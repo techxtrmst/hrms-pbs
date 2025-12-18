@@ -1,0 +1,174 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Employee Handbook | Petabytz{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Keka-style Handbook Clean UI */
+    .page-header-center {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding-top: 1rem;
+    }
+
+    .page-title-large {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2c5282;
+        /* Deep Blue from screenshot */
+        margin-bottom: 0.75rem;
+    }
+
+    .page-subtitle {
+        color: #a0aec0;
+        max-width: 600px;
+        margin: 0 auto;
+        font-size: 0.95rem;
+    }
+
+    /* Navigation Pills - Centered */
+    .nav-pills-custom {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 2.5rem;
+        flex-wrap: wrap;
+    }
+
+    .nav-pills-custom .nav-link {
+        background-color: #f7fafc;
+        color: #718096;
+        border: 1px solid #e2e8f0;
+        border-radius: 50px;
+        /* Pill shape */
+        padding: 10px 24px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+
+    .nav-pills-custom .nav-link:hover {
+        background-color: #ebf8ff;
+        color: #3182ce;
+        border-color: #bee3f8;
+    }
+
+    .nav-pills-custom .nav-link.active {
+        background-color: #3182ce;
+        /* Active Blue */
+        color: white;
+        border-color: #3182ce;
+        box-shadow: 0 4px 6px rgba(49, 130, 206, 0.25);
+    }
+
+    /* Content Area */
+    .content-box-large {
+        background-color: #fff;
+        border-radius: 12px;
+        padding: 3rem;
+        /* box-shadow: 0 4px 20px rgba(0,0,0,0.03); */
+        min-height: 400px;
+        border: 1px solid #edf2f7;
+    }
+
+    .section-heading {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #edf2f7;
+    }
+
+    /* Rich Text Content Styling */
+    .rich-text-content {
+        color: #4a5568;
+        line-height: 1.7;
+    }
+
+    .rich-text-content h4 {
+        color: #2d3748;
+        font-weight: 700;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        font-size: 1.2rem;
+    }
+
+    .rich-text-content p {
+        margin-bottom: 1rem;
+    }
+
+    .rich-text-content ul {
+        margin-bottom: 1rem;
+        padding-left: 1.5rem;
+    }
+
+    .rich-text-content li {
+        margin-bottom: 0.5rem;
+        position: relative;
+    }
+
+    /* Checkmark bullets like in screenshot */
+    .rich-text-checkmarks ul {
+        list-style: none;
+        padding-left: 0;
+    }
+
+    .rich-text-checkmarks li {
+        padding-left: 1.75rem;
+    }
+
+    .rich-text-checkmarks li::before {
+        content: '\2713';
+        /* Checkmark */
+        position: absolute;
+        left: 0;
+        color: #38a169;
+        /* Green check */
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="page-header-center">
+        <h1 class="page-title-large">Employee Handbook</h1>
+        <p class="page-subtitle">Your comprehensive guide to company policies, procedures, and culture. Browse the
+            sections below to learn more.</p>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-pills-custom" id="handbook-tabs" role="tablist">
+        {% for section in sections %}
+        <button class="nav-link {% if forloop.first %}active{% endif %}" id="tab-{{ section.id }}" data-bs-toggle="pill"
+            data-bs-target="#content-{{ section.id }}" type="button" role="tab">
+            {{ section.title }}
+        </button>
+        {% endfor %}
+    </div>
+
+    <!-- Content Area -->
+    <div class="tab-content" id="handbook-content">
+        {% for section in sections %}
+        <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="content-{{ section.id }}"
+            role="tabpanel">
+
+            <div class="content-box-large">
+                <h2 class="section-heading">{{ section.title }}</h2>
+                <div class="rich-text-content rich-text-checkmarks">
+                    {{ section.content|safe }}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-book-open fa-3x mb-3 text-secondary"></i>
+            <p>No handbook sections available yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

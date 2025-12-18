@@ -1,0 +1,436 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}My Home | HRMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-dashboard {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        /* Softer shadow */
+        background-color: #fff;
+        height: 100%;
+        padding: 20px;
+    }
+
+    .card-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-circle {
+        width: 40px;
+        height: 40px;
+        background-color: #f6ad55;
+        /* Orange-ish */
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 15px;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        color: #718096;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+    }
+
+    .stat-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #2d3748;
+    }
+
+    .week-days {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+    }
+
+    .day-circle {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: #edf2f7;
+        color: #718096;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .day-circle.active {
+        background-color: #3182ce;
+        color: white;
+    }
+
+    .break-info {
+        font-size: 0.85rem;
+        color: #718096;
+        margin-bottom: 5px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .digital-clock {
+        font-size: 2.5rem;
+        font-weight: 300;
+        color: #2d3748;
+        margin-bottom: 5px;
+    }
+
+    .date-display {
+        color: #718096;
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+    }
+
+    .btn-clock {
+        border-radius: 5px;
+        padding: 10px 20px;
+        font-weight: 600;
+        width: 100%;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+    }
+
+    .btn-clock-in {
+        background-color: #48bb78;
+        color: white;
+        border: none;
+    }
+
+    .btn-clock-in:hover {
+        background-color: #38a169;
+    }
+
+    .btn-clock-out {
+        background-color: #e53e3e;
+        color: white;
+        border: none;
+    }
+
+    .btn-clock-out:hover {
+        background-color: #c53030;
+    }
+
+    /* Attendance Log Table */
+    .table-log th {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #718096;
+        font-weight: 600;
+        border-top: none;
+    }
+
+    .table-log td {
+        vertical-align: middle;
+        font-size: 0.9rem;
+        color: #2d3748;
+    }
+
+    .attendance-visual-bar {
+        height: 6px;
+        background-color: #e2e8f0;
+        border-radius: 3px;
+        position: relative;
+        width: 100%;
+        margin-top: 8px;
+    }
+
+    .attendance-visual-fill {
+        height: 100%;
+        background-color: #319795;
+        /* Teal */
+        border-radius: 3px;
+    }
+
+    .log-time {
+        font-size: 0.8rem;
+        color: #718096;
+    }
+
+    .status-badge {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+        background-color: #feebc8;
+        color: #c05621;
+        border-radius: 4px;
+        margin-left: 5px;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-4 mb-5">
+        <!-- Attendance Stats -->
+        <div class="col-md-4">
+            <div class="card-dashboard">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="card-title m-0">Attendance Stats</div>
+                    <div class="text-primary small" style="font-size: 0.8rem; cursor: pointer;">This Week <i
+                            class="fas fa-caret-down"></i></div>
+                </div>
+
+                <div class="d-flex align-items-center p-3 rounded" style="background-color: #f7fafc;">
+                    <div class="stat-circle">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between text-center px-2">
+                            <div>
+                                <div class="stat-label">Me</div>
+                            </div>
+                            <div>
+                                <div class="stat-label">AVG HRS / DAY</div>
+                                <div class="stat-value">{{ avg_hours }}hrs</div>
+                            </div>
+                            <div>
+                                <div class="stat-label">ON TIME</div>
+                                <div class="stat-value">{{ on_time_percentage }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timings -->
+        <div class="col-md-4">
+            <div class="card-dashboard">
+                <div class="card-title">Timings</div>
+
+                <div class="week-days">
+                    <div class="day-circle">S</div>
+                    <div class="day-circle">M</div>
+                    <div class="day-circle">T</div>
+                    <div class="day-circle active">W</div> <!-- Dynamic day needed ideally -->
+                    <div class="day-circle">T</div>
+                    <div class="day-circle">F</div>
+                    <div class="day-circle">S</div>
+                </div>
+
+                <div class="mt-3">
+                    <div class="break-info">
+                        <span>Duration: 9:00 hrs</span>
+                    </div>
+                    <div class="break-info">
+                        <span>Morning Break :</span>
+                        <span>15mins from 10:45 to 11:00</span>
+                    </div>
+                    <div class="break-info">
+                        <span>Lunch Break :</span>
+                        <span>45min from 1:00 to 1:45</span>
+                    </div>
+                    <div class="break-info">
+                        <span>Evening Break :</span>
+                        <span>15mins from 4:00 to 4:30</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="col-md-4">
+            <div class="card-dashboard text-center d-flex flex-column justify-content-center">
+                <div class="card-title text-start w-100">Actions</div>
+
+                <div id="clock" class="digital-clock">--:--:--</div>
+                <div id="date" class="date-display">--</div>
+
+                <div class="mt-2">
+                    {% if attendance and attendance.clock_in and not attendance.clock_out %}
+                    <button id="clock-btn" class="btn btn-clock btn-clock-out" onclick="handleClockAction('out')">Clock
+                        Out</button>
+                    <div class="mt-2 text-muted small">Remote Clock-in</div>
+                    {% else %}
+                    <button id="clock-btn" class="btn btn-clock btn-clock-in" onclick="handleClockAction('in')">Clock
+                        In</button>
+                    <div class="mt-2 text-muted small">Web Clock-in</div>
+                    {% endif %}
+                </div>
+
+                <div class="mt-auto text-start w-100 pt-3 border-top">
+                    <a href="{% url 'policy' %}" class="text-decoration-none text-muted small">Attendance Policy</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Section -->
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold text-secondary">Current Status:
+            <span class="text-dark">
+                {% if attendance and attendance.clock_in and not attendance.clock_out %}In Office{% else %}Away{% endif %}
+            </span>
+        </h5>
+        <div class="btn-group">
+            <button class="btn btn-outline-secondary btn-sm active">30 Days</button>
+            <button class="btn btn-outline-secondary btn-sm">Jun</button>
+            <button class="btn btn-outline-secondary btn-sm">May</button>
+        </div>
+    </div>
+
+    <div class="card card-dashboard p-0 overflow-hidden">
+        <table class="table table-hover table-log mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4 py-3">Date</th>
+                    <th class="py-3" style="width: 30%;">Attendance Visual</th>
+                    <th class="py-3">Effective Hours</th>
+                    <th class="py-3">Gross Hours</th>
+                    <th class="py-3">Arrival</th>
+                    <th class="py-3">Log</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for att in attendance_history %}
+                <tr>
+                    <td class="ps-4 fw-bold text-secondary">
+                        {{ att.date|date:"M d D" }}
+                        {% if att.status == 'Absent' %}<span class="status-badge bg-danger text-white">ABS</span>{% endif %}
+                        {% if not att.clock_in %}<span class="status-badge">GEN</span>{% endif %}
+                    </td>
+                    <td>
+                        <div class="attendance-visual-bar">
+                            <div class="attendance-visual-fill"
+                                style="width: {{ att.visual_width|default:0|floatformat:0 }}%;"></div>
+                        </div>
+                    </td>
+                    <td class="fw-bold">{{ att.effective_hours }} hrs</td>
+                    <td class="text-muted">{{ att.effective_hours }} hrs</td>
+                    <td class="text-success">{% if att.clock_in %}On Time{% else %}-{% endif %}</td>
+                    <td>
+                        {% if att.clock_in %}
+                        <div class="log-time"><i class="fas fa-sign-in-alt text-success me-1"></i> {{
+                            att.clock_in|time:"h:i A" }}</div>
+                        {% endif %}
+                        {% if att.clock_out %}
+                        <div class="log-time"><i class="fas fa-sign-out-alt text-danger me-1"></i> {{
+                            att.clock_out|time:"h:i A" }}</div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-4">No attendance records found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function updateClock() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('en-US', { hour12: false });
+        const dateString = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+
+        document.getElementById('clock').innerText = timeString;
+        document.getElementById('date').innerText = dateString;
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Highlighting current day in existing DOM if static, usually done via template. 
+    // Just JS fix:
+    const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    const currentDay = new Date().getDay();
+    const dayCircles = document.querySelectorAll('.day-circle');
+    dayCircles.forEach((circle, index) => {
+        if (index === currentDay) {
+            circle.classList.add('active');
+        } else {
+            circle.classList.remove('active');
+        }
+    });
+
+    // Geolocation and Clocking
+    let locationInterval;
+
+    function handleClockAction(action) {
+        if (!navigator.geolocation) {
+            alert("Geolocation is not supported by this browser.");
+            return;
+        }
+
+        const btn = document.getElementById('clock-btn');
+        const originalText = btn.innerText;
+        btn.innerText = "Processing...";
+        btn.disabled = true;
+
+        navigator.geolocation.getCurrentPosition((position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+
+            const url = action === 'in' ? "{% url 'api_clock_in' %}" : "{% url 'api_clock_out' %}";
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}' // Add if not csrf_exempt, today it IS exempt, but good practice
+                },
+                body: JSON.stringify({ latitude: lat, longitude: lng })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        location.reload(); // Reload to update UI state
+                    } else {
+                        alert("Error: " + data.message);
+                        btn.innerText = originalText;
+                        btn.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("An error occurred.");
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                });
+
+        }, (error) => {
+            alert("Unable to retrieve location. Please allow location access.");
+            btn.innerText = originalText;
+            btn.disabled = false;
+        });
+    }
+
+    // Periodic Location Tracking (Every 1 hour = 3600000 ms)
+    // Only if clocked in
+    {% if attendance and attendance.clock_in and not attendance.clock_out %}
+    setInterval(() => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                fetch("{% url 'api_update_location' %}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ latitude: lat, longitude: lng })
+                }); // Silent update
+            });
+        }
+    }, 3600000);
+    {% endif %}
+</script>
+{% endblock %}

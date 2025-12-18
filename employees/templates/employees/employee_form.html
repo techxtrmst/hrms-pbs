@@ -1,0 +1,232 @@
+{% extends 'core/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Add New Employee - HRMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section-title {
+        color: #6c757d;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .keka-card {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        padding: 2rem;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #344767;
+        font-size: 0.9rem;
+    }
+
+    .btn-submit {
+        background: #5e72e4;
+        color: #fff;
+        padding: 0.6rem 2rem;
+        font-weight: 600;
+        border-radius: 4px;
+        border: none;
+        transition: all 0.2s;
+    }
+
+    .btn-submit:hover {
+        background: #4e62cc;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="mb-1 text-dark font-weight-bold">Add Employee</h4>
+                <p class="text-muted small mb-0">Fill in the details to create a new employee profile.</p>
+            </div>
+            <a href="{% url 'employee_list' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left me-1"></i> Back
+            </a>
+        </div>
+
+        <div class="keka-card">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Company Selection (Conditional) -->
+                {% if form.company_selection.is_hidden is False %}
+                <div class="mb-4">
+                    <h6 class="form-section-title mt-0">Organization Details</h6>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label class="form-label d-block">Select Company</label>
+                            {% for radio in form.company_selection %}
+                            <div class="form-check form-check-inline">
+                                {{ radio.tag }}
+                                <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                            </div>
+                            {% endfor %}
+                            {% if form.company_selection.errors %}
+                            <div class="text-danger small">{{ form.company_selection.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Role Selection -->
+                <div class="mb-4">
+                    <h6 class="form-section-title mt-0 text-primary">Access Role</h6>
+                    <div class="row">
+                        <div class="col-md-12">
+                            {% for radio in form.role %}
+                            <div class="form-check form-check-inline">
+                                {{ radio.tag }}
+                                <label class="form-check-label fw-bold" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 1. Personal Details -->
+                <h6 class="form-section-title">Personal Information</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">First Name <span class="text-danger">*</span></label>
+                        {% render_field form.first_name class="form-control" placeholder="e.g. John" %}
+                        <div class="text-danger small">{{ form.first_name.errors.0 }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                        {% render_field form.last_name class="form-control" placeholder="e.g. Doe" %}
+                        <div class="text-danger small">{{ form.last_name.errors.0 }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Badge ID/Emp ID <span class="text-danger">*</span></label>
+                        {% render_field form.badge_id class="form-control" placeholder="e.g. EMP001" %}
+                        <div class="text-danger small">{{ form.badge_id.errors.0 }}</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Personal Email <span class="text-danger">*</span></label>
+                        {% render_field form.email class="form-control" placeholder="e.g. john.doe@gmail.com" %}
+                        <div class="text-danger small">{{ form.email.errors.0 }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Mobile Number</label>
+                        {% render_field form.mobile_number class="form-control" placeholder="+91 9876543210" %}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Gender</label>
+                        {% render_field form.gender class="form-select" %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Marital Status</label>
+                        {% render_field form.marital_status class="form-select" %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Date of Birth</label>
+                        {% render_field form.dob class="form-control" %}
+                    </div>
+
+                    <div class="col-md-12">
+                        <label class="form-label">Permanent Address</label>
+                        {% render_field form.permanent_address class="form-control" rows="2" %}
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Emergency Contact Info</label>
+                        {% render_field form.emergency_contact class="form-control" placeholder="Name & Number" %}
+                    </div>
+                </div>
+
+                <!-- 2. Job Profile -->
+                <h6 class="form-section-title">Job Profile</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Designation <span class="text-danger">*</span></label>
+                        {% render_field form.designation class="form-control" placeholder="e.g. Software Engineer" %}
+                        <div class="text-danger small">{{ form.designation.errors.0 }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Department <span class="text-danger">*</span></label>
+                        {% render_field form.department class="form-control" placeholder="e.g. Engineering" %}
+                        <div class="text-danger small">{{ form.department.errors.0 }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Reporting Manager</label>
+                        {% render_field form.manager class="form-select" %}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Work Type</label>
+                        {% render_field form.work_type class="form-select" %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Shift</label>
+                        {% render_field form.shift class="form-control" %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Date of Joining</label>
+                        {% render_field form.date_of_joining class="form-control" %}
+                    </div>
+                </div>
+
+                <!-- 3. Finance Details -->
+                <h6 class="form-section-title">Financial Details</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Bank Name</label>
+                        {% render_field form.bank_name class="form-control" %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Account Number</label>
+                        {% render_field form.account_number class="form-control" %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">IFSC Code</label>
+                        {% render_field form.ifsc_code class="form-control" %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">UAN</label>
+                        {% render_field form.uan class="form-control" %}
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center mt-4">
+                        <div class="form-check form-switch">
+                            {% render_field form.pf_enabled class="form-check-input" role="switch" %}
+                            <label class="form-check-label" for="{{ form.pf_enabled.id_for_label }}">PF Enabled</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-5 text-end border-top pt-3">
+                    <button type="submit" class="btn btn-submit">Save Employee</button>
+                    <p class="text-muted small mt-2">Password will be auto-generated (Name + Last 3 digits of Badge ID)
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

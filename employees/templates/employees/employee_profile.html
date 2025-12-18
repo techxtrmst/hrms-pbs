@@ -1,0 +1,449 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}My Profile | Petabytz{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Profile Header */
+    .profile-header {
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        margin-bottom: 1.5rem;
+    }
+
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background-color: #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: #718096;
+    }
+
+    .profile-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 0.25rem;
+    }
+
+    .profile-designation {
+        color: #718096;
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .profile-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+        border-top: 1px solid #edf2f7;
+        padding-top: 1.5rem;
+    }
+
+    .meta-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #a0aec0;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .meta-value {
+        font-size: 0.95rem;
+        color: #2d3748;
+        font-weight: 500;
+    }
+
+    /* Side Nav */
+    .profile-nav-card {
+        background-color: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .nav-pills .nav-link {
+        border-radius: 0;
+        color: #718096;
+        padding: 1rem 1.5rem;
+        font-weight: 500;
+        border-left: 3px solid transparent;
+        text-align: left;
+    }
+
+    .nav-pills .nav-link:hover {
+        background-color: #f7fafc;
+        color: #2d3748;
+    }
+
+    .nav-pills .nav-link.active {
+        background-color: #ebf8ff;
+        color: #3182ce;
+        border-left-color: #3182ce;
+        font-weight: 600;
+    }
+
+    .nav-pills .nav-link i {
+        width: 24px;
+        text-align: center;
+        margin-right: 10px;
+    }
+
+    /* Content Area */
+    .section-card {
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    /* Timeline */
+    .timeline {
+        border-left: 2px solid #e2e8f0;
+        margin-left: 10px;
+        padding-left: 20px;
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 2rem;
+    }
+
+    .timeline-dot {
+        position: absolute;
+        left: -26px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background-color: #fff;
+        border: 2px solid #3182ce;
+        top: 5px;
+    }
+
+    .timeline-content h6 {
+        font-weight: 600;
+        color: #2b6cb0;
+        margin-bottom: 0.25rem;
+    }
+
+    .timeline-content p {
+        color: #718096;
+        margin-bottom: 0.25rem;
+    }
+
+    /* ID Proofs */
+    .file-upload-box {
+        border: 2px dashed #cbd5e0;
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background-color: #f7fafc;
+    }
+
+    .file-upload-box:hover {
+        border-color: #3182ce;
+        background-color: #ebf8ff;
+    }
+
+    .file-preview {
+        width: 100%;
+        max-width: 300px;
+        height: auto;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        margin-top: 10px;
+    }
+
+    .status-locked {
+        color: #e53e3e;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-top: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="profile-header">
+        <div class="d-flex align-items-center gap-4">
+            <div class="profile-avatar">
+                {% if employee.profile_picture %}
+                <img src="{{ employee.profile_picture.url }}" alt="Profile"
+                    class="w-100 h-100 rounded-circle object-fit-cover">
+                {% else %}
+                <i class="fas fa-user"></i>
+                {% endif %}
+            </div>
+            <div class="flex-grow-1">
+                <h1 class="profile-name">{{ employee.user.get_full_name }}</h1>
+                <div class="profile-designation">
+                    <i class="fas fa-briefcase"></i>
+                    {{ employee.designation|default:"No Designation" }}
+                </div>
+
+                <div class="profile-meta-grid">
+                    <div>
+                        <div class="meta-label">Department</div>
+                        <div class="meta-value">{{ employee.department|default:"-" }}</div>
+                    </div>
+                    <div>
+                        <div class="meta-label">Employee ID</div>
+                        <div class="meta-value">#{{ employee.badge_id|default:"-" }}</div>
+                    </div>
+                    <div>
+                        <div class="meta-label">Work Email</div>
+                        <div class="meta-value">{{ employee.user.email }}</div>
+                    </div>
+                    <div>
+                        <div class="meta-label">Status</div>
+                        <div class="meta-value text-success">Active</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Sidebar Navigation -->
+        <div class="col-md-3">
+            <div class="profile-nav-card position-sticky" style="top: 20px;">
+                <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                    <button class="nav-link active" id="v-pills-about-tab" data-bs-toggle="pill"
+                        data-bs-target="#v-pills-about" type="button" role="tab" aria-selected="true">
+                        <i class="far fa-user"></i> About & Timeline
+                    </button>
+                    <button class="nav-link" id="v-pills-job-tab" data-bs-toggle="pill" data-bs-target="#v-pills-job"
+                        type="button" role="tab" aria-selected="false">
+                        <i class="fas fa-briefcase"></i> Job Profile
+                    </button>
+                    <button class="nav-link" id="v-pills-personal-tab" data-bs-toggle="pill"
+                        data-bs-target="#v-pills-personal" type="button" role="tab" aria-selected="false">
+                        <i class="far fa-id-card"></i> Personal Details
+                    </button>
+                    <button class="nav-link" id="v-pills-id-tab" data-bs-toggle="pill" data-bs-target="#v-pills-id"
+                        type="button" role="tab" aria-selected="false">
+                        <i class="fas fa-fingerprint"></i> ID Proofs
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="col-md-9">
+            <div class="tab-content" id="v-pills-tabContent">
+
+                <!-- About & Timeline -->
+                <div class="tab-pane fade show active" id="v-pills-about" role="tabpanel">
+                    <div class="section-card">
+                        <h5 class="section-title"><i class="far fa-clock me-2"></i> Timeline & Info</h5>
+
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div class="timeline-content">
+                                    <h6 class="text-uppercase small text-primary">Joined Company</h6>
+                                    <h5>Started as {{ employee.designation }}</h5>
+                                    <p><i class="far fa-calendar-alt me-2"></i> {{
+                                        employee.date_of_joining|default:"Date not set" }}</p>
+                                    <p class="small text-muted">Employee joined the organization.</p>
+                                </div>
+                            </div>
+
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div class="timeline-content">
+                                    <h6 class="text-uppercase small text-primary">Current Assignment</h6>
+                                    <h5>Reporting to Manager</h5>
+                                    <p>{{ employee.manager.user.get_full_name|default:"No reporting manager assigned
+                                        yet." }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Job Profile -->
+                <div class="tab-pane fade" id="v-pills-job" role="tabpanel">
+                    <div class="section-card">
+                        <h5 class="section-title">Job Information</h5>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="meta-label">Designation</label>
+                                <div class="fw-bold">{{ employee.designation }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="meta-label">Department</label>
+                                <div class="fw-bold">{{ employee.department }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="meta-label">Work Type</label>
+                                <div class="fw-bold">{{ employee.get_work_type_display }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="meta-label">Shift</label>
+                                <div class="fw-bold">{{ employee.shift }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personal Details -->
+                <div class="tab-pane fade" id="v-pills-personal" role="tabpanel">
+                    <div class="section-card">
+                        <h5 class="section-title">Personal Information</h5>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="meta-label">Mobile Number</label>
+                                <div class="fw-bold">{{ employee.mobile_number|default:"-" }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="meta-label">Gender</label>
+                                <div class="fw-bold">{{ employee.get_gender_display|default:"-" }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="meta-label">Date of Birth</label>
+                                <div class="fw-bold">{{ employee.dob|default:"-" }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="meta-label">Marital Status</label>
+                                <div class="fw-bold">{{ employee.get_marital_status_display|default:"-" }}</div>
+                            </div>
+                            <div class="col-12">
+                                <label class="meta-label">Permanent Address</label>
+                                <div class="fw-bold">{{ employee.permanent_address|default:"-" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ID Proofs -->
+                <div class="tab-pane fade" id="v-pills-id" role="tabpanel">
+                    <div class="section-card">
+                        <h5 class="section-title">Identity Proofs</h5>
+                        <p class="text-muted small mb-4">Please upload clear copies of your documents. Once uploaded,
+                            they can only be changed by an administrator.</p>
+
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+
+                            <div class="row g-4">
+                                <!-- Aadhar Front -->
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Aadhar Card (Front)</label>
+                                        {% if id_proofs.aadhar_front %}
+                                        <div class="mb-2">
+                                            <img src="{{ id_proofs.aadhar_front.url }}" class="file-preview">
+                                        </div>
+                                        {% if is_admin %}
+                                        <div class="d-flex align-items-center gap-2 mt-2">
+                                            <input type="file" name="aadhar_front" class="form-control form-control-sm">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox"
+                                                    name="delete_aadhar_front" id="del_af">
+                                                <label class="form-check-label text-danger small"
+                                                    for="del_af">Delete</label>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <div class="status-locked"><i class="fas fa-lock"></i> Locked</div>
+                                        {% endif %}
+                                        {% else %}
+                                        <input type="file" name="aadhar_front" class="form-control" accept="image/*">
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Aadhar Back -->
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Aadhar Card (Back)</label>
+                                        {% if id_proofs.aadhar_back %}
+                                        <div class="mb-2">
+                                            <img src="{{ id_proofs.aadhar_back.url }}" class="file-preview">
+                                        </div>
+                                        {% if is_admin %}
+                                        <div class="d-flex align-items-center gap-2 mt-2">
+                                            <input type="file" name="aadhar_back" class="form-control form-control-sm">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox"
+                                                    name="delete_aadhar_back" id="del_ab">
+                                                <label class="form-check-label text-danger small"
+                                                    for="del_ab">Delete</label>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <div class="status-locked"><i class="fas fa-lock"></i> Locked</div>
+                                        {% endif %}
+                                        {% else %}
+                                        <input type="file" name="aadhar_back" class="form-control" accept="image/*">
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Pan Card -->
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">PAN Card</label>
+                                        {% if id_proofs.pan_card %}
+                                        <div class="mb-2">
+                                            <img src="{{ id_proofs.pan_card.url }}" class="file-preview">
+                                        </div>
+                                        {% if is_admin %}
+                                        <div class="d-flex align-items-center gap-2 mt-2">
+                                            <input type="file" name="pan_card" class="form-control form-control-sm">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="delete_pan_card"
+                                                    id="del_pc">
+                                                <label class="form-check-label text-danger small"
+                                                    for="del_pc">Delete</label>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <div class="status-locked"><i class="fas fa-lock"></i> Locked</div>
+                                        {% endif %}
+                                        {% else %}
+                                        <input type="file" name="pan_card" class="form-control" accept="image/*">
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 text-end">
+                                <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-2"></i> Save
+                                    Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

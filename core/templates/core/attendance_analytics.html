@@ -1,0 +1,207 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Attendance Analytics | Petabytz{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Analytics Dashboard Cards */
+    .stat-card-analytics {
+        background-color: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        transition: transform 0.2s;
+    }
+
+    .stat-card-analytics:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-icon-wrapper {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-right: 20px;
+    }
+
+    .bg-light-blue {
+        background-color: #ebf8ff;
+        color: #3182ce;
+    }
+
+    .bg-light-green {
+        background-color: #f0fff4;
+        color: #38a169;
+    }
+
+    .bg-light-red {
+        background-color: #fff5f5;
+        color: #e53e3e;
+    }
+
+    .bg-light-orange {
+        background-color: #fffaf0;
+        color: #dd6b20;
+    }
+
+    .bg-light-purple {
+        background-color: #faf5ff;
+        color: #805ad5;
+    }
+
+    .stat-content h3 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .stat-content p {
+        margin: 0;
+        color: #718096;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .analytics-chart-container {
+        background-color: #fff;
+        padding: 24px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        margin-top: 24px;
+        min-height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .action-btn-large {
+        padding: 12px 24px;
+        font-size: 1rem;
+        border-radius: 6px;
+        background-color: #3182ce;
+        color: white;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+
+    .action-btn-large:hover {
+        background-color: #2b6cb0;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold text-dark m-0">Attendance Analytics</h4>
+            <p class="text-muted small m-0 mt-1">Real-time overview of today's attendance</p>
+        </div>
+        <div>
+            <a href="{% url 'attendance_report' %}" class="action-btn-large">
+                <i class="fas fa-file-excel"></i> View Detailed Report
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="row g-4">
+        <div class="col-md-4 col-lg-3">
+            <div class="stat-card-analytics">
+                <div class="stat-icon-wrapper bg-light-blue">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ total_employees }}</h3>
+                    <p>Total Employees</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <div class="stat-card-analytics">
+                <div class="stat-icon-wrapper bg-light-green">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ present_today }}</h3>
+                    <p>Present</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <div class="stat-card-analytics">
+                <div class="stat-icon-wrapper bg-light-red">
+                    <i class="fas fa-user-times"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ absent_today }}</h3>
+                    <p>Absent</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <div class="stat-card-analytics">
+                <div class="stat-icon-wrapper bg-light-orange">
+                    <i class="fas fa-coffee"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ leave_today }}</h3>
+                    <p>On Leave</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <div class="stat-card-analytics">
+                <div class="stat-icon-wrapper bg-light-purple">
+                    <i class="fas fa-laptop-house"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ wfh_today }}</h3>
+                    <p>Work From Home</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Placeholder (Future Enhancement) -->
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="analytics-chart-container">
+                <div class="text-center text-muted">
+                    <i class="fas fa-chart-pie fa-3x mb-3 text-secondary opacity-50"></i>
+                    <h5>Attendance Distribution</h5>
+                    <p>Present Percentage: <strong>{{ present_pct }}%</strong></p>
+                    <div class="progress mt-3" style="width: 200px; height: 10px; margin: 0 auto;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ present_pct }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <!-- Could be Late Arrivals list here -->
+        </div>
+    </div>
+
+</div>
+{% endblock %}
