@@ -193,7 +193,7 @@ This project is proprietary software. All rights reserved.
 
 ## 📞 Support
 
-For support, email sathinathpadhi2001@gmail.com or create an issue in the repository.
+For support, email sathinath.padhi@petabytz.com or create an issue in the repository.
 
 ---
 
