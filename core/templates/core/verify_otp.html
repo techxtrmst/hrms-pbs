@@ -1,0 +1,347 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify OTP - Petabytz HRMS</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Shared CSS from Login/Forgot Password */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --input-bg: rgba(255, 255, 255, 0.6);
+            --focus-ring: rgba(118, 75, 162, 0.4);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            background: #fdfbf7;
+        }
+
+        .login-wrapper {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+        }
+
+        .visual-section {
+            flex: 1.2;
+            position: relative;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        .slide-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out, transform 8s ease-in-out;
+            transform: scale(1);
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .visual-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.6) 100%);
+            z-index: 10;
+        }
+
+        .visual-content {
+            position: relative;
+            z-index: 20;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 4rem;
+            color: white;
+            max-width: 600px;
+        }
+
+        .visual-tagline {
+            font-size: 3.5rem;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s forwards 0.5s;
+        }
+
+        .visual-subtext {
+            font-size: 1.2rem;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s forwards 0.8s;
+            margin-bottom: 2rem;
+        }
+
+        .form-section {
+            flex: 0.8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop') no-repeat center center/cover;
+            position: relative;
+        }
+
+        .form-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            z-index: 1;
+        }
+
+        .login-card {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 450px;
+            padding: 3rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.8s forwards 0.2s;
+        }
+
+        .brand-logo-small {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .brand-logo-small i {
+            font-size: 2rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-right: 0.8rem;
+        }
+
+        .welcome-text h3 {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-text p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-floating>.form-control {
+            background-color: var(--input-bg);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            font-size: 1rem;
+            height: 55px;
+        }
+
+        .form-floating>label {
+            padding-top: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .form-floating>.form-control:focus {
+            background-color: #fff;
+            border-color: #764ba2;
+            box-shadow: 0 0 0 4px var(--focus-ring);
+        }
+
+        .btn-submit {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            width: 100%;
+            padding: 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            margin-top: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(118, 75, 162, 0.5);
+        }
+
+        .extra-links {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+
+        .back-link:hover {
+            color: #764ba2;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .circle-1,
+        .circle-2 {
+            position: absolute;
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .circle-1 {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.6), rgba(118, 75, 162, 0.6));
+            top: -100px;
+            right: -100px;
+            filter: blur(60px);
+        }
+
+        .circle-2 {
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(135deg, rgba(255, 106, 0, 0.4), rgba(238, 9, 121, 0.4));
+            bottom: -50px;
+            left: -50px;
+            filter: blur(50px);
+        }
+
+        @media (max-width: 900px) {
+            .visual-section {
+                display: none;
+            }
+
+            .form-section {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-wrapper">
+        <div class="visual-section">
+            <div class="slide-container" id="slideContainer"></div>
+            <div class="visual-overlay"></div>
+            <div class="visual-content">
+                <div class="visual-tagline">Verify Your Identity.</div>
+                <div class="visual-subtext">We've sent a 6-digit OTP to your email address.</div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="circle-1"></div>
+            <div class="circle-2"></div>
+
+            <div class="login-card">
+                <div class="brand-logo-small"><i class="fas fa-cubes"></i> Petabytz</div>
+                <div class="welcome-text text-center">
+                    <h3>Verify OTP</h3>
+                    <p>Enter the code sent to <strong>{{ email }}</strong></p>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    {% if form.errors %}
+                    <div class="alert alert-danger small p-2 mb-3 rounded-3 border-0 bg-danger-subtle text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>{{ form.errors }}
+                    </div>
+                    {% endif %}
+
+                    <div class="form-floating mb-4">
+                        <input type="text" class="form-control text-center fw-bold fs-4" id="id_otp" name="otp"
+                            placeholder="000000" maxlength="6" required style="letter-spacing: 5px;">
+                        <label for="id_otp" class="w-100 text-center">Enter 6-Digit OTP</label>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Verify & Proceed</button>
+
+                    <div class="extra-links">
+                        <a href="{% url 'forgot_password' %}" class="back-link">
+                            <i class="fas fa-arrow-left me-2"></i> Resend / Change Email
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let slidesData = ['https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=2032&auto=format&fit=crop'];
+        const slideContainer = document.getElementById('slideContainer');
+        if (slideContainer) {
+            slidesData.forEach(url => {
+                const div = document.createElement('div');
+                div.classList.add('slide', 'active');
+                div.style.backgroundImage = `url('${url}')`;
+                slideContainer.appendChild(div);
+            });
+        }
+    </script>
+</body>
+
+</html>

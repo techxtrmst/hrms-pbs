@@ -1,0 +1,146 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Leaves Today - SuperAdmin{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'superadmin/css/superadmin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="superadmin-container">
+    <!-- Breadcrumb -->
+    <nav class="sa-breadcrumb">
+        <a href="{% url 'superadmin:dashboard' %}" class="sa-breadcrumb-item">
+            <i class="fas fa-home"></i> Dashboard
+        </a>
+        <span class="sa-breadcrumb-separator">/</span>
+        <span class="sa-breadcrumb-item active">Leaves Today</span>
+    </nav>
+
+    <!-- Header -->
+    <div class="sa-header d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="sa-header-title">Leaves Today</h1>
+            <p class="sa-header-subtitle">{{ today|date:"l, F d, Y" }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'superadmin:export_data' 'leaves' %}{% if selected_company_id %}?company_id={{ selected_company_id }}{% endif %}"
+                class="sa-btn-export">
+                <i class="fas fa-download"></i>
+                <span>Export CSV</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Company Filter -->
+    <div class="mb-4">
+        <select class="form-select" id="companyFilter" style="max-width: 300px;">
+            <option value="">All Companies</option>
+            {% for company in companies %}
+            <option value="{{ company.id }}" {% if selected_company_id == company.id %}selected{% endif %}>
+                {{ company.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Leaves Table -->
+    <div class="sa-table-container">
+        <div class="table-responsive">
+            <table class="sa-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Company</th>
+                        <th>Leave Type</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Duration</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for leave in leave_records %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if leave.employee.profile_picture %}
+                                <img src="{{ leave.employee.profile_picture.url }}"
+                                    alt="{{ leave.employee.user.get_full_name }}" class="rounded-circle me-2"
+                                    style="width: 32px; height: 32px; object-fit: cover;">
+                                {% else %}
+                                <img src="https://ui-avatars.com/api/?name={{ leave.employee.user.get_full_name|urlencode }}&background=f59e0b&color=fff"
+                                    class="rounded-circle me-2" style="width: 32px; height: 32px;">
+                                {% endif %}
+                                <strong>{{ leave.employee.user.get_full_name }}</strong>
+                            </div>
+                        </td>
+                        <td>{{ leave.employee.company.name }}</td>
+                        <td>
+                            {% if leave.leave_type == 'CL' %}
+                            <span class="sa-badge info">
+                                <i class="fas fa-calendar-day"></i> Casual Leave
+                            </span>
+                            {% elif leave.leave_type == 'SL' %}
+                            <span class="sa-badge warning">
+                                <i class="fas fa-notes-medical"></i> Sick Leave
+                            </span>
+                            {% elif leave.leave_type == 'EL' %}
+                            <span class="sa-badge success">
+                                <i class="fas fa-umbrella-beach"></i> Earned Leave
+                            </span>
+                            {% elif leave.leave_type == 'UL' %}
+                            <span class="sa-badge danger">
+                                <i class="fas fa-ban"></i> Unpaid Leave
+                            </span>
+                            {% else %}
+                            <span class="sa-badge">{{ leave.get_leave_type_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ leave.start_date|date:"M d, Y" }}</td>
+                        <td>{{ leave.end_date|date:"M d, Y" }}</td>
+                        <td>
+                            <strong>{{ leave.total_days }}</strong>
+                            {% if leave.total_days == 1 %}day{% else %}days{% endif %}
+                        </td>
+                        <td>
+                            <div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                title="{{ leave.reason }}">
+                                {{ leave.reason|truncatewords:10 }}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="sa-badge success">
+                                <i class="fas fa-check-circle"></i> Approved
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="fas fa-calendar-check fa-3x mb-3 d-block" style="opacity: 0.3;"></i>
+                            No approved leaves for today
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('companyFilter').addEventListener('change', function () {
+        const companyId = this.value;
+        const url = new URL(window.location.href);
+        if (companyId) {
+            url.searchParams.set('company_id', companyId);
+        } else {
+            url.searchParams.delete('company_id');
+        }
+        window.location.href = url.toString();
+    });
+</script>
+{% endblock %}

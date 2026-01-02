@@ -1,0 +1,343 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ company.name }} - Company Monitor{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'superadmin/css/superadmin.css' %}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="superadmin-container">
+    <!-- Breadcrumb -->
+    <nav class="sa-breadcrumb">
+        <a href="{% url 'superadmin:dashboard' %}" class="sa-breadcrumb-item">
+            <i class="fas fa-home"></i> Dashboard
+        </a>
+        <span class="sa-breadcrumb-separator">/</span>
+        <a href="{% url 'superadmin:companies' %}" class="sa-breadcrumb-item">Companies</a>
+        <span class="sa-breadcrumb-separator">/</span>
+        <span class="sa-breadcrumb-item active">{{ company.name }}</span>
+    </nav>
+
+    <!-- Company Header -->
+    <div class="sa-header mb-4">
+        <div class="d-flex align-items-center gap-3">
+            {% if company.logo %}
+            <img src="{{ company.logo.url }}" alt="{{ company.name }}" class="rounded"
+                style="width: 64px; height: 64px; object-fit: cover;">
+            {% else %}
+            <div class="rounded d-flex align-items-center justify-content-center"
+                style="width: 64px; height: 64px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; font-weight: 800; font-size: 1.5rem;">
+                {{ company.name|slice:":1" }}
+            </div>
+            {% endif %}
+            <div>
+                <h1 class="sa-header-title mb-1">{{ company.name }}</h1>
+                <p class="sa-header-subtitle mb-0">
+                    {{ company.primary_domain }} • {{ company.get_location_display }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Company Summary Cards -->
+    <div class="sa-metric-cards mb-4">
+        <div class="sa-metric-card blue">
+            <div class="sa-metric-label">Total Employees</div>
+            <div class="sa-metric-value">{{ summary.total_employees }}</div>
+            <div class="sa-metric-subtitle">
+                {{ summary.active_employees }} active, {{ summary.inactive_employees }} inactive
+            </div>
+        </div>
+
+        <div class="sa-metric-card green">
+            <div class="sa-metric-label">Active Employees</div>
+            <div class="sa-metric-value">{{ summary.active_employees }}</div>
+            <div class="sa-metric-subtitle">Currently working</div>
+        </div>
+
+        <div class="sa-metric-card amber">
+            <div class="sa-metric-label">Locations</div>
+            <div class="sa-metric-value">{{ summary.locations_count }}</div>
+            <div class="sa-metric-subtitle">Office locations</div>
+        </div>
+
+        <div class="sa-metric-card cyan">
+            <div class="sa-metric-label">Currency</div>
+            <div class="sa-metric-value">{{ company.currency }}</div>
+            <div class="sa-metric-subtitle">Payroll currency</div>
+        </div>
+    </div>
+
+    <!-- Employee Lifecycle Analytics -->
+    <div class="sa-chart-container mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="sa-chart-title mb-0">Employee Lifecycle Analytics</h2>
+            <a href="{% url 'superadmin:export_data' 'employees' %}?company_id={{ company.id }}" class="sa-btn-export">
+                <i class="fas fa-download"></i> Export
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="sa-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Join Date</th>
+                        <th>Working Days</th>
+                        <th>Leaves Taken</th>
+                        <th>LOP Days</th>
+                        <th>Attendance %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp_data in employee_lifecycle %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'superadmin:employee_detail' emp_data.employee.id %}"
+                                class="text-decoration-none">
+                                <strong class="text-primary">{{ emp_data.name }}</strong>
+                            </a>
+                        </td>
+                        <td>{{ emp_data.join_date|date:"M d, Y"|default:"-" }}</td>
+                        <td><strong>{{ emp_data.working_days }}</strong></td>
+                        <td>{{ emp_data.leaves_taken }}</td>
+                        <td>
+                            {% if emp_data.lop_days > 0 %}
+                            <span class="sa-badge danger">{{ emp_data.lop_days }}</span>
+                            {% else %}
+                            {{ emp_data.lop_days }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if emp_data.attendance_percentage >= 90 %}
+                            <span class="sa-badge success">{{ emp_data.attendance_percentage }}%</span>
+                            {% elif emp_data.attendance_percentage >= 75 %}
+                            <span class="sa-badge warning">{{ emp_data.attendance_percentage }}%</span>
+                            {% else %}
+                            <span class="sa-badge danger">{{ emp_data.attendance_percentage }}%</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">No employee data available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Leave Analytics -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="sa-chart-container">
+                <h2 class="sa-chart-title">Leave Distribution</h2>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="leaveDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="sa-chart-container">
+                <h2 class="sa-chart-title">Monthly Leave Trends</h2>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="monthlyTrendsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Frequent Leave Takers -->
+    <div class="sa-chart-container mb-4">
+        <h2 class="sa-chart-title">Frequent Leave Takers (Last 6 Months)</h2>
+        <div class="table-responsive">
+            <table class="sa-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th>Total Leaves</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp in leave_analytics.frequent_takers %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'superadmin:employee_detail' emp.id %}" class="text-decoration-none">
+                                <strong class="text-primary">{{ emp.user.get_full_name }}</strong>
+                            </a>
+                        </td>
+                        <td>{{ emp.department }}</td>
+                        <td>
+                            <span
+                                class="sa-badge {% if emp.leave_count > 10 %}danger{% elif emp.leave_count > 5 %}warning{% else %}info{% endif %}">
+                                {{ emp.leave_count }} leaves
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center py-4 text-muted">No leave data available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Attendance Heatmap -->
+    <div class="sa-chart-container">
+        <h2 class="sa-chart-title">Attendance Heatmap - {{ current_month }}</h2>
+        <div class="row g-3 mb-3">
+            <div class="col-md-3">
+                <div class="p-3 rounded" style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981;">
+                    <div class="small text-muted mb-1">Late Logins</div>
+                    <div class="h4 mb-0 fw-bold text-success">{{ heatmap_data.late_logins }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 rounded" style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid #f59e0b;">
+                    <div class="small text-muted mb-1">Early Logouts</div>
+                    <div class="h4 mb-0 fw-bold text-warning">{{ heatmap_data.early_logouts }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 rounded" style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444;">
+                    <div class="small text-muted mb-1">Absenteeism</div>
+                    <div class="h4 mb-0 fw-bold text-danger">{{ heatmap_data.absenteeism_percentage }}%</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 rounded" style="background: rgba(99, 102, 241, 0.1); border-left: 4px solid #6366f1;">
+                    <div class="small text-muted mb-1">Total Employees</div>
+                    <div class="h4 mb-0 fw-bold text-primary">{{ heatmap_data.total_employees }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Note:</strong> Attendance heatmap visualization coming soon. The statistics above show the current
+            month's attendance metrics.
+        </div>
+    </div>
+</div>
+
+<script>
+    // Leave Distribution Chart
+    const leaveDistCtx = document.getElementById('leaveDistributionChart');
+    if (leaveDistCtx) {
+        const leaveDistData = {{ leave_analytics.distribution| safe
+    }};
+    new Chart(leaveDistCtx, {
+        type: 'doughnut',
+        data: {
+            labels: leaveDistData.map(d => {
+                const types = {
+                    'CL': 'Casual Leave',
+                    'SL': 'Sick Leave',
+                    'EL': 'Earned Leave',
+                    'UL': 'Unpaid Leave',
+                    'CO': 'Comp Off',
+                    'OT': 'Others'
+                };
+                return types[d.leave_type] || d.leave_type;
+            }),
+            datasets: [{
+                data: leaveDistData.map(d => d.count),
+                backgroundColor: [
+                    '#3b82f6',  // Blue
+                    '#f59e0b',  // Amber
+                    '#10b981',  // Green
+                    '#ef4444',  // Red
+                    '#8b5cf6',  // Purple
+                    '#64748b'   // Gray
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        font: {
+                            size: 12,
+                            family: 'Inter, sans-serif'
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+    // Monthly Trends Chart
+    const monthlyTrendsCtx = document.getElementById('monthlyTrendsChart');
+    if (monthlyTrendsCtx) {
+        const trendsData = {{ leave_analytics.monthly_trends| safe
+    }};
+    new Chart(monthlyTrendsCtx, {
+        type: 'line',
+        data: {
+            labels: trendsData.map(d => {
+                const date = new Date(d.month);
+                return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            }),
+            datasets: [{
+                label: 'Leave Requests',
+                data: trendsData.map(d => d.count),
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointBackgroundColor: '#6366f1',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#e2e8f0'
+                    },
+                    ticks: {
+                        font: {
+                            family: 'Inter, sans-serif'
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            family: 'Inter, sans-serif'
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

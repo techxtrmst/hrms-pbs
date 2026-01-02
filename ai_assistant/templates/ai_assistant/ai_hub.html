@@ -1,0 +1,404 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}AI Features Hub{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+        background: #f5f7fa;
+        min-height: 100vh;
+    }
+
+    .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2.5rem 2rem;
+    }
+
+    /* Header */
+    .page-header {
+        text-align: center;
+        padding: 3rem 0 4rem;
+    }
+
+    .header-icon {
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 1.5rem;
+        background: white;
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: #6366f1;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.75rem;
+    }
+
+    .page-subtitle {
+        font-size: 1.1rem;
+        color: #64748b;
+        font-weight: 400;
+    }
+
+    /* Features Grid */
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    /* Feature Card - Keka Style */
+    .feature-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        text-decoration: none;
+        display: block;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        border: 1px solid #e2e8f0;
+    }
+
+    .feature-card:hover {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        transform: translateY(-4px);
+    }
+
+    .feature-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .feature-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.6rem;
+        flex-shrink: 0;
+    }
+
+    /* Icon Colors - Keka Style */
+    .feature-card:nth-child(1) .feature-icon {
+        background: #ec4899;
+    }
+
+    .feature-card:nth-child(2) .feature-icon {
+        background: #06b6d4;
+    }
+
+    .feature-card:nth-child(3) .feature-icon {
+        background: #10b981;
+    }
+
+    .feature-card:nth-child(4) .feature-icon {
+        background: #f59e0b;
+    }
+
+    .feature-card:nth-child(5) .feature-icon {
+        background: #8b5cf6;
+    }
+
+    .feature-card:nth-child(6) .feature-icon {
+        background: #6366f1;
+    }
+
+    .feature-card:nth-child(7) .feature-icon {
+        background: #ef4444;
+    }
+
+    .feature-info {
+        flex: 1;
+    }
+
+    .feature-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+    }
+
+    .feature-badge {
+        display: inline-block;
+        padding: 0.25rem 0.625rem;
+        border-radius: 6px;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .badge-new {
+        background: #dcfce7;
+        color: #16a34a;
+    }
+
+    .badge-enhanced {
+        background: #dbeafe;
+        color: #2563eb;
+    }
+
+    .feature-description {
+        color: #64748b;
+        font-size: 0.9375rem;
+        line-height: 1.6;
+        margin-bottom: 1.25rem;
+    }
+
+    .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .feature-list li {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        padding: 0.375rem 0;
+        color: #475569;
+        font-size: 0.875rem;
+    }
+
+    .feature-list li i {
+        color: #10b981;
+        font-size: 0.75rem;
+    }
+
+    /* CTA Section */
+    .cta-section {
+        background: white;
+        border-radius: 16px;
+        padding: 2.5rem;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        border: 1px solid #e2e8f0;
+    }
+
+    .cta-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.75rem;
+    }
+
+    .cta-description {
+        color: #64748b;
+        font-size: 1rem;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .features-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .page-title {
+            font-size: 2rem;
+        }
+
+        .container {
+            padding: 1.5rem 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-icon">
+            <i class="fas fa-robot"></i>
+        </div>
+        <h1 class="page-title">AI Features Hub</h1>
+        <p class="page-subtitle">Powerful AI-driven tools to revolutionize your HR management</p>
+    </div>
+
+    <!-- Features Grid -->
+    <div class="features-grid">
+        <!-- Smart Notifications -->
+        <a href="{% url 'smart_notifications' %}" class="feature-card">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <div class="feature-info">
+                    <h3 class="feature-title">Smart Notifications</h3>
+                    <span class="feature-badge badge-new">NEW</span>
+                </div>
+            </div>
+            <p class="feature-description">
+                Intelligent alerts for missed clock-outs, LOP warnings, and critical events
+            </p>
+            <ul class="feature-list">
+                <li><i class="fas fa-check-circle"></i> Missed clock-out alerts</li>
+                <li><i class="fas fa-check-circle"></i> LOP threshold warnings</li>
+                <li><i class="fas fa-check-circle"></i> Contract expiry alerts</li>
+            </ul>
+        </a>
+
+        <!-- HR Chatbot -->
+        <a href="{% url 'chatbot_page' %}" class="feature-card">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div class="feature-info">
+                    <h3 class="feature-title">Ask HR Bot</h3>
+                    <span class="feature-badge badge-enhanced">ENHANCED</span>
+                </div>
+            </div>
+            <p class="feature-description">
+                Smart Q&A assistant for instant answers to HR queries
+            </p>
+            <ul class="feature-list">
+                <li><i class="fas fa-check-circle"></i> Leave balance queries</li>
+                <li><i class="fas fa-check-circle"></i> Attendance status</li>
+                <li><i class="fas fa-check-circle"></i> Policy questions</li>
+            </ul>
+        </a>
+
+        {% if is_manager %}
+        <!-- Attendance Intelligence -->
+        <a href="{% url 'attendance_intelligence' %}" class="feature-card">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="feature-info">
+                    <h3 class="feature-title">Attendance Intelligence</h3>
+                    <span class="feature-badge badge-new">NEW</span>
+                </div>
+            </div>
+            <p class="feature-description">
+                AI-powered attendance pattern analysis with smart insights
+            </p>
+            <ul class="feature-list">
+                <li><i class="fas fa-check-circle"></i> Late login detection</li>
+                <li><i class="fas fa-check-circle"></i> Early logout monitoring</li>
+                <li><i class="fas fa-check-circle"></i> Risk scoring & insights</li>
+            </ul>
+        </a>
+
+        <!-- Leave Prediction -->
+        <a href="{% url 'leave_prediction' %}" class="feature-card">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="feature-info">
+                    <h3 class="feature-title">Leave Prediction</h3>
+                    <span class="feature-badge badge-new">NEW</span>
+                </div>
+            </div>
+            <p class="feature-description">
+                Predict team shortages with 14-day forecasting
+            </p>
+            <ul class="feature-list">
+                <li><i class="fas fa-check-circle"></i> 14-day shortage forecast</li>
+                <li><i class="fas fa-check-circle"></i> Critical day alerts</li>
+                <li><i class="fas fa-check-circle"></i> Leave pattern analysis</li>
+            </ul>
+        </a>
+
+        <!-- Performance Insights -->
+        <a href="{% url 'performance_insights' %}" class="feature-card">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="feature-info">
+                    <h3 class="feature-title">Performance Insights</h3>
+                    <span class="feature-badge badge-new">NEW</span>
+                </div>
+            </div>
+            <p class="feature-description">
+                AI-driven performance analysis with coaching recommendations
+            </p>
+            <ul class="feature-list">
+                <li><i class="fas fa-check-circle"></i> Performance scoring</li>
+                <li><i class="fas fa-check-circle"></i> Attendance analysis</li>
+                <li><i class="fas fa-check-circle"></i> Coaching recommendations</li>
+            </ul>
+        </a>
+
+        <!-- Attrition Risk -->
+        <a href="{% url 'attrition_dashboard' %}" class="feature-card">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <div class="feature-info">
+                    <h3 class="feature-title">Attrition Risk</h3>
+                    <span class="feature-badge badge-enhanced">ENHANCED</span>
+                </div>
+            </div>
+            <p class="feature-description">
+                Predict employee retention risk with behavioral analysis
+            </p>
+            <ul class="feature-list">
+                <li><i class="fas fa-check-circle"></i> Risk score calculation</li>
+                <li><i class="fas fa-check-circle"></i> Behavioral analysis</li>
+                <li><i class="fas fa-check-circle"></i> Retention recommendations</li>
+            </ul>
+        </a>
+
+        <!-- Resume Parser -->
+        <a href="{% url 'resume_parser' %}" class="feature-card">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="feature-info">
+                    <h3 class="feature-title">Resume Parser</h3>
+                    <span class="feature-badge badge-enhanced">ENHANCED</span>
+                </div>
+            </div>
+            <p class="feature-description">
+                Automatically extract key information from candidate resumes
+            </p>
+            <ul class="feature-list">
+                <li><i class="fas fa-check-circle"></i> Name extraction</li>
+                <li><i class="fas fa-check-circle"></i> Contact details</li>
+                <li><i class="fas fa-check-circle"></i> Skills identification</li>
+            </ul>
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- CTA Section -->
+    <div class="cta-section">
+        <h3 class="cta-title">🚀 Powered by Advanced AI</h3>
+        <p class="cta-description">
+            Our AI features are continuously learning and improving to provide you with the best HR management
+            experience
+        </p>
+    </div>
+</div>
+{% endblock %}

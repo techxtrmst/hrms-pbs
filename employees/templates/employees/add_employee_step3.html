@@ -1,0 +1,308 @@
+{% extends 'core/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Add Employee - Step 3{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+    * {
+        font-family: 'Inter', sans-serif;
+    }
+
+    body {
+        background: #f8f9fa;
+    }
+
+    .container {
+        max-width: 1000px;
+        padding-top: 2rem;
+    }
+
+    .page-header {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #5b5fc7;
+        margin-bottom: 0.25rem;
+    }
+
+    .progress-stepper {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .step {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .step-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #e9ecef;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .step.active .step-circle {
+        background: #5b5fc7;
+        color: white;
+    }
+
+    .step.completed .step-circle {
+        background: #28a745;
+        color: white;
+    }
+
+    .step.completed .step-circle::after {
+        content: '✓';
+    }
+
+    .step-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .step.active .step-label {
+        color: #5b5fc7;
+        font-weight: 600;
+    }
+
+    .step-divider {
+        width: 40px;
+        height: 2px;
+        background: #dee2e6;
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+        font-weight: 600;
+        font-size: 1rem;
+        color: #212529;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .section-title i {
+        color: #5b5fc7;
+        font-size: 1.1rem;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+        font-size: 0.875rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .form-control,
+    .form-select {
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        height: auto;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #5b5fc7;
+        box-shadow: 0 0 0 0.2rem rgba(91, 95, 199, 0.15);
+    }
+
+    .form-check-input {
+        width: 2.5rem;
+        height: 1.25rem;
+        cursor: pointer;
+    }
+
+    .form-check-input:checked {
+        background-color: #5b5fc7;
+        border-color: #5b5fc7;
+    }
+
+    .btn-create {
+        background: #28a745;
+        color: white;
+        padding: 0.65rem 2rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        border-radius: 6px;
+        border: none;
+    }
+
+    .btn-create:hover {
+        background: #218838;
+    }
+
+    .btn-back {
+        background: white;
+        border: 1px solid #ced4da;
+        color: #6c757d;
+        padding: 0.65rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .btn-back:hover {
+        background: #f8f9fa;
+    }
+
+    .info-box {
+        background: #e7f3ff;
+        border-left: 4px solid #5b5fc7;
+        padding: 1rem;
+        border-radius: 6px;
+        margin-top: 1.5rem;
+    }
+
+    .text-danger {
+        color: #dc3545;
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+    }
+
+    .alert {
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .row.g-3 {
+        --bs-gutter-y: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="page-title mb-0">Add New Employee</h1>
+                <p class="text-muted mb-0">Step 3 of 3: Finance Details & Save</p>
+            </div>
+            <a href="{% url 'employee_list' %}" class="btn btn-back">
+                <i class="fas fa-times me-2"></i>Cancel
+            </a>
+        </div>
+    </div>
+
+    <div class="progress-stepper">
+        <div class="step completed">
+            <div class="step-circle"></div>
+            <div class="step-label">Personal Info</div>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step completed">
+            <div class="step-circle"></div>
+            <div class="step-label">Job Details</div>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step active">
+            <div class="step-circle">3</div>
+            <div class="step-label">Finance & Save</div>
+        </div>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <form method="post" class="form-card">
+        {% csrf_token %}
+
+        <h2 class="section-title">
+            <i class="fas fa-wallet"></i>Financial Details
+        </h2>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Bank Name</label>
+                {% render_field form.bank_name class="form-control" placeholder="e.g. HDFC Bank" %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Account Number</label>
+                {% render_field form.account_number class="form-control" placeholder="e.g. 1234567890" %}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">IFSC Code</label>
+                {% render_field form.ifsc_code class="form-control" placeholder="e.g. HDFC0001234" %}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">UAN</label>
+                {% render_field form.uan class="form-control" placeholder="Universal Account Number" %}
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <div class="form-check form-switch">
+                    {% render_field form.pf_enabled class="form-check-input" role="switch" %}
+                    <label class="form-check-label fw-600 ms-2" for="{{ form.pf_enabled.id_for_label }}">
+                        PF Enabled
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <p class="mb-0">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Auto-generated Password:</strong> The employee's password will be automatically generated as
+                <code>FirstName + Last 3 digits of Employee ID</code>.
+                <br>
+                <small class="text-muted">The employee can change this password after first login.</small>
+            </p>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <a href="{% url 'add_employee_step2' %}" class="btn btn-back">
+                <i class="fas fa-arrow-left me-2"></i>Back
+            </a>
+            <button type="submit" class="btn btn-create">
+                <i class="fas fa-check-circle me-2"></i>Create Employee
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

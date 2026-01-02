@@ -1,0 +1,123 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Companies - SuperAdmin{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'superadmin/css/superadmin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="superadmin-container">
+    <!-- Breadcrumb -->
+    <nav class="sa-breadcrumb">
+        <a href="{% url 'superadmin:dashboard' %}" class="sa-breadcrumb-item">
+            <i class="fas fa-home"></i> Dashboard
+        </a>
+        <span class="sa-breadcrumb-separator">/</span>
+        <span class="sa-breadcrumb-item active">Companies</span>
+    </nav>
+
+    <!-- Header -->
+    <div class="sa-header d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="sa-header-title">All Companies</h1>
+            <p class="sa-header-subtitle">Manage and monitor all organizations</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'superadmin:export_data' 'companies' %}" class="sa-btn-export">
+                <i class="fas fa-download"></i>
+                <span>Export CSV</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="mb-4">
+        <form method="get" class="d-flex gap-2">
+            <input type="text" name="search" class="form-control" placeholder="Search by name, domain..."
+                value="{{ search_query }}" style="max-width: 400px;">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i> Search
+            </button>
+            {% if search_query %}
+            <a href="{% url 'superadmin:companies' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-times"></i> Clear
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Companies Table -->
+    <div class="sa-table-container">
+        <div class="table-responsive">
+            <table class="sa-table">
+                <thead>
+                    <tr>
+                        <th>Company</th>
+                        <th>Domain</th>
+                        <th>Email Domain</th>
+                        <th>Location</th>
+                        <th>Employees</th>
+                        <th>Active Employees</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for company in companies %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if company.logo %}
+                                <img src="{{ company.logo.url }}" alt="{{ company.name }}" class="rounded me-2"
+                                    style="width: 40px; height: 40px; object-fit: cover;">
+                                {% else %}
+                                <div class="rounded me-2 d-flex align-items-center justify-content-center"
+                                    style="width: 40px; height: 40px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; font-weight: 700;">
+                                    {{ company.name|slice:":1" }}
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <strong>{{ company.name }}</strong>
+                                    <div class="small text-muted">{{ company.currency }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ company.primary_domain }}</td>
+                        <td>{{ company.email_domain }}</td>
+                        <td>
+                            <span class="sa-badge info">
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                {{ company.get_location_display }}
+                            </span>
+                        </td>
+                        <td><strong>{{ company.employee_count }}</strong></td>
+                        <td><strong>{{ company.active_employee_count }}</strong></td>
+                        <td>
+                            {% if company.is_active %}
+                            <span class="sa-badge success">Active</span>
+                            {% else %}
+                            <span class="sa-badge danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'superadmin:company_monitor' company.id %}" class="sa-btn-monitor">
+                                <i class="fas fa-chart-line"></i>
+                                Monitor
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            No companies found
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,550 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Leave Configuration | Premium HRMS{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+<style>
+    :root {
+        --primary-light: #eff6ff;
+        --primary-brand: #4f46e5;
+        --primary-dark: #4338ca;
+        --success-soft: #dcfce7;
+        --success-text: #166534;
+        --bg-body: #f1f5f9;
+        --card-bg: #ffffff;
+        --text-main: #1e293b;
+        --text-muted: #64748b;
+        --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+        --radius-lg: 16px;
+        --radius-md: 12px;
+    }
+
+    body {
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+    }
+
+    /* Page Layout */
+    .config-container {
+        padding: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    /* Header Section */
+    .header-card {
+        background: linear-gradient(120deg, #ffffff 0%, #f8fafc 100%);
+        border-radius: var(--radius-lg);
+        padding: 2rem;
+        box-shadow: var(--shadow-soft);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .header-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle at center, rgba(79, 70, 229, 0.05) 0%, transparent 70%);
+        transform: translate(30%, -30%);
+    }
+
+    .stat-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background: white;
+        border-radius: 50px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        border: 1px solid #e2e8f0;
+    }
+
+    .stat-badge i {
+        margin-right: 8px;
+        color: var(--primary-brand);
+    }
+
+    /* Action Bar */
+    .action-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Search Input */
+    .premium-search {
+        position: relative;
+        width: 350px;
+    }
+
+    .premium-search input {
+        width: 100%;
+        padding: 12px 20px 12px 45px;
+        border: 1px solid #e2e8f0;
+        border-radius: 50px;
+        background: white;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+        box-shadow: var(--shadow-soft);
+    }
+
+    .premium-search input:focus {
+        outline: none;
+        border-color: var(--primary-brand);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .premium-search i {
+        position: absolute;
+        left: 18px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+    }
+
+    /* Floating List */
+    .employee-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .employee-card {
+        background: white;
+        border-radius: var(--radius-md);
+        padding: 1rem 1.5rem;
+        display: grid;
+        grid-template-columns: 2.5fr 1.5fr 2fr 2fr 1fr;
+        align-items: center;
+        box-shadow: var(--shadow-soft);
+        border: 1px solid transparent;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: slideUp 0.4s ease-out forwards;
+        opacity: 0;
+    }
+
+    .employee-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-hover);
+        border-color: rgba(79, 70, 229, 0.2);
+    }
+
+    /* Column Styles */
+    .col-header {
+        display: grid;
+        grid-template-columns: 2.5fr 1.5fr 2fr 2fr 1fr;
+        padding: 0 1.5rem 1rem;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        font-weight: 700;
+    }
+
+    /* User Profile */
+    .user-profile {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .user-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        object-fit: cover;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .user-initials {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+        color: var(--primary-brand);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    /* Input Controls */
+    .control-wrapper {
+        display: flex;
+        align-items: center;
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 4px;
+        border: 1px solid #e2e8f0;
+        width: fit-content;
+    }
+
+    .control-btn {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: white;
+        border-radius: 6px;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .control-btn:hover {
+        background: var(--primary-brand);
+        color: white;
+    }
+
+    .control-input {
+        width: 50px;
+        border: none;
+        background: transparent;
+        text-align: center;
+        font-weight: 600;
+        color: var(--text-main);
+        outline: none;
+        font-family: 'Plus Jakarta Sans', monospace;
+    }
+
+    /* Buttons */
+    .btn-save-row {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: none;
+        background: #f1f5f9;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .btn-save-row:hover {
+        background: var(--success-soft);
+        color: var(--success-text);
+        transform: scale(1.1);
+    }
+
+    .btn-hero {
+        background: var(--primary-brand);
+        color: white;
+        border: none;
+        padding: 12px 28px;
+        border-radius: 50px;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .btn-hero:hover {
+        background: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(79, 70, 229, 0.4);
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Badge */
+    .badge-dept {
+        background: #f1f5f9;
+        color: #475569;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+
+    /* Toast */
+    .toast-premium {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transform: translateY(100px);
+        opacity: 0;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        z-index: 1000;
+        border-left: 5px solid var(--primary-brand);
+    }
+
+    .toast-premium.show {
+        transform: translateY(0);
+        opacity: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="config-container">
+
+    <!-- Header -->
+    <div class="header-card">
+        <div class="d-flex justify-content-between align-items-end">
+            <div>
+                <h2 class="fw-bold mb-2">Leave Configuration</h2>
+                <p class="text-muted mb-4" style="max-width: 500px;">
+                    Manage leave allocations for all employees. Automated monthly accruals run on the 1st of every
+                    month.
+                </p>
+                <div class="d-flex gap-3">
+                    <div class="stat-badge">
+                        <i class="fas fa-users"></i> {{ employees|length }} Active
+                    </div>
+                    <div class="stat-badge">
+                        <i class="fas fa-clock"></i> Next: 1st Nov
+                    </div>
+                </div>
+            </div>
+            <div>
+                <button class="btn-hero" data-bs-toggle="modal" data-bs-target="#accrualModal">
+                    <i class="fas fa-magic"></i>
+                    Run Monthly Accrual
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+        <div class="premium-search">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search by name, role or ID...">
+        </div>
+        <div class="d-flex gap-2">
+            <!-- Filter Dropdowns could go here -->
+        </div>
+    </div>
+
+    <!-- List Header -->
+    <div class="col-header">
+        <div>Employee</div>
+        <div>Role</div>
+        <div>Sick Leave (Allocated)</div>
+        <div>Casual Leave (Allocated)</div>
+        <div class="text-center">Save</div>
+    </div>
+
+    <!-- Employee List -->
+    <div class="employee-list" id="employeeList">
+        {% for employee in employees %}
+        <div class="employee-card" style="animation-delay: {{ forloop.counter0|add:'1'|stringformat:'d' }}00ms;">
+            <!-- User -->
+            <div class="user-profile">
+                {% if employee.profile_picture %}
+                <img src="{{ employee.profile_picture.url }}" class="user-avatar" alt="pic">
+                {% else %}
+                <div class="user-initials">
+                    {{ employee.user.first_name|first }}{{ employee.user.last_name|first }}
+                </div>
+                {% endif %}
+                <div>
+                    <h6 class="mb-0 fw-bold text-dark">{{ employee.user.get_full_name }}</h6>
+                    <small class="text-muted">{{ employee.user.email }}</small>
+                </div>
+            </div>
+
+            <!-- Role -->
+            <div>
+                <span class="badge-dept">{{ employee.designation|default:"--"}}</span>
+            </div>
+
+            <!-- Sick Leave Control -->
+            <div>
+                <div class="control-wrapper">
+                    <button class="control-btn" onclick="modifyVal('sick_val_{{ employee.id }}', -0.5)">-</button>
+                    <input type="number" id="sick_val_{{ employee.id }}" class="control-input"
+                        value="{{ employee.leave_balance.sick_leave_allocated }}" step="0.5">
+                    <button class="control-btn" onclick="modifyVal('sick_val_{{ employee.id }}', 0.5)">+</button>
+                </div>
+            </div>
+
+            <!-- Casual Leave Control -->
+            <div>
+                <div class="control-wrapper">
+                    <button class="control-btn" onclick="modifyVal('casual_val_{{ employee.id }}', -0.5)">-</button>
+                    <input type="number" id="casual_val_{{ employee.id }}" class="control-input"
+                        value="{{ employee.leave_balance.casual_leave_allocated }}" step="0.5">
+                    <button class="control-btn" onclick="modifyVal('casual_val_{{ employee.id }}', 0.5)">+</button>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="d-flex justify-content-center">
+                <button class="btn-save-row" onclick="saveRow({{ employee.id }}, this)" title="Save Changes">
+                    <i class="fas fa-check"></i>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="accrualModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-body p-5 text-center">
+                <div class="mb-4 d-inline-flex align-items-center justify-content-center"
+                    style="width: 80px; height: 80px; background: #e0e7ff; border-radius: 50%; color: #4338ca;">
+                    <i class="fas fa-magic fa-2x"></i>
+                </div>
+                <h3 class="fw-bold mb-3">Confirm Accrual</h3>
+                <p class="text-muted mb-4">
+                    This action will add <strong>+1.0 Casual Leave</strong> to all.
+                    <br>
+                    <strong>Sick Leave</strong> will be added as:
+                <ul class="text-start d-inline-block mx-auto text-muted small" style="text-align: left;">
+                    <li>Petabytz: +1.0 Day</li>
+                    <li>Bluebix/Softstandard: +0.5 Day</li>
+                </ul>
+                </p>
+                <div class="d-flex justify-content-center gap-3">
+                    <button type="button" class="btn btn-light px-4 rounded-pill fw-bold"
+                        data-bs-dismiss="modal">Cancel</button>
+                    <a href="{% url 'run_monthly_accrual' %}" class="btn btn-primary px-4 rounded-pill fw-bold">Yes, Run
+                        Accrual</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast-premium">
+    <i class="fas fa-check-circle text-success fs-4"></i>
+    <div>
+        <h6 class="mb-0 fw-bold">Success</h6>
+        <div class="text-muted small" id="toastMsg">Changes saved successfully</div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Modify Input Value
+    function modifyVal(id, delta) {
+        const el = document.getElementById(id);
+        let val = parseFloat(el.value) || 0;
+        val += delta;
+        // prevent negative? maybe not, sometimes adjustment needed
+        el.value = val.toFixed(1);
+    }
+
+    // Search Filter
+    document.getElementById('searchInput').addEventListener('keyup', function (e) {
+        const val = e.target.value.toLowerCase();
+        const cards = document.querySelectorAll('.employee-card');
+
+        cards.forEach(card => {
+            const text = card.innerText.toLowerCase();
+            if (text.includes(val)) {
+                card.style.display = 'grid';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+
+    // Toast Logic
+    function showToast(msg, type = 'success') {
+        const toast = document.getElementById('toast');
+        document.getElementById('toastMsg').innerText = msg;
+        toast.className = 'toast-premium show';
+        if (type === 'error') {
+            toast.style.borderLeftColor = '#ef4444';
+            toast.querySelector('i').className = 'fas fa-exclamation-circle text-danger fs-4';
+        } else {
+            toast.style.borderLeftColor = '#4f46e5';
+            toast.querySelector('i').className = 'fas fa-check-circle text-success fs-4';
+        }
+
+        setTimeout(() => {
+            toast.className = 'toast-premium';
+        }, 3000);
+    }
+
+    // Save Row
+    function saveRow(id, btn) {
+        const sick = document.getElementById(`sick_val_${id}`).value;
+        const casual = document.getElementById(`casual_val_${id}`).value;
+
+        // Visual Loading
+        const icon = btn.querySelector('i');
+        const oldClass = icon.className;
+        icon.className = 'fas fa-spinner fa-spin';
+        btn.disabled = true;
+
+        fetch(`/employees/leave/balance/${id}/update/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                sick_leave_allocated: sick,
+                casual_leave_allocated: casual
+            })
+        })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                if (data.status === 'success') {
+                    icon.className = 'fas fa-check';
+                    showToast('Allocations updated!');
+                    // Reset icon after delay
+                    setTimeout(() => icon.className = oldClass, 2000);
+                } else {
+                    icon.className = 'fas fa-times text-danger';
+                    showToast(data.message, 'error');
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                icon.className = oldClass;
+                showToast('Network error occurred', 'error');
+            });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,465 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard | Manager{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --keka-primary: #5b47fb;
+        --keka-success: #00c48c;
+        --keka-danger: #ff647c;
+        --keka-warning: #ffa26b;
+        --keka-info: #4da6ff;
+        --keka-purple: #9b7dff;
+        --keka-bg: #f7f8fc;
+        --keka-text-primary: #1e2139;
+        --keka-text-secondary: #6c7293;
+    }
+
+    .dashboard-header {
+        background: white;
+        padding: 20px 32px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid #e8ecf4;
+    }
+
+    .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--keka-text-primary);
+        margin: 0;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        border-left: 4px solid var(--keka-primary);
+    }
+
+    .stat-card.purple {
+        border-left-color: var(--keka-purple);
+    }
+
+    .stat-card.green {
+        border-left-color: var(--keka-success);
+    }
+
+    .stat-card.orange {
+        border-left-color: var(--keka-warning);
+    }
+
+    .stat-card.red {
+        border-left-color: var(--keka-danger);
+    }
+
+    .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--keka-text-primary);
+    }
+
+    .stat-label {
+        font-size: 14px;
+        color: var(--keka-text-secondary);
+        margin-top: 4px;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        color: var(--keka-text-primary);
+    }
+
+    .card-box {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .request-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .request-item {
+        display: flex;
+        align-items: center;
+        padding: 16px 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .request-item:last-child {
+        border-bottom: none;
+    }
+
+    .req-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e0e7ff;
+        color: #4338ca;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        margin-right: 12px;
+    }
+
+    .req-info {
+        flex: 1;
+    }
+
+    .req-name {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .req-detail {
+        font-size: 12px;
+        color: var(--keka-text-secondary);
+    }
+
+    .req-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-sm {
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+    }
+
+    .btn-approve {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .btn-reject {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 class="page-title">Manager Dashboard</h1>
+            <p style="margin: 4px 0 0; color: var(--keka-text-secondary); font-size: 14px;">
+                Welcome back, {{ manager.user.first_name }}! Here's what's happening with your team today.
+            </p>
+        </div>
+        <div style="font-size: 14px; color: var(--keka-text-secondary);">
+            {{ today|date:"l, F j, Y" }}
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid px-4">
+    <!-- Team Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_team_members }}</div>
+            <div class="stat-label">Total Team Members</div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-value">{{ present_count }}</div>
+            <div class="stat-label">Present Today</div>
+        </div>
+        <div class="stat-card orange">
+            <div class="stat-value">{{ wfh_count }}</div>
+            <div class="stat-label">WFH / On Duty</div>
+        </div>
+        <div class="stat-card purple">
+            <div class="stat-value">{{ leave_count }}</div>
+            <div class="stat-label">On Leave</div>
+        </div>
+        <div class="stat-card red">
+            <div class="stat-value">{{ late_count }}</div>
+            <div class="stat-label">Late Arrivals</div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Pending Leave Requests -->
+        <div class="col-lg-8">
+            <div class="card-box">
+                <h2 class="section-title">Pending Leave Requests</h2>
+                {% if pending_leaves %}
+                <div class="request-list">
+                    {% for leave in pending_leaves %}
+                    <div class="request-item">
+                        <div class="req-avatar">
+                            {{ leave.employee.user.first_name|first }}{{ leave.employee.user.last_name|first }}
+                        </div>
+                        <div class="req-info">
+                            <div class="req-name">{{ leave.employee.user.get_full_name }}</div>
+                            <div class="req-detail">
+                                {{ leave.get_leave_type_display }} • {{ leave.total_days }} Days <br>
+                                {{ leave.start_date|date:"M d" }} - {{ leave.end_date|date:"M d" }}
+                                <div class="mt-1 small text-muted">Reason: {{ leave.reason|default:"-" }}</div>
+                            </div>
+                        </div>
+                        <div class="req-actions">
+                            <form method="post" action="{% url 'leave_requests' %}" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="leave_id" value="{{ leave.id }}">
+                                <input type="hidden" name="action" value="approve">
+                                <button type="submit" class="btn-sm btn-approve">Approve</button>
+                            </form>
+                            <form method="post" action="{% url 'leave_requests' %}" style="display:inline;"
+                                onsubmit="return confirm('Reject this request?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="leave_id" value="{{ leave.id }}">
+                                <input type="hidden" name="action" value="reject">
+                                <button type="submit" class="btn-sm btn-reject">Reject</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: #999; text-align: center; padding: 20px;">No pending requests.</p>
+                {% endif %}
+            </div>
+
+            <!-- Recent Team Activity -->
+            <div class="card-box">
+                <h2 class="section-title">Recent Team Activity (Clock-Ins)</h2>
+                {% if recent_activity %}
+                <div class="request-list">
+                    {% for activity in recent_activity %}
+                    <div class="request-item">
+                        <div class="req-avatar" style="background:#dcfce7; color:#166534;">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="req-info">
+                            <div class="req-name">{{ activity.employee.user.get_full_name }}</div>
+                            <div class="req-detail">
+                                Clocked in at {{ activity.clock_in|time:"H:i A" }}
+                                {% if activity.status == 'WFH' %} (WFH){% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: #999; text-align: center;">No activity recorded today.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Team Sidebar -->
+        <div class="col-lg-4">
+            <!-- Consolidated Announcements & Celebrations Card -->
+            <div class="card-box p-0 overflow-hidden" style="min-height: 400px;">
+                <div class="p-4" style="background: linear-gradient(135deg, #5b47fb 0%, #4834d4 100%); color: white;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="section-title m-0 text-white"><i class="fas fa-bullhorn me-2"></i> Announcements</h2>
+                    </div>
+
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button class="btn btn-sm btn-light rounded-pill px-3 fw-bold tab-btn active"
+                            data-target="tab-announcements">All</button>
+                        <button class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold tab-btn"
+                            data-target="tab-birthdays">Birthdays</button>
+                        <button class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold tab-btn"
+                            data-target="tab-anniv">Work Anniv</button>
+                        <button class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold tab-btn"
+                            data-target="tab-holidays">Holidays</button>
+                    </div>
+                </div>
+
+                <div class="p-0">
+                    <!-- Tab: Announcements -->
+                    <div id="tab-announcements" class="tab-content d-block">
+                        {% if announcements %}
+                        <div class="list-group list-group-flush">
+                            {% for announcement in announcements %}
+                            <div class="list-group-item p-3 border-0 border-bottom">
+                                <div class="d-flex align-items-start">
+                                    <div class="req-avatar flex-shrink-0 mt-1"
+                                        style="background:#f3f0ff; color:#5b47fb;">
+                                        <i class="fas fa-scroll"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <div class="d-flex justify-content-between">
+                                            <h6 class="mb-1 fw-bold text-dark">{{ announcement.title }}</h6>
+                                            <small class="text-muted">{{ announcement.created_at|date:"d M" }}</small>
+                                        </div>
+                                        <p class="mb-0 text-muted small" style="line-height: 1.4;">{{
+                                            announcement.content|truncatechars:80 }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-bullhorn fa-3x text-light mb-3"></i>
+                            <p class="text-muted">No valid announcements.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Tab: Birthdays -->
+                    <div id="tab-birthdays" class="tab-content d-none">
+                        {% if birthdays %}
+                        <div class="list-group list-group-flush">
+                            {% for emp in birthdays %}
+                            <div class="list-group-item p-3 border-0 border-bottom">
+                                <div class="d-flex align-items-center">
+                                    <div class="req-avatar flex-shrink-0" style="background:#e0e7ff; color:#4338ca;">
+                                        <i class="fas fa-birthday-cake"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0 fw-bold text-dark">{{ emp.user.get_full_name }}</h6>
+                                            <span
+                                                class="badge bg-soft-primary text-primary rounded-pill px-2">Today</span>
+                                        </div>
+                                        <div class="text-success small fw-bold mt-1">Happy Birthday Today! 🎉</div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-birthday-cake fa-3x text-light mb-3"></i>
+                            <p class="text-muted">No birthdays today.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Tab: Work Anniversary -->
+                    <div id="tab-anniv" class="tab-content d-none">
+                        {% if work_anniversaries %}
+                        <div class="list-group list-group-flush">
+                            {% for emp in work_anniversaries %}
+                            <div class="list-group-item p-3 border-0 border-bottom">
+                                <div class="d-flex align-items-center">
+                                    <div class="req-avatar flex-shrink-0" style="background:#fff7ed; color:#ea580c;">
+                                        <i class="fas fa-medal"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="mb-0 fw-bold text-dark">{{ emp.user.get_full_name }}</h6>
+                                        <div class="text-muted small mt-1">{{ emp.years_of_service }} Years of Service
+                                            🌟</div>
+                                    </div>
+                                    <span class="badge bg-soft-warning text-warning rounded-pill">{{
+                                        emp.date_of_joining|date:"d M" }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-medal fa-3x text-light mb-3"></i>
+                            <p class="text-muted">No work anniversaries today.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Tab: Holidays -->
+                    <div id="tab-holidays" class="tab-content d-none">
+                        {% if upcoming_holidays %}
+                        <div class="list-group list-group-flush">
+                            {% for holiday in upcoming_holidays %}
+                            <div class="list-group-item p-3 border-0 border-bottom">
+                                <div class="d-flex align-items-center">
+                                    <div class="req-avatar flex-shrink-0" style="background:#ecfdf5; color:#059669;">
+                                        <i class="fas fa-umbrella-beach"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="mb-0 fw-bold text-dark">{{ holiday.name }}</h6>
+                                        <div class="text-muted small mt-1">{{ holiday.date|date:"l" }}</div>
+                                    </div>
+                                    <span class="badge bg-soft-success text-success rounded-pill">{{
+                                        holiday.date|date:"d M" }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-glass-cheers fa-3x text-light mb-3"></i>
+                            <p class="text-muted">No upcoming holidays.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                document.querySelectorAll('.tab-btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                        // Remove active class from all buttons
+                        document.querySelectorAll('.tab-btn').forEach(btn => {
+                            btn.classList.remove('btn-light', 'text-dark', 'active');
+                            btn.classList.add('btn-outline-light');
+                        });
+
+                        // Add active class to clicked button
+                        button.classList.remove('btn-outline-light');
+                        button.classList.add('btn-light', 'text-dark', 'active');
+
+                        // Hide all tab content
+                        document.querySelectorAll('.tab-content').forEach(content => {
+                            content.classList.remove('d-block');
+                            content.classList.add('d-none');
+                        });
+
+                        // Show target tab content
+                        const targetId = button.getAttribute('data-target');
+                        const targetContent = document.getElementById(targetId);
+                        if (targetContent) {
+                            targetContent.classList.remove('d-none');
+                            targetContent.classList.add('d-block');
+                        }
+                    });
+                });
+            </script>
+
+            <div class="card-box">
+                <h2 class="section-title">My Team</h2>
+                <div class="request-list">
+                    {% for member in team_members %}
+                    <div class="request-item">
+                        <div class="req-avatar">
+                            {{ member.user.first_name|first }}{{ member.user.last_name|first }}
+                        </div>
+                        <div class="req-info">
+                            <div class="req-name">{{ member.user.get_full_name }}</div>
+                            <div class="req-detail">{{ member.designation }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

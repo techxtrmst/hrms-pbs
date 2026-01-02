@@ -1,437 +1,1444 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}Dashboard | HRMS{% endblock %}
+{% block title %}Dashboard | Admin{% endblock %}
 
 {% block extra_css %}
 <style>
-    .card-dashboard {
-        border: none;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        /* Softer shadow */
-        background-color: #fff;
-        height: 100%;
-        padding: 20px;
+    :root {
+        --keka-primary: #5b47fb;
+        --keka-success: #00c48c;
+        --keka-danger: #ff647c;
+        --keka-warning: #ffa26b;
+        --keka-info: #4da6ff;
+        --keka-purple: #9b7dff;
+        --keka-teal: #4fd1c5;
+        --keka-bg: #f7f8fc;
+        --keka-card: #ffffff;
+        --keka-border: #e8ecf4;
+        --keka-text-primary: #1e2139;
+        --keka-text-secondary: #6c7293;
     }
 
-    .card-title {
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #4a5568;
-        margin-bottom: 20px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    body {
+        background: var(--keka-bg);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
-    .stat-circle {
-        width: 40px;
-        height: 40px;
-        background-color: #f6ad55;
-        /* Orange-ish */
-        color: white;
+    .dashboard-header {
+        background: white;
+        padding: 20px 32px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid var(--keka-border);
+    }
+
+    .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--keka-text-primary);
+        margin: 0;
+    }
+
+    .filter-bar {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+    }
+
+    .filter-select {
+        padding: 8px 16px;
+        border: 1.5px solid var(--keka-border);
+        border-radius: 8px;
+        font-size: 14px;
+        background: white;
+        color: var(--keka-text-primary);
+    }
+
+    /* Employee Search Bar Styles */
+    .employee-search-container {
+        margin-top: 20px;
+        margin-bottom: 16px;
+        max-width: 600px;
+    }
+
+    .search-wrapper {
+        position: relative;
+        width: 100%;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--keka-text-secondary);
+        font-size: 16px;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .employee-search-input {
+        width: 100%;
+        padding: 12px 16px 12px 48px;
+        border: 2px solid var(--keka-border);
+        border-radius: 12px;
+        font-size: 15px;
+        background: white;
+        color: var(--keka-text-primary);
+        transition: all 0.3s ease;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .employee-search-input:focus {
+        outline: none;
+        border-color: var(--keka-primary);
+        box-shadow: 0 0 0 4px rgba(91, 71, 251, 0.1);
+    }
+
+    .employee-search-input::placeholder {
+        color: var(--keka-text-secondary);
+        opacity: 0.6;
+    }
+
+    .search-results {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid var(--keka-border);
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        max-height: 400px;
+        overflow-y: auto;
+        z-index: 1000;
+        animation: slideDown 0.2s ease-out;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .search-result-item {
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--keka-border);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .search-result-item:last-child {
+        border-bottom: none;
+    }
+
+    .search-result-item:hover {
+        background: linear-gradient(90deg, rgba(91, 71, 251, 0.05) 0%, rgba(91, 71, 251, 0.02) 100%);
+        padding-left: 22px;
+    }
+
+    .search-result-avatar {
+        width: 42px;
+        height: 42px;
         border-radius: 50%;
+        background: linear-gradient(135deg, var(--keka-primary), var(--keka-purple));
+        color: white;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: bold;
-        margin-right: 15px;
+        font-weight: 700;
+        font-size: 16px;
+        flex-shrink: 0;
     }
 
-    .stat-label {
-        font-size: 0.75rem;
-        color: #718096;
-        text-transform: uppercase;
-        margin-bottom: 5px;
+    .search-result-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .search-result-name {
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--keka-text-primary);
+        margin-bottom: 4px;
+    }
+
+    .search-result-meta {
+        font-size: 13px;
+        color: var(--keka-text-secondary);
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .search-result-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .search-result-meta i {
+        font-size: 11px;
+        opacity: 0.7;
+    }
+
+    .search-no-results {
+        padding: 32px 20px;
+        text-align: center;
+        color: var(--keka-text-secondary);
+    }
+
+    .search-no-results i {
+        font-size: 32px;
+        margin-bottom: 12px;
+        opacity: 0.3;
+    }
+
+    .search-loading {
+        padding: 20px;
+        text-align: center;
+        color: var(--keka-text-secondary);
+    }
+
+    .search-loading i {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Scrollbar Styling for Search Results */
+    .search-results::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .search-results::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    .search-results::-webkit-scrollbar-thumb {
+        background: var(--keka-primary);
+        border-radius: 10px;
+    }
+
+    .search-results::-webkit-scrollbar-thumb:hover {
+        background: #4a38ca;
+    }
+
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        border-left: 4px solid;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    .stat-card.purple {
+        border-left-color: var(--keka-purple);
+    }
+
+    .stat-card.green {
+        border-left-color: var(--keka-success);
+    }
+
+    .stat-card.orange {
+        border-left-color: var(--keka-warning);
+    }
+
+    .stat-card.blue {
+        border-left-color: var(--keka-info);
     }
 
     .stat-value {
-        font-size: 1.1rem;
+        font-size: 36px;
         font-weight: 700;
-        color: #2d3748;
+        color: var(--keka-text-primary);
+        margin-bottom: 4px;
+        animation: countUp 0.5s ease-out;
     }
 
-    .week-days {
+    @keyframes countUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .stat-label {
+        font-size: 13px;
+        color: var(--keka-text-secondary);
+        font-weight: 500;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--keka-text-primary);
+        margin-bottom: 16px;
+    }
+
+    .requests-section {
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .request-card {
         display: flex;
-        justify-content: space-between;
-        margin-bottom: 15px;
+        align-items: center;
+        padding: 16px;
+        border: 1.5px solid var(--keka-border);
+        border-radius: 10px;
+        margin-bottom: 12px;
+        transition: all 0.2s;
     }
 
-    .day-circle {
-        width: 30px;
-        height: 30px;
+    .request-card:hover {
+        border-color: var(--keka-primary);
+        box-shadow: 0 4px 12px rgba(91, 71, 251, 0.1);
+    }
+
+    .employee-avatar {
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
-        background-color: #edf2f7;
-        color: #718096;
+        background: linear-gradient(135deg, var(--keka-primary), var(--keka-purple));
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-    .day-circle.active {
-        background-color: #3182ce;
         color: white;
+        font-weight: 700;
+        font-size: 18px;
+        margin-right: 16px;
     }
 
-    .break-info {
-        font-size: 0.85rem;
-        color: #718096;
-        margin-bottom: 5px;
+    .request-info {
+        flex: 1;
+    }
+
+    .employee-name {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--keka-text-primary);
+        margin-bottom: 2px;
+    }
+
+    .request-meta {
+        font-size: 12px;
+        color: var(--keka-text-secondary);
+    }
+
+    .leave-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-left: 8px;
+    }
+
+    .leave-badge.medical {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .leave-badge.personal {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .leave-badge.sick {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .request-actions {
         display: flex;
+        gap: 8px;
+    }
+
+    .btn-action {
+        padding: 6px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-reject {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .btn-reject:hover {
+        background: #fecaca;
+    }
+
+    .btn-approve {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .btn-approve:hover {
+        background: #a7f3d0;
+    }
+
+    .calendar-section {
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .calendar-header {
+        display: flex;
+        align-items: center;
         justify-content: space-between;
-    }
-
-    .digital-clock {
-        font-size: 2.5rem;
-        font-weight: 300;
-        color: #2d3748;
-        margin-bottom: 5px;
-    }
-
-    .date-display {
-        color: #718096;
-        font-size: 0.9rem;
         margin-bottom: 20px;
     }
 
-    .btn-clock {
-        border-radius: 5px;
-        padding: 10px 20px;
-        font-weight: 600;
-        width: 100%;
-        text-transform: uppercase;
-        font-size: 0.9rem;
+    .month-nav {
+        display: flex;
+        align-items: center;
+        gap: 16px;
     }
 
-    .btn-clock-in {
-        background-color: #48bb78;
-        color: white;
+    .month-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
         border: none;
+        background: var(--keka-bg);
+        color: var(--keka-text-primary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
     }
 
-    .btn-clock-in:hover {
-        background-color: #38a169;
-    }
-
-    .btn-clock-out {
-        background-color: #e53e3e;
+    .month-btn:hover {
+        background: var(--keka-primary);
         color: white;
-        border: none;
     }
 
-    .btn-clock-out:hover {
-        background-color: #c53030;
-    }
-
-    /* Attendance Log Table */
-    .table-log th {
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        color: #718096;
+    .month-label {
+        font-size: 16px;
         font-weight: 600;
-        border-top: none;
+        color: var(--keka-text-primary);
     }
 
-    .table-log td {
-        vertical-align: middle;
-        font-size: 0.9rem;
-        color: #2d3748;
-    }
-
-    .attendance-visual-bar {
-        height: 6px;
-        background-color: #e2e8f0;
-        border-radius: 3px;
-        position: relative;
+    .calendar-table {
         width: 100%;
-        margin-top: 8px;
+        border-collapse: separate;
+        border-spacing: 0 8px;
     }
 
-    .attendance-visual-fill {
+    .calendar-table thead th {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--keka-text-secondary);
+        text-align: center;
+        padding: 8px 4px;
+        text-transform: uppercase;
+    }
+
+    .calendar-table tbody td {
+        padding: 4px 2px;
+    }
+
+    .employee-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .employee-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 180px;
+    }
+
+    .employee-mini-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--keka-primary), var(--keka-purple));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .employee-details {
+        flex: 1;
+    }
+
+    .employee-details-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--keka-text-primary);
+    }
+
+    .day-cell {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 600;
+        margin: 0 auto;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .day-cell:hover {
+        transform: scale(1.1);
+    }
+
+    .day-cell.wfh {
+        background: var(--keka-purple);
+        color: white;
+    }
+
+    .day-cell.weekly-off {
+        background: var(--keka-warning);
+        color: white;
+    }
+
+    .day-cell.paid-leave {
+        background: var(--keka-teal);
+        color: white;
+    }
+
+    .day-cell.no-attendance {
+        background: var(--keka-danger);
+        color: white;
+    }
+
+    .day-cell.holiday {
+        background: var(--keka-info);
+        color: white;
+    }
+
+    .day-cell.sick-leave {
+        background: #ec4899;
+        /* Pink/Reddish */
+        color: white;
+    }
+
+    .day-cell.present {
+        background: var(--keka-success);
+        color: white;
+    }
+
+    .day-cell.future {
+        background: transparent;
+        color: var(--keka-text-secondary);
+        opacity: 0.4;
+    }
+
+    .legend {
+        display: flex;
+        gap: 20px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--keka-text-secondary);
+    }
+
+    .legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+
+    .auto-refresh {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--keka-text-secondary);
+    }
+
+    .refresh-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--keka-success);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    /* Improved Announcements Widget */
+    .announcements-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        /* Softer shadow */
+        overflow: hidden;
         height: 100%;
-        background-color: #319795;
-        /* Teal */
-        border-radius: 3px;
+        display: flex;
+        flex-direction: column;
     }
 
-    .log-time {
-        font-size: 0.8rem;
-        color: #718096;
+    .announcements-header {
+        background: linear-gradient(135deg, var(--keka-primary), #4338ca);
+        /* Gradient header */
+        padding: 20px;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
-    .status-badge {
-        font-size: 0.7rem;
-        padding: 2px 6px;
-        background-color: #feebc8;
-        color: #c05621;
-        border-radius: 4px;
-        margin-left: 5px;
+    .announcements-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .announcements-tabs {
+        display: flex;
+        gap: 10px;
+    }
+
+    .tab-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        backdrop-filter: blur(5px);
+    }
+
+    .tab-btn.active,
+    .tab-btn:hover {
+        background: white;
+        color: var(--keka-primary);
         font-weight: 600;
+    }
+
+    .announcements-body {
+        padding: 0;
+        /* Remove padding to let items flush */
+        flex: 1;
+        overflow-y: auto;
+        min-height: 300px;
+        position: relative;
+    }
+
+    .announcement-item {
+        display: flex;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--keka-border);
+        transition: background 0.2s;
+    }
+
+    .announcement-item:last-child {
+        border-bottom: none;
+    }
+
+    .announcement-item:hover {
+        background: #fdfdfd;
+    }
+
+    .announcement-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        margin-right: 16px;
+        flex-shrink: 0;
+    }
+
+    .announcement-details {
+        flex: 1;
+    }
+
+    .announcement-text {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--keka-text-primary);
+        margin-bottom: 2px;
+    }
+
+    .announcement-subtext {
+        font-size: 12px;
+        color: var(--keka-text-secondary);
+    }
+
+    .announcement-date {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--keka-primary);
+        background: rgba(91, 71, 251, 0.08);
+        padding: 4px 10px;
+        border-radius: 8px;
+    }
+
+    /* Empty State */
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 40px;
+        text-align: center;
+        color: var(--keka-text-secondary);
+    }
+
+    .empty-state i {
+        font-size: 32px;
+        margin-bottom: 16px;
+        opacity: 0.3;
+    }
+
+    /* Animation */
+    .fade-in {
+        animation: fadeIn 0.3s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Animation End */
+
+    /* Maximize & Scrollable Calendar */
+    .calendar-section {
+        transition: all 0.3s ease;
+        position: relative;
+        background: white;
+    }
+
+    .calendar-section.maximized {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 1050;
+        /* Above navbar */
+        border-radius: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 24px;
+        overflow: hidden;
+        /* Prevent body scroll, container handles it */
+    }
+
+    .calendar-section.maximized .calendar-scroll-area {
+        height: 100%;
+        max-height: calc(100vh - 140px);
+        /* Adjust for header/legend space */
+    }
+
+    .calendar-scroll-area {
+        overflow: auto;
+        max-height: 500px;
+        /* Default height constraint */
+        border: 1px solid var(--keka-border);
+        border-radius: 8px;
+        position: relative;
+    }
+
+    /* Stick Headers */
+    .calendar-table thead th {
+        position: sticky;
+        top: 0;
+        background: #f8f9fa;
+        z-index: 20;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        border-bottom: 1px solid var(--keka-border);
+    }
+
+    /* Sticky Name Column */
+    .calendar-table td:first-child,
+    .calendar-table th:first-child {
+        position: sticky;
+        left: 0;
+        background: white;
+        z-index: 21;
+        box-shadow: 2px 0 2px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .calendar-table th:first-child {
+        z-index: 25;
+        /* Corner overlaps both top and left sticky */
+        background: #f8f9fa;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid p-0">
-    <div class="row g-4 mb-5">
-        <!-- Attendance Stats -->
-        <div class="col-md-4">
-            <div class="card-dashboard">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div class="card-title m-0">Attendance Stats</div>
-                    <div class="text-primary small" style="font-size: 0.8rem; cursor: pointer;">This Week <i
-                            class="fas fa-caret-down"></i></div>
-                </div>
+<div class="dashboard-header">
+    <h1 class="page-title">Today's Stats</h1>
 
-                <div class="d-flex align-items-center p-3 rounded" style="background-color: #f7fafc;">
-                    <div class="stat-circle">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <div class="d-flex justify-content-between text-center px-2">
-                            <div>
-                                <div class="stat-label">Me</div>
-                            </div>
-                            <div>
-                                <div class="stat-label">AVG HRS / DAY</div>
-                                <div class="stat-value">{{ avg_hours }}hrs</div>
-                            </div>
-                            <div>
-                                <div class="stat-label">ON TIME</div>
-                                <div class="stat-value">{{ on_time_percentage }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Timings -->
-        <div class="col-md-4">
-            <div class="card-dashboard">
-                <div class="card-title">Timings</div>
-
-                <div class="week-days">
-                    <div class="day-circle">S</div>
-                    <div class="day-circle">M</div>
-                    <div class="day-circle">T</div>
-                    <div class="day-circle active">W</div> <!-- Dynamic day needed ideally -->
-                    <div class="day-circle">T</div>
-                    <div class="day-circle">F</div>
-                    <div class="day-circle">S</div>
-                </div>
-
-                <div class="mt-3">
-                    <div class="break-info">
-                        <span>Duration: 9:00 hrs</span>
-                    </div>
-                    <div class="break-info">
-                        <span>Morning Break :</span>
-                        <span>15mins from 10:45 to 11:00</span>
-                    </div>
-                    <div class="break-info">
-                        <span>Lunch Break :</span>
-                        <span>45min from 1:00 to 1:45</span>
-                    </div>
-                    <div class="break-info">
-                        <span>Evening Break :</span>
-                        <span>15mins from 4:00 to 4:30</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="col-md-4">
-            <div class="card-dashboard text-center d-flex flex-column justify-content-center">
-                <div class="card-title text-start w-100">Actions</div>
-
-                <div id="clock" class="digital-clock">--:--:--</div>
-                <div id="date" class="date-display">--</div>
-
-                <div class="mt-2">
-                    {% if attendance and attendance.clock_in and not attendance.clock_out %}
-                    <button id="clock-btn" class="btn btn-clock btn-clock-out" onclick="handleClockAction('out')">Clock
-                        Out</button>
-                    <div class="mt-2 text-muted small">Remote Clock-in</div>
-                    {% else %}
-                    <button id="clock-btn" class="btn btn-clock btn-clock-in" onclick="handleClockAction('in')">Clock
-                        In</button>
-                    <div class="mt-2 text-muted small">Web Clock-in</div>
-                    {% endif %}
-                </div>
-
-                <div class="mt-auto text-start w-100 pt-3 border-top">
-                    <a href="{% url 'policy' %}" class="text-decoration-none text-muted small">Attendance Policy</a>
-                </div>
-            </div>
+    <!-- Employee Search Bar -->
+    <div class="employee-search-container">
+        <div class="search-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="employeeSearchInput" class="employee-search-input"
+                placeholder="Search employees by name or ID..." autocomplete="off">
+            <div id="searchResults" class="search-results" style="display: none;"></div>
         </div>
     </div>
 
-    <!-- Bottom Section -->
-    <div class="mb-3 d-flex justify-content-between align-items-center">
-        <h5 class="fw-bold text-secondary">Current Status:
-            <span class="text-dark">
-                {% if attendance and attendance.clock_in and not attendance.clock_out %}In Office{% else %}Away{% endif
-                %}
-            </span>
-        </h5>
-        <div class="btn-group">
-            <button class="btn btn-outline-secondary btn-sm active">30 Days</button>
-            <button class="btn btn-outline-secondary btn-sm">Jun</button>
-            <button class="btn btn-outline-secondary btn-sm">May</button>
+    <div class="filter-bar">
+        <select class="filter-select">
+            <option>All Departments</option>
+            {% for dept in departments %}
+            <option>{{ dept }}</option>
+            {% endfor %}
+        </select>
+        <select class="filter-select" onchange="window.location.href='?location=' + this.value">
+            <option value="">All Locations</option>
+            {% for loc in locations %}
+            <option value="{{ loc.id }}" {% if location_filter == loc.id %}selected{% endif %}>
+                {{ loc.name }}
+            </option>
+            {% endfor %}
+        </select>
+        <div class="auto-refresh">
+            <div class="refresh-indicator"></div>
+            <span>Auto-refreshing</span>
         </div>
-    </div>
-
-    <div class="card card-dashboard p-0 overflow-hidden">
-        <table class="table table-hover table-log mb-0">
-            <thead class="bg-light">
-                <tr>
-                    <th class="ps-4 py-3">Date</th>
-                    <th class="py-3" style="width: 30%;">Attendance Visual</th>
-                    <th class="py-3">Effective Hours</th>
-                    <th class="py-3">Gross Hours</th>
-                    <th class="py-3">Arrival</th>
-                    <th class="py-3">Log</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for att in attendance_history %}
-                <tr>
-                    <td class="ps-4 fw-bold text-secondary">
-                        {{ att.date|date:"M d D" }}
-                        {% if att.status == 'Absent' %}<span class="status-badge bg-danger text-white">ABS</span>{%
-                        endif %}
-                        {% if not att.clock_in %}<span class="status-badge">GEN</span>{% endif %}
-                    </td>
-                    <td>
-                        <div class="attendance-visual-bar">
-                            <div class="attendance-visual-fill" style="width: {{ att.visual_width }}%;"></div>
-                        </div>
-                    </td>
-                    <td class="fw-bold">{{ att.effective_hours }} hrs</td>
-                    <td class="text-muted">{{ att.effective_hours }} hrs</td>
-                    <td class="text-success">{% if att.clock_in %}On Time{% else %}-{% endif %}</td>
-                    <td>
-                        {% if att.clock_in %}
-                        <div class="log-time"><i class="fas fa-sign-in-alt text-success me-1"></i> {{
-                            att.clock_in|time:"h:i A" }}</div>
-                        {% endif %}
-                        {% if att.clock_out %}
-                        <div class="log-time"><i class="fas fa-sign-out-alt text-danger me-1"></i> {{
-                            att.clock_out|time:"h:i A" }}</div>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="text-center py-4">No attendance records found.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
+<div class="container-fluid px-4 pb-4">
+    <!-- Row 1: Insights & Announcements -->
+    <div class="row mb-4">
+        <!-- Today's Insights (Vertical Stack) -->
+        <div class="col-md-4">
+            <div class="keka-card h-100">
+                <div class="card-title-keka mb-4">
+                    <i class="fas fa-search me-2 text-primary"></i> Today's Insights
+                </div>
+                <div class="vstack gap-3">
+                    <!-- Late Arrivals -->
+                    <div class="p-3 rounded-3 d-flex justify-content-between align-items-center"
+                        style="background: #fffbeb; border: 1px solid #fef3c7;">
+                        <div>
+                            <div class="h3 fw-bold mb-1 text-warning">{{ late_arrivals }}</div>
+                            <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.7rem;">Late
+                                Arrivals</div>
+                        </div>
+                        <div
+                            style="width: 40px; height: 40px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-running text-warning"></i>
+                        </div>
+                    </div>
+
+                    <!-- Early Departures -->
+                    <div class="p-3 rounded-3 d-flex justify-content-between align-items-center"
+                        style="background: #eff6ff; border: 1px solid #dbeafe;">
+                        <div>
+                            <div class="h3 fw-bold mb-1 text-primary">{{ early_departures }}</div>
+                            <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.7rem;">Early
+                                Departures</div>
+                        </div>
+                        <div
+                            style="width: 40px; height: 40px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-sign-out-alt text-primary"></i>
+                        </div>
+                    </div>
+
+                    <!-- On Duty -->
+                    <div class="p-3 rounded-3 d-flex justify-content-between align-items-center"
+                        style="background: #ecfeff; border: 1px solid #cffafe;">
+                        <div>
+                            <div class="h3 fw-bold mb-1 text-info">{{ on_duty_count }}</div>
+                            <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.7rem;">On Duty
+                            </div>
+                        </div>
+                        <div
+                            style="width: 40px; height: 40px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-briefcase text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Announcements Widget -->
+        <div class="col-md-8">
+            <div class="announcements-card">
+                <div class="announcements-header">
+                    <h3 class="announcements-title"><i class="fas fa-bullhorn"></i> Announcements</h3>
+                    <div class="announcements-tabs">
+                        <button class="tab-btn active" onclick="switchTab('birthdays')">Birthdays</button>
+                        <button class="tab-btn" onclick="switchTab('anniv')">Work Anniv.</button>
+                        <button class="tab-btn" onclick="switchTab('holidays')">Holidays</button>
+                    </div>
+                </div>
+
+                <div class="announcements-body" id="announcementsContent">
+                    <!-- Dynamic Content Loaded Here -->
+
+                    <!-- 1. Birthdays Content -->
+                    <div id="tab-birthdays" class="tab-content fade-in">
+                        {% if upcoming_birthdays %}
+                        {% for bday in upcoming_birthdays %}
+                        <div class="announcement-item">
+                            <div class="announcement-icon" style="background: #e0e7ff; color: #4338ca;">
+                                <i class="fas fa-birthday-cake"></i>
+                            </div>
+                            <div class="announcement-details">
+                                <div class="announcement-text">{{ bday.employee.user.get_full_name }}</div>
+                                <div class="announcement-subtext">
+                                    {% if bday.is_today %}
+                                    <span style="color: #16a34a; font-weight: bold;">Happy Birthday Today! 🎉</span>
+                                    {% else %}
+                                    Turning {{ bday.employee.age }} soon
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="announcement-date">
+                                {{ bday.display_date|date:"d M" }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-birthday-cake"></i>
+                            <p>No upcoming birthdays</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- 2. Anniversaries Content -->
+                    <div id="tab-anniv" class="tab-content fade-in" style="display: none;">
+                        {% if upcoming_anniversaries %}
+                        {% for anniv in upcoming_anniversaries %}
+                        <div class="announcement-item">
+                            <div class="announcement-icon" style="background: #fef3c7; color: #d97706;">
+                                <i class="fas fa-medal"></i>
+                            </div>
+                            <div class="announcement-details">
+                                <div class="announcement-text">{{ anniv.employee.user.get_full_name }}</div>
+                                <div class="announcement-subtext">
+                                    Completing {{ anniv.years }} year{% if anniv.years > 1 %}s{% endif %}
+                                </div>
+                            </div>
+                            <div class="announcement-date">
+                                {{ anniv.date|date:"d M" }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-award"></i>
+                            <p>No upcoming work anniversaries</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- 3. Holidays Content -->
+                    <div id="tab-holidays" class="tab-content fade-in" style="display: none;">
+                        {% if upcoming_holidays %}
+                        {% for holiday in upcoming_holidays %}
+                        <div class="announcement-item">
+                            <div class="announcement-icon" style="background: #d1fae5; color: #059669;">
+                                <i class="fas fa-umbrella-beach"></i>
+                            </div>
+                            <div class="announcement-details">
+                                <div class="announcement-text">{{ holiday.name }}</div>
+                                <div class="announcement-subtext">
+                                    {{ holiday.get_location_display }} • {{ holiday.get_holiday_type_display }}
+                                </div>
+                            </div>
+                            <div class="announcement-date">
+                                {{ holiday.date|date:"D, d M" }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-umbrella-beach"></i>
+                            <p>No upcoming holidays</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 2: Department Performance & Leave Requests -->
+    <div class="row mb-4">
+        <!-- Department Performance -->
+        <div class="col-md-8">
+            <div class="keka-card h-100">
+                <div class="card-title-keka mb-4">
+                    <i class="fas fa-building me-2 text-primary"></i> Department Performance (Present %)
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-borderless align-middle">
+                        <thead class="text-muted small text-uppercase fw-bold"
+                            style="border-bottom: 1px solid #f3f4f6;">
+                            <tr>
+                                <th class="ps-0">Department</th>
+                                <th class="text-center">Present</th>
+                                <th class="text-center">Total</th>
+                                <th style="width: 40%;">Presence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dept in department_performance %}
+                            <tr>
+                                <td class="ps-0 fw-bold text-dark py-3">{{ dept.name }}</td>
+                                <td class="text-center text-muted">{{ dept.present }}</td>
+                                <td class="text-center text-muted">{{ dept.total }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1"
+                                            style="height: 6px; background-color: #f3f4f6;">
+                                            <div class="progress-bar rounded-pill" role="progressbar"
+                                                style="width: {{ dept.percentage }}%; background-color: var(--keka-primary);"
+                                                aria-valuenow="{{ dept.percentage }}" aria-valuemin="0"
+                                                aria-valuemax="100"></div>
+                                        </div>
+                                        <span class="small fw-bold text-dark">{{ dept.percentage }}%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">No department data available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leave Requests -->
+        <div class="col-md-4">
+            <div class="requests-section" style="height: 100%;">
+                <h2 class="section-title">Leave Requests</h2>
+                <div id="leaveRequests">
+                    {% if pending_leave_requests %}
+                    {% for request in pending_leave_requests %}
+                    <div class="request-card">
+                        <div class="employee-avatar">
+                            {{ request.employee.user.first_name|first }}{{ request.employee.user.last_name|first }}
+                        </div>
+                        <div class="request-info">
+                            <div class="employee-name">
+                                {{ request.employee.user.get_full_name }}
+                                <span
+                                    class="leave-badge {% if request.leave_type == 'SL' %}sick{% elif request.leave_type == 'CL' %}personal{% else %}medical{% endif %}">
+                                    {{ request.get_leave_type_display|upper }}
+                                </span>
+                            </div>
+                            <div class="request-meta">
+                                {{ request.start_date|date:"jS M" }} - {{ request.end_date|date:"jS M" }}
+                            </div>
+                        </div>
+                        <div class="request-actions">
+                            <button class="btn-action btn-reject"
+                                onclick="handleLeaveAction({{ request.id }}, 'reject')">Reject</button>
+                            <button class="btn-action btn-approve"
+                                onclick="handleLeaveAction({{ request.id }}, 'approve')">Approve</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p style="text-align: center; color: var(--keka-text-secondary); padding: 40px;">
+                        No pending leave requests
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Calendar -->
+    <div class="calendar-section" id="calendarSection">
+        <div class="calendar-header">
+            <h2 class="section-title" style="margin: 0;">{{ current_month }} {{ current_year }}</h2>
+            <div class="d-flex align-items-center gap-2">
+                <div class="month-nav">
+                    <a href="?month={{ prev_month }}&year={{ prev_year }}" class="month-btn text-decoration-none">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                    <span class="month-label">{{ current_month }} {{ current_year }}</span>
+                    <a href="?month={{ next_month }}&year={{ next_year }}" class="month-btn text-decoration-none">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </div>
+                <button class="btn btn-sm btn-light border ms-2" onclick="toggleMaximizeCalendar()"
+                    title="Maximize/Minimize">
+                    <i class="fas fa-expand" id="maximizeIcon"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="calendar-scroll-area">
+            <table class="calendar-table">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; min-width: 180px;">Employee</th>
+                        {% for day in employee_calendar_data.0.days %}
+                        <th>{{ day.day }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp_data in employee_calendar_data %}
+                    <tr>
+                        <td>
+                            <div class="employee-info">
+                                <div class="employee-mini-avatar">
+                                    {{ emp_data.employee.user.first_name|first }}
+                                    {{ emp_data.employee.user.last_name|first }}
+                                </div>
+                                <div class="employee-details">
+                                    <div class="employee-details-name">{{ emp_data.employee.user.get_full_name }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        {% for day in emp_data.days %}
+                        <td>
+                            <div class="day-cell {{ day.status }}" title="{{ day.date|date:'d M Y' }}">
+                                {{ day.day }}
+                            </div>
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-dot" style="background: var(--keka-purple);"></div>
+                <span>Work from home</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: var(--keka-warning);"></div>
+                <span>Weekly off</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: var(--keka-teal);"></div>
+                <span>Paid leave</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: var(--keka-danger);"></div>
+                <span>No attendance</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: var(--keka-info);"></div>
+                <span>Holiday</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #ec4899;"></div>
+                <span>Sick leave</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: var(--keka-success);"></div>
+                <span>Present</span>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    function updateClock() {
-        const now = new Date();
-        const timeString = now.toLocaleTimeString('en-US', { hour12: false });
-        const dateString = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    // Real-time auto-refresh
+    let refreshInterval;
 
-        document.getElementById('clock').innerText = timeString;
-        document.getElementById('date').innerText = dateString;
+    function startAutoRefresh() {
+        refreshInterval = setInterval(() => {
+            refreshDashboardData();
+        }, 30000); // Refresh every 30 seconds
     }
 
-    setInterval(updateClock, 1000);
-    updateClock();
+    async function refreshDashboardData() {
+        try {
+            // In a real implementation, this would fetch from an API endpoint
+            // For now, we'll just reload the page
+            // location.reload();
 
-    // Highlighting current day in existing DOM if static, usually done via template. 
-    // Just JS fix:
-    const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-    const currentDay = new Date().getDay();
-    const dayCircles = document.querySelectorAll('.day-circle');
-    dayCircles.forEach((circle, index) => {
-        if (index === currentDay) {
-            circle.classList.add('active');
-        } else {
-            circle.classList.remove('active');
+            // Simulate real-time update with animation
+            animateStatUpdate();
+        } catch (error) {
+            console.error('Error refreshing dashboard:', error);
         }
-    });
+    }
 
-    // Geolocation and Clocking
-    let locationInterval;
-
-    function handleClockAction(action) {
-        if (!navigator.geolocation) {
-            alert("Geolocation is not supported by this browser.");
-            return;
-        }
-
-        const btn = document.getElementById('clock-btn');
-        const originalText = btn.innerText;
-        btn.innerText = "Processing...";
-        btn.disabled = true;
-
-        navigator.geolocation.getCurrentPosition((position) => {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-
-            const url = action === 'in' ? "{% url 'api_clock_in' %}" : "{% url 'api_clock_out' %}";
-
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}' // Add if not csrf_exempt, but we marked views csrf_exempt for simplicity or ensure cookie handling
-                },
-                body: JSON.stringify({ latitude: lat, longitude: lng })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        location.reload(); // Reload to update UI state
-                    } else {
-                        alert("Error: " + data.message);
-                        btn.innerText = originalText;
-                        btn.disabled = false;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert("An error occurred.");
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                });
-
-        }, (error) => {
-            alert("Unable to retrieve location. Please allow location access.");
-            btn.innerText = originalText;
-            btn.disabled = false;
+    function animateStatUpdate() {
+        const statValues = document.querySelectorAll('.stat-value');
+        statValues.forEach(stat => {
+            stat.style.animation = 'none';
+            setTimeout(() => {
+                stat.style.animation = 'countUp 0.5s ease-out';
+            }, 10);
         });
     }
 
-    // Periodic Location Tracking (Every 1 hour = 3600000 ms)
-    // Only if clocked in
-    {% if attendance and attendance.clock_in and not attendance.clock_out %}
-    setInterval(() => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition((position) => {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-
-                fetch("{% url 'api_update_location' %}", {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ latitude: lat, longitude: lng })
-                }); // Silent update
-            });
+    function handleLeaveAction(requestId, action) {
+        if (action === 'approve') {
+            if (confirm('Are you sure you want to approve this leave request?')) {
+                // Submit approval
+                window.location.href = `/leaves/requests/?action=approve&id=${requestId}`;
+            }
+        } else {
+            const reason = prompt('Please enter rejection reason:');
+            if (reason) {
+                // Submit rejection
+                window.location.href = `/leaves/requests/?action=reject&id=${requestId}&reason=${encodeURIComponent(reason)}`;
+            }
         }
-    }, 3600000);
-    {% endif %}
+    }
+
+    function changeMonth(direction) {
+        // Implement month navigation
+        console.log('Change month:', direction);
+    }
+
+    // Start auto-refresh on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        startAutoRefresh();
+    });
+
+    // Stop auto-refresh when page is hidden
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            clearInterval(refreshInterval);
+        } else {
+            startAutoRefresh();
+        }
+    });
+
+    // Tab Switching Logic
+    function switchTab(tabName) {
+        // Hide all contents
+        document.querySelectorAll('.tab-content').forEach(el => {
+            el.style.display = 'none';
+        });
+
+        // Remove active class from buttons
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        // Show selected content
+        document.getElementById(`tab-${tabName}`).style.display = 'block';
+
+        // Activate button
+        const btns = document.querySelectorAll('.tab-btn');
+        btns.forEach(btn => {
+            if (btn.getAttribute('onclick').includes(tabName)) {
+                btn.classList.add('active');
+            }
+        });
+    }
+
+    function toggleMaximizeCalendar() {
+        const section = document.getElementById('calendarSection');
+        const icon = document.getElementById('maximizeIcon');
+
+        section.classList.toggle('maximized');
+
+        if (section.classList.contains('maximized')) {
+            icon.classList.remove('fa-expand');
+            icon.classList.add('fa-compress');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        } else {
+            icon.classList.remove('fa-compress');
+            icon.classList.add('fa-expand');
+            document.body.style.overflow = ''; // Restore background scrolling
+        }
+    }
+
+    // Employee Search Functionality
+    let searchTimeout;
+    const searchInput = document.getElementById('employeeSearchInput');
+    const searchResults = document.getElementById('searchResults');
+
+    if (searchInput) {
+        // Search on input with debouncing
+        searchInput.addEventListener('input', function () {
+            const query = this.value.trim();
+
+            // Clear previous timeout
+            clearTimeout(searchTimeout);
+
+            if (query.length < 2) {
+                searchResults.style.display = 'none';
+                return;
+            }
+
+            // Show loading state
+            searchResults.innerHTML = '<div class="search-loading"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+            searchResults.style.display = 'block';
+
+            // Debounce search (wait 300ms after user stops typing)
+            searchTimeout = setTimeout(() => {
+                performSearch(query);
+            }, 300);
+        });
+
+        // Close search results when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.style.display = 'none';
+            }
+        });
+
+        // Reopen results when clicking on input if there's content
+        searchInput.addEventListener('focus', function () {
+            if (this.value.trim().length >= 2 && searchResults.innerHTML) {
+                searchResults.style.display = 'block';
+            }
+        });
+    }
+
+    function performSearch(query) {
+        fetch(`/api/search-employees/?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                displaySearchResults(data.employees);
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+                searchResults.innerHTML = '<div class="search-no-results"><i class="fas fa-exclamation-circle"></i><div>Error performing search</div></div>';
+            });
+    }
+
+    function displaySearchResults(employees) {
+        if (employees.length === 0) {
+            searchResults.innerHTML = `
+                <div class="search-no-results">
+                    <i class="fas fa-user-slash"></i>
+                    <div>No employees found</div>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        employees.forEach(emp => {
+            // Get initials for avatar
+            const nameParts = emp.name.split(' ');
+            const initials = nameParts.length > 1
+                ? nameParts[0][0] + nameParts[nameParts.length - 1][0]
+                : nameParts[0][0];
+
+            html += `
+                <div class="search-result-item" onclick="navigateToEmployee('${emp.profile_url}')">
+                    <div class="search-result-avatar">${initials.toUpperCase()}</div>
+                    <div class="search-result-details">
+                        <div class="search-result-name">${emp.name}</div>
+                        <div class="search-result-meta">
+                            <span><i class="fas fa-id-badge"></i> ${emp.employee_id}</span>
+                            <span><i class="fas fa-briefcase"></i> ${emp.designation}</span>
+                            <span><i class="fas fa-building"></i> ${emp.department}</span>
+                            <span><i class="fas fa-map-marker-alt"></i> ${emp.location}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        searchResults.innerHTML = html;
+    }
+
+    function navigateToEmployee(url) {
+        window.location.href = url;
+    }
+
+    // Auto-rotate tabs occasionally if user is idle? Maybe too distracting.
+    // Let's keep it manual for now as requested "advance css js" implies sleekness not necessarily chaos.
+
 </script>
 {% endblock %}

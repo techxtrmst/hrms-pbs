@@ -4,433 +4,1566 @@
 {% block title %}My Home | HRMS{% endblock %}
 
 {% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-    .card-dashboard {
-        border: none;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        /* Softer shadow */
-        background-color: #fff;
+    :root {
+        --primary-color: #6366f1;
+        /* Indigo */
+        --primary-light: #e0e7ff;
+        --secondary-color: #64748b;
+        /* Slate */
+        --success-color: #10b981;
+        /* Emerald */
+        --warning-color: #f59e0b;
+        /* Amber */
+        --danger-color: #ef4444;
+        /* Red */
+        --bg-color: #f8fafc;
+        --card-bg: #ffffff;
+        --text-main: #1e293b;
+        --text-muted: #64748b;
+        --border-radius: 16px;
+        --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    body {
+        font-family: 'Outfit', sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-main);
+    }
+
+    /* --- CARDS --- */
+    .keka-card {
+        background: var(--card-bg);
+        border-radius: 20px;
+        /* Match Shift Card */
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         height: 100%;
-        padding: 20px;
+        overflow: hidden;
+        position: relative;
     }
 
-    .card-title {
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #4a5568;
-        margin-bottom: 20px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    .keka-card:hover {
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        transform: translateY(-4px);
+        border-color: rgba(99, 102, 241, 0.2);
     }
 
-    .stat-circle {
-        width: 40px;
-        height: 40px;
-        background-color: #f6ad55;
-        /* Orange-ish */
-        color: white;
-        border-radius: 50%;
+    .card-header-clean {
+        padding: 24px 24px 15px;
+        border-bottom: 1px solid transparent;
         display: flex;
+        justify-content: space-between;
         align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        margin-right: 15px;
+        background: transparent;
     }
 
-    .stat-label {
-        font-size: 0.75rem;
-        color: #718096;
-        text-transform: uppercase;
-        margin-bottom: 5px;
-    }
-
-    .stat-value {
-        font-size: 1.1rem;
+    .card-title-text {
         font-weight: 700;
-        color: #2d3748;
-    }
-
-    .week-days {
+        font-size: 1.05rem;
+        color: var(--text-main);
+        margin: 0;
         display: flex;
-        justify-content: space-between;
-        margin-bottom: 15px;
+        align-items: center;
+        gap: 12px;
     }
 
-    .day-circle {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        background-color: #edf2f7;
-        color: #718096;
+    .card-icon-soft {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.75rem;
-        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
     }
 
-    .day-circle.active {
-        background-color: #3182ce;
-        color: white;
+    .keka-card:hover .card-icon-soft.primary {
+        background: var(--primary-light);
+        color: var(--primary-color);
     }
 
-    .break-info {
-        font-size: 0.85rem;
-        color: #718096;
-        margin-bottom: 5px;
-        display: flex;
-        justify-content: space-between;
+    .keka-card:hover .card-icon-soft.warning {
+        background: #fef3c7;
+        color: var(--warning-color);
+    }
+
+    .keka-card:hover .card-icon-soft.danger {
+        background: #fee2e2;
+        color: var(--danger-color);
+    }
+
+    .card-body-clean {
+        padding: 24px;
+    }
+
+    /* --- TYPOGRAPHY --- */
+    .text-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #94a3b8;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+
+    .text-value {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: var(--text-main);
+        line-height: 1.2;
+    }
+
+    /* --- CLOCK WIDGET --- */
+    .clock-widget {
+        text-align: center;
+        padding: 10px 0;
     }
 
     .digital-clock {
-        font-size: 2.5rem;
-        font-weight: 300;
-        color: #2d3748;
+        font-size: 3.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -2px;
+        line-height: 1;
         margin-bottom: 5px;
+        font-variant-numeric: tabular-nums;
     }
 
-    .date-display {
-        color: #718096;
-        font-size: 0.9rem;
-        margin-bottom: 20px;
+    .current-date {
+        font-size: 0.95rem;
+        color: #64748b;
+        font-weight: 500;
+        margin-bottom: 30px;
+        background: #f1f5f9;
+        display: inline-block;
+        padding: 6px 16px;
+        border-radius: 20px;
     }
 
     .btn-clock {
-        border-radius: 5px;
-        padding: 10px 20px;
-        font-weight: 600;
-        width: 100%;
-        text-transform: uppercase;
-        font-size: 0.9rem;
-    }
-
-    .btn-clock-in {
-        background-color: #48bb78;
-        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 24px;
+        border-radius: 16px;
+        font-weight: 700;
         border: none;
+        width: 100%;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 12px;
+        text-align: left;
+        overflow: hidden;
+        /* For sheen effect */
     }
 
-    .btn-clock-in:hover {
-        background-color: #38a169;
+    .btn-clock::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        transition: 0.5s;
+    }
+
+    .btn-clock:hover::after {
+        left: 100%;
+        transition: 0.5s ease-in-out;
+    }
+
+    .btn-clock:active {
+        transform: scale(0.98);
+    }
+
+    .btn-clock-in-office {
+        background: #ecfdf5;
+        color: #047857;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .btn-clock-in-office:hover {
+        background: #10b981;
+        color: white;
+        box-shadow: 0 8px 20px -4px rgba(16, 185, 129, 0.4);
+        border-color: #10b981;
+    }
+
+    .btn-clock-in-remote {
+        background: #f5f3ff;
+        color: #7c3aed;
+        border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+
+    .btn-clock-in-remote:hover {
+        background: #8b5cf6;
+        color: white;
+        box-shadow: 0 8px 20px -4px rgba(139, 92, 246, 0.4);
+        border-color: #8b5cf6;
     }
 
     .btn-clock-out {
-        background-color: #e53e3e;
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
         color: white;
-        border: none;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        justify-content: center;
     }
 
     .btn-clock-out:hover {
-        background-color: #c53030;
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(220, 38, 38, 0.4);
     }
 
-    /* Attendance Log Table */
-    .table-log th {
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        color: #718096;
-        font-weight: 600;
-        border-top: none;
+    .btn-icon-wrapper {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
     }
 
-    .table-log td {
-        vertical-align: middle;
-        font-size: 0.9rem;
-        color: #2d3748;
-    }
-
-    .attendance-visual-bar {
-        height: 6px;
-        background-color: #e2e8f0;
-        border-radius: 3px;
+    /* --- STATS CIRCLES --- */
+    .stat-ring {
         position: relative;
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 15px;
+    }
+
+    .stat-ring svg {
         width: 100%;
-        margin-top: 8px;
-    }
-
-    .attendance-visual-fill {
         height: 100%;
-        background-color: #319795;
-        /* Teal */
-        border-radius: 3px;
+        transform: rotate(-90deg);
     }
 
-    .log-time {
+    .stat-ring circle {
+        fill: none;
+        stroke-width: 8;
+        stroke-linecap: round;
+    }
+
+    .stat-ring .bg {
+        stroke: #f1f5f9;
+    }
+
+    .stat-ring .progress {
+        stroke: var(--primary-color);
+        stroke-dasharray: 283;
+        /* 2 * PI * 45 */
+        stroke-dashoffset: 283;
+        transition: stroke-dashoffset 1s ease;
+    }
+
+    .stat-ring-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+
+    .stat-ring-value {
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: var(--text-main);
+    }
+
+    .stat-ring-label {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+    }
+
+    /* --- TIMELINE / SHIFT --- */
+    .shift-timeline {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+        padding-top: 10px;
+    }
+
+    .shift-timeline::before {
+        content: '';
+        position: absolute;
+        top: 24px;
+        left: 20px;
+        right: 20px;
+        height: 4px;
+        background: #f1f5f9;
+        z-index: 1;
+        border-radius: 4px;
+    }
+
+    .timeline-point {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .timeline-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #cbd5e1;
+        border: 3px solid #fff;
+        box-shadow: 0 0 0 1px #e2e8f0;
+        margin-top: 10px;
+        margin-bottom: 8px;
+    }
+
+    .timeline-point.active .timeline-dot {
+        background: var(--success-color);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+    }
+
+    .timeline-time {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--text-main);
+    }
+
+    .timeline-label {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+    }
+
+    /* --- WEEK DAYS --- */
+    .week-days {
+        display: flex;
+        justify-content: space-between;
+        gap: 5px;
+        background: #f8fafc;
+        padding: 10px;
+        border-radius: 12px;
+    }
+
+    .day-badge {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-size: 0.8rem;
-        color: #718096;
+        font-weight: 600;
+        color: #94a3b8;
+        background: white;
+        border: 1px solid #e2e8f0;
+    }
+
+    .day-badge.active {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+        box-shadow: 0 2px 5px rgba(99, 102, 241, 0.3);
+    }
+
+    /* --- CELEBRATIONS --- */
+    .celebration-item {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        border-radius: 12px;
+        background: #fff;
+        border: 1px solid #f1f5f9;
+        margin-bottom: 10px;
+        transition: transform 0.2s;
+    }
+
+    .celebration-item:hover {
+        transform: translateX(5px);
+        border-color: #e2e8f0;
+    }
+
+    .celebration-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+        color: #db2777;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        margin-right: 12px;
+        font-size: 1rem;
+    }
+
+    .celebration-icon {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        color: #db2777;
+        margin-left: auto;
+    }
+
+    /* --- TABLE --- */
+    .table-custom {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-custom th {
+        background: #f8fafc;
+        padding: 16px 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #64748b;
+        border-top: 1px solid #e2e8f0;
+        border-bottom: 1px solid #e2e8f0;
+        letter-spacing: 0.05em;
+    }
+
+    .table-custom th:first-child {
+        border-top-left-radius: 12px;
+        border-left: 1px solid #e2e8f0;
+    }
+
+    .table-custom th:last-child {
+        border-top-right-radius: 12px;
+        border-right: 1px solid #e2e8f0;
+    }
+
+    .table-custom td {
+        padding: 16px 20px;
+        font-size: 0.9rem;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+        background: white;
+        transition: background 0.2s;
+    }
+
+    .table-custom tr:last-child td {
+        border-bottom: none;
+    }
+
+    .table-custom tr:last-child td:first-child {
+        border-bottom-left-radius: 12px;
+    }
+
+    .table-custom tr:last-child td:last-child {
+        border-bottom-right-radius: 12px;
+    }
+
+    .table-custom tr:hover td {
+        background: #f8fafc;
     }
 
     .status-badge {
-        font-size: 0.7rem;
-        padding: 2px 6px;
-        background-color: #feebc8;
-        color: #c05621;
-        border-radius: 4px;
-        margin-left: 5px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
         font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .status-present {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-absent {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .status-half {
+        background: #ffedd5;
+        color: #9a3412;
+    }
+
+    /* Overlay */
+    #celebration-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(8px);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+    }
+
+    /* Anim */
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-enter {
+        animation: slideInUp 0.5s ease-out forwards;
+    }
+
+    .delay-100 {
+        animation-delay: 0.1s;
+    }
+
+    .delay-200 {
+        animation-delay: 0.2s;
+    }
+
+    .delay-300 {
+        animation-delay: 0.3s;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    /* Active Day Pulse */
+    .day-badge.active {
+        animation: pulse-soft 2s infinite;
+    }
+
+    @keyframes pulse-soft {
+        0% {
+            box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+        }
+
+        70% {
+            box-shadow: 0 0 0 6px rgba(99, 102, 241, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid p-0">
-    <div class="row g-4 mb-5">
-        <!-- Attendance Stats -->
-        <div class="col-md-4">
-            <div class="card-dashboard">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div class="card-title m-0">Attendance Stats</div>
-                    <div class="text-primary small" style="font-size: 0.8rem; cursor: pointer;">This Week <i
-                            class="fas fa-caret-down"></i></div>
+<div class="container-fluid py-4 px-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-end mb-5 animate-enter">
+        <div>
+            <h4 class="fw-bold mb-1"
+                style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block;">
+                Good Morning, {{ request.user.first_name }}! 👋
+            </h4>
+            <p class="text-muted mb-0">Here's what's happening today.</p>
+        </div>
+        <div class="text-end d-none d-md-block">
+            <div id="header-date" class="fw-bold text-dark fs-5"></div>
+        </div>
+    </div>
+
+    <!-- Top Stats Row (Mobile Only sort of, but useful for overview) -->
+    <!-- Grid Layout -->
+    <div class="row g-4">
+
+        <!-- Left Column: Primary Actions & Stats -->
+        <div class="col-lg-3">
+            <div class="vstack gap-4">
+
+                <!-- Clock In/Out Card -->
+                <div class="keka-card animate-enter delay-100">
+                    <div class="card-body-clean text-center">
+                        <div class="mb-4">
+                            <div class="text-label mb-2">Current Time</div>
+                            <div id="clock" class="digital-clock">--:--</div>
+                            <div id="date-sub" class="current-date">-- -- ----</div>
+                        </div>
+
+                        {% if attendance and attendance.clock_in and not attendance.clock_out %}
+                        <!-- Clocked In State -->
+                        <div class="p-3 bg-light rounded-3 mb-4 border">
+                            <div class="text-label mb-1">Clocked In At</div>
+                            <div class="fs-4 fw-bold text-dark">{{ attendance.clock_in|time:"h:i A" }}</div>
+
+                            <hr class="my-3 text-muted opacity-25">
+
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="text-label" style="font-size: 0.65rem;">Duration</div>
+                                    <div class="fw-bold text-dark timer-count" id="timer-display">00:00:00</div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="text-label" style="font-size: 0.65rem;">Status</div>
+                                    <div class="badge bg-success bg-opacity-10 text-success">Active</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn-clock btn-clock-out" onclick="handleClockAction('out')">
+                            <span class="btn-icon-wrapper"><i class="fas fa-sign-out-alt"></i></span>
+                            Clock Out
+                        </button>
+
+                        {% else %}
+                        <!-- Clocked Out State -->
+                        <div class="d-grid gap-3">
+                            <button class="btn-clock btn-clock-in-office" onclick="handleClockAction('in', 'office')">
+                                <span class="btn-icon-wrapper"><i class="fas fa-building"></i></span>
+                                Web Clock-In
+                            </button>
+                            <button class="btn-clock btn-clock-in-remote" onclick="handleClockAction('in', 'remote')">
+                                <span class="btn-icon-wrapper"><i class="fas fa-laptop-house"></i></span>
+                                Remote Clock-In
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
 
-                <div class="d-flex align-items-center p-3 rounded" style="background-color: #f7fafc;">
-                    <div class="stat-circle">
-                        <i class="fas fa-user"></i>
+                <!-- Weekly Summary Mini Stats -->
+                <div class="keka-card animate-enter delay-200">
+                    <div class="card-header-clean">
+                        <span class="card-title-text">
+                            <span class="card-icon-soft primary"><i class="fas fa-chart-pie"></i></span>
+                            Weekly Stats
+                        </span>
                     </div>
-                    <div class="flex-grow-1">
-                        <div class="d-flex justify-content-between text-center px-2">
-                            <div>
-                                <div class="stat-label">Me</div>
+                    <div class="card-body-clean pt-0">
+                        <div class="row text-center align-items-center">
+                            <div class="col-6 border-end">
+                                <div class="stat-ring">
+                                    <svg>
+                                        <circle class="bg" cx="60" cy="60" r="45"></circle>
+                                        <circle class="progress" cx="60" cy="60" r="45" id="avg-progress"></circle>
+                                    </svg>
+                                    <div class="stat-ring-content">
+                                        <div class="stat-ring-value">{{ avg_hours|default:"00:00" }}</div>
+                                        <div class="stat-ring-label">Avg Hrs</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <div class="stat-label">AVG HRS / DAY</div>
-                                <div class="stat-value">{{ avg_hours }}hrs</div>
-                            </div>
-                            <div>
-                                <div class="stat-label">ON TIME</div>
-                                <div class="stat-value">{{ on_time_percentage }}</div>
+                            <div class="col-6 d-flex flex-column justify-content-center gap-3">
+                                <div>
+                                    <div class="text-value text-success" style="font-size: 1.4rem;">100%</div>
+                                    <div class="text-label">On Time</div>
+                                </div>
+                                <div>
+                                    <div class="text-value text-primary" style="font-size: 1.4rem;">0</div>
+                                    <div class="text-label">Leaves</div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
 
-        <!-- Timings -->
-        <div class="col-md-4">
-            <div class="card-dashboard">
-                <div class="card-title">Timings</div>
+        <!-- Middle Column: Shift & Activity -->
+        <div class="col-lg-6">
+            <div class="vstack gap-4">
 
-                <div class="week-days">
-                    <div class="day-circle">S</div>
-                    <div class="day-circle">M</div>
-                    <div class="day-circle">T</div>
-                    <div class="day-circle active">W</div> <!-- Dynamic day needed ideally -->
-                    <div class="day-circle">T</div>
-                    <div class="day-circle">F</div>
-                    <div class="day-circle">S</div>
-                </div>
+                <style>
+                    /* --- ANIMATED SHIFT CARD --- */
+                    .shift-card {
+                        background: radial-gradient(circle at top right, #6366f1 0%, #4338ca 100%);
+                        border-radius: 24px;
+                        color: white;
+                        position: relative;
+                        overflow: hidden;
+                        box-shadow: 0 20px 40px -10px rgba(67, 56, 202, 0.5);
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+                    }
 
-                <div class="mt-3">
-                    <div class="break-info">
-                        <span>Duration: 9:00 hrs</span>
+                    .shift-card:hover {
+                        transform: translateY(-8px) scale(1.02);
+                        box-shadow: 0 30px 60px -12px rgba(67, 56, 202, 0.6);
+                    }
+
+                    /* Floating Background Blobs */
+                    .shift-card::before,
+                    .shift-card::after {
+                        content: '';
+                        position: absolute;
+                        border-radius: 50%;
+                        filter: blur(40px);
+                        opacity: 0.4;
+                        z-index: 0;
+                    }
+
+                    .shift-card::before {
+                        width: 150px;
+                        height: 150px;
+                        background: #a5b4fc;
+                        top: -30px;
+                        right: -30px;
+                        animation: float 6s ease-in-out infinite;
+                    }
+
+                    .shift-card::after {
+                        width: 120px;
+                        height: 120px;
+                        background: #818cf8;
+                        bottom: -20px;
+                        left: -20px;
+                        animation: float 8s ease-in-out infinite reverse;
+                    }
+
+                    @keyframes float {
+
+                        0%,
+                        100% {
+                            transform: translate(0, 0);
+                        }
+
+                        50% {
+                            transform: translate(10px, 15px);
+                        }
+                    }
+
+                    .shift-header {
+                        position: relative;
+                        z-index: 1;
+                        padding: 28px 28px 10px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    }
+
+                    .shift-icon-box {
+                        width: 52px;
+                        height: 52px;
+                        border-radius: 16px;
+                        background: rgba(255, 255, 255, 0.2);
+                        border: 1px solid rgba(255, 255, 255, 0.3);
+                        backdrop-filter: blur(8px);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 1.4rem;
+                        margin-right: 18px;
+                        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+                        transition: transform 0.3s ease;
+                    }
+
+                    .shift-card:hover .shift-icon-box {
+                        transform: rotate(15deg) scale(1.1);
+                    }
+
+                    .shift-badge {
+                        background: rgba(255, 255, 255, 0.9);
+                        color: #4338ca;
+                        font-weight: 800;
+                        padding: 8px 18px;
+                        border-radius: 50px;
+                        font-size: 0.75rem;
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                        text-transform: uppercase;
+                        letter-spacing: 0.05em;
+                        border: 2px solid transparent;
+                        transition: all 0.3s ease;
+                    }
+
+                    .shift-card:hover .shift-badge {
+                        background: #fff;
+                        transform: scale(1.05);
+                    }
+
+                    .timeline-container {
+                        position: relative;
+                        z-index: 1;
+                        padding: 40px 30px 30px;
+                    }
+
+                    .timeline-track {
+                        position: absolute;
+                        top: 86px;
+                        /* Adjusted for better alignment */
+                        left: 40px;
+                        right: 40px;
+                        height: 6px;
+                        background: rgba(0, 0, 0, 0.2);
+                        border-radius: 10px;
+                        overflow: hidden;
+                    }
+
+                    .timeline-progress-bar {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        height: 100%;
+                        background: linear-gradient(90deg, #34d399, #10b981, #6ee7b7);
+                        background-size: 200% 100%;
+                        border-radius: 10px;
+                        width: 0%;
+                        animation: shimmer 2s infinite linear;
+                        box-shadow: 0 0 15px rgba(52, 211, 153, 0.6);
+                    }
+
+                    @keyframes shimmer {
+                        0% {
+                            background-position: 100% 0;
+                        }
+
+                        100% {
+                            background-position: -100% 0;
+                        }
+                    }
+
+                    .timeline-dot-indicator {
+                        position: absolute;
+                        top: 50%;
+                        right: -8px;
+                        transform: translateY(-50%);
+                        width: 16px;
+                        height: 16px;
+                        background: #fff;
+                        border: 3px solid #10b981;
+                        border-radius: 50%;
+                        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.3);
+                        animation: pulse 2s infinite;
+                        z-index: 10;
+                    }
+
+                    @keyframes pulse {
+                        0% {
+                            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+                        }
+
+                        70% {
+                            box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+                        }
+
+                        100% {
+                            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+                        }
+                    }
+
+                    .t-node {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        text-align: center;
+                        width: 80px;
+                        transition: transform 0.3s ease;
+                        cursor: default;
+                    }
+
+                    .t-node:hover {
+                        transform: translateX(-50%) translateY(-5px) !important;
+                        /* Keep the X transform but lift up */
+                    }
+
+                    .t-time {
+                        font-weight: 700;
+                        font-size: 0.95rem;
+                        margin-bottom: 14px;
+                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                    }
+
+                    .t-dot {
+                        width: 18px;
+                        height: 18px;
+                        border-radius: 50%;
+                        background: rgba(255, 255, 255, 0.2);
+                        border: 2px solid rgba(255, 255, 255, 0.6);
+                        margin-bottom: 10px;
+                        position: relative;
+                        transition: all 0.3s ease;
+                    }
+
+                    .t-node:hover .t-dot {
+                        background: rgba(255, 255, 255, 1);
+                        box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+                    }
+
+                    .t-dot.green {
+                        background: #10b981;
+                        border-color: #fff;
+                        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.3);
+                    }
+
+                    .t-label {
+                        font-size: 0.75rem;
+                        font-weight: 600;
+                        opacity: 0.9;
+                        letter-spacing: 0.03em;
+                        background: rgba(0, 0, 0, 0.15);
+                        padding: 2px 8px;
+                        border-radius: 4px;
+                    }
+
+                    .shift-footer {
+                        background: rgba(0, 0, 0, 0.2);
+                        padding: 18px 28px;
+                        margin: 0;
+                        /* Full width now */
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        border-top: 1px solid rgba(255, 255, 255, 0.1);
+                        position: relative;
+                        z-index: 1;
+                    }
+                </style>
+
+                <div class="shift-card animate-enter delay-100 mb-4">
+                    <div class="shift-header">
+                        <div class="d-flex align-items-center">
+                            <div class="shift-icon-box">
+                                <i class="far fa-clock"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-1 fw-bold">
+                                    {% if assigned_shift %}{{ assigned_shift.name }}{% else %}General Shift{% endif %}
+                                </h4>
+                                <div class="opacity-75 small fw-medium">
+                                    {% if assigned_shift %}
+                                    {{ assigned_shift.start_time|time:"h:i A" }} - {{ assigned_shift.end_time|time:"h:i
+                                    A" }}
+                                    {% else %}
+                                    09:00 AM - 06:00 PM
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="shift-badge">{% if assigned_shift %}Active{% else %}Default{% endif %}</div>
                     </div>
-                    <div class="break-info">
-                        <span>Morning Break :</span>
-                        <span>15mins from 10:45 to 11:00</span>
-                    </div>
-                    <div class="break-info">
-                        <span>Lunch Break :</span>
-                        <span>45min from 1:00 to 1:45</span>
-                    </div>
-                    <div class="break-info">
-                        <span>Evening Break :</span>
-                        <span>15mins from 4:00 to 4:30</span>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Actions -->
-        <div class="col-md-4">
-            <div class="card-dashboard text-center d-flex flex-column justify-content-center">
-                <div class="card-title text-start w-100">Actions</div>
+                    <div class="timeline-container" id="shift-timeline"
+                        data-start="{% if assigned_shift %}{{ assigned_shift.start_time|time:'H:i' }}{% else %}09:00{% endif %}"
+                        data-end="{% if assigned_shift %}{{ assigned_shift.end_time|time:'H:i' }}{% else %}18:00{% endif %}">
+                        <div class="timeline-track">
+                            <div class="timeline-progress-bar" id="timeline-progress">
+                                <div class="timeline-dot-indicator"></div>
+                            </div>
+                        </div>
+                        <div class="timeline-nodes" style="height: 60px; position: relative;">
+                            {% for item in timeline_items %}
+                            <div class="t-node"
+                                style="position: absolute; left: {{ item.percent }}%; transform: translateX(-50%);">
+                                <div class="t-time">
+                                    {% if item.time|stringformat:"s" != "13:00" %}
+                                    {{ item.time|time:"H:i" }}
+                                    {% else %}
+                                    13:00
+                                    {% endif %}
+                                </div>
+                                <div class="t-dot {% if item.type == 'login' %}green{% else %}hollow{% endif %}"></div>
+                                <div class="t-label">
+                                    {{ item.label }}
+                                    {% if item.is_late %}
+                                    <span class="badge bg-danger rounded-pill"
+                                        style="font-size: 0.5rem; vertical-align: middle;">Late</span>
+                                    {% endif %}
+                                    {% if item.is_early %}
+                                    <span class="badge bg-warning text-dark rounded-pill"
+                                        style="font-size: 0.5rem; vertical-align: middle;">Early</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
 
-                <div id="clock" class="digital-clock">--:--:--</div>
-                <div id="date" class="date-display">--</div>
-
-                <div class="mt-2">
-                    {% if attendance and attendance.clock_in and not attendance.clock_out %}
-                    <button id="clock-btn" class="btn btn-clock btn-clock-out" onclick="handleClockAction('out')">Clock
-                        Out</button>
-                    <div class="mt-2 text-muted small">Remote Clock-in</div>
+                    {% if assigned_shift %}
+                    <div class="shift-footer">
+                        <!-- Grace Account Section Removed -->
+                        <div class="text-end">
+                            <div class="small fw-bold opacity-75" style="font-size: 0.65rem; letter-spacing: 0.05em;">
+                                STATUS</div>
+                            {% if assigned_shift %}
+                            <div class="fw-bold text-success">Active</div>
+                            {% else %}
+                            <div class="fw-bold text-muted">Default</div>
+                            {% endif %}
+                        </div>
+                    </div>
                     {% else %}
-                    <button id="clock-btn" class="btn btn-clock btn-clock-in" onclick="handleClockAction('in')">Clock
-                        In</button>
-                    <div class="mt-2 text-muted small">Web Clock-in</div>
+                    <div class="shift-footer">
+                        <div class="small opacity-75">No specific shift assigned. Using default company timings.</div>
+                    </div>
                     {% endif %}
                 </div>
 
-                <div class="mt-auto text-start w-100 pt-3 border-top">
-                    <a href="{% url 'policy' %}" class="text-decoration-none text-muted small">Attendance Policy</a>
+                <!-- Recent Activity Table -->
+                <div class="keka-card animate-enter delay-200">
+                    <div class="card-header-clean">
+                        <span class="card-title-text"><i class="fas fa-list text-muted"></i> Attendance Log</span>
+                        <a href="{% url 'attendance_report' %}"
+                            class="btn btn-sm btn-light text-primary fw-bold rounded-pill px-3">View All</a>
+                    </div>
+                    <div class="card-body-clean p-0">
+                        <div class="table-responsive">
+                            <table class="table-custom">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Check In</th>
+                                        <th>Check Out</th>
+                                        <th>Hours</th>
+                                        <th>Status</th>
+                                        <th>Map</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for att in attendance_history|slice:":5" %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold text-dark">{{ att.date|date:"d M" }}</div>
+                                            <div class="small text-muted">{{ att.date|date:"D" }}</div>
+                                        </td>
+                                        <td>
+                                            {% if att.clock_in %}
+                                            <div class="fw-bold text-dark">{{ att.clock_in|time:"h:i A" }}</div>
+                                            {% else %}<span class="text-muted">-</span>{% endif %}
+                                        </td>
+                                        <td>
+                                            {% if att.clock_out %}
+                                            <div class="fw-bold text-dark">{{ att.clock_out|time:"h:i A" }}</div>
+                                            {% else %}<span class="text-muted">-</span>{% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-secondary">{{ att.effective_hours|default:"-" }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if att.status == 'Absent' %}
+                                            <span class="status-badge status-absent">Absent</span>
+                                            {% else %}
+                                            <span class="status-badge status-present">Present</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if att.location_in or att.location_out %}
+                                            <a href="{% url 'attendance_map' att.id %}"
+                                                class="btn btn-sm btn-light text-primary rounded-circle"
+                                                style="width:32px;height:32px; display:flex;align-items:center;justify-content:center;"><i
+                                                    class="fas fa-map-marker-alt"></i></a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">No records found.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
+
             </div>
         </div>
+
+        <!-- Right Column: Info & Widgets -->
+        <div class="col-lg-3">
+            <div class="vstack gap-4">
+
+                <!-- Working Days (Calendar visual) -->
+                <div class="keka-card animate-enter delay-100">
+                    <div class="card-body-clean">
+                        <div class="text-label mb-3">This Week</div>
+                        <div class="week-days">
+                            <div class="day-badge">S</div>
+                            <div class="day-badge active">M</div>
+                            <div class="day-badge active">T</div>
+                            <div class="day-badge active">W</div>
+                            <div class="day-badge active">T</div>
+                            <div class="day-badge active">F</div>
+                            <div class="day-badge">S</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Announcements -->
+                <div class="keka-card animate-enter delay-200">
+                    <div class="card-header-clean">
+                        <span class="card-title-text">
+                            <span class="card-icon-soft warning"><i class="fas fa-bullhorn"></i></span>
+                            Announcements
+                        </span>
+                    </div>
+                    <div class="card-body-clean p-0">
+                        {% if announcements %}
+                        <div class="list-group list-group-flush">
+                            {% for ann in announcements %}
+                            <div class="list-group-item border-0 p-3 bg-transparent">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill"
+                                        style="font-size: 0.65rem;">New</span>
+                                    <small class="text-muted" style="font-size: 0.7rem;">{{ ann.created_at|date:"M d"
+                                        }}</small>
+                                </div>
+                                <div class="fw-bold text-dark small mb-1">{{ ann.title }}</div>
+                                <div class="text-muted small text-truncate">{{ ann.content }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="p-4 text-center text-muted small">No active announcements</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Celebrations -->
+                <div class="keka-card animate-enter delay-300">
+                    <div class="card-header-clean">
+                        <span class="card-title-text">
+                            <span class="card-icon-soft danger"><i class="fas fa-birthday-cake"></i></span>
+                            Celebrations
+                        </span>
+                    </div>
+                    <div class="card-body-clean">
+                        {% if birthdays or work_anniversaries %}
+                        {% for emp in birthdays %}
+                        <div class="celebration-item">
+                            <div class="celebration-avatar">{{ emp.user.first_name|first }}</div>
+                            <div class="lh-1">
+                                <div class="fw-bold text-dark small">{{ emp.user.get_full_name }}</div>
+                                <div class="text-muted" style="font-size: 0.7rem;">Birthday</div>
+                            </div>
+                            <div class="celebration-icon"><i class="fas fa-gift"></i></div>
+                        </div>
+                        {% endfor %}
+
+                        {% for emp in work_anniversaries %}
+                        <div class="celebration-item">
+                            <div class="celebration-avatar bg-warning bg-opacity-25 text-warning">{{
+                                emp.user.first_name|first }}</div>
+                            <div class="lh-1">
+                                <div class="fw-bold text-dark small">{{ emp.user.get_full_name }}</div>
+                                <div class="text-muted" style="font-size: 0.7rem;">Anniversary</div>
+                            </div>
+                            <div class="celebration-icon text-warning"><i class="fas fa-medal"></i></div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="text-center text-muted small py-2">No celebrations today.</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
     </div>
 
-    <!-- Bottom Section -->
-    <div class="mb-3 d-flex justify-content-between align-items-center">
-        <h5 class="fw-bold text-secondary">Current Status:
-            <span class="text-dark">
-                {% if attendance and attendance.clock_in and not attendance.clock_out %}In Office{% else %}Away{% endif %}
-            </span>
-        </h5>
-        <div class="btn-group">
-            <button class="btn btn-outline-secondary btn-sm active">30 Days</button>
-            <button class="btn btn-outline-secondary btn-sm">Jun</button>
-            <button class="btn btn-outline-secondary btn-sm">May</button>
+    {% if is_birthday or is_work_anniversary %}
+    <!-- Overlay -->
+    <div id="celebration-overlay">
+        <div class="text-center p-5 bg-white rounded-4 shadow-lg animate-enter" style="max-width: 500px;">
+            <div class="display-1 mb-3">🎉</div>
+            <h2 class="fw-bold text-primary mb-2">
+                {% if is_birthday %}Happy Birthday!{% elif is_work_anniversary %}Happy Anniversary!{% endif %}
+            </h2>
+            <h4 class="fw-bold text-dark mb-4">{{ request.user.first_name }}</h4>
+            <p class="text-muted mb-4">Wishing you a fantastic day filled with joy and success!</p>
+            <button class="btn btn-primary rounded-pill px-5 fw-bold"
+                onclick="document.getElementById('celebration-overlay').style.display='none'">Thank You!</button>
         </div>
     </div>
-
-    <div class="card card-dashboard p-0 overflow-hidden">
-        <table class="table table-hover table-log mb-0">
-            <thead class="bg-light">
-                <tr>
-                    <th class="ps-4 py-3">Date</th>
-                    <th class="py-3" style="width: 30%;">Attendance Visual</th>
-                    <th class="py-3">Effective Hours</th>
-                    <th class="py-3">Gross Hours</th>
-                    <th class="py-3">Arrival</th>
-                    <th class="py-3">Log</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for att in attendance_history %}
-                <tr>
-                    <td class="ps-4 fw-bold text-secondary">
-                        {{ att.date|date:"M d D" }}
-                        {% if att.status == 'Absent' %}<span class="status-badge bg-danger text-white">ABS</span>{% endif %}
-                        {% if not att.clock_in %}<span class="status-badge">GEN</span>{% endif %}
-                    </td>
-                    <td>
-                        <div class="attendance-visual-bar">
-                            <div class="attendance-visual-fill"
-                                style="width: {{ att.visual_width|default:0|floatformat:0 }}%;"></div>
-                        </div>
-                    </td>
-                    <td class="fw-bold">{{ att.effective_hours }} hrs</td>
-                    <td class="text-muted">{{ att.effective_hours }} hrs</td>
-                    <td class="text-success">{% if att.clock_in %}On Time{% else %}-{% endif %}</td>
-                    <td>
-                        {% if att.clock_in %}
-                        <div class="log-time"><i class="fas fa-sign-in-alt text-success me-1"></i> {{
-                            att.clock_in|time:"h:i A" }}</div>
-                        {% endif %}
-                        {% if att.clock_out %}
-                        <div class="log-time"><i class="fas fa-sign-out-alt text-danger me-1"></i> {{
-                            att.clock_out|time:"h:i A" }}</div>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="text-center py-4">No attendance records found.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    {% endif %}
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script>
+    // Clock
     function updateClock() {
         const now = new Date();
-        const timeString = now.toLocaleTimeString('en-US', { hour12: false });
-        const dateString = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+        const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        const dateString = now.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
 
         document.getElementById('clock').innerText = timeString;
-        document.getElementById('date').innerText = dateString;
-    }
+        document.getElementById('date-sub').innerText = dateString;
 
+        // Header Date
+        const headerDate = document.getElementById('header-date');
+        if (headerDate) headerDate.innerText = dateString;
+    }
     setInterval(updateClock, 1000);
     updateClock();
 
-    // Highlighting current day in existing DOM if static, usually done via template. 
-    // Just JS fix:
-    const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-    const currentDay = new Date().getDay();
-    const dayCircles = document.querySelectorAll('.day-circle');
-    dayCircles.forEach((circle, index) => {
-        if (index === currentDay) {
-            circle.classList.add('active');
-        } else {
-            circle.classList.remove('active');
+    // Stats Ring Animation
+    setTimeout(() => {
+        // Mock calculation for circle progress (Max 8hrs = 100%)
+        // stroke-dashoffset = 283 - (283 * percent / 100)
+        const avgHours = "{{ avg_hours|default:'00:00' }}"; // "HH:MM"
+        const [h, m] = avgHours.split(':').map(Number);
+        const decimalHours = h + (m / 60);
+        const percent = Math.min((decimalHours / 9) * 100, 100); // 9 hours usually max
+
+        const circle = document.getElementById('avg-progress');
+        if (circle) {
+            const offset = 283 - (283 * percent / 100);
+            circle.style.strokeDashoffset = offset;
         }
-    });
+    }, 500);
 
-    // Geolocation and Clocking
-    let locationInterval;
+    // Active Day Highlight
+    const currentDay = new Date().getDay(); // 0 = Sun, 1 = Mon...
+    const dayBadges = document.querySelectorAll('.day-badge');
+    if (dayBadges[currentDay]) {
+        dayBadges.forEach(b => b.classList.remove('active'));
+        dayBadges[currentDay].classList.add('active');
+    }
 
-    function handleClockAction(action) {
-        if (!navigator.geolocation) {
-            alert("Geolocation is not supported by this browser.");
-            return;
-        }
+    // Celebration Overlay
+    const isBirthdayRaw = "{{ is_birthday|yesno:'true,false' }}";
+    const isWorkAnniversaryRaw = "{{ is_work_anniversary|yesno:'true,false' }}";
+    const isBirthday = isBirthdayRaw === "true";
+    const isWorkAnniversary = isWorkAnniversaryRaw === "true";
 
-        const btn = document.getElementById('clock-btn');
-        const originalText = btn.innerText;
-        btn.innerText = "Processing...";
+    if (isBirthday || isWorkAnniversary) {
+        setTimeout(() => {
+            const ov = document.getElementById('celebration-overlay');
+            if (ov) {
+                ov.style.display = 'flex';
+                ov.offsetHeight;
+                ov.style.opacity = '1';
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            }
+        }, 1000);
+    }
+
+    // Live Timer for clocked in
+    {% if attendance.clock_in and not attendance.clock_out %}
+    const clockInTimeStr = "{{ attendance.clock_in|date:'Y-m-d H:i:s' }}";
+    // Parse Date safely (Safari/iOS compatibility often requires T or /)
+    // Assuming ISO format from Django often effectively works or use Date.parse
+    const clockInTime = new Date(clockInTimeStr.replace(' ', 'T'));
+
+    function updateDuration() {
+        if (!clockInTime) return;
+        const now = new Date();
+        const diff = now - clockInTime; // milliseconds
+
+        if (diff < 0) return; // Should not happen with server time sync, but safe guard
+
+        const seconds = Math.floor((diff / 1000) % 60);
+        const minutes = Math.floor((diff / (1000 * 60)) % 60);
+        const hours = Math.floor((diff / (1000 * 60 * 60)));
+
+        const formatted =
+            String(hours).padStart(2, '0') + ':' +
+            String(minutes).padStart(2, '0') + ':' +
+            String(seconds).padStart(2, '0');
+
+        const timerEl = document.getElementById('timer-display');
+        if (timerEl) timerEl.innerText = formatted;
+    }
+    setInterval(updateDuration, 1000);
+    updateDuration();
+    {% endif %}
+
+    // Clock Actions
+    function handleClockAction(action, type) {
+        if (!navigator.geolocation) { alert("Geolocation not supported."); return; }
+
+        // Get the button that was clicked
+        const btn = event ? event.currentTarget : document.querySelector('.btn-clock');
+        const origText = btn.innerHTML;
+        btn.innerHTML = '\u003ci class="fas fa-spinner fa-spin"\u003e\u003c/i\u003e';
         btn.disabled = true;
 
-        navigator.geolocation.getCurrentPosition((position) => {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
+        navigator.geolocation.getCurrentPosition((pos) => {
+            const requestData = {
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                type: type
+            };
 
-            const url = action === 'in' ? "{% url 'api_clock_in' %}" : "{% url 'api_clock_out' %}";
-
-            fetch(url, {
+            fetch(action === 'in' ? "{% url 'api_clock_in' %}" : "{% url 'api_clock_out' %}", {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}' // Add if not csrf_exempt, today it IS exempt, but good practice
-                },
-                body: JSON.stringify({ latitude: lat, longitude: lng })
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify(requestData)
             })
-                .then(response => response.json())
+                .then(r => r.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        location.reload(); // Reload to update UI state
-                    } else {
-                        alert("Error: " + data.message);
-                        btn.innerText = originalText;
+                        // Success Animation
+                        if (typeof confetti === 'function') {
+                            confetti({
+                                particleCount: 150,
+                                spread: 70,
+                                origin: { y: 0.6 },
+                                colors: ['#6366f1', '#10b981', '#f59e0b']
+                            });
+                        }
+
+                        // Show success message with a slight delay to see confetti
+                        setTimeout(() => {
+                            if (data.message) {
+                                alert(data.message);
+                            }
+                            location.reload();
+                        }, 1000);
+                    }
+                    else if (data.status === 'confirmation_required' || data.requires_confirmation) {
+                        // Show confirmation dialog for early clock-out
+                        const message = data.message || 'Your shift is not completed yet. Are you sure you want to clock out?';
+                        const details = data.worked_hours && data.expected_hours
+                            ? `\n\nWorked: ${data.worked_hours} hours\nExpected: ${data.expected_hours} hours\nCompletion: ${data.completion_percentage}%`
+                            : '';
+
+                        if (confirm(message + details)) {
+                            // User confirmed, send request with force_clockout flag
+                            fetch("{% url 'api_clock_out' %}", {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                                body: JSON.stringify({
+                                    latitude: pos.coords.latitude,
+                                    longitude: pos.coords.longitude,
+                                    force_clockout: true
+                                })
+                            })
+                                .then(r => r.json())
+                                .then(data2 => {
+                                    if (data2.status === 'success') {
+                                        if (data2.message) {
+                                            alert(data2.message);
+                                        }
+                                        location.reload();
+                                    } else {
+                                        alert(data2.message || 'Clock-out failed');
+                                        btn.innerHTML = origText;
+                                        btn.disabled = false;
+                                    }
+                                })
+                                .catch(() => {
+                                    alert("Network Error");
+                                    btn.innerHTML = origText;
+                                    btn.disabled = false;
+                                });
+                        } else {
+                            // User cancelled
+                            btn.innerHTML = origText;
+                            btn.disabled = false;
+                        }
+                    }
+                    else if (data.already_clocked_in) {
+                        // Handle duplicate clock-in attempt
+                        alert(data.message || 'You are already clocked in.');
+                        btn.innerHTML = origText;
+                        btn.disabled = false;
+                    }
+                    else {
+                        // Other errors
+                        alert(data.message || 'An error occurred');
+                        btn.innerHTML = origText;
                         btn.disabled = false;
                     }
                 })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert("An error occurred.");
-                    btn.innerText = originalText;
+                .catch(() => {
+                    alert("Network Error");
+                    btn.innerHTML = origText;
                     btn.disabled = false;
                 });
-
-        }, (error) => {
-            alert("Unable to retrieve location. Please allow location access.");
-            btn.innerText = originalText;
+        }, (err) => {
+            console.error(err);
+            if (err.code === 1) {
+                alert("Location access denied. Please enable location permissions to clock in.");
+            } else if (err.code === 2) {
+                alert("Location unavailable. Please try again.");
+            } else if (err.code === 3) {
+                alert("Location request timed out. Please try again.");
+            } else {
+                alert("Error getting location: " + err.message);
+            }
+            btn.innerHTML = origText;
             btn.disabled = false;
+        }, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
         });
     }
 
-    // Periodic Location Tracking (Every 1 hour = 3600000 ms)
-    // Only if clocked in
-    {% if attendance and attendance.clock_in and not attendance.clock_out %}
-    setInterval(() => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition((position) => {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
+    // Timeline Animation
+    function updateTimelinePosition() {
+        const container = document.getElementById('shift-timeline');
+        if (!container) return;
+
+        const startTimeStr = container.getAttribute('data-start'); // "HH:MM"
+        const endTimeStr = container.getAttribute('data-end');     // "HH:MM"
+        const progressBar = document.getElementById('timeline-progress');
+
+        const now = new Date();
+        const currentTotalMinutes = (now.getHours() * 60) + now.getMinutes();
+
+        const [startH, startM] = startTimeStr.split(':').map(Number);
+        const [endH, endM] = endTimeStr.split(':').map(Number);
+
+        const startTotalMinutes = (startH * 60) + startM;
+        const endTotalMinutes = (endH * 60) + endM;
+
+        let totalDuration = endTotalMinutes - startTotalMinutes;
+        if (totalDuration <= 0) totalDuration = 24 * 60; // Handle cross-midnight
+
+        let elapsed = currentTotalMinutes - startTotalMinutes;
+        let percent = (elapsed / totalDuration) * 100;
+
+        // Clamp
+        if (percent < 0) percent = 0;
+        if (percent > 100) percent = 100;
+
+        if (progressBar) {
+            progressBar.style.width = percent + '%';
+        }
+    }
+
+    setInterval(updateTimelinePosition, 60000); // Every minute
+    updateTimelinePosition(); // Run immediately
+
+    // --- Location Tracking Service ---
+    {% if attendance.clock_in and not attendance.clock_out %}
+    (function () {
+        let trackingInterval;
+        const ONE_HOUR_MS = 3600000; // 1 hour
+        // const ONE_HOUR_MS = 60000; // Debug: 1 minute
+
+        // Reuse clockInTime from existing script or re-parse
+        const clockInStr = "{{ attendance.clock_in|date:'Y-m-d H:i:s' }}";
+        // Create Date object (safely handling Django default string format)
+        // Note: Ideally use ISO format from view, but this usually works in modern browsers
+        // or we rely on the previously defined clockInTime if available in scope.
+        let loginTime = new Date(clockInStr.replace(' ', 'T'));
+        if (isNaN(loginTime.getTime())) {
+            // Fallback
+            loginTime = new Date();
+        }
+
+        function sendLocationUpdate() {
+            if (!navigator.geolocation) return;
+
+            console.log("📍 Triggering scheduled location update...");
+            navigator.geolocation.getCurrentPosition((pos) => {
+                const data = {
+                    latitude: pos.coords.latitude,
+                    longitude: pos.coords.longitude
+                };
 
                 fetch("{% url 'api_update_location' %}", {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ latitude: lat, longitude: lng })
-                }); // Silent update
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                    body: JSON.stringify(data)
+                })
+                    .then(r => r.json())
+                    .then(res => {
+                        console.log("✅ Location synced:", res);
+                        if (res.status === 'tracking_stopped' || res.location_tracking_active === false) {
+                            console.log("🛑 Tracking stopped by server rule.");
+                            if (trackingInterval) clearInterval(trackingInterval);
+                        }
+                    })
+                    .catch(err => console.error("❌ Tracking sync error:", err));
+
+            }, (err) => {
+                console.warn("⚠️ Location access failed:", err.message);
+            }, {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
             });
         }
-    }, 3600000);
+
+        // Calculate time until next hour mark relative to login
+        const now = new Date();
+        const elapsedMs = now - loginTime;
+
+        // If elapsed is negative (clock drift), treat as 0
+        const safeElapsed = Math.max(0, elapsedMs);
+
+        // Calculate delay to next hour
+        const msUntilNextHour = ONE_HOUR_MS - (safeElapsed % ONE_HOUR_MS);
+
+        console.log(`⏱️ Tracking Service: Login at ${loginTime.toLocaleTimeString()}. Next update in ${Math.round(msUntilNextHour / 60000)} mins.`);
+
+        // Schedule first run
+        setTimeout(() => {
+            sendLocationUpdate();
+            // Then start interval
+            trackingInterval = setInterval(sendLocationUpdate, ONE_HOUR_MS);
+        }, msUntilNextHour);
+
+    })();
     {% endif %}
+    // 3D Tilt Effect for Shift Card
+    const card = document.querySelector('.shift-card');
+    if (card) {
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+
+            const rotateX = ((y - centerY) / centerY) * -5;
+            const rotateY = ((x - centerX) / centerX) * 5;
+
+            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+        });
+
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
+        });
+    }
+
+    // Staggered Week Days Animation
+    const badges = document.querySelectorAll('.day-badge');
+    badges.forEach((badge, index) => {
+        badge.style.opacity = '0';
+        badge.style.transform = 'translateY(10px)';
+        badge.style.transition = 'all 0.3s ease-out';
+        setTimeout(() => {
+            badge.style.opacity = '1';
+            badge.style.transform = 'translateY(0)';
+        }, 500 + (index * 100)); // Start after initial load 500ms
+    });
+
+    // Pulse Effect for Active Day (CSS handled)
+
 </script>
 {% endblock %}

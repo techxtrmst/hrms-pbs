@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Probation Completion - Congratulations!</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px 30px;
+            text-align: center;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .trophy-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .header h1 {
+            color: #ffffff;
+            font-size: 32px;
+            margin: 0;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .content {
+            background: #ffffff;
+            padding: 40px 30px;
+        }
+
+        .greeting {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .message {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #555;
+            margin-bottom: 30px;
+        }
+
+        .milestone-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 30px 0;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .milestone-box h2 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .milestone-box p {
+            margin: 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .benefits {
+            background: #f8f9ff;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 25px 0;
+            border-left: 5px solid #667eea;
+        }
+
+        .benefits h3 {
+            color: #667eea;
+            margin-top: 0;
+            font-size: 20px;
+        }
+
+        .benefits ul {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+
+        .benefits li {
+            color: #555;
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .footer {
+            background: #f8f9ff;
+            padding: 30px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .company-name {
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        .congrats-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            color: #333;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-weight: 700;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="trophy-icon">🏆</div>
+            <h1>Congratulations!</h1>
+        </div>
+
+        <div class="content">
+            <div class="greeting">
+                Dear {{ employee_name }},
+            </div>
+
+            <div class="message">
+                We are delighted to inform you that you have successfully completed your <strong>3-month probation
+                    period</strong> with {{ company_name }}!
+            </div>
+
+            <div class="milestone-box">
+                <h2>🎉 Welcome to the Team!</h2>
+                <p>You are now a <strong>Full-Time Employee</strong></p>
+            </div>
+
+            <div class="message">
+                Your dedication, hard work, and contributions over the past three months have been exceptional. We are
+                thrilled to have you as a permanent member of our team.
+            </div>
+
+            <div class="benefits">
+                <h3>✨ What This Means for You:</h3>
+                <ul>
+                    <li>✅ <strong>Full-time employment status</strong> confirmed</li>
+                    <li>✅ Access to all <strong>company benefits</strong> and perks</li>
+                    <li>✅ Eligibility for <strong>performance bonuses</strong></li>
+                    <li>✅ <strong>Leave entitlements</strong> now fully active</li>
+                    <li>✅ Participation in <strong>training and development</strong> programs</li>
+                </ul>
+            </div>
+
+            <div class="message">
+                We look forward to your continued success and growth with <span class="company-name">{{ company_name
+                    }}</span>. Thank you for being an integral part of our journey!
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <div class="congrats-badge">
+                    🌟 Congratulations on Your Achievement! 🌟
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p><strong>Best Regards,</strong></p>
+            <p class="company-name">{{ company_name }} HR Team</p>
+            <p style="margin-top: 20px; font-size: 12px; color: #999;">
+                This is an automated notification. For any queries, please contact HR.
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>

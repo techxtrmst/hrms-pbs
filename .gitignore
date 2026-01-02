@@ -1,12 +1,63 @@
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.pyc
+
+# Django
 *.sqlite3
-.env
-venv/
-env/
-.idea/
-.vscode/
-.DS_Store
+*.log
+db.sqlite3
+db.sqlite3-journal
 media/
 staticfiles/
+static_root/
+*.pot
+
+# Environment
+.env
+.env.local
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backup files
+*.bak
+*.backup
+*.html.bak
+
+# Migrations (optional - uncomment if you don't want to track migrations)
+# */migrations/*.py
+# !*/migrations/__init__.py
+
+# Sensitive data
+*.pem
+*.key
+*.cert
+
+# Logs
+*.log
+logs/
+sent_emails/

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Anniversary Celebration</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #ffffff;
+            font-size: 36px;
+            margin: 0 0 10px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .header .emoji {
+            font-size: 60px;
+            margin-bottom: 10px;
+        }
+
+        .anniversary-badge {
+            background: rgba(255, 255, 255, 0.9);
+            color: #f5576c;
+            padding: 15px 30px;
+            border-radius: 50px;
+            display: inline-block;
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .content {
+            background: #ffffff;
+            padding: 40px 30px;
+        }
+
+        .content h2 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .content p {
+            color: #555;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .highlight {
+            color: #f5576c;
+            font-weight: bold;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+        }
+
+        .company-logo {
+            margin-top: 15px;
+            color: #f5576c;
+            font-weight: bold;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="emoji">🎊🏆✨</div>
+            <h1>Congratulations!</h1>
+            <div class="anniversary-badge">{{ years_of_service }} Year{{ years_of_service|pluralize }} with Us!</div>
+        </div>
+        <div class="content">
+            <h2>Dear {{ employee_name }},</h2>
+            <p>
+                Today marks a significant milestone – you've completed <span class="highlight">{{ years_of_service }}
+                    wonderful year{{ years_of_service|pluralize }}</span> with <span class="highlight">{{ company_name
+                    }}</span>! 🎉
+            </p>
+            <p>
+                Your dedication, hard work, and contributions have been invaluable to our team.
+                We truly appreciate everything you do and the positive impact you've made on our organization.
+            </p>
+            <p>
+                Thank you for your commitment, professionalism, and for being an integral part of our success story.
+                Here's to many more years of growth and achievements together!
+            </p>
+            <p style="margin-top: 30px;">
+                <strong>With gratitude and best wishes,</strong><br>
+                HR Team<br>
+                {{ company_name }}
+            </p>
+        </div>
+        <div class="footer">
+            <p>This is an automated work anniversary greeting from your HR department.</p>
+            <div class="company-logo">{{ company_name }}</div>
+        </div>
+    </div>
+</body>
+
+</html>

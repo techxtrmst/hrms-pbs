@@ -1,0 +1,173 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Employees - SuperAdmin{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'superadmin/css/superadmin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="superadmin-container">
+    <!-- Breadcrumb -->
+    <nav class="sa-breadcrumb">
+        <a href="{% url 'superadmin:dashboard' %}" class="sa-breadcrumb-item">
+            <i class="fas fa-home"></i> Dashboard
+        </a>
+        <span class="sa-breadcrumb-separator">/</span>
+        <span class="sa-breadcrumb-item active">Employees</span>
+    </nav>
+
+    <!-- Header -->
+    <div class="sa-header d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="sa-header-title">All Employees</h1>
+            <p class="sa-header-subtitle">
+                {% if selected_company %}
+                {{ total_count }} employees in {{ selected_company.name }}
+                {% else %}
+                {{ total_count }} employees across all companies
+                {% endif %}
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'superadmin:export_data' 'employees' %}{% if selected_company_id %}?company_id={{ selected_company_id }}{% endif %}"
+                class="sa-btn-export">
+                <i class="fas fa-download"></i>
+                <span>Export CSV</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="mb-4 d-flex gap-3">
+        <select class="form-select" id="companyFilter" style="max-width: 300px;">
+            <option value="">All Companies</option>
+            {% for company in companies %}
+            <option value="{{ company.id }}" {% if selected_company_id == company.id %}selected{% endif %}>
+                {{ company.name }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <form method="get" class="d-flex gap-2 flex-grow-1">
+            {% if selected_company_id %}
+            <input type="hidden" name="company_id" value="{{ selected_company_id }}">
+            {% endif %}
+            <input type="text" name="search" class="form-control" placeholder="Search by name, email, department..."
+                value="{{ search_query }}">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i> Search
+            </button>
+        </form>
+    </div>
+
+    <!-- Employees Table -->
+    <div class="sa-table-container">
+        <div class="table-responsive">
+            <table class="sa-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Company</th>
+                        <th>Department</th>
+                        <th>Designation</th>
+                        <th>Join Date</th>
+                        <th>Manager</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp in employees %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if emp.profile_picture %}
+                                <img src="{{ emp.profile_picture.url }}" alt="{{ emp.user.get_full_name }}"
+                                    class="rounded-circle me-2" style="width: 36px; height: 36px; object-fit: cover;">
+                                {% else %}
+                                <img src="https://ui-avatars.com/api/?name={{ emp.user.get_full_name|urlencode }}&background=6366f1&color=fff"
+                                    class="rounded-circle me-2" style="width: 36px; height: 36px;">
+                                {% endif %}
+                                <div>
+                                    <strong>{{ emp.user.get_full_name }}</strong>
+                                    <div class="small text-muted">{{ emp.user.email }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ emp.company.name }}</td>
+                        <td>{{ emp.department }}</td>
+                        <td>{{ emp.designation }}</td>
+                        <td>{{ emp.date_of_joining|date:"M d, Y"|default:"-" }}</td>
+                        <td>
+                            {% if emp.manager %}
+                            {{ emp.manager.get_full_name }}
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if emp.user.is_active %}
+                            <span class="sa-badge success">Active</span>
+                            {% else %}
+                            <span class="sa-badge danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            No employees found
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if employees.has_other_pages %}
+    <div class="d-flex justify-content-center mt-4">
+        <nav>
+            <ul class="pagination">
+                {% if employees.has_previous %}
+                <li class="page-item">
+                    <a class="page-link"
+                        href="?page={{ employees.previous_page_number }}{% if selected_company_id %}&company_id={{ selected_company_id }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                        Previous
+                    </a>
+                </li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link">Page {{ employees.number }} of {{ employees.paginator.num_pages }}</span>
+                </li>
+
+                {% if employees.has_next %}
+                <li class="page-item">
+                    <a class="page-link"
+                        href="?page={{ employees.next_page_number }}{% if selected_company_id %}&company_id={{ selected_company_id }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                        Next
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    document.getElementById('companyFilter').addEventListener('change', function () {
+        const companyId = this.value;
+        const url = new URL(window.location.href);
+        if (companyId) {
+            url.searchParams.set('company_id', companyId);
+        } else {
+            url.searchParams.delete('company_id');
+        }
+        window.location.href = url.toString();
+    });
+</script>
+{% endblock %}

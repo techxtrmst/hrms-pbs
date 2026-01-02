@@ -1,0 +1,155 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Attendance Today - SuperAdmin{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'superadmin/css/superadmin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="superadmin-container">
+    <!-- Breadcrumb -->
+    <nav class="sa-breadcrumb">
+        <a href="{% url 'superadmin:dashboard' %}" class="sa-breadcrumb-item">
+            <i class="fas fa-home"></i> Dashboard
+        </a>
+        <span class="sa-breadcrumb-separator">/</span>
+        <span class="sa-breadcrumb-item active">Attendance Today</span>
+    </nav>
+
+    <!-- Header -->
+    <div class="sa-header d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="sa-header-title">Attendance Today</h1>
+            <p class="sa-header-subtitle">{{ today|date:"l, F d, Y" }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'superadmin:export_data' 'attendance' %}{% if selected_company_id %}?company_id={{ selected_company_id }}{% endif %}"
+                class="sa-btn-export">
+                <i class="fas fa-download"></i>
+                <span>Export CSV</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Company Filter -->
+    <div class="mb-4">
+        <select class="form-select" id="companyFilter" style="max-width: 300px;">
+            <option value="">All Companies</option>
+            {% for company in companies %}
+            <option value="{{ company.id }}" {% if selected_company_id == company.id %}selected{% endif %}>
+                {{ company.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Attendance Table -->
+    <div class="sa-table-container">
+        <div class="table-responsive">
+            <table class="sa-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Company</th>
+                        <th>Clock In</th>
+                        <th>Clock Out</th>
+                        <th>Shift</th>
+                        <th>Hours</th>
+                        <th>Status</th>
+                        <th>Location</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for att in attendance_records %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if att.employee.profile_picture %}
+                                <img src="{{ att.employee.profile_picture.url }}"
+                                    alt="{{ att.employee.user.get_full_name }}" class="rounded-circle me-2"
+                                    style="width: 32px; height: 32px; object-fit: cover;">
+                                {% else %}
+                                <img src="https://ui-avatars.com/api/?name={{ att.employee.user.get_full_name|urlencode }}&background=10b981&color=fff"
+                                    class="rounded-circle me-2" style="width: 32px; height: 32px;">
+                                {% endif %}
+                                <strong>{{ att.employee.user.get_full_name }}</strong>
+                            </div>
+                        </td>
+                        <td>{{ att.employee.company.name }}</td>
+                        <td>
+                            <strong>{{ att.clock_in|date:"h:i A" }}</strong>
+                            {% if att.is_late %}
+                            <span class="sa-badge danger ms-2">
+                                <i class="fas fa-exclamation-triangle"></i> Late
+                            </span>
+                            {% elif att.is_grace_used %}
+                            <span class="sa-badge warning ms-2">
+                                <i class="fas fa-clock"></i> Grace
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if att.clock_out %}
+                            {{ att.clock_out|date:"h:i A" }}
+                            {% if att.is_early_departure %}
+                            <span class="sa-badge warning ms-2">
+                                <i class="fas fa-sign-out-alt"></i> Early
+                            </span>
+                            {% endif %}
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if att.employee.assigned_shift %}
+                            {{ att.employee.assigned_shift.name }}
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td><strong>{{ att.effective_hours }}</strong></td>
+                        <td>
+                            <span class="sa-badge success">
+                                <i class="fas fa-check-circle"></i> {{ att.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if att.location_in %}
+                            <a href="https://www.google.com/maps?q={{ att.location_in }}" target="_blank"
+                                class="text-decoration-none">
+                                <i class="fas fa-map-marker-alt text-primary"></i> View
+                            </a>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="fas fa-calendar-times fa-3x mb-3 d-block" style="opacity: 0.3;"></i>
+                            No attendance records for today
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('companyFilter').addEventListener('change', function () {
+        const companyId = this.value;
+        const url = new URL(window.location.href);
+        if (companyId) {
+            url.searchParams.set('company_id', companyId);
+        } else {
+            url.searchParams.delete('company_id');
+        }
+        window.location.href = url.toString();
+    });
+</script>
+{% endblock %}

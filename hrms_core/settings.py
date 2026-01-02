@@ -25,7 +25,17 @@ SECRET_KEY = "django-insecure-)11e40%=qcfj91=%r$1m^c0t(%ob#kvkkzw4f8*6o6n9-n7w9&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'petabytz.com',
+    'www.petabytz.com',
+    'bluebix.com',
+    'www.bluebix.com',
+    'softstandard.com',
+    'www.softstandard.com',
+    '*',  # For development - remove in production
+]
 
 
 # Application definition
@@ -46,7 +56,9 @@ INSTALLED_APPS = [
     "companies",
     "accounts",
     "employees",
-    "core",
+    "core.apps.CoreConfig",  # Changed to use AppConfig for signal handling
+    "superadmin",
+    "ai_assistant",  # AI-powered features
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -127,7 +139,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Kolkata"
 
 USE_I18N = True
 
@@ -139,7 +151,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
-MEDIA_URL = "media/"
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 AUTH_USER_MODEL = "accounts.User"
@@ -171,3 +183,19 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
+# Email Configuration for Birthday/Anniversary Notifications
+# Using Petabytz Office 365 Account
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.office365.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+EMAIL_HOST_USER = 'hrms@petabytz.com'
+EMAIL_HOST_PASSWORD = 'Rminds@0007'
+DEFAULT_FROM_EMAIL = 'Petabytz HR <hrms@petabytz.com>'
+SERVER_EMAIL = 'hrms@petabytz.com'
+
+# reload
+# reload2
+# reload3
+# reload4

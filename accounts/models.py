@@ -4,6 +4,7 @@ from companies.models import Company
 
 class User(AbstractUser):
     class Role(models.TextChoices):
+        SUPERADMIN = "SUPERADMIN", "Super Admin"
         COMPANY_ADMIN = "COMPANY_ADMIN", "Company Admin"
         MANAGER = "MANAGER", "Manager"
         EMPLOYEE = "EMPLOYEE", "Employee"

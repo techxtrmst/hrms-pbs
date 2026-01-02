@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Leave Request Notification</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f6f8fb;
+            margin: 0;
+            padding: 0;
+            color: #4a5568;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        .header {
+            background-color: #ffffff;
+            padding: 40px 40px 10px;
+            text-align: left;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .header h1 {
+            color: #2d3748;
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0 0 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background-color: #ebf8ff;
+            color: #3182ce;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .intro {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            color: #4a5568;
+        }
+
+        .details-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 30px;
+        }
+
+        .details-table td {
+            padding: 12px 0;
+            border-bottom: 1px solid #edf2f7;
+            font-size: 15px;
+        }
+
+        .details-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .label {
+            color: #718096;
+            width: 40%;
+            font-weight: 500;
+        }
+
+        .value {
+            color: #2d3748;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .reason-box {
+            background-color: #f7fafc;
+            border-left: 4px solid #4fd1c5;
+            padding: 20px;
+            margin-top: 10px;
+            border-radius: 6px;
+        }
+
+        .reason-label {
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: #718096;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .reason-text {
+            color: #2d3748;
+            font-size: 15px;
+            margin: 0;
+            font-style: italic;
+            line-height: 1.5;
+        }
+
+        .action-area {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #edf2f7;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            padding: 14px 32px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .footer {
+            background-color: #f8fafc;
+            padding: 25px;
+            text-align: center;
+            font-size: 13px;
+            color: #a0aec0;
+            border-top: 1px solid #edf2f7;
+        }
+
+        p {
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <span class="status-badge">New Request</span>
+            <h1>Leave Application</h1>
+        </div>
+
+        <div class="content">
+            <p class="intro">
+                <strong>{{ employee_name }}</strong> has submitted a new leave request for your review.
+            </p>
+
+            <table class="details-table">
+                <tr>
+                    <td class="label">Employee ID</td>
+                    <td class="value">{{ employee_id }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Department</td>
+                    <td class="value">{{ department }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Leave Type</td>
+                    <td class="value">{{ leave_type }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Date Range</td>
+                    <td class="value">{{ start_date }} - {{ end_date }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Total Duration</td>
+                    <td class="value">{{ total_days }} Days ({{ duration }})</td>
+                </tr>
+            </table>
+
+            {% if reason %}
+            <div class="reason-box">
+                <div class="reason-label">Reason</div>
+                <p class="reason-text">"{{ reason }}"</p>
+            </div>
+            {% endif %}
+
+            <div class="action-area">
+                <a href="#" class="cta-button">Review Request</a>
+                <p style="margin-top: 15px; font-size: 13px; color: #a0aec0;">Log in to the HRMS portal to take action.
+                </p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Sent via {{ company_name }} HRMS</p>
+            <p style="margin-top: 5px;">&copy; {% now "Y" %} {{ company_name }}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+
+</html>

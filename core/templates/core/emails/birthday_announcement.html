@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Birthday Announcement</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            text-align: center;
+            color: #ffffff;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin: 0 0 10px 0;
+        }
+
+        .header .emoji {
+            font-size: 50px;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .content p {
+            color: #555;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .employee-card {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 8px;
+        }
+
+        .employee-card .name {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .employee-card .department {
+            color: #667eea;
+            font-size: 16px;
+        }
+
+        .cta {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .cta p {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="emoji">🎂🎉</div>
+            <h1>Birthday Celebration!</h1>
+        </div>
+        <div class="content">
+            <p>Hello Team,</p>
+            <p>
+                Let's all join together to wish a very Happy Birthday to our wonderful colleague!
+            </p>
+
+            <div class="employee-card">
+                <div class="name">{{ employee_name }}</div>
+                <div class="department">{{ department }} | {{ designation }}</div>
+            </div>
+
+            <div class="cta">
+                <p>🎈 Let's make their day special! 🎈</p>
+            </div>
+
+            <p>
+                Please take a moment to wish {{ employee_first_name }} a happy birthday and make their day even more
+                special!
+            </p>
+        </div>
+        <div class="footer">
+            <p>{{ company_name }} - HR Team</p>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,625 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}ID Proofs - {{ employee.user.get_full_name }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    * {
+        font-family: 'Inter', sans-serif;
+    }
+
+    .id-proofs-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    /* Header Section */
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+        border-radius: 16px;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+    }
+
+    .page-header h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .employee-info {
+        font-size: 0.95rem;
+        opacity: 0.95;
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+
+    .employee-info span {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    /* ID Proof Cards */
+    .id-proofs-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .id-proof-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s;
+        border: 2px solid #f1f5f9;
+    }
+
+    .id-proof-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        border-color: #667eea;
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    .card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .card-title i {
+        color: #667eea;
+        font-size: 1.25rem;
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .status-uploaded {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .proof-image-container {
+        position: relative;
+        width: 100%;
+        height: 250px;
+        background: #f8fafc;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 1rem;
+        border: 2px dashed #cbd5e1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .proof-image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        cursor: pointer;
+        transition: transform 0.3s;
+    }
+
+    .proof-image-container img:hover {
+        transform: scale(1.05);
+    }
+
+    .no-image-placeholder {
+        text-align: center;
+        color: #94a3b8;
+    }
+
+    .no-image-placeholder i {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+        opacity: 0.5;
+    }
+
+    .no-image-placeholder p {
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    /* Action Buttons */
+    .card-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-upload,
+    .btn-delete,
+    .btn-view {
+        padding: 0.6rem 1.25rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .btn-upload {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-upload:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+
+    .btn-delete {
+        background: #fee2e2;
+        color: #dc2626;
+        border: 1px solid #fecaca;
+    }
+
+    .btn-delete:hover {
+        background: #dc2626;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .btn-view {
+        background: #e0f2fe;
+        color: #0284c7;
+        border: 1px solid #bae6fd;
+    }
+
+    .btn-view:hover {
+        background: #0284c7;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .btn-back {
+        background: white;
+        color: #64748b;
+        padding: 0.6rem 1.25rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border: 2px solid #e2e8f0;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        margin-bottom: 2rem;
+    }
+
+    .btn-back:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        color: #475569;
+        transform: translateX(-5px);
+    }
+
+    /* Upload Form */
+    .upload-form {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 2rem;
+        border: 2px solid #f1f5f9;
+    }
+
+    .upload-form h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .upload-form h3 i {
+        color: #667eea;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .form-group input[type="file"] {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px dashed #cbd5e1;
+        border-radius: 8px;
+        background: #f8fafc;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .form-group input[type="file"]:hover {
+        border-color: #667eea;
+        background: #f0f9ff;
+    }
+
+    .help-text {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-top: 0.25rem;
+    }
+
+    /* Image Modal */
+    .image-modal {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        justify-content: center;
+        align-items: center;
+    }
+
+    .image-modal img {
+        max-width: 90%;
+        max-height: 90%;
+        border-radius: 8px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-close {
+        position: absolute;
+        top: 2rem;
+        right: 2rem;
+        color: white;
+        font-size: 2rem;
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.1);
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+    }
+
+    .modal-close:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: rotate(90deg);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .id-proofs-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .employee-info {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+    }
+
+    /* Info Alert */
+    .info-alert {
+        background: #e0f2fe;
+        border: 2px solid #bae6fd;
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 2rem;
+        color: #0c4a6e;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .info-alert i {
+        font-size: 1.25rem;
+        margin-top: 0.1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="id-proofs-container">
+    <!-- Back Button -->
+    <a href="{% url 'employee_detail' employee.pk %}" class="btn-back">
+        <i class="fas fa-arrow-left"></i> Back to Employee Details
+    </a>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1>
+            <i class="fas fa-id-card"></i>
+            ID Proof Documents
+        </h1>
+        <div class="employee-info">
+            <span><i class="fas fa-user"></i> {{ employee.user.get_full_name }}</span>
+            <span><i class="fas fa-envelope"></i> {{ employee.user.email }}</span>
+            <span><i class="fas fa-building"></i> {{ employee.department|default:"N/A" }}</span>
+            <span><i class="fas fa-briefcase"></i> {{ employee.designation|default:"N/A" }}</span>
+        </div>
+    </div>
+
+    <!-- Info Alert -->
+    {% if not is_admin %}
+    <div class="info-alert">
+        <i class="fas fa-info-circle"></i>
+        <div>
+            <strong>Note:</strong> You can upload ID proofs only if they haven't been uploaded yet. Once uploaded, only
+            administrators can edit or delete them.
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Upload Form -->
+    {% if is_admin or not id_proofs.aadhar_front or not id_proofs.aadhar_back or not id_proofs.pan_card %}
+    <div class="upload-form">
+        <h3><i class="fas fa-cloud-upload-alt"></i> Upload ID Proofs</h3>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="upload">
+
+            <div class="form-group">
+                <label for="aadhar_front">
+                    <i class="fas fa-id-card"></i> Aadhar Card (Front)
+                </label>
+                <input type="file" id="aadhar_front" name="aadhar_front" accept="image/*">
+                <p class="help-text">Upload a clear image of the front side of your Aadhar card</p>
+            </div>
+
+            <div class="form-group">
+                <label for="aadhar_back">
+                    <i class="fas fa-id-card"></i> Aadhar Card (Back)
+                </label>
+                <input type="file" id="aadhar_back" name="aadhar_back" accept="image/*">
+                <p class="help-text">Upload a clear image of the back side of your Aadhar card</p>
+            </div>
+
+            <div class="form-group">
+                <label for="pan_card">
+                    <i class="fas fa-credit-card"></i> PAN Card
+                </label>
+                <input type="file" id="pan_card" name="pan_card" accept="image/*">
+                <p class="help-text">Upload a clear image of your PAN card</p>
+            </div>
+
+            <button type="submit" class="btn-upload">
+                <i class="fas fa-upload"></i> Upload Documents
+            </button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- ID Proofs Grid -->
+    <div class="id-proofs-grid">
+        <!-- Aadhar Front -->
+        <div class="id-proof-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-id-card"></i>
+                    Aadhar Card (Front)
+                </div>
+                {% if id_proofs.aadhar_front %}
+                <span class="status-badge status-uploaded">
+                    <i class="fas fa-check-circle"></i> Uploaded
+                </span>
+                {% else %}
+                <span class="status-badge status-pending">
+                    <i class="fas fa-clock"></i> Pending
+                </span>
+                {% endif %}
+            </div>
+
+            <div class="proof-image-container">
+                {% if id_proofs.aadhar_front %}
+                <img src="{{ id_proofs.aadhar_front.url }}" alt="Aadhar Front" onclick="openImageModal(this.src)">
+                {% else %}
+                <div class="no-image-placeholder">
+                    <i class="fas fa-image"></i>
+                    <p>No document uploaded</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="card-actions">
+                {% if id_proofs.aadhar_front %}
+                <a href="{{ id_proofs.aadhar_front.url }}" target="_blank" class="btn-view">
+                    <i class="fas fa-eye"></i> View Full Size
+                </a>
+                {% if is_admin %}
+                <form method="post" style="display: inline;"
+                    onsubmit="return confirm('Are you sure you want to delete this document?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="delete_type" value="aadhar_front">
+                    <button type="submit" class="btn-delete">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </form>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Aadhar Back -->
+        <div class="id-proof-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-id-card"></i>
+                    Aadhar Card (Back)
+                </div>
+                {% if id_proofs.aadhar_back %}
+                <span class="status-badge status-uploaded">
+                    <i class="fas fa-check-circle"></i> Uploaded
+                </span>
+                {% else %}
+                <span class="status-badge status-pending">
+                    <i class="fas fa-clock"></i> Pending
+                </span>
+                {% endif %}
+            </div>
+
+            <div class="proof-image-container">
+                {% if id_proofs.aadhar_back %}
+                <img src="{{ id_proofs.aadhar_back.url }}" alt="Aadhar Back" onclick="openImageModal(this.src)">
+                {% else %}
+                <div class="no-image-placeholder">
+                    <i class="fas fa-image"></i>
+                    <p>No document uploaded</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="card-actions">
+                {% if id_proofs.aadhar_back %}
+                <a href="{{ id_proofs.aadhar_back.url }}" target="_blank" class="btn-view">
+                    <i class="fas fa-eye"></i> View Full Size
+                </a>
+                {% if is_admin %}
+                <form method="post" style="display: inline;"
+                    onsubmit="return confirm('Are you sure you want to delete this document?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="delete_type" value="aadhar_back">
+                    <button type="submit" class="btn-delete">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </form>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- PAN Card -->
+        <div class="id-proof-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-credit-card"></i>
+                    PAN Card
+                </div>
+                {% if id_proofs.pan_card %}
+                <span class="status-badge status-uploaded">
+                    <i class="fas fa-check-circle"></i> Uploaded
+                </span>
+                {% else %}
+                <span class="status-badge status-pending">
+                    <i class="fas fa-clock"></i> Pending
+                </span>
+                {% endif %}
+            </div>
+
+            <div class="proof-image-container">
+                {% if id_proofs.pan_card %}
+                <img src="{{ id_proofs.pan_card.url }}" alt="PAN Card" onclick="openImageModal(this.src)">
+                {% else %}
+                <div class="no-image-placeholder">
+                    <i class="fas fa-image"></i>
+                    <p>No document uploaded</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="card-actions">
+                {% if id_proofs.pan_card %}
+                <a href="{{ id_proofs.pan_card.url }}" target="_blank" class="btn-view">
+                    <i class="fas fa-eye"></i> View Full Size
+                </a>
+                {% if is_admin %}
+                <form method="post" style="display: inline;"
+                    onsubmit="return confirm('Are you sure you want to delete this document?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="delete_type" value="pan_card">
+                    <button type="submit" class="btn-delete">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </form>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Last Updated Info -->
+    {% if id_proofs.updated_at %}
+    <div style="text-align: center; color: #64748b; font-size: 0.875rem; margin-top: 2rem;">
+        <i class="fas fa-clock"></i> Last updated: {{ id_proofs.updated_at|date:"d M, Y h:i A" }}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Image Modal -->
+<div id="imageModal" class="image-modal" onclick="closeImageModal()">
+    <span class="modal-close">&times;</span>
+    <img id="modalImage" src="" alt="ID Proof">
+</div>
+
+<script>
+    function openImageModal(src) {
+        document.getElementById('modalImage').src = src;
+        document.getElementById('imageModal').style.display = 'flex';
+    }
+
+    function closeImageModal() {
+        document.getElementById('imageModal').style.display = 'none';
+    }
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeImageModal();
+        }
+    });
+</script>
+{% endblock %}

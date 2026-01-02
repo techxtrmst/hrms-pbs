@@ -1,0 +1,2 @@
+# Ignore Django templates to prevent breaking template tags
+employees/templates/employees/employee_profile.html

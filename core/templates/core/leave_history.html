@@ -1,0 +1,378 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Leave History | Petabytz{% endblock %}
+
+{% block extra_css %}
+<style>
+    .history-container {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .filter-bar {
+        background: #f7fafc;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+    }
+
+    .table-responsive-custom {
+        overflow-x: auto;
+    }
+
+    .history-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .history-table thead th {
+        background: #2d3748;
+        color: white;
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .history-table tbody td {
+        padding: 12px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .history-table tbody tr:hover {
+        background: #f7fafc;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-approved {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-rejected {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .status-cancelled {
+        background: #e2e8f0;
+        color: #4a5568;
+    }
+
+    .leave-type-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #e0e7ff;
+        color: #3730a3;
+    }
+
+    .view-btn {
+        background: #4299e1;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .view-btn:hover {
+        background: #3182ce;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        overflow-y: auto;
+    }
+
+    .modal-content {
+        background: white;
+        margin: 5% auto;
+        padding: 0;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 700px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px 24px;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .close {
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        color: white;
+        opacity: 0.8;
+    }
+
+    .close:hover {
+        opacity: 1;
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin: 16px 0;
+    }
+
+    .detail-item {
+        padding: 12px;
+        background: #f7fafc;
+        border-radius: 8px;
+    }
+
+    .detail-label {
+        font-size: 12px;
+        color: #718096;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .detail-value {
+        font-size: 14px;
+        color: #2d3748;
+        font-weight: 500;
+    }
+
+    .summary-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 20px;
+        margin-top: 16px;
+    }
+
+    .summary-item {
+        text-align: center;
+    }
+
+    .summary-value {
+        font-size: 32px;
+        font-weight: bold;
+        margin-bottom: 4px;
+    }
+
+    .summary-label {
+        font-size: 12px;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold text-dark m-0">📊 Leave History</h4>
+            <p class="text-muted small m-0 mt-1">Complete leave records and analytics</p>
+        </div>
+        <div>
+            <button class="btn btn-success" onclick="exportToExcel()">
+                <i class="fas fa-file-excel"></i> Export to Excel
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-card">
+        <h5 class="mb-0">Leave Statistics</h5>
+        <div class="summary-grid">
+            <div class="summary-item">
+                <div class="summary-value">{{ leave_history.count }}</div>
+                <div class="summary-label">Total Requests</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value">{{ leave_history|length }}</div>
+                <div class="summary-label">Filtered Results</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <form method="get" class="filter-grid">
+            <div>
+                <label class="form-label small fw-bold">Employee</label>
+                <input type="text" name="employee" class="form-control form-control-sm" placeholder="Name or ID"
+                    value="{{ employee_filter }}">
+            </div>
+            <div>
+                <label class="form-label small fw-bold">Department</label>
+                <select name="department" class="form-select form-select-sm">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept }}" {% if department_filter == dept %}selected{% endif %}>{{ dept }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label small fw-bold">Leave Type</label>
+                <select name="leave_type" class="form-select form-select-sm">
+                    <option value="">All Types</option>
+                    <option value="CL" {% if leave_type_filter == 'CL' %}selected{% endif %}>Casual Leave</option>
+                    <option value="SL" {% if leave_type_filter == 'SL' %}selected{% endif %}>Sick Leave</option>
+                    <option value="EL" {% if leave_type_filter == 'EL' %}selected{% endif %}>Earned Leave</option>
+                    <option value="CO" {% if leave_type_filter == 'CO' %}selected{% endif %}>Comp Off</option>
+                    <option value="UL" {% if leave_type_filter == 'UL' %}selected{% endif %}>Unpaid Leave</option>
+                    <option value="OT" {% if leave_type_filter == 'OT' %}selected{% endif %}>Others</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label small fw-bold">Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Status</option>
+                    <option value="PENDING" {% if status_filter == 'PENDING' %}selected{% endif %}>Pending</option>
+                    <option value="APPROVED" {% if status_filter == 'APPROVED' %}selected{% endif %}>Approved</option>
+                    <option value="REJECTED" {% if status_filter == 'REJECTED' %}selected{% endif %}>Rejected</option>
+                    <option value="CANCELLED" {% if status_filter == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label small fw-bold">Year</label>
+                <select name="year" class="form-select form-select-sm">
+                    <option value="">All Years</option>
+                    {% for year in years %}
+                    <option value="{{ year }}" {% if year_filter == year|stringformat:"s" %}selected{% endif %}>{{ year }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label small fw-bold">Month</label>
+                <select name="month" class="form-select form-select-sm">
+                    <option value="">All Months</option>
+                    <option value="1" {% if month_filter == '1' %}selected{% endif %}>January</option>
+                    <option value="2" {% if month_filter == '2' %}selected{% endif %}>February</option>
+                    <option value="3" {% if month_filter == '3' %}selected{% endif %}>March</option>
+                    <option value="4" {% if month_filter == '4' %}selected{% endif %}>April</option>
+                    <option value="5" {% if month_filter == '5' %}selected{% endif %}>May</option>
+                    <option value="6" {% if month_filter == '6' %}selected{% endif %}>June</option>
+                    <option value="7" {% if month_filter == '7' %}selected{% endif %}>July</option>
+                    <option value="8" {% if month_filter == '8' %}selected{% endif %}>August</option>
+                    <option value="9" {% if month_filter == '9' %}selected{% endif %}>September</option>
+                    <option value="10" {% if month_filter == '10' %}selected{% endif %}>October</option>
+                    <option value="11" {% if month_filter == '11' %}selected{% endif %}>November</option>
+                    <option value="12" {% if month_filter == '12' %}selected{% endif %}>December</option>
+                </select>
+            </div>
+            <div class="d-flex align-items-end">
+                <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- History Table -->
+    <div class="history-container">
+        <div class="table-responsive-custom">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>ID</th>
+                        <th>Leave Type</th>
+                        <th>From Date</th>
+                        <th>To Date</th>
+                        <th>Days</th>
+                        <th>Status</th>
+                        <th>Applied On</th>
+                        <th>Approved By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if leave_history %}
+                    {% for leave in leave_history %}
+                    <tr>
+                        <td>
+                            <strong>{{ leave.employee.user.get_full_name }}</strong><br>
+                            <small class="text-muted">{{ leave.employee.designation }}</small>
+                        </td>
+                        <td>{{ leave.employee.badge_id }}</td>
+                        <td><span class="leave-type-badge">{{ leave.get_leave_type_display }}</span></td>
+                        <td>{{ leave.start_date|date:"d M, Y" }}</td>
+                        <td>{{ leave.end_date|date:"d M, Y" }}</td>
+                        <td><strong>{{ leave.total_days }}</strong></td>
+                        <td><span class="status-badge status-{{ leave.status|lower }}">{{ leave.get_status_display }}</span></td>
+                        <td>{{ leave.created_at|date:"d M, Y" }}</td>
+                        <td>{{ leave.approved_by.get_full_name|default:"-" }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No leave history found</p>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<script>
+
+    function exportToExcel() {
+        alert('Export to Excel functionality will be implemented soon!');
+    }
+
+</script>
+{% endblock %}

@@ -4,229 +4,971 @@
 {% block title %}Add New Employee - HRMS{% endblock %}
 
 {% block extra_css %}
+<link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap"
+    rel="stylesheet">
 <style>
-    .form-section-title {
-        color: #6c757d;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.85rem;
-        margin-top: 1.5rem;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid #e9ecef;
+    * {
+        font-family: 'Inter', sans-serif;
     }
 
-    .keka-card {
-        background: #fff;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+
+    .page-header {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
         padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.3);
     }
 
-    .form-label {
-        font-weight: 500;
-        color: #344767;
-        font-size: 0.9rem;
+    .page-title {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 800;
+        font-size: 2.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
     }
 
-    .btn-submit {
-        background: #5e72e4;
-        color: #fff;
-        padding: 0.6rem 2rem;
+    .page-subtitle {
+        color: #64748b;
+        font-size: 1rem;
+    }
+
+    /* Progress Stepper */
+    .progress-stepper {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3rem;
+        position: relative;
+    }
+
+    .progress-stepper::before {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: rgba(255, 255, 255, 0.2);
+        z-index: 0;
+    }
+
+    .step {
+        flex: 1;
+        text-align: center;
+        position: relative;
+        z-index: 1;
+    }
+
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        border: 3px solid rgba(255, 255, 255, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 0.5rem;
+        font-weight: 700;
+        color: white;
+        transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    .step.active .step-circle {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: white;
+        transform: scale(1.2);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .step.completed .step-circle {
+        background: #10b981;
+        border-color: #10b981;
+    }
+
+    .step-label {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.8);
         font-weight: 600;
-        border-radius: 4px;
+    }
+
+    /* Glassmorphic Form Card */
+    .form-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 24px;
+        padding: 3rem;
+        box-shadow:
+            0 8px 32px 0 rgba(31, 38, 135, 0.15),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        margin-bottom: 2rem;
+    }
+
+    .section-title {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 700;
+        font-size: 1.3rem;
+        color: #1e293b;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #e2e8f0;
+        position: relative;
+    }
+
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 60px;
+        height: 2px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    /* Premium Form Inputs */
+    .form-label {
+        font-weight: 600;
+        color: #475569;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        transition: color 0.3s;
+    }
+
+    .form-control,
+    .form-select {
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: white;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .form-control:hover,
+    .form-select:hover {
+        border-color: #cbd5e1;
+    }
+
+    /* Radio Buttons - Premium Style */
+    .role-selector {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .role-option {
+        flex: 1;
+        position: relative;
+    }
+
+    .role-option input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+    }
+
+    .role-option label {
+        display: block;
+        padding: 1.25rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 16px;
+        text-align: center;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: white;
+    }
+
+    .role-option input[type="radio"]:checked+label {
+        border-color: #667eea;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        color: #667eea;
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+    }
+
+    .role-option label:hover {
+        border-color: #cbd5e1;
+        transform: translateY(-2px);
+    }
+
+    /* Submit Button */
+    .btn-submit {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem 3rem;
+        font-weight: 700;
+        font-size: 1.1rem;
+        border-radius: 16px;
         border: none;
-        transition: all 0.2s;
+        transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-submit::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.5s;
     }
 
     .btn-submit:hover {
-        background: #4e62cc;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 12px 28px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-submit:hover::before {
+        left: 100%;
+    }
+
+    .btn-back {
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid #e2e8f0;
+        color: #64748b;
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .btn-back:hover {
+        background: white;
+        border-color: #cbd5e1;
+        transform: translateX(-4px);
+        color: #475569;
+    }
+
+    /* Company Selection */
+    .company-selector {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .company-option {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .company-option input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+    }
+
+    .company-option label {
+        display: block;
+        padding: 1rem 1.5rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: white;
+        font-weight: 600;
+    }
+
+    .company-option input[type="radio"]:checked+label {
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.05);
+        color: #667eea;
+    }
+
+    /* Error Messages */
+    .text-danger {
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+        animation: shake 0.3s;
+    }
+
+    @keyframes shake {
+
+        0%,
+        100% {
+            transform: translateX(0);
+        }
+
+        25% {
+            transform: translateX(-5px);
+        }
+
+        75% {
+            transform: translateX(5px);
+        }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 2rem;
+        }
+
+        .form-card {
+            padding: 1.5rem;
+        }
+
+        .role-selector {
+            flex-direction: column;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-10">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container py-5">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
             <div>
-                <h4 class="mb-1 text-dark font-weight-bold">Add Employee</h4>
-                <p class="text-muted small mb-0">Fill in the details to create a new employee profile.</p>
+                <h1 class="page-title mb-0">{% if form.instance.pk %}Edit Employee{% else %}Add New Employee{% endif %}
+                </h1>
+                <p class="page-subtitle mb-0">{% if form.instance.pk %}Update employee details and profile{% else
+                    %}Create a comprehensive employee profile{% endif %}</p>
             </div>
-            <a href="{% url 'employee_list' %}" class="btn btn-outline-secondary btn-sm">
-                <i class="fas fa-arrow-left me-1"></i> Back
+            <a href="{% url 'employee_list' %}" class="btn btn-back">
+                <i class="fas fa-arrow-left me-2"></i>Back
             </a>
         </div>
+    </div>
 
-        <div class="keka-card">
-            <form method="post" class="needs-validation" novalidate>
-                {% csrf_token %}
+    <!-- Progress Stepper -->
+    <div class="progress-stepper">
+        <div class="step active" data-step="1">
+            <div class="step-circle">1</div>
+            <div class="step-label">Organization</div>
+        </div>
+        <div class="step" data-step="2">
+            <div class="step-circle">2</div>
+            <div class="step-label">Personal Info</div>
+        </div>
+        <div class="step" data-step="3">
+            <div class="step-circle">3</div>
+            <div class="step-label">Job Profile</div>
+        </div>
+        <div class="step" data-step="4">
+            <div class="step-circle">4</div>
+            <div class="step-label">Finance</div>
+        </div>
+    </div>
 
-                {% if form.non_field_errors %}
-                <div class="alert alert-danger">
-                    {% for error in form.non_field_errors %}
-                    {{ error }}
+    <!-- Form -->
+    <form method="post" id="employeeForm" class="needs-validation" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger rounded-4">
+            {% for error in form.non_field_errors %}
+            {{ error }}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Section 1: Organization Details -->
+        {% if form.company_selection.is_hidden is False %}
+        <div class="form-card" data-section="1">
+            <h2 class="section-title">
+                <i class="fas fa-building me-2 text-primary"></i>Organization Details
+            </h2>
+
+            <div class="mb-4">
+                <label class="form-label">Select Company</label>
+                <div class="company-selector">
+                    {% for radio in form.company_selection %}
+                    <div class="company-option">
+                        {{ radio.tag }}
+                        <label for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                    </div>
                     {% endfor %}
                 </div>
+                {% if form.company_selection.errors %}
+                <div class="text-danger">{{ form.company_selection.errors.0 }}</div>
                 {% endif %}
+            </div>
 
-                <!-- Company Selection (Conditional) -->
-                {% if form.company_selection.is_hidden is False %}
-                <div class="mb-4">
-                    <h6 class="form-section-title mt-0">Organization Details</h6>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <label class="form-label d-block">Select Company</label>
-                            {% for radio in form.company_selection %}
-                            <div class="form-check form-check-inline">
-                                {{ radio.tag }}
-                                <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+            <div class="mb-4">
+                <label class="form-label d-block mb-3">
+                    <i class="fas fa-user-shield me-2"></i>Access Role
+                </label>
+                <div class="role-selector">
+                    {% for radio in form.role %}
+                    <div class="role-option">
+                        {{ radio.tag }}
+                        <label for="{{ radio.id_for_label }}">
+                            <i
+                                class="fas fa-{% if 'Employee' in radio.choice_label %}user{% elif 'Manager' in radio.choice_label %}user-tie{% else %}user-cog{% endif %} me-2"></i>
+                            {{ radio.choice_label }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Section 2: Personal Information -->
+        <div class="form-card" data-section="2">
+            <h2 class="section-title">
+                <i class="fas fa-user me-2 text-primary"></i>Personal Information
+            </h2>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">First Name <span class="text-danger">*</span></label>
+                    {% render_field form.first_name class="form-control" placeholder="e.g. John" %}
+                    <div class="text-danger">{{ form.first_name.errors.0 }}</div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                    {% render_field form.last_name class="form-control" placeholder="e.g. Doe" %}
+                    <div class="text-danger">{{ form.last_name.errors.0 }}</div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Employee ID <span class="text-danger">*</span></label>
+                    {% render_field form.badge_id class="form-control" placeholder="e.g. PBTHYD001" %}
+                    <small class="text-muted d-block">Leave empty for auto-generation</small>
+                    <div class="text-danger">{{ form.badge_id.errors.0 }}</div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Personal Email <span class="text-danger">*</span></label>
+                    {% render_field form.email class="form-control" placeholder="e.g. john.doe@gmail.com" %}
+                    <div class="text-danger">{{ form.email.errors.0 }}</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Mobile Number</label>
+                    {% render_field form.mobile_number class="form-control" placeholder="+91 9876543210" %}
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Gender</label>
+                    {% render_field form.gender class="form-select" %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Marital Status</label>
+                    {% render_field form.marital_status class="form-select" %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Date of Birth</label>
+                    {% render_field form.dob class="form-control" %}
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Permanent Address</label>
+                    {% render_field form.permanent_address class="form-control" rows="2" %}
+                </div>
+            </div>
+
+            <!-- Emergency Contacts Section -->
+            <h3 class="section-title mt-4">
+                <i class="fas fa-phone-alt me-2"></i>Emergency Contacts
+            </h3>
+
+            {% if form.instance.pk %}
+            <!-- Editing existing employee - show existing contacts -->
+            <div id="emergency-contacts-container">
+                {% if form.instance.emergency_contacts.all %}
+                {% for contact in form.instance.emergency_contacts.all %}
+                <div class="emergency-contact-form border rounded p-3 mb-3" data-contact-index="{{ forloop.counter0 }}"
+                    data-contact-id="{{ contact.id }}">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Contact #{{ forloop.counter }}</h6>
+                        <button type="button" class="btn btn-sm btn-outline-danger"
+                            onclick="removeEmergencyContact(this)">
+                            <i class="fas fa-times"></i> Remove
+                        </button>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control" name="emergency_contact_name_{{ forloop.counter0 }}"
+                                value="{{ contact.name }}" placeholder="Full Name">
+                            <input type="hidden" name="emergency_contact_id_{{ forloop.counter0 }}"
+                                value="{{ contact.id }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" name="emergency_contact_phone_{{ forloop.counter0 }}"
+                                value="{{ contact.phone_number }}" placeholder="+91 9876543210">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Relationship</label>
+                            <input type="text" class="form-control"
+                                name="emergency_contact_relationship_{{ forloop.counter0 }}"
+                                value="{{ contact.relationship }}" placeholder="e.g., Spouse, Father">
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input"
+                                    name="emergency_contact_primary_{{ forloop.counter0 }}"
+                                    id="primary_{{ forloop.counter0 }}" {% if contact.is_primary %}checked{% endif %}
+                                    onchange="handlePrimaryChange(this)">
+                                <label class="form-check-label small" for="primary_{{ forloop.counter0 }}"
+                                    title="Primary Contact">
+                                    Primary
+                                </label>
                             </div>
-                            {% endfor %}
-                            {% if form.company_selection.errors %}
-                            <div class="text-danger small">{{ form.company_selection.errors.0 }}</div>
-                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <!-- No existing contacts - show first empty form -->
+                <div class="emergency-contact-form border rounded p-3 mb-3" data-contact-index="0">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Contact #1</h6>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control" name="emergency_contact_name_0"
+                                placeholder="Full Name">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" name="emergency_contact_phone_0"
+                                placeholder="+91 9876543210">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Relationship</label>
+                            <input type="text" class="form-control" name="emergency_contact_relationship_0"
+                                placeholder="e.g., Spouse, Father">
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="emergency_contact_primary_0"
+                                    id="primary_0" onchange="handlePrimaryChange(this)">
+                                <label class="form-check-label small" for="primary_0" title="Primary Contact">
+                                    Primary
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
                 {% endif %}
-
-                <!-- Role Selection -->
-                <div class="mb-4">
-                    <h6 class="form-section-title mt-0 text-primary">Access Role</h6>
-                    <div class="row">
-                        <div class="col-md-12">
-                            {% for radio in form.role %}
-                            <div class="form-check form-check-inline">
-                                {{ radio.tag }}
-                                <label class="form-check-label fw-bold" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+            </div>
+            {% else %}
+            <!-- Creating new employee - show first empty form -->
+            <div id="emergency-contacts-container">
+                <div class="emergency-contact-form border rounded p-3 mb-3" data-contact-index="0">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Contact #1</h6>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control" name="emergency_contact_name_0"
+                                placeholder="Full Name">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" name="emergency_contact_phone_0"
+                                placeholder="+91 9876543210">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Relationship</label>
+                            <input type="text" class="form-control" name="emergency_contact_relationship_0"
+                                placeholder="e.g., Spouse, Father">
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="emergency_contact_primary_0"
+                                    id="primary_0" onchange="handlePrimaryChange(this)">
+                                <label class="form-check-label small" for="primary_0" title="Primary Contact">
+                                    Primary
+                                </label>
                             </div>
-                            {% endfor %}
                         </div>
                     </div>
                 </div>
+            </div>
+            {% endif %}
 
-                <!-- 1. Personal Details -->
-                <h6 class="form-section-title">Personal Information</h6>
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label">First Name <span class="text-danger">*</span></label>
-                        {% render_field form.first_name class="form-control" placeholder="e.g. John" %}
-                        <div class="text-danger small">{{ form.first_name.errors.0 }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Last Name <span class="text-danger">*</span></label>
-                        {% render_field form.last_name class="form-control" placeholder="e.g. Doe" %}
-                        <div class="text-danger small">{{ form.last_name.errors.0 }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Badge ID/Emp ID <span class="text-danger">*</span></label>
-                        {% render_field form.badge_id class="form-control" placeholder="e.g. EMP001" %}
-                        <div class="text-danger small">{{ form.badge_id.errors.0 }}</div>
-                    </div>
+            <div class="text-start mt-3">
+                <button type="button" class="btn btn-outline-primary btn-sm" onclick="addEmergencyContact()">
+                    <i class="fas fa-plus me-1"></i> Add Another Contact
+                </button>
+            </div>
+        </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Personal Email <span class="text-danger">*</span></label>
-                        {% render_field form.email class="form-control" placeholder="e.g. john.doe@gmail.com" %}
-                        <div class="text-danger small">{{ form.email.errors.0 }}</div>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Mobile Number</label>
-                        {% render_field form.mobile_number class="form-control" placeholder="+91 9876543210" %}
-                    </div>
+        <!-- Section 3: Job Profile -->
+        <div class="form-card" data-section="3">
+            <h2 class="section-title">
+                <i class="fas fa-briefcase me-2 text-primary"></i>Job Profile
+            </h2>
 
-                    <div class="col-md-4">
-                        <label class="form-label">Gender</label>
-                        {% render_field form.gender class="form-select" %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Department <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        {% render_field form.department class="form-select" placeholder="Select Department" %}
+                        <button class="btn btn-outline-primary" type="button" onclick="openQuickAdd('department')"
+                            title="Add New Department">
+                            <i class="fas fa-plus"></i>
+                        </button>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Marital Status</label>
-                        {% render_field form.marital_status class="form-select" %}
+                    <div class="text-danger">{{ form.department.errors.0 }}</div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Designation <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        {% render_field form.designation class="form-select" placeholder="Select Designation" %}
+                        <button class="btn btn-outline-primary" type="button" onclick="openQuickAdd('designation')"
+                            title="Add New Designation">
+                            <i class="fas fa-plus"></i>
+                        </button>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Date of Birth</label>
-                        {% render_field form.dob class="form-control" %}
-                    </div>
-
-                    <div class="col-md-12">
-                        <label class="form-label">Permanent Address</label>
-                        {% render_field form.permanent_address class="form-control" rows="2" %}
-                    </div>
-                    <div class="col-md-12">
-                        <label class="form-label">Emergency Contact Info</label>
-                        {% render_field form.emergency_contact class="form-control" placeholder="Name & Number" %}
-                    </div>
+                    <div class="text-danger">{{ form.designation.errors.0 }}</div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Location <span class="text-danger">*</span></label>
+                    {% render_field form.location class="form-select" %}
+                    <div class="text-danger">{{ form.location.errors.0 }}</div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Reporting Manager</label>
+                    {% render_field form.manager class="form-select" %}
                 </div>
 
-                <!-- 2. Job Profile -->
-                <h6 class="form-section-title">Job Profile</h6>
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Designation <span class="text-danger">*</span></label>
-                        {% render_field form.designation class="form-control" placeholder="e.g. Software Engineer" %}
-                        <div class="text-danger small">{{ form.designation.errors.0 }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Department <span class="text-danger">*</span></label>
-                        {% render_field form.department class="form-control" placeholder="e.g. Engineering" %}
-                        <div class="text-danger small">{{ form.department.errors.0 }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Reporting Manager</label>
-                        {% render_field form.manager class="form-select" %}
-                    </div>
+                <div class="col-md-4">
+                    <label class="form-label">Work Type</label>
+                    {% render_field form.work_type class="form-select" %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Shift Schedule</label>
+                    {% render_field form.assigned_shift class="form-select" %}
+                    <div class="text-danger">{{ form.assigned_shift.errors.0 }}</div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Date of Joining</label>
+                    {% render_field form.date_of_joining class="form-control" %}
+                </div>
+            </div>
+        </div>
 
-                    <div class="col-md-4">
-                        <label class="form-label">Work Type</label>
-                        {% render_field form.work_type class="form-select" %}
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Shift</label>
-                        {% render_field form.shift class="form-control" %}
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Date of Joining</label>
-                        {% render_field form.date_of_joining class="form-control" %}
+        <!-- Section 4: Financial Details -->
+        <div class="form-card" data-section="4">
+            <h2 class="section-title">
+                <i class="fas fa-wallet me-2 text-primary"></i>Financial Details
+            </h2>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Bank Name</label>
+                    {% render_field form.bank_name class="form-control" %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Account Number</label>
+                    {% render_field form.account_number class="form-control" %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">IFSC Code</label>
+                    {% render_field form.ifsc_code class="form-control" %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">UAN</label>
+                    {% render_field form.uan class="form-control" %}
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="form-check form-switch">
+                        {% render_field form.pf_enabled class="form-check-input" role="switch" %}
+                        <label class="form-check-label fw-600" for="{{ form.pf_enabled.id_for_label }}">PF
+                            Enabled</label>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <!-- 3. Finance Details -->
-                <h6 class="form-section-title">Financial Details</h6>
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Bank Name</label>
-                        {% render_field form.bank_name class="form-control" %}
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Account Number</label>
-                        {% render_field form.account_number class="form-control" %}
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">IFSC Code</label>
-                        {% render_field form.ifsc_code class="form-control" %}
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">UAN</label>
-                        {% render_field form.uan class="form-control" %}
-                    </div>
-                    <div class="col-md-4 d-flex align-items-center mt-4">
-                        <div class="form-check form-switch">
-                            {% render_field form.pf_enabled class="form-check-input" role="switch" %}
-                            <label class="form-check-label" for="{{ form.pf_enabled.id_for_label }}">PF Enabled</label>
-                        </div>
-                    </div>
-                </div>
+        <!-- Submit Section -->
+        <div class="form-card text-center">
+            <button type="submit" class="btn btn-submit">
+                <i class="fas fa-check-circle me-2"></i>{% if form.instance.pk %}Update Employee{% else %}Save
+                Employee{% endif %}
+            </button>
+            {% if not form.instance.pk %}
+            <p class="text-muted small mt-3 mb-0">
+                <i class="fas fa-info-circle me-1"></i>
+                Password will be auto-generated (Name + Last 3 digits of Employee ID)
+            </p>
+            {% endif %}
+        </div>
+    </form>
+</div>
 
-                <div class="mt-5 text-end border-top pt-3">
-                    <button type="submit" class="btn btn-submit">Save Employee</button>
-                    <p class="text-muted small mt-2">Password will be auto-generated (Name + Last 3 digits of Badge ID)
-                    </p>
+<!-- Quick Add Modal -->
+<div class="modal fade" id="quickAddModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 bg-light rounded-top-4">
+                <h5 class="modal-title fw-bold" id="quickAddTitle">Add New</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label" id="quickAddLabel">Name</label>
+                    <input type="text" class="form-control" id="quickAddName" placeholder="Enter name...">
+                    <div class="invalid-feedback" id="quickAddError"></div>
                 </div>
-            </form>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4" onclick="submitQuickAdd()">Save</button>
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Quick Add Logic
+    let currentAddType = null;
+    const quickAddModal = new bootstrap.Modal(document.getElementById('quickAddModal'));
+    const nameInput = document.getElementById('quickAddName');
+    const errorDiv = document.getElementById('quickAddError');
+
+    function openQuickAdd(type) {
+        currentAddType = type;
+        document.getElementById('quickAddTitle').textContent = type === 'department' ? 'Add New Department' : 'Add New Designation';
+        document.getElementById('quickAddLabel').textContent = type === 'department' ? 'Department Name' : 'Designation Name';
+        nameInput.value = '';
+        nameInput.classList.remove('is-invalid');
+        quickAddModal.show();
+        setTimeout(() => nameInput.focus(), 500);
+    }
+
+    function submitQuickAdd() {
+        const name = nameInput.value.trim();
+        if (!name) {
+            nameInput.classList.add('is-invalid');
+            errorDiv.textContent = 'Please enter a name.';
+            return;
+        }
+
+        const url = currentAddType === 'department' ? '{% url "quick_add_department" %}' : '{% url "quick_add_designation" %}';
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ name: name })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Add to dropdown
+                    const selectId = currentAddType === 'department' ? 'id_department' : 'id_designation';
+                    const selectElement = document.getElementById(selectId);
+
+                    if (selectElement) {
+                        const option = new Option(data.name, data.name);
+                        selectElement.add(option);
+                        selectElement.value = data.name;
+
+                        // Flash success
+                        selectElement.style.borderColor = '#10b981';
+                        selectElement.style.boxShadow = '0 0 0 4px rgba(16, 185, 129, 0.1)';
+                        setTimeout(() => {
+                            selectElement.style.borderColor = '';
+                            selectElement.style.boxShadow = '';
+                        }, 2000);
+                    }
+
+                    quickAddModal.hide();
+                } else {
+                    nameInput.classList.add('is-invalid');
+                    errorDiv.textContent = data.message || 'An error occurred.';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                nameInput.classList.add('is-invalid');
+                errorDiv.textContent = 'Network error. Please try again.';
+            });
+    }
+
+    // Existing Progress tracking based on scroll
+    const sections = document.querySelectorAll('[data-section]');
+    const steps = document.querySelectorAll('.step');
+
+    function updateProgress() {
+        const scrollPosition = window.scrollY + window.innerHeight / 2;
+
+        sections.forEach((section, index) => {
+            const sectionTop = section.offsetTop;
+            const sectionBottom = sectionTop + section.offsetHeight;
+
+            if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
+                steps.forEach(step => step.classList.remove('active'));
+                steps[index].classList.add('active');
+            }
+        });
+    }
+
+    window.addEventListener('scroll', updateProgress);
+    updateProgress();
+
+    // Smooth scroll on step click
+    steps.forEach((step, index) => {
+        step.addEventListener('click', () => {
+            sections[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+    });
+
+    // Form validation with animations
+    const form = document.getElementById('employeeForm');
+    const inputs = form.querySelectorAll('.form-control, .form-select');
+
+    inputs.forEach(input => {
+        input.addEventListener('blur', function () {
+            if (this.value.trim() !== '') {
+                this.style.borderColor = '#10b981';
+            }
+        });
+
+        input.addEventListener('focus', function () {
+            this.style.borderColor = '#667eea';
+        });
+    });
+
+    // Emergency Contacts Management
+    {% if form.instance.pk %}
+    let contactCounter = {{ form.instance.emergency_contacts.all| length }};
+    {% else %}
+    let contactCounter = 1;
+    {% endif %}
+
+    function addEmergencyContact() {
+        const container = document.getElementById('emergency-contacts-container');
+        const newContact = document.createElement('div');
+        newContact.className = 'emergency-contact-form border rounded p-3 mb-3';
+        newContact.setAttribute('data-contact-index', contactCounter);
+
+        newContact.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Contact #${contactCounter + 1}</h6>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeEmergencyContact(this)">
+                    <i class="fas fa-times"></i> Remove
+                </button>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Name</label>
+                    <input type="text" class="form-control" name="emergency_contact_name_${contactCounter}" placeholder="Full Name">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" class="form-control" name="emergency_contact_phone_${contactCounter}" placeholder="+91 9876543210">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Relationship</label>
+                    <input type="text" class="form-control" name="emergency_contact_relationship_${contactCounter}" placeholder="e.g., Spouse, Father">
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="emergency_contact_primary_${contactCounter}" id="primary_${contactCounter}" onchange="handlePrimaryChange(this)">
+                        <label class="form-check-label small" for="primary_${contactCounter}" title="Primary Contact">
+                            Primary
+                        </label>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        container.appendChild(newContact);
+        contactCounter++;
+
+        // Smooth scroll to new contact
+        newContact.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function removeEmergencyContact(button) {
+        const contactForm = button.closest('.emergency-contact-form');
+        const contactId = contactForm.getAttribute('data-contact-id');
+
+        // If this is an existing contact (has ID), mark for deletion
+        if (contactId) {
+            // Add hidden input to mark for deletion
+            const deleteInput = document.createElement('input');
+            deleteInput.type = 'hidden';
+            deleteInput.name = `emergency_contact_delete_${contactId}`;
+            deleteInput.value = 'true';
+            document.getElementById('employeeForm').appendChild(deleteInput);
+        }
+
+        contactForm.remove();
+
+        // Renumber remaining contacts
+        const allContacts = document.querySelectorAll('.emergency-contact-form');
+        allContacts.forEach((contact, index) => {
+            const heading = contact.querySelector('h6');
+            if (heading) {
+                heading.textContent = `Contact #${index + 1}`;
+            }
+        });
+    }
+
+    function handlePrimaryChange(checkbox) {
+        if (checkbox.checked) {
+            // Uncheck all other primary checkboxes
+            const allPrimaryCheckboxes = document.querySelectorAll('input[name^="emergency_contact_primary_"]');
+            allPrimaryCheckboxes.forEach(cb => {
+                if (cb !== checkbox) {
+                    cb.checked = false;
+                }
+            });
+        }
+    }
+
+    // Add event listeners to existing primary checkboxes
+    document.addEventListener('DOMContentLoaded', function () {
+        const allPrimaryCheckboxes = document.querySelectorAll('input[name^="emergency_contact_primary_"]');
+        allPrimaryCheckboxes.forEach(cb => {
+            cb.addEventListener('change', function () {
+                handlePrimaryChange(this);
+            });
+        });
+    });
+</script>
+
+<style>
+    .emergency-contact-form {
+        background: rgba(255, 255, 255, 0.5);
+        transition: all 0.3s ease;
+    }
+
+    .emergency-contact-form:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.8);
+    }
+
+    .emergency-contact-form h6 {
+        color: #1e293b;
+        font-weight: 600;
+    }
+</style>
+
 {% endblock %}

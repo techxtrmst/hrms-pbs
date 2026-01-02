@@ -1,0 +1,1059 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}My Dashboard | {{ employee.user.get_full_name }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    * {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    :root {
+        --primary-color: #5b47fb;
+        --primary-light: #7c6bff;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --info-color: #3b82f6;
+        --text-primary: #1f2937;
+        --text-secondary: #6b7280;
+        --bg-gray: #f9fafb;
+        --border-color: #e5e7eb;
+        --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        --card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    body {
+        background: #f3f4f6;
+        min-height: 100vh;
+        font-size: 14px;
+    }
+
+    /* Compact Hero Header */
+    .hero-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+        padding: 1.5rem 0;
+        margin: 0 0 1.5rem 0;
+        border-radius: 0 0 16px 16px;
+        box-shadow: 0 2px 8px rgba(91, 71, 251, 0.15);
+    }
+
+    .welcome-card {
+        background: rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        padding: 1.25rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .user-avatar-hero {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--primary-color);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .welcome-text h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: white;
+        margin: 0;
+        line-height: 1.3;
+    }
+
+
+    .welcome-text p {
+        font-size: 0.875rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0.25rem 0 0 0;
+    }
+
+    .quick-actions-hero {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .quick-btn-hero {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.813rem;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .quick-btn-hero:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-primary-hero {
+        background: white;
+        color: var(--primary-color);
+    }
+
+    .btn-outline-hero {
+        background: transparent;
+        color: white;
+        border: 2px solid white;
+    }
+
+    .btn-outline-hero:hover {
+        background: white;
+        color: var(--primary-color);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-card-modern {
+        background: white;
+        padding: 1.25rem;
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        transition: all 0.2s;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        border: 1px solid var(--border-color);
+    }
+
+    .stat-card-modern::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 5px;
+        background: var(--primary-gradient);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.4s;
+    }
+
+    .stat-card-modern:hover::before {
+        transform: scaleX(1);
+    }
+
+    .stat-card-modern:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--card-hover-shadow);
+    }
+
+    .stat-icon-modern {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        margin-bottom: 0.75rem;
+        position: relative;
+    }
+
+    .stat-icon-modern::after {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 20px;
+        background: inherit;
+        filter: blur(20px);
+        opacity: 0.5;
+        z-index: -1;
+    }
+
+    .stat-icon-modern.purple {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .stat-icon-modern.green {
+        background: var(--success-color);
+        color: white;
+    }
+
+    .stat-icon-modern.orange {
+        background: var(--warning-color);
+        color: white;
+    }
+
+    .stat-icon-modern.blue {
+        background: var(--info-color);
+        color: white;
+    }
+
+    .stat-value-modern {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-label-modern {
+        font-size: 0.813rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    /* Attendance Statistics Section */
+    .attendance-stats-section {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .section-title-modern {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .section-title-modern i {
+        font-size: 1.25rem;
+        color: var(--primary-color);
+    }
+
+    /* Tab Navigation */
+    .attendance-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0;
+        flex-wrap: wrap;
+    }
+
+    .tab-btn {
+        padding: 0.625rem 1rem;
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
+        font-weight: 500;
+        font-size: 0.875rem;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .tab-btn::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: var(--primary-color);
+        transform: scaleX(0);
+        transition: transform 0.2s;
+    }
+
+    .tab-btn.active {
+        color: var(--primary-color);
+        background: rgba(91, 71, 251, 0.05);
+    }
+
+    .tab-btn.active::after {
+        transform: scaleX(1);
+    }
+
+    .tab-btn:hover {
+        color: var(--primary-color);
+        background: rgba(91, 71, 251, 0.05);
+    }
+
+    /* Tab Content */
+    .tab-content {
+        display: none;
+        animation: fadeInUp 0.5s;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Attendance Grid */
+    .attendance-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .attendance-metric {
+        background: var(--bg-gray);
+        padding: 1rem;
+        border-radius: 10px;
+        text-align: center;
+        transition: all 0.2s;
+        border: 1px solid var(--border-color);
+    }
+
+    .attendance-metric:hover {
+        transform: translateY(-2px);
+        border-color: var(--primary-color);
+        box-shadow: 0 2px 8px rgba(91, 71, 251, 0.1);
+    }
+
+    .metric-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+    }
+
+    .metric-label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    /* Progress Bars */
+    .progress-container {
+        margin-top: 1.5rem;
+    }
+
+    .progress-item {
+        margin-bottom: 1.5rem;
+    }
+
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+
+    .progress-label {
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .progress-value {
+        font-weight: 700;
+        color: #667eea;
+    }
+
+    .progress-bar-custom {
+        height: 12px;
+        background: #e5e7eb;
+        border-radius: 10px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: var(--primary-gradient);
+        border-radius: 10px;
+        transition: width 1s ease-in-out;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .progress-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+        0% {
+            transform: translateX(-100%);
+        }
+
+        100% {
+            transform: translateX(100%);
+        }
+    }
+
+    /* Calendar View */
+    .calendar-mini {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 20px;
+        margin-top: 1.5rem;
+    }
+
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .calendar-month {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.5rem;
+    }
+
+    .calendar-day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+
+    .calendar-day.header {
+        color: #6b7280;
+        font-weight: 700;
+        cursor: default;
+    }
+
+    .calendar-day.present {
+        background: var(--success-gradient);
+        color: white;
+    }
+
+    .calendar-day.wfh {
+        background: var(--info-gradient);
+        color: white;
+    }
+
+    .calendar-day.leave {
+        background: var(--warning-gradient);
+        color: white;
+    }
+
+    .calendar-day.absent {
+        background: #ef4444;
+        color: white;
+    }
+
+    .calendar-day:hover:not(.header) {
+        transform: scale(1.1);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Leave Balance Card */
+    .leave-balance-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        height: 100%;
+        border: 1px solid var(--border-color);
+    }
+
+    .balance-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .balance-item-modern {
+        background: var(--bg-gray);
+        padding: 1rem;
+        border-radius: 10px;
+        text-align: center;
+        transition: all 0.2s;
+        border: 1px solid var(--border-color);
+    }
+
+    .balance-item-modern:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .balance-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+    }
+
+    .balance-label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    /* Leave Requests */
+    .leave-request-item {
+        background: #f8f9fa;
+        padding: 1.25rem;
+        border-radius: 15px;
+        margin-bottom: 1rem;
+        transition: all 0.3s;
+        border-left: 4px solid transparent;
+    }
+
+    .leave-request-item:hover {
+        transform: translateX(5px);
+        border-left-color: #667eea;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .request-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .request-type {
+        font-weight: 700;
+        color: #1f2937;
+        font-size: 1rem;
+    }
+
+    .status-badge-modern {
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-badge-modern.approved {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-badge-modern.pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-badge-modern.rejected {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .request-dates {
+        font-size: 0.9rem;
+        color: #6b7280;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .hero-header {
+            padding: 2rem 0;
+        }
+
+        .welcome-text h1 {
+            font-size: 1.75rem;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .attendance-tabs {
+            overflow-x: auto;
+            flex-wrap: nowrap;
+        }
+
+        .balance-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Loading Animation */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.95);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 1;
+        transition: opacity 0.5s;
+    }
+
+    .loading-overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .loader {
+        width: 60px;
+        height: 60px;
+        border: 5px solid #e5e7eb;
+        border-top-color: #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Header -->
+<div class="hero-header animate__animated animate__fadeInDown">
+    <div class="container-fluid px-4">
+        <div class="welcome-card">
+            <div class="d-flex align-items-center gap-4 flex-wrap">
+                <div class="user-avatar-hero">
+                    {{ employee.user.first_name|first|upper }}{{ employee.user.last_name|first|upper }}
+                </div>
+                <div class="welcome-text flex-grow-1">
+                    <h1>Welcome back, {{ employee.user.first_name }}! 👋</h1>
+                    <p>{{ employee.designation }} • {{ employee.department }}</p>
+                    <div class="quick-actions-hero">
+                        <button class="quick-btn-hero btn-primary-hero"
+                            onclick="window.location.href='{% url 'my_leaves' %}'">
+                            <i class="fas fa-calendar-plus"></i>
+                            Apply for Leave
+                        </button>
+                        <button class="quick-btn-hero btn-outline-hero"
+                            onclick="window.location.href='{% url 'employee_holidays' %}'">
+                            <i class="fas fa-calendar-alt"></i>
+                            View Holidays
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid px-4 pb-4">
+    <!-- Stats Grid -->
+    <div class="stats-grid animate__animated animate__fadeInUp">
+        <div class="stat-card-modern">
+            <div class="stat-icon-modern purple">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-value-modern">{{ avg_hours }}</div>
+            <div class="stat-label-modern">Avg. Working Hours</div>
+        </div>
+        <div class="stat-card-modern">
+            <div class="stat-icon-modern green">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-value-modern">{{ present_days }}</div>
+            <div class="stat-label-modern">Present Days (30d)</div>
+        </div>
+        <div class="stat-card-modern">
+            <div class="stat-icon-modern orange">
+                <i class="fas fa-home"></i>
+            </div>
+            <div class="stat-value-modern">{{ wfh_days }}</div>
+            <div class="stat-label-modern">WFH Days (30d)</div>
+        </div>
+        <div class="stat-card-modern">
+            <div class="stat-icon-modern blue">
+                <i class="fas fa-umbrella-beach"></i>
+            </div>
+            <div class="stat-value-modern">{{ leave_days }}</div>
+            <div class="stat-label-modern">Leave Days (30d)</div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Attendance Statistics Section -->
+        <div class="col-lg-8 mb-4">
+            <div class="attendance-stats-section animate__animated animate__fadeInLeft">
+                <h2 class="section-title-modern">
+                    <i class="fas fa-chart-line"></i>
+                    Attendance Overview
+                </h2>
+
+                <!-- Tab Navigation -->
+                <div class="attendance-tabs">
+                    <button class="tab-btn active" data-tab="today">
+                        <i class="fas fa-calendar-day me-2"></i>Today
+                    </button>
+                    <button class="tab-btn" data-tab="week">
+                        <i class="fas fa-calendar-week me-2"></i>This Week
+                    </button>
+                    <button class="tab-btn" data-tab="month">
+                        <i class="fas fa-calendar me-2"></i>This Month
+                    </button>
+                    <button class="tab-btn" data-tab="year">
+                        <i class="fas fa-calendar-alt me-2"></i>This Year
+                    </button>
+                </div>
+
+                <!-- Today Tab -->
+                <div class="tab-content active" id="today">
+                    <div class="attendance-grid">
+                        <div class="attendance-metric">
+                            <div class="metric-value">
+                                {% if attendance and attendance.clock_in %}
+                                {{ attendance.clock_in|date:"h:i A" }}
+                                {% else %}
+                                --:--
+                                {% endif %}
+                            </div>
+                            <div class="metric-label">Clock In</div>
+                        </div>
+                        <div class="attendance-metric">
+                            <div class="metric-value">
+                                {% if attendance and attendance.clock_out %}
+                                {{ attendance.clock_out|date:"h:i A" }}
+                                {% else %}
+                                --:--
+                                {% endif %}
+                            </div>
+                            <div class="metric-label">Clock Out</div>
+                        </div>
+                        <div class="attendance-metric">
+                            <div class="metric-value">
+                                {% if attendance and attendance.clock_in and attendance.clock_out %}
+                                {{ attendance.total_hours|default:"0:00" }}
+                                {% else %}
+                                0:00
+                                {% endif %}
+                            </div>
+                            <div class="metric-label">Total Hours</div>
+                        </div>
+                        <div class="attendance-metric">
+                            <div class="metric-value">
+                                {% if attendance %}
+                                {{ attendance.get_status_display }}
+                                {% else %}
+                                Not Marked
+                                {% endif %}
+                            </div>
+                            <div class="metric-label">Status</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Week Tab -->
+                <div class="tab-content" id="week">
+                    <div class="attendance-grid">
+                        <div class="attendance-metric">
+                            <div class="metric-value" id="weekPresent">{{ week_present }}</div>
+                            <div class="metric-label">Present Days</div>
+                        </div>
+                        <div class="attendance-metric">
+                            <div class="metric-value" id="weekWFH">{{ week_wfh }}</div>
+                            <div class="metric-label">WFH Days</div>
+                        </div>
+                        <div class="attendance-metric">
+                            <div class="metric-value" id="weekLeave">{{ week_leave }}</div>
+                            <div class="metric-label">Leave Days</div>
+                        </div>
+                        <div class="attendance-metric">
+                            <div class="metric-value" id="weekAbsent">{{ week_absent }}</div>
+                            <div class="metric-label">Absent Days</div>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span class="progress-label">Attendance Rate</span>
+                                <span class="progress-value" id="weekAttendanceRate">{{ week_attendance_rate }}%</span>
+                            </div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill" id="weekAttendanceBar"
+                                    style="width: {{ week_attendance_rate }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Month Tab -->
+                <div class="tab-content" id="month">
+                    <div class="attendance-grid">
+                        <div class="attendance-metric">
+                            <div class="metric-value" id="monthPresent">{{ present_days }}</div>
+                            <div class="metric-label">Present Days</div>
+                        </div>
+                        <div class="attendance-metric">
+                            <div class="metric-value" id="monthWFH">{{ wfh_days }}</div>
+                            <div class="metric-label">WFH Days</div>
+                        </div>
+                        <div class="attendance-metric">
+                            <div class="metric-value" id="monthLeave">{{ leave_days }}</div>
+                            <div class="metric-label">Leave Days</div>
+                        </div>
+                        <div class="attendance-metric">
+                            <div class="metric-value" id="monthTotal">{{ total_days }}</div>
+                            <div class="metric-label">Total Days</div>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span class="progress-label">Present</span>
+                                <span class="progress-value">{{ present_days }} days</span>
+                            </div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill"
+                                    style="width: {% if total_days > 0 %}{% widthratio present_days total_days 100 %}{% else %}0{% endif %}%">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span class="progress-label">Work From Home</span>
+                                <span class="progress-value">{{ wfh_days }} days</span>
+                            </div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill"
+                                    style="width: {% if total_days > 0 %}{% widthratio wfh_days total_days 100 %}{% else %}0{% endif %}%; background: var(--info-gradient);">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span class="progress-label">Leave</span>
+                                <span class="progress-value">{{ leave_days }} days</span>
+                            </div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill"
+                                    style="width: {% if total_days > 0 %}{% widthratio leave_days total_days 100 %}{% else %}0{% endif %}%; background: var(--warning-gradient);">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Year Tab -->
+                <div class="tab-content" id="year">
+                    <div class="attendance-grid">
+                        <div class="attendance-metric">
+                            <div class="metric-value" id="yearPresent">{{ year_present }}</div>
+                            <div class="metric-label">Present Days</div>
+                        </div>
+                        <div class="attendance-metric">
+                            <div class="metric-value" id="yearWFH">{{ year_wfh }}</div>
+                            <div class="metric-label">WFH Days</div>
+                        </div>
+                        <div class="attendance-metric">
+                            <div class="metric-value" id="yearLeave">{{ year_leave }}</div>
+                            <div class="metric-label">Leave Days</div>
+                        </div>
+                        <div class="attendance-metric">
+                            <div class="metric-value" id="yearTotal">{{ year_total }}</div>
+                            <div class="metric-label">Total Days</div>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span class="progress-label">Yearly Attendance Rate</span>
+                                <span class="progress-value" id="yearAttendanceRate">{{ year_attendance_rate }}%</span>
+                            </div>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill" id="yearAttendanceBar"
+                                    style="width: {{ year_attendance_rate }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leave Balance & Requests -->
+        <div class="col-lg-4 mb-4">
+            <div class="leave-balance-card animate__animated animate__fadeInRight">
+                <h2 class="section-title-modern">
+                    <i class="fas fa-chart-pie"></i>
+                    Leave Balance
+                </h2>
+                {% if leave_balance %}
+                <div class="balance-grid">
+                    <div class="balance-item-modern">
+                        <div class="balance-value">{{ leave_balance.casual_leave_balance }}</div>
+                        <div class="balance-label">Casual</div>
+                    </div>
+                    <div class="balance-item-modern">
+                        <div class="balance-value">{{ leave_balance.sick_leave_balance }}</div>
+                        <div class="balance-label">Sick</div>
+                    </div>
+                    <div class="balance-item-modern">
+                        <div class="balance-value">{{ leave_balance.earned_leave_balance }}</div>
+                        <div class="balance-label">Earned</div>
+                    </div>
+                    <div class="balance-item-modern">
+                        <div class="balance-value">{{ leave_balance.comp_off_balance }}</div>
+                        <div class="balance-label">Comp Off</div>
+                    </div>
+                </div>
+                {% else %}
+                <p style="text-align: center; color: #6b7280; padding: 2rem;">
+                    No leave balance information
+                </p>
+                {% endif %}
+
+                <h3 style="font-size: 1.25rem; font-weight: 700; margin: 2rem 0 1rem 0; color: #1f2937;">
+                    Recent Requests
+                </h3>
+                <div>
+                    {% for request in recent_leave_requests %}
+                    <div class="leave-request-item">
+                        <div class="request-header">
+                            <span class="request-type">{{ request.get_leave_type_display }}</span>
+                            <span
+                                class="status-badge-modern {% if request.status == 'APPROVED' %}approved{% elif request.status == 'REJECTED' %}rejected{% else %}pending{% endif %}">
+                                {{ request.status }}
+                            </span>
+                        </div>
+                        <div class="request-dates">
+                            {{ request.start_date|date:"M d" }} - {{ request.end_date|date:"M d, Y" }}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p style="text-align: center; color: #6b7280; padding: 1.5rem; font-size: 0.9rem;">
+                        No leave requests yet
+                    </p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Tab switching
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.getAttribute('data-tab');
+
+                // Remove active class from all buttons and contents
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+
+                // Add active class to clicked button and corresponding content
+                button.classList.add('active');
+                document.getElementById(targetTab).classList.add('active');
+
+                // Load data for the selected tab
+                loadTabData(targetTab);
+            });
+        });
+
+        // Function to load data for each tab
+        function loadTabData(tab) {
+            // All data is now loaded from the backend - no dummy data needed
+            // Just trigger animations for progress bars
+
+            if (tab === 'week') {
+                // Animate the progress bar
+                const weekBar = document.getElementById('weekAttendanceBar');
+                const weekRate = weekBar.style.width;
+                weekBar.style.width = '0%';
+                setTimeout(() => {
+                    weekBar.style.width = weekRate;
+                }, 100);
+            } else if (tab === 'year') {
+                // Animate the progress bar
+                const yearBar = document.getElementById('yearAttendanceBar');
+                const yearRate = yearBar.style.width;
+                yearBar.style.width = '0%';
+                setTimeout(() => {
+                    yearBar.style.width = yearRate;
+                }, 100);
+            }
+        }
+
+        // Animate stat cards on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.stat-card-modern, .attendance-stats-section, .leave-balance-card').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'all 0.6s ease-out';
+            observer.observe(el);
+        });
+
+        // Add hover effect sound (optional)
+        document.querySelectorAll('.stat-card-modern, .attendance-metric, .balance-item-modern').forEach(card => {
+            card.addEventListener('mouseenter', function () {
+                this.style.transform = 'translateY(-10px) scale(1.02)';
+            });
+            card.addEventListener('mouseleave', function () {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+    });
+</script>
+{% endblock %}

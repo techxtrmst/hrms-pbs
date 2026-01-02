@@ -1,15 +1,35 @@
 <li>
     <div class="node-card">
         <div class="node-avatar">
-            {% if node.employee.profile_picture %}
+            {% if node.employee and node.employee.profile_picture %}
             <img src="{{ node.employee.profile_picture.url }}" alt="Profile">
             {% else %}
             <i class="fas fa-user"></i>
             {% endif %}
         </div>
-        <div class="node-name">{{ node.employee.user.get_full_name }}</div>
-        <div class="node-role">{{ node.employee.designation }}</div>
-        <div class="node-dept">{{ node.employee.department }}</div>
+        <div class="node-name">
+            {% if node.employee %}
+            {{ node.employee.user.get_full_name }}
+            {% else %}
+            {{ node.user.get_full_name }}
+            {% endif %}
+        </div>
+        <div class="node-role">
+            {% if node.employee %}
+            {{ node.employee.designation }}
+            {% elif node.is_superadmin %}
+            Super Admin
+            {% else %}
+            -
+            {% endif %}
+        </div>
+        <div class="node-dept">
+            {% if node.employee %}
+            {{ node.employee.department }}
+            {% else %}
+            Global
+            {% endif %}
+        </div>
 
         {% if node.direct_reports %}
         <div class="node-toggler" onclick="toggleNode(this)">

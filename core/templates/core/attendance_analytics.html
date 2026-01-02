@@ -5,90 +5,163 @@
 
 {% block extra_css %}
 <style>
+    :root {
+        --primary-color: #4f46e5;
+        --secondary-color: #64748b;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --info-color: #3b82f6;
+    }
+
     /* Analytics Dashboard Cards */
     .stat-card-analytics {
         background-color: #fff;
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
+        border-radius: 16px;
         padding: 24px;
         display: flex;
         align-items: center;
-        transition: transform 0.2s;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
 
     .stat-card-analytics:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transform: translateY(-4px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
     .stat-icon-wrapper {
-        width: 56px;
-        height: 56px;
-        border-radius: 12px;
+        width: 60px;
+        height: 60px;
+        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.5rem;
+        font-size: 1.75rem;
         margin-right: 20px;
+        flex-shrink: 0;
     }
 
     .bg-light-blue {
-        background-color: #ebf8ff;
-        color: #3182ce;
+        background-color: #eff6ff;
+        color: var(--info-color);
     }
 
     .bg-light-green {
-        background-color: #f0fff4;
-        color: #38a169;
+        background-color: #ecfdf5;
+        color: var(--success-color);
     }
 
     .bg-light-red {
-        background-color: #fff5f5;
-        color: #e53e3e;
+        background-color: #fef2f2;
+        color: var(--danger-color);
     }
 
     .bg-light-orange {
-        background-color: #fffaf0;
-        color: #dd6b20;
+        background-color: #fffbeb;
+        color: var(--warning-color);
     }
 
     .bg-light-purple {
-        background-color: #faf5ff;
-        color: #805ad5;
+        background-color: #f5f3ff;
+        color: #8b5cf6;
+    }
+
+    .bg-light-indigo {
+        background-color: #eef2ff;
+        color: var(--primary-color);
     }
 
     .stat-content h3 {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #2d3748;
+        font-size: 2rem;
+        font-weight: 800;
+        color: #1e293b;
         margin: 0;
-        line-height: 1.2;
+        line-height: 1.1;
     }
 
     .stat-content p {
-        margin: 0;
-        color: #718096;
-        font-size: 0.9rem;
-        font-weight: 500;
+        margin: 4px 0 0;
+        color: var(--secondary-color);
+        font-size: 0.95rem;
+        font-weight: 600;
     }
 
-    .analytics-chart-container {
-        background-color: #fff;
-        padding: 24px;
-        border-radius: 8px;
+    .section-card {
+        background: white;
+        border-radius: 16px;
         border: 1px solid #e2e8f0;
-        margin-top: 24px;
-        min-height: 300px;
+        padding: 24px;
+        height: 100%;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 20px;
         display: flex;
         align-items: center;
-        justify-content: center;
+        gap: 10px;
+    }
+
+    .progress-stacked {
+        height: 12px;
+        border-radius: 6px;
+        overflow: hidden;
+        background-color: #f1f5f9;
+        display: flex;
+    }
+
+    .progress-segment {
+        height: 100%;
+        transition: width 0.5s ease;
+    }
+
+    .mini-stat-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .mini-stat-row:last-child {
+        border-bottom: none;
+    }
+
+    .mini-stat-label {
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+
+    .mini-stat-value {
+        font-weight: 700;
+        color: #334155;
+    }
+
+    .dept-table th {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #94a3b8;
+        font-weight: 700;
+        border-bottom: 2px solid #f1f5f9;
+        padding-bottom: 12px;
+    }
+
+    .dept-table td {
+        padding: 12px 0;
+        color: #475569;
+        font-size: 0.95rem;
+        border-bottom: 1px solid #f1f5f9;
     }
 
     .action-btn-large {
         padding: 12px 24px;
-        font-size: 1rem;
-        border-radius: 6px;
-        background-color: #3182ce;
+        font-size: 0.95rem;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
         color: white;
         border: none;
         display: inline-flex;
@@ -96,12 +169,31 @@
         gap: 10px;
         font-weight: 600;
         text-decoration: none;
-        transition: background 0.2s;
+        transition: all 0.2s;
+        box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
     }
 
     .action-btn-large:hover {
-        background-color: #2b6cb0;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 12px -3px rgba(79, 70, 229, 0.3);
         color: white;
+    }
+
+    .trend-indicator {
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 99px;
+    }
+
+    .trend-up {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .trend-down {
+        background: #fee2e2;
+        color: #991b1b;
     }
 </style>
 {% endblock %}
@@ -109,21 +201,27 @@
 {% block content %}
 <div class="container-fluid py-4">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
         <div>
-            <h4 class="fw-bold text-dark m-0">Attendance Analytics</h4>
-            <p class="text-muted small m-0 mt-1">Real-time overview of today's attendance</p>
+            <h3 class="fw-bold text-dark m-0">Attendance Analytics</h3>
+            <p class="text-muted m-0 mt-1">
+                <i class="far fa-calendar-alt me-1"></i> {{ today|date:"l, F j, Y" }}
+            </p>
         </div>
-        <div>
+        <div class="d-flex gap-3">
             <a href="{% url 'attendance_report' %}" class="action-btn-large">
-                <i class="fas fa-file-excel"></i> View Detailed Report
+                <i class="fas fa-file-alt"></i> Detailed Report
+            </a>
+            <a href="{% url 'download_attendance' %}" class="action-btn-large"
+                style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+                <i class="fas fa-file-excel"></i> Export Data
             </a>
         </div>
     </div>
 
-    <!-- Stats Grid -->
-    <div class="row g-4">
-        <div class="col-md-4 col-lg-3">
+    <!-- Quick Stats Grid -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-lg-3">
             <div class="stat-card-analytics">
                 <div class="stat-icon-wrapper bg-light-blue">
                     <i class="fas fa-users"></i>
@@ -135,43 +233,31 @@
             </div>
         </div>
 
-        <div class="col-md-4 col-lg-3">
+        <div class="col-md-6 col-lg-3">
             <div class="stat-card-analytics">
                 <div class="stat-icon-wrapper bg-light-green">
-                    <i class="fas fa-check-circle"></i>
+                    <i class="fas fa-user-check"></i>
                 </div>
                 <div class="stat-content">
                     <h3>{{ present_today }}</h3>
-                    <p>Present</p>
+                    <p>Present Today</p>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-4 col-lg-3">
+        <div class="col-md-6 col-lg-3">
             <div class="stat-card-analytics">
                 <div class="stat-icon-wrapper bg-light-red">
                     <i class="fas fa-user-times"></i>
                 </div>
                 <div class="stat-content">
                     <h3>{{ absent_today }}</h3>
-                    <p>Absent</p>
+                    <p>Absent Today</p>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-4 col-lg-3">
-            <div class="stat-card-analytics">
-                <div class="stat-icon-wrapper bg-light-orange">
-                    <i class="fas fa-coffee"></i>
-                </div>
-                <div class="stat-content">
-                    <h3>{{ leave_today }}</h3>
-                    <p>On Leave</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4 col-lg-3">
+        <div class="col-md-6 col-lg-3">
             <div class="stat-card-analytics">
                 <div class="stat-icon-wrapper bg-light-purple">
                     <i class="fas fa-laptop-house"></i>
@@ -184,22 +270,39 @@
         </div>
     </div>
 
-    <!-- Chart Placeholder (Future Enhancement) -->
-    <div class="row mt-4">
-        <div class="col-md-8">
-            <div class="analytics-chart-container">
-                <div class="text-center text-muted">
-                    <i class="fas fa-chart-pie fa-3x mb-3 text-secondary opacity-50"></i>
-                    <h5>Attendance Distribution</h5>
-                    <p>Present Percentage: <strong>{{ present_pct }}%</strong></p>
-                    <div class="progress mt-3" style="width: 200px; height: 10px; margin: 0 auto;">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ present_pct }}%"></div>
+    <!-- Row containing Insights and Dept Performance removed as per user request -->
+
+
+    <!-- Monthly Overview -->
+    <div class="row">
+        <div class="col-12">
+            <div class="section-card">
+                <div class="section-title d-flex justify-content-between">
+                    <div><i class="fas fa-chart-line text-primary"></i> Monthly Overview</div>
+                    {% if mom_change >= 0 %}
+                    <span class="trend-indicator trend-up"><i class="fas fa-arrow-up"></i> {{ mom_change }}% vs Last
+                        Month</span>
+                    {% else %}
+                    <span class="trend-indicator trend-down"><i class="fas fa-arrow-down"></i> {{ mom_change }}% vs Last
+                        Month</span>
+                    {% endif %}
+                </div>
+
+                <div class="row text-center mt-4">
+                    <div class="col-md-4 border-end">
+                        <h2 class="fw-bold text-dark">{{ month_present }}</h2>
+                        <p class="text-muted text-uppercase small fw-bold tracking-wider">Total Present Days</p>
+                    </div>
+                    <div class="col-md-4 border-end">
+                        <h2 class="fw-bold text-dark">{{ month_wfh }}</h2>
+                        <p class="text-muted text-uppercase small fw-bold tracking-wider">Total WFH</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h2 class="fw-bold text-dark">{{ month_absent }}</h2>
+                        <p class="text-muted text-uppercase small fw-bold tracking-wider">Total Absent</p>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-4">
-            <!-- Could be Late Arrivals list here -->
         </div>
     </div>
 

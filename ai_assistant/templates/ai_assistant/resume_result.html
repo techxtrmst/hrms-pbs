@@ -1,0 +1,720 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Resume Parsing Result{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --primary: #6366f1;
+        --secondary: #8b5cf6;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --bg-color: #f5f7fa;
+        --card-bg: #ffffff;
+        --text-color: #1e293b;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+        background: var(--bg-color);
+        color: var(--text-color);
+        min-height: 100vh;
+    }
+
+    .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 2.5rem 1.5rem;
+    }
+
+    /* Header Section */
+    .result-header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: #dcfce7;
+        color: #166534;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .header-title {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--text-color);
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.5px;
+    }
+
+    /* Grid Layout */
+    .grid-container {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 2rem;
+    }
+
+    /* Cards Common */
+    .card {
+        background: var(--card-bg);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        border: 1px solid var(--border-color);
+        margin-bottom: 2rem;
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .card-title {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--text-color);
+    }
+
+    .card-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+
+    /* Sidebar Profile */
+    .profile-card {
+        text-align: center;
+        position: sticky;
+        top: 2rem;
+    }
+
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 1rem;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        color: white;
+        box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+    }
+
+    .profile-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+
+    .profile-role {
+        color: var(--text-muted);
+        font-weight: 500;
+        margin-bottom: 1.5rem;
+    }
+
+    .profile-contact {
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background: #f8fafc;
+        border-radius: 10px;
+        transition: all 0.2s;
+    }
+
+    .contact-item:hover {
+        background: #f1f5f9;
+        transform: translateX(4px);
+    }
+
+    .contact-icon {
+        width: 32px;
+        height: 32px;
+        background: white;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .contact-info label {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .contact-info span,
+    .contact-info a {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-color);
+        text-decoration: none;
+        word-break: break-all;
+    }
+
+    /* Timelines */
+    .timeline {
+        position: relative;
+        padding-left: 1rem;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 10px;
+        bottom: 0;
+        width: 2px;
+        background: #e2e8f0;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-left: 2rem;
+        padding-bottom: 2rem;
+    }
+
+    .timeline-item:last-child {
+        padding-bottom: 0;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: -5px;
+        top: 6px;
+        width: 12px;
+        height: 12px;
+        background: var(--primary);
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px var(--primary);
+    }
+
+    .timeline-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-color);
+        margin-bottom: 0.25rem;
+    }
+
+    .timeline-meta {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+    }
+
+    .timeline-subtitle {
+        color: var(--text-muted);
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+
+    .timeline-desc {
+        font-size: 0.95rem;
+        color: #475569;
+        line-height: 1.5;
+    }
+
+    /* Skills */
+    .skills-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .skills-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-bottom: 0.75rem;
+        text-transform: uppercase;
+    }
+
+    .skills-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .skill-badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .skill-tech {
+        background: #e0e7ff;
+        color: #4338ca;
+    }
+
+    .skill-tool {
+        background: #ecfdf5;
+        color: #047857;
+    }
+
+    .skill-soft {
+        background: #fff7ed;
+        color: #c2410c;
+    }
+
+    /* AI Insights */
+    .insights-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .insight-box {
+        background: #f8fafc;
+        padding: 1rem;
+        border-radius: 10px;
+        text-align: center;
+    }
+
+    .insight-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+    }
+
+    .insight-value {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-color);
+    }
+
+    /* Buttons */
+    .action-bar {
+        position: sticky;
+        bottom: 2rem;
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        background: white;
+        padding: 1rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--border-color);
+        z-index: 100;
+    }
+
+    .btn {
+        flex: 1;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+    }
+
+    .btn-secondary {
+        background: white;
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn-primary:hover {
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-secondary:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+
+    @media (max-width: 900px) {
+        .grid-container {
+            grid-template-columns: 1fr;
+        }
+
+        .profile-card {
+            position: static;
+        }
+
+        .insights-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="result-header">
+        <div class="status-badge">
+            <i class="fas fa-check-circle"></i> Resume Parsed Successfully
+        </div>
+        <h1 class="header-title">Candidate Profile</h1>
+        <p style="color: var(--text-muted);">Extracted from resume analysis</p>
+    </div>
+
+    <div class="grid-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="card profile-card">
+                <div class="profile-avatar">
+                    {{ job.parsed_name|default:"??"|slice:":2"|upper }}
+                </div>
+                <h2 class="profile-name">{{ job.parsed_name|default:"Unknown Candidate" }}</h2>
+                <div class="profile-role">
+                    {{ job.role_fit|default:"Role Not Detected" }}
+                </div>
+
+                <div class="profile-contact">
+                    <div class="contact-item">
+                        <div class="contact-icon"><i class="fas fa-envelope"></i></div>
+                        <div class="contact-info">
+                            <label>Email</label>
+                            <span>{{ job.parsed_email|default:"--" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="contact-item">
+                        <div class="contact-icon"><i class="fas fa-phone"></i></div>
+                        <div class="contact-info">
+                            <label>Phone</label>
+                            <span>{{ job.parsed_phone|default:"--" }}</span>
+                        </div>
+                    </div>
+
+                    {% if job.parsed_location %}
+                    <div class="contact-item">
+                        <div class="contact-icon"><i class="fas fa-map-marker-alt"></i></div>
+                        <div class="contact-info">
+                            <label>Location</label>
+                            <span>{{ job.parsed_location }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if job.parsed_linkedin %}
+                    <a href="{{ job.parsed_linkedin }}" target="_blank" class="contact-item">
+                        <div class="contact-icon" style="color:#0077b5"><i class="fab fa-linkedin"></i></div>
+                        <div class="contact-info">
+                            <label>LinkedIn</label>
+                            <span>View Profile</span>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    {% if job.parsed_github %}
+                    <a href="{{ job.parsed_github }}" target="_blank" class="contact-item">
+                        <div class="contact-icon" style="color:#333"><i class="fab fa-github"></i></div>
+                        <div class="contact-info">
+                            <label>GitHub</label>
+                            <span>View Profile</span>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    {% if job.parsed_portfolio %}
+                    <a href="{% if 'http' not in job.parsed_portfolio %}https://{% endif %}{{ job.parsed_portfolio }}"
+                        target="_blank" class="contact-item">
+                        <div class="contact-icon" style="color:#f59e0b"><i class="fas fa-globe"></i></div>
+                        <div class="contact-info">
+                            <label>Portfolio</label>
+                            <span>View Website</span>
+                        </div>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+
+            <!-- AI Insights -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="background:#e0e7ff; color:#4338ca">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="card-title">AI Assessment</div>
+                </div>
+
+                <div class="insights-grid">
+                    <div class="insight-box">
+                        <div class="insight-label">Experience Level</div>
+                        <div class="insight-value">{{ job.candidate_type|default:"--" }}</div>
+                    </div>
+                    <div class="insight-box">
+                        <div class="insight-label">Domain</div>
+                        <div class="insight-value">{{ job.domain|default:"--" }}</div>
+                    </div>
+                    <div class="insight-box">
+                        <div class="insight-label">Total Exp</div>
+                        <div class="insight-value">{{ job.total_experience_years|default:"0" }} Years</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skills -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="background:#ecfdf5; color:#047857">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <div class="card-title">Skills & Expertise</div>
+                </div>
+
+                {% if job.parsed_skills_json %}
+                {% if job.parsed_skills_json.technical %}
+                <div class="skills-section">
+                    <div class="skills-title">Technical Skills</div>
+                    <div class="skills-grid">
+                        {% for skill in job.parsed_skills_json.technical %}
+                        <span class="skill-badge skill-tech">{{ skill }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if job.parsed_skills_json.tools %}
+                <div class="skills-section">
+                    <div class="skills-title">Tools & Platforms</div>
+                    <div class="skills-grid">
+                        {% for skill in job.parsed_skills_json.tools %}
+                        <span class="skill-badge skill-tool">{{ skill }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if job.parsed_skills_json.soft %}
+                <div class="skills-section">
+                    <div class="skills-title">Soft Skills</div>
+                    <div class="skills-grid">
+                        {% for skill in job.parsed_skills_json.soft %}
+                        <span class="skill-badge skill-soft">{{ skill }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                {% elif job.parsed_skills %}
+                <div class="skills-grid">
+                    {% for skill in job.parsed_skills.split|slice:":20" %}
+                    <span class="skill-badge skill-tech">{{ skill|cut:"," }}</span>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No skills detected</p>
+                {% endif %}
+            </div>
+
+            <!-- Experience -->
+            {% if job.parsed_experience %}
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="background:#fff7ed; color:#c2410c">
+                        <i class="fas fa-briefcase"></i>
+                    </div>
+                    <div class="card-title">Work Experience</div>
+                </div>
+
+                <div class="timeline">
+                    {% for exp in job.parsed_experience %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-title">{{ exp.title }}</div>
+                        <div class="timeline-subtitle">{{ exp.company }}</div>
+                        <div class="timeline-meta">
+                            <span><i class="far fa-calendar"></i> {{ exp.start_date }} - {{ exp.end_date }}</span>
+                        </div>
+                        {% if exp.description %}
+                        <div class="timeline-desc">{{ exp.description|linebreaksbr }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Projects -->
+            {% if job.parsed_projects %}
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="background:#f0f9ff; color:#0284c7">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <div class="card-title">Projects</div>
+                </div>
+
+                <div class="timeline">
+                    {% for proj in job.parsed_projects %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-title">{{ proj.title }}</div>
+                        <div class="timeline-subtitle">{{ proj.domain }}</div>
+                        {% if proj.description %}
+                        <div class="timeline-desc">{{ proj.description|linebreaksbr }}</div>
+                        {% endif %}
+                        {% if proj.technologies %}
+                        <div class="skills-grid" style="margin-top: 0.5rem;">
+                            {% for tech in proj.technologies %}
+                            <span class="skill-badge skill-tool" style="font-size: 0.75rem; padding: 0.2rem 0.5rem">{{
+                                tech }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Education -->
+            {% if job.parsed_education %}
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="background:#fdf2f8; color:#db2777">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="card-title">Education</div>
+                </div>
+
+                <div class="timeline">
+                    {% for Edu in job.parsed_education %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-title">{{ Edu.degree }}</div>
+                        <div class="timeline-subtitle">{{ Edu.university }}</div>
+                        <div class="timeline-meta">
+                            {% if Edu.year %}<span><i class="far fa-calendar"></i> {{ Edu.year }}</span>{% endif %}
+                            {% if Edu.gpa %}<span><i class="fas fa-star"></i> GPA/Score: {{ Edu.gpa }}</span>{% endif %}
+                        </div>
+                        {% if Edu.specialization %}
+                        <div class="timeline-desc">Specialization: {{ Edu.specialization }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Certifications -->
+            {% if job.parsed_certifications %}
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="background:#f5f3ff; color:#7c3aed">
+                        <i class="fas fa-certificate"></i>
+                    </div>
+                    <div class="card-title">Certifications</div>
+                </div>
+
+                <div class="grid" style="display: grid; gap: 1rem;">
+                    {% for cert in job.parsed_certifications %}
+                    <div
+                        style="background: #f8fafc; padding: 1rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 600;">{{ cert.name }}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted);">{{ cert.issuer }}</div>
+                        </div>
+                        {% if cert.year %}
+                        <div
+                            style="font-size: 0.85rem; font-weight: 600; background: #e2e8f0; padding: 0.2rem 0.6rem; border-radius: 4px;">
+                            {{ cert.year }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <div class="action-bar">
+        <a href="{% url 'resume_parser' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Parse Another
+        </a>
+        <button class="btn btn-primary" onclick="window.print()">
+            <i class="fas fa-print"></i> Print Profile
+        </button>
+        <button class="btn btn-primary" onclick="copyToClipboard(this)">
+            <i class="fas fa-copy"></i> Copy Data
+        </button>
+    </div>
+</div>
+
+<script>
+    function copyToClipboard(btn) {
+        const data = `
+Candidate: {{ job.parsed_name }}
+Email: {{ job.parsed_email }}
+Phone: {{ job.parsed_phone }}
+Role: {{ job.role_fit }}
+Exp: {{ job.total_experience_years }} Years
+Skills: {{ job.parsed_skills }}
+    `.trim();
+
+        navigator.clipboard.writeText(data).then(() => {
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+            }, 2000);
+        });
+    }
+</script>
+{% endblock %}
