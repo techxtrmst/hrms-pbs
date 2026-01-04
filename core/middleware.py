@@ -62,7 +62,37 @@ class CompanyIsolationMiddleware:
             # Import User model to check role
             from accounts.models import User
             
-            # Skip company validation for SUPERADMIN users
+            # Get current path
+            path = request.path_info
+            
+            # Skip company validation for:
+            # 1. Django admin panel (for superusers)
+            # 2. Static/media files
+            # 3. SuperAdmin custom portal
+            # 4. Account management pages
+            if (path.startswith('/admin/') or 
+                path.startswith('/static/') or 
+                path.startswith('/media/') or 
+                path.startswith('/superadmin/') or
+                path.startswith('/accounts/logout/') or
+                path.startswith('/accounts/change-password/')):
+                
+                # Still store company info if available
+                request.company = request.user.company or domain_company
+                _thread_locals.company = request.company
+                
+                # Check password change requirement
+                if request.user.must_change_password and \
+                   not path.startswith('/accounts/logout/') and \
+                   not path.startswith('/accounts/change-password/') and \
+                   not path.startswith('/static/') and \
+                   not path.startswith('/media/'):
+                    return redirect('change_password')
+                
+                response = self.get_response(request)
+                return response
+            
+            # Skip company validation for SUPERADMIN users (for non-admin paths)
             is_superadmin = hasattr(request.user, 'role') and request.user.role == User.Role.SUPERADMIN
             
             user_company = request.user.company
@@ -87,7 +117,6 @@ class CompanyIsolationMiddleware:
                 )
             
             # Force Password Change on First Login
-            path = request.path_info
             if request.user.must_change_password and \
                not path.startswith('/accounts/logout/') and \
                not path.startswith('/accounts/change-password/') and \
