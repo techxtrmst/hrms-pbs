@@ -184,6 +184,10 @@ jobs:
           EMAIL_HOST_PASSWORD=${{ secrets.STAGING_EMAIL_HOST_PASSWORD }}
           DEFAULT_FROM_EMAIL=${{ secrets.STAGING_DEFAULT_FROM_EMAIL }}
           TIME_ZONE=${{ secrets.STAGING_TIME_ZONE }}
+          STATIC_URL=${{ secrets.STAGING_STATIC_URL }}
+          STATIC_ROOT=${{ secrets.STAGING_STATIC_ROOT }}
+          MEDIA_URL=${{ secrets.STAGING_MEDIA_URL }}
+          MEDIA_ROOT=${{ secrets.STAGING_MEDIA_ROOT }}
           EOF
 
           # Create deployment archive
