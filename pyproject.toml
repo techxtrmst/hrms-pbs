@@ -1,0 +1,138 @@
+[project]
+name = "hrms-pbs"
+version = "1.0.0"
+description = "HRMS PBS - Human Resource Management System"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    # Core Django and Web Framework
+    "django>=4.2.0,<5.0",
+    "djangorestframework>=3.16.0",
+    "djangorestframework-simplejwt>=5.5.0",
+    "asgiref>=3.10.0",
+    
+    # Django Extensions
+    "django-apscheduler>=0.7.0",
+    "django-auditlog>=3.4.0",
+    "django-cors-headers>=4.9.0",
+    "django-environ>=0.12.0",
+    "django-filter>=25.1",
+    "django-haystack>=3.3.0",
+    "django-import-export>=4.3.0",
+    "django-jsonfield>=1.4.1",
+    "django-mathfilters>=1.0.0",
+    "django-microsoft-auth>=3.0.1",
+    "django-model-utils>=5.0.0",
+    "django-redis>=6.0.0",
+    "django-simple-history>=3.11.0",
+    "django-storages>=1.14.0",
+    "django-widget-tweaks>=1.5.0",
+    
+    # API Documentation
+    "drf-yasg>=1.21.0",
+    
+    # Database
+    "psycopg2-binary>=2.9.0",
+    "sqlalchemy>=2.0.0",
+    "sqlparse>=0.5.0",
+    "alembic>=1.12.0",
+    
+    # Authentication & Security
+    "bcrypt>=4.1.0",
+    "pyjwt>=2.9.0",
+    "python-jose>=3.3.0",
+    "oauthlib>=3.3.0",
+    "requests-oauthlib>=2.0.0",
+    
+    # File Processing
+    "openpyxl>=3.1.0",
+    "xlsxwriter>=3.2.0",
+    "pypdf2>=3.0.0",
+    "pypdf>=6.4.0",
+    "pdfplumber>=0.11.0",
+    "pdfkit>=1.0.0",
+    "reportlab>=4.0.0",
+    "xhtml2pdf>=0.2.17",
+    "python-bidi>=0.6.0",
+    "arabic-reshaper>=3.0.0",
+    
+    # AI/ML Libraries
+    "openai>=1.0",
+    "langchain>=0.3.0",
+    "langchain-openai>=0.1.0",
+    "langchain-google-genai>=0.2.0,<3.0.0",
+    "langchain-groq>=0.2.0",
+    "langchain-core>=0.3.0",
+    "langchain-community>=0.3.0",
+    "langchain-chroma>=0.1.0",
+    "langgraph>=0.2.0",
+    "groq>=0.10.0",
+    "google-generativeai>=0.3.0",
+    "sentence-transformers>=3.0.0",
+    "transformers>=4.40.0",
+    "torch>=2.0.0",
+    
+    # Utilities
+    "python-dateutil>=2.9.0",
+    "pytz>=2024.1",
+    "tzlocal>=5.3.0",
+    "python-slugify>=8.0.0",
+    "faker>=37.0.0",
+    "geopy>=2.4.0",
+    "phonenumbers>=8.13.0",
+    
+    # HTTP/API Clients
+    "requests>=2.32.0",
+    "httpx>=0.27.0",
+    "aiohttp>=3.12.0",
+    "websockets>=15.0.0",
+    
+    # Task Scheduling
+    "apscheduler>=3.11.0",
+    
+    # Data Processing
+    "pandas>=2.2.0",
+    "numpy>=2.0.0",
+    "tablib>=3.9.0",
+    
+    # Image Processing
+    "pillow>=11.0.0",
+    
+    # Cloud Storage
+    "boto3>=1.37.0",
+    "google-cloud-storage>=3.0.0",
+    
+    # Server
+    "gunicorn>=23.0.0",
+    "whitenoise>=6.11.0",
+    "python-dotenv>=1.0.0",
+    
+    # Misc
+    "pyzk>=0.9",
+    "qrcode>=8.2",
+    "twilio>=9.6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.0",
+    "pytest-django>=4.11.0",
+    "factory-boy>=3.3.0",
+    "coverage>=7.11.0",
+    "black>=24.10.0",
+    "flake8>=7.1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.0",
+    "pytest-django>=4.11.0",
+    "factory-boy>=3.3.0",
+    "coverage>=7.11.0",
+    "black>=24.10.0",
+    "flake8>=7.1.0",
+]

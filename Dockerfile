@@ -1,58 +1,46 @@
-FROM ghcr.io/astral-sh/uv:python3.13-alpine AS builder
+# syntax=docker/dockerfile:1
+
+# Build stage - using slim instead of Alpine for better torch/ML library compatibility
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
 
 WORKDIR /app
 
-ENV PYTHONUNBUFFERED=1 \
-  PYTHONDONTWRITEBYTECODE=1 \
-  UV_COMPILE_BYTECODE=1 \
-  UV_LINK_MODE=copy
+# Enable bytecode compilation
+ENV UV_COMPILE_BYTECODE=1
 
-# Install build dependencies
-RUN apk add --no-cache --virtual .build-deps \
-  build-base \
-  postgresql-dev \
-  libffi-dev \
-  jpeg-dev \
-  zlib-dev \
-  freetype-dev \
-  lcms2-dev \
-  openjpeg-dev \
-  tiff-dev \
-  tk-dev \
-  tcl-dev
+# Copy from the cache instead of linking since it's a mounted cache
+ENV UV_LINK_MODE=copy
 
 # Copy dependency files
-COPY requirements.txt ./
+COPY pyproject.toml uv.lock ./
 
-# Install dependencies with uv
-RUN uv venv /app/.venv && \
-  uv pip install --no-cache -r requirements.txt
+# Install dependencies without installing the project
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-install-project
 
-# Production image
-FROM python:3.13-alpine
+# Runtime stage
+FROM python:3.12-slim-bookworm AS runtime
 
 WORKDIR /app
 
-ENV PYTHONUNBUFFERED=1 \
-  PYTHONDONTWRITEBYTECODE=1 \
-  PATH="/app/.venv/bin:$PATH"
-
 # Install runtime dependencies
-RUN apk add --no-cache \
-  postgresql-client \
-  libpq \
-  postgresql-dev \
-  jpeg \
-  zlib \
-  freetype \
-  lcms2 \
-  openjpeg \
-  tiff \
-  curl && \
-  adduser -D -u 1000 app
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    wkhtmltopdf \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd -m -u 1000 -s /bin/bash app
 
 # Copy virtual environment from builder
 COPY --from=builder /app/.venv /app/.venv
+
+# Set PATH to use virtual environment
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app"
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 # Copy and set permissions for entrypoint script first
 COPY scripts/docker-entrypoint.sh /docker-entrypoint.sh
@@ -60,6 +48,12 @@ RUN chmod +x /docker-entrypoint.sh
 
 # Copy application code
 COPY --chown=app:app . .
+
+# Create necessary directories and set permissions
+RUN mkdir -p /app/staticfiles /app/mediafiles /app/logs && \
+    chown -R app:app /app
+
+USER app
 
 EXPOSE 8000
 
