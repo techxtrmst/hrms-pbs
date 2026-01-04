@@ -81,8 +81,9 @@ class CompanyIsolationMiddleware:
                 request.company = request.user.company or domain_company
                 _thread_locals.company = request.company
                 
-                # Check password change requirement
+                # Check password change requirement (but EXCLUDE /admin/)
                 if request.user.must_change_password and \
+                   not path.startswith('/admin/') and \
                    not path.startswith('/accounts/logout/') and \
                    not path.startswith('/accounts/change-password/') and \
                    not path.startswith('/static/') and \
