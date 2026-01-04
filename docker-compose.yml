@@ -39,9 +39,6 @@ services:
           cpus: "0.25"
 
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: hrms-backend:latest
     env_file:
       - .env

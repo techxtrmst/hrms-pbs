@@ -11,12 +11,24 @@ ENV UV_COMPILE_BYTECODE=1
 # Copy from the cache instead of linking since it's a mounted cache
 ENV UV_LINK_MODE=copy
 
+# Install build dependencies for packages that need compilation
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    g++ \
+    libpq-dev \
+    libcairo2-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
 # Copy dependency files
 COPY pyproject.toml uv.lock ./
 
-# Install dependencies without installing the project
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-project
+# Install dependencies - NO CACHE to avoid filling runner disk
+RUN uv sync --frozen --no-dev --no-install-project --no-cache && \
+    find /app/.venv -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true && \
+    find /app/.venv -type f -name '*.pyc' -delete 2>/dev/null || true && \
+    find /app/.venv -type f -name '*.pyo' -delete 2>/dev/null || true
 
 # Runtime stage
 FROM python:3.12-slim-bookworm AS runtime
@@ -26,6 +38,7 @@ WORKDIR /app
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
+    libcairo2 \
     wkhtmltopdf \
     curl \
     && rm -rf /var/lib/apt/lists/*

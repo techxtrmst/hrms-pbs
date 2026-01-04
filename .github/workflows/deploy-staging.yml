@@ -27,15 +27,6 @@ jobs:
           driver-opts: |
             network=host
 
-      - name: Cache Docker layers
-        uses: actions/cache@v4
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-staging-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-staging-
-            ${{ runner.os }}-buildx-
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -59,22 +50,13 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Use both GHA cache and local cache for maximum speed
-          cache-from: |
-            type=gha
-            type=local,src=/tmp/.buildx-cache
-          cache-to: |
-            type=gha,mode=max
-            type=local,dest=/tmp/.buildx-cache-new,mode=max
+          # Use only GHA cache to save disk space
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           load: false
           # Enable inline cache for faster subsequent builds
           build-args: |
             BUILDKIT_INLINE_CACHE=1
-
-      - name: Move cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache || true
 
       - name: Check disk space on staging server
         uses: appleboy/ssh-action@v1.2.0
@@ -408,7 +390,7 @@ jobs:
 
             # Login to GitHub Container Registry
             echo "🔐 Logging in to GitHub Container Registry..."
-            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
 
             # Pull the pre-built image from GHCR (convert repository name to lowercase)
             echo "📥 Pulling Docker image from GitHub Container Registry..."
@@ -460,7 +442,7 @@ jobs:
             echo "🔍 Validating deployment..."
 
             # Check all services are running
-            if ! $DOCKER_COMPOSE_CMD ps --services --filter "status=running" | grep -q "backend\|db\|redis\|celery-worker\|celery-beat\|nginx"; then
+            if ! $DOCKER_COMPOSE_CMD ps --services --filter "status=running" | grep -q "backend\|db\|redis\|nginx"; then
               echo "❌ Not all services are running"
               $DOCKER_COMPOSE_CMD ps
               
