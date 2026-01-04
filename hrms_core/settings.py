@@ -11,31 +11,34 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import environ
+
+# Initialize environment variables
+env = environ.Env(
+    # Set default values and casting
+    DEBUG=(bool, False),
+    CORS_ALLOW_ALL_ORIGINS=(bool, True),
+    EMAIL_USE_TLS=(bool, True),
+    EMAIL_USE_SSL=(bool, False),
+)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Read .env file
+environ.Env.read_env(BASE_DIR / ".env")
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-)11e40%=qcfj91=%r$1m^c0t(%ob#kvkkzw4f8*6o6n9-n7w9&"
+SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env("DEBUG")
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    'petabytz.com',
-    'www.petabytz.com',
-    'bluebix.com',
-    'www.bluebix.com',
-    'softstandard.com',
-    'www.softstandard.com',
-    '*',  # For development - remove in production
-]
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
 
 # Application definition
@@ -62,8 +65,8 @@ INSTALLED_APPS = [
 ]
 
 AUTHENTICATION_BACKENDS = [
-    'accounts.backends.CustomAuthenticationBackend',
-    'django.contrib.auth.backends.ModelBackend',
+    "accounts.backends.CustomAuthenticationBackend",
+    "django.contrib.auth.backends.ModelBackend",
 ]
 
 
@@ -105,12 +108,12 @@ WSGI_APPLICATION = "hrms_core.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "hrms_pbs",
-        "USER": "postgres",
-        "PASSWORD": "work123",
-        "HOST": "localhost",
-        "PORT": "5432",
+        "ENGINE": env("DB_ENGINE", default="django.db.backends.postgresql"),
+        "NAME": env("DB_NAME"),
+        "USER": env("DB_USER"),
+        "PASSWORD": env("DB_PASSWORD"),
+        "HOST": env("DB_HOST", default="localhost"),
+        "PORT": env("DB_PORT", default="5432"),
     }
 }
 
@@ -139,7 +142,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "Asia/Kolkata"
+TIME_ZONE = env("TIME_ZONE", default="UTC")
 
 USE_I18N = True
 
@@ -160,9 +163,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.IsAuthenticated",
-    ),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
 }
 
 from datetime import timedelta
@@ -172,28 +173,29 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
 
-CORS_ALLOW_ALL_ORIGINS = True # For development
+CORS_ALLOW_ALL_ORIGINS = env("CORS_ALLOW_ALL_ORIGINS")  # For development
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'dashboard'
-LOGOUT_REDIRECT_URL = 'login'
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "dashboard"
+LOGOUT_REDIRECT_URL = "login"
 
 # Email Configuration for Birthday/Anniversary Notifications
-# Using Petabytz Office 365 Account
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.office365.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_USE_SSL = False
-EMAIL_HOST_USER = 'hrms@petabytz.com'
-EMAIL_HOST_PASSWORD = 'Rminds@0007'
-DEFAULT_FROM_EMAIL = 'Petabytz HR <hrms@petabytz.com>'
-SERVER_EMAIL = 'hrms@petabytz.com'
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend"
+)
+EMAIL_HOST = env("EMAIL_HOST", default="smtp.office365.com")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_USE_TLS = env("EMAIL_USE_TLS")
+EMAIL_USE_SSL = env("EMAIL_USE_SSL")
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="HR <noreply@example.com>")
+SERVER_EMAIL = env("SERVER_EMAIL", default="")
 
 # reload
 # reload2

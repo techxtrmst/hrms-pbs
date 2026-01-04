@@ -1,0 +1,908 @@
+name: Deploy Backend to Staging
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-staging-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          buildkitd-flags: --debug
+          driver-opts: |
+            network=host
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-staging-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-staging-
+            ${{ runner.os }}-buildx-
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          tags: |
+            type=raw,value=staging
+            type=sha,prefix=staging-
+
+      - name: Build and push Docker image to GHCR
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Use both GHA cache and local cache for maximum speed
+          cache-from: |
+            type=gha
+            type=local,src=/tmp/.buildx-cache
+          cache-to: |
+            type=gha,mode=max
+            type=local,dest=/tmp/.buildx-cache-new,mode=max
+          load: false
+          # Enable inline cache for faster subsequent builds
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache || true
+
+      - name: Check disk space on staging server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USERNAME }}
+          password: ${{ secrets.STAGING_SSH_PASSWORD }}
+          port: ${{ secrets.STAGING_SSH_PORT }}
+          command_timeout: 2m
+          script: |
+            AVAILABLE=$(df / | tail -1 | awk '{print $4}')
+            AVAILABLE_GB=$(echo "scale=2; $AVAILABLE / 1048576" | bc)
+            echo "💾 Available disk space: ${AVAILABLE_GB}GB"
+
+            # We only need ~2GB for pulling images
+            if [ "$AVAILABLE" -lt 2097152 ]; then
+              echo "❌ ERROR: Less than 2GB free space!"
+              echo "❌ Current free space: ${AVAILABLE_GB}GB"
+              exit 1
+            fi
+
+            echo "✅ Sufficient disk space available"
+
+      - name: Smart pre-deployment cleanup
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USERNAME }}
+          password: ${{ secrets.STAGING_SSH_PASSWORD }}
+          port: ${{ secrets.STAGING_SSH_PORT }}
+          command_timeout: 10m
+          script: |
+            set -e
+
+            echo "🗑️ Starting smart pre-deployment cleanup..."
+
+            # Check disk space BEFORE cleanup
+            echo "📊 Disk space BEFORE cleanup:"
+            df -h /
+            docker system df
+
+            # Remove stopped containers
+            echo "🛑 Removing stopped containers..."
+            docker container prune -f
+
+            # Remove dangling images (untagged)
+            echo "🗑️ Removing dangling images..."
+            docker image prune -f
+
+            # PRESERVE build cache - only remove if older than 7 days
+            echo "🧹 Cleaning very old build cache (7+ days)..."
+            docker builder prune --filter "until=168h" -f || true
+
+            # Remove anonymous volumes only
+            echo "🗑️ Removing anonymous volumes (keeping named volumes)..."
+            docker volume prune -f
+
+            # Remove unused networks
+            echo "🗑️ Removing unused networks..."
+            docker network prune -f
+
+            # DO NOT cleanup backups here - only cleanup SUCCESSFUL backups after deployment succeeds
+            BACKUP_ROOT="${{ secrets.STAGING_BACKUP_PATH }}"
+            if [ -d "$BACKUP_ROOT" ]; then
+              echo "📦 Current backups:"
+              ls -lhd "$BACKUP_ROOT"/backup-* 2>/dev/null || echo "No backups found"
+              
+              # Clean up FAILED deployment backups only (keep all successful ones for now)
+              echo "🗑️ Cleaning up failed deployment backups..."
+              find "$BACKUP_ROOT" -name "backup-*" -type d | while read backup_dir; do
+                if [ -f "$backup_dir/.deployment_failed" ]; then
+                  echo "  Removing failed backup: $(basename $backup_dir)"
+                  rm -rf "$backup_dir"
+                fi
+              done
+            fi
+
+            # Check disk space AFTER cleanup
+            echo ""
+            echo "📊 Disk space AFTER cleanup:"
+            df -h /
+            docker system df
+
+            # Verify we have enough space
+            AVAILABLE=$(df / | tail -1 | awk '{print $4}')
+            AVAILABLE_GB=$(echo "scale=2; $AVAILABLE / 1048576" | bc)
+            echo ""
+            echo "💾 Available space after cleanup: ${AVAILABLE_GB}GB"
+
+            if [ "$AVAILABLE" -lt 2097152 ]; then
+              echo "❌ ERROR: Less than 2GB free space after cleanup!"
+              exit 1
+            fi
+
+            echo "✅ Smart cleanup complete!"
+
+      - name: Create deployment config files
+        run: |
+          # Create deployment directory
+          mkdir -p /tmp/deployment
+
+          # Copy only necessary files for deployment
+          cp docker-compose.yml /tmp/deployment/
+          cp nginx.conf /tmp/deployment/
+
+          # Create staging environment file (only vars used by this project)
+          cat > /tmp/deployment/.env << 'EOF'
+          DEBUG=${{ secrets.STAGING_DEBUG }}
+          SECRET_KEY=${{ secrets.STAGING_SECRET_KEY }}
+          APP_PORT=${{ secrets.STAGING_APP_PORT }}
+          DB_ENGINE=${{ secrets.STAGING_DB_ENGINE }}
+          DB_NAME=${{ secrets.STAGING_DB_NAME }}
+          DB_USER=${{ secrets.STAGING_DB_USER }}
+          DB_PASSWORD=${{ secrets.STAGING_DB_PASSWORD }}
+          DB_HOST=${{ secrets.STAGING_DB_HOST }}
+          DB_PORT=${{ secrets.STAGING_DB_PORT }}
+          ALLOWED_HOSTS=${{ secrets.STAGING_ALLOWED_HOSTS }}
+          CORS_ALLOW_ALL_ORIGINS=${{ secrets.STAGING_CORS_ALLOW_ALL_ORIGINS }}
+          EMAIL_BACKEND=${{ secrets.STAGING_EMAIL_BACKEND }}
+          EMAIL_HOST=${{ secrets.STAGING_EMAIL_HOST }}
+          EMAIL_PORT=${{ secrets.STAGING_EMAIL_PORT }}
+          EMAIL_USE_TLS=${{ secrets.STAGING_EMAIL_USE_TLS }}
+          EMAIL_USE_SSL=${{ secrets.STAGING_EMAIL_USE_SSL }}
+          EMAIL_HOST_USER=${{ secrets.STAGING_EMAIL_HOST_USER }}
+          EMAIL_HOST_PASSWORD=${{ secrets.STAGING_EMAIL_HOST_PASSWORD }}
+          DEFAULT_FROM_EMAIL=${{ secrets.STAGING_DEFAULT_FROM_EMAIL }}
+          TIME_ZONE=${{ secrets.STAGING_TIME_ZONE }}
+          EOF
+
+          # Create deployment archive
+          cd /tmp/deployment
+          tar -czf ../backend-staging-config.tar.gz .
+
+          # Move archive back to workspace
+          mv ../backend-staging-config.tar.gz "${{ github.workspace }}/backend-staging-config.tar.gz"
+
+          # Generate checksum for integrity verification
+          cd "${{ github.workspace }}"
+          sha256sum backend-staging-config.tar.gz > backend-staging-config.tar.gz.sha256
+          echo "✅ Config archive created with checksum"
+          cat backend-staging-config.tar.gz.sha256
+
+      - name: Upload deployment files
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USERNAME }}
+          password: ${{ secrets.STAGING_SSH_PASSWORD }}
+          port: ${{ secrets.STAGING_SSH_PORT }}
+          source: "backend-staging-config.tar.gz,backend-staging-config.tar.gz.sha256"
+          target: "/tmp/"
+
+      - name: Deploy to staging server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USERNAME }}
+          password: ${{ secrets.STAGING_SSH_PASSWORD }}
+          port: ${{ secrets.STAGING_SSH_PORT }}
+          command_timeout: 20m
+          script: |
+            set -e
+
+            DEPLOY_DIR="${{ secrets.STAGING_DEPLOY_PATH }}"
+            BACKUP_ROOT="${{ secrets.STAGING_BACKUP_PATH }}"
+            DEPLOYMENT_ID="$(date +%Y%m%d-%H%M%S)"
+            BACKUP_DIR="$BACKUP_ROOT/backup-$DEPLOYMENT_ID"
+            DOCKER_COMPOSE_CMD=""
+            STATE_FILE="$BACKUP_ROOT/.deployment_state"
+
+            echo "🚀 Starting backend deployment to staging server..."
+            echo "📋 Deployment ID: $DEPLOYMENT_ID"
+
+            # Verify checksum BEFORE extraction
+            echo "🔐 Verifying archive integrity..."
+            cd /tmp
+            if sha256sum -c backend-staging-config.tar.gz.sha256 2>&1; then
+              echo "✅ Archive integrity verified"
+            else
+              echo "❌ Checksum verification failed!"
+              exit 1
+            fi
+
+            # Determine docker compose command
+            if command -v docker-compose >/dev/null 2>&1; then
+              DOCKER_COMPOSE_CMD="docker-compose"
+            elif docker compose version >/dev/null 2>&1; then
+              DOCKER_COMPOSE_CMD="docker compose"
+            else
+              echo "❌ Neither docker-compose nor docker compose found"
+              exit 1
+            fi
+
+            echo "📦 Using Docker Compose command: $DOCKER_COMPOSE_CMD"
+
+            # Create deployment directory if it doesn't exist
+            mkdir -p "$DEPLOY_DIR"
+            mkdir -p "$BACKUP_ROOT"
+            cd "$DEPLOY_DIR"
+
+            # Read last successful deployment info
+            LAST_SUCCESSFUL_DEPLOYMENT=""
+            if [ -f "$STATE_FILE" ]; then
+              LAST_SUCCESSFUL_DEPLOYMENT=$(grep "^LAST_SUCCESSFUL=" "$STATE_FILE" | cut -d= -f2)
+              echo "📌 Last successful deployment: ${LAST_SUCCESSFUL_DEPLOYMENT:-none}"
+            fi
+
+            # Backup current deployment if it exists
+            if [ -f "docker-compose.yml" ]; then
+              echo "💾 Creating backup of current deployment..."
+              mkdir -p "$BACKUP_DIR"
+              
+              # Backup database FIRST (before stopping services)
+              DB_BACKUP_SUCCESSFUL=false
+              echo "🗃️ Backing up database..."
+              if $DOCKER_COMPOSE_CMD ps | grep -q "db.*Up"; then
+                if $DOCKER_COMPOSE_CMD exec -T db pg_dump -U postgres postgres > "$BACKUP_DIR/database-backup.sql" 2>&1; then
+                  if [ -f "$BACKUP_DIR/database-backup.sql" ] && [ -s "$BACKUP_DIR/database-backup.sql" ]; then
+                    BACKUP_SIZE=$(du -h "$BACKUP_DIR/database-backup.sql" | cut -f1)
+                    
+                    # Verify backup integrity by checking for SQL dump header
+                    if head -n 1 "$BACKUP_DIR/database-backup.sql" | grep -q "PostgreSQL database dump"; then
+                      echo "✅ Database backup verified: $BACKUP_SIZE"
+                      DB_BACKUP_SUCCESSFUL=true
+                    else
+                      echo "⚠️ Database backup validation failed - invalid SQL dump format"
+                      rm -f "$BACKUP_DIR/database-backup.sql"
+                    fi
+                  else
+                    echo "⚠️ Database backup is empty"
+                  fi
+                else
+                  echo "⚠️ Database backup command failed"
+                fi
+              else
+                echo "⚠️ Database container not running, skipping backup"
+              fi
+              
+              # Backup config files
+              cp -r . "$BACKUP_DIR/" 2>/dev/null || true
+              [ -f ".env" ] && cp ".env" "$BACKUP_DIR/.env" 2>/dev/null || true
+              
+              # Record current image ID for rollback
+              CURRENT_IMAGE=$(docker images hrms-backend:latest -q 2>/dev/null)
+              if [ -n "$CURRENT_IMAGE" ]; then
+                echo "$CURRENT_IMAGE" > "$BACKUP_DIR/.image_id"
+                echo "📦 Recorded image ID: $CURRENT_IMAGE"
+              fi
+              
+              # Mark this backup's status
+              if [ "$DB_BACKUP_SUCCESSFUL" = true ]; then
+                echo "complete" > "$BACKUP_DIR/.backup_status"
+                echo "✅ Backup completed successfully at: $BACKUP_DIR"
+              else
+                echo "incomplete" > "$BACKUP_DIR/.backup_status"
+                echo "⚠️ Backup incomplete (no DB backup) at: $BACKUP_DIR"
+              fi
+            fi
+
+            # Tag current image with deployment ID for precise rollback
+            if [ -f "docker-compose.yml" ]; then
+              echo "🏷️ Tagging current image for rollback..."
+              CURRENT_IMAGE=$(docker images hrms-backend:latest -q 2>/dev/null)
+              if [ -n "$CURRENT_IMAGE" ]; then
+                # Tag with deployment ID
+                docker tag hrms-backend:latest "hrms-backend:deploy-$DEPLOYMENT_ID" || true
+                
+                # Also update 'last-known-good' if there was a last successful deployment
+                if [ -n "$LAST_SUCCESSFUL_DEPLOYMENT" ]; then
+                  LAST_GOOD_IMAGE=$(docker images "hrms-backend:deploy-$LAST_SUCCESSFUL_DEPLOYMENT" -q 2>/dev/null)
+                  if [ -n "$LAST_GOOD_IMAGE" ]; then
+                    docker rmi hrms-backend:last-known-good 2>/dev/null || true
+                    docker tag "$LAST_GOOD_IMAGE" hrms-backend:last-known-good || true
+                    echo "✅ Tagged last known good: deploy-$LAST_SUCCESSFUL_DEPLOYMENT"
+                  fi
+                fi
+                
+                echo "✅ Tagged current image: deploy-$DEPLOYMENT_ID ($CURRENT_IMAGE)"
+              fi
+            fi
+
+            # Stop and remove all services, containers, networks (PRESERVE DATABASE VOLUMES)
+            if [ -f "docker-compose.yml" ]; then
+              echo "🛑 Stopping current services (preserving database volume)..."
+              $DOCKER_COMPOSE_CMD down --remove-orphans || true
+              
+              # Clean up stopped containers only
+              echo "🧹 Cleaning up stopped containers..."
+              docker container prune -f || true
+              
+              # Remove dangling images only (untagged)
+              echo "🗑️ Removing dangling images..."
+              docker image prune -f || true
+              
+              # Keep all tagged images for rollback - do NOT remove deployment-tagged images
+              echo "✅ Preserving all tagged images for rollback capability"
+              
+              # Remove only anonymous volumes (preserve named volumes like postgres_data)
+              echo "🔄 Cleaning up anonymous volumes (keeping database data)..."
+              docker volume prune -f || true
+            fi
+
+            # Clean up deployment directory (completely clean it)
+            echo "🧽 Cleaning deployment directory..."
+            find . -maxdepth 1 -not -name "." -not -name ".." -exec rm -rf {} + 2>/dev/null || true
+
+            # Extract new deployment config
+            echo "📦 Extracting deployment configuration..."
+            tar -xzf /tmp/backend-staging-config.tar.gz
+            rm -f /tmp/backend-staging-config.tar.gz
+
+            # Verify deployment files
+            if [ ! -f "docker-compose.yml" ]; then
+              echo "❌ docker-compose.yml not found in deployment package"
+              exit 1
+            fi
+
+            if [ ! -f ".env" ]; then
+              echo "❌ .env file not found in deployment package"
+              exit 1
+            fi
+
+            echo "✅ Configuration files validated"
+
+            # Verify docker-compose configuration
+            echo "✅ Validating deployment files..."
+            $DOCKER_COMPOSE_CMD config --quiet || {
+              echo "❌ Invalid docker-compose.yml configuration"
+              exit 1
+            }
+
+            # Login to GitHub Container Registry
+            echo "🔐 Logging in to GitHub Container Registry..."
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+
+            # Pull the pre-built image from GHCR (convert repository name to lowercase)
+            echo "📥 Pulling Docker image from GitHub Container Registry..."
+            REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+            docker pull ghcr.io/${REPO_LOWER}:staging
+
+            # Tag the pulled image for local use
+            docker tag ghcr.io/${REPO_LOWER}:staging hrms-backend:latest
+
+            # Start all services (database health check and migrations handled automatically)
+            echo "🚀 Starting all services..."
+            $DOCKER_COMPOSE_CMD up -d
+
+            # Wait for database to be healthy
+            echo "⏳ Waiting for database to be ready..."
+            for i in {1..30}; do
+              if $DOCKER_COMPOSE_CMD exec -T db pg_isready -U postgres >/dev/null 2>&1; then
+                echo "✅ Database is ready"
+                break
+              fi
+              if [ $i -eq 30 ]; then
+                echo "❌ Database failed to start within 30 seconds"
+                $DOCKER_COMPOSE_CMD logs db --tail=50
+                exit 1
+              fi
+              sleep 1
+            done
+
+            echo "✅ Migrations will be applied automatically by backend container"
+
+            # Wait for backend to be healthy (increased timeout for migrations)
+            echo "⏳ Waiting for backend to be ready..."
+            for i in {1..120}; do
+              if $DOCKER_COMPOSE_CMD exec -T backend curl -fsS http://localhost:8000/api/health/ >/dev/null 2>&1; then
+                echo "✅ Backend is healthy and responding"
+                break
+              fi
+              if [ $i -eq 120 ]; then
+                echo "❌ Backend failed to start within 120 seconds"
+                echo "📋 Backend logs:"
+                $DOCKER_COMPOSE_CMD logs backend --tail=20
+                exit 1
+              fi
+              echo "⏳ Attempt $i/120 - waiting for backend..."
+              sleep 1
+            done
+
+            # Final deployment validation
+            echo "🔍 Validating deployment..."
+
+            # Check all services are running
+            if ! $DOCKER_COMPOSE_CMD ps --services --filter "status=running" | grep -q "backend\|db\|redis\|celery-worker\|celery-beat\|nginx"; then
+              echo "❌ Not all services are running"
+              $DOCKER_COMPOSE_CMD ps
+              
+              # Mark this deployment as failed
+              touch "$BACKUP_DIR/.deployment_failed"
+              echo "deployment_id=$DEPLOYMENT_ID" > "$BACKUP_DIR/.deployment_info"
+              echo "status=failed" >> "$BACKUP_DIR/.deployment_info"
+              echo "reason=services_not_running" >> "$BACKUP_DIR/.deployment_info"
+              echo "timestamp=$(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$BACKUP_DIR/.deployment_info"
+              
+              exit 1
+            fi
+
+            # Check external connectivity
+            if ! curl -fsS "http://localhost:${{ secrets.STAGING_APP_PORT }}/api/health/" >/dev/null 2>&1; then
+              echo "❌ External health check failed"
+              echo "📋 Nginx logs:"
+              $DOCKER_COMPOSE_CMD logs nginx --tail=10
+              
+              # Mark this deployment as failed
+              touch "$BACKUP_DIR/.deployment_failed"
+              echo "deployment_id=$DEPLOYMENT_ID" > "$BACKUP_DIR/.deployment_info"
+              echo "status=failed" >> "$BACKUP_DIR/.deployment_info"
+              echo "reason=health_check_failed" >> "$BACKUP_DIR/.deployment_info"
+              echo "timestamp=$(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$BACKUP_DIR/.deployment_info"
+              
+              exit 1
+            fi
+
+            # 🎉 DEPLOYMENT SUCCESSFUL - Record this success
+            echo ""
+            echo "🎉 Backend deployment completed successfully!"
+
+            # Mark deployment as successful
+            echo "deployment_id=$DEPLOYMENT_ID" > "$BACKUP_DIR/.deployment_info"
+            echo "status=success" >> "$BACKUP_DIR/.deployment_info"
+            echo "timestamp=$(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$BACKUP_DIR/.deployment_info"
+            echo "commit_sha=${{ github.sha }}" >> "$BACKUP_DIR/.deployment_info"
+
+            # Update deployment state file
+            echo "LAST_SUCCESSFUL=$DEPLOYMENT_ID" > "$STATE_FILE"
+            echo "LAST_SUCCESSFUL_TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$STATE_FILE"
+            echo "LAST_SUCCESSFUL_COMMIT=${{ github.sha }}" >> "$STATE_FILE"
+
+            # Tag the successfully deployed image as 'last-known-good'
+            CURRENT_IMAGE=$(docker images hrms-backend:latest -q 2>/dev/null)
+            if [ -n "$CURRENT_IMAGE" ]; then
+              docker rmi hrms-backend:last-known-good 2>/dev/null || true
+              docker tag hrms-backend:latest hrms-backend:last-known-good
+              echo "✅ Tagged image as last-known-good"
+            fi
+
+            # NOW cleanup old successful deployments (keep last 3 successful)
+            echo "🗑️ Cleaning up old successful deployments (keeping 3 most recent)..."
+            find "$BACKUP_ROOT" -name "backup-*" -type d | while read backup_dir; do
+              if [ -f "$backup_dir/.deployment_info" ] && grep -q "status=success" "$backup_dir/.deployment_info"; then
+                echo "  Found successful backup: $(basename $backup_dir)"
+              fi
+            done | tail -n +4 | while read line; do
+              backup_name=$(echo "$line" | awk '{print $NF}')
+              backup_path="$BACKUP_ROOT/$backup_name"
+              if [ -d "$backup_path" ]; then
+                echo "  Removing old successful backup: $backup_name"
+                
+                # Also remove associated image tag if it exists
+                if [ -f "$backup_path/.deployment_info" ]; then
+                  old_deploy_id=$(grep "deployment_id=" "$backup_path/.deployment_info" | cut -d= -f2)
+                  docker rmi "hrms-backend:deploy-$old_deploy_id" 2>/dev/null || true
+                fi
+                
+                rm -rf "$backup_path"
+              fi
+            done
+
+            echo "🌐 Application available at: http://${{ secrets.STAGING_SSH_HOST }}:${{ secrets.STAGING_APP_PORT }}"
+            echo "💾 Current backup location: $BACKUP_DIR"
+            echo "📁 All backups stored in: $BACKUP_ROOT"
+            echo "💽 Database data preserved in volume: postgres_data"
+            echo ""
+            echo "📊 Service status:"
+            $DOCKER_COMPOSE_CMD ps
+            echo ""
+            echo "📦 Deployment images:"
+            docker images hrms-backend --format "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Size}}"
+
+            # Cleanup old deployment-tagged images (keep last 5 deployment tags)
+            echo ""
+            echo "🗑️ Cleaning up old deployment images (keeping 5 most recent deploy tags)..."
+            docker images hrms-backend --format "{{.Tag}}" | grep "^deploy-" | sort -r | tail -n +6 | while read old_tag; do
+              echo "  Removing old image tag: $old_tag"
+              docker rmi "hrms-backend:$old_tag" 2>/dev/null || true
+            done
+
+            # Final cleanup: remove truly dangling images
+            echo "🗑️ Final cleanup of dangling images..."
+            docker image prune -f || true
+
+            echo ""
+            echo "✅ Deployment and cleanup completed successfully!"
+
+      - name: Rollback on failure
+        if: failure()
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USERNAME }}
+          password: ${{ secrets.STAGING_SSH_PASSWORD }}
+          port: ${{ secrets.STAGING_SSH_PORT }}
+          command_timeout: 10m
+          script: |
+            set -e
+
+            DEPLOY_DIR="${{ secrets.STAGING_DEPLOY_PATH }}"
+            BACKUP_ROOT="${{ secrets.STAGING_BACKUP_PATH }}"
+            STATE_FILE="$BACKUP_ROOT/.deployment_state"
+            DOCKER_COMPOSE_CMD=""
+
+            # Determine docker compose command
+            if command -v docker-compose >/dev/null 2>&1; then
+              DOCKER_COMPOSE_CMD="docker-compose"
+            elif docker compose version >/dev/null 2>&1; then
+              DOCKER_COMPOSE_CMD="docker compose"
+            else
+              echo "❌ Neither docker-compose nor docker compose found"
+              exit 1
+            fi
+
+            cd "$DEPLOY_DIR"
+
+            echo "🔄 Deployment failed, initiating intelligent rollback..."
+
+            # Stop current broken deployment (preserve database volumes)
+            echo "🛑 Stopping failed deployment..."
+            $DOCKER_COMPOSE_CMD down --remove-orphans || true
+
+            # Find last SUCCESSFUL deployment
+            LAST_SUCCESSFUL_DEPLOYMENT=""
+            if [ -f "$STATE_FILE" ]; then
+              LAST_SUCCESSFUL_DEPLOYMENT=$(grep "^LAST_SUCCESSFUL=" "$STATE_FILE" | cut -d= -f2)
+            fi
+
+            if [ -z "$LAST_SUCCESSFUL_DEPLOYMENT" ]; then
+              echo "❌ No last successful deployment found in state file"
+              echo "🔍 Searching for any successful backup..."
+              
+              # Try to find any successful backup
+              LAST_SUCCESSFUL_BACKUP=$(find "$BACKUP_ROOT" -name ".deployment_info" -type f | xargs grep -l "status=success" | sort -r | head -n 1)
+              
+              if [ -n "$LAST_SUCCESSFUL_BACKUP" ]; then
+                LAST_SUCCESSFUL_DEPLOYMENT=$(grep "deployment_id=" "$LAST_SUCCESSFUL_BACKUP" | cut -d= -f2)
+                echo "✅ Found successful backup: $LAST_SUCCESSFUL_DEPLOYMENT"
+              else
+                echo "❌ No successful backups found - cannot rollback"
+                echo "⚠️ Manual intervention required"
+                exit 1
+              fi
+            fi
+
+            echo "📌 Rolling back to last successful deployment: $LAST_SUCCESSFUL_DEPLOYMENT"
+
+            # Check if last-known-good image exists
+            ROLLBACK_IMAGE=$(docker images hrms-backend:last-known-good -q 2>/dev/null)
+            if [ -z "$ROLLBACK_IMAGE" ]; then
+              # Try deployment-specific tag
+              ROLLBACK_IMAGE=$(docker images "hrms-backend:deploy-$LAST_SUCCESSFUL_DEPLOYMENT" -q 2>/dev/null)
+              
+              if [ -z "$ROLLBACK_IMAGE" ]; then
+                echo "❌ No rollback image found"
+                echo "ℹ️ Available images:"
+                docker images hrms-backend
+                exit 1
+              else
+                echo "🏷️ Found deployment-specific image: deploy-$LAST_SUCCESSFUL_DEPLOYMENT"
+                docker tag "hrms-backend:deploy-$LAST_SUCCESSFUL_DEPLOYMENT" hrms-backend:latest
+              fi
+            else
+              echo "🏷️ Using last-known-good image: $ROLLBACK_IMAGE"
+              docker tag hrms-backend:last-known-good hrms-backend:latest
+            fi
+
+            # Restore config files from last successful backup
+            ROLLBACK_BACKUP="$BACKUP_ROOT/backup-$LAST_SUCCESSFUL_DEPLOYMENT"
+
+            if [ -d "$ROLLBACK_BACKUP" ]; then
+              echo "📋 Restoring configuration from: $ROLLBACK_BACKUP"
+              
+              # Restore .env
+              if [ -f "$ROLLBACK_BACKUP/.env" ]; then
+                cp "$ROLLBACK_BACKUP/.env" "./.env"
+                echo "✅ Restored .env file"
+              fi
+              
+              # Restore docker-compose.yml if it exists
+              if [ -f "$ROLLBACK_BACKUP/docker-compose.yml" ]; then
+                cp "$ROLLBACK_BACKUP/docker-compose.yml" "./docker-compose.yml"
+                echo "✅ Restored docker-compose.yml"
+              fi
+              
+              # Check if database backup exists and ask about restoration
+              if [ -f "$ROLLBACK_BACKUP/database-backup.sql" ] && [ -s "$ROLLBACK_BACKUP/database-backup.sql" ]; then
+                BACKUP_SIZE=$(du -h "$ROLLBACK_BACKUP/database-backup.sql" | cut -f1)
+                echo "📦 Database backup available: $BACKUP_SIZE"
+                echo "⚠️ Database will NOT be restored automatically (data preserved in volume)"
+                echo "ℹ️ To restore manually, run:"
+                echo "   cat $ROLLBACK_BACKUP/database-backup.sql | docker exec -i \$(docker ps -qf name=db) psql -U postgres postgres"
+              fi
+            else
+              echo "⚠️ Backup directory not found: $ROLLBACK_BACKUP"
+              echo "⚠️ Using current configuration files"
+            fi
+
+            # Start services with rolled-back image
+            echo "🚀 Starting services with last known good image..."
+            $DOCKER_COMPOSE_CMD up -d
+
+            # Wait for services to be healthy
+            echo "⏳ Waiting for services to start..."
+            for i in {1..30}; do
+              if $DOCKER_COMPOSE_CMD ps --filter "status=running" | grep -q "backend"; then
+                echo "✅ Backend service is running"
+                break
+              fi
+              if [ $i -eq 30 ]; then
+                echo "❌ Backend failed to start after rollback"
+                $DOCKER_COMPOSE_CMD logs backend --tail=30
+                exit 1
+              fi
+              sleep 2
+            done
+
+            # Verify rollback health
+            echo "🔍 Verifying rollback health..."
+            sleep 5
+
+            if curl -fsS "http://localhost:${{ secrets.STAGING_APP_PORT }}/api/health/" >/dev/null 2>&1; then
+              echo "✅ Rollback completed successfully - application is healthy"
+              echo "📊 Service status:"
+              $DOCKER_COMPOSE_CMD ps
+              echo ""
+              echo "📌 Rolled back to: $LAST_SUCCESSFUL_DEPLOYMENT"
+              echo "💡 Current deployment failed - last successful state restored"
+            else
+              echo "⚠️ Rollback completed but health check failed"
+              echo "📋 Logs:"
+              $DOCKER_COMPOSE_CMD logs --tail=30
+              echo "⚠️ Manual intervention may be required"
+              exit 1
+            fi
+
+      - name: Collect failure diagnostics
+        if: failure()
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USERNAME }}
+          password: ${{ secrets.STAGING_SSH_PASSWORD }}
+          port: ${{ secrets.STAGING_SSH_PORT }}
+          command_timeout: 2m
+          script: |
+            DEPLOY_DIR="${{ secrets.STAGING_DEPLOY_PATH }}"
+            BACKUP_ROOT="${{ secrets.STAGING_BACKUP_PATH }}"
+            DIAGNOSTICS_FILE="/tmp/deployment-diagnostics.json"
+
+            cd "$DEPLOY_DIR"
+
+            # Determine docker compose command
+            if command -v docker-compose >/dev/null 2>&1; then
+              DOCKER_COMPOSE_CMD="docker-compose"
+            elif docker compose version >/dev/null 2>&1; then
+              DOCKER_COMPOSE_CMD="docker compose"
+            else
+              DOCKER_COMPOSE_CMD="docker compose"
+            fi
+
+            echo "🔍 Collecting deployment failure diagnostics..."
+
+            # Get failure reason from latest backup
+            FAILURE_REASON="Unknown"
+            LATEST_BACKUP=$(ls -dt "$BACKUP_ROOT"/backup-* 2>/dev/null | head -n 1)
+            if [ -n "$LATEST_BACKUP" ] && [ -f "$LATEST_BACKUP/.deployment_info" ]; then
+              FAILURE_REASON=$(grep "^reason=" "$LATEST_BACKUP/.deployment_info" | cut -d= -f2 | sed 's/_/ /g')
+            fi
+
+            # Check service status
+            SERVICES_STATUS=$($DOCKER_COMPOSE_CMD ps --format json 2>/dev/null || echo "[]")
+
+            # Get logs for each service (last 20 lines)
+            BACKEND_LOGS=$($DOCKER_COMPOSE_CMD logs backend --tail=20 2>/dev/null | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g' || echo "No logs available")
+            DB_LOGS=$($DOCKER_COMPOSE_CMD logs db --tail=20 2>/dev/null | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g' || echo "No logs available")
+            NGINX_LOGS=$($DOCKER_COMPOSE_CMD logs nginx --tail=20 2>/dev/null | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g' || echo "No logs available")
+            REDIS_LOGS=$($DOCKER_COMPOSE_CMD logs redis --tail=15 2>/dev/null | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g' || echo "No logs available")
+
+            # Check which services are unhealthy
+            UNHEALTHY_SERVICES=""
+            if ! $DOCKER_COMPOSE_CMD ps | grep -q "backend.*Up"; then
+              UNHEALTHY_SERVICES="${UNHEALTHY_SERVICES}backend, "
+            fi
+            if ! $DOCKER_COMPOSE_CMD ps | grep -q "db.*Up"; then
+              UNHEALTHY_SERVICES="${UNHEALTHY_SERVICES}db, "
+            fi
+            if ! $DOCKER_COMPOSE_CMD ps | grep -q "nginx.*Up"; then
+              UNHEALTHY_SERVICES="${UNHEALTHY_SERVICES}nginx, "
+            fi
+            UNHEALTHY_SERVICES=${UNHEALTHY_SERVICES%, }
+
+            # Create diagnostics JSON
+            cat > "$DIAGNOSTICS_FILE" <<EOF
+            {
+              "failure_reason": "$FAILURE_REASON",
+              "unhealthy_services": "$UNHEALTHY_SERVICES",
+              "backend_logs": "$BACKEND_LOGS",
+              "db_logs": "$DB_LOGS",
+              "nginx_logs": "$NGINX_LOGS",
+              "redis_logs": "$REDIS_LOGS"
+            }
+            EOF
+
+            echo "✅ Diagnostics collected"
+            cat "$DIAGNOSTICS_FILE"
+
+      - name: Download diagnostics
+        if: failure()
+        uses: appleboy/scp-action@v0.1.7
+        continue-on-error: true
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USERNAME }}
+          password: ${{ secrets.STAGING_SSH_PASSWORD }}
+          port: ${{ secrets.STAGING_SSH_PORT }}
+          source: "/tmp/deployment-diagnostics.json"
+          target: "."
+
+      - name: Notify deployment success
+        if: success()
+        run: |
+          curl -H 'Content-Type: application/json' \
+               -d '{
+                 "@type": "MessageCard",
+                 "@context": "https://schema.org/extensions",
+                 "summary": "✅ HRMS Backend Deployment Successful",
+                 "themeColor": "28a745",
+                 "title": "✅ Staging HRMS Backend Deployment Successful",
+                 "sections": [{
+                   "activityTitle": "Deployment Details",
+                   "facts": [
+                     {"name": "Repository", "value": "${{ github.repository }}"},
+                     {"name": "Branch", "value": "${{ github.ref_name }}"},
+                     {"name": "Commit", "value": "${{ github.sha }}"},
+                     {"name": "Triggered by", "value": "${{ github.actor }}"},
+                     {"name": "Timestamp", "value": "'"$(date -u +"%Y-%m-%d %H:%M:%S UTC")"'"},
+                     {"name": "Status", "value": "✅ Deployed Successfully"}
+                   ],
+                   "markdown": true
+                 }],
+                 "potentialAction": [{
+                   "@type": "OpenUri",
+                   "name": "View Workflow",
+                   "targets": [{
+                     "os": "default",
+                     "uri": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                   }]
+                 }]
+               }' \
+               '${{ secrets.STAGING_TEAMS_WEBHOOK_URL }}'
+
+      - name: Notify deployment failure
+        if: failure()
+        run: |
+          # Parse diagnostics if available
+          FAILURE_REASON="Unknown"
+          UNHEALTHY_SERVICES="Unknown"
+          BACKEND_LOGS="Not available"
+          DB_LOGS="Not available"
+          NGINX_LOGS="Not available"
+
+          if [ -f "deployment-diagnostics.json" ]; then
+            FAILURE_REASON=$(jq -r '.failure_reason // "Unknown"' deployment-diagnostics.json | head -c 100)
+            UNHEALTHY_SERVICES=$(jq -r '.unhealthy_services // "Unknown"' deployment-diagnostics.json | head -c 200)
+            BACKEND_LOGS=$(jq -r '.backend_logs // "Not available"' deployment-diagnostics.json | head -c 1000)
+            DB_LOGS=$(jq -r '.db_logs // "Not available"' deployment-diagnostics.json | head -c 1000)
+            NGINX_LOGS=$(jq -r '.nginx_logs // "Not available"' deployment-diagnostics.json | head -c 1000)
+          fi
+
+          # Escape for JSON
+          BACKEND_LOGS=$(echo "$BACKEND_LOGS" | jq -Rs '.')
+          DB_LOGS=$(echo "$DB_LOGS" | jq -Rs '.')
+          NGINX_LOGS=$(echo "$NGINX_LOGS" | jq -Rs '.')
+
+          # Create summary
+          SUMMARY="**Failure Reason:** $FAILURE_REASON\n\n**Unhealthy Services:** $UNHEALTHY_SERVICES\n\n"
+
+          curl -H 'Content-Type: application/json' \
+               -d '{
+                 "@type": "MessageCard",
+                 "@context": "https://schema.org/extensions",
+                 "summary": "❌ HRMS Backend Deployment Failed",
+                 "themeColor": "dc3545",
+                 "title": "❌ Staging HRMS Backend Deployment Failed",
+                 "sections": [
+                   {
+                     "activityTitle": "Deployment Details",
+                     "facts": [
+                       {"name": "Repository", "value": "${{ github.repository }}"},
+                       {"name": "Branch", "value": "${{ github.ref_name }}"},
+                       {"name": "Commit", "value": "${{ github.sha }}"},
+                       {"name": "Triggered by", "value": "${{ github.actor }}"},
+                       {"name": "Timestamp", "value": "'"$(date -u +"%Y-%m-%d %H:%M:%S UTC")"'"},
+                       {"name": "Status", "value": "❌ Deployment Failed - Rollback Initiated"}
+                     ],
+                     "markdown": true
+                   },
+                   {
+                     "activityTitle": "Failure Analysis",
+                     "facts": [
+                       {"name": "Failure Reason", "value": "'"$FAILURE_REASON"'"},
+                       {"name": "Unhealthy Services", "value": "'"$UNHEALTHY_SERVICES"'"}
+                     ],
+                     "markdown": true
+                   },
+                   {
+                     "activityTitle": "Backend Logs (last 20 lines)",
+                     "text": '"$BACKEND_LOGS"',
+                     "markdown": false
+                   },
+                   {
+                     "activityTitle": "Database Logs (last 20 lines)",
+                     "text": '"$DB_LOGS"',
+                     "markdown": false
+                   },
+                   {
+                     "activityTitle": "Nginx Logs (last 20 lines)",
+                     "text": '"$NGINX_LOGS"',
+                     "markdown": false
+                   }
+                 ],
+                 "potentialAction": [{
+                   "@type": "OpenUri",
+                   "name": "View Workflow Logs",
+                   "targets": [{
+                     "os": "default",
+                     "uri": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                   }]
+                 }]
+               }' \
+               '${{ secrets.STAGING_TEAMS_WEBHOOK_URL }}'
