@@ -63,10 +63,10 @@ services:
       - logs_volume:/app/_logs
     healthcheck:
       test: [ "CMD", "curl", "-fsS", "http://localhost:8000/api/health/" ]
-      interval: 15s
+      interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 60s
+      retries: 10
+      start_period: 120s
     restart: unless-stopped
     deploy:
       resources:
@@ -77,8 +77,7 @@ services:
   nginx:
     image: nginx:1.27-alpine
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     ports:
       - "${APP_PORT:-8421}:80"
     volumes:
