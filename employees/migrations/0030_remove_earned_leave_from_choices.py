@@ -4,15 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('employees', '0029_add_missing_earned_leave_fields'),
+        ("employees", "0029_add_missing_earned_leave_fields"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='leaverequest',
-            name='leave_type',
-            field=models.CharField(choices=[('CL', 'Casual Leave'), ('SL', 'Sick Leave'), ('CO', 'Comp Off'), ('UL', 'Unpaid Leave (LOP)'), ('OT', 'Others')], max_length=2),
+            model_name="leaverequest",
+            name="leave_type",
+            field=models.CharField(
+                choices=[
+                    ("CL", "Casual Leave"),
+                    ("SL", "Sick Leave"),
+                    ("CO", "Comp Off"),
+                    ("UL", "Unpaid Leave (LOP)"),
+                    ("OT", "Others"),
+                ],
+                max_length=2,
+            ),
         ),
     ]

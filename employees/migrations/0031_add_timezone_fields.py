@@ -4,25 +4,36 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('employees', '0030_remove_earned_leave_from_choices'),
+        ("employees", "0030_remove_earned_leave_from_choices"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='attendance',
-            name='local_clock_in_time',
-            field=models.DateTimeField(blank=True, help_text="Clock-in time in employee's local timezone", null=True),
+            model_name="attendance",
+            name="local_clock_in_time",
+            field=models.DateTimeField(
+                blank=True,
+                help_text="Clock-in time in employee's local timezone",
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='attendance',
-            name='local_clock_out_time',
-            field=models.DateTimeField(blank=True, help_text="Clock-out time in employee's local timezone", null=True),
+            model_name="attendance",
+            name="local_clock_out_time",
+            field=models.DateTimeField(
+                blank=True,
+                help_text="Clock-out time in employee's local timezone",
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='attendance',
-            name='user_timezone',
-            field=models.CharField(default='Asia/Kolkata', help_text="Employee's timezone when clocking in", max_length=50),
+            model_name="attendance",
+            name="user_timezone",
+            field=models.CharField(
+                default="Asia/Kolkata",
+                help_text="Employee's timezone when clocking in",
+                max_length=50,
+            ),
         ),
     ]

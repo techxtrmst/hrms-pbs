@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("employees", "0016_remove_employee_location_new_alter_employee_location"),
     ]

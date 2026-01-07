@@ -855,25 +855,25 @@ def personal_home(request):
                 )
 
             context["timeline_items"] = timeline_items
-            
+
             # Break Status Detection
             current_time = timezone.localtime().time()
             current_min = to_minutes(current_time)
-            
+
             # Check if currently in break time
             is_in_break = False
             current_break = None
-            
+
             if shift.breaks.exists():
                 for break_item in shift.breaks.all():
                     break_start_min = to_minutes(break_item.start_time)
                     break_end_min = to_minutes(break_item.end_time)
-                    
+
                     if break_start_min <= current_min <= break_end_min:
                         is_in_break = True
                         current_break = break_item
                         break
-            
+
             context["is_in_break"] = is_in_break
             context["current_break"] = current_break
 

@@ -4,25 +4,30 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('employees', '0027_alter_employee_badge_id'),
+        ("employees", "0027_alter_employee_badge_id"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='attendance',
-            name='daily_clock_count',
-            field=models.IntegerField(default=1, help_text='Number of times clocked in today'),
+            model_name="attendance",
+            name="daily_clock_count",
+            field=models.IntegerField(
+                default=1, help_text="Number of times clocked in today"
+            ),
         ),
         migrations.AddField(
-            model_name='attendance',
-            name='is_currently_clocked_in',
-            field=models.BooleanField(default=False, help_text='Whether employee is currently clocked in'),
+            model_name="attendance",
+            name="is_currently_clocked_in",
+            field=models.BooleanField(
+                default=False, help_text="Whether employee is currently clocked in"
+            ),
         ),
         migrations.AddField(
-            model_name='attendance',
-            name='max_daily_clocks',
-            field=models.IntegerField(default=3, help_text='Maximum allowed clock-ins per day'),
+            model_name="attendance",
+            name="max_daily_clocks",
+            field=models.IntegerField(
+                default=3, help_text="Maximum allowed clock-ins per day"
+            ),
         ),
     ]

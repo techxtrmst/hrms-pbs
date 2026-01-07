@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("employees", "0024_employee_probation_completion_date_jobhistory"),
     ]

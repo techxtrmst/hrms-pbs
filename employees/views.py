@@ -258,22 +258,24 @@ def clock_in(request):
             data = json.loads(request.body)
             lat = data.get("latitude")
             lng = data.get("longitude")
-            
+
             # Import timezone utilities
             from .timezone_utils import (
-                get_timezone_from_coordinates, 
-                validate_timezone, 
-                get_current_time_in_timezone
+                get_timezone_from_coordinates,
+                validate_timezone,
+                get_current_time_in_timezone,
             )
             import pytz
-            
+
             # Get user's timezone from browser or coordinates
             user_timezone_str = data.get("timezone")  # From browser
-            
+
             # If no timezone from browser, detect from coordinates
             if not user_timezone_str and lat and lng:
-                user_timezone_str = get_timezone_from_coordinates(float(lat), float(lng))
-            
+                user_timezone_str = get_timezone_from_coordinates(
+                    float(lat), float(lng)
+                )
+
             # Validate and set default timezone
             user_timezone_str = validate_timezone(user_timezone_str)
             user_timezone = pytz.timezone(user_timezone_str)
@@ -286,7 +288,7 @@ def clock_in(request):
                 )
 
             employee = request.user.employee_profile
-            
+
             # Get current time in user's timezone
             user_now = get_current_time_in_timezone(user_timezone_str)
             today = user_now.date()
@@ -302,7 +304,7 @@ def clock_in(request):
                         display_time = attendance.local_clock_in_time
                     else:
                         display_time = attendance.clock_in.astimezone(user_timezone)
-                    
+
                     return JsonResponse(
                         {
                             "status": "error",
@@ -330,14 +332,14 @@ def clock_in(request):
             # Set clock-in times (both UTC and local)
             utc_now = timezone.now()
             local_now = user_now
-            
+
             attendance.clock_in = utc_now  # Store in UTC for consistency
             attendance.local_clock_in_time = local_now  # Store local time for display
             attendance.user_timezone = user_timezone_str  # Store user's timezone
             attendance.location_in = f"{lat},{lng}" if lat and lng else None
             attendance.status = status
             attendance.clock_in_attempts = 1
-            
+
             # Set daily clock tracking fields
             attendance.daily_clock_count = 1
             attendance.is_currently_clocked_in = True
@@ -351,14 +353,22 @@ def clock_in(request):
             if shift:
                 try:
                     shift_duration = shift.get_shift_duration_timedelta()
-                    attendance.location_tracking_end_time = attendance.clock_in + shift_duration
+                    attendance.location_tracking_end_time = (
+                        attendance.clock_in + shift_duration
+                    )
                 except:
                     # Fallback to 9 hours if method doesn't exist
                     from datetime import timedelta
-                    attendance.location_tracking_end_time = attendance.clock_in + timedelta(hours=9)
+
+                    attendance.location_tracking_end_time = (
+                        attendance.clock_in + timedelta(hours=9)
+                    )
             else:
                 from datetime import timedelta
-                attendance.location_tracking_end_time = attendance.clock_in + timedelta(hours=9)
+
+                attendance.location_tracking_end_time = attendance.clock_in + timedelta(
+                    hours=9
+                )
 
             # Calculate late arrival using user's timezone
             attendance.calculate_late_arrival_with_timezone(user_timezone_str)
@@ -405,6 +415,7 @@ def clock_in(request):
                         )
                 except Exception as email_err:
                     import logging
+
                     logger = logging.getLogger(__name__)
                     logger.error(f"Failed to send WFH email: {str(email_err)}")
 
@@ -419,7 +430,7 @@ def clock_in(request):
             }
 
             # Add late arrival information
-            if hasattr(attendance, 'is_late') and attendance.is_late:
+            if hasattr(attendance, "is_late") and attendance.is_late:
                 response_data["is_late"] = True
                 response_data["late_by_minutes"] = attendance.late_by_minutes
                 response_data["message"] = (
@@ -432,13 +443,14 @@ def clock_in(request):
                 )
 
             return JsonResponse(response_data)
-            
+
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Clock-in error: {str(e)}", exc_info=True)
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
-    
+
     return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
 
 
@@ -492,7 +504,7 @@ def clock_out(request):
                 # Process clock-out
                 attendance.clock_out = timezone.now()
                 attendance.location_out = f"{lat},{lng}"
-                
+
                 # Update clock status
                 attendance.is_currently_clocked_in = False
 
@@ -685,11 +697,12 @@ def employee_profile(request):
 
     if request.method == "POST":
         import logging
+
         logger = logging.getLogger(__name__)
         logger.info(f"Document upload POST request from user: {user.email}")
         logger.info(f"POST data keys: {list(request.POST.keys())}")
         logger.info(f"FILES data keys: {list(request.FILES.keys())}")
-        
+
         # Handle Profile Picture Upload
         if "profile_picture" in request.FILES:
             logger.info("Processing profile picture upload")
@@ -761,10 +774,12 @@ def employee_profile(request):
                     id_proofs.pan_card.delete(save=False)
                     id_proofs.pan_card = None
                     deleted_files.append("PAN Card")
-            
+
             if deleted_files:
                 id_proofs.save()
-                messages.success(request, f"Deleted documents: {', '.join(deleted_files)}")
+                messages.success(
+                    request, f"Deleted documents: {', '.join(deleted_files)}"
+                )
 
         return redirect("employee_profile")
 

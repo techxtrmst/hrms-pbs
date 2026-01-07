@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("companies", "0005_shiftschedule"),
         ("employees", "0012_employee_location"),

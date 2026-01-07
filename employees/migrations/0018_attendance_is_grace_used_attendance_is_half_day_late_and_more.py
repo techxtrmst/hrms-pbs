@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("companies", "0009_shiftschedule_allowed_late_logins_and_more"),
         ("employees", "0017_alter_employee_shift_schedule"),

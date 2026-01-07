@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("employees", "0025_remove_employee_probation_completion_date_and_more"),
     ]
