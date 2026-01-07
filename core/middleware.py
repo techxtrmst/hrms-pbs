@@ -1,6 +1,4 @@
 import threading
-import pytz
-from django.utils import timezone
 from django.shortcuts import redirect
 from django.http import HttpResponseForbidden
 from companies.models import Company
@@ -132,23 +130,5 @@ class CompanyIsolationMiddleware:
             request.company = domain_company
             _thread_locals.company = domain_company
         
-        # Activate User Timezone
-        tz_name = 'UTC'
-        if request.user.is_authenticated:
-            # Try employee profile first
-            if hasattr(request.user, 'employee_profile') and request.user.employee_profile.location and request.user.employee_profile.location.timezone:
-                tz_name = request.user.employee_profile.location.timezone
-            # Fallback to Company settings
-            elif request.company:
-                if request.company.location == 'INDIA':
-                    tz_name = 'Asia/Kolkata'
-                elif request.company.location == 'US':
-                    tz_name = 'America/New_York'
-        
-        try:
-            timezone.activate(pytz.timezone(tz_name))
-        except pytz.UnknownTimeZoneError:
-            pass
-
         response = self.get_response(request)
         return response

@@ -499,7 +499,7 @@
 
     .exit-type-buttons {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 1rem;
         margin-bottom: 2rem;
     }
@@ -797,11 +797,6 @@
                             <a href="{% url 'employee_edit' employee.pk %}" class="btn-action btn-edit">
                                 <i class="fas fa-edit"></i> Edit
                             </a>
-                            <a href="{% url 'resend_welcome_email' employee.pk %}" class="btn-action"
-                                style="background:#f3e8ff; color:#9333ea; border: 1px solid #d8b4fe;"
-                                title="Resend Activation Link">
-                                <i class="fas fa-paper-plane"></i> Resend
-                            </a>
                             {% if employee.is_active %}
                             <button class="btn-action"
                                 style="background:#fef3c7; color:#d97706; border:1px solid #fde68a;"
@@ -897,13 +892,6 @@
         document.getElementById('exitModal').style.display = 'none';
         currentEmployeeId = null;
         currentEmployeeName = '';
-    }
-
-    function confirmDelete() {
-        if (confirm(`Are you sure you want to PERMANENTLY DELETE ${currentEmployeeName}?\n\nThis action cannot be undone and will remove all employee data from the system.`)) {
-            // Redirect to delete URL
-            window.location.href = `/employees/${currentEmployeeId}/delete/`;
-        }
     }
 
     function selectExitType(type) {
@@ -1031,11 +1019,6 @@
                 <button class="exit-type-btn" id="btn-terminated" onclick="selectExitType('terminated')">
                     <i class="fas fa-ban"></i>
                     <span>Terminated</span>
-                </button>
-                <button class="exit-type-btn" id="btn-delete" onclick="confirmDelete()"
-                    style="border-color: #fee2e2; background: #fef2f2;">
-                    <i class="fas fa-trash-alt" style="color: #dc2626;"></i>
-                    <span style="color: #dc2626;">Delete Permanently</span>
                 </button>
             </div>
 

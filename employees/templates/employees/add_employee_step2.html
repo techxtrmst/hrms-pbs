@@ -242,33 +242,21 @@
         <div class="row g-3">
             <div class="col-md-4">
                 <label class="form-label">Designation <span class="text-danger">*</span></label>
-                <div class="input-group">
-                    {% render_field form.designation class="form-select" placeholder="Select Designation" %}
-                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
-                        data-bs-target="#addDesignationModal">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
+                {% render_field form.designation class="form-control" placeholder="e.g. Software Engineer" %}
                 {% if form.designation.errors %}
                 <div class="text-danger">{{ form.designation.errors.0 }}</div>
                 {% endif %}
             </div>
             <div class="col-md-4">
                 <label class="form-label">Department <span class="text-danger">*</span></label>
-                <div class="input-group">
-                    {% render_field form.department class="form-select" placeholder="Select Department" %}
-                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
-                        data-bs-target="#addDepartmentModal">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
+                {% render_field form.department class="form-control" placeholder="e.g. Engineering" %}
                 {% if form.department.errors %}
                 <div class="text-danger">{{ form.department.errors.0 }}</div>
                 {% endif %}
             </div>
             <div class="col-md-4">
                 <label class="form-label">Reporting Manager</label>
-                {% render_field form.manager_selection class="form-select" %}
+                {% render_field form.manager class="form-select" %}
             </div>
 
             <div class="col-md-4">
@@ -277,13 +265,7 @@
             </div>
             <div class="col-md-4">
                 <label class="form-label">Shift Schedule</label>
-                <div class="input-group">
-                    {% render_field form.shift_schedule class="form-select" placeholder="Select Shift" %}
-                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
-                        data-bs-target="#addShiftModal">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
+                {% render_field form.shift_schedule class="form-control" placeholder="e.g. 09:00 AM - 06:00 PM" %}
                 <small class="text-muted">Determines early/late tracking</small>
             </div>
             <div class="col-md-4">
@@ -302,223 +284,4 @@
         </div>
     </form>
 </div>
-
-<!-- Modals -->
-
-<!-- Add Designation Modal -->
-<div class="modal fade" id="addDesignationModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Add New Designation</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Designation Name</label>
-                    <input type="text" id="newDesignationName" class="form-control" placeholder="e.g. Senior Developer">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveDesignation()">Save</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Add Department Modal -->
-<div class="modal fade" id="addDepartmentModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Add New Department</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Department Name</label>
-                    <input type="text" id="newDepartmentName" class="form-control" placeholder="e.g. Marketing">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveDepartment()">Save</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Add Shift Modal -->
-<div class="modal fade" id="addShiftModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Add New Shift</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Shift Name</label>
-                    <input type="text" id="newShiftName" class="form-control" placeholder="e.g. Morning Shift">
-                </div>
-                <div class="row">
-                    <div class="col-6 mb-3">
-                        <label class="form-label">Start Time</label>
-                        <input type="time" id="newShiftStart" class="form-control">
-                    </div>
-                    <div class="col-6 mb-3">
-                        <label class="form-label">End Time</label>
-                        <input type="time" id="newShiftEnd" class="form-control">
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveShift()">Save</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-
-    async function saveDesignation() {
-        const name = document.getElementById('newDesignationName').value;
-        if (!name) return alert('Please enter a name');
-
-        try {
-            const response = await fetch("{% url 'quick_add_designation' %}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify({ name: name })
-            });
-            const data = await response.json();
-
-            if (data.status === 'success') {
-                // Add to dropdown
-                const select = document.getElementById('id_designation');
-                const option = new Option(data.name, data.id);
-                select.add(option, undefined);
-                select.value = data.id;
-
-                // Close modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('addDesignationModal'));
-                modal.hide();
-                document.getElementById('newDesignationName').value = '';
-            } else {
-                alert(data.message);
-                if (data.id) {
-                    // If exists, select it
-                    const select = document.getElementById('id_designation');
-                    select.value = data.id;
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('addDesignationModal'));
-                    modal.hide();
-                }
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Failed to add designation');
-        }
-    }
-
-    async function saveDepartment() {
-        const name = document.getElementById('newDepartmentName').value;
-        if (!name) return alert('Please enter a name');
-
-        try {
-            const response = await fetch("{% url 'quick_add_department' %}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify({ name: name })
-            });
-            const data = await response.json();
-
-            if (data.status === 'success') {
-                const select = document.getElementById('id_department');
-                const option = new Option(data.name, data.id);
-                select.add(option, undefined);
-                select.value = data.id;
-
-                const modal = bootstrap.Modal.getInstance(document.getElementById('addDepartmentModal'));
-                modal.hide();
-                document.getElementById('newDepartmentName').value = '';
-            } else {
-                alert(data.message);
-                if (data.id) {
-                    const select = document.getElementById('id_department');
-                    select.value = data.id;
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('addDepartmentModal'));
-                    modal.hide();
-                }
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Failed to add department');
-        }
-    }
-
-    async function saveShift() {
-        const name = document.getElementById('newShiftName').value;
-        const start = document.getElementById('newShiftStart').value;
-        const end = document.getElementById('newShiftEnd').value;
-
-        if (!name || !start || !end) return alert('Please fill all fields');
-
-        try {
-            const response = await fetch("{% url 'quick_add_shift' %}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify({
-                    name: name,
-                    start_time: start,
-                    end_time: end
-                })
-            });
-            const data = await response.json();
-
-            if (data.status === 'success') {
-                const select = document.getElementById('id_shift_schedule');
-                // The name returned is the __str__ representation which includes times
-                const option = new Option(data.display || data.name, data.id);
-                select.add(option, undefined);
-                select.value = data.id;
-
-                const modal = bootstrap.Modal.getInstance(document.getElementById('addShiftModal'));
-                modal.hide();
-                document.getElementById('newShiftName').value = '';
-                document.getElementById('newShiftStart').value = '';
-                document.getElementById('newShiftEnd').value = '';
-            } else {
-                alert(data.message);
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Failed to add shift');
-        }
-    }
-</script>
 {% endblock %}

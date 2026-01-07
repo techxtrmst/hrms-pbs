@@ -330,10 +330,9 @@
                     <div class="stat-badge">
                         <i class="fas fa-users"></i> {{ employees|length }} Active
                     </div>
-                    <a href="#" class="stat-badge text-decoration-none text-dark" data-bs-toggle="modal"
-                        data-bs-target="#accrualModal" title="Click to select month">
-                        <i class="fas fa-calendar-alt"></i> Select Period
-                    </a>
+                    <div class="stat-badge">
+                        <i class="fas fa-clock"></i> Next: 1st Nov
+                    </div>
                 </div>
             </div>
             <div>
@@ -425,50 +424,28 @@
 <div class="modal fade" id="accrualModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
-            <form action="{% url 'run_monthly_accrual' %}" method="post">
-                {% csrf_token %}
-                <div class="modal-body p-5 text-center">
-                    <div class="mb-4 d-inline-flex align-items-center justify-content-center"
-                        style="width: 80px; height: 80px; background: #e0e7ff; border-radius: 50%; color: #4338ca;">
-                        <i class="fas fa-magic fa-2x"></i>
-                    </div>
-                    <h3 class="fw-bold mb-3">Run Monthly Accrual</h3>
-
-                    <div class="alert alert-light border mb-4 text-start">
-                        <div class="row g-2">
-                            <div class="col-8">
-                                <label class="small fw-bold text-muted mb-1">Select Month</label>
-                                <select name="month" class="form-select form-select-sm fw-bold">
-                                    {% for m in months_ctx %}
-                                    <option value="{{ m.value }}" {{ m.selected }}>{{ m.name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-4">
-                                <label class="small fw-bold text-muted mb-1">Year</label>
-                                <select name="year" class="form-select form-select-sm fw-bold">
-                                    {% for y in years_ctx %}
-                                    <option value="{{ y.value }}" {{ y.selected }}>{{ y.value }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <p class="text-muted mb-4 small">
-                        This action will manually add leave credits for the selected period.
-                        <br>
-                        <strong>Standard:</strong> +1.0 CL, +1.0 SL (or +0.5 based on policy).
-                    </p>
-                    <div class="d-flex justify-content-center gap-3">
-                        <button type="button" class="btn btn-light px-4 rounded-pill fw-bold"
-                            data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary px-4 rounded-pill fw-bold">
-                            Run Accrual
-                        </button>
-                    </div>
+            <div class="modal-body p-5 text-center">
+                <div class="mb-4 d-inline-flex align-items-center justify-content-center"
+                    style="width: 80px; height: 80px; background: #e0e7ff; border-radius: 50%; color: #4338ca;">
+                    <i class="fas fa-magic fa-2x"></i>
                 </div>
-            </form>
+                <h3 class="fw-bold mb-3">Confirm Accrual</h3>
+                <p class="text-muted mb-4">
+                    This action will add <strong>+1.0 Casual Leave</strong> to all.
+                    <br>
+                    <strong>Sick Leave</strong> will be added as:
+                <ul class="text-start d-inline-block mx-auto text-muted small" style="text-align: left;">
+                    <li>Petabytz: +1.0 Day</li>
+                    <li>Bluebix/Softstandard: +0.5 Day</li>
+                </ul>
+                </p>
+                <div class="d-flex justify-content-center gap-3">
+                    <button type="button" class="btn btn-light px-4 rounded-pill fw-bold"
+                        data-bs-dismiss="modal">Cancel</button>
+                    <a href="{% url 'run_monthly_accrual' %}" class="btn btn-primary px-4 rounded-pill fw-bold">Yes, Run
+                        Accrual</a>
+                </div>
+            </div>
         </div>
     </div>
 </div>

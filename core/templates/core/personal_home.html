@@ -590,7 +590,7 @@
         <div>
             <h4 class="fw-bold mb-1"
                 style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block;">
-                <span id="dynamic-greeting">Good Morning</span>, {{ request.user.first_name }}! 👋
+                Good Morning, {{ request.user.first_name }}! 👋
             </h4>
             <p class="text-muted mb-0">Here's what's happening today.</p>
         </div>
@@ -614,13 +614,21 @@
                             <div class="text-label mb-2">Current Time</div>
                             <div id="clock" class="digital-clock">--:--</div>
                             <div id="date-sub" class="current-date">-- -- ----</div>
+                            <div id="timezone-display" class="text-muted small mt-1">Loading timezone...</div>
                         </div>
 
                         {% if attendance and attendance.clock_in and not attendance.clock_out %}
                         <!-- Clocked In State -->
                         <div class="p-3 bg-light rounded-3 mb-4 border">
                             <div class="text-label mb-1">Clocked In At</div>
-                            <div class="fs-4 fw-bold text-dark">{{ attendance.clock_in|time:"h:i A" }}</div>
+                            {% load tz %}
+                            {% if employee.location.timezone %}
+                                {% timezone employee.location.timezone %}
+                                    <div class="fs-4 fw-bold text-dark">{{ attendance.clock_in|time:"h:i A" }}</div>
+                                {% endtimezone %}
+                            {% else %}
+                                <div class="fs-4 fw-bold text-dark">{{ attendance.clock_in|time:"h:i A" }}</div>
+                            {% endif %}
 
                             <hr class="my-3 text-muted opacity-25">
 
@@ -882,9 +890,10 @@
                         flex-direction: column;
                         align-items: center;
                         text-align: center;
-                        width: 80px;
+                        width: 60px;
                         transition: transform 0.3s ease;
                         cursor: default;
+                        z-index: 10;
                     }
 
                     .t-node:hover {
@@ -922,13 +931,17 @@
                     }
 
                     .t-label {
-                        font-size: 0.75rem;
+                        font-size: 0.7rem;
                         font-weight: 600;
                         opacity: 0.9;
                         letter-spacing: 0.03em;
                         background: rgba(0, 0, 0, 0.15);
-                        padding: 2px 8px;
+                        padding: 2px 6px;
                         border-radius: 4px;
+                        white-space: nowrap;
+                        max-width: 50px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
                     }
 
                     .shift-footer {
@@ -957,8 +970,7 @@
                                 </h4>
                                 <div class="opacity-75 small fw-medium">
                                     {% if assigned_shift %}
-                                    {{ assigned_shift.start_time|time:"h:i A" }} - {{ assigned_shift.end_time|time:"h:i
-                                    A" }}
+                                    {{ assigned_shift.start_time|time:"h:i A" }} - {{ assigned_shift.end_time|time:"h:i A" }}
                                     {% else %}
                                     09:00 AM - 06:00 PM
                                     {% endif %}
@@ -1006,15 +1018,11 @@
 
                     {% if assigned_shift %}
                     <div class="shift-footer">
-                        <!-- Grace Account Section Removed -->
+                        <!-- Only show STATUS on the right -->
                         <div class="text-end">
                             <div class="small fw-bold opacity-75" style="font-size: 0.65rem; letter-spacing: 0.05em;">
                                 STATUS</div>
-                            {% if assigned_shift %}
                             <div class="fw-bold text-success">Active</div>
-                            {% else %}
-                            <div class="fw-bold text-muted">Default</div>
-                            {% endif %}
                         </div>
                     </div>
                     {% else %}
@@ -1053,12 +1061,26 @@
                                         </td>
                                         <td>
                                             {% if att.clock_in %}
-                                            <div class="fw-bold text-dark">{{ att.clock_in|time:"h:i A" }}</div>
+                                            {% load tz %}
+                                            {% if employee.location.timezone %}
+                                                {% timezone employee.location.timezone %}
+                                                    <div class="fw-bold text-dark">{{ att.clock_in|time:"h:i A" }}</div>
+                                                {% endtimezone %}
+                                            {% else %}
+                                                <div class="fw-bold text-dark">{{ att.clock_in|time:"h:i A" }}</div>
+                                            {% endif %}
                                             {% else %}<span class="text-muted">-</span>{% endif %}
                                         </td>
                                         <td>
                                             {% if att.clock_out %}
-                                            <div class="fw-bold text-dark">{{ att.clock_out|time:"h:i A" }}</div>
+                                            {% load tz %}
+                                            {% if employee.location.timezone %}
+                                                {% timezone employee.location.timezone %}
+                                                    <div class="fw-bold text-dark">{{ att.clock_out|time:"h:i A" }}</div>
+                                                {% endtimezone %}
+                                            {% else %}
+                                                <div class="fw-bold text-dark">{{ att.clock_out|time:"h:i A" }}</div>
+                                            {% endif %}
                                             {% else %}<span class="text-muted">-</span>{% endif %}
                                         </td>
                                         <td>
@@ -1212,41 +1234,41 @@
     // Clock
     function updateClock() {
         const now = new Date();
+        {% if employee.location.timezone %}
+        // Use employee's timezone for consistent time display
+        const timeString = now.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            hour12: true,
+            timeZone: '{{ employee.location.timezone }}'
+        });
+        const dateString = now.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            day: 'numeric', 
+            month: 'short', 
+            year: 'numeric',
+            timeZone: '{{ employee.location.timezone }}'
+        });
+        {% else %}
         const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
         const dateString = now.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+        {% endif %}
 
         document.getElementById('clock').innerText = timeString;
         document.getElementById('date-sub').innerText = dateString;
+        
+        // Update timezone display
+        const timezoneDisplay = document.getElementById('timezone-display');
+        if (timezoneDisplay) {
+            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const timezoneAbbr = now.toLocaleDateString('en', {timeZoneName:'short'}).split(', ')[1];
+            timezoneDisplay.innerText = `${userTimezone} (${timezoneAbbr})`;
+        }
 
         // Header Date
         const headerDate = document.getElementById('header-date');
         if (headerDate) headerDate.innerText = dateString;
-
-        // Update dynamic greeting based on time
-        updateGreeting(now);
     }
-
-    // Dynamic Greeting based on time of day
-    function updateGreeting(now) {
-        const hour = now.getHours();
-        const greetingElement = document.getElementById('dynamic-greeting');
-
-        if (!greetingElement) return;
-
-        let greeting;
-        if (hour >= 5 && hour < 12) {
-            greeting = 'Good Morning';
-        } else if (hour >= 12 && hour < 17) {
-            greeting = 'Good Afternoon';
-        } else if (hour >= 17 && hour < 21) {
-            greeting = 'Good Evening';
-        } else {
-            greeting = 'Good Night';
-        }
-
-        greetingElement.textContent = greeting;
-    }
-
     setInterval(updateClock, 1000);
     updateClock();
 
@@ -1294,10 +1316,13 @@
 
     // Live Timer for clocked in
     {% if attendance.clock_in and not attendance.clock_out %}
-    const clockInTimeStr = "{{ attendance.clock_in|date:'Y-m-d H:i:s' }}";
-    // Parse Date safely (Safari/iOS compatibility often requires T or /)
-    // Assuming ISO format from Django often effectively works or use Date.parse
-    const clockInTime = new Date(clockInTimeStr.replace(' ', 'T'));
+    {% load tz %}
+    // Get clock-in time in UTC and convert to employee timezone in JavaScript
+    const clockInTimeUTC = "{{ attendance.clock_in|date:'Y-m-d H:i:s' }}"; // This is in UTC
+    const employeeTimezone = "{{ employee.location.timezone|default:'UTC' }}";
+    
+    // Create Date object from UTC time and handle timezone conversion properly
+    const clockInTime = new Date(clockInTimeUTC.replace(' ', 'T') + 'Z'); // Add Z to indicate UTC
 
     function updateDuration() {
         if (!clockInTime) return;
@@ -1333,11 +1358,21 @@
         btn.disabled = true;
 
         navigator.geolocation.getCurrentPosition((pos) => {
+            // Get user's timezone information
+            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const now = new Date();
+            const timezoneOffset = now.getTimezoneOffset();
+            
             const requestData = {
                 latitude: pos.coords.latitude,
                 longitude: pos.coords.longitude,
-                type: type
+                type: type,
+                timezone: userTimezone,
+                local_time: now.toISOString(),
+                timezone_offset: timezoneOffset
             };
+
+            console.log('Clock-in request with timezone data:', requestData);
 
             fetch(action === 'in' ? "{% url 'api_clock_in' %}" : "{% url 'api_clock_out' %}", {
                 method: 'POST',
@@ -1346,6 +1381,8 @@
             })
                 .then(r => r.json())
                 .then(data => {
+                    console.log('Clock-in response:', data);
+                    
                     if (data.status === 'success') {
                         // Success Animation
                         if (typeof confetti === 'function') {
@@ -1357,11 +1394,15 @@
                             });
                         }
 
+                        // Show success message with timezone info
+                        let message = data.message || 'Clock action completed successfully';
+                        if (data.timezone && data.time) {
+                            message += `\nLocal Time: ${data.time} (${data.timezone})`;
+                        }
+
                         // Show success message with a slight delay to see confetti
                         setTimeout(() => {
-                            if (data.message) {
-                                alert(data.message);
-                            }
+                            alert(message);
                             location.reload();
                         }, 1000);
                     }
@@ -1439,8 +1480,8 @@
             btn.innerHTML = origText;
             btn.disabled = false;
         }, {
-            enableHighAccuracy: false,
-            timeout: 30000,
+            enableHighAccuracy: true,
+            timeout: 10000,
             maximumAge: 0
         });
     }
@@ -1488,14 +1529,10 @@
         const ONE_HOUR_MS = 3600000; // 1 hour
         // const ONE_HOUR_MS = 60000; // Debug: 1 minute
 
-        // Reuse clockInTime from existing script or re-parse
-        const clockInStr = "{{ attendance.clock_in|date:'Y-m-d H:i:s' }}";
-        // Create Date object (safely handling Django default string format)
-        // Note: Ideally use ISO format from view, but this usually works in modern browsers
-        // or we rely on the previously defined clockInTime if available in scope.
-        let loginTime = new Date(clockInStr.replace(' ', 'T'));
-        if (isNaN(loginTime.getTime())) {
-            // Fallback
+        // Reuse clockInTime from existing script (already in UTC)
+        let loginTime = clockInTime; // Use the already defined UTC clockInTime
+        if (!loginTime || isNaN(loginTime.getTime())) {
+            // Fallback to current time if clockInTime is not available
             loginTime = new Date();
         }
 
@@ -1528,7 +1565,7 @@
                 console.warn("⚠️ Location access failed:", err.message);
             }, {
                 enableHighAccuracy: true,
-                timeout: 30000,
+                timeout: 10000,
                 maximumAge: 0
             });
         }

@@ -216,13 +216,20 @@ class Attendance(models.Model):
     
     # Multiple click handling
     clock_in_attempts = models.IntegerField(default=0, help_text="Number of clock-in attempts (max 3)")
-    daily_clock_count = models.IntegerField(default=0, help_text="Number of valid clock-ins today")
-    is_currently_clocked_in = models.BooleanField(default=False, help_text="Currently clocked in status")
+    
+    # Daily clock tracking
+    daily_clock_count = models.IntegerField(default=1, help_text="Number of times clocked in today")
+    is_currently_clocked_in = models.BooleanField(default=False, help_text="Whether employee is currently clocked in")
     max_daily_clocks = models.IntegerField(default=3, help_text="Maximum allowed clock-ins per day")
     
     # Location tracking
     location_tracking_active = models.BooleanField(default=False, help_text="Whether location tracking is currently active")
     location_tracking_end_time = models.DateTimeField(null=True, blank=True, help_text="When location tracking should stop")
+    
+    # Timezone tracking
+    user_timezone = models.CharField(max_length=50, default='Asia/Kolkata', help_text="Employee's timezone when clocking in")
+    local_clock_in_time = models.DateTimeField(null=True, blank=True, help_text="Clock-in time in employee's local timezone")
+    local_clock_out_time = models.DateTimeField(null=True, blank=True, help_text="Clock-out time in employee's local timezone")
     
     class Meta:
         unique_together = [['employee', 'date']]
@@ -231,7 +238,68 @@ class Attendance(models.Model):
     def __str__(self):
         return f"{self.employee} - {self.date}"
     
-    def calculate_late_arrival(self):
+    def calculate_late_arrival_with_timezone(self, user_timezone_str):
+        """Calculate if employee is late based on their shift schedule using specific timezone"""
+        from datetime import datetime, time, timedelta
+        import pytz
+        from django.utils import timezone
+        from companies.models import ShiftSchedule
+        from .timezone_utils import get_current_time_in_timezone
+        
+        if not self.local_clock_in_time:
+            return
+        
+        # Get user timezone
+        try:
+            user_tz = pytz.timezone(user_timezone_str)
+        except pytz.exceptions.UnknownTimeZoneError:
+            user_tz = pytz.timezone('Asia/Kolkata')
+        
+        # Get local clock-in time
+        local_clock_in = self.local_clock_in_time
+        if timezone.is_aware(local_clock_in):
+            local_clock_in = local_clock_in.astimezone(user_tz)
+        
+        clock_in_time = local_clock_in.time()
+        
+        # Get shift schedule
+        shift = self.employee.assigned_shift
+        if not shift:
+            # Fallback to any shift for this company
+            shift = ShiftSchedule.objects.filter(company=self.employee.company).first()
+        
+        if not shift:
+            # No shift defined, can't calculate late arrival
+            self.is_late = False
+            self.late_by_minutes = 0
+            return
+        
+        # Compare with shift start time
+        shift_start = shift.start_time
+        grace_period = getattr(shift, 'grace_period_minutes', 15)  # Default 15 minutes grace
+        
+        # Convert times to minutes for easier calculation
+        clock_in_minutes = clock_in_time.hour * 60 + clock_in_time.minute
+        shift_start_minutes = shift_start.hour * 60 + shift_start.minute
+        
+        # Calculate difference
+        late_minutes = clock_in_minutes - shift_start_minutes
+        
+        if late_minutes <= 0:
+            # On time or early
+            self.is_late = False
+            self.late_by_minutes = 0
+            self.is_grace_used = False
+        elif late_minutes <= grace_period:
+            # Within grace period
+            self.is_late = False
+            self.late_by_minutes = 0
+            self.is_grace_used = True
+        else:
+            # Late beyond grace period
+            self.is_late = True
+            self.late_by_minutes = late_minutes - grace_period
+            self.is_grace_used = True
         """Calculate if employee is late based on their shift schedule and location timezone"""
         from datetime import datetime, time, timedelta
         import pytz
@@ -501,12 +569,12 @@ class LeaveBalance(models.Model):
     @property
     def total_balance(self):
         return (self.casual_leave_balance + self.sick_leave_balance + 
-                self.earned_leave_balance + self.comp_off_balance)
+                self.comp_off_balance)
     
     @property
     def has_negative_balance(self):
         return (self.casual_leave_balance < 0 or self.sick_leave_balance < 0 or 
-                self.earned_leave_balance < 0 or self.comp_off_balance < 0)
+                self.comp_off_balance < 0)
 
     def __str__(self):
         return f"Balance: {self.employee.user.get_full_name()}"
@@ -515,7 +583,6 @@ class LeaveRequest(models.Model):
     LEAVE_TYPES = [
         ('CL', 'Casual Leave'),
         ('SL', 'Sick Leave'),
-        ('EL', 'Earned Leave'),
         ('CO', 'Comp Off'),
         ('UL', 'Unpaid Leave (LOP)'),
         ('OT', 'Others'),
@@ -578,8 +645,6 @@ class LeaveRequest(models.Model):
                 return balance.casual_leave_balance < self.total_days
             elif self.leave_type == 'SL':
                 return balance.sick_leave_balance < self.total_days
-            elif self.leave_type == 'EL':
-                return balance.earned_leave_balance < self.total_days
             elif self.leave_type == 'CO':
                 return balance.comp_off_balance < self.total_days
         except:

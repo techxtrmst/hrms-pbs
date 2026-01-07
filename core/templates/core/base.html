@@ -322,40 +322,31 @@
         {% endif %}
 
         {% if user.role != 'SUPERADMIN' %}
-        <!-- ME Section (Collapsible) -->
-        <a href="#menuMe" class="sidebar-dropdown-toggle d-flex justify-content-between align-items-center"
-            data-bs-toggle="collapse" role="button" aria-expanded="false">
-            <span class="sidebar-section-title ps-0 mt-0 mb-0 py-2">Me</span>
-            <i class="fas fa-chevron-down small text-muted"></i>
+        <!-- Direct Menu Items (No Collapsible) -->
+        <a href="{% url 'personal_home' %}"
+            class="{% if request.resolver_match.url_name == 'personal_home' %}active{% endif %}">
+            <i class="fas fa-user-circle"></i> <span>Home</span>
         </a>
-        <div class="collapse {% if 'me/' in request.path or 'profile' in request.path %}show{% endif %}" id="menuMe">
-            <div class="sub-menu">
-                <a href="{% url 'personal_home' %}"
-                    class="{% if request.resolver_match.url_name == 'personal_home' %}active{% endif %}">
-                    <i class="fas fa-user-circle"></i> Home
-                </a>
-                <a href="{% url 'employee_profile' %}" class="{% if 'profile' in request.path %}active{% endif %}">
-                    <i class="fas fa-id-card"></i> My Profile
-                </a>
-                <a href="{% url 'my_leaves' %}"
-                    class="{% if 'leaves' in request.path and 'me' in request.path %}active{% endif %}">
-                    <i class="fas fa-calendar-check"></i> Leave
-                </a>
-                <a href="{% url 'regularization_apply' %}"
-                    class="{% if 'regularization/apply' in request.path %}active{% endif %}">
-                    <i class="fas fa-clock"></i> Regularize
-                </a>
-                <a href="{% url 'my_finance' %}" class="{% if 'finance' in request.path %}active{% endif %}">
-                    <i class="fas fa-rupee-sign"></i> Finance
-                </a>
-                <a href="{% url 'handbook' %}" class="{% if 'handbook' in request.path %}active{% endif %}">
-                    <i class="fas fa-book-reader"></i> Employee Handbook
-                </a>
-                <a href="{% url 'policy' %}" class="{% if 'policy' in request.path %}active{% endif %}">
-                    <i class="fas fa-file-contract"></i> Policy
-                </a>
-            </div>
-        </div>
+        <a href="{% url 'employee_profile' %}" class="{% if 'profile' in request.path %}active{% endif %}">
+            <i class="fas fa-id-card"></i> <span>My Profile</span>
+        </a>
+        <a href="{% url 'my_leaves' %}"
+            class="{% if 'leaves' in request.path and 'me' in request.path %}active{% endif %}">
+            <i class="fas fa-calendar-check"></i> <span>Leave</span>
+        </a>
+        <a href="{% url 'regularization_apply' %}"
+            class="{% if 'regularization/apply' in request.path %}active{% endif %}">
+            <i class="fas fa-clock"></i> <span>Regularize</span>
+        </a>
+        <a href="{% url 'my_finance' %}" class="{% if 'finance' in request.path %}active{% endif %}">
+            <i class="fas fa-rupee-sign"></i> <span>Finance</span>
+        </a>
+        <a href="{% url 'handbook' %}" class="{% if 'handbook' in request.path %}active{% endif %}">
+            <i class="fas fa-book-reader"></i> <span>Employee Handbook</span>
+        </a>
+        <a href="{% url 'policy' %}" class="{% if 'policy' in request.path %}active{% endif %}">
+            <i class="fas fa-file-contract"></i> <span>Policy</span>
+        </a>
         {% endif %}
 
         <!-- Employees / Team (Collapsible) -->
@@ -474,69 +465,6 @@
             </div>
         </div>
         {% endif %}
-
-        <!-- AI Features Section -->
-        <a href="#menuAI" class="sidebar-dropdown-toggle d-flex justify-content-between align-items-center"
-            data-bs-toggle="collapse" role="button" aria-expanded="false">
-            <span class="sidebar-section-title ps-0 mt-0 mb-0 py-2">🤖 AI Features</span>
-            <i class="fas fa-chevron-down small text-muted"></i>
-        </a>
-        <div class="collapse {% if 'ai/' in request.path %}show{% endif %}" id="menuAI">
-            <div class="sub-menu">
-                <!-- AI Hub - Available to all -->
-                <a href="{% url 'ai_hub' %}"
-                    class="{% if request.resolver_match.url_name == 'ai_hub' %}active{% endif %}">
-                    <i class="fas fa-robot"></i> AI Hub
-                </a>
-
-                <!-- Smart Notifications - Available to all -->
-                <a href="{% url 'smart_notifications' %}"
-                    class="{% if 'notifications' in request.path %}active{% endif %}">
-                    <i class="fas fa-bell"></i> Smart Notifications
-                </a>
-
-                <!-- Chatbot - Available to all -->
-                <a href="{% url 'chatbot_page' %}" class="{% if 'chatbot' in request.path %}active{% endif %}">
-                    <i class="fas fa-comments"></i> Ask HR Bot
-                </a>
-
-                <!-- Manager/Admin Features -->
-                {% if user.role == 'COMPANY_ADMIN' or user.role == 'MANAGER' %}
-
-                <!-- Attendance Intelligence -->
-                <a href="{% url 'attendance_intelligence' %}"
-                    class="{% if 'attendance-intelligence' in request.path %}active{% endif %}">
-                    <i class="fas fa-clock"></i> Attendance Intelligence
-                </a>
-
-                <!-- Leave Prediction -->
-                <a href="{% url 'leave_prediction' %}"
-                    class="{% if 'leave-prediction' in request.path %}active{% endif %}">
-                    <i class="fas fa-calendar-alt"></i> Leave Prediction
-                </a>
-
-                <!-- Performance Insights -->
-                <a href="{% url 'performance_insights' %}"
-                    class="{% if 'performance-insights' in request.path %}active{% endif %}">
-                    <i class="fas fa-chart-line"></i> Performance Insights
-                </a>
-
-                <!-- Attrition Risk -->
-                <a href="{% url 'attrition_dashboard' %}"
-                    class="{% if 'attrition-risk' in request.path %}active{% endif %}">
-                    <i class="fas fa-brain"></i> Attrition Risk
-                </a>
-                {% endif %}
-
-                <!-- Resume Parser - Admin only -->
-                {% if user.role == 'COMPANY_ADMIN' %}
-                <a href="{% url 'resume_parser' %}" class="{% if 'resume-parser' in request.path %}active{% endif %}">
-                    <i class="fas fa-file-upload"></i> Resume Parser
-                </a>
-                {% endif %}
-            </div>
-        </div>
-
 
         <div class="logout-container mt-auto">
             {% if user.is_authenticated %}

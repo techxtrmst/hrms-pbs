@@ -341,62 +341,14 @@
                 <div class="text-danger">{{ form.last_name.errors.0 }}</div>
                 {% endif %}
             </div>
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <label class="form-label">Employee ID <span class="text-danger">*</span></label>
-                <!-- Hidden Actual Field -->
-                {% render_field form.badge_id class="d-none" id="real_badge_id" %}
-
-                <div class="input-group">
-                    <!-- Company Prefix -->
-                    <span class="input-group-text bg-light fw-bold text-primary" id="id_prefix_display">
-                        {{ company_prefix }}
-                    </span>
-
-                    <!-- Location Code -->
-                    <select class="form-select" id="id_location_code_select"
-                        style="max-width: 110px; background-color: #f8f9fa;">
-                        <option value="HYD">HYD</option>
-                        <option value="US">US</option>
-                        <option value="DHAKA">DHAKA</option>
-                    </select>
-
-                    <!-- Number -->
-                    <input type="text" class="form-control" id="id_number_input" placeholder="001" maxlength="6">
-                </div>
-
-
-                <small class="text-muted">Auto-generated format: <span id="preview_id">...</span></small>
+                {% render_field form.badge_id class="form-control" placeholder="e.g. PBTHYD001" %}
+                <small class="text-muted">Leave empty for auto-generation</small>
                 {% if form.badge_id.errors %}
                 <div class="text-danger">{{ form.badge_id.errors.0 }}</div>
                 {% endif %}
             </div>
-
-            <script>
-                document.addEventListener('DOMContentLoaded', function () {
-                    const realInput = document.getElementById('real_badge_id');
-                    const prefixSpan = document.getElementById('id_prefix_display');
-                    const locSelect = document.getElementById('id_location_code_select');
-                    const numInput = document.getElementById('id_number_input');
-                    const previewSpan = document.getElementById('preview_id');
-
-                    function updateId() {
-                        const prefix = prefixSpan.textContent.trim();
-                        const loc = locSelect.value;
-                        const num = numInput.value.trim();
-
-                        const fullId = prefix + loc + num;
-                        realInput.value = fullId;
-                        previewSpan.textContent = fullId;
-                    }
-
-                    // Event Listeners
-                    locSelect.addEventListener('change', updateId);
-                    numInput.addEventListener('input', updateId);
-
-                    // Initial Call
-                    updateId();
-                });
-            </script>
 
             <div class="col-md-6">
                 <label class="form-label">Personal Email <span class="text-danger">*</span></label>

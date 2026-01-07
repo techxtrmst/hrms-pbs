@@ -283,10 +283,9 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const clBalance = parseFloat("{{ cl_balance|default:0 }}");
-        const elBalance = parseFloat("{{ el_balance|default:0 }}");
 
         // Auto-select Unpaid Leave if no balance
-        if (clBalance <= 0 && elBalance <= 0) {
+        if (clBalance <= 0) {
             const leaveTypeSelect = document.querySelector('select[name="leave_type"]');
             if (leaveTypeSelect) {
                 leaveTypeSelect.value = 'UL';

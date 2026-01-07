@@ -287,16 +287,28 @@ class ShiftSchedule(models.Model):
                        self.friday, self.saturday, self.sunday]
         return working_days[weekday]
     
-    def get_shift_duration_timedelta(self):
-        """Calculate shift duration as timedelta"""
+    def get_shift_duration_hours(self):
+        """Calculate total shift duration in hours"""
         from datetime import datetime, timedelta
         
-        # Create dummy datetime objects for today
-        dummy_date = datetime.now().date()
-        start_dt = datetime.combine(dummy_date, self.start_time)
-        end_dt = datetime.combine(dummy_date, self.end_time)
+        # Create datetime objects for calculation
+        start_dt = datetime.combine(datetime.today(), self.start_time)
+        end_dt = datetime.combine(datetime.today(), self.end_time)
         
-        # Handle overnight shifts (end_time < start_time)
+        # Handle overnight shifts
+        if end_dt < start_dt:
+            end_dt += timedelta(days=1)
+        
+        duration = (end_dt - start_dt).total_seconds() / 3600
+        return duration
+    
+    def get_shift_duration_timedelta(self):
+        """Return shift duration as timedelta object"""
+        from datetime import datetime, timedelta
+        
+        start_dt = datetime.combine(datetime.today(), self.start_time)
+        end_dt = datetime.combine(datetime.today(), self.end_time)
+        
         if end_dt < start_dt:
             end_dt += timedelta(days=1)
         

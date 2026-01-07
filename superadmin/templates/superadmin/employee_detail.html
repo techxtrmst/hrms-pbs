@@ -710,11 +710,6 @@
                         <div class="leave-balance-value">{{ leave_summary.balances.SL }}</div>
                         <div class="leave-balance-taken">Taken: {{ leave_summary.taken_by_type.SL|default:0 }}</div>
                     </div>
-                    <div class="leave-balance-card el">
-                        <div class="leave-balance-label">Earned Leave</div>
-                        <div class="leave-balance-value">{{ leave_summary.balances.EL }}</div>
-                        <div class="leave-balance-taken">Taken: {{ leave_summary.taken_by_type.EL|default:0 }}</div>
-                    </div>
                 </div>
 
                 <h3><i class="fas fa-history text-primary"></i> Leave History</h3>
@@ -738,8 +733,6 @@
                                     <span class="status-badge info">CL</span>
                                     {% elif leave.leave_type == 'SL' %}
                                     <span class="status-badge warning">SL</span>
-                                    {% elif leave.leave_type == 'EL' %}
-                                    <span class="status-badge success">EL</span>
                                     {% else %}
                                     <span class="status-badge">{{ leave.leave_type }}</span>
                                     {% endif %}

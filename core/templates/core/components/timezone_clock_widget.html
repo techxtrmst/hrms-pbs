@@ -1,0 +1,415 @@
+<!-- Timezone-Aware Clock Widget -->
+<!-- This component can be included in any dashboard that needs clock-in functionality -->
+
+<div class="timezone-clock-widget">
+    <!-- Current Time Display with Timezone -->
+    <div class="current-time-section mb-4">
+        <div class="text-label mb-2">Current Time</div>
+        <div id="widget-clock" class="digital-clock">--:--</div>
+        <div id="widget-date" class="current-date">-- -- ----</div>
+        <div id="widget-timezone" class="text-muted small mt-1">Loading timezone...</div>
+    </div>
+
+    <!-- Clock In/Out Section -->
+    {% if attendance and attendance.clock_in and not attendance.clock_out %}
+    <!-- Clocked In State -->
+    <div class="clocked-in-state">
+        <div class="p-3 bg-light rounded-3 mb-4 border">
+            <div class="text-label mb-1">Clocked In At</div>
+            {% load tz %}
+            {% if attendance.user_timezone %}
+                {% timezone attendance.user_timezone %}
+                    <div class="fs-4 fw-bold text-dark">{{ attendance.local_clock_in_time|time:"h:i A" }}</div>
+                    <div class="small text-muted">{{ attendance.user_timezone }}</div>
+                {% endtimezone %}
+            {% elif attendance.local_clock_in_time %}
+                <div class="fs-4 fw-bold text-dark">{{ attendance.local_clock_in_time|time:"h:i A" }}</div>
+                <div class="small text-muted">Local Time</div>
+            {% elif employee.location.timezone %}
+                {% timezone employee.location.timezone %}
+                    <div class="fs-4 fw-bold text-dark">{{ attendance.clock_in|time:"h:i A" }}</div>
+                    <div class="small text-muted">{{ employee.location.timezone }}</div>
+                {% endtimezone %}
+            {% else %}
+                <div class="fs-4 fw-bold text-dark">{{ attendance.clock_in|time:"h:i A" }}</div>
+                <div class="small text-muted">UTC</div>
+            {% endif %}
+
+            <hr class="my-3 text-muted opacity-25">
+
+            <div class="d-flex justify-content-between">
+                <div>
+                    <div class="text-label" style="font-size: 0.65rem;">Duration</div>
+                    <div class="fw-bold text-dark timer-count" id="widget-timer-display">00:00:00</div>
+                </div>
+                <div class="text-end">
+                    <div class="text-label" style="font-size: 0.65rem;">Status</div>
+                    <div class="badge bg-success bg-opacity-10 text-success">Active</div>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-clock btn-clock-out" onclick="handleTimezoneClockAction('out')">
+            <span class="btn-icon-wrapper"><i class="fas fa-sign-out-alt"></i></span>
+            Clock Out
+        </button>
+    </div>
+
+    {% else %}
+    <!-- Clocked Out State -->
+    <div class="clocked-out-state">
+        <div class="d-grid gap-3">
+            <button class="btn-clock btn-clock-in-office" onclick="handleTimezoneClockAction('in', 'office')">
+                <span class="btn-icon-wrapper"><i class="fas fa-building"></i></span>
+                Web Clock-In
+            </button>
+            <button class="btn-clock btn-clock-in-remote" onclick="handleTimezoneClockAction('in', 'remote')">
+                <span class="btn-icon-wrapper"><i class="fas fa-laptop-house"></i></span>
+                Remote Clock-In
+            </button>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* Timezone Clock Widget Styles */
+.timezone-clock-widget {
+    background: white;
+    border-radius: 20px;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    padding: 24px;
+    text-align: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.timezone-clock-widget:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    transform: translateY(-2px);
+    border-color: rgba(99, 102, 241, 0.2);
+}
+
+.digital-clock {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.current-date {
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 500;
+    margin-top: 0.25rem;
+}
+
+.text-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #94a3b8;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+.btn-clock {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 24px;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.btn-clock::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: 0.5s;
+}
+
+.btn-clock:hover::after {
+    left: 100%;
+    transition: 0.5s ease-in-out;
+}
+
+.btn-clock:active {
+    transform: scale(0.98);
+}
+
+.btn-clock-in-office {
+    background: #ecfdf5;
+    color: #047857;
+    border: 2px solid #d1fae5;
+}
+
+.btn-clock-in-office:hover {
+    background: #10b981;
+    color: white;
+    border-color: #10b981;
+    transform: translateY(-2px);
+}
+
+.btn-clock-in-remote {
+    background: #f5f3ff;
+    color: #7c3aed;
+    border: 2px solid #e9d5ff;
+}
+
+.btn-clock-in-remote:hover {
+    background: #8b5cf6;
+    color: white;
+    border-color: #8b5cf6;
+    transform: translateY(-2px);
+}
+
+.btn-clock-out {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    border: 2px solid #ef4444;
+}
+
+.btn-clock-out:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+}
+
+.btn-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+}
+
+.timer-count {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+}
+</style>
+
+<script>
+// Timezone-aware clock widget JavaScript
+(function() {
+    // Update widget clock display
+    function updateWidgetClock() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            hour12: true 
+        });
+        const dateString = now.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            day: 'numeric', 
+            month: 'short', 
+            year: 'numeric' 
+        });
+
+        const clockElement = document.getElementById('widget-clock');
+        const dateElement = document.getElementById('widget-date');
+        const timezoneElement = document.getElementById('widget-timezone');
+
+        if (clockElement) clockElement.innerText = timeString;
+        if (dateElement) dateElement.innerText = dateString;
+        
+        if (timezoneElement) {
+            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const timezoneAbbr = now.toLocaleDateString('en', {timeZoneName:'short'}).split(', ')[1];
+            timezoneElement.innerText = `${userTimezone} (${timezoneAbbr})`;
+        }
+    }
+
+    // Update timer for clocked-in duration
+    function updateWidgetTimer() {
+        {% if attendance and attendance.clock_in and not attendance.clock_out %}
+        const clockInTimeUTC = "{{ attendance.clock_in|date:'Y-m-d H:i:s' }}";
+        const clockInTime = new Date(clockInTimeUTC.replace(' ', 'T') + 'Z');
+        
+        if (!isNaN(clockInTime.getTime())) {
+            const now = new Date();
+            const diff = now - clockInTime;
+            
+            if (diff >= 0) {
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                const timerElement = document.getElementById('widget-timer-display');
+                if (timerElement) {
+                    timerElement.innerText = 
+                        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
+            }
+        }
+        {% endif %}
+    }
+
+    // Initialize widget
+    function initializeWidget() {
+        updateWidgetClock();
+        updateWidgetTimer();
+        
+        // Update every second
+        setInterval(updateWidgetClock, 1000);
+        setInterval(updateWidgetTimer, 1000);
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeWidget);
+    } else {
+        initializeWidget();
+    }
+})();
+
+// Timezone-aware clock action handler
+function handleTimezoneClockAction(action, type) {
+    if (!navigator.geolocation) { 
+        alert("Geolocation not supported."); 
+        return; 
+    }
+
+    const btn = event ? event.currentTarget : document.querySelector('.btn-clock');
+    const origText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+
+    navigator.geolocation.getCurrentPosition((pos) => {
+        // Get user's timezone information
+        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const now = new Date();
+        const timezoneOffset = now.getTimezoneOffset();
+        
+        const requestData = {
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            type: type,
+            timezone: userTimezone,
+            local_time: now.toISOString(),
+            timezone_offset: timezoneOffset
+        };
+
+        console.log('Timezone-aware clock action:', requestData);
+
+        fetch(action === 'in' ? "{% url 'api_clock_in' %}" : "{% url 'api_clock_out' %}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify(requestData)
+        })
+        .then(r => r.json())
+        .then(data => {
+            console.log('Clock action response:', data);
+            
+            if (data.status === 'success') {
+                // Success Animation
+                if (typeof confetti === 'function') {
+                    confetti({
+                        particleCount: 150,
+                        spread: 70,
+                        origin: { y: 0.6 },
+                        colors: ['#6366f1', '#10b981', '#f59e0b']
+                    });
+                }
+
+                // Show success message with timezone info
+                let message = data.message || 'Clock action completed successfully';
+                if (data.timezone && data.time) {
+                    message += `\nLocal Time: ${data.time} (${data.timezone})`;
+                }
+
+                setTimeout(() => {
+                    alert(message);
+                    location.reload();
+                }, 1000);
+            }
+            else if (data.status === 'confirmation_required' || data.requires_confirmation) {
+                // Handle early clock-out confirmation
+                const message = data.message || 'Your shift is not completed yet. Are you sure you want to clock out?';
+                const details = data.worked_hours && data.expected_hours
+                    ? `\n\nWorked: ${data.worked_hours} hours\nExpected: ${data.expected_hours} hours\nCompletion: ${data.completion_percentage}%`
+                    : '';
+
+                if (confirm(message + details)) {
+                    // User confirmed, send request with force_clockout flag
+                    fetch("{% url 'api_clock_out' %}", {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                        body: JSON.stringify({
+                            ...requestData,
+                            force_clockout: true
+                        })
+                    })
+                    .then(r => r.json())
+                    .then(data2 => {
+                        if (data2.status === 'success') {
+                            if (data2.message) {
+                                alert(data2.message);
+                            }
+                            location.reload();
+                        } else {
+                            alert(data2.message || 'Clock-out failed');
+                            btn.innerHTML = origText;
+                            btn.disabled = false;
+                        }
+                    })
+                    .catch(() => {
+                        alert("Network Error");
+                        btn.innerHTML = origText;
+                        btn.disabled = false;
+                    });
+                } else {
+                    btn.innerHTML = origText;
+                    btn.disabled = false;
+                }
+            }
+            else if (data.already_clocked_in) {
+                alert(data.message || 'You are already clocked in.');
+                btn.innerHTML = origText;
+                btn.disabled = false;
+            }
+            else {
+                alert(data.message || 'An error occurred');
+                btn.innerHTML = origText;
+                btn.disabled = false;
+            }
+        })
+        .catch(() => {
+            alert("Network Error");
+            btn.innerHTML = origText;
+            btn.disabled = false;
+        });
+    }, (err) => {
+        console.error(err);
+        if (err.code === 1) {
+            alert("Location access denied. Please enable location permissions to clock in.");
+        } else if (err.code === 2) {
+            alert("Location unavailable. Please try again.");
+        } else if (err.code === 3) {
+            alert("Location request timed out. Please try again.");
+        } else {
+            alert("Error getting location: " + err.message);
+        }
+        btn.innerHTML = origText;
+        btn.disabled = false;
+    }, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+    });
+}
+</script>

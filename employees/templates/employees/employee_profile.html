@@ -309,15 +309,33 @@
         border-radius: 0.75rem;
         padding: 1.5rem;
         text-align: center;
-        transition: 0.2s;
+        transition: all 0.3s ease;
         cursor: pointer;
         position: relative;
         overflow: hidden;
+        min-height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .doc-upload-box:hover {
         border-color: var(--primary-color);
         background: #f8fafc;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .doc-upload-box.drag-over {
+        border-color: var(--primary-color);
+        background: #f0f9ff;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+    .doc-upload-box.uploading {
+        border-color: var(--primary-color);
+        background: #f0f9ff;
+        pointer-events: none;
     }
 
     .doc-preview-img {
@@ -622,7 +640,7 @@
                                                 <div class="address-header"><i
                                                         class="fas fa-home me-2 text-primary"></i> Current Address</div>
                                                 <p class="address-text">
-                                                    {{ employee.current_address|default:"Not Provided"|linebreaksbr }}
+                                                    {{ employee.permanent_address|default:"Not Provided"|linebreaksbr }}
                                                 </p>
                                             </div>
                                         </div>
@@ -777,74 +795,101 @@
                     <div class="card-icon"><i class="fas fa-folder-open"></i></div>Identity Documents
                 </div>
                 <div class="card-body-clean">
-                    <form method="post" enctype="multipart/form-data">
+                    <form id="document-upload-form" method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="row g-4">
                             <!-- Aadhar Front -->
                             <div class="col-md-4">
-                                <div class="doc-upload-box" onclick="this.querySelector('input').click()">
+                                <div class="doc-upload-box" onclick="if(!this.querySelector('input').disabled) this.querySelector('input').click()">
                                     {% if id_proofs.aadhar_front %}
                                     <span class="badge bg-success doc-status-badge"><i class="fas fa-check"></i></span>
-                                    <img src="{{ id_proofs.aadhar_front.url }}" class="doc-preview-img w-100">
+                                    <img src="{{ id_proofs.aadhar_front.url }}" class="doc-preview-img w-100" alt="Aadhar Front">
                                     <div class="fw-bold text-dark">Aadhar Front</div>
+                                    {% if is_admin %}
+                                    <div class="small text-muted mt-2">
+                                        <label class="form-check-label">
+                                            <input type="checkbox" name="delete_aadhar_front" class="form-check-input me-1">
+                                            Delete this document
+                                        </label>
+                                    </div>
+                                    {% endif %}
                                     {% else %}
                                     <div class="py-4 text-muted"><i
                                             class="fas fa-id-card display-4 mb-3 opacity-50"></i>
                                         <div class="fw-bold">Aadhar Front</div>
-                                        <div class="small">Click to upload</div>
+                                        <div class="small">Click to upload or drag & drop</div>
+                                        <div class="small text-muted mt-1">JPG, PNG, GIF or PDF (Max 10MB)</div>
                                     </div>
                                     {% endif %}
-                                    <!-- prettier-ignore -->
+                                    <!-- File input -->
                                     {% if not is_admin and id_proofs.aadhar_front %}
-                                    <input type="file" name="aadhar_front" hidden disabled>
+                                    <input type="file" name="aadhar_front" accept="image/*,application/pdf" hidden disabled>
                                     {% else %}
-                                    <input type="file" name="aadhar_front" hidden>
+                                    <input type="file" name="aadhar_front" accept="image/*,application/pdf" hidden>
                                     {% endif %}
                                 </div>
                             </div>
 
                             <!-- Aadhar Back -->
                             <div class="col-md-4">
-                                <div class="doc-upload-box" onclick="this.querySelector('input').click()">
+                                <div class="doc-upload-box" onclick="if(!this.querySelector('input').disabled) this.querySelector('input').click()">
                                     {% if id_proofs.aadhar_back %}
                                     <span class="badge bg-success doc-status-badge"><i class="fas fa-check"></i></span>
-                                    <img src="{{ id_proofs.aadhar_back.url }}" class="doc-preview-img w-100">
+                                    <img src="{{ id_proofs.aadhar_back.url }}" class="doc-preview-img w-100" alt="Aadhar Back">
                                     <div class="fw-bold text-dark">Aadhar Back</div>
+                                    {% if is_admin %}
+                                    <div class="small text-muted mt-2">
+                                        <label class="form-check-label">
+                                            <input type="checkbox" name="delete_aadhar_back" class="form-check-input me-1">
+                                            Delete this document
+                                        </label>
+                                    </div>
+                                    {% endif %}
                                     {% else %}
                                     <div class="py-4 text-muted"><i
                                             class="fas fa-id-card display-4 mb-3 opacity-50"></i>
                                         <div class="fw-bold">Aadhar Back</div>
-                                        <div class="small">Click to upload</div>
+                                        <div class="small">Click to upload or drag & drop</div>
+                                        <div class="small text-muted mt-1">JPG, PNG, GIF or PDF (Max 10MB)</div>
                                     </div>
                                     {% endif %}
-                                    <!-- prettier-ignore -->
+                                    <!-- File input -->
                                     {% if not is_admin and id_proofs.aadhar_back %}
-                                    <input type="file" name="aadhar_back" hidden disabled>
+                                    <input type="file" name="aadhar_back" accept="image/*,application/pdf" hidden disabled>
                                     {% else %}
-                                    <input type="file" name="aadhar_back" hidden>
+                                    <input type="file" name="aadhar_back" accept="image/*,application/pdf" hidden>
                                     {% endif %}
                                 </div>
                             </div>
 
                             <!-- PAN Card -->
                             <div class="col-md-4">
-                                <div class="doc-upload-box" onclick="this.querySelector('input').click()">
+                                <div class="doc-upload-box" onclick="if(!this.querySelector('input').disabled) this.querySelector('input').click()">
                                     {% if id_proofs.pan_card %}
                                     <span class="badge bg-success doc-status-badge"><i class="fas fa-check"></i></span>
-                                    <img src="{{ id_proofs.pan_card.url }}" class="doc-preview-img w-100">
+                                    <img src="{{ id_proofs.pan_card.url }}" class="doc-preview-img w-100" alt="PAN Card">
                                     <div class="fw-bold text-dark">PAN Card</div>
+                                    {% if is_admin %}
+                                    <div class="small text-muted mt-2">
+                                        <label class="form-check-label">
+                                            <input type="checkbox" name="delete_pan_card" class="form-check-input me-1">
+                                            Delete this document
+                                        </label>
+                                    </div>
+                                    {% endif %}
                                     {% else %}
                                     <div class="py-4 text-muted"><i
                                             class="fas fa-address-card display-4 mb-3 opacity-50"></i>
                                         <div class="fw-bold">PAN Card</div>
-                                        <div class="small">Click to upload</div>
+                                        <div class="small">Click to upload or drag & drop</div>
+                                        <div class="small text-muted mt-1">JPG, PNG, GIF or PDF (Max 10MB)</div>
                                     </div>
                                     {% endif %}
-                                    <!-- prettier-ignore -->
+                                    <!-- File input -->
                                     {% if not is_admin and id_proofs.pan_card %}
-                                    <input type="file" name="pan_card" hidden disabled>
+                                    <input type="file" name="pan_card" accept="image/*,application/pdf" hidden disabled>
                                     {% else %}
-                                    <input type="file" name="pan_card" hidden>
+                                    <input type="file" name="pan_card" accept="image/*,application/pdf" hidden>
                                     {% endif %}
                                 </div>
                             </div>
@@ -867,5 +912,189 @@
 <script>
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) { return new bootstrap.Tooltip(tooltipTriggerEl); });
+
+    // Handle document upload
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 Document upload system initializing...');
+        
+        const fileInputs = document.querySelectorAll('#document-upload-form input[type="file"]:not([disabled])');
+        const form = document.querySelector('#document-upload-form');
+        
+        console.log('📋 Found file inputs:', fileInputs.length);
+        console.log('📋 Found form:', form ? 'Yes' : 'No');
+        
+        if (!form) {
+            console.error('❌ Document upload form not found!');
+            return;
+        }
+        
+        // Add change event listeners to file inputs
+        fileInputs.forEach(function(input, index) {
+            console.log(`📎 Setting up input ${index + 1}: ${input.name}`);
+            
+            input.addEventListener('change', function(e) {
+                console.log('📁 File input changed:', this.name);
+                
+                if (this.files && this.files[0]) {
+                    const file = this.files[0];
+                    console.log('📄 Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
+                    
+                    // Validate file size (10MB limit)
+                    if (file.size > 10 * 1024 * 1024) {
+                        alert('❌ File size must be less than 10MB');
+                        this.value = '';
+                        return;
+                    }
+                    
+                    // Validate file type
+                    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
+                    if (!allowedTypes.includes(file.type)) {
+                        alert('❌ Please select a valid image file (JPEG, PNG, GIF) or PDF');
+                        this.value = '';
+                        return;
+                    }
+                    
+                    console.log('✅ File validation passed, uploading...');
+                    
+                    // Show loading state
+                    const uploadBox = this.closest('.doc-upload-box');
+                    if (uploadBox) {
+                        const originalContent = uploadBox.innerHTML;
+                        
+                        uploadBox.innerHTML = `
+                            <div class="py-4 text-primary">
+                                <i class="fas fa-spinner fa-spin display-4 mb-3"></i>
+                                <div class="fw-bold">Uploading ${file.name}...</div>
+                                <div class="small">Please wait</div>
+                            </div>
+                        `;
+                        
+                        // Store original content for potential restoration
+                        uploadBox.dataset.originalContent = originalContent;
+                    }
+                    
+                    // Submit the form after a short delay to show loading state
+                    setTimeout(function() {
+                        console.log('📤 Submitting form...');
+                        try {
+                            form.submit();
+                        } catch (error) {
+                            console.error('❌ Form submission error:', error);
+                            // Restore original content if submission fails
+                            if (uploadBox && uploadBox.dataset.originalContent) {
+                                uploadBox.innerHTML = uploadBox.dataset.originalContent;
+                            }
+                            alert('❌ Upload failed. Please try again.');
+                        }
+                    }, 500);
+                } else {
+                    console.log('❌ No file selected');
+                }
+            });
+            
+            // Add visual feedback on focus/blur
+            input.addEventListener('focus', function() {
+                const uploadBox = this.closest('.doc-upload-box');
+                if (uploadBox) {
+                    uploadBox.style.borderColor = '#6366f1';
+                    uploadBox.style.backgroundColor = '#f8fafc';
+                }
+            });
+            
+            input.addEventListener('blur', function() {
+                const uploadBox = this.closest('.doc-upload-box');
+                if (uploadBox) {
+                    uploadBox.style.borderColor = '#cbd5e1';
+                    uploadBox.style.backgroundColor = '';
+                }
+            });
+        });
+        
+        // Add visual feedback for upload boxes
+        const uploadBoxes = document.querySelectorAll('#document-upload-form .doc-upload-box');
+        console.log('📦 Found upload boxes:', uploadBoxes.length);
+        
+        uploadBoxes.forEach(function(box, index) {
+            console.log(`📦 Setting up upload box ${index + 1}`);
+            
+            // Only add drag/drop to boxes that don't have disabled inputs
+            const input = box.querySelector('input[type="file"]');
+            if (input && !input.disabled) {
+                console.log(`✅ Upload box ${index + 1} is active`);
+                
+                // Add hover effect
+                box.addEventListener('mouseenter', function() {
+                    if (!this.classList.contains('uploading')) {
+                        this.style.borderColor = '#6366f1';
+                        this.style.backgroundColor = '#f8fafc';
+                    }
+                });
+                
+                box.addEventListener('mouseleave', function() {
+                    if (!this.classList.contains('uploading')) {
+                        this.style.borderColor = '#cbd5e1';
+                        this.style.backgroundColor = '';
+                    }
+                });
+                
+                // Drag and drop functionality
+                box.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    this.style.borderColor = '#6366f1';
+                    this.style.backgroundColor = '#f0f9ff';
+                    this.classList.add('drag-over');
+                });
+                
+                box.addEventListener('dragleave', function(e) {
+                    e.preventDefault();
+                    this.style.borderColor = '#cbd5e1';
+                    this.style.backgroundColor = '';
+                    this.classList.remove('drag-over');
+                });
+                
+                box.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.style.borderColor = '#cbd5e1';
+                    this.style.backgroundColor = '';
+                    this.classList.remove('drag-over');
+                    
+                    console.log('📁 File dropped on upload box');
+                    
+                    const fileInput = this.querySelector('input[type="file"]');
+                    if (fileInput && e.dataTransfer.files.length > 0) {
+                        console.log('📄 Processing dropped file:', e.dataTransfer.files[0].name);
+                        fileInput.files = e.dataTransfer.files;
+                        fileInput.dispatchEvent(new Event('change'));
+                    }
+                });
+            } else {
+                console.log(`⚠️ Upload box ${index + 1} is disabled`);
+            }
+        });
+        
+        // Handle manual submit button
+        const submitBtn = document.querySelector('#document-upload-form button[type="submit"]');
+        if (submitBtn) {
+            console.log('✅ Submit button found');
+            submitBtn.addEventListener('click', function(e) {
+                console.log('🔘 Manual submit clicked');
+                
+                // Check if any files are selected
+                const hasFiles = Array.from(fileInputs).some(input => input.files && input.files.length > 0);
+                
+                if (!hasFiles) {
+                    e.preventDefault();
+                    alert('⚠️ Please select at least one file to upload.');
+                    return false;
+                }
+                
+                console.log('📤 Form will be submitted with files');
+            });
+        } else {
+            console.warn('⚠️ Submit button not found');
+        }
+        
+        console.log('✅ Document upload system initialized successfully');
+    });
 </script>
 {% endblock %}

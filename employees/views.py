@@ -1,8 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy, reverse
 from django.db import transaction
+from django.contrib import messages
 from .models import (
     Employee,
     Attendance,
@@ -246,30 +247,6 @@ class EmployeeDeleteView(LoginRequiredMixin, CompanyAdminRequiredMixin, DeleteVi
         return redirect(self.success_url)
 
 
-@login_required
-def resend_welcome_email(request, pk):
-    """
-    Resend welcome email with activation link to the employee.
-    """
-    if request.user.role != User.Role.COMPANY_ADMIN:
-        messages.error(request, "Permission denied.")
-        return redirect('employee_list')
-        
-    try:
-        employee = Employee.objects.get(pk=pk, company=request.user.company)
-        from core.email_utils import send_welcome_email_with_link
-        
-        domain = request.get_host()
-        if send_welcome_email_with_link(employee, domain):
-            messages.success(request, f"Welcome email resent to {employee.user.email}")
-        else:
-            messages.error(request, "Failed to send email. Please check email settings.")
-            
-    except Employee.DoesNotExist:
-        messages.error(request, "Employee not found.")
-        
-    return redirect('employee_list')
-
 # --- Attendance & Tracking Views ---
 
 
@@ -281,6 +258,25 @@ def clock_in(request):
             data = json.loads(request.body)
             lat = data.get("latitude")
             lng = data.get("longitude")
+            
+            # Import timezone utilities
+            from .timezone_utils import (
+                get_timezone_from_coordinates, 
+                validate_timezone, 
+                get_current_time_in_timezone
+            )
+            import pytz
+            
+            # Get user's timezone from browser or coordinates
+            user_timezone_str = data.get("timezone")  # From browser
+            
+            # If no timezone from browser, detect from coordinates
+            if not user_timezone_str and lat and lng:
+                user_timezone_str = get_timezone_from_coordinates(float(lat), float(lng))
+            
+            # Validate and set default timezone
+            user_timezone_str = validate_timezone(user_timezone_str)
+            user_timezone = pytz.timezone(user_timezone_str)
 
             # Ensure employee profile exists
             if not hasattr(request.user, "employee_profile"):
@@ -290,7 +286,10 @@ def clock_in(request):
                 )
 
             employee = request.user.employee_profile
-            today = timezone.localdate()
+            
+            # Get current time in user's timezone
+            user_now = get_current_time_in_timezone(user_timezone_str)
+            today = user_now.date()
 
             # Try to get existing attendance record for today
             try:
@@ -298,25 +297,20 @@ def clock_in(request):
 
                 # Check if already clocked in
                 if attendance.clock_in:
-                    # Increment attempt counter (max 3)
-                    if attendance.clock_in_attempts < 3:
-                        attendance.clock_in_attempts += 1
-                        attendance.save()
-
-                    # Log the duplicate attempt
-                    import logging
-
-                    logger = logging.getLogger(__name__)
-                    logger.info(
-                        f"Duplicate clock-in attempt #{attendance.clock_in_attempts} by {employee.user.username} on {today}"
-                    )
-
+                    # Convert stored time to user's timezone for display
+                    if attendance.local_clock_in_time:
+                        display_time = attendance.local_clock_in_time
+                    else:
+                        display_time = attendance.clock_in.astimezone(user_timezone)
+                    
                     return JsonResponse(
                         {
                             "status": "error",
                             "message": "You are already clocked in.",
                             "already_clocked_in": True,
-                            "clock_in_time": attendance.clock_in.strftime("%H:%M:%S"),
+                            "clock_in_time": display_time.strftime("%H:%M:%S"),
+                            "clock_in_timezone": user_timezone_str,
+                            "clock_in_date": display_time.strftime("%Y-%m-%d"),
                         }
                     )
 
@@ -333,11 +327,18 @@ def clock_in(request):
             else:
                 status = "PRESENT"
 
-            # Set clock-in details
-            attendance.clock_in = timezone.now()
-            attendance.location_in = f"{lat},{lng}"
+            # Set clock-in times (both UTC and local)
+            utc_now = timezone.now()
+            local_now = user_now
+            
+            attendance.clock_in = utc_now  # Store in UTC for consistency
+            attendance.local_clock_in_time = local_now  # Store local time for display
+            attendance.user_timezone = user_timezone_str  # Store user's timezone
+            attendance.location_in = f"{lat},{lng}" if lat and lng else None
             attendance.status = status
-            attendance.clock_in_attempts = 1  # First valid attempt
+            attendance.clock_in_attempts = 1
+            
+            # Set daily clock tracking fields
             attendance.daily_clock_count = 1
             attendance.is_currently_clocked_in = True
             attendance.max_daily_clocks = 3
@@ -348,36 +349,23 @@ def clock_in(request):
             # Calculate location tracking end time based on shift duration
             shift = employee.assigned_shift
             if shift:
-                # Robust check (Fallback for production sync issues)
-                if hasattr(shift, "get_shift_duration_timedelta"):
+                try:
                     shift_duration = shift.get_shift_duration_timedelta()
-                else:
-                    from datetime import datetime, timedelta
-
-                    today_date = timezone.localdate()
-                    s_start = datetime.combine(today_date, shift.start_time)
-                    s_end = datetime.combine(today_date, shift.end_time)
-                    if s_end < s_start:
-                        s_end += timedelta(days=1)
-                    shift_duration = s_end - s_start
-
-                attendance.location_tracking_end_time = (
-                    attendance.clock_in + shift_duration
-                )
+                    attendance.location_tracking_end_time = attendance.clock_in + shift_duration
+                except:
+                    # Fallback to 9 hours if method doesn't exist
+                    from datetime import timedelta
+                    attendance.location_tracking_end_time = attendance.clock_in + timedelta(hours=9)
             else:
-                # Default to 9 hours if no shift assigned
                 from datetime import timedelta
+                attendance.location_tracking_end_time = attendance.clock_in + timedelta(hours=9)
 
-                attendance.location_tracking_end_time = attendance.clock_in + timedelta(
-                    hours=9
-                )
-
-            # Calculate late arrival based on shift
-            attendance.calculate_late_arrival()
+            # Calculate late arrival using user's timezone
+            attendance.calculate_late_arrival_with_timezone(user_timezone_str)
 
             attendance.save()
 
-            # Send WFH Notification
+            # Send WFH Notification if needed
             if status == "WFH":
                 try:
                     from django.core.mail import send_mail
@@ -389,13 +377,14 @@ def clock_in(request):
                     Designation: {employee.designation}
                     Department: {employee.department}
                     
-                    Clock In Time: {attendance.clock_in.strftime("%d-%m-%Y %H:%M:%S")}
+                    Clock In Time: {local_now.strftime("%d-%m-%Y %H:%M:%S %Z")}
+                    Timezone: {user_timezone_str}
+                    Location: {lat}, {lng} (if available)
                     
                     This user has clocked in using 'Work From Home' mode.
                     """
 
-                    # Send to HR/Admin emails (configure in settings or fetch dynamically)
-                    # For now, sending to ADMINs
+                    # Send to HR/Admin emails
                     recipient_list = [
                         admin.email
                         for admin in User.objects.filter(role=User.Role.COMPANY_ADMIN)
@@ -415,38 +404,41 @@ def clock_in(request):
                             fail_silently=True,
                         )
                 except Exception as email_err:
-                    # Non-blocking error
                     import logging
-
                     logger = logging.getLogger(__name__)
                     logger.error(f"Failed to send WFH email: {str(email_err)}")
 
-            # Prepare response with late status
+            # Prepare response with user's local time
             response_data = {
                 "status": "success",
-                "time": attendance.clock_in.strftime("%H:%M:%S"),
+                "time": local_now.strftime("%H:%M:%S"),
+                "timezone": user_timezone_str,
+                "local_date": local_now.strftime("%Y-%m-%d"),
+                "utc_time": utc_now.strftime("%H:%M:%S UTC"),
                 "location_tracking_active": True,
-                "tracking_end_time": attendance.location_tracking_end_time.strftime(
-                    "%H:%M:%S"
-                ),
             }
 
-            if attendance.is_late:
+            # Add late arrival information
+            if hasattr(attendance, 'is_late') and attendance.is_late:
                 response_data["is_late"] = True
                 response_data["late_by_minutes"] = attendance.late_by_minutes
                 response_data["message"] = (
-                    f"Clocked in successfully. You are {attendance.late_by_minutes} minutes late."
+                    f"Clocked in at {local_now.strftime('%H:%M:%S')} ({user_timezone_str}). "
+                    f"You are {attendance.late_by_minutes} minutes late."
                 )
             else:
-                response_data["message"] = "Clocked in successfully."
+                response_data["message"] = (
+                    f"Clocked in successfully at {local_now.strftime('%H:%M:%S')} ({user_timezone_str})."
+                )
 
             return JsonResponse(response_data)
+            
         except Exception as e:
             import logging
-
             logger = logging.getLogger(__name__)
             logger.error(f"Clock-in error: {str(e)}", exc_info=True)
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
+    
     return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
 
 
@@ -500,10 +492,12 @@ def clock_out(request):
                 # Process clock-out
                 attendance.clock_out = timezone.now()
                 attendance.location_out = f"{lat},{lng}"
+                
+                # Update clock status
+                attendance.is_currently_clocked_in = False
 
                 # Stop location tracking
                 attendance.location_tracking_active = False
-                attendance.is_currently_clocked_in = False
 
                 # Calculate early departure based on shift
                 attendance.calculate_early_departure()
@@ -690,44 +684,87 @@ def employee_profile(request):
     locations = employee.company.locations.all()
 
     if request.method == "POST":
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Document upload POST request from user: {user.email}")
+        logger.info(f"POST data keys: {list(request.POST.keys())}")
+        logger.info(f"FILES data keys: {list(request.FILES.keys())}")
+        
         # Handle Profile Picture Upload
         if "profile_picture" in request.FILES:
+            logger.info("Processing profile picture upload")
             employee.profile_picture = request.FILES["profile_picture"]
             employee.save()
             return redirect("employee_profile")
 
         is_admin = request.user.role == User.Role.COMPANY_ADMIN
+        logger.info(f"User is admin: {is_admin}")
 
         # Helper to check if upload allowed
         def can_upload(current_file):
             return not current_file or is_admin
 
+        # Track if any files were uploaded
+        files_uploaded = False
+
         if "aadhar_front" in request.FILES:
+            logger.info("Processing aadhar_front upload")
             if can_upload(id_proofs.aadhar_front):
                 id_proofs.aadhar_front = request.FILES["aadhar_front"]
+                files_uploaded = True
+                logger.info("Aadhar front uploaded successfully")
+            else:
+                logger.warning("Aadhar front upload not allowed")
 
         if "aadhar_back" in request.FILES:
+            logger.info("Processing aadhar_back upload")
             if can_upload(id_proofs.aadhar_back):
                 id_proofs.aadhar_back = request.FILES["aadhar_back"]
+                files_uploaded = True
+                logger.info("Aadhar back uploaded successfully")
+            else:
+                logger.warning("Aadhar back upload not allowed")
 
         if "pan_card" in request.FILES:
+            logger.info("Processing pan_card upload")
             if can_upload(id_proofs.pan_card):
                 id_proofs.pan_card = request.FILES["pan_card"]
+                files_uploaded = True
+                logger.info("PAN card uploaded successfully")
+            else:
+                logger.warning("PAN card upload not allowed")
 
-        id_proofs.save()
+        # Save if any files were uploaded
+        if files_uploaded:
+            id_proofs.save()
+            logger.info("ID proofs saved successfully")
+            messages.success(request, "Documents uploaded successfully!")
 
         # Deletion logic for Admins
         if is_admin:
+            deleted_files = []
             if request.POST.get("delete_aadhar_front") == "on":
-                id_proofs.aadhar_front.delete(save=False)
-                id_proofs.aadhar_front = None
+                logger.info("Deleting aadhar_front")
+                if id_proofs.aadhar_front:
+                    id_proofs.aadhar_front.delete(save=False)
+                    id_proofs.aadhar_front = None
+                    deleted_files.append("Aadhar Front")
             if request.POST.get("delete_aadhar_back") == "on":
-                id_proofs.aadhar_back.delete(save=False)
-                id_proofs.aadhar_back = None
+                logger.info("Deleting aadhar_back")
+                if id_proofs.aadhar_back:
+                    id_proofs.aadhar_back.delete(save=False)
+                    id_proofs.aadhar_back = None
+                    deleted_files.append("Aadhar Back")
             if request.POST.get("delete_pan_card") == "on":
-                id_proofs.pan_card.delete(save=False)
-                id_proofs.pan_card = None
-            id_proofs.save()
+                logger.info("Deleting pan_card")
+                if id_proofs.pan_card:
+                    id_proofs.pan_card.delete(save=False)
+                    id_proofs.pan_card = None
+                    deleted_files.append("PAN Card")
+            
+            if deleted_files:
+                id_proofs.save()
+                messages.success(request, f"Deleted documents: {', '.join(deleted_files)}")
 
         return redirect("employee_profile")
 
@@ -793,14 +830,11 @@ class LeaveApplyView(LoginRequiredMixin, CreateView):
             employee = self.request.user.employee_profile
             if hasattr(employee, "leave_balance"):
                 context["cl_balance"] = employee.leave_balance.casual_leave_balance
-                context["el_balance"] = employee.leave_balance.earned_leave_balance
             else:
                 context["cl_balance"] = 0
-                context["el_balance"] = 0
         except Exception as e:
             # Fallback if something goes wrong (e.g. no profile)
             context["cl_balance"] = 0
-            context["el_balance"] = 0
         return context
 
     def form_valid(self, form):
@@ -856,13 +890,6 @@ def approve_leave(request, pk):
 
         balance.save()
 
-        # Send Approval Email
-        try:
-             from core.email_utils import send_leave_approval_notification
-             send_leave_approval_notification(leave_request)
-        except Exception as e:
-             print(f"Error sending approval email: {e}")
-
         return redirect(request.META.get("HTTP_REFERER", "admin_dashboard"))
     return redirect("admin_dashboard")
 
@@ -887,13 +914,6 @@ def reject_leave(request, pk):
         leave_request.rejection_reason = request.POST.get("rejection_reason", "")
         leave_request.approver = user  # Track who rejected
         leave_request.save()
-
-        # Send Rejection Email
-        try:
-            from core.email_utils import send_leave_rejection_notification
-            send_leave_rejection_notification(leave_request)
-        except Exception as e:
-            print(f"Error sending rejection email: {e}")
 
         return redirect(request.META.get("HTTP_REFERER", "admin_dashboard"))
     return redirect("admin_dashboard")
@@ -1616,27 +1636,11 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                         elif badge_id.endswith(".0"):
                             badge_id = badge_id[:-2]  # 101.0 -> 101
 
-                        # Sync Department & Designation with Role Configuration
-                        from companies.models import Department, Designation
-
-                        dept_name = str(row.get("department", "General")).strip().title()
-                        desig_name = str(row.get("designation", "Employee")).strip().title()
-
-                        # Ensure they exist in Role Config (prevents duplicates)
-                        Department.objects.get_or_create(
-                            company=self.request.user.company, 
-                            name=dept_name
-                        )
-                        Designation.objects.get_or_create(
-                            company=self.request.user.company, 
-                            name=desig_name
-                        )
-
                         employee = Employee.objects.create(
                             user=user,
                             company=self.request.user.company,
-                            designation=desig_name,
-                            department=dept_name,
+                            designation=str(row.get("designation", "Employee")),
+                            department=str(row.get("department", "General")),
                             location=location,
                             badge_id=badge_id,
                             mobile_number=str(row.get("mobile", ""))
@@ -1870,13 +1874,6 @@ def approve_regularization(request, pk):
 
         attendance.save()
 
-        # Send Approval Email
-        try:
-             from core.email_utils import send_regularization_approval_notification
-             send_regularization_approval_notification(reg_request)
-        except Exception as e:
-            print(f"Error sending regularization approval email: {e}")
-
         return redirect(request.META.get("HTTP_REFERER", "regularization_list"))
 
     return redirect("regularization_list")
@@ -1904,13 +1901,6 @@ def reject_regularization(request, pk):
         )  # Use manager_comment for rejection reason
         reg_request.save()
 
-        # Send Rejection Email
-        try:
-            from core.email_utils import send_regularization_rejection_notification
-            send_regularization_rejection_notification(reg_request)
-        except Exception as e:
-            print(f"Error sending regularization rejection email: {e}")
-
         return redirect(request.META.get("HTTP_REFERER", "regularization_list"))
 
     return redirect("regularization_list")
@@ -1936,42 +1926,13 @@ def leave_configuration(request):
     else:
         employees = Employee.objects.filter(company=company)
 
-    # Prefetch leave balances
+    # Prefetch leave balances and user for names
     employees = employees.select_related("leave_balance", "user").order_by(
         "user__first_name"
     )
 
-    # Context for Accrual Modal (Safe from template syntax errors)
-    import calendar
-    from django.utils import timezone
-    now = timezone.now()
-    current_month = now.month
-    current_year = now.year
-
-    months_ctx = []
-    for i in range(1, 13):
-        months_ctx.append({
-            'value': i,
-            'name': calendar.month_name[i],
-            'selected': 'selected' if i == current_month else ''
-        })
-        
-    years_ctx = []
-    # Show current year and next 2 years, or surrounding
-    for y in [2024, 2025, 2026]:
-        years_ctx.append({
-             'value': y,
-             'selected': 'selected' if y == current_year else ''
-        })
-
     return render(
-        request, 
-        "employees/leave_configuration.html", 
-        {
-            "employees": employees,
-            "months_ctx": months_ctx,
-            "years_ctx": years_ctx
-        }
+        request, "employees/leave_configuration.html", {"employees": employees}
     )
 
 
@@ -2039,7 +2000,6 @@ def update_leave_balance(request, pk):
 @login_required
 def run_monthly_accrual(request):
     from django.contrib import messages
-    import calendar
 
     user = request.user
     if user.role not in [User.Role.COMPANY_ADMIN, User.Role.MANAGER]:
@@ -2049,24 +2009,13 @@ def run_monthly_accrual(request):
     from django.core.management import call_command
 
     try:
-        month = request.POST.get("month")
-        year = request.POST.get("year")
-        
-        period_msg = ""
-        if month and year:
-            try:
-                month_name = calendar.month_name[int(month)]
-                period_msg = f"for {month_name} {year}"
-            except:
-                pass
-
         # Run the command
+        # Capture stdout to log if needed, or just let it run
         call_command("accrue_monthly_leaves")
-        
-        success_msg = f"Monthly accrual processed {period_msg}: +1 Sick and +1 Casual leave added to all employees." if period_msg else "Monthly accrual processed: +1 Sick and +1 Casual leave added to all employees."
-        
-        messages.success(request, success_msg)
-
+        messages.success(
+            request,
+            "Monthly accrual processed: +1 Sick and +1 Casual leave added to all employees.",
+        )
     except Exception as e:
         messages.error(request, f"Error running accrual: {str(e)}")
 

@@ -627,7 +627,6 @@
                     <option value="">All Types</option>
                     <option value="CL" {% if leave_type_filter == 'CL' %}selected{% endif %}>Casual Leave</option>
                     <option value="SL" {% if leave_type_filter == 'SL' %}selected{% endif %}>Sick Leave</option>
-                    <option value="EL" {% if leave_type_filter == 'EL' %}selected{% endif %}>Earned Leave</option>
                     <option value="CO" {% if leave_type_filter == 'CO' %}selected{% endif %}>Comp Off</option>
                     <option value="UL" {% if leave_type_filter == 'UL' %}selected{% endif %}>Unpaid Leave</option>
                     <option value="OT" {% if leave_type_filter == 'OT' %}selected{% endif %}>Others</option>
@@ -759,13 +758,6 @@
                     <div
                         class="balance-value {% if leave.employee.leave_balance.sick_leave_balance >= 0 %}balance-positive{% else %}balance-negative{% endif %}">
                         {{ leave.employee.leave_balance.sick_leave_balance }}
-                    </div>
-                </div>
-                <div class="balance-item">
-                    <div class="balance-label">EL</div>
-                    <div
-                        class="balance-value {% if leave.employee.leave_balance.earned_leave_balance >= 0 %}balance-positive{% else %}balance-negative{% endif %}">
-                        {{ leave.employee.leave_balance.earned_leave_balance }}
                     </div>
                 </div>
                 <div class="balance-item">

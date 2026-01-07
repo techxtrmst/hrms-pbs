@@ -746,7 +746,21 @@
                         <div class="attendance-metric">
                             <div class="metric-value">
                                 {% if attendance and attendance.clock_in %}
-                                {{ attendance.clock_in|date:"h:i A" }}
+                                {% load tz %}
+                                {% if attendance.user_timezone %}
+                                    {% timezone attendance.user_timezone %}
+                                        {{ attendance.clock_in|date:"h:i A" }}
+                                        <small class="text-muted d-block" style="font-size: 0.7rem;">{{ attendance.user_timezone }}</small>
+                                    {% endtimezone %}
+                                {% elif employee.location.timezone %}
+                                    {% timezone employee.location.timezone %}
+                                        {{ attendance.clock_in|date:"h:i A" }}
+                                        <small class="text-muted d-block" style="font-size: 0.7rem;">{{ employee.location.timezone }}</small>
+                                    {% endtimezone %}
+                                {% else %}
+                                    {{ attendance.clock_in|date:"h:i A" }}
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">UTC</small>
+                                {% endif %}
                                 {% else %}
                                 --:--
                                 {% endif %}
@@ -756,7 +770,21 @@
                         <div class="attendance-metric">
                             <div class="metric-value">
                                 {% if attendance and attendance.clock_out %}
-                                {{ attendance.clock_out|date:"h:i A" }}
+                                {% load tz %}
+                                {% if attendance.user_timezone %}
+                                    {% timezone attendance.user_timezone %}
+                                        {{ attendance.clock_out|date:"h:i A" }}
+                                        <small class="text-muted d-block" style="font-size: 0.7rem;">{{ attendance.user_timezone }}</small>
+                                    {% endtimezone %}
+                                {% elif employee.location.timezone %}
+                                    {% timezone employee.location.timezone %}
+                                        {{ attendance.clock_out|date:"h:i A" }}
+                                        <small class="text-muted d-block" style="font-size: 0.7rem;">{{ employee.location.timezone }}</small>
+                                    {% endtimezone %}
+                                {% else %}
+                                    {{ attendance.clock_out|date:"h:i A" }}
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">UTC</small>
+                                {% endif %}
                                 {% else %}
                                 --:--
                                 {% endif %}
@@ -930,10 +958,7 @@
                         <div class="balance-value">{{ leave_balance.sick_leave_balance }}</div>
                         <div class="balance-label">Sick</div>
                     </div>
-                    <div class="balance-item-modern">
-                        <div class="balance-value">{{ leave_balance.earned_leave_balance }}</div>
-                        <div class="balance-label">Earned</div>
-                    </div>
+
                     <div class="balance-item-modern">
                         <div class="balance-value">{{ leave_balance.comp_off_balance }}</div>
                         <div class="balance-label">Comp Off</div>

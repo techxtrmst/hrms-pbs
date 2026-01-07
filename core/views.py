@@ -720,6 +720,7 @@ def personal_home(request):
     context = {}
     if hasattr(request.user, "employee_profile"):
         employee = request.user.employee_profile
+        context["employee"] = employee  # Add employee to context
         today = timezone.localdate()
 
         # Today's attendance
@@ -783,7 +784,7 @@ def personal_home(request):
 
             timeline_items = []
 
-            # 1. Login Node
+            # 1. Start Node (always show at 0%)
             if attendance and attendance.clock_in:
                 login_time = timezone.localtime(attendance.clock_in).time()
                 login_min = to_minutes(login_time)
@@ -800,46 +801,27 @@ def personal_home(request):
                     {
                         "type": "login",
                         "time": login_time,
-                        "label": "Login",
+                        "label": "In",
                         "percent": percent,
                         "is_late": attendance.is_late,
                     }
                 )
             else:
-                # Show expected login at 0%
+                # Show expected start at 0%
                 timeline_items.append(
                     {
                         "type": "login",
                         "time": shift.start_time,
-                        "label": "Start",
+                        "label": "In",
                         "percent": 0,
                         "is_late": False,
                     }
                 )
 
-            # 2. Lunch/Break (Static for now, e.g. 50% or based on break time)
-            # Assuming 1pm lunch for 9-6 shift (4 hours in) -> ~44%
-            # If shift has breaks defined:
-            first_break = shift.breaks.first()
-            if first_break:
-                break_min = to_minutes(first_break.start_time)
-                offset = break_min - shift_start_min
-                percent = (offset / total_duration) * 100
-                timeline_items.append(
-                    {
-                        "type": "break",
-                        "time": first_break.start_time,
-                        "label": "Break",
-                        "percent": percent,
-                    }
-                )
-            else:
-                # Default middle
-                timeline_items.append(
-                    {"type": "break", "time": "13:00", "label": "Lunch", "percent": 50}
-                )
+            # 2. Skip break in timeline - we'll show it separately in footer
+            # (Removed break timeline item)
 
-            # 3. Logout Node
+            # 3. End Node (always show at 100%)
             if attendance and attendance.clock_out:
                 logout_time = timezone.localtime(attendance.clock_out).time()
                 logout_min = to_minutes(logout_time)
@@ -855,7 +837,7 @@ def personal_home(request):
                     {
                         "type": "logout",
                         "time": logout_time,
-                        "label": "Logout",
+                        "label": "Out",
                         "percent": percent,
                         "is_early": attendance.is_early_departure,
                     }
@@ -866,13 +848,34 @@ def personal_home(request):
                     {
                         "type": "logout",
                         "time": shift.end_time,
-                        "label": "End",
+                        "label": "Out",
                         "percent": 100,
                         "is_early": False,
                     }
                 )
 
             context["timeline_items"] = timeline_items
+            
+            # Break Status Detection
+            current_time = timezone.localtime().time()
+            current_min = to_minutes(current_time)
+            
+            # Check if currently in break time
+            is_in_break = False
+            current_break = None
+            
+            if shift.breaks.exists():
+                for break_item in shift.breaks.all():
+                    break_start_min = to_minutes(break_item.start_time)
+                    break_end_min = to_minutes(break_item.end_time)
+                    
+                    if break_start_min <= current_min <= break_end_min:
+                        is_in_break = True
+                        current_break = break_item
+                        break
+            
+            context["is_in_break"] = is_in_break
+            context["current_break"] = current_break
 
         else:
             # Fallback
