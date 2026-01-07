@@ -353,20 +353,31 @@
             <form method="get" style="display: flex; gap: 12px;">
                 <select name="year" class="form-select-keka" onchange="this.form.submit()">
                     {% for year in years %}
-                    <option value="{{ year }}" {% if year == year_filter %}selected{% endif %}>{{ year }}</option>
+                    {% if year == year_filter %}
+                    <option value="{{ year }}" selected>{{ year }}</option>
+                    {% else %}
+                    <option value="{{ year }}">{{ year }}</option>
+                    {% endif %}
                     {% endfor %}
                 </select>
                 <select name="location" class="form-select-keka" onchange="this.form.submit()">
                     <option value="">All Locations</option>
                     {% for loc in locations %}
-                    <option value="{{ loc.id }}" {% if loc.id|stringformat:"i" == location_filter %}selected{% endif %}>{{
-                        loc.name }}</option>
+                    {% if loc.id|stringformat:"i" == location_filter %}
+                    <option value="{{ loc.id }}" selected>{{ loc.name }}</option>
+                    {% else %}
+                    <option value="{{ loc.id }}">{{ loc.name }}</option>
+                    {% endif %}
                     {% endfor %}
                 </select>
                 <select name="type" class="form-select-keka" onchange="this.form.submit()">
                     <option value="">All Types</option>
                     {% for code, name in type_choices %}
-                    <option value="{{ code }}" {% if code == type_filter %}selected{% endif %}>{{ name }}</option>
+                    {% if code == type_filter %}
+                    <option value="{{ code }}" selected>{{ name }}</option>
+                    {% else %}
+                    <option value="{{ code }}">{{ name }}</option>
+                    {% endif %}
                     {% endfor %}
                 </select>
             </form>

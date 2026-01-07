@@ -84,10 +84,36 @@ class PersonalInfoForm(forms.ModelForm):
 class JobDetailsForm(forms.ModelForm):
     """Step 2: Job Profile"""
     
+    designation = forms.ModelChoiceField(
+        queryset=Employee.objects.none(), 
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label="Designation"
+    )
+
+    manager_selection = forms.ModelChoiceField( # Renamed from manager to avoid conflict
+        queryset=Employee.objects.none(),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label="Reporting Manager"
+    )
+    department = forms.ModelChoiceField(
+        queryset=Employee.objects.none(),
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label="Department"
+    )
+    shift_schedule = forms.ModelChoiceField(
+        queryset=ShiftSchedule.objects.none(),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label="Shift Schedule"
+    )
+
     class Meta:
         model = Employee
         fields = [
-            'designation', 'department', 'manager', 'work_type', 'shift_schedule', 'date_of_joining',
+            'designation', 'department', 'work_type', 'shift_schedule', 'date_of_joining',  # 'manager' excluded
         ]
         widgets = {
             'date_of_joining': forms.DateInput(attrs={'type': 'date'}),
@@ -100,18 +126,52 @@ class JobDetailsForm(forms.ModelForm):
         
         # Get company object from ID
         if company_id:
-            from companies.models import Company
+            from companies.models import Company, Designation, Department
             self.company = Company.objects.get(id=company_id)
         else:
             self.company = None
         
-        # Filter managers by company
         if self.company:
-            self.fields['manager'].queryset = Employee.objects.filter(
+            # Filter managers by company
+            self.fields['manager_selection'].queryset = Employee.objects.filter(
                 company=self.company
             ).exclude(user__role=User.Role.EMPLOYEE)
             
-            # Shift schedule is now a CharField, no queryset needed
+            # Populate Dynamic Fields
+            from companies.models import Designation, Department
+            
+            self.fields['designation'].queryset = Designation.objects.filter(company=self.company)
+            self.fields['department'].queryset = Department.objects.filter(company=self.company)
+            self.fields['shift_schedule'].queryset = ShiftSchedule.objects.filter(company=self.company)
+            
+            # Set initial if data comes from session as name/ID ??
+            # The form initialization with 'initial' dict handles basic mapping if keys match.
+            # But if session has stored 'names' (strings) from previous runs/edits, 
+            # we might need to find the object.
+            # However, for new flow, it should be fine.
+            # If editing (back button), we need to ensure initial data is mapped correctly.
+            
+            if 'initial' in kwargs:
+                initial = kwargs['initial']
+                # If designation is a string name, try to find object
+                if isinstance(initial.get('designation'), str):
+                     try:
+                         desig = Designation.objects.filter(company=self.company, name=initial['designation']).first()
+                         if desig: self.initial['designation'] = desig
+                     except: pass
+                
+                if isinstance(initial.get('department'), str):
+                     try:
+                         dept = Department.objects.filter(company=self.company, name=initial['department']).first()
+                         if dept: self.initial['department'] = dept
+                     except: pass
+                     
+                # Shift: session might have stored name (string)
+                if isinstance(initial.get('shift_schedule'), str):
+                    try:
+                        shift = ShiftSchedule.objects.filter(company=self.company, name=initial['shift_schedule']).first()
+                        if shift: self.initial['shift_schedule'] = shift
+                    except: pass
 
 
 class FinanceDetailsForm(forms.ModelForm):
@@ -120,5 +180,5 @@ class FinanceDetailsForm(forms.ModelForm):
     class Meta:
         model = Employee
         fields = [
-            'bank_name', 'account_number', 'ifsc_code', 'uan', 'pf_enabled'
+            'annual_ctc', 'bank_name', 'account_number', 'ifsc_code', 'uan', 'pf_enabled'
         ]

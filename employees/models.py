@@ -216,6 +216,9 @@ class Attendance(models.Model):
     
     # Multiple click handling
     clock_in_attempts = models.IntegerField(default=0, help_text="Number of clock-in attempts (max 3)")
+    daily_clock_count = models.IntegerField(default=0, help_text="Number of valid clock-ins today")
+    is_currently_clocked_in = models.BooleanField(default=False, help_text="Currently clocked in status")
+    max_daily_clocks = models.IntegerField(default=3, help_text="Maximum allowed clock-ins per day")
     
     # Location tracking
     location_tracking_active = models.BooleanField(default=False, help_text="Whether location tracking is currently active")

@@ -16,6 +16,7 @@ urlpatterns = [
     path('<int:pk>/detail/', views.employee_detail, name='employee_detail'),
     path('<int:pk>/edit/', views.EmployeeUpdateView.as_view(), name='employee_edit'),
     path('<int:pk>/delete/', views.EmployeeDeleteView.as_view(), name='employee_delete'),
+    path('<int:pk>/resend-welcome/', views.resend_welcome_email, name='resend_welcome_email'),
     
     path('employee-profile/', views.employee_profile, name='employee_profile'),
     

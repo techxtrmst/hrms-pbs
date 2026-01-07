@@ -260,6 +260,23 @@
 
         <div class="row g-3">
             <div class="col-md-6">
+                <label class="form-label">Annual CTC (₹)</label>
+                {% render_field form.annual_ctc class="form-control" placeholder="e.g. 1200000" %}
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+                <div class="form-check form-switch mb-2">
+                    {% render_field form.pf_enabled class="form-check-input" role="switch" %}
+                    <label class="form-check-label fw-600 ms-2" for="{{ form.pf_enabled.id_for_label }}">
+                        PF Enabled
+                    </label>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <hr class="text-muted my-2">
+            </div>
+
+            <div class="col-md-6">
                 <label class="form-label">Bank Name</label>
                 {% render_field form.bank_name class="form-control" placeholder="e.g. HDFC Bank" %}
             </div>
@@ -267,21 +284,13 @@
                 <label class="form-label">Account Number</label>
                 {% render_field form.account_number class="form-control" placeholder="e.g. 1234567890" %}
             </div>
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <label class="form-label">IFSC Code</label>
                 {% render_field form.ifsc_code class="form-control" placeholder="e.g. HDFC0001234" %}
             </div>
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <label class="form-label">UAN</label>
                 {% render_field form.uan class="form-control" placeholder="Universal Account Number" %}
-            </div>
-            <div class="col-md-4 d-flex align-items-end">
-                <div class="form-check form-switch">
-                    {% render_field form.pf_enabled class="form-check-input" role="switch" %}
-                    <label class="form-check-label fw-600 ms-2" for="{{ form.pf_enabled.id_for_label }}">
-                        PF Enabled
-                    </label>
-                </div>
             </div>
         </div>
 

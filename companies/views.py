@@ -162,11 +162,13 @@ def quick_add_department(request):
             
             # Check for duplicates
             from .models import Department
-            if Department.objects.filter(company=company, name__iexact=name).exists():
-                return JsonResponse({'status': 'error', 'message': 'Department already exists'})
-                
-            Department.objects.create(company=company, name=name)
-            return JsonResponse({'status': 'success', 'name': name})
+            dept, created = Department.objects.get_or_create(company=company, name__iexact=name, defaults={'name': name})
+            
+            if not created:
+                 # If likely duplicates with different casing, return the existing one
+                 return JsonResponse({'status': 'error', 'message': 'Department already exists', 'id': dept.id, 'name': dept.name})
+
+            return JsonResponse({'status': 'success', 'name': dept.name, 'id': dept.id})
             
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
@@ -192,11 +194,56 @@ def quick_add_designation(request):
             
             # Check for duplicates
             from .models import Designation
-            if Designation.objects.filter(company=company, name__iexact=name).exists():
-                return JsonResponse({'status': 'error', 'message': 'Designation already exists'})
+            desig, created = Designation.objects.get_or_create(company=company, name__iexact=name, defaults={'name': name})
             
-            Designation.objects.create(company=company, name=name)
-            return JsonResponse({'status': 'success', 'name': name})
+            if not created:
+                return JsonResponse({'status': 'error', 'message': 'Designation already exists', 'id': desig.id, 'name': desig.name})
+            
+            return JsonResponse({'status': 'success', 'name': desig.name, 'id': desig.id})
+            
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
+@login_required
+def quick_add_shift(request):
+    """API view to quickly add a shift schedule"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            name = data.get('name')
+            start_time = data.get('start_time')
+            end_time = data.get('end_time')
+            
+            if not (name and start_time and end_time):
+                return JsonResponse({'status': 'error', 'message': 'Missing required fields'}, status=400)
+
+            # Get Company
+            company = None
+            if hasattr(request.user, 'company') and request.user.company:
+                company = request.user.company
+            elif request.user.employee_profile and request.user.employee_profile.company:
+                company = request.user.employee_profile.company
+                
+            if not company:
+                return JsonResponse({'status': 'error', 'message': 'Company not found'}, status=400)
+            
+            from .models import ShiftSchedule
+            # Create Shift
+            shift = ShiftSchedule.objects.create(
+                company=company,
+                name=name,
+                start_time=start_time,
+                end_time=end_time,
+                shift_type='MORNING' # Default, can be inferred or added to form
+            )
+            
+            return JsonResponse({
+                'status': 'success', 
+                'name': str(shift), 
+                'id': shift.id,
+                'display': str(shift) 
+            })
             
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

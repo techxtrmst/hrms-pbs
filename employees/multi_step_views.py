@@ -69,7 +69,18 @@ def add_employee_step1(request):
         initial_data = request.session.get('employee_personal_data', {})
         form = PersonalInfoForm(initial=initial_data, user=request.user)
     
-    return render(request, 'employees/add_employee_step1.html', {'form': form, 'step': 1})
+    # Calculate Company Prefix for ID generation
+    company_prefix = "EMP"
+    if request.user.company:
+        c_name = request.user.company.name.lower()
+        if 'petabytz' in c_name or 'petabytes' in c_name:
+            company_prefix = "PBT"
+        elif 'softstandard' in c_name:
+            company_prefix = "SSS"
+        else:
+            company_prefix = request.user.company.name[:3].upper()
+
+    return render(request, 'employees/add_employee_step1.html', {'form': form, 'step': 1, 'company_prefix': company_prefix})
 
 
 @login_required
@@ -86,13 +97,19 @@ def add_employee_step2(request):
     if request.method == 'POST':
         form = JobDetailsForm(request.POST, user=request.user, company_id=company_id)
         if form.is_valid():
+            # Extract objects from form data
+            desig_obj = form.cleaned_data['designation']
+            dept_obj = form.cleaned_data['department']
+            shift_obj = form.cleaned_data.get('shift_schedule')
+
             # Save job details to session
             request.session['employee_job_data'] = {
-                'designation': form.cleaned_data['designation'],
-                'department': form.cleaned_data['department'],
-                'manager_id': form.cleaned_data.get('manager').id if form.cleaned_data.get('manager') else None,
+                'designation': desig_obj.name if desig_obj else '',
+                'department': dept_obj.name if dept_obj else '',
+                'manager_id': form.cleaned_data.get('manager_selection').user.id if form.cleaned_data.get('manager_selection') else None,
                 'work_type': form.cleaned_data.get('work_type', 'FT'),
-                'shift_schedule': form.cleaned_data.get('shift_schedule'),
+                'shift_schedule': shift_obj.name if shift_obj else '',
+                'shift_schedule_id': shift_obj.id if shift_obj else None,
                 'date_of_joining': str(form.cleaned_data.get('date_of_joining', '')) if form.cleaned_data.get('date_of_joining') else '',
             }
             messages.success(request, 'Job details saved! Now add financial information.')
@@ -145,7 +162,6 @@ def add_employee_step3(request):
             
             # Create Employee
             from datetime import datetime
-            from companies.models import ShiftSchedule
             
             employee = Employee.objects.create(
                 user=user,
@@ -165,6 +181,7 @@ def add_employee_step3(request):
                 manager_id=job_data.get('manager_id'),
                 work_type=job_data.get('work_type', 'FT'),
                 shift_schedule=job_data.get('shift_schedule'),
+                assigned_shift_id=job_data.get('shift_schedule_id'),
                 date_of_joining=datetime.strptime(job_data['date_of_joining'], '%Y-%m-%d').date() if job_data.get('date_of_joining') else None,
                 # Finance
                 bank_name=finance_data.get('bank_name'),
@@ -190,13 +207,23 @@ def add_employee_step3(request):
                         is_primary=contact_data.get('is_primary', False)
                     )
             
+            # Send Activation Email
+            from .utils import send_activation_email
+            email_sent = send_activation_email(user, request)
+            
             # Clear session
             del request.session['employee_personal_data']
             del request.session['employee_job_data']
             if 'employee_emergency_contacts' in request.session:
                 del request.session['employee_emergency_contacts']
             
-            messages.success(request, f'Employee {employee.user.get_full_name()} created successfully! Password: {password}')
+            msg = f'Employee {employee.user.get_full_name()} created successfully!'
+            if email_sent:
+                msg += ' Activation email with link has been sent.'
+            else:
+                msg += f' Password: {password} (Email failed to send)'
+
+            messages.success(request, msg)
             return redirect('employee_list')
     else:
         # Pre-fill from session if available

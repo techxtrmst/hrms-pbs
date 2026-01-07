@@ -11,4 +11,5 @@ urlpatterns = [
     path('role-configuration/', views.role_configuration, name='role_configuration'),
     path('api/quick-add-department/', views.quick_add_department, name='quick_add_department'),
     path('api/quick-add-designation/', views.quick_add_designation, name='quick_add_designation'),
+    path('api/quick-add-shift/', views.quick_add_shift, name='quick_add_shift'),
 ]

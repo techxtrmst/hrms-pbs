@@ -246,6 +246,30 @@ class EmployeeDeleteView(LoginRequiredMixin, CompanyAdminRequiredMixin, DeleteVi
         return redirect(self.success_url)
 
 
+@login_required
+def resend_welcome_email(request, pk):
+    """
+    Resend welcome email with activation link to the employee.
+    """
+    if request.user.role != User.Role.COMPANY_ADMIN:
+        messages.error(request, "Permission denied.")
+        return redirect('employee_list')
+        
+    try:
+        employee = Employee.objects.get(pk=pk, company=request.user.company)
+        from core.email_utils import send_welcome_email_with_link
+        
+        domain = request.get_host()
+        if send_welcome_email_with_link(employee, domain):
+            messages.success(request, f"Welcome email resent to {employee.user.email}")
+        else:
+            messages.error(request, "Failed to send email. Please check email settings.")
+            
+    except Employee.DoesNotExist:
+        messages.error(request, "Employee not found.")
+        
+    return redirect('employee_list')
+
 # --- Attendance & Tracking Views ---
 
 
@@ -314,6 +338,9 @@ def clock_in(request):
             attendance.location_in = f"{lat},{lng}"
             attendance.status = status
             attendance.clock_in_attempts = 1  # First valid attempt
+            attendance.daily_clock_count = 1
+            attendance.is_currently_clocked_in = True
+            attendance.max_daily_clocks = 3
 
             # Start location tracking
             attendance.location_tracking_active = True
@@ -321,7 +348,19 @@ def clock_in(request):
             # Calculate location tracking end time based on shift duration
             shift = employee.assigned_shift
             if shift:
-                shift_duration = shift.get_shift_duration_timedelta()
+                # Robust check (Fallback for production sync issues)
+                if hasattr(shift, "get_shift_duration_timedelta"):
+                    shift_duration = shift.get_shift_duration_timedelta()
+                else:
+                    from datetime import datetime, timedelta
+
+                    today_date = timezone.localdate()
+                    s_start = datetime.combine(today_date, shift.start_time)
+                    s_end = datetime.combine(today_date, shift.end_time)
+                    if s_end < s_start:
+                        s_end += timedelta(days=1)
+                    shift_duration = s_end - s_start
+
                 attendance.location_tracking_end_time = (
                     attendance.clock_in + shift_duration
                 )
@@ -464,6 +503,7 @@ def clock_out(request):
 
                 # Stop location tracking
                 attendance.location_tracking_active = False
+                attendance.is_currently_clocked_in = False
 
                 # Calculate early departure based on shift
                 attendance.calculate_early_departure()
@@ -816,6 +856,13 @@ def approve_leave(request, pk):
 
         balance.save()
 
+        # Send Approval Email
+        try:
+             from core.email_utils import send_leave_approval_notification
+             send_leave_approval_notification(leave_request)
+        except Exception as e:
+             print(f"Error sending approval email: {e}")
+
         return redirect(request.META.get("HTTP_REFERER", "admin_dashboard"))
     return redirect("admin_dashboard")
 
@@ -840,6 +887,13 @@ def reject_leave(request, pk):
         leave_request.rejection_reason = request.POST.get("rejection_reason", "")
         leave_request.approver = user  # Track who rejected
         leave_request.save()
+
+        # Send Rejection Email
+        try:
+            from core.email_utils import send_leave_rejection_notification
+            send_leave_rejection_notification(leave_request)
+        except Exception as e:
+            print(f"Error sending rejection email: {e}")
 
         return redirect(request.META.get("HTTP_REFERER", "admin_dashboard"))
     return redirect("admin_dashboard")
@@ -1562,11 +1616,27 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                         elif badge_id.endswith(".0"):
                             badge_id = badge_id[:-2]  # 101.0 -> 101
 
+                        # Sync Department & Designation with Role Configuration
+                        from companies.models import Department, Designation
+
+                        dept_name = str(row.get("department", "General")).strip().title()
+                        desig_name = str(row.get("designation", "Employee")).strip().title()
+
+                        # Ensure they exist in Role Config (prevents duplicates)
+                        Department.objects.get_or_create(
+                            company=self.request.user.company, 
+                            name=dept_name
+                        )
+                        Designation.objects.get_or_create(
+                            company=self.request.user.company, 
+                            name=desig_name
+                        )
+
                         employee = Employee.objects.create(
                             user=user,
                             company=self.request.user.company,
-                            designation=str(row.get("designation", "Employee")),
-                            department=str(row.get("department", "General")),
+                            designation=desig_name,
+                            department=dept_name,
                             location=location,
                             badge_id=badge_id,
                             mobile_number=str(row.get("mobile", ""))
@@ -1800,6 +1870,13 @@ def approve_regularization(request, pk):
 
         attendance.save()
 
+        # Send Approval Email
+        try:
+             from core.email_utils import send_regularization_approval_notification
+             send_regularization_approval_notification(reg_request)
+        except Exception as e:
+            print(f"Error sending regularization approval email: {e}")
+
         return redirect(request.META.get("HTTP_REFERER", "regularization_list"))
 
     return redirect("regularization_list")
@@ -1827,6 +1904,13 @@ def reject_regularization(request, pk):
         )  # Use manager_comment for rejection reason
         reg_request.save()
 
+        # Send Rejection Email
+        try:
+            from core.email_utils import send_regularization_rejection_notification
+            send_regularization_rejection_notification(reg_request)
+        except Exception as e:
+            print(f"Error sending regularization rejection email: {e}")
+
         return redirect(request.META.get("HTTP_REFERER", "regularization_list"))
 
     return redirect("regularization_list")
@@ -1852,13 +1936,42 @@ def leave_configuration(request):
     else:
         employees = Employee.objects.filter(company=company)
 
-    # Prefetch leave balances and user for names
+    # Prefetch leave balances
     employees = employees.select_related("leave_balance", "user").order_by(
         "user__first_name"
     )
 
+    # Context for Accrual Modal (Safe from template syntax errors)
+    import calendar
+    from django.utils import timezone
+    now = timezone.now()
+    current_month = now.month
+    current_year = now.year
+
+    months_ctx = []
+    for i in range(1, 13):
+        months_ctx.append({
+            'value': i,
+            'name': calendar.month_name[i],
+            'selected': 'selected' if i == current_month else ''
+        })
+        
+    years_ctx = []
+    # Show current year and next 2 years, or surrounding
+    for y in [2024, 2025, 2026]:
+        years_ctx.append({
+             'value': y,
+             'selected': 'selected' if y == current_year else ''
+        })
+
     return render(
-        request, "employees/leave_configuration.html", {"employees": employees}
+        request, 
+        "employees/leave_configuration.html", 
+        {
+            "employees": employees,
+            "months_ctx": months_ctx,
+            "years_ctx": years_ctx
+        }
     )
 
 
@@ -1926,6 +2039,7 @@ def update_leave_balance(request, pk):
 @login_required
 def run_monthly_accrual(request):
     from django.contrib import messages
+    import calendar
 
     user = request.user
     if user.role not in [User.Role.COMPANY_ADMIN, User.Role.MANAGER]:
@@ -1935,13 +2049,24 @@ def run_monthly_accrual(request):
     from django.core.management import call_command
 
     try:
+        month = request.POST.get("month")
+        year = request.POST.get("year")
+        
+        period_msg = ""
+        if month and year:
+            try:
+                month_name = calendar.month_name[int(month)]
+                period_msg = f"for {month_name} {year}"
+            except:
+                pass
+
         # Run the command
-        # Capture stdout to log if needed, or just let it run
         call_command("accrue_monthly_leaves")
-        messages.success(
-            request,
-            "Monthly accrual processed: +1 Sick and +1 Casual leave added to all employees.",
-        )
+        
+        success_msg = f"Monthly accrual processed {period_msg}: +1 Sick and +1 Casual leave added to all employees." if period_msg else "Monthly accrual processed: +1 Sick and +1 Casual leave added to all employees."
+        
+        messages.success(request, success_msg)
+
     except Exception as e:
         messages.error(request, f"Error running accrual: {str(e)}")
 

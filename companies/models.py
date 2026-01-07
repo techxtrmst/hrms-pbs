@@ -286,6 +286,21 @@ class ShiftSchedule(models.Model):
         working_days = [self.monday, self.tuesday, self.wednesday, self.thursday, 
                        self.friday, self.saturday, self.sunday]
         return working_days[weekday]
+    
+    def get_shift_duration_timedelta(self):
+        """Calculate shift duration as timedelta"""
+        from datetime import datetime, timedelta
+        
+        # Create dummy datetime objects for today
+        dummy_date = datetime.now().date()
+        start_dt = datetime.combine(dummy_date, self.start_time)
+        end_dt = datetime.combine(dummy_date, self.end_time)
+        
+        # Handle overnight shifts (end_time < start_time)
+        if end_dt < start_dt:
+            end_dt += timedelta(days=1)
+        
+        return end_dt - start_dt
 
 
 class ShiftBreak(models.Model):

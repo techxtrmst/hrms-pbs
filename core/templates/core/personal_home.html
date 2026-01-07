@@ -590,7 +590,7 @@
         <div>
             <h4 class="fw-bold mb-1"
                 style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block;">
-                Good Morning, {{ request.user.first_name }}! 👋
+                <span id="dynamic-greeting">Good Morning</span>, {{ request.user.first_name }}! 👋
             </h4>
             <p class="text-muted mb-0">Here's what's happening today.</p>
         </div>
@@ -1221,7 +1221,32 @@
         // Header Date
         const headerDate = document.getElementById('header-date');
         if (headerDate) headerDate.innerText = dateString;
+
+        // Update dynamic greeting based on time
+        updateGreeting(now);
     }
+
+    // Dynamic Greeting based on time of day
+    function updateGreeting(now) {
+        const hour = now.getHours();
+        const greetingElement = document.getElementById('dynamic-greeting');
+
+        if (!greetingElement) return;
+
+        let greeting;
+        if (hour >= 5 && hour < 12) {
+            greeting = 'Good Morning';
+        } else if (hour >= 12 && hour < 17) {
+            greeting = 'Good Afternoon';
+        } else if (hour >= 17 && hour < 21) {
+            greeting = 'Good Evening';
+        } else {
+            greeting = 'Good Night';
+        }
+
+        greetingElement.textContent = greeting;
+    }
+
     setInterval(updateClock, 1000);
     updateClock();
 
@@ -1414,8 +1439,8 @@
             btn.innerHTML = origText;
             btn.disabled = false;
         }, {
-            enableHighAccuracy: true,
-            timeout: 10000,
+            enableHighAccuracy: false,
+            timeout: 30000,
             maximumAge: 0
         });
     }
@@ -1503,7 +1528,7 @@
                 console.warn("⚠️ Location access failed:", err.message);
             }, {
                 enableHighAccuracy: true,
-                timeout: 10000,
+                timeout: 30000,
                 maximumAge: 0
             });
         }
