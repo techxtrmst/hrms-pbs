@@ -1,0 +1,445 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}AI Resume Parser{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+        background: #f5f7fa;
+        min-height: 100vh;
+    }
+
+    .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 2.5rem 2rem;
+    }
+
+    /* Header */
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+        font-size: 0.9375rem;
+        color: #64748b;
+    }
+
+    /* Upload Section */
+    .upload-section {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+        margin-bottom: 2rem;
+    }
+
+    .upload-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 3rem 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        background: #f8fafc;
+    }
+
+    .upload-area:hover {
+        border-color: #6366f1;
+        background: #f1f5f9;
+    }
+
+    .upload-area.dragover {
+        border-color: #6366f1;
+        background: #eef2ff;
+    }
+
+    .upload-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 1.5rem;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+    }
+
+    .upload-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+    }
+
+    .upload-subtitle {
+        font-size: 0.875rem;
+        color: #64748b;
+        margin-bottom: 1.5rem;
+    }
+
+    .upload-btn {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .upload-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    }
+
+    .file-input {
+        display: none;
+    }
+
+    /* Selected File */
+    .selected-file {
+        display: none;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 10px;
+        margin-top: 1.5rem;
+    }
+
+    .selected-file.show {
+        display: flex;
+    }
+
+    .file-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.125rem;
+    }
+
+    .file-info {
+        flex: 1;
+    }
+
+    .file-name {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.9375rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .file-size {
+        font-size: 0.8125rem;
+        color: #64748b;
+    }
+
+    .remove-file {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        background: #fee2e2;
+        color: #dc2626;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .remove-file:hover {
+        background: #fecaca;
+    }
+
+    /* Features Grid */
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.25rem;
+    }
+
+    .feature-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+    }
+
+    .feature-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .feature-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .feature-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.125rem;
+        color: white;
+    }
+
+    .feature-card:nth-child(1) .feature-icon {
+        background: #6366f1;
+    }
+
+    .feature-card:nth-child(2) .feature-icon {
+        background: #8b5cf6;
+    }
+
+    .feature-card:nth-child(3) .feature-icon {
+        background: #ec4899;
+    }
+
+    .feature-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .feature-description {
+        color: #64748b;
+        font-size: 0.875rem;
+        line-height: 1.6;
+    }
+
+    /* Submit Button */
+    .submit-section {
+        text-align: center;
+        margin-top: 2rem;
+    }
+
+    .submit-btn {
+        display: inline-block;
+        padding: 0.875rem 2rem;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .submit-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .submit-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .features-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .container {
+            padding: 1.5rem 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="page-header">
+        <h1 class="page-title">AI Resume Parser</h1>
+        <p class="page-subtitle">Automatically extract key information from candidate resumes</p>
+    </div>
+
+    <!-- Upload Section -->
+    <div class="upload-section">
+        <form id="uploadForm" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <h3 class="upload-title">Upload Resume</h3>
+                <p class="upload-subtitle">Drag and drop your resume here, or click to browse</p>
+                <button type="button" class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    Choose File
+                </button>
+                <input type="file" id="fileInput" name="resume" class="file-input" accept=".pdf,.doc,.docx">
+            </div>
+
+            <div class="selected-file" id="selectedFile">
+                <div class="file-icon">
+                    <i class="fas fa-file-pdf"></i>
+                </div>
+                <div class="file-info">
+                    <div class="file-name" id="fileName"></div>
+                    <div class="file-size" id="fileSize"></div>
+                </div>
+                <button type="button" class="remove-file" onclick="removeFile()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="submit-section">
+                <button type="submit" class="submit-btn" id="submitBtn" disabled>
+                    <i class="fas fa-magic"></i> Parse Resume
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Features -->
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h4 class="feature-title">Name Extraction</h4>
+            </div>
+            <p class="feature-description">
+                Automatically identifies and extracts candidate's full name from the resume
+            </p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <h4 class="feature-title">Contact Details</h4>
+            </div>
+            <p class="feature-description">
+                Extracts email addresses, phone numbers, and other contact information
+            </p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-code"></i>
+                </div>
+                <h4 class="feature-title">Skills Identification</h4>
+            </div>
+            <p class="feature-description">
+                Identifies technical skills, programming languages, and competencies
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // File Upload Handling
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const selectedFile = document.getElementById('selectedFile');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Drag and Drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            handleFileSelect();
+        }
+    });
+
+    // File Input Change
+    fileInput.addEventListener('change', handleFileSelect);
+
+    function handleFileSelect() {
+        const file = fileInput.files[0];
+        if (file) {
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            selectedFile.classList.add('show');
+            submitBtn.disabled = false;
+        }
+    }
+
+    function removeFile() {
+        fileInput.value = '';
+        selectedFile.classList.remove('show');
+        submitBtn.disabled = true;
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    // Form Submit
+    document.getElementById('uploadForm').addEventListener('submit', function (e) {
+        if (!fileInput.files || fileInput.files.length === 0) {
+            e.preventDefault();
+            alert('Please select a file first');
+            return;
+        }
+
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+        // Let the form submit normally to Django
+        // The form will handle the redirect automatically
+    });
+</script>
+{% endblock %}

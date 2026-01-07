@@ -1,0 +1,936 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ employee.user.get_full_name }} - Employee Detail{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+    :root {
+        --primary: #5b47fb;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --info: #3b82f6;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-900: #111827;
+    }
+
+    body {
+        background: var(--gray-50);
+    }
+
+    /* Compact Header */
+    .emp-header {
+        background: white;
+        padding: 1.5rem 2rem;
+        margin-bottom: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .emp-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 12px;
+        object-fit: cover;
+        border: 3px solid var(--gray-100);
+    }
+
+    .emp-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin: 0;
+    }
+
+    .emp-role {
+        color: var(--gray-600);
+        font-size: 0.95rem;
+        margin-top: 0.25rem;
+    }
+
+    .emp-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .emp-badge.active {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .emp-badge.inactive {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    /* Compact Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 1.25rem;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border-left: 3px solid var(--stat-color);
+    }
+
+    .stat-card.attendance {
+        --stat-color: var(--primary);
+    }
+
+    .stat-card.punctuality {
+        --stat-color: var(--success);
+    }
+
+    .stat-card.leaves {
+        --stat-color: var(--warning);
+    }
+
+    .stat-card.hours {
+        --stat-color: var(--info);
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--gray-600);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        line-height: 1;
+    }
+
+    .stat-subtitle {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+        margin-top: 0.5rem;
+    }
+
+    /* Compact Tabs */
+    .nav-tabs {
+        border-bottom: 2px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+        background: white;
+        padding: 0 1rem;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .nav-tabs .nav-link {
+        border: none;
+        color: var(--gray-600);
+        padding: 1rem 1.5rem;
+        font-weight: 500;
+        position: relative;
+    }
+
+    .nav-tabs .nav-link:hover {
+        color: var(--primary);
+        background: transparent;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: var(--primary);
+        background: transparent;
+        border-bottom: 2px solid var(--primary);
+        margin-bottom: -2px;
+    }
+
+    .nav-tabs .nav-link .badge {
+        margin-left: 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    /* Content Cards */
+    .content-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .content-card h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Compact Table */
+    .compact-table {
+        width: 100%;
+        font-size: 0.875rem;
+    }
+
+    .compact-table thead th {
+        background: var(--gray-50);
+        color: var(--gray-700);
+        font-weight: 600;
+        padding: 0.75rem;
+        border-bottom: 2px solid var(--gray-200);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .compact-table tbody td {
+        padding: 0.875rem 0.75rem;
+        border-bottom: 1px solid var(--gray-100);
+        vertical-align: middle;
+    }
+
+    .compact-table tbody tr:hover {
+        background: var(--gray-50);
+    }
+
+    /* Status Badges */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.25rem 0.625rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .status-badge.success {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-badge.warning {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-badge.danger {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .status-badge.info {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    /* Compliance Grid */
+    .compliance-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+
+    .compliance-item {
+        text-align: center;
+        padding: 1rem;
+        background: var(--gray-50);
+        border-radius: 8px;
+    }
+
+    .compliance-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--compliance-color);
+        margin-bottom: 0.25rem;
+    }
+
+    .compliance-item.green {
+        --compliance-color: var(--success);
+    }
+
+    .compliance-item.yellow {
+        --compliance-color: var(--warning);
+    }
+
+    .compliance-item.red {
+        --compliance-color: var(--danger);
+    }
+
+    .compliance-label {
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        font-weight: 500;
+    }
+
+    /* Progress Bars */
+    .progress-compact {
+        height: 8px;
+        background: var(--gray-200);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 0.5rem;
+    }
+
+    .progress-bar-compact {
+        height: 100%;
+        background: var(--bar-color);
+        transition: width 0.5s ease;
+    }
+
+    /* Activity Timeline */
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+    }
+
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -1.625rem;
+        top: 0.25rem;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--item-color);
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px var(--item-color);
+    }
+
+    .timeline-item::after {
+        content: '';
+        position: absolute;
+        left: -1.375rem;
+        top: 1rem;
+        width: 2px;
+        height: calc(100% - 0.75rem);
+        background: var(--gray-200);
+    }
+
+    .timeline-item:last-child::after {
+        display: none;
+    }
+
+    .timeline-content {
+        font-size: 0.875rem;
+    }
+
+    .timeline-time {
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        margin-top: 0.25rem;
+    }
+
+    /* Leave Balance Cards */
+    .leave-balance-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+    }
+
+    .leave-balance-card {
+        padding: 1.25rem;
+        border-radius: 10px;
+        color: white;
+    }
+
+    .leave-balance-card.cl {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+    }
+
+    .leave-balance-card.sl {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+
+    .leave-balance-card.el {
+        background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .leave-balance-label {
+        font-size: 0.75rem;
+        opacity: 0.9;
+        margin-bottom: 0.5rem;
+    }
+
+    .leave-balance-value {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+
+    .leave-balance-taken {
+        font-size: 0.75rem;
+        opacity: 0.85;
+    }
+
+    /* Chart Container */
+    .chart-container {
+        position: relative;
+        height: 250px;
+        margin-top: 1rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .emp-header {
+            padding: 1rem;
+        }
+
+        .nav-tabs .nav-link {
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <!-- Compact Header -->
+    <div class="emp-header">
+        <div class="d-flex align-items-center gap-3">
+            {% if employee.profile_picture %}
+            <img src="{{ employee.profile_picture.url }}" alt="{{ employee.user.get_full_name }}" class="emp-avatar">
+            {% else %}
+            <img src="https://ui-avatars.com/api/?name={{ employee.user.get_full_name|urlencode }}&size=80&background=5b47fb&color=fff&bold=true"
+                class="emp-avatar">
+            {% endif %}
+            <div class="flex-grow-1">
+                <h1 class="emp-name">{{ employee.user.get_full_name }}</h1>
+                <div class="emp-role">
+                    {{ personal_info.designation }} • {{ personal_info.department }}
+                </div>
+            </div>
+            <div class="text-end">
+                <div class="small text-muted mb-2">{{ employee.company.name }}</div>
+                {% if employee.user.is_active %}
+                <span class="emp-badge active">
+                    <i class="fas fa-check-circle"></i> Active
+                </span>
+                {% else %}
+                <span class="emp-badge inactive">
+                    <i class="fas fa-times-circle"></i> Inactive
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Compact Stats -->
+    <div class="stats-grid">
+        <div class="stat-card attendance">
+            <div class="stat-label">Attendance</div>
+            <div class="stat-value">{{ quick_stats.attendance_percentage }}%</div>
+            <div class="stat-subtitle">Last 3 months</div>
+            <div class="progress-compact">
+                <div class="progress-bar-compact"
+                    style="--bar-color: var(--primary); width: {{ quick_stats.attendance_percentage }}%"></div>
+            </div>
+        </div>
+
+        <div class="stat-card punctuality">
+            <div class="stat-label">Punctuality</div>
+            <div class="stat-value">{{ quick_stats.on_time_percentage }}%</div>
+            <div class="stat-subtitle">On-time arrivals</div>
+            <div class="progress-compact">
+                <div class="progress-bar-compact"
+                    style="--bar-color: var(--success); width: {{ quick_stats.on_time_percentage }}%"></div>
+            </div>
+        </div>
+
+        <div class="stat-card leaves">
+            <div class="stat-label">Leaves Taken</div>
+            <div class="stat-value">{{ quick_stats.leaves_taken }}</div>
+            <div class="stat-subtitle">This year</div>
+        </div>
+
+        <div class="stat-card hours">
+            <div class="stat-label">Working Days</div>
+            <div class="stat-value">{{ quick_stats.total_working_days }}</div>
+            <div class="stat-subtitle">Last 3 months</div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#overview">
+                <i class="fas fa-th-large me-1"></i> Overview
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#attendance">
+                <i class="fas fa-calendar-check me-1"></i> Attendance
+                {% if attendance_stats.late_days > 0 %}
+                <span class="badge bg-warning">{{ attendance_stats.late_days }}</span>
+                {% endif %}
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#leaves">
+                <i class="fas fa-umbrella-beach me-1"></i> Leaves
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#compliance">
+                <i class="fas fa-shield-alt me-1"></i> Compliance
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#activity">
+                <i class="fas fa-history me-1"></i> Activity
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+        <!-- Overview Tab -->
+        <div class="tab-pane fade show active" id="overview">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="content-card">
+                        <h3><i class="fas fa-map-marker-alt text-primary"></i> Location Access</h3>
+                        <table class="compact-table">
+                            <thead>
+                                <tr>
+                                    <th>Location</th>
+                                    <th>Code</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for loc in location_access %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ loc.name }}</strong>
+                                        {% if loc.is_primary %}
+                                        <span class="status-badge info ms-1">Primary</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ loc.code }}</td>
+                                    <td><span class="status-badge success">Accessible</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">No locations assigned</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="content-card">
+                        <h3><i class="fas fa-clock text-success"></i> Working Hours</h3>
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <div class="text-muted small">Total Hours</div>
+                                <div class="h4 mb-0 text-success">{{ working_hours_compliance.total_hours }}h</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-muted small">Expected</div>
+                                <div class="h4 mb-0 text-primary">{{ working_hours_compliance.expected_hours }}h</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-muted small">Overtime</div>
+                                <div class="h4 mb-0 text-warning">{{ working_hours_compliance.overtime_hours }}h</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-muted small">Undertime Days</div>
+                                <div class="h4 mb-0 text-danger">{{ working_hours_compliance.undertime_count }}</div>
+                            </div>
+                        </div>
+                        <div class="small text-muted mb-1">Compliance: {{ working_hours_compliance.compliance_percentage
+                            }}%</div>
+                        <div class="progress-compact" style="height: 10px;">
+                            <div class="progress-bar-compact"
+                                style="--bar-color: var(--success); width: {{ working_hours_compliance.compliance_percentage }}%">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Tab -->
+        <div class="tab-pane fade" id="attendance">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="content-card">
+                        <h3><i class="fas fa-chart-pie text-primary"></i> Statistics</h3>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="small">Present Days</span>
+                            <strong class="text-success">{{ attendance_stats.present_days }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="small">Late Days</span>
+                            <strong class="text-warning">{{ attendance_stats.late_days }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="small">Early Departures</span>
+                            <strong class="text-warning">{{ attendance_stats.early_departures }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="small">Absent Days</span>
+                            <strong class="text-danger">{{ attendance_stats.absent_days }}</strong>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <span class="small fw-bold">On-Time Days</span>
+                            <strong class="text-success">{{ attendance_stats.on_time_days }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-8">
+                    <div class="content-card">
+                        <h3><i class="fas fa-chart-line text-info"></i> Punctuality Trend</h3>
+                        <div class="chart-container">
+                            <canvas id="punctualityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <div class="col-12">
+                    <div class="content-card">
+                        <h3><i class="fas fa-list text-primary"></i> Recent Records</h3>
+                        <div class="table-responsive">
+                            <table class="compact-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Clock In</th>
+                                        <th>Clock Out</th>
+                                        <th>Hours</th>
+                                        <th>Status</th>
+                                        <th>Location</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for att in recent_attendance %}
+                                    <tr>
+                                        <td><strong>{{ att.date|date:"M d, Y" }}</strong></td>
+                                        <td>
+                                            {{ att.clock_in|date:"h:i A"|default:"-" }}
+                                            {% if att.is_late %}
+                                            <span class="status-badge danger ms-1">Late</span>
+                                            {% elif att.is_grace_used %}
+                                            <span class="status-badge warning ms-1">Grace</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {{ att.clock_out|date:"h:i A"|default:"-" }}
+                                            {% if att.is_early_departure %}
+                                            <span class="status-badge warning ms-1">Early</span>
+                                            {% endif %}
+                                        </td>
+                                        <td><strong>{{ att.effective_hours|default:"0" }}h</strong></td>
+                                        <td>
+                                            {% if att.status == 'PRESENT' %}
+                                            <span class="status-badge success">Present</span>
+                                            {% elif att.status == 'ABSENT' %}
+                                            <span class="status-badge danger">Absent</span>
+                                            {% else %}
+                                            <span class="status-badge info">{{ att.get_status_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if att.location_in %}
+                                            <a href="https://www.google.com/maps/search/?api=1&query={{ att.location_in }}"
+                                                target="_blank" class="btn btn-sm btn-light text-success"
+                                                title="View Clock In Location">
+                                                <i class="fas fa-map-marker-alt"></i> In
+                                            </a>
+                                            {% endif %}
+                                            {% if att.location_out %}
+                                            <a href="https://www.google.com/maps/search/?api=1&query={{ att.location_out }}"
+                                                target="_blank" class="btn btn-sm btn-light text-danger ms-1"
+                                                title="View Clock Out Location">
+                                                <i class="fas fa-map-marker-alt"></i> Out
+                                            </a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-3">No records found</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaves Tab -->
+        <div class="tab-pane fade" id="leaves">
+            <div class="content-card">
+                <h3><i class="fas fa-wallet text-success"></i> Leave Balances</h3>
+                <div class="leave-balance-grid mb-4">
+                    <div class="leave-balance-card cl">
+                        <div class="leave-balance-label">Casual Leave</div>
+                        <div class="leave-balance-value">{{ leave_summary.balances.CL }}</div>
+                        <div class="leave-balance-taken">Taken: {{ leave_summary.taken_by_type.CL|default:0 }}</div>
+                    </div>
+                    <div class="leave-balance-card sl">
+                        <div class="leave-balance-label">Sick Leave</div>
+                        <div class="leave-balance-value">{{ leave_summary.balances.SL }}</div>
+                        <div class="leave-balance-taken">Taken: {{ leave_summary.taken_by_type.SL|default:0 }}</div>
+                    </div>
+                    <div class="leave-balance-card el">
+                        <div class="leave-balance-label">Earned Leave</div>
+                        <div class="leave-balance-value">{{ leave_summary.balances.EL }}</div>
+                        <div class="leave-balance-taken">Taken: {{ leave_summary.taken_by_type.EL|default:0 }}</div>
+                    </div>
+                </div>
+
+                <h3><i class="fas fa-history text-primary"></i> Leave History</h3>
+                <div class="table-responsive">
+                    <table class="compact-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Days</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for leave in leave_summary.leave_history %}
+                            <tr>
+                                <td>
+                                    {% if leave.leave_type == 'CL' %}
+                                    <span class="status-badge info">CL</span>
+                                    {% elif leave.leave_type == 'SL' %}
+                                    <span class="status-badge warning">SL</span>
+                                    {% elif leave.leave_type == 'EL' %}
+                                    <span class="status-badge success">EL</span>
+                                    {% else %}
+                                    <span class="status-badge">{{ leave.leave_type }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ leave.start_date|date:"M d, Y" }}</td>
+                                <td>{{ leave.end_date|date:"M d, Y" }}</td>
+                                <td><strong>{{ leave.total_days }}</strong></td>
+                                <td>{{ leave.reason|truncatewords:8 }}</td>
+                                <td>
+                                    {% if leave.status == 'APPROVED' %}
+                                    <span class="status-badge success">Approved</span>
+                                    {% elif leave.status == 'PENDING' %}
+                                    <span class="status-badge warning">Pending</span>
+                                    {% else %}
+                                    <span class="status-badge danger">Rejected</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-3">No leave records</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compliance Tab -->
+        <div class="tab-pane fade" id="compliance">
+            <div class="content-card">
+                <h3><i class="fas fa-clipboard-check text-success"></i> Compliance Metrics</h3>
+                <div class="compliance-grid mb-4">
+                    <div
+                        class="compliance-item {% if attendance_stats.late_days == 0 %}green{% elif attendance_stats.late_days < 5 %}yellow{% else %}red{% endif %}">
+                        <div class="compliance-value">{{ attendance_stats.late_days }}</div>
+                        <div class="compliance-label">Late Logins</div>
+                    </div>
+                    <div
+                        class="compliance-item {% if attendance_stats.missing_punches == 0 %}green{% elif attendance_stats.missing_punches < 3 %}yellow{% else %}red{% endif %}">
+                        <div class="compliance-value">{{ attendance_stats.missing_punches|default:0 }}</div>
+                        <div class="compliance-label">Missing Punches</div>
+                    </div>
+                    <div
+                        class="compliance-item {% if leave_summary.lop_days == 0 %}green{% elif leave_summary.lop_days < 3 %}yellow{% else %}red{% endif %}">
+                        <div class="compliance-value">{{ leave_summary.lop_days|default:0 }}</div>
+                        <div class="compliance-label">LOP Days</div>
+                    </div>
+                    <div
+                        class="compliance-item {% if working_hours_compliance.overtime_hours == 0 %}green{% elif working_hours_compliance.overtime_hours < 10 %}yellow{% else %}red{% endif %}">
+                        <div class="compliance-value">{{ working_hours_compliance.overtime_hours }}h</div>
+                        <div class="compliance-label">Overtime</div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 class="mb-3">Attendance Compliance</h5>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span>Attendance Rate</span>
+                                <strong>{{ quick_stats.attendance_percentage }}%</strong>
+                            </div>
+                            <div class="progress-compact" style="height: 10px;">
+                                <div class="progress-bar-compact"
+                                    style="--bar-color: var(--success); width: {{ quick_stats.attendance_percentage }}%">
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span>Punctuality Rate</span>
+                                <strong>{{ quick_stats.on_time_percentage }}%</strong>
+                            </div>
+                            <div class="progress-compact" style="height: 10px;">
+                                <div class="progress-bar-compact"
+                                    style="--bar-color: var(--info); width: {{ quick_stats.on_time_percentage }}%">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="mb-3">Working Hours Compliance</h5>
+                        <div>
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span>Hours Compliance</span>
+                                <strong>{{ working_hours_compliance.compliance_percentage }}%</strong>
+                            </div>
+                            <div class="progress-compact" style="height: 10px;">
+                                <div class="progress-bar-compact"
+                                    style="--bar-color: var(--primary); width: {{ working_hours_compliance.compliance_percentage }}%">
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between text-muted small mt-2">
+                                <span>Total: {{ working_hours_compliance.total_hours }}h</span>
+                                <span>Expected: {{ working_hours_compliance.expected_hours }}h</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Tab -->
+        <div class="tab-pane fade" id="activity">
+            <div class="content-card">
+                <h3><i class="fas fa-stream text-info"></i> Recent Activity</h3>
+                <div class="timeline">
+                    {% for activity in recent_activity %}
+                    <div class="timeline-item"
+                        style="--item-color: {% if activity.color == 'success' %}var(--success){% elif activity.color == 'warning' %}var(--warning){% elif activity.color == 'info' %}var(--info){% else %}var(--primary){% endif %};">
+                        <div class="timeline-content">
+                            <i class="fas {{ activity.icon }} me-2"></i>
+                            <strong>{{ activity.description }}</strong>
+                            <div class="timeline-time">{{ activity.timestamp|date:"M d, Y h:i A" }}</div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted py-3">No recent activity</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Punctuality Chart
+    const ctx = document.getElementById('punctualityChart');
+    if (ctx) {
+        const data = {{ punctuality_analysis.clock_in_times| safe
+    }};
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.map(d => d.date),
+            datasets: [{
+                label: 'Clock-In Time',
+                data: data.map(d => {
+                    const [hours, minutes] = d.time.split(':');
+                    return parseInt(hours) + parseInt(minutes) / 60;
+                }),
+                borderColor: '#5b47fb',
+                backgroundColor: 'rgba(91, 71, 251, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointBackgroundColor: data.map(d =>
+                    d.is_late ? '#ef4444' : d.is_grace ? '#f59e0b' : '#10b981'
+                ),
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            const hours = Math.floor(context.raw);
+                            const minutes = Math.round((context.raw - hours) * 60);
+                            return `Clock-In: ${hours}:${minutes.toString().padStart(2, '0')}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    min: 8,
+                    max: 12,
+                    ticks: {
+                        callback: function (value) {
+                            const hours = Math.floor(value);
+                            const minutes = Math.round((value - hours) * 60);
+                            return `${hours}:${minutes.toString().padStart(2, '0')}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    }
+
+
+</script>
+{% endblock %}

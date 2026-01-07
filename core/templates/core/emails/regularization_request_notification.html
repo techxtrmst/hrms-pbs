@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Regularization Request Notification</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            color: #fff;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .info-card {
+            background-color: #f8f9fa;
+            border-left: 4px solid #fda085;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 10px;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .label {
+            font-weight: 600;
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .value {
+            font-weight: 500;
+            color: #333;
+            text-align: right;
+            font-size: 14px;
+        }
+
+        .time-box {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        .time-item {
+            text-align: center;
+            width: 48%;
+        }
+
+        .time-label {
+            font-size: 12px;
+            color: #1976d2;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .time-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #0d47a1;
+        }
+
+        .reason-box {
+            background-color: #fce4ec;
+            border: 1px solid #f8bbd0;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+
+        .reason-title {
+            color: #c2185b;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .reason-text {
+            color: #c2185b;
+            margin: 0;
+            font-style: italic;
+        }
+
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #6c757d;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #fda085;
+            color: #ffffff;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⏰ Attendance Regularization</h1>
+        </div>
+        <div class="content">
+            <p style="text-align: center; color: #666; margin-bottom: 25px;">
+                An employee has requested attendance regularization.
+            </p>
+
+            <div class="info-card">
+                <div class="info-row">
+                    <span class="label">Employee</span>
+                    <span class="value">{{ employee_name }} ({{ employee_id }})</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Department</span>
+                    <span class="value">{{ department }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Regularization Date</span>
+                    <span class="value">{{ date }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Submission Date</span>
+                    <span class="value">{{ request_date }}</span>
+                </div>
+            </div>
+
+            <div class="time-box">
+                <div class="time-item">
+                    <div class="time-label">Requested Check-In</div>
+                    <div class="time-value">{{ check_in }}</div>
+                </div>
+                <div class="time-item">
+                    <div class="time-label">Requested Check-Out</div>
+                    <div class="time-value">{{ check_out }}</div>
+                </div>
+            </div>
+
+            {% if reason %}
+            <div class="reason-box">
+                <div class="reason-title">Reason for Regularization:</div>
+                <p class="reason-text">"{{ reason }}"</p>
+            </div>
+            {% endif %}
+
+            <div style="text-align: center;">
+                <a href="#" class="button">Review Request</a>
+            </div>
+        </div>
+        <div class="footer">
+            <p>This is an automated notification from {{ company_name }} HRMS.</p>
+            <p>&copy; {% now "Y" %} {{ company_name }}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+
+</html>

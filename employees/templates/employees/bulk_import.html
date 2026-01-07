@@ -1,0 +1,138 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Bulk Import Employees | Petabytz{% endblock %}
+
+{% block extra_css %}
+<style>
+    .import-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .upload-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+    }
+
+    .upload-header {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: white;
+        padding: 24px;
+        text-align: center;
+    }
+
+    .upload-body {
+        padding: 32px;
+    }
+
+    .instruction-list {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 24px;
+        border-left: 4px solid #6366f1;
+    }
+
+    .instruction-list h6 {
+        color: #1e293b;
+        font-weight: 600;
+        margin-bottom: 12px;
+    }
+
+    .instruction-list ul {
+        margin-bottom: 0;
+        padding-left: 20px;
+        color: #475569;
+        font-size: 0.95rem;
+    }
+
+    .instruction-list li {
+        margin-bottom: 6px;
+    }
+
+    .download-template-link {
+        display: inline-block;
+        margin-top: 10px;
+        color: #6366f1;
+        font-weight: 500;
+        text-decoration: none;
+    }
+
+    .download-template-link:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="import-container">
+        <!-- Back Link -->
+        <a href="{% url 'employee_list' %}" class="text-decoration-none text-muted mb-3 d-inline-block">
+            <i class="fas fa-arrow-left me-1"></i> Back to Employee List
+        </a>
+
+        <div class="upload-card">
+            <div class="upload-header">
+                <i class="fas fa-file-import fa-3x mb-3 opacity-75"></i>
+                <h4 class="fw-bold m-0">Bulk Import Employees</h4>
+                <p class="m-0 mt-2 opacity-90">Upload an Excel file to create multiple employees at once</p>
+            </div>
+
+            <div class="upload-body">
+                <div class="instruction-list">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Instructions & Requirements</h6>
+                        <a href="{% url 'download_sample_import_file' %}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-download me-1"></i> Download Sample
+                        </a>
+                    </div>
+                    <ul>
+                        <li>File format must be <strong>.xlsx</strong> (Excel).</li>
+                        <li>Required Columns: <strong>First Name, Last Name, Email, Designation, Department, Date of
+                                Joining, Date of Birth</strong>.</li>
+                        <li>Optional Columns: Mobile, Employee ID, Gender, Marital Status, Annual CTC, Location.</li>
+                        <li>Email addresses must be unique. Existing emails will be skipped.</li>
+                        <li>Dates should be in <strong>YYYY-MM-DD</strong> format.</li>
+                        <li>Employees will receive an activation email to set their password.</li>
+                    </ul>
+                </div>
+
+                <form method="post" enctype="multipart/form-data" class="mt-4">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger mb-4">
+                        {% for error in form.non_field_errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">{{ form.import_file.label }}</label>
+                        {% render_field form.import_file class="form-control" %}
+                        {% if form.import_file.help_text %}
+                        <div class="form-text mt-2 text-muted small">{{ form.import_file.help_text }}</div>
+                        {% endif %}
+                        {% if form.import_file.errors %}
+                        <div class="text-danger small mt-1">{{ form.import_file.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-cloud-upload-alt me-2"></i> Upload and Import
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+[project]
+name = "hrms-pbs"
+version = "1.0.0"
+description = "HRMS PBS - Human Resource Management System"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    # Core Django and Web Framework
+    "django>=4.2.0,<5.0",
+    "djangorestframework>=3.16.0",
+    "djangorestframework-simplejwt>=5.5.0",
+    
+    # Django Extensions
+    "django-cors-headers>=4.9.0",
+    "django-environ>=0.12.0",
+    "django-import-export>=4.3.0",
+    "django-widget-tweaks>=1.5.0",
+    
+    # API Documentation
+    "drf-yasg>=1.21.0",
+    
+    # Database
+    "psycopg2-binary>=2.9.0",
+    "redis>=5.0.0",
+    "django-redis>=6.0.0",
+    
+    # File Processing (Excel only - actually used)
+    "openpyxl>=3.1.0",
+    "pypdf2>=3.0.0",
+    
+    # Utilities
+    "python-dateutil>=2.9.0",
+    "pytz>=2024.1",
+    "python-slugify>=8.0.0",
+    "phonenumbers>=8.13.0",
+    
+    # HTTP/API Clients
+    "requests>=2.32.0",
+    
+    # Data Processing (only pandas is used)
+    "pandas>=2.2.0",
+    "tablib>=3.9.0",
+    
+    # Image Processing
+    "pillow>=11.0.0",
+    
+    # Server
+    "gunicorn>=23.0.0",
+    "whitenoise>=6.11.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.0",
+    "pytest-django>=4.11.0",
+    "factory-boy>=3.3.0",
+    "coverage>=7.11.0",
+    "black>=24.10.0",
+    "flake8>=7.1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["accounts", "ai_assistant", "companies", "core", "employees", "hrms_core", "superadmin", "scripts"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.0",
+    "pytest-django>=4.11.0",
+    "factory-boy>=3.3.0",
+    "coverage>=7.11.0",
+    "black>=24.10.0",
+    "flake8>=7.1.0",
+]

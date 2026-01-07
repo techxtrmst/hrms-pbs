@@ -1,0 +1,452 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Map View{% endblock %}
+
+
+
+{% block extra_css %}
+<style>
+    :root {
+        --keka-sidebar-width: 300px;
+        --keka-timeline-color: #e2e8f0;
+        --keka-primary: #6366f1;
+    }
+
+    /* Override base container styles to full width/height for this view if needed */
+    .content {
+        padding: 0 !important;
+        margin: 0 !important;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .base-layout-container {
+        display: none;
+        /* Hide standard layout container if present */
+    }
+
+    /* Custom Layout for Map View */
+    .map-view-wrapper {
+        display: flex;
+        height: 100vh;
+        width: 100%;
+        background: white;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 2000;
+        /* Above sidebar */
+    }
+
+    /* Sidebar Styling */
+    .map-sidebar {
+        width: var(--keka-sidebar-width);
+        background: #fff;
+        border-right: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        z-index: 10;
+        box-shadow: 4px 0 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .map-header {
+        padding: 20px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .map-header h5 {
+        font-size: 14px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        margin: 0;
+        letter-spacing: 0.5px;
+    }
+
+    .timeline-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px 0;
+    }
+
+    .timeline-section-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        color: #94a3b8;
+        font-weight: 600;
+        padding: 0 20px 10px;
+        letter-spacing: 0.5px;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding: 10px 20px;
+        display: flex;
+        align-items: flex-start;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .timeline-item:hover {
+        background: #f8fafc;
+    }
+
+    .timeline-item.active {
+        background: #f1f5f9;
+    }
+
+    /* Timeline Line */
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: 36px;
+        /* Adjust based on layout */
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--keka-timeline-color);
+        z-index: 0;
+        display: none;
+        /* Hidden by default, enable if we want connected line */
+    }
+
+    .timeline-marker {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #cbd5e0;
+        color: white;
+        font-size: 10px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+        /* Right align marker */
+        z-index: 1;
+        flex-shrink: 0;
+    }
+
+    .timeline-content {
+        flex: 1;
+    }
+
+    .timeline-time {
+        font-size: 14px;
+        font-weight: 600;
+        color: #334155;
+        display: flex;
+        align-items: center;
+    }
+
+    .timeline-coords {
+        font-size: 10px;
+        color: #94a3b8;
+        font-family: monospace;
+        margin-top: 2px;
+    }
+
+    .marker-clock-in {
+        background: #6366f1;
+        /* Indigo */
+    }
+
+    .marker-clock-out {
+        background: #ef4444;
+        /* Red */
+    }
+
+    .marker-log {
+        background: #94a3b8;
+        /* Gray */
+    }
+
+    /* Status Indicators */
+    .status-icon {
+        font-size: 10px;
+        margin-right: 8px;
+    }
+
+    .status-in {
+        color: #10b981;
+    }
+
+    .status-out {
+        color: #ef4444;
+    }
+
+    .status-log {
+        color: #64748b;
+    }
+
+    /* Map Area */
+    .map-wrapper {
+        flex: 1;
+        position: relative;
+    }
+
+    #map {
+        height: 100%;
+        width: 100%;
+    }
+
+    /* Close Button */
+    .btn-close-view {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: white;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0.9;
+        transition: all 0.2s;
+        text-decoration: none;
+        color: #64748b;
+    }
+
+    .btn-close-view:hover {
+        opacity: 1;
+        transform: scale(1.05);
+        color: #ef4444;
+    }
+
+    /* Scrollbar for sidebar */
+    .timeline-container::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .timeline-container::-webkit-scrollbar-thumb {
+        background: #cbd5e0;
+        border-radius: 2px;
+    }
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+{% endblock %}
+
+{% block content %}
+<div class="map-view-wrapper">
+    <!-- Sidebar -->
+    <div class="map-sidebar">
+        <!-- Header -->
+        <div class="map-header">
+            <h5>Map View - {{ attendance.date|date:"d M Y"|upper }} - {{ attendance.employee.user.first_name|upper }}
+            </h5>
+        </div>
+
+        <!-- Timeline -->
+        <div class="timeline-container">
+            <!-- Remote Clock In Section -->
+            {% if attendance.clock_in %}
+            <div class="timeline-section-title mt-2">Remote Clock In</div>
+            <div class="timeline-item" onclick="panToLocation('{{ attendance.location_in }}')">
+                <div class="timeline-content">
+                    <div class="timeline-time">
+                        <i class="fas fa-check status-icon status-in"></i>
+                        {{ attendance.clock_in|time:"h:i A" }}
+                    </div>
+                    <div class="timeline-coords">{{ attendance.location_in }}</div>
+                </div>
+                <div class="timeline-marker marker-clock-in">A</div>
+            </div>
+            {% endif %}
+
+            {% if attendance.clock_out %}
+            <div class="timeline-item" onclick="panToLocation('{{ attendance.location_out }}')">
+                <div class="timeline-content">
+                    <div class="timeline-time">
+                        <i class="fas fa-arrow-up status-icon status-out"></i>
+                        {{ attendance.clock_out|time:"h:i A" }}
+                    </div>
+                    <div class="timeline-coords">{{ attendance.location_out }}</div>
+                </div>
+                <div class="timeline-marker marker-clock-out">R</div>
+            </div>
+            {% endif %}
+
+            <!-- Location Punch Section -->
+            {% if logs %}
+            <div class="timeline-section-title mt-4">Location Punch</div>
+            {% for log in logs %}
+            <div class="timeline-item"
+                onclick="panToPoint('{{ log.latitude }}', '{{ log.longitude }}', '{{ forloop.counter }}')">
+                <div class="timeline-content">
+                    <div class="timeline-time">
+                        <i class="fas fa-arrow-down status-icon status-log"></i>
+                        {{ log.timestamp|time:"h:i A" }}
+                    </div>
+                    <div class="timeline-coords">{{ log.latitude|floatformat:6 }},{{ log.longitude|floatformat:6 }}
+                    </div>
+                </div>
+                <div class="timeline-marker marker-log">{{ forloop.counter }}</div>
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Map -->
+    <div class="map-wrapper">
+        <div id="map"></div>
+        <a href="javascript:history.back()" class="btn-close-view">
+            <i class="fas fa-times"></i>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+{{ map_data_json|json_script:"map-data" }}
+
+<script>
+    let map;
+    const markers = {};
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Parse Locations
+        const locations = JSON.parse(document.getElementById('map-data').textContent);
+        console.log('Map locations:', locations);
+
+        // Default View if no data
+
+        // Default View if no data
+        if (locations.length === 0) {
+            map = L.map('map').setView([20.5937, 78.9629], 5); // India center
+            L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                maxZoom: 20,
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+            }).addTo(map);
+            return;
+        }
+
+
+        // Initialize Map
+        const startPoint = locations[0];
+
+        // Google Map Layers
+        const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        });
+
+        const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        });
+
+        const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        });
+
+        // Initialize Map with Google Streets by default
+        map = L.map('map', {
+            zoomControl: false,
+            layers: [googleStreets]
+        }).setView([startPoint.lat, startPoint.lng], 16);
+
+        // Layer Control
+        const baseMaps = {
+            "Google Streets": googleStreets,
+            "Google Satellite": googleHybrid,
+            "OpenStreetMap": osm
+        };
+
+        L.control.layers(baseMaps).addTo(map);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+
+        // Define Icons matching the timeline colors
+        const createIcon = (color, label) => {
+            return L.divIcon({
+                className: 'custom-map-marker',
+                html: `<div style="
+                    background: ${color};
+                    color: white;
+                    width: 30px;
+                    height: 30px;
+                    border-radius: 50% 50% 50% 0;
+                    transform: rotate(-45deg);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+                    border: 2px solid white;">
+                    <div style="transform: rotate(45deg); font-weight: bold; font-size: 12px;">${label}</div>
+                </div>`,
+                iconSize: [30, 30],
+                iconAnchor: [15, 30],
+                popupAnchor: [0, -30]
+            });
+        };
+
+        const pathCoords = [];
+        let indexLog = 1;
+
+        locations.forEach(loc => {
+            const lat = parseFloat(loc.lat);
+            const lng = parseFloat(loc.lng);
+            pathCoords.push([lat, lng]);
+
+            let icon;
+            let label = '';
+            let color = '#94a3b8'; // Default Gray
+
+            if (loc.type === 'in') {
+                color = '#6366f1';
+                label = 'A';
+            } else if (loc.type === 'out') {
+                color = '#ef4444';
+                label = 'R'; // As per screenshot 'R' for remote clock out? Or E
+            } else {
+                label = indexLog++;
+            }
+
+            icon = createIcon(color, label);
+
+            const marker = L.marker([lat, lng], { icon: icon })
+                .addTo(map)
+                .bindPopup(`<b>${loc.title}</b><br>${lat}, ${lng}`);
+
+            // Store reference/id if we want to link from timeline
+        });
+
+        // Draw Polyline
+        if (pathCoords.length > 1) {
+            const polyline = L.polyline(pathCoords, {
+                color: '#6366f1',
+                weight: 3,
+                opacity: 0.8,
+                dashArray: '10, 10'
+            }).addTo(map);
+            map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
+        }
+    });
+
+    // Helper to pan map
+    window.panToPoint = function (lat, lng, label) {
+        if (map) {
+            map.flyTo([parseFloat(lat), parseFloat(lng)], 18);
+        }
+    }
+
+    window.panToLocation = function (locStr) {
+        if (!locStr) return;
+        const [lat, lng] = locStr.split(',').map(Number);
+        if (map && lat && lng) {
+            map.flyTo([lat, lng], 18);
+        }
+    }
+</script>
+{% endblock %}

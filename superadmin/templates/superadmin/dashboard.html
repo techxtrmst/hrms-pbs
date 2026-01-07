@@ -1,0 +1,729 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}SuperAdmin Dashboard - HRMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --keka-primary: #5b47fb;
+        --keka-primary-dark: #4a38ca;
+        --keka-success: #00c48c;
+        --keka-danger: #ff647c;
+        --keka-warning: #ffa26b;
+        --keka-info: #4da6ff;
+        --keka-purple: #9b7dff;
+        --keka-cyan: #4fd1c5;
+        --keka-bg: #f7f8fc;
+        --keka-card: #ffffff;
+        --keka-border: #e8ecf4;
+        --keka-text-primary: #1e2139;
+        --keka-text-secondary: #6c7293;
+        --keka-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        --keka-shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    body {
+        background: var(--keka-bg);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    /* Header Section */
+    .sa-header {
+        background: linear-gradient(135deg, var(--keka-primary) 0%, var(--keka-purple) 100%);
+        padding: 32px 40px;
+        border-radius: 20px;
+        margin-bottom: 32px;
+        box-shadow: var(--keka-shadow);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .sa-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 400px;
+        height: 400px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+
+        0%,
+        100% {
+            transform: translateY(0px);
+        }
+
+        50% {
+            transform: translateY(-20px);
+        }
+    }
+
+    .sa-header-title {
+        color: white;
+        font-size: 32px;
+        font-weight: 800;
+        margin: 0;
+        position: relative;
+        z-index: 1;
+    }
+
+    .sa-header-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 16px;
+        margin: 8px 0 0 0;
+        position: relative;
+        z-index: 1;
+    }
+
+    .sa-company-selector {
+        position: relative;
+        z-index: 1;
+    }
+
+    .sa-company-selector select {
+        background: rgba(255, 255, 255, 0.95);
+        border: none;
+        border-radius: 12px;
+        padding: 12px 20px;
+        font-weight: 600;
+        color: var(--keka-text-primary);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .sa-company-selector select:focus {
+        outline: none;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    /* Context Indicator */
+    .sa-context-indicator {
+        background: linear-gradient(90deg, rgba(91, 71, 251, 0.1) 0%, rgba(155, 125, 255, 0.05) 100%);
+        border-left: 4px solid var(--keka-primary);
+        padding: 16px 24px;
+        border-radius: 12px;
+        margin-bottom: 32px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: slideIn 0.5s ease-out;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    /* Metric Cards Grid */
+    .sa-metric-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+        margin-bottom: 32px;
+    }
+
+    .sa-metric-card {
+        background: white;
+        border-radius: 20px;
+        padding: 28px;
+        box-shadow: var(--keka-shadow);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+    .sa-metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--card-color) 0%, var(--card-color-light) 100%);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.3s ease;
+    }
+
+    .sa-metric-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .sa-metric-card:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--keka-shadow-hover);
+    }
+
+    .sa-metric-card.blue {
+        --card-color: #4da6ff;
+        --card-color-light: #80bfff;
+    }
+
+    .sa-metric-card.cyan {
+        --card-color: #4fd1c5;
+        --card-color-light: #7fddd4;
+    }
+
+    .sa-metric-card.green {
+        --card-color: #00c48c;
+        --card-color-light: #33d3a6;
+    }
+
+    .sa-metric-card.amber {
+        --card-color: #ffa26b;
+        --card-color-light: #ffb88c;
+    }
+
+    .sa-metric-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        margin-bottom: 20px;
+        background: linear-gradient(135deg, var(--card-color) 0%, var(--card-color-light) 100%);
+        color: white;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    .sa-metric-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--keka-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .sa-metric-value {
+        font-size: 40px;
+        font-weight: 800;
+        color: var(--keka-text-primary);
+        margin-bottom: 8px;
+        line-height: 1;
+        animation: countUp 0.8s ease-out;
+    }
+
+    @keyframes countUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .sa-metric-subtitle {
+        font-size: 13px;
+        color: var(--keka-text-secondary);
+    }
+
+    /* Table Container */
+    .sa-table-container {
+        background: white;
+        border-radius: 20px;
+        padding: 32px;
+        box-shadow: var(--keka-shadow);
+        margin-bottom: 32px;
+    }
+
+    .sa-table-header {
+        margin-bottom: 24px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid var(--keka-border);
+    }
+
+    .sa-table-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--keka-text-primary);
+        margin: 0;
+    }
+
+    .sa-btn-export {
+        background: linear-gradient(135deg, var(--keka-primary) 0%, var(--keka-purple) 100%);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(91, 71, 251, 0.3);
+    }
+
+    .sa-btn-export:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(91, 71, 251, 0.4);
+        color: white;
+    }
+
+    /* Table Styling */
+    .sa-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+    }
+
+    .sa-table thead th {
+        background: var(--keka-bg);
+        color: var(--keka-text-secondary);
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: 0.5px;
+        padding: 16px;
+        border: none;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .sa-table thead th:first-child {
+        border-radius: 12px 0 0 12px;
+    }
+
+    .sa-table thead th:last-child {
+        border-radius: 0 12px 12px 0;
+    }
+
+    .sa-table tbody tr {
+        background: white;
+        transition: all 0.3s ease;
+    }
+
+    .sa-table tbody tr:hover {
+        transform: scale(1.01);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .sa-table tbody td {
+        padding: 20px 16px;
+        border-top: 1px solid var(--keka-border);
+        border-bottom: 1px solid var(--keka-border);
+    }
+
+    .sa-table tbody td:first-child {
+        border-left: 1px solid var(--keka-border);
+        border-radius: 12px 0 0 12px;
+    }
+
+    .sa-table tbody td:last-child {
+        border-right: 1px solid var(--keka-border);
+        border-radius: 0 12px 12px 0;
+    }
+
+    /* Badges */
+    .sa-badge {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .sa-badge.success {
+        background: rgba(0, 196, 140, 0.1);
+        color: var(--keka-success);
+    }
+
+    .sa-badge.danger {
+        background: rgba(255, 100, 124, 0.1);
+        color: var(--keka-danger);
+    }
+
+    .sa-badge.info {
+        background: rgba(77, 166, 255, 0.1);
+        color: var(--keka-info);
+    }
+
+    /* Monitor Button */
+    .sa-btn-monitor {
+        background: linear-gradient(135deg, var(--keka-primary) 0%, var(--keka-purple) 100%);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .sa-btn-monitor:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(91, 71, 251, 0.3);
+        color: white;
+    }
+
+    /* Animations */
+    .sa-fade-in {
+        animation: fadeInUp 0.6s ease-out forwards;
+        opacity: 0;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Loading State */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.95);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+    .loading-overlay.active {
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 4px solid var(--keka-border);
+        border-top-color: var(--keka-primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .sa-header {
+            padding: 24px;
+        }
+
+        .sa-header-title {
+            font-size: 24px;
+        }
+
+        .sa-metric-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .sa-table-container {
+            padding: 20px;
+            overflow-x: auto;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<div class="superadmin-container">
+    <!-- Header Section -->
+    <div class="sa-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h1 class="sa-header-title">🌐 Super Admin Overview</h1>
+            <p class="sa-header-subtitle">
+                {% if selected_company %}
+                Monitoring {{ selected_company.name }}
+                {% else %}
+                Global monitoring across all companies
+                {% endif %}
+            </p>
+        </div>
+        <div class="sa-company-selector">
+            <select class="form-select form-select-lg" id="companySelectorDropdown">
+                <option value="null" {% if not selected_company_id %}selected{% endif %}>
+                    🌍 All Companies (Global View)
+                </option>
+                {% for company in companies %}
+                <option value="{{ company.id }}" {% if selected_company_id == company.id %}selected{% endif %}>
+                    {{ company.name }} - {{ company.location }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Context Indicator -->
+    {% if selected_company %}
+    <div class="sa-context-indicator">
+        <i class="fas fa-filter"></i>
+        <span>Viewing data for: <strong>{{ selected_company.name }}</strong></span>
+        <a href="#"
+            onclick="document.getElementById('companySelectorDropdown').value='null'; document.getElementById('companySelectorDropdown').dispatchEvent(new Event('change')); return false;"
+            class="ms-auto text-decoration-none" style="color: var(--keka-primary); font-weight: 600;">
+            <i class="fas fa-times-circle"></i> Clear Filter
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Metric Cards -->
+    <div class="sa-metric-cards">
+        <!-- Total Companies Card -->
+        <div class="sa-metric-card blue sa-fade-in" style="animation-delay: 0.1s;">
+            <div class="sa-metric-icon">
+                <i class="fas fa-building"></i>
+            </div>
+            <div class="sa-metric-label">Total Companies</div>
+            <div class="sa-metric-value" data-target="{{ metrics.total_companies }}">0</div>
+            <div class="sa-metric-subtitle">Active organizations</div>
+        </div>
+
+        <!-- Total Employees Card -->
+        <div class="sa-metric-card cyan sa-fade-in" style="animation-delay: 0.2s;">
+            <div class="sa-metric-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="sa-metric-label">Total Employees</div>
+            <div class="sa-metric-value" data-target="{{ metrics.total_employees }}">0</div>
+            <div class="sa-metric-subtitle">
+                {% if selected_company %}
+                In {{ selected_company.name }}
+                {% else %}
+                Across all companies
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Present Today Card -->
+        <div class="sa-metric-card green sa-fade-in" style="animation-delay: 0.3s;">
+            <div class="sa-metric-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="sa-metric-label">Present Today</div>
+            <div class="sa-metric-value" data-target="{{ metrics.present_today }}">0</div>
+            <div class="sa-metric-subtitle">Clocked in employees</div>
+        </div>
+
+        <!-- On Leave Today Card -->
+        <div class="sa-metric-card amber sa-fade-in" style="animation-delay: 0.4s;">
+            <div class="sa-metric-icon">
+                <i class="fas fa-umbrella-beach"></i>
+            </div>
+            <div class="sa-metric-label">On Leave Today</div>
+            <div class="sa-metric-value" data-target="{{ metrics.on_leave_today }}">0</div>
+            <div class="sa-metric-subtitle">Approved leaves</div>
+        </div>
+    </div>
+
+    <!-- Company Overview Table -->
+    <div class="sa-table-container sa-fade-in" style="animation-delay: 0.5s;">
+        <div class="sa-table-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <h2 class="sa-table-title">📊 Company Overview</h2>
+            <a href="{% url 'superadmin:companies' %}" class="sa-btn-export">
+                <i class="fas fa-list"></i>
+                <span>View All Companies</span>
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="sa-table">
+                <thead>
+                    <tr>
+                        <th>Company Name</th>
+                        <th>Domain</th>
+                        <th>Location</th>
+                        <th>Employees</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for company in company_overview %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                {% if company.logo %}
+                                <img src="{{ company.logo.url }}" alt="{{ company.name }}" class="rounded"
+                                    style="width: 40px; height: 40px; object-fit: cover;">
+                                {% else %}
+                                <div class="rounded d-flex align-items-center justify-content-center"
+                                    style="width: 40px; height: 40px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; font-weight: 700; font-size: 1rem;">
+                                    {{ company.name|slice:":1" }}
+                                </div>
+                                {% endif %}
+                                <strong style="font-size: 15px;">{{ company.name }}</strong>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="text-muted">{{ company.primary_domain }}</span>
+                        </td>
+                        <td>
+                            <span class="sa-badge info">
+                                <i class="fas fa-map-marker-alt"></i>
+                                {{ company.get_location_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <strong style="color: var(--keka-primary);">{{ company.employee_count }}</strong> employees
+                        </td>
+                        <td>
+                            {% if company.is_active %}
+                            <span class="sa-badge success">
+                                <i class="fas fa-check-circle"></i>
+                                Active
+                            </span>
+                            {% else %}
+                            <span class="sa-badge danger">
+                                <i class="fas fa-times-circle"></i>
+                                Inactive
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'superadmin:company_monitor' company.id %}" class="sa-btn-monitor">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Monitor</span>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <i class="fas fa-building fa-3x mb-3 d-block"
+                                style="opacity: 0.3; color: var(--keka-text-secondary);"></i>
+                            <p class="text-muted">No companies found</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- CSRF Token for AJAX -->
+{% csrf_token %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Counter Animation for Metrics
+    function animateCounter(element) {
+        const target = parseInt(element.getAttribute('data-target'));
+        const duration = 1500;
+        const increment = target / (duration / 16);
+        let current = 0;
+
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                element.textContent = target;
+                clearInterval(timer);
+            } else {
+                element.textContent = Math.floor(current);
+            }
+        }, 16);
+    }
+
+    // Animate all metric values on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        const metricValues = document.querySelectorAll('.sa-metric-value');
+        metricValues.forEach((value, index) => {
+            setTimeout(() => animateCounter(value), index * 100);
+        });
+    });
+
+    // Enhanced company selector with loading state
+    const selector = document.getElementById('companySelectorDropdown');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+
+    selector.addEventListener('change', function () {
+        const companyId = this.value;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        // Show loading overlay
+        loadingOverlay.classList.add('active');
+        selector.disabled = true;
+
+        // Make AJAX request
+        fetch('{% url "superadmin:switch_company_api" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken
+            },
+            body: `company_id=${companyId}`
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload page with smooth transition
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 300);
+                } else {
+                    alert(data.message);
+                    loadingOverlay.classList.remove('active');
+                    selector.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to switch company');
+                loadingOverlay.classList.remove('active');
+                selector.disabled = false;
+            });
+    });
+
+    // Add hover effect to metric cards
+    document.querySelectorAll('.sa-metric-card').forEach(card => {
+        card.addEventListener('mouseenter', function () {
+            this.style.transform = 'translateY(-8px) scale(1.02)';
+        });
+
+        card.addEventListener('mouseleave', function () {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+
+    // Add smooth scroll behavior
+    document.documentElement.style.scrollBehavior = 'smooth';
+</script>
+{% endblock %}

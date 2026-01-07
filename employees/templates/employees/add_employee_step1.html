@@ -1,0 +1,601 @@
+{% extends 'core/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Add Employee - Step 1{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+    * {
+        font-family: 'Inter', sans-serif;
+    }
+
+    body {
+        background: #f8f9fa;
+    }
+
+    .container {
+        max-width: 1000px;
+        padding-top: 2rem;
+    }
+
+    /* Header */
+    .page-header {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #5b5fc7;
+        margin-bottom: 0.25rem;
+    }
+
+    .page-subtitle {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    /* Progress Stepper - Compact & Sticky */
+    .progress-stepper {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .step {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .step-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #e9ecef;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .step.active .step-circle {
+        background: #5b5fc7;
+        color: white;
+    }
+
+    .step.completed .step-circle {
+        background: #28a745;
+        color: white;
+    }
+
+    .step-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .step.active .step-label {
+        color: #5b5fc7;
+        font-weight: 600;
+    }
+
+    .step-divider {
+        width: 40px;
+        height: 2px;
+        background: #dee2e6;
+    }
+
+    /* Form Card - Compact */
+    .form-card {
+        background: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+        font-weight: 600;
+        font-size: 1rem;
+        color: #212529;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .section-title i {
+        color: #5b5fc7;
+        font-size: 1.1rem;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+        font-size: 0.875rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .form-control,
+    .form-select {
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        height: auto;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #5b5fc7;
+        box-shadow: 0 0 0 0.2rem rgba(91, 95, 199, 0.15);
+    }
+
+    /* Radio Buttons - Compact */
+    .role-selector,
+    .company-selector {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .role-option,
+    .company-option {
+        flex: 1;
+        min-width: 140px;
+        position: relative;
+    }
+
+    .role-option input[type="radio"],
+    .company-option input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+    }
+
+    .role-option label,
+    .company-option label {
+        display: block;
+        padding: 0.65rem 1rem;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        text-align: center;
+        font-weight: 500;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: white;
+    }
+
+    .role-option input[type="radio"]:checked+label,
+    .company-option input[type="radio"]:checked+label {
+        border-color: #5b5fc7;
+        background: #f0f1ff;
+        color: #5b5fc7;
+    }
+
+    /* Buttons - Compact */
+    .btn-next {
+        background: #5b5fc7;
+        color: white;
+        padding: 0.65rem 2rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        border-radius: 6px;
+        border: none;
+    }
+
+    .btn-next:hover {
+        background: #4a4eb8;
+    }
+
+    .btn-back {
+        background: white;
+        border: 1px solid #ced4da;
+        color: #6c757d;
+        padding: 0.65rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .btn-back:hover {
+        background: #f8f9fa;
+    }
+
+    .text-danger {
+        color: #dc3545;
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+    }
+
+    .alert {
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .row.g-3 {
+        --bs-gutter-y: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="page-title mb-0">Add New Employee</h1>
+                <p class="text-muted mb-0">Step 1 of 3: Personal Information</p>
+            </div>
+            <a href="{% url 'employee_list' %}" class="btn btn-back">
+                <i class="fas fa-arrow-left me-2"></i>Cancel
+            </a>
+        </div>
+    </div>
+
+    <!-- Progress Stepper -->
+    <div class="progress-stepper">
+        <div class="step active">
+            <div class="step-circle">1</div>
+            <div class="step-label">Personal Info</div>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step">
+            <div class="step-circle">2</div>
+            <div class="step-label">Job Details</div>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step">
+            <div class="step-circle">3</div>
+            <div class="step-label">Finance & Save</div>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Form -->
+    <form method="post" class="form-card">
+        {% csrf_token %}
+
+        <h2 class="section-title">
+            <i class="fas fa-building me-2 text-primary"></i>Organization Details
+        </h2>
+
+        {% if form.company_selection.field.widget.attrs.disabled %}
+        <div class="mb-4">
+            <label class="form-label">Company</label>
+            <div class="company-selector">
+                {% for radio in form.company_selection %}
+                <div class="company-option">
+                    {{ radio.tag }}
+                    <label for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="mb-4">
+            <label class="form-label d-block mb-3">
+                <i class="fas fa-user-shield me-2"></i>Access Role
+            </label>
+            <div class="role-selector">
+                {% for radio in form.role %}
+                <div class="role-option">
+                    {{ radio.tag }}
+                    <label for="{{ radio.id_for_label }}">
+                        <i
+                            class="fas fa-{% if 'Employee' in radio.choice_label %}user{% elif 'Manager' in radio.choice_label %}user-tie{% else %}user-cog{% endif %} me-2"></i>
+                        {{ radio.choice_label }}
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <h2 class="section-title mt-5">
+            <i class="fas fa-user me-2 text-primary"></i>Personal Information
+        </h2>
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">First Name <span class="text-danger">*</span></label>
+                {% render_field form.first_name class="form-control" placeholder="e.g. John" %}
+                {% if form.first_name.errors %}
+                <div class="text-danger">{{ form.first_name.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                {% render_field form.last_name class="form-control" placeholder="e.g. Doe" %}
+                {% if form.last_name.errors %}
+                <div class="text-danger">{{ form.last_name.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-5">
+                <label class="form-label">Employee ID <span class="text-danger">*</span></label>
+                <!-- Hidden Actual Field -->
+                {% render_field form.badge_id class="d-none" id="real_badge_id" %}
+
+                <div class="input-group">
+                    <!-- Company Prefix -->
+                    <span class="input-group-text bg-light fw-bold text-primary" id="id_prefix_display">
+                        {{ company_prefix }}
+                    </span>
+
+                    <!-- Location Code -->
+                    <select class="form-select" id="id_location_code_select"
+                        style="max-width: 110px; background-color: #f8f9fa;">
+                        <option value="HYD">HYD</option>
+                        <option value="US">US</option>
+                        <option value="DHAKA">DHAKA</option>
+                    </select>
+
+                    <!-- Number -->
+                    <input type="text" class="form-control" id="id_number_input" placeholder="001" maxlength="6">
+                </div>
+
+
+                <small class="text-muted">Auto-generated format: <span id="preview_id">...</span></small>
+                {% if form.badge_id.errors %}
+                <div class="text-danger">{{ form.badge_id.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const realInput = document.getElementById('real_badge_id');
+                    const prefixSpan = document.getElementById('id_prefix_display');
+                    const locSelect = document.getElementById('id_location_code_select');
+                    const numInput = document.getElementById('id_number_input');
+                    const previewSpan = document.getElementById('preview_id');
+
+                    function updateId() {
+                        const prefix = prefixSpan.textContent.trim();
+                        const loc = locSelect.value;
+                        const num = numInput.value.trim();
+
+                        const fullId = prefix + loc + num;
+                        realInput.value = fullId;
+                        previewSpan.textContent = fullId;
+                    }
+
+                    // Event Listeners
+                    locSelect.addEventListener('change', updateId);
+                    numInput.addEventListener('input', updateId);
+
+                    // Initial Call
+                    updateId();
+                });
+            </script>
+
+            <div class="col-md-6">
+                <label class="form-label">Personal Email <span class="text-danger">*</span></label>
+                {% render_field form.email class="form-control" placeholder="e.g. john.doe@gmail.com" %}
+                {% if form.email.errors %}
+                <div class="text-danger">{{ form.email.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Mobile Number</label>
+                {% render_field form.mobile_number class="form-control" placeholder="+91 9876543210" %}
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Gender</label>
+                {% render_field form.gender class="form-select" %}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Marital Status</label>
+                {% render_field form.marital_status class="form-select" %}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Date of Birth</label>
+                {% render_field form.dob class="form-control" %}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Work Location <span class="text-danger">*</span></label>
+                {% render_field form.location class="form-select" %}
+                {% if form.location.errors %}
+                <div class="text-danger">{{ form.location.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-12">
+                <label class="form-label">Permanent Address</label>
+                {% render_field form.permanent_address class="form-control" rows="2" %}
+            </div>
+        </div>
+
+        <!-- Emergency Contacts Section -->
+        <h2 class="section-title mt-5">
+            <i class="fas fa-phone-alt me-2 text-primary"></i>Emergency Contacts
+        </h2>
+
+        <div id="emergency-contacts-container">
+            <!-- First emergency contact (always visible) -->
+            <div class="emergency-contact-form border rounded p-3 mb-3" data-contact-index="0">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Contact #1</h6>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" name="emergency_contact_name_0" placeholder="Full Name">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" name="emergency_contact_phone_0"
+                            placeholder="+91 9876543210">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Relationship</label>
+                        <input type="text" class="form-control" name="emergency_contact_relationship_0"
+                            placeholder="e.g., Spouse, Father">
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" name="emergency_contact_primary_0"
+                                id="primary_0">
+                            <label class="form-check-label small" for="primary_0" title="Primary Contact">
+                                Primary
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-start mt-3">
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addEmergencyContact()">
+                <i class="fas fa-plus me-1"></i> Add Another Contact
+            </button>
+        </div>
+
+        <div class="text-end mt-4">
+            <button type="submit" class="btn btn-next">
+                Next: Job Details <i class="fas fa-arrow-right ms-2"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    let contactCounter = 1;
+
+    function addEmergencyContact() {
+        const container = document.getElementById('emergency-contacts-container');
+        const newContact = document.createElement('div');
+        newContact.className = 'emergency-contact-form border rounded p-3 mb-3';
+        newContact.setAttribute('data-contact-index', contactCounter);
+
+        newContact.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">Contact #${contactCounter + 1}</h6>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeEmergencyContact(this)">
+                <i class="fas fa-times"></i> Remove
+            </button>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Name</label>
+                <input type="text" class="form-control" name="emergency_contact_name_${contactCounter}" placeholder="Full Name">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Phone Number</label>
+                <input type="tel" class="form-control" name="emergency_contact_phone_${contactCounter}" placeholder="+91 9876543210">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Relationship</label>
+                <input type="text" class="form-control" name="emergency_contact_relationship_${contactCounter}" placeholder="e.g., Spouse, Father">
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" name="emergency_contact_primary_${contactCounter}" id="primary_${contactCounter}" onchange="handlePrimaryChange(this)">
+                    <label class="form-check-label small" for="primary_${contactCounter}" title="Primary Contact">
+                        Primary
+                    </label>
+                </div>
+            </div>
+        </div>
+    `;
+
+        container.appendChild(newContact);
+        contactCounter++;
+
+        // Smooth scroll to new contact
+        newContact.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function removeEmergencyContact(button) {
+        const contactForm = button.closest('.emergency-contact-form');
+        contactForm.remove();
+
+        // Renumber remaining contacts
+        const allContacts = document.querySelectorAll('.emergency-contact-form');
+        allContacts.forEach((contact, index) => {
+            const heading = contact.querySelector('h6');
+            if (heading) {
+                heading.textContent = `Contact #${index + 1}`;
+            }
+        });
+    }
+
+    function handlePrimaryChange(checkbox) {
+        if (checkbox.checked) {
+            // Uncheck all other primary checkboxes
+            const allPrimaryCheckboxes = document.querySelectorAll('input[name^="emergency_contact_primary_"]');
+            allPrimaryCheckboxes.forEach(cb => {
+                if (cb !== checkbox) {
+                    cb.checked = false;
+                }
+            });
+        }
+    }
+
+    // Add event listener to first contact's primary checkbox
+    document.addEventListener('DOMContentLoaded', function () {
+        const firstPrimary = document.getElementById('primary_0');
+        if (firstPrimary) {
+            firstPrimary.addEventListener('change', function () {
+                handlePrimaryChange(this);
+            });
+        }
+    });
+</script>
+
+<style>
+    .emergency-contact-form {
+        background: #f8f9fa;
+        transition: all 0.3s ease;
+    }
+
+    .emergency-contact-form:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .emergency-contact-form h6 {
+        color: #495057;
+        font-weight: 600;
+    }
+
+    .btn-outline-primary {
+        border-color: #5b5fc7;
+        color: #5b5fc7;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: #5b5fc7;
+        color: white;
+    }
+</style>
+{% endblock %}

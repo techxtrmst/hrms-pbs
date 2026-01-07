@@ -1,0 +1,928 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Leave Requests | Petabytz{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --keka-primary: #5b47fb;
+        --keka-primary-dark: #4a38e0;
+        --keka-success: #00c48c;
+        --keka-danger: #ff647c;
+        --keka-warning: #ffa26b;
+        --keka-info: #00d4ff;
+        --keka-bg: #f8f9fd;
+        --keka-card: #ffffff;
+        --keka-border: #e8ecf4;
+        --keka-text-primary: #1e2139;
+        --keka-text-secondary: #6c7293;
+        --keka-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        --keka-shadow-hover: 0 8px 24px rgba(91, 71, 251, 0.12);
+    }
+
+    body {
+        background: var(--keka-bg);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .page-header {
+        background: var(--keka-card);
+        padding: 24px 32px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid var(--keka-border);
+    }
+
+    .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--keka-text-primary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .page-subtitle {
+        font-size: 14px;
+        color: var(--keka-text-secondary);
+        margin: 4px 0 0 0;
+    }
+
+    .filter-section {
+        background: var(--keka-card);
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin-bottom: 24px;
+        box-shadow: var(--keka-shadow);
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        align-items: end;
+    }
+
+    .form-group {
+        margin: 0;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--keka-text-primary);
+        margin-bottom: 8px;
+    }
+
+    .form-control,
+    .form-select {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid var(--keka-border);
+        border-radius: 8px;
+        font-size: 14px;
+        color: var(--keka-text-primary);
+        background: white;
+        transition: all 0.2s ease;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        outline: none;
+        border-color: var(--keka-primary);
+        box-shadow: 0 0 0 3px rgba(91, 71, 251, 0.1);
+    }
+
+    .btn-keka {
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-primary-keka {
+        background: var(--keka-primary);
+        color: white;
+    }
+
+    .btn-primary-keka:hover {
+        background: var(--keka-primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(91, 71, 251, 0.3);
+    }
+
+    .btn-success-keka {
+        background: var(--keka-success);
+        color: white;
+    }
+
+    .btn-success-keka:hover {
+        background: #00b37e;
+        transform: translateY(-1px);
+    }
+
+    .btn-danger-keka {
+        background: var(--keka-danger);
+        color: white;
+    }
+
+    .btn-danger-keka:hover {
+        background: #ff5268;
+        transform: translateY(-1px);
+    }
+
+    .btn-outline-keka {
+        background: white;
+        color: var(--keka-text-secondary);
+        border: 1.5px solid var(--keka-border);
+    }
+
+    .btn-outline-keka:hover {
+        border-color: var(--keka-primary);
+        color: var(--keka-primary);
+    }
+
+    .leave-card {
+        background: var(--keka-card);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 16px;
+        box-shadow: var(--keka-shadow);
+        border: 1px solid var(--keka-border);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .leave-card:hover {
+        box-shadow: var(--keka-shadow-hover);
+        transform: translateY(-2px);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--keka-border);
+    }
+
+    .employee-section {
+        display: flex;
+        gap: 16px;
+        flex: 1;
+    }
+
+    .employee-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--keka-primary) 0%, #7c6bff 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+    .employee-info {
+        flex: 1;
+    }
+
+    .employee-name {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--keka-text-primary);
+        margin: 0 0 6px 0;
+    }
+
+    .employee-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        font-size: 13px;
+        color: var(--keka-text-secondary);
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .meta-divider {
+        color: var(--keka-border);
+    }
+
+    .status-badge {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-pending {
+        background: #fff4e6;
+        color: #ff9f43;
+    }
+
+    .status-approved {
+        background: #d4f4e2;
+        color: #00c48c;
+    }
+
+    .status-rejected {
+        background: #ffe5e9;
+        color: #ff647c;
+    }
+
+    .status-cancelled {
+        background: #f0f1f7;
+        color: #6c7293;
+    }
+
+    .leave-details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+    }
+
+    .detail-box {
+        background: var(--keka-bg);
+        padding: 14px 16px;
+        border-radius: 10px;
+        border-left: 3px solid var(--keka-primary);
+    }
+
+    .detail-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--keka-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+
+    .detail-value {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--keka-text-primary);
+    }
+
+    .leave-type-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .reason-section {
+        background: var(--keka-bg);
+        padding: 16px;
+        border-radius: 10px;
+        margin: 20px 0;
+    }
+
+    .reason-label {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--keka-text-primary);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .reason-text {
+        font-size: 14px;
+        color: var(--keka-text-secondary);
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    .balance-section {
+        background: linear-gradient(135deg, #f8f9fd 0%, #e8ecf4 100%);
+        padding: 20px;
+        border-radius: 12px;
+        margin: 20px 0;
+    }
+
+    .balance-header {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--keka-text-primary);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .balance-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 16px;
+    }
+
+    .balance-item {
+        text-align: center;
+        background: white;
+        padding: 12px;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    }
+
+    .balance-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--keka-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+
+    .balance-value {
+        font-size: 22px;
+        font-weight: 700;
+    }
+
+    .balance-positive {
+        color: var(--keka-success);
+    }
+
+    .balance-negative {
+        color: var(--keka-danger);
+    }
+
+    .warning-banner {
+        background: linear-gradient(135deg, #fff4e6 0%, #ffe8d1 100%);
+        border-left: 4px solid var(--keka-warning);
+        padding: 14px 16px;
+        border-radius: 10px;
+        margin: 16px 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .warning-icon {
+        font-size: 20px;
+        color: var(--keka-warning);
+    }
+
+    .warning-text {
+        font-size: 13px;
+        font-weight: 600;
+        color: #d97706;
+        margin: 0;
+    }
+
+    .action-section {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--keka-border);
+    }
+
+    .approval-info {
+        background: var(--keka-bg);
+        padding: 16px;
+        border-radius: 10px;
+        margin-top: 20px;
+    }
+
+    .approval-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 13px;
+    }
+
+    .approval-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .approval-label {
+        color: var(--keka-text-secondary);
+        font-weight: 600;
+    }
+
+    .approval-value {
+        color: var(--keka-text-primary);
+        font-weight: 600;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        background: var(--keka-card);
+        border-radius: 12px;
+        box-shadow: var(--keka-shadow);
+    }
+
+    .empty-icon {
+        font-size: 64px;
+        color: var(--keka-border);
+        margin-bottom: 16px;
+    }
+
+    .empty-text {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--keka-text-secondary);
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(30, 33, 57, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    .modal-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 20px;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 500px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .modal-header {
+        padding: 24px 28px;
+        border-bottom: 1px solid var(--keka-border);
+    }
+
+    .modal-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--keka-text-primary);
+        margin: 0;
+    }
+
+    .modal-subtitle {
+        font-size: 14px;
+        color: var(--keka-text-secondary);
+        margin: 4px 0 0 0;
+    }
+
+    .modal-body {
+        padding: 24px 28px;
+    }
+
+    .modal-footer {
+        padding: 20px 28px;
+        border-top: 1px solid var(--keka-border);
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    .close-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: var(--keka-text-secondary);
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: all 0.2s;
+    }
+
+    .close-btn:hover {
+        background: var(--keka-bg);
+        color: var(--keka-text-primary);
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 100px;
+        font-family: inherit;
+    }
+
+    .document-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: var(--keka-bg);
+        border: 1.5px solid var(--keka-border);
+        border-radius: 8px;
+        color: var(--keka-primary);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .document-link:hover {
+        background: var(--keka-primary);
+        color: white;
+        border-color: var(--keka-primary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        <span>📋</span>
+        Leave Requests
+    </h1>
+    <p class="page-subtitle">Review and manage employee leave applications</p>
+</div>
+
+<div class="container-fluid px-4 pb-4">
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <form method="get" class="filter-grid">
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="PENDING" {% if status_filter == 'PENDING' %}selected{% endif %}>Pending</option>
+                    <option value="APPROVED" {% if status_filter == 'APPROVED' %}selected{% endif %}>Approved</option>
+                    <option value="REJECTED" {% if status_filter == 'REJECTED' %}selected{% endif %}>Rejected</option>
+                    <option value="CANCELLED" {% if status_filter == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Employee</label>
+                <input type="text" name="employee" class="form-control" placeholder="Search by name or ID"
+                    value="{{ employee_filter }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Department</label>
+                <select name="department" class="form-select">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept }}" {% if department_filter == dept %}selected{% endif %}>{{ dept }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Leave Type</label>
+                <select name="leave_type" class="form-select">
+                    <option value="">All Types</option>
+                    <option value="CL" {% if leave_type_filter == 'CL' %}selected{% endif %}>Casual Leave</option>
+                    <option value="SL" {% if leave_type_filter == 'SL' %}selected{% endif %}>Sick Leave</option>
+                    <option value="EL" {% if leave_type_filter == 'EL' %}selected{% endif %}>Earned Leave</option>
+                    <option value="CO" {% if leave_type_filter == 'CO' %}selected{% endif %}>Comp Off</option>
+                    <option value="UL" {% if leave_type_filter == 'UL' %}selected{% endif %}>Unpaid Leave</option>
+                    <option value="OT" {% if leave_type_filter == 'OT' %}selected{% endif %}>Others</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn-keka btn-primary-keka" style="width: 100%;">
+                    <i class="fas fa-filter"></i>
+                    Apply Filters
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Leave Requests List -->
+    {% if leave_requests %}
+    {% for leave in leave_requests %}
+    <div class="leave-card">
+        <!-- Card Header -->
+        <div class="card-header">
+            <div class="employee-section">
+                <div class="employee-avatar">
+                    {{ leave.employee.user.first_name.0 }}{{ leave.employee.user.last_name.0 }}
+                </div>
+                <div class="employee-info">
+                    <h3 class="employee-name">{{ leave.employee.user.get_full_name }}</h3>
+                    <div class="employee-meta">
+                        <span class="meta-item">
+                            <i class="fas fa-id-badge"></i>
+                            {{ leave.employee.badge_id }}
+                        </span>
+                        <span class="meta-divider">•</span>
+                        <span class="meta-item">
+                            <i class="fas fa-briefcase"></i>
+                            {{ leave.employee.designation }}
+                        </span>
+                        <span class="meta-divider">•</span>
+                        <span class="meta-item">
+                            <i class="fas fa-building"></i>
+                            {{ leave.employee.department }}
+                        </span>
+                    </div>
+                    <div class="employee-meta" style="margin-top: 4px;">
+                        <span class="meta-item">
+                            <i class="fas fa-user-tie"></i>
+                            Manager: {{ leave.employee.manager.get_full_name|default:"N/A" }}
+                        </span>
+                        <span class="meta-divider">•</span>
+                        <span class="meta-item">
+                            <i class="fas fa-clock"></i>
+                            {{ leave.employee.get_work_type_display }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <span class="status-badge status-{{ leave.status|lower }}">
+                {{ leave.get_status_display }}
+            </span>
+        </div>
+
+        <!-- Leave Details -->
+        <div class="leave-details-grid">
+            <div class="detail-box">
+                <div class="detail-label">Leave Type</div>
+                <div class="detail-value">
+                    <span class="leave-type-tag">
+                        <i class="fas fa-calendar-alt"></i>
+                        {{ leave.get_leave_type_display }}
+                    </span>
+                </div>
+            </div>
+            <div class="detail-box">
+                <div class="detail-label">From Date</div>
+                <div class="detail-value">{{ leave.start_date|date:"d M, Y" }}</div>
+            </div>
+            <div class="detail-box">
+                <div class="detail-label">To Date</div>
+                <div class="detail-value">{{ leave.end_date|date:"d M, Y" }}</div>
+            </div>
+            <div class="detail-box">
+                <div class="detail-label">Total Days</div>
+                <div class="detail-value">{{ leave.total_days }} day{{ leave.total_days|pluralize }}</div>
+            </div>
+            <div class="detail-box">
+                <div class="detail-label">Duration</div>
+                <div class="detail-value">{{ leave.get_duration_display }}</div>
+            </div>
+            <div class="detail-box">
+                <div class="detail-label">Applied On</div>
+                <div class="detail-value">{{ leave.created_at|date:"d M, Y" }}</div>
+            </div>
+        </div>
+
+        <!-- Reason -->
+        <div class="reason-section">
+            <div class="reason-label">
+                <i class="fas fa-comment-dots"></i>
+                Reason for Leave
+            </div>
+            <p class="reason-text">{{ leave.reason|default:"No reason provided" }}</p>
+        </div>
+
+        <!-- Supporting Document -->
+        {% if leave.supporting_document %}
+        <div style="margin: 16px 0;">
+            <a href="{{ leave.supporting_document.url }}" target="_blank" class="document-link">
+                <i class="fas fa-paperclip"></i>
+                View Supporting Document
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Leave Balance -->
+        <div class="balance-section">
+            <div class="balance-header">
+                <i class="fas fa-chart-pie"></i>
+                Current Leave Balance
+            </div>
+            <div class="balance-grid">
+                <div class="balance-item">
+                    <div class="balance-label">CL</div>
+                    <div
+                        class="balance-value {% if leave.employee.leave_balance.casual_leave_balance >= 0 %}balance-positive{% else %}balance-negative{% endif %}">
+                        {{ leave.employee.leave_balance.casual_leave_balance }}
+                    </div>
+                </div>
+                <div class="balance-item">
+                    <div class="balance-label">SL</div>
+                    <div
+                        class="balance-value {% if leave.employee.leave_balance.sick_leave_balance >= 0 %}balance-positive{% else %}balance-negative{% endif %}">
+                        {{ leave.employee.leave_balance.sick_leave_balance }}
+                    </div>
+                </div>
+                <div class="balance-item">
+                    <div class="balance-label">EL</div>
+                    <div
+                        class="balance-value {% if leave.employee.leave_balance.earned_leave_balance >= 0 %}balance-positive{% else %}balance-negative{% endif %}">
+                        {{ leave.employee.leave_balance.earned_leave_balance }}
+                    </div>
+                </div>
+                <div class="balance-item">
+                    <div class="balance-label">Comp Off</div>
+                    <div
+                        class="balance-value {% if leave.employee.leave_balance.comp_off_balance >= 0 %}balance-positive{% else %}balance-negative{% endif %}">
+                        {{ leave.employee.leave_balance.comp_off_balance }}
+                    </div>
+                </div>
+            </div>
+
+            {% if leave.is_negative_balance %}
+            <div class="warning-banner">
+                <i class="fas fa-exclamation-triangle warning-icon"></i>
+                <p class="warning-text">Warning: Approving this leave will result in negative balance!</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Actions or Approval Info -->
+        {% if leave.status == 'PENDING' %}
+        <div class="action-section">
+            <button class="btn-keka btn-success-keka"
+                onclick="approveLeave({{ leave.id }}, '{{ leave.employee.user.get_full_name }}')">
+                <i class="fas fa-check-circle"></i>
+                Approve Leave
+            </button>
+            <button class="btn-keka btn-danger-keka"
+                onclick="rejectLeave({{ leave.id }}, '{{ leave.employee.user.get_full_name }}')">
+                <i class="fas fa-times-circle"></i>
+                Reject Leave
+            </button>
+        </div>
+        {% else %}
+        <div class="approval-info">
+            <div class="approval-row">
+                <span class="approval-label">Action Taken By:</span>
+                <span class="approval-value">{{ leave.approved_by.get_full_name|default:"System" }}</span>
+            </div>
+            <div class="approval-row">
+                <span class="approval-label">Action Date:</span>
+                <span class="approval-value">{{ leave.approved_at|date:"d M, Y H:i"|default:"N/A" }}</span>
+            </div>
+            {% if leave.admin_comment %}
+            <div class="approval-row">
+                <span class="approval-label">Comment:</span>
+                <span class="approval-value">{{ leave.admin_comment }}</span>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <p class="empty-text">No leave requests found</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Approve Modal -->
+<div id="approveModal" class="modal-overlay">
+    <div class="modal-container" onclick="if(event.target === this) closeModal('approveModal')">
+        <div class="modal-content">
+            <div class="modal-header" style="position: relative;">
+                <button class="close-btn" onclick="closeModal('approveModal')">&times;</button>
+                <h2 class="modal-title">Approve Leave Request</h2>
+                <p class="modal-subtitle" id="approveEmployeeName"></p>
+            </div>
+            <form method="post" id="approveForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="approve">
+                <input type="hidden" name="leave_id" id="approveLeaveId">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Admin Comment (Optional)</label>
+                        <textarea name="admin_comment" class="form-control" rows="4"
+                            placeholder="Add any remarks or notes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-keka btn-outline-keka" onclick="closeModal('approveModal')">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-keka btn-success-keka">
+                        <i class="fas fa-check"></i>
+                        Confirm Approval
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div id="rejectModal" class="modal-overlay">
+    <div class="modal-container" onclick="if(event.target === this) closeModal('rejectModal')">
+        <div class="modal-content">
+            <div class="modal-header" style="position: relative;">
+                <button class="close-btn" onclick="closeModal('rejectModal')">&times;</button>
+                <h2 class="modal-title">Reject Leave Request</h2>
+                <p class="modal-subtitle" id="rejectEmployeeName"></p>
+            </div>
+            <form method="post" id="rejectForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reject">
+                <input type="hidden" name="leave_id" id="rejectLeaveId">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Rejection Reason <span
+                                style="color: var(--keka-danger);">*</span></label>
+                        <textarea name="admin_comment" class="form-control" rows="4"
+                            placeholder="Please provide a reason for rejection..." required></textarea>
+                        <small
+                            style="color: var(--keka-text-secondary); font-size: 12px; margin-top: 6px; display: block;">
+                            A reason is mandatory when rejecting a leave request
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-keka btn-outline-keka" onclick="closeModal('rejectModal')">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-keka btn-danger-keka">
+                        <i class="fas fa-times"></i>
+                        Confirm Rejection
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function approveLeave(leaveId, employeeName) {
+        document.getElementById('approveLeaveId').value = leaveId;
+        document.getElementById('approveEmployeeName').textContent = 'For: ' + employeeName;
+        document.getElementById('approveModal').style.display = 'block';
+    }
+
+    function rejectLeave(leaveId, employeeName) {
+        document.getElementById('rejectLeaveId').value = leaveId;
+        document.getElementById('rejectEmployeeName').textContent = 'For: ' + employeeName;
+        document.getElementById('rejectModal').style.display = 'block';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeModal('approveModal');
+            closeModal('rejectModal');
+        }
+    });
+</script>
+{% endblock %}

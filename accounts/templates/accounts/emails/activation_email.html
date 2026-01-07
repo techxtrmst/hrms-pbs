@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Activate Your Account</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .logo-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        .content {
+            padding: 40px 30px;
+            color: #333333;
+            line-height: 1.6;
+        }
+
+        .greeting {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2d3748;
+        }
+
+        .message-body {
+            font-size: 16px;
+            color: #4a5568;
+            margin-bottom: 30px;
+        }
+
+        .btn-container {
+            text-align: center;
+            margin: 35px 0;
+        }
+
+        .btn-primary {
+            background-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 16px 36px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .note {
+            font-size: 13px;
+            color: #718096;
+            text-align: center;
+            margin-top: 30px;
+            border-top: 1px solid #edf2f7;
+            padding-top: 20px;
+        }
+
+        .footer {
+            background-color: #f8fafc;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #a0aec0;
+            border-top: 1px solid #edf2f7;
+        }
+
+        .link-fallback {
+            word-break: break-all;
+            color: #667eea;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-icon">&#128187;</div> <!-- Computer Icon Unicode -->
+            <h1>Petabytz HRMS</h1>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="greeting">Hi {{ first_name }},</div>
+
+            <div class="message-body">
+                <p><strong>Welcome to the team!</strong></p>
+                <p>We are thrilled to have you onboard. Your employee account has been successfully created.</p>
+                <p>To get started, please activate your account and set your secure password by clicking the button
+                    below:</p>
+            </div>
+
+            <div class="btn-container">
+                <a href="{{ activation_link }}" class="btn-primary">Activate Account</a>
+            </div>
+
+            <div class="note">
+                <p>This activation link is valid for <strong>24 hours</strong>.</p>
+                <p style="margin-top: 10px;">If the button above doesn't work, copy and paste this link into your
+                    browser:</p>
+                <div class="link-fallback">{{ activation_link }}</div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            &copy; 2025 {{ company_name|default:"Petabytz" }}. All rights reserved.<br>
+            This is an automated system email. Please do not reply.
+        </div>
+    </div>
+</body>
+
+</html>

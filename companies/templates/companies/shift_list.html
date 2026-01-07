@@ -1,0 +1,89 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Shift Settings - HRMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0 text-gray-800">Shift Settings</h1>
+            <p class="text-muted">Configure shift timings, grace periods, and rules.</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'shift_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Create New Shift
+            </a>
+        </div>
+    </div>
+
+    <!-- Shift Cards -->
+    <div class="row">
+        {% for shift in shifts %}
+        <div class="col-md-6 col-xl-4 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="m-0 font-weight-bold text-primary">{{ shift.name }}</h5>
+                    <span
+                        class="badge {% if shift.shift_type == 'MORNING' %}bg-success{% elif shift.shift_type == 'AFTERNOON' %}bg-warning{% else %}bg-dark{% endif %}">
+                        {{ shift.get_shift_type_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-uppercase text-muted fw-bold">Timings</small>
+                        <div class="h5 mt-1">{{ shift.start_time|time:"h:i A" }} - {{ shift.end_time|time:"h:i A" }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-uppercase text-muted fw-bold">Grace Period</small>
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <span>{{ shift.grace_period_minutes }} mins</span>
+                            {% with limit=shift.allowed_late_logins %}
+                            <span class="badge bg-info text-dark" title="Allowed Late Logins">{{ limit }}/month</span>
+                            {% endwith %}
+                        </div>
+                        <small class="text-muted d-block mt-1">
+                            Action: {{ shift.get_grace_exceeded_action_display }}
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-uppercase text-muted fw-bold">Breaks</small>
+                        <ul class="list-unstyled mt-1 mb-0">
+                            {% for brk in shift.breaks.all %}
+                            <li class="d-flex justify-content-between mb-1">
+                                <span>{{ brk.name }}</span>
+                                <span class="text-muted small">{{ brk.start_time|time:"h:i A" }}</span>
+                                <span class="text-muted small">({{ brk.duration_minutes }}m)</span>
+                            </li>
+                            {% empty %}
+                            <li class="text-muted fst-italic">No breaks configured</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-top-0 d-flex justify-content-end">
+                    <a href="{% url 'shift_edit' shift.pk %}" class="btn btn-sm btn-outline-primary me-2">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    <a href="{% url 'shift_delete' shift.pk %}" class="btn btn-sm btn-outline-danger"
+                        title="Delete Shift">
+                        <i class="fas fa-trash-alt"></i> Delete
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <div class="text-muted mb-3">
+                <i class="fas fa-clock fa-3x"></i>
+            </div>
+            <h4>No Shifts Configured</h4>
+            <p class="text-muted">Get started by creating your first shift schedule.</p>
+            <a href="{% url 'shift_create' %}" class="btn btn-primary mt-2">Create Shift</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

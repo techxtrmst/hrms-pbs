@@ -1,0 +1,439 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Regularize Attendance | HRMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+    :root {
+        --primary-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.2);
+        --shadow-soft: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+        --shadow-hover: 0 20px 40px -10px rgba(0, 0, 0, 0.12);
+        --text-main: #1e293b;
+        --text-light: #64748b;
+        --radius-lg: 24px;
+        --radius-md: 16px;
+    }
+
+    body {
+        font-family: 'Outfit', system-ui, -apple-system, sans-serif !important;
+        background-color: #f8fafc;
+        background-image:
+            radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+            radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.15) 0px, transparent 50%);
+        background-attachment: fixed;
+    }
+
+    /* Modern Card */
+    .modern-card {
+        background: var(--glass-bg);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-soft);
+        backdrop-filter: blur(20px);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden;
+    }
+
+    /* Form Elements */
+    .form-group-modern {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-control-modern {
+        width: 100%;
+        padding: 16px 20px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--text-main);
+        background: #f1f5f9;
+        border: 2px solid transparent;
+        border-radius: var(--radius-md);
+        transition: all 0.3s ease;
+    }
+
+    .form-control-modern:focus {
+        background: #fff;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        outline: none;
+    }
+
+    .form-label-modern {
+        position: absolute;
+        top: -10px;
+        left: 15px;
+        background: #fff;
+        padding: 0 8px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6366f1;
+        border-radius: 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        z-index: 10;
+        pointer-events: none;
+    }
+
+    /* Button */
+    .btn-submit-modern {
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        padding: 16px;
+        border-radius: var(--radius-md);
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .btn-submit-modern:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-submit-modern:active {
+        transform: translateY(0);
+    }
+
+    /* Stats Pill */
+    .duration-pill {
+        background: #e0e7ff;
+        color: #4338ca;
+        padding: 8px 16px;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: all 0.3s ease;
+    }
+
+    .duration-pill.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* Timeline Styling */
+    .history-container {
+        max-height: 600px;
+        overflow-y: auto;
+        padding-right: 10px;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-left: 40px;
+        padding-bottom: 30px;
+        border-left: 2px solid #e2e8f0;
+        margin-left: 10px;
+    }
+
+    .timeline-item:last-child {
+        border-left-color: transparent;
+    }
+
+    .timeline-dot {
+        position: absolute;
+        left: -9px;
+        top: 0;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+    }
+
+    .timeline-dot.pending {
+        background: #f59e0b;
+    }
+
+    .timeline-dot.approved {
+        background: #10b981;
+    }
+
+    .timeline-dot.rejected {
+        background: #ef4444;
+    }
+
+    .history-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        border: 1px solid #f1f5f9;
+        transition: transform 0.2s;
+    }
+
+    .history-card:hover {
+        transform: translateX(5px);
+        border-color: #e2e8f0;
+    }
+
+    /* Header Graphics */
+    .header-graphic {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 150px;
+        height: 150px;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+        border-radius: 0 0 0 100%;
+        pointer-events: none;
+    }
+
+    /* Custom Scrollbar */
+    .history-container::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    .history-container::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row g-5">
+        <!-- Left Column: Form -->
+        <div class="col-lg-5">
+            <div class="modern-card p-4 p-md-5 position-relative">
+                <div class="header-graphic"></div>
+
+                <div class="mb-5">
+                    <span
+                        class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 mb-3 fw-bold small">Attendance
+                        Correction</span>
+                    <h2 class="fw-bold text-dark mb-2">Request Regularization</h2>
+                    <p class="text-secondary small">Correct your attendance records by submitting a request to your
+                        manager.</p>
+                </div>
+
+                <form method="post" novalidate id="regForm">
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger border-0 shadow-sm rounded-3 mb-4">
+                        <i class="fas fa-exclamation-circle me-2"></i> {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+
+                    <!-- Date Selection -->
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Misssing Date</label>
+                        {{ form.date }}
+                        {% if form.date.errors %}
+                        <div class="text-danger small mt-1 ms-2"><i class="fas fa-exclamation-circle me-1"></i>{{ form.date.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Time Stats -->
+                    <div class="d-flex justify-content-center mb-4">
+                        <div id="durationPill" class="duration-pill">
+                            <i class="fas fa-hourglass-half"></i> <span id="durationText">0h 0m</span>
+                        </div>
+                    </div>
+
+                    <!-- Layout for Time -->
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Check In</label>
+                                {{ form.check_in }}
+                                {% if form.check_in.errors %}
+                                <div class="text-danger small mt-1 ms-2">{{ form.check_in.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Check Out</label>
+                                {{ form.check_out }}
+                                {% if form.check_out.errors %}
+                                <div class="text-danger small mt-1 ms-2">{{ form.check_out.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reason -->
+                    <div class="form-group-modern mt-2">
+                        <label class="form-label-modern">Reason for Correction</label>
+                        {{ form.reason }}
+                        {% if form.reason.errors %}
+                        <div class="text-danger small mt-1 ms-2">{{ form.reason.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn-submit-modern mt-3">
+                        Submit Request <i class="fas fa-arrow-right ms-2 opacity-75"></i>
+                    </button>
+
+                    <p class="text-center text-muted small mt-4 mb-0">
+                        <i class="fas fa-info-circle me-1"></i> Request will be sent to your Reporting Manager.
+                    </p>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Column: Timeline History -->
+        <div class="col-lg-7">
+            <div class="ps-lg-4">
+                <div class="d-flex justify-content-between align-items-end mb-4">
+                    <div>
+                        <h4 class="fw-bold text-dark mb-1">Your Requests</h4>
+                        <p class="text-secondary small mb-0">Track the status of past correction requests.</p>
+                    </div>
+                </div>
+
+                <div class="history-container custom-scrollbar">
+                    {% for req in history %}
+                    <div class="timeline-item">
+                        <div class="timeline-dot {{ req.status|lower }}"></div>
+
+                        <div class="history-card">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="fw-bold mb-0 text-dark">{{ req.date|date:"F j, Y" }}</h6>
+                                    <small class="text-muted">{{ req.date|date:"l" }}</small>
+                                </div>
+                                {% if req.status == 'APPROVED' %}
+                                <span
+                                    class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3">Approved</span>
+                                {% elif req.status == 'REJECTED' %}
+                                <span
+                                    class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3">Rejected</span>
+                                {% else %}
+                                <span
+                                    class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3">Pending</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="d-flex align-items-center bg-light rounded p-2 mb-2">
+                                <div class="me-4">
+                                    <i class="fas fa-sign-in-alt text-success me-1 small"></i>
+                                    <span class="fw-medium small">{{ req.check_in|time:"H:i"|default:"--" }}</span>
+                                </div>
+                                <div class="me-4 text-muted small">
+                                    <i class="fas fa-arrow-right"></i>
+                                </div>
+                                <div>
+                                    <i class="fas fa-sign-out-alt text-danger me-1 small"></i>
+                                    <span class="fw-medium small">{{ req.check_out|time:"H:i"|default:"--" }}</span>
+                                </div>
+                            </div>
+
+                            <p class="mb-0 small text-secondary fst-italic">"{{ req.reason }}"</p>
+
+                            {% if req.manager_comment %}
+                            <div class="mt-2 pt-2 border-top">
+                                <p class="mb-0 small text-dark">
+                                    <i class="fas fa-user-tie me-1 text-primary"></i>
+                                    <strong>Manager Note:</strong> {{ req.manager_comment }}
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mt-1 ms-1 text-muted small" style="font-size: 0.7rem;">
+                            Submitted {{ req.created_at|timesince }} ago
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <i class="fas fa-history text-muted opacity-25" style="font-size: 3rem;"></i>
+                        </div>
+                        <h6 class="fw-bold text-muted">No History Found</h6>
+                        <p class="text-muted small">You haven't raised any regularization requests yet.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Add specific classes to Django rendered form inputs
+        const inputs = document.querySelectorAll('#regForm input, #regForm textarea');
+        inputs.forEach(input => {
+            input.classList.add('form-control-modern');
+            if (input.type === 'date' || input.type === 'time') {
+                input.style.cursor = 'pointer';
+            }
+        });
+
+        // Current Date Validation
+        const dateInput = document.querySelector('input[type="date"]');
+        if (dateInput) {
+            // Prevent future dates
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.setAttribute('max', today);
+        }
+
+        // Duration Calculator
+        const checkIn = document.querySelector('input[name="check_in"]');
+        const checkOut = document.querySelector('input[name="check_out"]');
+        const pill = document.getElementById('durationPill');
+        const durationText = document.getElementById('durationText');
+
+        function calculateDuration() {
+            if (checkIn.value && checkOut.value) {
+                const start = new Date("2000-01-01 " + checkIn.value);
+                const end = new Date("2000-01-01 " + checkOut.value);
+
+                if (end > start) {
+                    const diff = end - start;
+                    const hours = Math.floor(diff / 1000 / 60 / 60);
+                    const minutes = Math.floor((diff / 1000 / 60) % 60);
+
+                    durationText.innerText = `${hours}h ${minutes}m`;
+                    pill.classList.add('visible');
+                    pill.style.background = '#e0e7ff';
+                    pill.style.color = '#4338ca';
+                } else {
+                    durationText.innerText = "Invalid Time";
+                    pill.classList.add('visible');
+                    pill.style.background = '#fee2e2';
+                    pill.style.color = '#ef4444';
+                }
+            } else {
+                pill.classList.remove('visible');
+            }
+        }
+
+        if (checkIn && checkOut) {
+            checkIn.addEventListener('input', calculateDuration);
+            checkOut.addEventListener('input', calculateDuration);
+        }
+
+        // Staggered Animation for history items
+        const timelineItems = document.querySelectorAll('.timeline-item');
+        timelineItems.forEach((item, index) => {
+            item.style.opacity = '0';
+            item.style.transform = 'translateY(20px)';
+            item.style.transition = 'all 0.4s ease';
+
+            setTimeout(() => {
+                item.style.opacity = '1';
+                item.style.transform = 'translateY(0)';
+            }, 100 + (index * 100));
+        });
+    });
+</script>
+{% endblock %}

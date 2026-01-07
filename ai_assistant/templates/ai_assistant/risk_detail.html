@@ -1,0 +1,303 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Employee Risk Detail - {{ employee.user.get_full_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .risk-detail-page {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 3rem 0;
+    }
+
+    .detail-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .detail-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 25px;
+        padding: 3rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        animation: fadeInUp 0.6s ease;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .employee-header {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid #e2e8f0;
+        margin-bottom: 2rem;
+    }
+
+    .employee-avatar-large {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 800;
+        font-size: 2.5rem;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .employee-info h2 {
+        color: #2d3748;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+    }
+
+    .employee-info p {
+        color: #718096;
+        margin: 0.25rem 0;
+    }
+
+    .risk-score-section {
+        text-align: center;
+        padding: 2rem;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border-radius: 20px;
+        margin-bottom: 2rem;
+    }
+
+    .risk-score-large {
+        font-size: 5rem;
+        font-weight: 900;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        line-height: 1;
+        margin-bottom: 1rem;
+    }
+
+    .risk-level-badge-large {
+        display: inline-block;
+        padding: 1rem 2.5rem;
+        border-radius: 50px;
+        font-weight: 800;
+        font-size: 1.5rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .risk-level-badge-large.CRITICAL {
+        background: linear-gradient(135deg, #ff6b6b 0%, #dc3545 100%);
+        color: white;
+        box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
+    }
+
+    .risk-level-badge-large.HIGH {
+        background: linear-gradient(135deg, #ffa94d 0%, #fd7e14 100%);
+        color: white;
+        box-shadow: 0 8px 25px rgba(253, 126, 20, 0.4);
+    }
+
+    .risk-level-badge-large.MEDIUM {
+        background: linear-gradient(135deg, #ffd93d 0%, #ffc107 100%);
+        color: #000;
+        box-shadow: 0 8px 25px rgba(255, 193, 7, 0.4);
+    }
+
+    .risk-level-badge-large.LOW {
+        background: linear-gradient(135deg, #6bcf7f 0%, #28a745 100%);
+        color: white;
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+    }
+
+    .factors-section h3 {
+        color: #2d3748;
+        font-weight: 800;
+        margin-bottom: 1.5rem;
+    }
+
+    .factor-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 15px;
+        margin-bottom: 1rem;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        border-left: 4px solid #667eea;
+    }
+
+    .factor-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .factor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .factor-name {
+        font-weight: 700;
+        color: #2d3748;
+        font-size: 1.1rem;
+    }
+
+    .factor-score {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-weight: 700;
+    }
+
+    .factor-description {
+        color: #718096;
+        margin-bottom: 0.5rem;
+    }
+
+    .factor-count {
+        color: #2d3748;
+        font-weight: 700;
+        font-size: 1.5rem;
+    }
+
+    .back-btn {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: 700;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        margin-top: 2rem;
+    }
+
+    .back-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+
+    .recommendation-box {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%);
+        border-left: 4px solid #ffc107;
+        padding: 1.5rem;
+        border-radius: 15px;
+        margin-top: 2rem;
+    }
+
+    .recommendation-box h4 {
+        color: #2d3748;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .recommendation-box ul {
+        margin: 0;
+        padding-left: 1.5rem;
+    }
+
+    .recommendation-box li {
+        color: #718096;
+        margin-bottom: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="risk-detail-page">
+    <div class="container">
+        <div class="detail-container">
+            <div class="detail-card">
+                <div class="employee-header">
+                    <div class="employee-avatar-large">
+                        {{ employee.user.first_name|first }}{{ employee.user.last_name|first }}
+                    </div>
+                    <div class="employee-info">
+                        <h2>{{ employee.user.get_full_name }}</h2>
+                        <p><strong>Designation:</strong> {{ employee.designation }}</p>
+                        <p><strong>Department:</strong> {{ employee.department }}</p>
+                        <p><strong>Email:</strong> {{ employee.user.email }}</p>
+                    </div>
+                </div>
+
+                <div class="risk-score-section">
+                    <div class="risk-score-large">{{ risk.risk_score|floatformat:0 }}%</div>
+                    <span class="risk-level-badge-large {{ risk.risk_level }}">
+                        {{ risk.get_risk_level_display }}
+                    </span>
+                </div>
+
+                <div class="factors-section">
+                    <h3>🔍 Risk Factors Analysis</h3>
+
+                    {% for factor_key, factor_data in risk.risk_factors.items %}
+                    <div class="factor-card">
+                        <div class="factor-header">
+                            <span class="factor-name">
+                                {% if factor_key == 'sick_leaves' %}
+                                🏥 Sick Leaves
+                                {% elif factor_key == 'late_arrivals' %}
+                                ⏰ Late Arrivals
+                                {% elif factor_key == 'missing_punches' %}
+                                ❌ Missing Punches
+                                {% elif factor_key == 'absences' %}
+                                📅 Absences
+                                {% elif factor_key == 'tenure' %}
+                                📊 Tenure
+                                {% endif %}
+                            </span>
+                            <span class="factor-score">+{{ factor_data.score }} points</span>
+                        </div>
+                        <p class="factor-description">{{ factor_data.description }}</p>
+                        {% if factor_data.count %}
+                        <div class="factor-count">Count: {{ factor_data.count }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if risk.risk_level == 'CRITICAL' or risk.risk_level == 'HIGH' %}
+                <div class="recommendation-box">
+                    <h4>
+                        <i class="fas fa-lightbulb"></i>
+                        Recommended Actions
+                    </h4>
+                    <ul>
+                        <li>Schedule a one-on-one meeting to understand concerns</li>
+                        <li>Review workload and work-life balance</li>
+                        <li>Discuss career growth opportunities</li>
+                        <li>Consider flexible work arrangements if applicable</li>
+                        <li>Provide additional support or training if needed</li>
+                    </ul>
+                </div>
+                {% endif %}
+
+                <a href="{% url 'attrition_dashboard' %}" class="back-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

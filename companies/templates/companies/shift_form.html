@@ -1,0 +1,501 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}Create{% endif %} Shift - HRMS{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: 1px solid rgba(255, 255, 255, 0.2);
+        --card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+        --input-bg: #f8fafc;
+        --input-border: #e2e8f0;
+        --input-focus: #6366f1;
+    }
+
+    body {
+        font-family: 'Outfit', sans-serif;
+        background-color: #f1f5f9;
+        color: #1e293b;
+    }
+
+    /* Animation */
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-enter {
+        animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-weight: 700;
+        font-size: 1.75rem;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -0.02em;
+    }
+
+    /* Cards */
+    .premium-card {
+        background: var(--glass-bg);
+        border: var(--glass-border);
+        border-radius: 20px;
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        transition: transform 0.3s ease;
+        margin-bottom: 24px;
+    }
+
+    .premium-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header-custom {
+        padding: 24px;
+        background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0));
+        border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #334155;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .section-icon {
+        width: 32px;
+        height: 32px;
+        background: #e0e7ff;
+        color: #4f46e5;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+    }
+
+    .card-body-custom {
+        padding: 32px;
+    }
+
+    /* Form Controls */
+    .form-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .form-control,
+    .form-select {
+        background-color: var(--input-bg);
+        border: 1px solid var(--input-border);
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #1e293b;
+        transition: all 0.2s ease;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        background-color: #fff;
+        border-color: var(--input-focus);
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+    /* Break Items */
+    .break-item {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 16px;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .break-item:hover {
+        border-color: #6366f1;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.05);
+    }
+
+    .break-index {
+        position: absolute;
+        left: -12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 24px;
+        height: 24px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        color: #94a3b8;
+        z-index: 10;
+        font-weight: 700;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Buttons */
+    .btn-action {
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+        border: none;
+    }
+
+    .btn-primary-custom {
+        background: var(--primary-gradient);
+        color: white;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+
+    .btn-primary-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(79, 70, 229, 0.4);
+    }
+
+    .btn-back {
+        background: white;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+    }
+
+    .btn-back:hover {
+        background: #f8fafc;
+        color: #334155;
+        border-color: #cbd5e1;
+    }
+
+    .btn-add-break {
+        background: #dcfce7;
+        /* Light green */
+        color: #166534;
+        border: 1px solid transparent;
+        padding: 8px 16px;
+        font-size: 0.85rem;
+        border-radius: 30px;
+    }
+
+    .btn-add-break:hover {
+        background: #bbf7d0;
+        color: #14532d;
+    }
+
+    .btn-remove {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fee2e2;
+        color: #dc2626;
+        border: none;
+        transition: all 0.2s;
+    }
+
+    .btn-remove:hover {
+        background: #ef4444;
+        color: white;
+        transform: rotate(90deg);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4" style="max-width: 1000px;">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center page-header animate-enter">
+        <div>
+            <h1 class="page-title mb-2">{% if form.instance.pk %}Edit{% else %}Create{% endif %} Shift</h1>
+            <p class="text-muted mb-0">Define working hours, grace periods, and break schedules.</p>
+        </div>
+        <a href="{% url 'shift_list' %}" class="btn-action btn-back shadow-sm">
+            <i class="fas fa-arrow-left me-2"></i> Back
+        </a>
+    </div>
+
+    <form method="post" class="needs-validation" novalidate>
+        {% csrf_token %}
+
+        <!-- Shift Details -->
+        <div class="premium-card animate-enter" style="animation-delay: 0.1s;">
+            <div class="card-header-custom">
+                <div class="section-title">
+                    <div class="section-icon"><i class="fas fa-clock"></i></div>
+                    Shift Configuration
+                </div>
+            </div>
+            <div class="card-body-custom">
+                <div class="row g-4">
+                    <div class="col-md-7">
+                        <label for="{{ form.name.id_for_label }}" class="form-label">Shift Name</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                        <div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-5">
+                        <label for="{{ form.shift_type.id_for_label }}" class="form-label">Shift Type</label>
+                        {{ form.shift_type }}
+                    </div>
+                </div>
+
+                <div class="row g-4 mt-2">
+                    <div class="col-md-6">
+                        <label for="{{ form.start_time.id_for_label }}" class="form-label">Start Time</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 rounded-start-3 ms-1"
+                                style="border-radius: 12px 0 0 12px;"><i class="far fa-clock text-muted"></i></span>
+                            {{ form.start_time }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.end_time.id_for_label }}" class="form-label">End Time</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 rounded-start-3 ms-1"
+                                style="border-radius: 12px 0 0 12px;"><i class="far fa-clock text-muted"></i></span>
+                            {{ form.end_time }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grace Rules -->
+        <div class="premium-card animate-enter" style="animation-delay: 0.2s;">
+            <div class="card-header-custom">
+                <div class="section-title">
+                    <div class="section-icon"><i class="fas fa-hourglass-half"></i></div>
+                    Attendance Rules
+                </div>
+            </div>
+            <div class="card-body-custom">
+                <div class="row g-4">
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.grace_period_minutes.id_for_label }}" class="form-label">Grace Period
+                            (Mins)</label>
+                        {{ form.grace_period_minutes }}
+                        <div class="form-text small">Minutes allowed after start time.</div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.allowed_late_logins.id_for_label }}" class="form-label">Late Logins
+                            Allowed</label>
+                        {{ form.allowed_late_logins }}
+                        <div class="form-text small">Max late logins per month.</div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.grace_exceeded_action.id_for_label }}" class="form-label">Penalty
+                            Action</label>
+                        {{ form.grace_exceeded_action }}
+                        <div class="form-text small">Action when limit exceeded.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Breaks -->
+        <div class="premium-card animate-enter" style="animation-delay: 0.3s;">
+            <div class="card-header-custom">
+                <div class="section-title">
+                    <div class="section-icon"><i class="fas fa-mug-hot"></i></div>
+                    Break Schedule
+                </div>
+                <button type="button" id="add-break-btn" class="btn-action btn-add-break">
+                    <i class="fas fa-plus me-1"></i> Add Break
+                </button>
+            </div>
+            <div class="card-body-custom bg-light-subtle">
+                {{ break_formset.management_form }}
+                <div id="break-forms-container">
+                    {% for b_form in break_formset %}
+                    <div class="break-item break-form-row">
+                        <div class="break-index">#</div>
+                        {{ b_form.id }}
+                        <div class="row align-items-end g-3">
+                            <div class="col-md-5">
+                                <label class="form-label small">Break Name</label>
+                                {{ b_form.name }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">Start</label>
+                                {{ b_form.start_time }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">End</label>
+                                {{ b_form.end_time }}
+                            </div>
+                            <div class="col-md-1 text-center">
+                                {% if break_formset.can_delete %}
+                                {% if b_form.instance.pk %}
+                                <div class="form-check d-flex justify-content-center mb-2">
+                                    {{ b_form.DELETE }}
+                                </div>
+                                <small class="text-danger fw-bold" style="font-size: 0.65rem;">DEL</small>
+                                {% else %}
+                                <!-- For unsaved forms, show button (but typically Django renders checkbox) -->
+                                <!-- We can hide standard delete checkbox via CSS and use JS? -->
+                                <!-- For existing forms, keep checking box. For new forms, JS remove button is mostly used. -->
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Empty Form Template -->
+                <div id="empty-form" style="display:none;">
+                    <div class="break-item break-form-row">
+                        <div class="break-index"><i class="fas fa-plus" style="font-size: 0.6rem;"></i></div>
+                        {{ break_formset.empty_form.id }}
+                        <div class="row align-items-end g-3">
+                            <div class="col-md-5">
+                                <label class="form-label small">Break Name</label>
+                                {{ break_formset.empty_form.name }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">Start</label>
+                                {{ break_formset.empty_form.start_time }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">End</label>
+                                {{ break_formset.empty_form.end_time }}
+                            </div>
+                            <div class="col-md-1 text-center">
+                                <button type="button" class="btn-remove remove-form-row" title="Remove Break">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Sticky Footer Action -->
+        <div class="d-flex justify-content-end pb-5 animate-enter" style="animation-delay: 0.4s;">
+            <button type="submit" class="btn-action btn-primary-custom px-5">
+                <i class="fas fa-save me-2"></i> Save Configuration
+            </button>
+        </div>
+
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const container = document.getElementById('break-forms-container');
+        const addButton = document.getElementById('add-break-btn');
+        const emptyFormTemplate = document.getElementById('empty-form').innerHTML;
+        const totalFormsInput = document.getElementById('id_breaks-TOTAL_FORMS');
+
+        // Enhance existing inputs on load
+        document.querySelectorAll('input[type="text"], input[type="number"], input[type="time"], select').forEach(el => {
+            el.classList.add('form-control');
+            if (el.tagName === 'SELECT') el.classList.replace('form-control', 'form-select');
+        });
+
+        addButton.addEventListener('click', function () {
+            const formIdx = totalFormsInput.value;
+            const newFormHtml = emptyFormTemplate.replace(/__prefix__/g, formIdx);
+
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = newFormHtml;
+            const newFormRow = tempDiv.firstElementChild;
+
+            // Add animation class
+            newFormRow.classList.add('animate-enter');
+
+            // Process classes for inputs inside the new row
+            newFormRow.querySelectorAll('input, select').forEach(el => {
+                if (el.type !== 'checkbox' && el.type !== 'hidden') {
+                    el.classList.add('form-control');
+                    if (el.tagName === 'SELECT') el.classList.replace('form-control', 'form-select');
+                }
+            });
+
+            container.appendChild(newFormRow);
+            totalFormsInput.value = parseInt(formIdx) + 1;
+            updateIndices();
+        });
+
+        container.addEventListener('click', function (e) {
+            // Handle custom remove button
+            if (e.target.closest('.remove-form-row')) {
+                const row = e.target.closest('.break-form-row');
+                // Animate out
+                row.style.transition = 'all 0.3s ease';
+                row.style.opacity = '0';
+                row.style.transform = 'translateX(20px)';
+
+                setTimeout(() => {
+                    row.remove();
+                    updateIndices();
+                }, 300);
+            }
+        });
+
+        function updateIndices() {
+            // Re-index logic if deemed necessary (Django typically handles gaps well if managing delete correctly, 
+            // but for clean DOM and "TOTAL_FORMS" consistency it helps).
+            const forms = container.querySelectorAll('.break-form-row');
+            let i = 0;
+            forms.forEach((form, index) => {
+                // Update Badge
+                const badge = form.querySelector('.break-index');
+                if (badge && !badge.innerHTML.includes('plus')) badge.textContent = index + 1;
+
+                // Update Names
+                form.querySelectorAll('input, select, textarea').forEach(input => {
+                    if (input.name) {
+                        input.name = input.name.replace(/breaks-\d+-/, `breaks-${index}-`);
+                        input.id = input.id.replace(/breaks-\d+-/, `breaks-${index}-`);
+                    }
+                });
+                i++;
+            });
+            totalFormsInput.value = i;
+        }
+
+        // Initial Index Update
+        updateIndices();
+    });
+</script>
+{% endblock %}

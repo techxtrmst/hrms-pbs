@@ -1,0 +1,871 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}My Profile | Petabytz{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ... (Styles kept compact to save lines/tokens, verified they are good) ... */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    :root {
+        --primary-hue: 245;
+        --primary-color: hsl(var(--primary-hue), 80%, 60%);
+        --primary-dark: hsl(var(--primary-hue), 80%, 50%);
+        --primary-light: hsl(var(--primary-hue), 90%, 95%);
+        --secondary-color: #64748b;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --bg-body: #f8fafc;
+        --card-bg: #ffffff;
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --shadow-custom: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+        --radius-lg: 1.25rem;
+        --radius-md: 0.75rem;
+    }
+
+    body {
+        background-color: var(--bg-body);
+        font-family: 'Inter', sans-serif;
+        color: #1e293b;
+    }
+
+    .profile-hero {
+        position: relative;
+        height: 280px;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        overflow: hidden;
+        border-bottom-left-radius: 2rem;
+        border-bottom-right-radius: 2rem;
+    }
+
+    .profile-card-main {
+        margin-top: -6rem;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid white;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-custom);
+        padding: 2rem;
+        position: relative;
+        z-index: 10;
+    }
+
+    .profile-avatar-wrapper {
+        position: relative;
+        width: 130px;
+        height: 130px;
+        margin-top: -5rem;
+        margin-bottom: 1rem;
+    }
+
+    .profile-avatar {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 4px solid white;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        background-color: #cbd5e1;
+    }
+
+    .camera-btn {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        background: #1e293b;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border: 2px solid white;
+    }
+
+    .profile-name {
+        font-weight: 700;
+        font-size: 1.75rem;
+        color: #1e293b;
+        letter-spacing: -0.025em;
+    }
+
+    .profile-role {
+        font-size: 0.95rem;
+        color: var(--secondary-color);
+        font-weight: 500;
+    }
+
+    .badge-soft {
+        padding: 0.35em 0.8em;
+        border-radius: 2rem;
+        font-weight: 600;
+        font-size: 0.75rem;
+        letter-spacing: 0.02em;
+    }
+
+    .badge-soft-primary {
+        background: var(--primary-light);
+        color: var(--primary-dark);
+    }
+
+    .badge-soft-success {
+        background: #d1fae5;
+        color: #059669;
+    }
+
+    .nav-pills-custom {
+        display: inline-flex;
+        background: #f1f5f9;
+        padding: 0.35rem;
+        border-radius: 1rem;
+        gap: 0.25rem;
+    }
+
+    .nav-pills-custom .nav-link {
+        color: #64748b;
+        font-weight: 600;
+        font-size: 0.9rem;
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        transition: all 0.3s;
+    }
+
+    .nav-pills-custom .nav-link.active {
+        background: white;
+        color: var(--primary-color);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .content-card {
+        background: white;
+        border-radius: var(--radius-md);
+        border: 1px solid #f1f5f9;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .card-header-clean {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 600;
+        color: #334155;
+        background: #fff;
+    }
+
+    .card-icon {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--primary-light);
+        color: var(--primary-dark);
+        border-radius: 8px;
+        font-size: 0.9rem;
+    }
+
+    .card-body-clean {
+        padding: 1.5rem;
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #94a3b8;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.25rem;
+    }
+
+    .info-value {
+        font-size: 0.95rem;
+        color: #1e293b;
+        font-weight: 500;
+    }
+
+    .timeline-wrapper {
+        position: relative;
+        padding-left: 1rem;
+    }
+
+    .timeline-line {
+        position: absolute;
+        top: 0.5rem;
+        bottom: 0;
+        left: 23px;
+        width: 2px;
+        background: #e2e8f0;
+    }
+
+    .timeline-node {
+        position: relative;
+        padding-left: 3rem;
+        margin-bottom: 2rem;
+    }
+
+    .timeline-node:last-child {
+        margin-bottom: 0;
+    }
+
+    .timeline-dot {
+        width: 20px;
+        height: 20px;
+        left: 15px;
+        border-width: 3px;
+        position: absolute;
+        top: 0;
+        background: white;
+        border: 2px solid #cbd5e1;
+        border-radius: 50%;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .timeline-dot.active {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 4px var(--primary-light);
+    }
+
+    .timeline-dot-inner {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #cbd5e1;
+    }
+
+    .timeline-dot.active .timeline-dot-inner {
+        background: var(--primary-color);
+    }
+
+    .timeline-dot.pulsing::after {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        border-radius: 50%;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.3);
+        animation: pulse-ring 2s infinite;
+    }
+
+    @keyframes pulse-ring {
+        0% {
+            transform: scale(1);
+            opacity: 0.8;
+        }
+
+        100% {
+            transform: scale(2.5);
+            opacity: 0;
+        }
+    }
+
+    .timeline-content {
+        padding: 1.25rem;
+        background: #fff;
+        border-radius: 1rem;
+        border: 1px solid #f1f5f9;
+        transition: 0.2s;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        margin-left: 0.5rem;
+    }
+
+    .timeline-content.active-node {
+        background: #fcfaff;
+        border-color: var(--primary-light);
+    }
+
+    .timeline-date {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--secondary-color);
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+
+    .timeline-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        color: #334155;
+    }
+
+    .doc-upload-box {
+        border: 2px dashed #cbd5e1;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        text-align: center;
+        transition: 0.2s;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .doc-upload-box:hover {
+        border-color: var(--primary-color);
+        background: #f8fafc;
+    }
+
+    .doc-preview-img {
+        max-height: 120px;
+        object-fit: cover;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1rem;
+    }
+
+    .doc-status-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .fade-in-up {
+        opacity: 0;
+        animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .gradient-icon {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white;
+        border: none;
+    }
+
+    .gradient-icon-2 {
+        background: linear-gradient(135deg, #3b82f6, #06b6d4);
+        color: white;
+        border: none;
+    }
+
+    .gradient-icon-3 {
+        background: linear-gradient(135deg, #f59e0b, #ea580c);
+        color: white;
+        border: none;
+    }
+
+    .info-group {
+        background: #f8fafc;
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        height: 100%;
+        transition: 0.2s;
+    }
+
+    .info-group:hover {
+        background: #fff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    .bg-primary-soft {
+        background-color: #e0e7ff;
+        color: #4338ca;
+    }
+
+    .address-box {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        padding: 1.25rem;
+        border-radius: 1rem;
+        height: 100%;
+    }
+
+    .address-header {
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1rem;
+        color: #475569;
+    }
+
+    .address-text {
+        font-size: 0.95rem;
+        color: #334155;
+        line-height: 1.6;
+        margin: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-hero"></div>
+
+<div class="container pb-5">
+    <div class="profile-card-main">
+        <div class="row align-items-end">
+            <div class="col-lg-2 col-md-3">
+                <div class="profile-avatar-wrapper" onclick="document.getElementById('profile_pic_input').click()"
+                    title="Click to change profile picture">
+                    {% if employee.profile_picture %}
+                    <img src="{{ employee.profile_picture.url }}" class="profile-avatar" alt="Profile">
+                    {% else %}
+                    <div
+                        class="profile-avatar d-flex align-items-center justify-content-center text-white bg-secondary fs-1">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    {% endif %}
+                    <div class="camera-btn"><i class="fas fa-camera fa-xs"></i></div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 col-md-5 mb-3 mb-md-0">
+                <h1 class="profile-name mb-1">
+                    {{ employee.user.get_full_name }}
+                </h1>
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                    <span class="profile-role"><i class="fas fa-briefcase me-1 text-muted"></i>
+                        {{ employee.designation }}
+                    </span>
+                    <span class="text-muted">•</span>
+                    <span class="profile-role"><i class="fas fa-building me-1 text-muted"></i>
+                        {{ employee.department }}
+                    </span>
+                </div>
+                <div class="d-flex gap-3 flex-wrap">
+                    <div class="badge-soft badge-soft-primary">
+                        {{ employee.get_work_type_display|default:"Full Time" }}
+                    </div>
+                    <div class="d-flex align-items-center text-muted small"><i class="fas fa-id-badge me-1"></i>
+                        {{ employee.badge_id|default:"-" }}
+                    </div>
+                    <div class="d-flex align-items-center text-muted small"><i class="fas fa-map-marker-alt me-1"></i>
+                        {{ employee.location.name|default:"Remote" }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-4 text-md-end">
+                <div class="d-inline-block text-start text-md-end mb-3">
+                    <div class="small text-muted mb-1 text-uppercase fw-bold" style="font-size: 0.7rem;">Current Status
+                    </div>
+                    {% if employee.is_active %}
+                    <span class="badge bg-success rounded-pill px-3 py-2 shadow-sm"><i
+                            class="fas fa-check-circle me-1"></i> Active</span>
+                    {% else %}
+                    <span class="badge bg-danger rounded-pill px-3 py-2 shadow-sm"><i
+                            class="fas fa-times-circle me-1"></i> Inactive</span>
+                    {% endif %}
+                </div>
+                <div>
+                    <ul class="nav nav-pills-custom justify-content-md-end" id="profileTabs" role="tablist">
+                        <li class="nav-item"><button class="nav-link active" id="about-tab" data-bs-toggle="tab"
+                                data-bs-target="#about" type="button" role="tab">About</button></li>
+                        <li class="nav-item"><button class="nav-link" id="job-tab" data-bs-toggle="tab"
+                                data-bs-target="#job" type="button" role="tab">Job</button></li>
+                        <li class="nav-item"><button class="nav-link" id="docs-tab" data-bs-toggle="tab"
+                                data-bs-target="#docs" type="button" role="tab">Docs</button></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <input type="file" id="profile_pic_input" class="d-none" form="avatar-form" name="profile_picture"
+            accept="image/*" onchange="document.getElementById('avatar-form').submit()">
+        <form id="avatar-form" method="post" enctype="multipart/form-data" class="d-none">{% csrf_token %}</form>
+    </div>
+
+    <div class="tab-content mt-4" id="profileTabsContent">
+
+        <!-- ABOUT TAB -->
+        <div class="tab-pane fade show active" id="about" role="tabpanel">
+            <div class="row g-4">
+                <!-- Work Timeline -->
+                <div class="col-lg-5 col-md-12 fade-in-up" style="animation-delay: 0.1s;">
+                    <div class="content-card h-100">
+                        <div class="card-header-clean">
+                            <div class="card-icon gradient-icon"><i class="fas fa-history"></i></div>Work Timeline
+                        </div>
+                        <div class="card-body-clean">
+                            <div class="timeline-wrapper">
+                                <div class="timeline-line"></div>
+
+                                <!-- Present -->
+                                <div class="timeline-node">
+                                    <div class="timeline-dot pulsing">
+                                        <div class="timeline-dot-inner"></div>
+                                    </div>
+                                    <div class="timeline-content active-node">
+                                        <span class="timeline-date">Today</span>
+                                        <div class="timeline-title text-primary">Current Role</div>
+                                        <span class="badge bg-primary-soft text-primary mt-1">
+                                            {{ employee.designation }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Confirmed -->
+                                <div class="timeline-node">
+                                    <div
+                                        class="timeline-dot {% if employee.employment_status == 'ACTIVE' %}active{% endif %}">
+                                        <div class="timeline-dot-inner"></div>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <span class="timeline-date">Probation Status</span>
+                                        <div class="timeline-title">Confirmed Employee</div>
+                                        <div class="small text-muted">Permanent Staff</div>
+                                    </div>
+                                </div>
+
+                                <!-- Joined -->
+                                <div class="timeline-node">
+                                    <div class="timeline-dot active">
+                                        <div class="timeline-dot-inner"></div>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <span class="timeline-date">
+                                            {{ employee.date_of_joining|date:"M d, Y"|default:"-" }}
+                                        </span>
+                                        <div class="timeline-title">Joined Organization</div>
+                                        <div class="small text-muted">
+                                            {{ employee.designation }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personal Info & Addresses -->
+                <div class="col-lg-7 col-md-12">
+                    <div class="row g-4">
+                        <div class="col-md-12 fade-in-up" style="animation-delay: 0.2s;">
+                            <div class="content-card">
+                                <div class="card-header-clean">
+                                    <div class="card-icon gradient-icon-2"><i class="fas fa-user-circle"></i></div>
+                                    Personal Details
+                                </div>
+                                <div class="card-body-clean">
+                                    <div class="row g-3">
+                                        <div class="col-sm-6">
+                                            <div class="info-group"><label class="info-label">Full Name</label>
+                                                <div class="info-value fw-bold">
+                                                    {{ employee.user.get_full_name }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="info-group"><label class="info-label">Email</label>
+                                                <div class="info-value text-break">
+                                                    {{ employee.user.email }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="info-group"><label class="info-label">Phone</label>
+                                                <div class="info-value">
+                                                    {{ employee.mobile_number|default:"--" }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="info-group"><label class="info-label">Date of Birth</label>
+                                                <div class="info-value">
+                                                    {{ employee.dob|date:"d M, Y"|default:"--" }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="info-group"><label class="info-label">Gender</label>
+                                                <div class="info-value">
+                                                    {{ employee.get_gender_display|default:"--" }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="info-group"><label class="info-label">Marital Status</label>
+                                                <div class="info-value">
+                                                    {{ employee.get_marital_status_display|default:"--" }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12 fade-in-up" style="animation-delay: 0.3s;">
+                            <div class="content-card">
+                                <div class="card-header-clean">
+                                    <div class="card-icon gradient-icon-3"><i class="fas fa-map-marker-alt"></i></div>
+                                    Address Book
+                                </div>
+                                <div class="card-body-clean">
+                                    <div class="row g-4">
+                                        <div class="col-md-6">
+                                            <div class="address-box">
+                                                <div class="address-header"><i
+                                                        class="fas fa-home me-2 text-primary"></i> Current Address</div>
+                                                <p class="address-text">
+                                                    {{ employee.current_address|default:"Not Provided"|linebreaksbr }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="address-box">
+                                                <div class="address-header"><i
+                                                        class="fas fa-building me-2 text-secondary"></i> Permanent
+                                                    Address</div>
+                                                <p class="address-text">
+                                                    {{employee.permanent_address|default:"-"|linebreaksbr}}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Emergency Contacts Section -->
+                        <div class="col-md-12 fade-in-up" style="animation-delay: 0.4s;">
+                            <div class="content-card">
+                                <div class="card-header-clean">
+                                    <div class="card-icon"
+                                        style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white;">
+                                        <i class="fas fa-phone-alt"></i>
+                                    </div>
+                                    Emergency Contacts
+                                </div>
+                                <div class="card-body-clean">
+                                    {% if emergency_contacts %}
+                                    <div class="row g-3">
+                                        {% for contact in emergency_contacts %}
+                                        <div class="col-md-6">
+                                            <div class="border rounded-3 p-3 h-100"
+                                                style="background: #f8fafc; transition: all 0.3s;">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <h6 class="mb-0 fw-bold text-dark">
+                                                        <i class="fas fa-user-circle me-2 text-primary"></i>
+                                                        {{ contact.name }}
+                                                    </h6>
+                                                    {% if contact.is_primary %}
+                                                    <span class="badge bg-success"
+                                                        style="font-size: 0.7rem;">Primary</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="small text-muted mb-1">
+                                                    <i class="fas fa-phone me-2 text-success"></i>
+                                                    <a href="tel:{{ contact.phone_number }}"
+                                                        class="text-decoration-none text-dark fw-medium">
+                                                        {{ contact.phone_number }}
+                                                    </a>
+                                                </div>
+                                                <div class="small text-muted">
+                                                    <i class="fas fa-user-friends me-2 text-info"></i>
+                                                    {{ contact.relationship }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% else %}
+                                    <div class="text-center py-5 text-muted">
+                                        <i class="fas fa-phone-slash fa-3x mb-3 opacity-25"></i>
+                                        <p class="mb-0">No emergency contacts added yet.</p>
+                                        <p class="small">Contact your HR to add emergency contacts.</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- JOB TAB -->
+        <div class="tab-pane fade" id="job" role="tabpanel">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="content-card">
+                        <div class="card-header-clean">
+                            <div class="card-icon"><i class="fas fa-briefcase"></i></div>Employment Details
+                        </div>
+                        <div class="card-body-clean">
+                            <div class="row g-4">
+                                <div class="col-sm-6">
+                                    <div class="info-label">Employment Type</div>
+                                    <div class="info-value">
+                                        {{ employee.get_work_type_display|default:"Full Time" }}
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="info-label">Department</div>
+                                    <div class="info-value">
+                                        {{ employee.department }}
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="info-label">Date of Joining</div>
+                                    <div class="info-value">
+                                        {{ employee.date_of_joining|date:"d F, Y"|default:"-" }}
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="info-label">Work Shift</div>
+                                    <div class="info-value text-primary"><i class="far fa-clock me-1"></i>
+                                        {{employee.assigned_shift.name|default:"General Shift"}}</div>
+                                </div>
+                                <div class="col-12 border-top pt-3 mt-3">
+                                    <div class="info-label">Location</div>
+                                    <div class="info-value">
+                                        {{ employee.location.name|default:"Head Office" }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="content-card">
+                        <div class="card-header-clean">
+                            <div class="card-icon"><i class="fas fa-sitemap"></i></div>Reporting Hierarchy
+                        </div>
+                        <div class="card-body-clean">
+                            <div class="p-4 rounded-3 border bg-light text-center">
+                                <div class="d-inline-flex align-items-center justify-content-center bg-white rounded-circle shadow-sm mb-3"
+                                    style="width: 64px; height: 64px; border: 3px solid white;">
+                                    <span class="fs-3 fw-bold text-primary">
+                                        {{ employee.manager.first_name|first|default:"M" }}
+                                    </span>
+                                </div>
+                                <h5 class="fw-bold mb-1">
+                                    {{ employee.manager.get_full_name|default:"Not Assigned" }}
+                                </h5>
+                                <div class="text-muted small mb-3">Reporting Manager</div>
+                                {% if employee.manager %}
+                                <a href="mailto:{{ employee.manager.email }}"
+                                    class="btn btn-sm btn-outline-primary rounded-pill px-4"><i
+                                        class="fas fa-envelope me-1"></i> Contact</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DOCUMENTS TAB -->
+        <div class="tab-pane fade" id="docs" role="tabpanel">
+            <div class="content-card">
+                <div class="card-header-clean">
+                    <div class="card-icon"><i class="fas fa-folder-open"></i></div>Identity Documents
+                </div>
+                <div class="card-body-clean">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="row g-4">
+                            <!-- Aadhar Front -->
+                            <div class="col-md-4">
+                                <div class="doc-upload-box" onclick="this.querySelector('input').click()">
+                                    {% if id_proofs.aadhar_front %}
+                                    <span class="badge bg-success doc-status-badge"><i class="fas fa-check"></i></span>
+                                    <img src="{{ id_proofs.aadhar_front.url }}" class="doc-preview-img w-100">
+                                    <div class="fw-bold text-dark">Aadhar Front</div>
+                                    {% else %}
+                                    <div class="py-4 text-muted"><i
+                                            class="fas fa-id-card display-4 mb-3 opacity-50"></i>
+                                        <div class="fw-bold">Aadhar Front</div>
+                                        <div class="small">Click to upload</div>
+                                    </div>
+                                    {% endif %}
+                                    <!-- prettier-ignore -->
+                                    {% if not is_admin and id_proofs.aadhar_front %}
+                                    <input type="file" name="aadhar_front" hidden disabled>
+                                    {% else %}
+                                    <input type="file" name="aadhar_front" hidden>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Aadhar Back -->
+                            <div class="col-md-4">
+                                <div class="doc-upload-box" onclick="this.querySelector('input').click()">
+                                    {% if id_proofs.aadhar_back %}
+                                    <span class="badge bg-success doc-status-badge"><i class="fas fa-check"></i></span>
+                                    <img src="{{ id_proofs.aadhar_back.url }}" class="doc-preview-img w-100">
+                                    <div class="fw-bold text-dark">Aadhar Back</div>
+                                    {% else %}
+                                    <div class="py-4 text-muted"><i
+                                            class="fas fa-id-card display-4 mb-3 opacity-50"></i>
+                                        <div class="fw-bold">Aadhar Back</div>
+                                        <div class="small">Click to upload</div>
+                                    </div>
+                                    {% endif %}
+                                    <!-- prettier-ignore -->
+                                    {% if not is_admin and id_proofs.aadhar_back %}
+                                    <input type="file" name="aadhar_back" hidden disabled>
+                                    {% else %}
+                                    <input type="file" name="aadhar_back" hidden>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- PAN Card -->
+                            <div class="col-md-4">
+                                <div class="doc-upload-box" onclick="this.querySelector('input').click()">
+                                    {% if id_proofs.pan_card %}
+                                    <span class="badge bg-success doc-status-badge"><i class="fas fa-check"></i></span>
+                                    <img src="{{ id_proofs.pan_card.url }}" class="doc-preview-img w-100">
+                                    <div class="fw-bold text-dark">PAN Card</div>
+                                    {% else %}
+                                    <div class="py-4 text-muted"><i
+                                            class="fas fa-address-card display-4 mb-3 opacity-50"></i>
+                                        <div class="fw-bold">PAN Card</div>
+                                        <div class="small">Click to upload</div>
+                                    </div>
+                                    {% endif %}
+                                    <!-- prettier-ignore -->
+                                    {% if not is_admin and id_proofs.pan_card %}
+                                    <input type="file" name="pan_card" hidden disabled>
+                                    {% else %}
+                                    <input type="file" name="pan_card" hidden>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-12 text-end mt-4">
+                                <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold"><i
+                                        class="fas fa-save me-1"></i> Save Changes</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) { return new bootstrap.Tooltip(tooltipTriggerEl); });
+</script>
+{% endblock %}

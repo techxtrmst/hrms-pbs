@@ -1,0 +1,210 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}My Finance | Petabytz{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Keka-style Finance Dashboard */
+
+    .finance-header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 3rem;
+        flex-wrap: wrap;
+        gap: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+        color: #a0aec0;
+        font-size: 0.9rem;
+    }
+
+    /* Financial Info Card */
+    .financial-card {
+        background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+        border-radius: 12px;
+        padding: 1.5rem 2rem;
+        color: white;
+        min-width: 350px;
+        box-shadow: 0 4px 6px rgba(49, 130, 206, 0.2);
+    }
+
+    .fin-card-title {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        opacity: 0.9;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+    }
+
+    .fin-card-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    .fin-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        opacity: 0.8;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .fin-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        display: inline-block;
+        min-width: 100px;
+    }
+
+    /* History Section */
+    .history-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 1rem;
+    }
+
+    /* Empty State */
+    .empty-state-box {
+        background-color: #f7fafc;
+        border: 2px dashed #cbd5e0;
+        border-radius: 8px;
+        padding: 4rem 2rem;
+        text-align: center;
+        margin-top: 1rem;
+    }
+
+    .empty-state-msg {
+        color: #4a5568;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state-sub {
+        color: #a0aec0;
+        font-size: 0.85rem;
+    }
+
+    /* Table if data exists */
+    .table-payslips th {
+        background-color: #f7fafc;
+        color: #718096;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        padding: 1rem;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    .table-payslips td {
+        padding: 1rem;
+        border-bottom: 1px solid #edf2f7;
+        color: #4a5568;
+        vertical-align: middle;
+    }
+
+    .btn-download {
+        color: #3182ce;
+        background-color: #ebf8ff;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .btn-download:hover {
+        background-color: #bee3f8;
+        color: #2b6cb0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <!-- Header & Fin Card -->
+    <div class="finance-header-section">
+        <div>
+            <h1 class="page-title">My Payslips</h1>
+            <p class="page-subtitle">View and download your monthly salary slips and financial information</p>
+        </div>
+
+        <div class="financial-card">
+            <div class="fin-card-title">Financial Information</div>
+            <div class="fin-card-grid">
+                <div>
+                    <div class="fin-label">UAN Number</div>
+                    <div class="fin-value">{{ employee.uan|default:"Not Set" }}</div>
+                </div>
+                <div>
+                    <div class="fin-label">Annual CTC</div>
+                    <div class="fin-value">{{ employee.annual_ctc|default:"Not Set" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History -->
+    <div>
+        <h5 class="history-title">Payslip History</h5>
+
+        {% if payslips %}
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-payslips mb-0">
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            <th>Generated On</th>
+                            <th>Net Salary</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for slip in payslips %}
+                        <tr>
+                            <td class="fw-bold text-dark">{{ slip.month|date:"F Y" }}</td>
+                            <td>{{ slip.generated_at|date:"M d, Y" }}</td>
+                            <td>Make sure to secure this info</td>
+                            <td class="text-end">
+                                {% if slip.pdf_file %}
+                                <a href="{{ slip.pdf_file.url }}" class="btn-download" target="_blank">
+                                    <i class="fas fa-download me-2"></i> Download
+                                </a>
+                                {% else %}
+                                <span class="text-muted small">Processing...</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state-box">
+            <div class="empty-state-msg">No Payslips Found</div>
+            <div class="empty-state-sub">Your payslips will appear here once they are uploaded by HR.</div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,586 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}My Profile | Petabytz{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-color: #5856d6;
+        --secondary-color: #a0aec0;
+        --success-color: #10b981;
+        --danger-color: #f87171;
+        --bg-light: #f3f4f6;
+        --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    body {
+        background-color: var(--bg-light);
+    }
+
+    /* Banner & Header */
+    .profile-banner {
+        height: 160px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 0 0 0 0;
+        /* Full width feeling */
+        position: relative;
+        margin-bottom: 60px;
+        /* Space for avatar overlap */
+    }
+
+    .header-content {
+        position: relative;
+        padding-left: 30px;
+        padding-right: 30px;
+        margin-top: -120px;
+        /* Pull up into banner */
+    }
+
+    .profile-card-header {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        padding: 20px;
+        position: relative;
+    }
+
+    .avatar-wrapper {
+        position: absolute;
+        top: -50px;
+        left: 40px;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: #fff;
+        padding: 4px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 10;
+        cursor: pointer;
+        overflow: hidden;
+    }
+
+    .profile-avatar {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        background-color: #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3.5rem;
+        color: #a0aec0;
+        position: relative;
+    }
+
+    .avatar-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .avatar-wrapper:hover .avatar-overlay {
+        opacity: 1;
+    }
+
+    .header-actions {
+        float: right;
+    }
+
+    .profile-info-main {
+        margin-left: 170px;
+        /* Space for avatar */
+        min-height: 80px;
+    }
+
+    .profile-name {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #2d3748;
+        margin-bottom: 4px;
+    }
+
+    .profile-designation {
+        color: #718096;
+        font-weight: 500;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .divider-vertical {
+        height: 40px;
+        width: 1px;
+        background: #e2e8f0;
+        margin: 0 20px;
+    }
+
+    .quick-stat {
+        text-align: center;
+        padding: 0 15px;
+    }
+
+    .qs-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #a0aec0;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+    }
+
+    .qs-value {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #4a5568;
+        margin-top: 2px;
+    }
+
+    /* Tabs */
+    .keka-tabs {
+        display: flex;
+        gap: 30px;
+        margin-top: 30px;
+        border-bottom: 1px solid #e2e8f0;
+        margin-bottom: 30px;
+    }
+
+    .keka-tab {
+        padding: 12px 0;
+        font-weight: 600;
+        color: #718096;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .keka-tab:hover {
+        color: var(--primary-color);
+    }
+
+    .keka-tab.active {
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
+    }
+
+    /* Cards */
+    .keka-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        padding: 25px;
+        margin-bottom: 25px;
+        transition: transform 0.2s;
+    }
+
+    .keka-card:hover {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-title-keka {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .field-label {
+        font-size: 0.75rem;
+        color: #718096;
+        margin-bottom: 4px;
+        font-weight: 500;
+    }
+
+    .field-value {
+        font-size: 0.95rem;
+        color: #1a202c;
+        font-weight: 600;
+        min-height: 24px;
+    }
+
+    /* File Upload */
+    .file-upload-card {
+        border: 2px dashed #cbd5e0;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        background: #f8fafc;
+        transition: all 0.2s;
+        cursor: pointer;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .file-upload-card:hover {
+        border-color: var(--primary-color);
+        background: #eff6ff;
+    }
+
+    .doc-preview {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+
+    .btn-action-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        color: #718096;
+        transition: all 0.2s;
+    }
+
+    .btn-action-icon:hover {
+        background: var(--danger-color);
+        color: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Full Width Gradient Banner -->
+<div class="profile-banner"></div>
+
+<div class="container-fluid px-lg-5">
+    <div class="header-content">
+        <div class="profile-card-header">
+            <!-- Avatar -->
+            <div class="avatar-wrapper" onclick="document.getElementById('profile_pic_input').click()">
+                {% if employee.profile_picture %}
+                <img src="{{ employee.profile_picture.url }}" class="profile-avatar">
+                {% else %}
+                <div class="profile-avatar"><i class="fas fa-user"></i></div>
+                {% endif %}
+                <div class="avatar-overlay">
+                    <i class="fas fa-camera"></i>
+                </div>
+            </div>
+
+            <form id="avatar-form" method="post" enctype="multipart/form-data" class="d-none">
+                {% csrf_token %}
+                <input type="file" name="profile_picture" id="profile_pic_input" accept="image/*"
+                    onchange="document.getElementById('avatar-form').submit()">
+            </form>
+
+            <!-- Info & Stats -->
+            <div class="d-flex flex-wrap justify-content-between align-items-center profile-info-main">
+                <div>
+                    <h1 class="profile-name">{{ employee.user.get_full_name }}</h1>
+                    <div class="profile-designation">
+                        <i class="fas fa-briefcase text-primary"></i>
+                        {{ employee.designation }}
+                        <span class="badge rounded-pill bg-light text-muted ms-2 fs-6 fw-normal px-2 border">{{
+                            employee.get_work_type_display }}</span>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center mt-3 mt-md-0 d-none d-md-flex">
+                    <div class="quick-stat">
+                        <div class="qs-label">Department</div>
+                        <div class="qs-value">{{ employee.department }}</div>
+                    </div>
+                    <div class="divider-vertical"></div>
+                    <div class="quick-stat">
+                        <div class="qs-label">Employee ID</div>
+                        <div class="qs-value">#{{ employee.badge_id|default:"-" }}</div>
+                    </div>
+                    <div class="divider-vertical"></div>
+                    <div class="quick-stat">
+                        <div class="qs-label">Location</div>
+                        <div class="qs-value"><i class="fas fa-map-marker-alt text-danger me-1"></i>{{
+                            employee.location.name|default:"Remote" }}</div>
+                    </div>
+                    <div class="divider-vertical"></div>
+                    <div class="quick-stat">
+                        <div class="qs-label">Status</div>
+                        <div class="qs-value text-success">Active</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="keka-tabs" id="profileTabs">
+                <div class="keka-tab active" onclick="switchTab('about')"><i class="far fa-user"></i> About</div>
+                <div class="keka-tab" onclick="switchTab('job')"><i class="fas fa-briefcase"></i> Job</div>
+                <div class="keka-tab" onclick="switchTab('documents')"><i class="far fa-folder-open"></i> Documents
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Content Area -->
+    <div class="mt-4 pb-5">
+
+        <!-- About Tab -->
+        <div id="tab-about" class="tab-content-block">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="keka-card h-100">
+                        <div class="card-title-keka">
+                            <span>Personal Information</span>
+                            <i class="fas fa-pen text-muted small" style="cursor: pointer;"></i>
+                        </div>
+                        <div class="vstack gap-3">
+                            <div>
+                                <div class="field-label">Mobile Number</div>
+                                <div class="field-value">{{ employee.mobile_number|default:"-" }}</div>
+                            </div>
+                            <div>
+                                <div class="field-label">Personal Email</div>
+                                <div class="field-value">{{ employee.user.email }}</div>
+                            </div>
+                            <div>
+                                <div class="field-label">Date of Birth</div>
+                                <div class="field-value">{{ employee.dob|date:"d M Y"|default:"-" }}</div>
+                            </div>
+                            <div>
+                                <div class="field-label">Gender</div>
+                                <div class="field-value">{{ employee.get_gender_display|default:"-" }}</div>
+                            </div>
+                            <div>
+                                <div class="field-label">Marital Status</div>
+                                <div class="field-value">{{ employee.get_marital_status_display|default:"-" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="keka-card h-100">
+                        <div class="card-title-keka">Addresses</div>
+                        <div class="vstack gap-3">
+                            <div>
+                                <div class="field-label">Current Address</div>
+                                <div class="field-value">{{ employee.permanent_address|default:"Same as permanent" }}
+                                </div>
+                            </div>
+                            <div>
+                                <div class="field-label">Permanent Address</div>
+                                <div class="field-value">{{ employee.permanent_address|default:"Not provided" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="keka-card h-100" style="background: linear-gradient(145deg, #ffffff 0%, #f7fafc 100%);">
+                        <div class="card-title-keka">Work Timeline</div>
+                        <div style="border-left: 2px solid #cbd5e0; padding-left: 20px; position: relative;">
+                            <div class="mb-4 position-relative">
+                                <div
+                                    style="width: 12px; height: 12px; border-radius: 50%; background: #5856d6; position: absolute; left: -27px; top: 5px; box-shadow: 0 0 0 4px #eef2ff;">
+                                </div>
+                                <div class="fw-bold text-dark">Joined Organization</div>
+                                <div class="small text-muted">{{ employee.date_of_joining|date:"d M, Y"|default:"-" }}
+                                </div>
+                                <div class="small text-primary mt-1">{{ employee.designation }}</div>
+                            </div>
+
+                            <div class="position-relative">
+                                <div
+                                    style="width: 12px; height: 12px; border-radius: 50%; background: #68d391; position: absolute; left: -27px; top: 5px; box-shadow: 0 0 0 4px #f0fff4;">
+                                </div>
+                                <div class="fw-bold text-dark">Confirmed</div>
+                                <div class="small text-muted">Probation completed</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Job Tab -->
+        <div id="tab-job" class="tab-content-block d-none">
+            <div class="row g-4">
+                <div class="col-md-8">
+                    <div class="keka-card">
+                        <div class="card-title-keka">Employment Details</div>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="field-label">Employment Type</div>
+                                <div class="field-value">Full Time</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="field-label">Work Shift</div>
+                                <div class="field-value">{{ employee.shift_schedule|default:"General Shift (09:00 -
+                                    18:00)" }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="field-label">Joining Date</div>
+                                <div class="field-value">{{ employee.date_of_joining|date:"d M, Y" }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="field-label">Probation Status</div>
+                                <div class="field-value text-success">Completed</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="keka-card">
+                        <div class="card-title-keka">Organization Hierarchy</div>
+                        <div class="d-flex align-items-center gap-3 p-3 rounded bg-light border">
+                            <div
+                                style="width: 50px; height: 50px; background: #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #718096;">
+                                {{ employee.manager.user.first_name|first|default:"?" }}
+                            </div>
+                            <div>
+                                <div class="small text-muted">Reporting Manager</div>
+                                <div class="fw-bold text-dark">{{ employee.manager.user.get_full_name|default:"Not
+                                    Assigned" }}</div>
+                                <div class="small text-muted">{{ employee.manager.designation }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documents Tab -->
+        <div id="tab-documents" class="tab-content-block d-none">
+            <div class="keka-card">
+                <div class="card-title-keka">Identity Documents</div>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="row g-4">
+                        <!-- Aadhar Front -->
+                        <div class="col-md-4">
+                            <div class="file-upload-card">
+                                <h6 class="mb-3 text-muted">Aadhar Front</h6>
+                                {% if id_proofs.aadhar_front %}
+                                <img src="{{ id_proofs.aadhar_front.url }}" class="doc-preview">
+                                {% if is_admin %}
+                                <div class="d-flex gap-2">
+                                    <label class="btn-action-icon" title="Change">
+                                        <i class="fas fa-pencil-alt"></i>
+                                        <input type="file" name="aadhar_front" style="display: none;">
+                                    </label>
+                                    <div class="form-check d-none">
+                                        <input type="checkbox" name="delete_aadhar_front" id="del_af_check">
+                                    </div>
+                                    <button type="button" class="btn-action-icon"
+                                        onclick="document.getElementById('del_af_check').checked=true; this.closest('form').submit()">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                {% else %}
+                                <div class="text-success small"><i class="fas fa-check-circle"></i> Verified</div>
+                                {% endif %}
+                                {% else %}
+                                <i class="fas fa-cloud-upload-alt fs-1 text-muted mb-3"></i>
+                                <input type="file" name="aadhar_front" class="form-control form-control-sm">
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Aadhar Back -->
+                        <div class="col-md-4">
+                            <div class="file-upload-card">
+                                <h6 class="mb-3 text-muted">Aadhar Back</h6>
+                                {% if id_proofs.aadhar_back %}
+                                <img src="{{ id_proofs.aadhar_back.url }}" class="doc-preview">
+                                {% if is_admin %}
+                                <div class="d-flex gap-2">
+                                    <label class="btn-action-icon" title="Change">
+                                        <i class="fas fa-pencil-alt"></i>
+                                        <input type="file" name="aadhar_back" style="display: none;">
+                                    </label>
+                                    <div class="form-check d-none">
+                                        <input type="checkbox" name="delete_aadhar_back" id="del_ab_check">
+                                    </div>
+                                    <button type="button" class="btn-action-icon"
+                                        onclick="document.getElementById('del_ab_check').checked=true; this.closest('form').submit()">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                {% else %}
+                                <div class="text-success small"><i class="fas fa-check-circle"></i> Verified</div>
+                                {% endif %}
+                                {% else %}
+                                <i class="fas fa-cloud-upload-alt fs-1 text-muted mb-3"></i>
+                                <input type="file" name="aadhar_back" class="form-control form-control-sm">
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- PAN Card -->
+                        <div class="col-md-4">
+                            <div class="file-upload-card">
+                                <h6 class="mb-3 text-muted">PAN Card</h6>
+                                {% if id_proofs.pan_card %}
+                                <img src="{{ id_proofs.pan_card.url }}" class="doc-preview">
+                                {% if is_admin %}
+                                <div class="d-flex gap-2">
+                                    <label class="btn-action-icon" title="Change">
+                                        <i class="fas fa-pencil-alt"></i>
+                                        <input type="file" name="pan_card" style="display: none;">
+                                    </label>
+                                    <div class="form-check d-none">
+                                        <input type="checkbox" name="delete_pan_card" id="del_pc_check">
+                                    </div>
+                                    <button type="button" class="btn-action-icon"
+                                        onclick="document.getElementById('del_pc_check').checked=true; this.closest('form').submit()">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                {% else %}
+                                <div class="text-success small"><i class="fas fa-check-circle"></i> Verified</div>
+                                {% endif %}
+                                {% else %}
+                                <i class="fas fa-cloud-upload-alt fs-1 text-muted mb-3"></i>
+                                <input type="file" name="pan_card" class="form-control form-control-sm">
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-12 text-end mt-4">
+                            <button type="submit" class="btn btn-primary px-4 rounded-pill fw-bold">Save
+                                Changes</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function switchTab(tabName) {
+        // Tabs
+        document.querySelectorAll('.keka-tab').forEach(t => t.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+
+        // Content
+        document.querySelectorAll('.tab-content-block').forEach(c => c.classList.add('d-none'));
+        document.getElementById('tab-' + tabName).classList.remove('d-none');
+    }
+</script>
+{% endblock %}

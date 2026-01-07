@@ -1,0 +1,524 @@
+{% extends 'core/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Add Employee - Step 2{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+    * {
+        font-family: 'Inter', sans-serif;
+    }
+
+    body {
+        background: #f8f9fa;
+    }
+
+    .container {
+        max-width: 1000px;
+        padding-top: 2rem;
+    }
+
+    .page-header {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #5b5fc7;
+        margin-bottom: 0.25rem;
+    }
+
+    .progress-stepper {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .step {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .step-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #e9ecef;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .step.active .step-circle {
+        background: #5b5fc7;
+        color: white;
+    }
+
+    .step.completed .step-circle {
+        background: #28a745;
+        color: white;
+    }
+
+    .step.completed .step-circle::after {
+        content: '✓';
+    }
+
+    .step-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .step.active .step-label {
+        color: #5b5fc7;
+        font-weight: 600;
+    }
+
+    .step-divider {
+        width: 40px;
+        height: 2px;
+        background: #dee2e6;
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+        font-weight: 600;
+        font-size: 1rem;
+        color: #212529;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .section-title i {
+        color: #5b5fc7;
+        font-size: 1.1rem;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+        font-size: 0.875rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .form-control,
+    .form-select {
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        height: auto;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #5b5fc7;
+        box-shadow: 0 0 0 0.2rem rgba(91, 95, 199, 0.15);
+    }
+
+    .btn-next {
+        background: #5b5fc7;
+        color: white;
+        padding: 0.65rem 2rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        border-radius: 6px;
+        border: none;
+    }
+
+    .btn-next:hover {
+        background: #4a4eb8;
+    }
+
+    .btn-back {
+        background: white;
+        border: 1px solid #ced4da;
+        color: #6c757d;
+        padding: 0.65rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .btn-back:hover {
+        background: #f8f9fa;
+    }
+
+    .text-danger {
+        color: #dc3545;
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+    }
+
+    .alert {
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .row.g-3 {
+        --bs-gutter-y: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="page-title mb-0">Add New Employee</h1>
+                <p class="text-muted mb-0">Step 2 of 3: Job Details</p>
+            </div>
+            <a href="{% url 'employee_list' %}" class="btn btn-back">
+                <i class="fas fa-times me-2"></i>Cancel
+            </a>
+        </div>
+    </div>
+
+    <div class="progress-stepper">
+        <div class="step completed">
+            <div class="step-circle"></div>
+            <div class="step-label">Personal Info</div>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step active">
+            <div class="step-circle">2</div>
+            <div class="step-label">Job Details</div>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step">
+            <div class="step-circle">3</div>
+            <div class="step-label">Finance & Save</div>
+        </div>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <form method="post" class="form-card">
+        {% csrf_token %}
+
+        <h2 class="section-title">
+            <i class="fas fa-briefcase"></i>Job Profile
+        </h2>
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Designation <span class="text-danger">*</span></label>
+                <div class="input-group">
+                    {% render_field form.designation class="form-select" placeholder="Select Designation" %}
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                        data-bs-target="#addDesignationModal">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                {% if form.designation.errors %}
+                <div class="text-danger">{{ form.designation.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Department <span class="text-danger">*</span></label>
+                <div class="input-group">
+                    {% render_field form.department class="form-select" placeholder="Select Department" %}
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                        data-bs-target="#addDepartmentModal">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                {% if form.department.errors %}
+                <div class="text-danger">{{ form.department.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Reporting Manager</label>
+                {% render_field form.manager_selection class="form-select" %}
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Work Type</label>
+                {% render_field form.work_type class="form-select" %}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Shift Schedule</label>
+                <div class="input-group">
+                    {% render_field form.shift_schedule class="form-select" placeholder="Select Shift" %}
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                        data-bs-target="#addShiftModal">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <small class="text-muted">Determines early/late tracking</small>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Date of Joining</label>
+                {% render_field form.date_of_joining class="form-control" %}
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <a href="{% url 'add_employee_step1' %}" class="btn btn-back">
+                <i class="fas fa-arrow-left me-2"></i>Back
+            </a>
+            <button type="submit" class="btn btn-next">
+                Next: Finance Details <i class="fas fa-arrow-right ms-2"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Modals -->
+
+<!-- Add Designation Modal -->
+<div class="modal fade" id="addDesignationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Designation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Designation Name</label>
+                    <input type="text" id="newDesignationName" class="form-control" placeholder="e.g. Senior Developer">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveDesignation()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Department Modal -->
+<div class="modal fade" id="addDepartmentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Department</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Department Name</label>
+                    <input type="text" id="newDepartmentName" class="form-control" placeholder="e.g. Marketing">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveDepartment()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Shift Modal -->
+<div class="modal fade" id="addShiftModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Shift</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Shift Name</label>
+                    <input type="text" id="newShiftName" class="form-control" placeholder="e.g. Morning Shift">
+                </div>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="form-label">Start Time</label>
+                        <input type="time" id="newShiftStart" class="form-control">
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="form-label">End Time</label>
+                        <input type="time" id="newShiftEnd" class="form-control">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveShift()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    async function saveDesignation() {
+        const name = document.getElementById('newDesignationName').value;
+        if (!name) return alert('Please enter a name');
+
+        try {
+            const response = await fetch("{% url 'quick_add_designation' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ name: name })
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                // Add to dropdown
+                const select = document.getElementById('id_designation');
+                const option = new Option(data.name, data.id);
+                select.add(option, undefined);
+                select.value = data.id;
+
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addDesignationModal'));
+                modal.hide();
+                document.getElementById('newDesignationName').value = '';
+            } else {
+                alert(data.message);
+                if (data.id) {
+                    // If exists, select it
+                    const select = document.getElementById('id_designation');
+                    select.value = data.id;
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addDesignationModal'));
+                    modal.hide();
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to add designation');
+        }
+    }
+
+    async function saveDepartment() {
+        const name = document.getElementById('newDepartmentName').value;
+        if (!name) return alert('Please enter a name');
+
+        try {
+            const response = await fetch("{% url 'quick_add_department' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ name: name })
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                const select = document.getElementById('id_department');
+                const option = new Option(data.name, data.id);
+                select.add(option, undefined);
+                select.value = data.id;
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addDepartmentModal'));
+                modal.hide();
+                document.getElementById('newDepartmentName').value = '';
+            } else {
+                alert(data.message);
+                if (data.id) {
+                    const select = document.getElementById('id_department');
+                    select.value = data.id;
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addDepartmentModal'));
+                    modal.hide();
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to add department');
+        }
+    }
+
+    async function saveShift() {
+        const name = document.getElementById('newShiftName').value;
+        const start = document.getElementById('newShiftStart').value;
+        const end = document.getElementById('newShiftEnd').value;
+
+        if (!name || !start || !end) return alert('Please fill all fields');
+
+        try {
+            const response = await fetch("{% url 'quick_add_shift' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    name: name,
+                    start_time: start,
+                    end_time: end
+                })
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                const select = document.getElementById('id_shift_schedule');
+                // The name returned is the __str__ representation which includes times
+                const option = new Option(data.display || data.name, data.id);
+                select.add(option, undefined);
+                select.value = data.id;
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addShiftModal'));
+                modal.hide();
+                document.getElementById('newShiftName').value = '';
+                document.getElementById('newShiftStart').value = '';
+                document.getElementById('newShiftEnd').value = '';
+            } else {
+                alert(data.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to add shift');
+        }
+    }
+</script>
+{% endblock %}
