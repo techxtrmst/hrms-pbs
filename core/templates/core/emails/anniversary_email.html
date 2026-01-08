@@ -1,129 +1,112 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Anniversary Celebration</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
-
-        .email-container {
-            max-width: 600px;
-            margin: 40px auto;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        .header {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 40px 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            color: #ffffff;
-            font-size: 36px;
-            margin: 0 0 10px 0;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .header .emoji {
-            font-size: 60px;
-            margin-bottom: 10px;
-        }
-
-        .anniversary-badge {
-            background: rgba(255, 255, 255, 0.9);
-            color: #f5576c;
-            padding: 15px 30px;
-            border-radius: 50px;
-            display: inline-block;
-            font-size: 24px;
-            font-weight: bold;
-            margin-top: 15px;
-        }
-
-        .content {
-            background: #ffffff;
-            padding: 40px 30px;
-        }
-
-        .content h2 {
-            color: #333;
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-
-        .content p {
-            color: #555;
-            font-size: 16px;
-            line-height: 1.6;
-            margin-bottom: 15px;
-        }
-
-        .highlight {
-            color: #f5576c;
-            font-weight: bold;
-        }
-
-        .footer {
-            background: #f8f9fa;
-            padding: 30px;
-            text-align: center;
-            color: #888;
-            font-size: 14px;
-        }
-
-        .company-logo {
-            margin-top: 15px;
-            color: #f5576c;
-            font-weight: bold;
-            font-size: 18px;
-        }
-    </style>
 </head>
 
-<body>
-    <div class="email-container">
-        <div class="header">
-            <div class="emoji">🎊🏆✨</div>
-            <h1>Congratulations!</h1>
-            <div class="anniversary-badge">{{ years_of_service }} Year{{ years_of_service|pluralize }} with Us!</div>
-        </div>
-        <div class="content">
-            <h2>Dear {{ employee_name }},</h2>
-            <p>
-                Today marks a significant milestone – you've completed <span class="highlight">{{ years_of_service }}
-                    wonderful year{{ years_of_service|pluralize }}</span> with <span class="highlight">{{ company_name
-                    }}</span>! 🎉
-            </p>
-            <p>
-                Your dedication, hard work, and contributions have been invaluable to our team.
-                We truly appreciate everything you do and the positive impact you've made on our organization.
-            </p>
-            <p>
-                Thank you for your commitment, professionalism, and for being an integral part of our success story.
-                Here's to many more years of growth and achievements together!
-            </p>
-            <p style="margin-top: 30px;">
-                <strong>With gratitude and best wishes,</strong><br>
-                HR Team<br>
-                {{ company_name }}
-            </p>
-        </div>
-        <div class="footer">
-            <p>This is an automated work anniversary greeting from your HR department.</p>
-            <div class="company-logo">{{ company_name }}</div>
-        </div>
-    </div>
+<body
+    style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f0f0f0;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0f0f0; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0"
+                    style="max-width: 600px; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); background-color: #667eea; padding: 50px 30px; text-align: center;">
+                            <div style="font-size: 80px; margin-bottom: 20px;">🏆</div>
+                            <h1 style="color: #ffffff; font-size: 40px; margin: 0; font-weight: 800;">Congratulations!
+                            </h1>
+                            <p style="color: #ffffff; font-size: 20px; margin: 10px 0 0 0; font-weight: 600;">Work
+                                Anniversary Celebration</p>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 50px 40px; background-color: #ffffff;">
+                            <p style="font-size: 28px; color: #2d3748; margin: 0 0 20px 0; font-weight: 700;">Dear {{
+                                employee_name }},</p>
+
+                            <div style="text-align: center; margin: 20px 0;">
+                                <div
+                                    style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); background-color: #f093fb; color: #ffffff; display: inline-block; padding: 15px 30px; border-radius: 50px; font-size: 32px; font-weight: 800;">
+                                    {{ years_of_service }} Year{{ years_of_service|pluralize }}
+                                </div>
+                            </div>
+
+                            <p style="font-size: 18px; line-height: 1.8; color: #4a5568; margin: 20px 0;">
+                                Today marks a special milestone in your journey with <strong>{{ company_name
+                                    }}</strong>!
+                                We're celebrating <strong>{{ years_of_service }} amazing year{{
+                                    years_of_service|pluralize }}</strong>
+                                of your dedication, hard work, and outstanding contributions.
+                            </p>
+
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+                                <tr>
+                                    <td
+                                        style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); background-color: #f0f0ff; border-left: 4px solid #667eea; padding: 25px; border-radius: 12px;">
+                                        <p
+                                            style="margin: 0; font-size: 18px; color: #2d3748; font-weight: 600; line-height: 1.6;">
+                                            🌟 Your commitment, expertise, and positive attitude have made a lasting
+                                            impact
+                                            on our team and organization. Thank you for being an invaluable part of our
+                                            success!
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size: 18px; line-height: 1.8; color: #4a5568; margin: 20px 0;">
+                                Over the past {{ years_of_service }} year{{ years_of_service|pluralize }}, you've not
+                                only
+                                grown professionally but have also helped shape our company culture and inspire those
+                                around you.
+                            </p>
+
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+                                <tr>
+                                    <td
+                                        style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); background-color: #4facfe; padding: 30px; border-radius: 15px; text-align: center;">
+                                        <p
+                                            style="margin: 0; font-size: 20px; font-weight: 600; color: #ffffff; line-height: 1.6;">
+                                            🎊 Here's to many more years of success, growth, and achievements together!
+                                            🎊
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size: 18px; line-height: 1.8; color: #4a5568; margin: 20px 0;">
+                                Thank you for your continued dedication and for being an essential part of the
+                                {{ company_name }} family!
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background-color: #f7fafc; padding: 30px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
+                            <p style="margin: 5px 0; color: #667eea; font-weight: 700; font-size: 16px;">{{ company_name
+                                }}</p>
+                            <p style="margin: 5px 0; color: #718096; font-size: 14px;">HR Team • Petabytz Technologies
+                            </p>
+                            <p style="margin: 15px 0 5px 0; font-size: 12px; color: #a0aec0;">
+                                Celebrating your journey with us!
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 
 </html>

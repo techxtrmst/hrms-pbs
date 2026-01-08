@@ -1,130 +1,161 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Birthday Announcement</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
-
-        .email-container {
-            max-width: 600px;
-            margin: 40px auto;
-            background: #ffffff;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 30px;
-            text-align: center;
-            color: #ffffff;
-        }
-
-        .header h1 {
-            font-size: 28px;
-            margin: 0 0 10px 0;
-        }
-
-        .header .emoji {
-            font-size: 50px;
-            margin-bottom: 10px;
-        }
-
-        .content {
-            padding: 40px 30px;
-        }
-
-        .content p {
-            color: #555;
-            font-size: 16px;
-            line-height: 1.6;
-            margin-bottom: 15px;
-        }
-
-        .employee-card {
-            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
-            border-left: 4px solid #667eea;
-            padding: 20px;
-            margin: 25px 0;
-            border-radius: 8px;
-        }
-
-        .employee-card .name {
-            font-size: 22px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .employee-card .department {
-            color: #667eea;
-            font-size: 16px;
-        }
-
-        .cta {
-            text-align: center;
-            margin: 30px 0;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-
-        .cta p {
-            color: #667eea;
-            font-weight: bold;
-            font-size: 18px;
-            margin: 0;
-        }
-
-        .footer {
-            background: #f8f9fa;
-            padding: 20px 30px;
-            text-align: center;
-            color: #888;
-            font-size: 14px;
-        }
-    </style>
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
 </head>
 
-<body>
-    <div class="email-container">
-        <div class="header">
-            <div class="emoji">🎂🎉</div>
-            <h1>Birthday Celebration!</h1>
-        </div>
-        <div class="content">
-            <p>Hello Team,</p>
-            <p>
-                Let's all join together to wish a very Happy Birthday to our wonderful colleague!
-            </p>
+<body
+    style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0"
+                    style="max-width: 600px; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
 
-            <div class="employee-card">
-                <div class="name">{{ employee_name }}</div>
-                <div class="department">{{ department }} | {{ designation }}</div>
-            </div>
+                    <!-- Header with explicit background -->
+                    <tr>
+                        <td style="background-color: #ff6b6b; padding: 40px 30px; text-align: center;">
+                            <div style="font-size: 70px; margin-bottom: 15px; line-height: 1;">🎂</div>
+                            <h1
+                                style="color: #ffffff; font-size: 36px; margin: 0; font-weight: 800; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">
+                                Birthday Celebration!</h1>
+                        </td>
+                    </tr>
 
-            <div class="cta">
-                <p>🎈 Let's make their day special! 🎈</p>
-            </div>
+                    <!-- Content with explicit backgrounds -->
+                    <tr>
+                        <td style="padding: 40px; background-color: #ffffff;">
 
-            <p>
-                Please take a moment to wish {{ employee_first_name }} a happy birthday and make their day even more
-                special!
-            </p>
-        </div>
-        <div class="footer">
-            <p>{{ company_name }} - HR Team</p>
-        </div>
-    </div>
+                            <!-- Greeting -->
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="text-align: center; padding: 20px 0;">
+                                        <p
+                                            style="font-size: 20px; line-height: 1.6; color: #2d3748; margin: 0; font-weight: 600;">
+                                            🎉 Let's celebrate together! 🎉
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Birthday Person Card -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+                                <tr>
+                                    <td
+                                        style="background-color: #fff5f5; border: 3px solid #ff6b6b; border-radius: 15px; padding: 35px; text-align: center;">
+
+                                        <!-- Label -->
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="text-align: center; padding-bottom: 15px;">
+                                                    <p
+                                                        style="font-size: 18px; color: #ff6b6b; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 1px;">
+                                                        ⭐ TODAY'S BIRTHDAY STAR ⭐
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <!-- Name -->
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="text-align: center; padding: 15px 0;">
+                                                    <h2
+                                                        style="font-size: 34px; color: #1a202c; font-weight: 900; margin: 0; line-height: 1.2;">
+                                                        {{ employee_name }}
+                                                    </h2>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <!-- Details -->
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="text-align: center; padding-top: 10px;">
+                                                    <p
+                                                        style="font-size: 16px; color: #4a5568; margin: 0; font-weight: 600;">
+                                                        {{ designation }}{% if department %} • {{ department }}{% endif
+                                                        %}
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Message 1 -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+                                <tr>
+                                    <td style="text-align: center;">
+                                        <p
+                                            style="font-size: 18px; line-height: 1.8; color: #2d3748; margin: 0; font-weight: 500;">
+                                            Join us in wishing <strong style="color: #ff6b6b; font-weight: 700;">{{
+                                                employee_first_name }}</strong> a very Happy Birthday! 🎈
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Message 2 -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 25px 0;">
+                                <tr>
+                                    <td style="text-align: center;">
+                                        <p
+                                            style="font-size: 18px; line-height: 1.8; color: #2d3748; margin: 0; font-weight: 500;">
+                                            Let's make {{ employee_first_name }}'s day extra special with our warm
+                                            wishes and celebrations!
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Call to Action Box -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 35px 0;">
+                                <tr>
+                                    <td
+                                        style="background-color: #667eea; padding: 30px; border-radius: 15px; text-align: center;">
+                                        <p
+                                            style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1.5;">
+                                            🌟 Drop by to wish {{ employee_first_name }} a Happy Birthday! 🌟
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer with explicit background -->
+                    <tr>
+                        <td
+                            style="background-color: #f7fafc; padding: 30px 40px; text-align: center; border-top: 2px solid #e2e8f0;">
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="text-align: center;">
+                                        <p style="margin: 8px 0; color: #ff6b6b; font-weight: 800; font-size: 18px;">{{
+                                            company_name }}</p>
+                                        <p style="margin: 8px 0; color: #4a5568; font-size: 15px; font-weight: 600;">HR
+                                            Team • Petabytz Technologies</p>
+                                        <p
+                                            style="margin: 15px 0 8px 0; font-size: 13px; color: #718096; font-weight: 500;">
+                                            Celebrating our amazing team members!
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 
 </html>

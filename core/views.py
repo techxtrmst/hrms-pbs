@@ -263,9 +263,9 @@ def admin_dashboard(request):
             if att.location_in and att.status == "WFH":
                 remote_clockins += 1
 
-            # On Duty
-            if att.status == "ON_DUTY":
-                on_duty_count += 1
+        # On Duty (Should be counted even if not clocked in, assuming approved)
+        if att.status == "ON_DUTY":
+            on_duty_count += 1
 
         # Early Departures
         if att.is_early_departure:
@@ -545,6 +545,39 @@ def admin_dashboard(request):
         else None,
     }
 
+    # Check for Admin's own celebration
+    try:
+        admin_emp = request.user.employee_profile
+        celebration_type = None
+        
+        # Birthday Check
+        if admin_emp.dob:
+             try:
+                 # Handle leap years
+                 bday_this_year = admin_emp.dob.replace(year=today.year)
+             except ValueError:
+                 bday_this_year = admin_emp.dob.replace(year=today.year, day=28)
+             
+             if bday_this_year == today:
+                 celebration_type = 'birthday'
+
+        # Anniversary Check
+        if admin_emp.date_of_joining:
+            try:
+                anniv_this_year = admin_emp.date_of_joining.replace(year=today.year)
+            except ValueError:
+                anniv_this_year = admin_emp.date_of_joining.replace(year=today.year, day=28)
+            
+            if anniv_this_year == today and today.year > admin_emp.date_of_joining.year:
+                celebration_type = 'anniversary' if not celebration_type else 'both'
+        
+        if celebration_type:
+            context['celebration_type'] = celebration_type
+            context['years_service'] = today.year - admin_emp.date_of_joining.year if admin_emp.date_of_joining else 0
+
+    except:
+        pass
+
     return render(request, "core/admin_dashboard.html", context)
 
 
@@ -711,6 +744,30 @@ def employee_dashboard(request):
         "recent_leave_requests": recent_leave_requests,
         "attendance_history": history,
     }
+
+    # Check for celebrations
+    celebration_type = None
+    if employee.dob:
+         try:
+             # Handle leap years
+             bday_this_year = employee.dob.replace(year=today.year)
+         except ValueError:
+             bday_this_year = employee.dob.replace(year=today.year, day=28)
+         
+         if bday_this_year == today:
+             celebration_type = 'birthday'
+
+    if employee.date_of_joining:
+        try:
+            anniv_this_year = employee.date_of_joining.replace(year=today.year)
+        except ValueError:
+            anniv_this_year = employee.date_of_joining.replace(year=today.year, day=28)
+        
+        if anniv_this_year == today and today.year > employee.date_of_joining.year:
+            celebration_type = 'anniversary' if not celebration_type else 'both'
+    
+    context['celebration_type'] = celebration_type
+    context['years_service'] = today.year - employee.date_of_joining.year if employee.date_of_joining else 0
 
     return render(request, "core/employee_dashboard.html", context)
 
@@ -950,11 +1007,17 @@ def my_leaves(request):
             # Send Email Notifications
             try:
                 from core.email_utils import send_leave_request_notification
-
-                send_leave_request_notification(leave_request)
+                result = send_leave_request_notification(leave_request)
+                
+                if not result.get('hr', False):
+                    messages.warning(request, "Leave request submitted, but email notification to HR failed. Please notify HR manually.")
+                
             except Exception as mail_err:
-                print(f"Error sending email: {mail_err}")
-                # Don't fail the request if email fails, just log it
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error sending email: {mail_err}")
+                messages.warning(request, "Leave request submitted, but email notification system encountered an error.")
+
 
             messages.success(request, "Leave request submitted successfully.")
 
@@ -1943,6 +2006,16 @@ def leave_requests(request):
                     f"Leave request approved for {leave_request.employee.user.get_full_name()}",
                 )
 
+                # Send Approval Email
+                try:
+                    from core.email_utils import send_leave_approval_notification
+                    if not send_leave_approval_notification(leave_request):
+                        messages.warning(request, "Leave approved, but email notification failed.")
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Error sending approval email: {e}")
+
             elif action == "reject":
                 if not admin_comment:
                     messages.error(request, "Admin comment is mandatory for rejection.")
@@ -1965,6 +2038,16 @@ def leave_requests(request):
                     request,
                     f"Leave request rejected for {leave_request.employee.user.get_full_name()}",
                 )
+
+                # Send Rejection Email
+                try:
+                    from core.email_utils import send_leave_rejection_notification
+                    if not send_leave_rejection_notification(leave_request):
+                        messages.warning(request, "Leave rejected, but email notification failed.")
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Error sending rejection email: {e}")
 
         except LeaveRequest.DoesNotExist:
             messages.error(request, "Leave request not found.")

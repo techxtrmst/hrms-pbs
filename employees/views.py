@@ -333,6 +333,10 @@ def clock_in(request):
             else:
                 status = "PRESENT"
 
+            # Preserve 'ON_DUTY' status if already set (e.g. via approved request)
+            if attendance.pk and attendance.status == 'ON_DUTY':
+                status = 'ON_DUTY'
+
             # Set clock-in details
             attendance.clock_in = timezone.now()
             attendance.location_in = f"{lat},{lng}"
@@ -609,13 +613,23 @@ def update_location(request):
                     LocationLog.objects.create(
                         employee=employee, latitude=lat, longitude=lng
                     )
-                    return JsonResponse(
-                        {
-                            "status": "success",
-                            "message": "Coordinates logged",
-                            "location_tracking_active": True,
-                        }
-                    )
+                    
+                    # Check for 9-hour notification
+                    response_data = {
+                        "status": "success",
+                        "message": "Coordinates logged",
+                        "location_tracking_active": True,
+                    }
+                    
+                    # Check if shift duration exceeded (default 9 hours)
+                    if attendance.clock_in:
+                        duration = timezone.now() - attendance.clock_in
+                        # 9 hours = 32400 seconds
+                        if duration.total_seconds() >= 9 * 3600:
+                            response_data["shift_completed"] = True
+                            response_data["notification"] = "Your shift is completed (9 hours). Please clock out."
+                    
+                    return JsonResponse(response_data)
                 else:
                     return JsonResponse(
                         {
@@ -715,6 +729,8 @@ def employee_profile(request):
                 id_proofs.pan_card = request.FILES["pan_card"]
 
         id_proofs.save()
+        from django.contrib import messages
+        messages.success(request, "ID Documents updated successfully.")
 
         # Deletion logic for Admins
         if is_admin:
@@ -811,7 +827,25 @@ class LeaveApplyView(LoginRequiredMixin, CreateView):
         response = super().form_valid(form)
 
         # Send email notifications
-        send_leave_request_notification(self.object)
+        try:
+            from core.email_utils import send_leave_request_notification
+            result = send_leave_request_notification(self.object)
+            if not result.get('hr', False):
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Failed to send leave request email to HR for {self.object.id}")
+                from django.contrib import messages
+                messages.warning(self.request, "Leave request created, but email notification to HR failed. Please notify HR manually.")
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error calling send_leave_request_notification: {e}")
+            from django.contrib import messages
+            messages.warning(self.request, "Leave request created, but email notification failed. Please notify HR manually.")
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error calling send_leave_request_notification: {e}")
 
         return response
 
@@ -856,12 +890,36 @@ def approve_leave(request, pk):
 
         balance.save()
 
+        # Update Attendance Records
+        from datetime import timedelta
+        current_date = leave_request.start_date
+        while current_date <= leave_request.end_date:
+            # Get or Create Attendance
+            att_record, created = Attendance.objects.get_or_create(
+                employee=leave_request.employee,
+                date=current_date
+            )
+            
+            # Update status
+            if leave_request.leave_type == 'OD':
+                att_record.status = 'ON_DUTY'
+            else:
+                att_record.status = 'LEAVE'
+            
+            att_record.save()
+            current_date += timedelta(days=1)
+
         # Send Approval Email
         try:
              from core.email_utils import send_leave_approval_notification
-             send_leave_approval_notification(leave_request)
+             if send_leave_approval_notification(leave_request):
+                 messages.success(request, f"Leave approved. Email sent to {leave_request.employee.user.first_name}.")
+             else:
+                 messages.warning(request, "Leave approved, but email notification failed.")
         except Exception as e:
-             print(f"Error sending approval email: {e}")
+             import logging
+             logger = logging.getLogger(__name__)
+             logger.error(f"Error sending approval email: {e}")
 
         return redirect(request.META.get("HTTP_REFERER", "admin_dashboard"))
     return redirect("admin_dashboard")
@@ -891,9 +949,14 @@ def reject_leave(request, pk):
         # Send Rejection Email
         try:
             from core.email_utils import send_leave_rejection_notification
-            send_leave_rejection_notification(leave_request)
+            if send_leave_rejection_notification(leave_request):
+                messages.success(request, "Leave rejected. Notification sent.")
+            else:
+                 messages.warning(request, "Leave rejected, but email notification failed.")
         except Exception as e:
-            print(f"Error sending rejection email: {e}")
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error sending rejection email: {e}")
 
         return redirect(request.META.get("HTTP_REFERER", "admin_dashboard"))
     return redirect("admin_dashboard")
@@ -1781,13 +1844,22 @@ class RegularizationCreateView(LoginRequiredMixin, CreateView):
         form.instance.employee = self.request.user.employee_profile
         response = super().form_valid(form)
 
-        # Send Email Notification using the new utility
+        # Send Email Notification
         try:
             from core.email_utils import send_regularization_request_notification
-
-            send_regularization_request_notification(self.object)
+            result = send_regularization_request_notification(self.object)
+            if not result.get('hr', False):
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Failed to send regularization request email to HR for {self.object.id}")
+                from django.contrib import messages
+                messages.warning(self.request, "Request submitted, but email notification to HR failed. Please notify HR manually.")
         except Exception as e:
-            print(f"Error sending regularization email: {e}")
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error calling regularization email utility: {e}")
+            from django.contrib import messages
+            messages.warning(self.request, "Request submitted, but email notification failed. Please notify HR manually.")
 
         return response
 
@@ -1873,9 +1945,14 @@ def approve_regularization(request, pk):
         # Send Approval Email
         try:
              from core.email_utils import send_regularization_approval_notification
-             send_regularization_approval_notification(reg_request)
+             if send_regularization_approval_notification(reg_request):
+                 messages.success(request, "Regularization approved. Notification sent.")
+             else:
+                 messages.warning(request, "Regularization approved, but email notification failed.")
         except Exception as e:
-            print(f"Error sending regularization approval email: {e}")
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error sending regularization approval email: {e}")
 
         return redirect(request.META.get("HTTP_REFERER", "regularization_list"))
 
@@ -1907,9 +1984,14 @@ def reject_regularization(request, pk):
         # Send Rejection Email
         try:
             from core.email_utils import send_regularization_rejection_notification
-            send_regularization_rejection_notification(reg_request)
+            if send_regularization_rejection_notification(reg_request):
+                 messages.success(request, "Regularization rejected. Notification sent.")
+            else:
+                 messages.warning(request, "Regularization rejected, but email notification failed.")
         except Exception as e:
-            print(f"Error sending regularization rejection email: {e}")
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error sending regularization rejection email: {e}")
 
         return redirect(request.META.get("HTTP_REFERER", "regularization_list"))
 

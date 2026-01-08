@@ -3,206 +3,144 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Leave Request Notification</title>
-    <style>
-        body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: #f6f8fb;
-            margin: 0;
-            padding: 0;
-            color: #4a5568;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 40px auto;
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
-            border: 1px solid #e2e8f0;
-        }
-
-        .header {
-            background-color: #ffffff;
-            padding: 40px 40px 10px;
-            text-align: left;
-            border-bottom: 2px solid #f0f0f0;
-        }
-
-        .header h1 {
-            color: #2d3748;
-            font-size: 24px;
-            font-weight: 700;
-            margin: 0 0 10px;
-            letter-spacing: -0.5px;
-        }
-
-        .status-badge {
-            display: inline-block;
-            background-color: #ebf8ff;
-            color: #3182ce;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .content {
-            padding: 40px;
-        }
-
-        .intro {
-            font-size: 16px;
-            line-height: 1.6;
-            margin-bottom: 30px;
-            color: #4a5568;
-        }
-
-        .details-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin-bottom: 30px;
-        }
-
-        .details-table td {
-            padding: 12px 0;
-            border-bottom: 1px solid #edf2f7;
-            font-size: 15px;
-        }
-
-        .details-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .label {
-            color: #718096;
-            width: 40%;
-            font-weight: 500;
-        }
-
-        .value {
-            color: #2d3748;
-            font-weight: 600;
-            text-align: right;
-        }
-
-        .reason-box {
-            background-color: #f7fafc;
-            border-left: 4px solid #4fd1c5;
-            padding: 20px;
-            margin-top: 10px;
-            border-radius: 6px;
-        }
-
-        .reason-label {
-            text-transform: uppercase;
-            font-size: 11px;
-            letter-spacing: 1px;
-            color: #718096;
-            margin-bottom: 8px;
-            font-weight: 700;
-        }
-
-        .reason-text {
-            color: #2d3748;
-            font-size: 15px;
-            margin: 0;
-            font-style: italic;
-            line-height: 1.5;
-        }
-
-        .action-area {
-            text-align: center;
-            margin-top: 40px;
-            padding-top: 30px;
-            border-top: 1px solid #edf2f7;
-        }
-
-        .cta-button {
-            display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #ffffff;
-            padding: 14px 32px;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 16px;
-            box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
-            transition: transform 0.2s;
-        }
-
-        .footer {
-            background-color: #f8fafc;
-            padding: 25px;
-            text-align: center;
-            font-size: 13px;
-            color: #a0aec0;
-            border-top: 1px solid #edf2f7;
-        }
-
-        p {
-            margin: 0;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
-<body>
-    <div class="container">
-        <div class="header">
-            <span class="status-badge">New Request</span>
-            <h1>Leave Application</h1>
-        </div>
+<body
+    style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f0f0f0;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0f0f0; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="650" cellpadding="0" cellspacing="0"
+                    style="max-width: 650px; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
 
-        <div class="content">
-            <p class="intro">
-                <strong>{{ employee_name }}</strong> has submitted a new leave request for your review.
-            </p>
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); background-color: #667eea; padding: 35px 40px;">
+                            <table cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td width="60" style="font-size: 50px; vertical-align: middle;">📋</td>
+                                    <td style="vertical-align: middle;">
+                                        <h1 style="color: #ffffff; font-size: 32px; margin: 0; font-weight: 800;">Leave
+                                            Request</h1>
+                                        <p style="color: #ffffff; font-size: 16px; margin: 5px 0 0 0;">New leave
+                                            application received</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
 
-            <table class="details-table">
-                <tr>
-                    <td class="label">Employee ID</td>
-                    <td class="value">{{ employee_id }}</td>
-                </tr>
-                <tr>
-                    <td class="label">Department</td>
-                    <td class="value">{{ department }}</td>
-                </tr>
-                <tr>
-                    <td class="label">Leave Type</td>
-                    <td class="value">{{ leave_type }}</td>
-                </tr>
-                <tr>
-                    <td class="label">Date Range</td>
-                    <td class="value">{{ start_date }} - {{ end_date }}</td>
-                </tr>
-                <tr>
-                    <td class="label">Total Duration</td>
-                    <td class="value">{{ total_days }} Days ({{ duration }})</td>
-                </tr>
-            </table>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px; background-color: #ffffff;">
 
-            {% if reason %}
-            <div class="reason-box">
-                <div class="reason-label">Reason</div>
-                <p class="reason-text">"{{ reason }}"</p>
-            </div>
-            {% endif %}
+                            <!-- Employee Info Card -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 25px 0;">
+                                <tr>
+                                    <td
+                                        style="background: linear-gradient(135deg, #667eea08 0%, #764ba208 100%); background-color: #f0f0ff; border-left: 4px solid #667eea; padding: 25px; border-radius: 12px;">
+                                        <table width="100%" cellpadding="8" cellspacing="0">
+                                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                                <td
+                                                    style="font-weight: 700; color: #4a5568; font-size: 15px; width: 180px;">
+                                                    Employee Name:</td>
+                                                <td style="color: #2d3748; font-size: 15px;"><strong>{{ employee_name
+                                                        }}</strong></td>
+                                            </tr>
+                                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                                <td style="font-weight: 700; color: #4a5568; font-size: 15px;">Employee
+                                                    ID:</td>
+                                                <td style="color: #2d3748; font-size: 15px;">{{ employee_id }}</td>
+                                            </tr>
+                                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                                <td style="font-weight: 700; color: #4a5568; font-size: 15px;">
+                                                    Department:</td>
+                                                <td style="color: #2d3748; font-size: 15px;">{{ department }}</td>
+                                            </tr>
+                                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                                <td style="font-weight: 700; color: #4a5568; font-size: 15px;">
+                                                    Designation:</td>
+                                                <td style="color: #2d3748; font-size: 15px;">{{ designation }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-weight: 700; color: #4a5568; font-size: 15px;">Request
+                                                    Date:</td>
+                                                <td style="color: #2d3748; font-size: 15px;">{{ request_date }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
 
-            <div class="action-area">
-                <a href="#" class="cta-button">Review Request</a>
-                <p style="margin-top: 15px; font-size: 13px; color: #a0aec0;">Log in to the HRMS portal to take action.
-                </p>
-            </div>
-        </div>
+                            <!-- Leave Details -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 25px 0;">
+                                <tr>
+                                    <td
+                                        style="background: linear-gradient(135deg, #f093fb15 0%, #f5576c15 100%); background-color: #fff5f8; border: 2px solid #f093fb; border-radius: 15px; padding: 25px;">
+                                        <div
+                                            style="font-size: 24px; font-weight: 800; color: #2d3748; margin: 0 0 15px 0;">
+                                            {{ leave_type }}</div>
+                                        <div style="font-size: 18px; color: #4a5568; margin: 10px 0; font-weight: 600;">
+                                            📅 {{ start_date }} to {{ end_date }}
+                                        </div>
+                                        <div
+                                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); background-color: #667eea; color: #ffffff; display: inline-block; padding: 8px 20px; border-radius: 50px; font-size: 14px; font-weight: 700; margin: 10px 0;">
+                                            {{ total_days }} Day{{ total_days|pluralize }} • {{ duration }}
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
 
-        <div class="footer">
-            <p>Sent via {{ company_name }} HRMS</p>
-            <p style="margin-top: 5px;">&copy; {% now "Y" %} {{ company_name }}. All rights reserved.</p>
-        </div>
-    </div>
+                            <!-- Reason -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
+                                <tr>
+                                    <td style="background-color: #f7fafc; border-radius: 12px; padding: 20px;">
+                                        <div
+                                            style="font-weight: 700; color: #4a5568; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">
+                                            Reason for Leave</div>
+                                        <p style="color: #2d3748; font-size: 16px; line-height: 1.6; margin: 0;">{{
+                                            reason }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Action Box -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+                                <tr>
+                                    <td
+                                        style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); background-color: #4facfe; padding: 25px; border-radius: 12px; text-align: center;">
+                                        <p
+                                            style="margin: 0 0 15px 0; font-size: 16px; font-weight: 600; color: #ffffff;">
+                                            ⚡ Action Required</p>
+                                        <p style="margin: 0; font-size: 14px; color: #ffffff;">Please review and
+                                            approve/reject this leave request in the HRMS system.</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background-color: #f7fafc; padding: 25px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
+                            <p style="margin: 5px 0; color: #667eea; font-weight: 700; font-size: 16px;">{{ company_name
+                                }}</p>
+                            <p style="margin: 5px 0; color: #718096; font-size: 14px;">HR Management System • Petabytz
+                                Technologies</p>
+                            <p style="margin: 15px 0 5px 0; font-size: 12px; color: #a0aec0;">
+                                This is an automated notification from your HRMS system.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 
 </html>

@@ -350,10 +350,10 @@
             attribution: '© OpenStreetMap'
         });
 
-        // Initialize Map with Google Streets by default
+        // Initialize Map with Google Street View by default as requested
         map = L.map('map', {
             zoomControl: false,
-            layers: [googleStreets]
+            layers: [googleStreets] // Default to Google Streets
         }).setView([startPoint.lat, startPoint.lng], 16);
 
         // Layer Control
@@ -403,10 +403,10 @@
             let label = '';
             let color = '#94a3b8'; // Default Gray
 
-            if (loc.type === 'in') {
+            if (loc.type === 'start') {
                 color = '#6366f1';
                 label = 'A';
-            } else if (loc.type === 'out') {
+            } else if (loc.type === 'end') {
                 color = '#ef4444';
                 label = 'R'; // As per screenshot 'R' for remote clock out? Or E
             } else {

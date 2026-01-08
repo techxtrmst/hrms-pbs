@@ -292,12 +292,14 @@ class Attendance(models.Model):
                     # Limit Exceeded -> Apply Penalty
                     if shift.grace_exceeded_action == 'HALF_DAY':
                         self.is_half_day_late = True
-                        self.status = 'HALF_DAY'
+                        if self.status not in ['ON_DUTY', 'WFH', 'LEAVE']:
+                            self.status = 'HALF_DAY'
                         # We still mark grace used as they essentially used the time
                         self.is_grace_used = True
                     elif shift.grace_exceeded_action == 'LOP':
                         self.is_half_day_late = True # Using same flag but status might be different?
-                        self.status = 'ABSENT' # Or specific LOP status
+                        if self.status not in ['ON_DUTY', 'WFH', 'LEAVE']:
+                            self.status = 'ABSENT' # Or specific LOP status
                         self.is_grace_used = True
                     else:
                         # NONE or tracking only
@@ -444,9 +446,9 @@ class Attendance(models.Model):
         if self.clock_out:
             return True
         
-        # Stop if tracking end time has passed
-        if self.location_tracking_end_time and timezone.now() >= self.location_tracking_end_time:
-            return True
+        # User requested tracking until actual clock-out, so we ignore location_tracking_end_time for stopping
+        # if self.location_tracking_end_time and timezone.now() >= self.location_tracking_end_time:
+        #    return True
         
         return False
 
@@ -518,6 +520,7 @@ class LeaveRequest(models.Model):
         ('EL', 'Earned Leave'),
         ('CO', 'Comp Off'),
         ('UL', 'Unpaid Leave (LOP)'),
+        ('OD', 'On Duty'),
         ('OT', 'Others'),
     ]
     STATUS_CHOICES = [

@@ -6,8 +6,32 @@ from django.core.mail import send_mail, EmailMultiAlternatives, get_connection
 from django.template.loader import render_to_string
 from django.conf import settings
 import logging
+import environ
 
+env = environ.Env()
 logger = logging.getLogger(__name__)
+
+
+def get_hr_email_connection():
+    """
+    Get email connection for hrms@petabytz.com with forced .env reload
+    to ensure detailed password updates are picked up without server restart.
+    """
+    # Force reload .env
+    try:
+        environ.Env.read_env(settings.BASE_DIR / ".env")
+    except Exception as e:
+        logger.warning(f"Could not reload .env file: {e}")
+
+    return get_connection(
+        backend='django.core.mail.backends.smtp.EmailBackend',
+        host='smtp.office365.com',
+        port=587,
+        use_tls=True,
+        username='hrms@petabytz.com',
+        password=env('PETABYTZ_HR_EMAIL_PASSWORD', default=''),
+        fail_silently=False,
+    )
 
 
 def get_company_email_connection(company):
@@ -40,7 +64,7 @@ def get_company_email_connection(company):
 
 def send_birthday_email(employee):
     """
-    Send individual birthday email to an employee using company-specific email
+    Send individual birthday email to an employee using hrms@petabytz.com
     
     Args:
         employee: Employee model instance
@@ -54,15 +78,11 @@ def send_birthday_email(employee):
             logger.warning(f"Employee {employee.user.get_full_name()} has no email address")
             return False
         
-        # Get company-specific email connection
-        connection = get_company_email_connection(employee.company)
+        # MANDATORY: Use hrms@petabytz.com for all birthday emails
+        from_email = 'Petabytz HR <hrms@petabytz.com>'
         
-        # Determine from email
-        if employee.company.hr_email:
-            from_name = employee.company.hr_email_name or f"{employee.company.name} HR"
-            from_email = f'{from_name} <{employee.company.hr_email}>'
-        else:
-            from_email = settings.DEFAULT_FROM_EMAIL
+        # Get connection
+        connection = get_hr_email_connection()
         
         # Prepare context for email template
         context = {
@@ -98,7 +118,7 @@ def send_birthday_email(employee):
 
 def send_anniversary_email(employee, years):
     """
-    Send individual work anniversary email to an employee using company-specific email
+    Send individual work anniversary email to an employee using hrms@petabytz.com
     
     Args:
         employee: Employee model instance
@@ -113,15 +133,11 @@ def send_anniversary_email(employee, years):
             logger.warning(f"Employee {employee.user.get_full_name()} has no email address")
             return False
         
-        # Get company-specific email connection
-        connection = get_company_email_connection(employee.company)
+        # MANDATORY: Use hrms@petabytz.com for all anniversary emails
+        from_email = 'Petabytz HR <hrms@petabytz.com>'
         
-        # Determine from email
-        if employee.company.hr_email:
-            from_name = employee.company.hr_email_name or f"{employee.company.name} HR"
-            from_email = f'{from_name} <{employee.company.hr_email}>'
-        else:
-            from_email = settings.DEFAULT_FROM_EMAIL
+        # Get connection
+        connection = get_hr_email_connection()
         
         # Prepare context for email template
         context = {
@@ -158,7 +174,7 @@ def send_anniversary_email(employee, years):
 
 def send_birthday_announcement(employee, company_employees):
     """
-    Send birthday announcement to all employees in the company using company-specific email
+    Send birthday announcement to all employees in the company using hrms@petabytz.com
     
     Args:
         employee: Employee model instance (birthday person)
@@ -168,15 +184,11 @@ def send_birthday_announcement(employee, company_employees):
         int: Number of emails sent successfully
     """
     try:
-        # Get company-specific email connection
-        connection = get_company_email_connection(employee.company)
+        # MANDATORY: Use hrms@petabytz.com for all birthday announcements
+        from_email = 'Petabytz HR <hrms@petabytz.com>'
         
-        # Determine from email
-        if employee.company.hr_email:
-            from_name = employee.company.hr_email_name or f"{employee.company.name} HR"
-            from_email = f'{from_name} <{employee.company.hr_email}>'
-        else:
-            from_email = settings.DEFAULT_FROM_EMAIL
+        # Get connection
+        connection = get_hr_email_connection()
         
         # Prepare context for email template
         context = {
@@ -224,7 +236,7 @@ def send_birthday_announcement(employee, company_employees):
 
 def send_anniversary_announcement(employee, years, company_employees):
     """
-    Send work anniversary announcement to all employees in the company using company-specific email
+    Send work anniversary announcement to all employees in the company using hrms@petabytz.com
     
     Args:
         employee: Employee model instance (anniversary person)
@@ -235,15 +247,11 @@ def send_anniversary_announcement(employee, years, company_employees):
         int: Number of emails sent successfully
     """
     try:
-        # Get company-specific email connection
-        connection = get_company_email_connection(employee.company)
+        # MANDATORY: Use hrms@petabytz.com for all anniversary announcements
+        from_email = 'Petabytz HR <hrms@petabytz.com>'
         
-        # Determine from email
-        if employee.company.hr_email:
-            from_name = employee.company.hr_email_name or f"{employee.company.name} HR"
-            from_email = f'{from_name} <{employee.company.hr_email}>'
-        else:
-            from_email = settings.DEFAULT_FROM_EMAIL
+        # Get connection
+        connection = get_hr_email_connection()
         
         # Prepare context for email template
         context = {
@@ -351,7 +359,7 @@ def send_probation_completion_email(employee):
 
 def send_leave_request_notification(leave_request):
     """
-    Send leave request notification to reporting manager and HR/Admin
+    Send leave request notification to hrms@petabytz.com (MANDATORY) and reporting manager
     
     Args:
         leave_request: LeaveRequest model instance
@@ -365,15 +373,11 @@ def send_leave_request_notification(leave_request):
         employee = leave_request.employee
         company = employee.company
         
-        # Get company-specific email connection
-        connection = get_company_email_connection(company)
+        # MANDATORY: Use hrms@petabytz.com for all leave request notifications
+        from_email = 'Petabytz HR <hrms@petabytz.com>'
         
-        # Determine from email
-        if company.hr_email:
-            from_name = company.hr_email_name or f"{company.name} HR"
-            from_email = f'{from_name} <{company.hr_email}>'
-        else:
-            from_email = settings.DEFAULT_FROM_EMAIL
+        # Get connection using helper that reloads env
+        connection = get_hr_email_connection()
         
         # Prepare context for email template
         context = {
@@ -395,46 +399,37 @@ def send_leave_request_notification(leave_request):
         html_content = render_to_string('core/emails/leave_request_notification.html', context)
         
         # Create email subject
-        subject = f'Leave Application: {employee.user.get_full_name()} - {leave_request.get_leave_type_display()}'
+        subject = f'📋 Leave Application: {employee.user.get_full_name()} - {leave_request.get_leave_type_display()}'
         
-        # Send to Reporting Manager
+        # Build recipient list - MANDATORY: hrms@petabytz.com MUST receive all leave requests
+        recipients = ['hrms@petabytz.com']
+        
+        # Add reporting manager to recipients if exists
         if employee.manager and employee.manager.email:
-            try:
-                email = EmailMultiAlternatives(
-                    subject, 
-                    '', 
-                    from_email, 
-                    [employee.manager.email],
-                    connection=connection
-                )
-                email.attach_alternative(html_content, "text/html")
-                email.send()
-                result['manager'] = True
-                logger.info(f"Leave request notification sent to manager {employee.manager.email} for {employee.user.get_full_name()}")
-            except Exception as e:
-                logger.error(f"Failed to send leave request email to manager: {str(e)}")
+            recipients.append(employee.manager.email)
         
-        # Send to HR/Admin (company HR email)
-        if company.hr_email:
-            try:
-                email = EmailMultiAlternatives(
-                    subject, 
-                    '', 
-                    from_email, 
-                    [company.hr_email],
-                    connection=connection
-                )
-                email.attach_alternative(html_content, "text/html")
-                email.send()
-                result['hr'] = True
-                logger.info(f"Leave request notification sent to HR {company.hr_email} for {employee.user.get_full_name()}")
-            except Exception as e:
-                logger.error(f"Failed to send leave request email to HR: {str(e)}")
+        # Send to all recipients (hrms@petabytz.com + manager)
+        try:
+            email = EmailMultiAlternatives(
+                subject, 
+                '', 
+                from_email, 
+                recipients,
+                connection=connection
+            )
+            email.attach_alternative(html_content, "text/html")
+            email.send()
+            result['hr'] = True
+            if employee.manager and employee.manager.email:
+                result['manager'] = True
+            logger.info(f"Leave request notification sent to {', '.join(recipients)} for {employee.user.get_full_name()}")
+        except Exception as e:
+            logger.error(f"Failed to send leave request email: {str(e)}")
         
         # Send Acknowledgment to Employee
         if employee.user.email:
             try:
-                ack_subject = f"Acknowledgement: {subject}"
+                ack_subject = f"✅ Acknowledgement: {subject}"
                 email = EmailMultiAlternatives(
                     ack_subject, 
                     '', 
@@ -457,7 +452,7 @@ def send_leave_request_notification(leave_request):
 
 def send_regularization_request_notification(regularization_request):
     """
-    Send regularization request notification to reporting manager and HR/Admin
+    Send regularization request notification to hrms@petabytz.com (MANDATORY) and reporting manager
     
     Args:
         regularization_request: RegularizationRequest model instance
@@ -471,15 +466,11 @@ def send_regularization_request_notification(regularization_request):
         employee = regularization_request.employee
         company = employee.company
         
-        # Get company-specific email connection
-        connection = get_company_email_connection(company)
+        # MANDATORY: Use hrms@petabytz.com for all regularization request notifications
+        from_email = 'Petabytz HR <hrms@petabytz.com>'
         
-        # Determine from email
-        if company.hr_email:
-            from_name = company.hr_email_name or f"{company.name} HR"
-            from_email = f'{from_name} <{company.hr_email}>'
-        else:
-            from_email = settings.DEFAULT_FROM_EMAIL
+        # Get connection using helper
+        connection = get_hr_email_connection()
         
         # Prepare context for email template
         context = {
@@ -501,44 +492,35 @@ def send_regularization_request_notification(regularization_request):
         # Create email subject
         subject = f'⏰ Attendance Regularization Request from {employee.user.get_full_name()}'
         
-        # Send to Reporting Manager
-        if employee.manager and employee.manager.email:
-            try:
-                email = EmailMultiAlternatives(
-                    subject, 
-                    '', 
-                    from_email, 
-                    [employee.manager.email],
-                    connection=connection
-                )
-                email.attach_alternative(html_content, "text/html")
-                email.send()
-                result['manager'] = True
-                logger.info(f"Regularization request notification sent to manager {employee.manager.email} for {employee.user.get_full_name()}")
-            except Exception as e:
-                logger.error(f"Failed to send regularization request email to manager: {str(e)}")
+        # Build recipient list - MANDATORY: hrms@petabytz.com MUST receive all regularization requests
+        recipients = ['hrms@petabytz.com']
         
-        # Send to HR/Admin (company HR email)
-        if company.hr_email:
-            try:
-                email = EmailMultiAlternatives(
-                    subject, 
-                    '', 
-                    from_email, 
-                    [company.hr_email],
-                    connection=connection
-                )
-                email.attach_alternative(html_content, "text/html")
-                email.send()
-                result['hr'] = True
-                logger.info(f"Regularization request notification sent to HR {company.hr_email} for {employee.user.get_full_name()}")
-            except Exception as e:
-                logger.error(f"Failed to send regularization request email to HR: {str(e)}")
+        # Add reporting manager to recipients if exists
+        if employee.manager and employee.manager.email:
+            recipients.append(employee.manager.email)
+        
+        # Send to all recipients (hrms@petabytz.com + manager)
+        try:
+            email = EmailMultiAlternatives(
+                subject, 
+                '', 
+                from_email, 
+                recipients,
+                connection=connection
+            )
+            email.attach_alternative(html_content, "text/html")
+            email.send()
+            result['hr'] = True
+            if employee.manager and employee.manager.email:
+                result['manager'] = True
+            logger.info(f"Regularization request notification sent to {', '.join(recipients)} for {employee.user.get_full_name()}")
+        except Exception as e:
+            logger.error(f"Failed to send regularization request email: {str(e)}")
         
         # Send Acknowledgment to Employee
         if employee.user.email:
             try:
-                ack_subject = f"Acknowledgement: {subject}"
+                ack_subject = f"✅ Acknowledgement: {subject}"
                 email = EmailMultiAlternatives(
                     ack_subject, 
                     '', 
@@ -594,11 +576,6 @@ def send_welcome_email_with_link(employee, domain):
         token = default_token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         
-        # Assuming standard Django password reset URL pattern
-        # If not present, we might need a custom one. 
-        # For now, let's assume 'password_reset_confirm' exists or we use a custom activation URL.
-        # Let's check urls.py for password reset. If not, we might need to rely on 'password_reset_confirm' from django.contrib.auth
-        
         # Construct the link
         try:
             link = f"http://{domain}{reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})}"
@@ -613,29 +590,11 @@ def send_welcome_email_with_link(employee, domain):
             'username': user.username
         }
         
-        # Render HTML (Create a simple template string or file)
-        # For simplicity in this step, I'll use a simple HTML string if file doesn't exist, 
-        # but I should probably create the template. 
-        # I'll try to render a template 'core/emails/welcome_email.html'.
-        
         try:
             html_content = render_to_string('core/emails/welcome_email.html', context)
         except:
             # Fallback Template
-            html_content = f"""
-            <html>
-                <body>
-                    <h2>Welcome to {employee.company.name}!</h2>
-                    <p>Hello {user.get_full_name()},</p>
-                    <p>Your account has been created. Please click the link below to set your password and access your account:</p>
-                    <p><a href="{link}">Activate Account</a></p>
-                    <p>Or copy this link: {link}</p>
-                    <br>
-                    <p>Username: {user.username}</p>
-                    <p>Best regards,<br>HR Team</p>
-                </body>
-            </html>
-            """
+            html_content = f"<html><body><h2>Welcome to {employee.company.name}!</h2><p>Please activate your account: <a href='{link}'>{link}</a></p></body></html>"
 
         subject = f'Welcome to {employee.company.name} - Activate Your Account'
         recipient_list = [user.email]
@@ -660,19 +619,17 @@ def send_welcome_email_with_link(employee, domain):
 def send_leave_rejection_notification(leave_request):
     """
     Send email to employee when leave is rejected.
+    MANDATORY: Uses hrms@petabytz.com as sender
     """
     try:
         employee = leave_request.employee
         company = employee.company
         
-        connection = get_company_email_connection(company)
+        # MANDATORY: Use hrms@petabytz.com for all leave notifications
+        from_email = 'Petabytz HR <hrms@petabytz.com>'
         
-        # From Email
-        if company.hr_email:
-            from_name = company.hr_email_name or f"{company.name} HR"
-            from_email = f'{from_name} <{company.hr_email}>'
-        else:
-            from_email = settings.DEFAULT_FROM_EMAIL
+        # Get connection using helper
+        connection = get_hr_email_connection()
             
         # Determine who rejected
         rejected_by = "Management"
@@ -736,17 +693,17 @@ def send_leave_rejection_notification(leave_request):
 def send_regularization_rejection_notification(reg_request):
     """
     Send email when regularization is rejected.
+    MANDATORY: Uses hrms@petabytz.com as sender
     """
     try:
         employee = reg_request.employee
         company = employee.company
-        connection = get_company_email_connection(company)
         
-        if company.hr_email:
-            from_name = company.hr_email_name or f"{company.name} HR"
-            from_email = f'{from_name} <{company.hr_email}>'
-        else:
-            from_email = settings.DEFAULT_FROM_EMAIL
+        # MANDATORY: Use hrms@petabytz.com for all regularization notifications
+        from_email = 'Petabytz HR <hrms@petabytz.com>'
+        
+        # Get connection using helper
+        connection = get_hr_email_connection()
             
         context = {
              'employee_name': employee.user.get_full_name(),
@@ -782,17 +739,17 @@ def send_regularization_rejection_notification(reg_request):
 def send_leave_approval_notification(leave_request):
     """
     Send email to employee when leave is APPROVED.
+    MANDATORY: Uses hrms@petabytz.com as sender
     """
     try:
         employee = leave_request.employee
         company = employee.company
-        connection = get_company_email_connection(company)
         
-        if company.hr_email:
-            from_name = company.hr_email_name or f"{company.name} HR"
-            from_email = f'{from_name} <{company.hr_email}>'
-        else:
-            from_email = settings.DEFAULT_FROM_EMAIL
+        # MANDATORY: Use hrms@petabytz.com for all leave notifications
+        from_email = 'Petabytz HR <hrms@petabytz.com>'
+        
+        # Get connection using helper
+        connection = get_hr_email_connection()
             
         context = {
             'employee_name': employee.user.get_full_name(),
@@ -836,17 +793,17 @@ def send_leave_approval_notification(leave_request):
 def send_regularization_approval_notification(reg_request):
     """
     Send email when regularization is APPROVED.
+    MANDATORY: Uses hrms@petabytz.com as sender
     """
     try:
         employee = reg_request.employee
         company = employee.company
-        connection = get_company_email_connection(company)
         
-        if company.hr_email:
-            from_name = company.hr_email_name or f"{company.name} HR"
-            from_email = f'{from_name} <{company.hr_email}>'
-        else:
-            from_email = settings.DEFAULT_FROM_EMAIL
+        # MANDATORY: Use hrms@petabytz.com for all regularization notifications
+        from_email = 'Petabytz HR <hrms@petabytz.com>'
+        
+        # Get connection using helper
+        connection = get_hr_email_connection()
             
         context = {
              'employee_name': employee.user.get_full_name(),

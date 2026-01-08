@@ -513,6 +513,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
+{{ map_data|json_script:"map-data-initial" }}
+
 <script>
     let map;
     let markersLayer;
@@ -522,7 +524,13 @@
         // Initialize Map
         map = L.map('activityMap').setView([20.5937, 78.9629], 5); // Default Center
 
-        // Google Map Layers
+        // OSM Layer (Default)
+        const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        });
+
+        // Google Layers (keep as optional)
         const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
             maxZoom: 20,
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
@@ -533,12 +541,13 @@
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
         });
 
-        // Add Google Streets by default
-        googleStreets.addTo(map);
+        // Add OSM by default
+        osm.addTo(map);
 
         // Layer Control
         const baseMaps = {
-            "Street View": googleStreets,
+            "OpenStreetMap": osm,
+            "Google Streets": googleStreets,
             "Satellite": googleHybrid
         };
         L.control.layers(baseMaps).addTo(map);
@@ -547,24 +556,23 @@
         pathLayer = L.layerGroup().addTo(map);
 
         // Load initial data if available
-        const initialData = {{ map_data| safe
-    }};
-    if (initialData && initialData.length > 0) {
-        drawMap(initialData);
-    } else {
-        setTimeout(() => { map.invalidateSize(); }, 200);
-    }
-
-    // Event delegation for view map buttons
-    document.addEventListener('click', function (e) {
-        const btn = e.target.closest('.view-map-btn');
-        if (btn) {
-            const id = btn.dataset.attendanceId;
-            const date = btn.dataset.date;
-            console.log("Button Clicked:", id, date);
-            if (id) viewMap(id, date);
+        const initialData = JSON.parse(document.getElementById('map-data-initial').textContent);
+        if (initialData && initialData.length > 0) {
+            drawMap(initialData);
+        } else {
+            setTimeout(() => { map.invalidateSize(); }, 200);
         }
-    });
+
+        // Event delegation for view map buttons
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.view-map-btn');
+            if (btn) {
+                const id = btn.dataset.attendanceId;
+                const date = btn.dataset.date;
+                console.log("Button Clicked:", id, date);
+                if (id) viewMap(id, date);
+            }
+        });
     });
 
     function drawMap(mapData) {

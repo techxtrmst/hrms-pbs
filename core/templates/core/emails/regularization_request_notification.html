@@ -3,205 +3,162 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Regularization Request Notification</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f6f9;
-            margin: 0;
-            padding: 0;
-            color: #333;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 20px auto;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
-            color: #fff;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 24px;
-            font-weight: 600;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        }
-
-        .content {
-            padding: 30px;
-        }
-
-        .info-card {
-            background-color: #f8f9fa;
-            border-left: 4px solid #fda085;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 4px;
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #e9ecef;
-            padding-bottom: 10px;
-        }
-
-        .info-row:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-
-        .label {
-            font-weight: 600;
-            color: #6c757d;
-            font-size: 14px;
-        }
-
-        .value {
-            font-weight: 500;
-            color: #333;
-            text-align: right;
-            font-size: 14px;
-        }
-
-        .time-box {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 15px;
-            background-color: #e3f2fd;
-            padding: 15px;
-            border-radius: 6px;
-        }
-
-        .time-item {
-            text-align: center;
-            width: 48%;
-        }
-
-        .time-label {
-            font-size: 12px;
-            color: #1976d2;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        .time-value {
-            font-size: 18px;
-            font-weight: bold;
-            color: #0d47a1;
-        }
-
-        .reason-box {
-            background-color: #fce4ec;
-            border: 1px solid #f8bbd0;
-            padding: 15px;
-            border-radius: 6px;
-            margin-top: 20px;
-        }
-
-        .reason-title {
-            color: #c2185b;
-            font-weight: bold;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-
-        .reason-text {
-            color: #c2185b;
-            margin: 0;
-            font-style: italic;
-        }
-
-        .footer {
-            background-color: #f8f9fa;
-            padding: 20px;
-            text-align: center;
-            font-size: 12px;
-            color: #6c757d;
-            border-top: 1px solid #e9ecef;
-        }
-
-        .button {
-            display: inline-block;
-            background-color: #fda085;
-            color: #ffffff;
-            padding: 12px 24px;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: 600;
-            margin-top: 20px;
-            text-align: center;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>⏰ Attendance Regularization</h1>
-        </div>
-        <div class="content">
-            <p style="text-align: center; color: #666; margin-bottom: 25px;">
-                An employee has requested attendance regularization.
-            </p>
+<body
+    style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f0f0f0;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0f0f0; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="650" cellpadding="0" cellspacing="0"
+                    style="max-width: 650px; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
 
-            <div class="info-card">
-                <div class="info-row">
-                    <span class="label">Employee</span>
-                    <span class="value">{{ employee_name }} ({{ employee_id }})</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Department</span>
-                    <span class="value">{{ department }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Regularization Date</span>
-                    <span class="value">{{ date }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Submission Date</span>
-                    <span class="value">{{ request_date }}</span>
-                </div>
-            </div>
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%); background-color: #ff6b6b; padding: 35px 40px;">
+                            <table cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td width="60" style="font-size: 50px; vertical-align: middle;">⏰</td>
+                                    <td style="vertical-align: middle;">
+                                        <h1 style="color: #ffffff; font-size: 32px; margin: 0; font-weight: 800;">
+                                            Regularization Request</h1>
+                                        <p style="color: #ffffff; font-size: 16px; margin: 5px 0 0 0;">Attendance
+                                            regularization request received</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
 
-            <div class="time-box">
-                <div class="time-item">
-                    <div class="time-label">Requested Check-In</div>
-                    <div class="time-value">{{ check_in }}</div>
-                </div>
-                <div class="time-item">
-                    <div class="time-label">Requested Check-Out</div>
-                    <div class="time-value">{{ check_out }}</div>
-                </div>
-            </div>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px; background-color: #ffffff;">
 
-            {% if reason %}
-            <div class="reason-box">
-                <div class="reason-title">Reason for Regularization:</div>
-                <p class="reason-text">"{{ reason }}"</p>
-            </div>
-            {% endif %}
+                            <!-- Employee Info Card -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 25px 0;">
+                                <tr>
+                                    <td
+                                        style="background: linear-gradient(135deg, #ff6b6b08 0%, #feca5708 100%); background-color: #fff5f5; border-left: 4px solid #ff6b6b; padding: 25px; border-radius: 12px;">
+                                        <table width="100%" cellpadding="8" cellspacing="0">
+                                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                                <td
+                                                    style="font-weight: 700; color: #4a5568; font-size: 15px; width: 180px;">
+                                                    Employee Name:</td>
+                                                <td style="color: #2d3748; font-size: 15px;"><strong>{{ employee_name
+                                                        }}</strong></td>
+                                            </tr>
+                                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                                <td style="font-weight: 700; color: #4a5568; font-size: 15px;">Employee
+                                                    ID:</td>
+                                                <td style="color: #2d3748; font-size: 15px;">{{ employee_id }}</td>
+                                            </tr>
+                                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                                <td style="font-weight: 700; color: #4a5568; font-size: 15px;">
+                                                    Department:</td>
+                                                <td style="color: #2d3748; font-size: 15px;">{{ department }}</td>
+                                            </tr>
+                                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                                <td style="font-weight: 700; color: #4a5568; font-size: 15px;">
+                                                    Designation:</td>
+                                                <td style="color: #2d3748; font-size: 15px;">{{ designation }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-weight: 700; color: #4a5568; font-size: 15px;">Request
+                                                    Date:</td>
+                                                <td style="color: #2d3748; font-size: 15px;">{{ request_date }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
 
-            <div style="text-align: center;">
-                <a href="#" class="button">Review Request</a>
-            </div>
-        </div>
-        <div class="footer">
-            <p>This is an automated notification from {{ company_name }} HRMS.</p>
-            <p>&copy; {% now "Y" %} {{ company_name }}. All rights reserved.</p>
-        </div>
-    </div>
+                            <!-- Attendance Details -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 25px 0;">
+                                <tr>
+                                    <td
+                                        style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); background-color: #f0f0ff; border: 2px solid #667eea; border-radius: 15px; padding: 25px;">
+                                        <div
+                                            style="font-size: 24px; font-weight: 800; color: #2d3748; margin: 0 0 20px 0;">
+                                            📅 {{ date }}</div>
+
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td width="50%" style="padding: 0 10px 0 0;">
+                                                    <div
+                                                        style="background-color: #ffffff; padding: 15px; border-radius: 10px; text-align: center;">
+                                                        <div
+                                                            style="font-size: 12px; color: #718096; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 700;">
+                                                            Check-In Time</div>
+                                                        <div style="font-size: 24px; color: #2d3748; font-weight: 800;">
+                                                            {{ check_in }}</div>
+                                                    </div>
+                                                </td>
+                                                <td width="50%" style="padding: 0 0 0 10px;">
+                                                    <div
+                                                        style="background-color: #ffffff; padding: 15px; border-radius: 10px; text-align: center;">
+                                                        <div
+                                                            style="font-size: 12px; color: #718096; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 700;">
+                                                            Check-Out Time</div>
+                                                        <div style="font-size: 24px; color: #2d3748; font-weight: 800;">
+                                                            {{ check_out }}</div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Reason -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
+                                <tr>
+                                    <td style="background-color: #f7fafc; border-radius: 12px; padding: 20px;">
+                                        <div
+                                            style="font-weight: 700; color: #4a5568; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">
+                                            Reason for Regularization</div>
+                                        <p style="color: #2d3748; font-size: 16px; line-height: 1.6; margin: 0;">{{
+                                            reason }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Action Box -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+                                <tr>
+                                    <td
+                                        style="background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%); background-color: #ff6b6b; padding: 25px; border-radius: 12px; text-align: center;">
+                                        <p
+                                            style="margin: 0 0 15px 0; font-size: 16px; font-weight: 600; color: #ffffff;">
+                                            ⚡ Action Required</p>
+                                        <p style="margin: 0; font-size: 14px; color: #ffffff;">Please review and
+                                            approve/reject this regularization request in the HRMS system.</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background-color: #f7fafc; padding: 25px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
+                            <p style="margin: 5px 0; color: #ff6b6b; font-weight: 700; font-size: 16px;">{{ company_name
+                                }}</p>
+                            <p style="margin: 5px 0; color: #718096; font-size: 14px;">HR Management System • Petabytz
+                                Technologies</p>
+                            <p style="margin: 15px 0 5px 0; font-size: 12px; color: #a0aec0;">
+                                This is an automated notification from your HRMS system.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 
 </html>

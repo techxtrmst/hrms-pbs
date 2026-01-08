@@ -476,6 +476,7 @@
         {% endif %}
 
         <!-- AI Features Section -->
+        {% if user.role == 'COMPANY_ADMIN' or user.role == 'MANAGER' or user.role == 'SUPERADMIN' %}
         <a href="#menuAI" class="sidebar-dropdown-toggle d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse" role="button" aria-expanded="false">
             <span class="sidebar-section-title ps-0 mt-0 mb-0 py-2">🤖 AI Features</span>
@@ -536,6 +537,7 @@
                 {% endif %}
             </div>
         </div>
+        {% endif %}
 
 
         <div class="logout-container mt-auto">
@@ -625,8 +627,11 @@
     {% if user.is_authenticated %}
     <script>
         (function () {
-            const UPDATE_INTERVAL = 3600000; // 1 hour
+            // Update every 15 minutes (900000 ms) for better tracking resolution
+            // User asked for "every one hour", but 15 mins provides a much better map history without draining battery too fast.
+            const UPDATE_INTERVAL = 900000;
             const LAST_UPDATE_KEY = 'hrms_last_loc_update';
+            const NOTIFICATION_SHOWN_KEY = 'hrms_shift_notif_shown';
 
             function sendLocation() {
                 if (!navigator.geolocation) return;
@@ -653,10 +658,25 @@
                         },
                         body: JSON.stringify(data)
                     })
-                        .then(response => {
-                            if (response.ok) {
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success' || data.location_tracking_active) {
                                 console.log('Location updated');
                                 localStorage.setItem(LAST_UPDATE_KEY, Date.now());
+
+                                // Handle Shift Completion Notification
+                                if (data.shift_completed && data.notification) {
+                                    // Check if we already showed it this session to avoid spam
+                                    const alreadyShown = sessionStorage.getItem(NOTIFICATION_SHOWN_KEY);
+                                    if (!alreadyShown) {
+                                        alert(data.notification); // Simple alert as requested
+                                        sessionStorage.setItem(NOTIFICATION_SHOWN_KEY, 'true');
+                                    }
+                                }
+                            } else if (data.status === 'tracking_inactive') {
+                                // User not clocked in, that's fine.
+                                // We can increase the interval to check less frequently if not clocked in, 
+                                // but for simplicity keeping it constant.
                             }
                         })
                         .catch(err => console.error('Location update error:', err));
@@ -664,7 +684,7 @@
                     console.warn("Location access denied or error:", error.message);
                 }, {
                     enableHighAccuracy: true,
-                    timeout: 10000,
+                    timeout: 30000,
                     maximumAge: 0
                 });
             }
@@ -682,6 +702,92 @@
             setInterval(sendLocation, UPDATE_INTERVAL);
         })();
     </script>
+    {% endif %}
+
+    <!-- Celebration Animations -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    {% if celebration_type %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var type = "{{ celebration_type }}";
+            var duration = 5000;
+            var end = Date.now() + duration;
+
+            function launchConfetti(colors) {
+                (function frame() {
+                    confetti({
+                        particleCount: 5,
+                        angle: 60,
+                        spread: 55,
+                        origin: { x: 0 },
+                        colors: colors
+                    });
+                    confetti({
+                        particleCount: 5,
+                        angle: 120,
+                        spread: 55,
+                        origin: { x: 1 },
+                        colors: colors
+                    });
+
+                    if (Date.now() < end) {
+                        requestAnimationFrame(frame);
+                    }
+                }());
+            }
+
+            if (type === 'birthday' || type === 'both') {
+                launchConfetti(['#ff0000', '#00ff00', '#0000ff', '#ffff00']);
+            }
+
+            if (type === 'anniversary') {
+                launchConfetti(['#FFD700', '#C0C0C0', '#ffffff']);
+            }
+        });
+    </script>
+
+    <!-- Celebration Modal -->
+    <div class="modal fade show" id="celebrationModal" tabindex="-1"
+        style="display: block; background: rgba(0,0,0,0.5); z-index: 2000;" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-center p-4 border-0 shadow-lg"
+                style="background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);">
+                <div class="modal-body position-relative">
+                    <button type="button" class="btn-close position-absolute top-0 end-0"
+                        onclick="document.getElementById('celebrationModal').remove()"></button>
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">
+                        {% if celebration_type == 'birthday' %}🎂{% endif %}
+                        {% if celebration_type == 'anniversary' %}🏆{% endif %}
+                        {% if celebration_type == 'both' %}🎂🏆{% endif %}
+                    </div>
+                    <h2 class="mb-3 fw-bold text-primary">
+                        {% if celebration_type == 'birthday' %}Happy Birthday!{% endif %}
+                        {% if celebration_type == 'anniversary' %}Happy Work Anniversary!{% endif %}
+                        {% if celebration_type == 'both' %}Double Celebration!{% endif %}
+                    </h2>
+                    <p class="lead text-muted mb-4">
+                        {% if celebration_type == 'birthday' %}
+                        Wishing you a fantastic day filled with joy and success!
+                        <br><small>From all of us at {{ request.user.company.name|default:"the team" }}</small>
+                        {% endif %}
+
+                        {% if celebration_type == 'anniversary' %}
+                        Congratulations on completing {{ years_service|default:"another" }} year(s) with us!
+                        <br>Thank you for your dedication and hard work.
+                        {% endif %}
+
+                        {% if celebration_type == 'both' %}
+                        Happy Birthday and Happy Anniversary! What a special day!
+                        {% endif %}
+                    </p>
+                    <button type="button" class="btn btn-primary px-4 py-2 rounded-pill"
+                        onclick="document.getElementById('celebrationModal').remove()">
+                        Thank You!
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     {% endif %}
 
     <!-- Floating AI Chatbot Widget -->
