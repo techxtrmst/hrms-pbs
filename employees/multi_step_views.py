@@ -209,6 +209,10 @@ def add_employee_step3(request):
             
             # Send Activation Email
             from .utils import send_activation_email
+            import logging
+            logger = logging.getLogger(__name__)
+            
+            logger.info(f"Attempting to send activation email to {employee.user.email} for company {company.name}")
             email_sent = send_activation_email(user, request)
             
             # Clear session
@@ -217,13 +221,18 @@ def add_employee_step3(request):
             if 'employee_emergency_contacts' in request.session:
                 del request.session['employee_emergency_contacts']
             
-            msg = f'Employee {employee.user.get_full_name()} created successfully!'
+            # Prepare success message with email status
+            msg = f'✓ Employee {employee.user.get_full_name()} created successfully!'
             if email_sent:
-                msg += ' Activation email with link has been sent.'
+                msg += f' 📧 Activation email sent to {employee.user.email}.'
+                messages.success(request, msg)
+                logger.info(f"Employee created and activation email sent successfully to {employee.user.email}")
             else:
-                msg += f' Password: {password} (Email failed to send)'
+                msg += f' ⚠️ However, the activation email could not be sent. Please check email configuration.'
+                msg += f' Temporary password: {password}'
+                messages.warning(request, msg)
+                logger.warning(f"Employee created but activation email failed for {employee.user.email}")
 
-            messages.success(request, msg)
             return redirect('employee_list')
     else:
         # Pre-fill from session if available
