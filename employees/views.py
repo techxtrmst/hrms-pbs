@@ -2019,9 +2019,15 @@ def leave_configuration(request):
         employees = Employee.objects.filter(company=company)
 
     # Prefetch leave balances
-    employees = employees.select_related("leave_balance", "user").order_by(
-        "user__first_name"
-    )
+    employees = employees.select_related("user").order_by("user__first_name")
+    
+    # Ensure all employees have leave balance records
+    from django.core.exceptions import ObjectDoesNotExist
+    for employee in employees:
+        try:
+            _ = employee.leave_balance
+        except ObjectDoesNotExist:
+            LeaveBalance.objects.create(employee=employee)
 
     # Context for Accrual Modal (Safe from template syntax errors)
     import calendar
