@@ -25,7 +25,10 @@ class SafeAddField(migrations.AddField):
         model = to_state.apps.get_model(app_label, self.model_name)
         table_name = model._meta.db_table
 
-        if column_exists(table_name, self.field.column or self.name):
+        # Get the actual column name - use db_column if set, otherwise use field name
+        column_name = getattr(self.field, "db_column", None) or self.name
+
+        if column_exists(table_name, column_name):
             # Column already exists, skip
             return
 
