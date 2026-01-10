@@ -253,22 +253,25 @@ def resend_welcome_email(request, pk):
     """
     if request.user.role != User.Role.COMPANY_ADMIN:
         messages.error(request, "Permission denied.")
-        return redirect('employee_list')
-        
+        return redirect("employee_list")
+
     try:
         employee = Employee.objects.get(pk=pk, company=request.user.company)
         from core.email_utils import send_welcome_email_with_link
-        
+
         domain = request.get_host()
         if send_welcome_email_with_link(employee, domain):
             messages.success(request, f"Welcome email resent to {employee.user.email}")
         else:
-            messages.error(request, "Failed to send email. Please check email settings.")
-            
+            messages.error(
+                request, "Failed to send email. Please check email settings."
+            )
+
     except Employee.DoesNotExist:
         messages.error(request, "Employee not found.")
-        
-    return redirect('employee_list')
+
+    return redirect("employee_list")
+
 
 # --- Attendance & Tracking Views ---
 
@@ -324,6 +327,12 @@ def clock_in(request):
                 # Create new attendance record
                 attendance = Attendance(employee=employee, date=today)
 
+            # Set user timezone from employee's location
+            tz_name = (
+                employee.location.timezone if employee.location else "Asia/Kolkata"
+            )
+            attendance.user_timezone = tz_name
+
             # Determine Status based on Type
             clock_in_type = data.get("type")
             if clock_in_type == "remote":
@@ -334,8 +343,8 @@ def clock_in(request):
                 status = "PRESENT"
 
             # Preserve 'ON_DUTY' status if already set (e.g. via approved request)
-            if attendance.pk and attendance.status == 'ON_DUTY':
-                status = 'ON_DUTY'
+            if attendance.pk and attendance.status == "ON_DUTY":
+                status = "ON_DUTY"
 
             # Set clock-in details
             attendance.clock_in = timezone.now()
@@ -613,22 +622,24 @@ def update_location(request):
                     LocationLog.objects.create(
                         employee=employee, latitude=lat, longitude=lng
                     )
-                    
+
                     # Check for 9-hour notification
                     response_data = {
                         "status": "success",
                         "message": "Coordinates logged",
                         "location_tracking_active": True,
                     }
-                    
+
                     # Check if shift duration exceeded (default 9 hours)
                     if attendance.clock_in:
                         duration = timezone.now() - attendance.clock_in
                         # 9 hours = 32400 seconds
                         if duration.total_seconds() >= 9 * 3600:
                             response_data["shift_completed"] = True
-                            response_data["notification"] = "Your shift is completed (9 hours). Please clock out."
-                    
+                            response_data["notification"] = (
+                                "Your shift is completed (9 hours). Please clock out."
+                            )
+
                     return JsonResponse(response_data)
                 else:
                     return JsonResponse(
@@ -730,6 +741,7 @@ def employee_profile(request):
 
         id_proofs.save()
         from django.contrib import messages
+
         messages.success(request, "ID Documents updated successfully.")
 
         # Deletion logic for Admins
@@ -829,21 +841,35 @@ class LeaveApplyView(LoginRequiredMixin, CreateView):
         # Send email notifications
         try:
             from core.email_utils import send_leave_request_notification
+
             result = send_leave_request_notification(self.object)
-            if not result.get('hr', False):
+            if not result.get("hr", False):
                 import logging
+
                 logger = logging.getLogger(__name__)
-                logger.error(f"Failed to send leave request email to HR for {self.object.id}")
+                logger.error(
+                    f"Failed to send leave request email to HR for {self.object.id}"
+                )
                 from django.contrib import messages
-                messages.warning(self.request, "Leave request created, but email notification to HR failed. Please notify HR manually.")
+
+                messages.warning(
+                    self.request,
+                    "Leave request created, but email notification to HR failed. Please notify HR manually.",
+                )
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Error calling send_leave_request_notification: {e}")
             from django.contrib import messages
-            messages.warning(self.request, "Leave request created, but email notification failed. Please notify HR manually.")
+
+            messages.warning(
+                self.request,
+                "Leave request created, but email notification failed. Please notify HR manually.",
+            )
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Error calling send_leave_request_notification: {e}")
 
@@ -892,34 +918,54 @@ def approve_leave(request, pk):
 
         # Update Attendance Records
         from datetime import timedelta
+
         current_date = leave_request.start_date
         while current_date <= leave_request.end_date:
+            # Get user timezone from employee's location
+            tz_name = (
+                leave_request.employee.location.timezone
+                if leave_request.employee.location
+                else "Asia/Kolkata"
+            )
+
             # Get or Create Attendance
             att_record, created = Attendance.objects.get_or_create(
                 employee=leave_request.employee,
-                date=current_date
+                date=current_date,
+                defaults={"user_timezone": tz_name},
             )
-            
+
+            # Update timezone if record already existed
+            if not created and not att_record.user_timezone:
+                att_record.user_timezone = tz_name
+
             # Update status
-            if leave_request.leave_type == 'OD':
-                att_record.status = 'ON_DUTY'
+            if leave_request.leave_type == "OD":
+                att_record.status = "ON_DUTY"
             else:
-                att_record.status = 'LEAVE'
-            
+                att_record.status = "LEAVE"
+
             att_record.save()
             current_date += timedelta(days=1)
 
         # Send Approval Email
         try:
-             from core.email_utils import send_leave_approval_notification
-             if send_leave_approval_notification(leave_request):
-                 messages.success(request, f"Leave approved. Email sent to {leave_request.employee.user.first_name}.")
-             else:
-                 messages.warning(request, "Leave approved, but email notification failed.")
+            from core.email_utils import send_leave_approval_notification
+
+            if send_leave_approval_notification(leave_request):
+                messages.success(
+                    request,
+                    f"Leave approved. Email sent to {leave_request.employee.user.first_name}.",
+                )
+            else:
+                messages.warning(
+                    request, "Leave approved, but email notification failed."
+                )
         except Exception as e:
-             import logging
-             logger = logging.getLogger(__name__)
-             logger.error(f"Error sending approval email: {e}")
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error sending approval email: {e}")
 
         return redirect(request.META.get("HTTP_REFERER", "admin_dashboard"))
     return redirect("admin_dashboard")
@@ -949,12 +995,16 @@ def reject_leave(request, pk):
         # Send Rejection Email
         try:
             from core.email_utils import send_leave_rejection_notification
+
             if send_leave_rejection_notification(leave_request):
                 messages.success(request, "Leave rejected. Notification sent.")
             else:
-                 messages.warning(request, "Leave rejected, but email notification failed.")
+                messages.warning(
+                    request, "Leave rejected, but email notification failed."
+                )
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Error sending rejection email: {e}")
 
@@ -1682,17 +1732,19 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                         # Sync Department & Designation with Role Configuration
                         from companies.models import Department, Designation
 
-                        dept_name = str(row.get("department", "General")).strip().title()
-                        desig_name = str(row.get("designation", "Employee")).strip().title()
+                        dept_name = (
+                            str(row.get("department", "General")).strip().title()
+                        )
+                        desig_name = (
+                            str(row.get("designation", "Employee")).strip().title()
+                        )
 
                         # Ensure they exist in Role Config (prevents duplicates)
                         Department.objects.get_or_create(
-                            company=self.request.user.company, 
-                            name=dept_name
+                            company=self.request.user.company, name=dept_name
                         )
                         Designation.objects.get_or_create(
-                            company=self.request.user.company, 
-                            name=desig_name
+                            company=self.request.user.company, name=desig_name
                         )
 
                         employee = Employee.objects.create(
@@ -1847,19 +1899,32 @@ class RegularizationCreateView(LoginRequiredMixin, CreateView):
         # Send Email Notification
         try:
             from core.email_utils import send_regularization_request_notification
+
             result = send_regularization_request_notification(self.object)
-            if not result.get('hr', False):
+            if not result.get("hr", False):
                 import logging
+
                 logger = logging.getLogger(__name__)
-                logger.error(f"Failed to send regularization request email to HR for {self.object.id}")
+                logger.error(
+                    f"Failed to send regularization request email to HR for {self.object.id}"
+                )
                 from django.contrib import messages
-                messages.warning(self.request, "Request submitted, but email notification to HR failed. Please notify HR manually.")
+
+                messages.warning(
+                    self.request,
+                    "Request submitted, but email notification to HR failed. Please notify HR manually.",
+                )
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Error calling regularization email utility: {e}")
             from django.contrib import messages
-            messages.warning(self.request, "Request submitted, but email notification failed. Please notify HR manually.")
+
+            messages.warning(
+                self.request,
+                "Request submitted, but email notification failed. Please notify HR manually.",
+            )
 
         return response
 
@@ -1916,11 +1981,24 @@ def approve_regularization(request, pk):
         reg_request.manager_comment = request.POST.get("manager_comment", "")
         reg_request.save()
 
+        # Get user timezone from employee's location
+        tz_name = (
+            reg_request.employee.location.timezone
+            if reg_request.employee.location
+            else "Asia/Kolkata"
+        )
+
         # Update Attendance
         # We need to find or create the attendance record for that date
         attendance, created = Attendance.objects.get_or_create(
-            employee=reg_request.employee, date=reg_request.date
+            employee=reg_request.employee,
+            date=reg_request.date,
+            defaults={"user_timezone": tz_name},
         )
+
+        # Update timezone if record already existed
+        if not created and not attendance.user_timezone:
+            attendance.user_timezone = tz_name
 
         if reg_request.check_in:
             # We need to combine date with time
@@ -1944,13 +2022,17 @@ def approve_regularization(request, pk):
 
         # Send Approval Email
         try:
-             from core.email_utils import send_regularization_approval_notification
-             if send_regularization_approval_notification(reg_request):
-                 messages.success(request, "Regularization approved. Notification sent.")
-             else:
-                 messages.warning(request, "Regularization approved, but email notification failed.")
+            from core.email_utils import send_regularization_approval_notification
+
+            if send_regularization_approval_notification(reg_request):
+                messages.success(request, "Regularization approved. Notification sent.")
+            else:
+                messages.warning(
+                    request, "Regularization approved, but email notification failed."
+                )
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Error sending regularization approval email: {e}")
 
@@ -1984,12 +2066,16 @@ def reject_regularization(request, pk):
         # Send Rejection Email
         try:
             from core.email_utils import send_regularization_rejection_notification
+
             if send_regularization_rejection_notification(reg_request):
-                 messages.success(request, "Regularization rejected. Notification sent.")
+                messages.success(request, "Regularization rejected. Notification sent.")
             else:
-                 messages.warning(request, "Regularization rejected, but email notification failed.")
+                messages.warning(
+                    request, "Regularization rejected, but email notification failed."
+                )
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Error sending regularization rejection email: {e}")
 
@@ -2020,9 +2106,10 @@ def leave_configuration(request):
 
     # Prefetch leave balances
     employees = employees.select_related("user").order_by("user__first_name")
-    
+
     # Ensure all employees have leave balance records
     from django.core.exceptions import ObjectDoesNotExist
+
     for employee in employees:
         try:
             _ = employee.leave_balance
@@ -2032,34 +2119,32 @@ def leave_configuration(request):
     # Context for Accrual Modal (Safe from template syntax errors)
     import calendar
     from django.utils import timezone
+
     now = timezone.now()
     current_month = now.month
     current_year = now.year
 
     months_ctx = []
     for i in range(1, 13):
-        months_ctx.append({
-            'value': i,
-            'name': calendar.month_name[i],
-            'selected': 'selected' if i == current_month else ''
-        })
-        
+        months_ctx.append(
+            {
+                "value": i,
+                "name": calendar.month_name[i],
+                "selected": "selected" if i == current_month else "",
+            }
+        )
+
     years_ctx = []
     # Show current year and next 2 years, or surrounding
     for y in [2024, 2025, 2026]:
-        years_ctx.append({
-             'value': y,
-             'selected': 'selected' if y == current_year else ''
-        })
+        years_ctx.append(
+            {"value": y, "selected": "selected" if y == current_year else ""}
+        )
 
     return render(
-        request, 
-        "employees/leave_configuration.html", 
-        {
-            "employees": employees,
-            "months_ctx": months_ctx,
-            "years_ctx": years_ctx
-        }
+        request,
+        "employees/leave_configuration.html",
+        {"employees": employees, "months_ctx": months_ctx, "years_ctx": years_ctx},
     )
 
 
@@ -2139,7 +2224,7 @@ def run_monthly_accrual(request):
     try:
         month = request.POST.get("month")
         year = request.POST.get("year")
-        
+
         period_msg = ""
         if month and year:
             try:
@@ -2150,9 +2235,13 @@ def run_monthly_accrual(request):
 
         # Run the command
         call_command("accrue_monthly_leaves")
-        
-        success_msg = f"Monthly accrual processed {period_msg}: +1 Sick and +1 Casual leave added to all employees." if period_msg else "Monthly accrual processed: +1 Sick and +1 Casual leave added to all employees."
-        
+
+        success_msg = (
+            f"Monthly accrual processed {period_msg}: +1 Sick and +1 Casual leave added to all employees."
+            if period_msg
+            else "Monthly accrual processed: +1 Sick and +1 Casual leave added to all employees."
+        )
+
         messages.success(request, success_msg)
 
     except Exception as e:
