@@ -339,6 +339,17 @@ class Attendance(models.Model):
         null=True, blank=True, help_text="When location tracking should stop"
     )
     
+    # Session tracking
+    daily_sessions_count = models.IntegerField(
+        default=0, help_text="Number of sessions today"
+    )
+    max_daily_sessions = models.IntegerField(
+        default=3, help_text="Maximum allowed sessions per day"
+    )
+    current_session_type = models.CharField(
+        max_length=20, null=True, blank=True, help_text="Current session type (WEB/REMOTE)"
+    )
+    
     # Timezone tracking
     user_timezone = models.CharField(
         max_length=50,
@@ -666,6 +677,18 @@ class Attendance(models.Model):
             clock_out__isnull=True,
             is_active=True,
         ).order_by("-session_number").first()
+
+    def can_clock_in(self):
+        """Check if employee can clock in based on current state and session limits"""
+        # Cannot clock in if already clocked in
+        if self.is_currently_clocked_in:
+            return False
+        
+        # Cannot clock in if maximum daily sessions reached
+        if self.daily_sessions_count >= self.max_daily_sessions:
+            return False
+        
+        return True
 
 
 class AttendanceSession(models.Model):
