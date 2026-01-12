@@ -338,6 +338,13 @@ class Attendance(models.Model):
     location_tracking_end_time = models.DateTimeField(
         null=True, blank=True, help_text="When location tracking should stop"
     )
+    
+    # Timezone tracking
+    user_timezone = models.CharField(
+        max_length=50,
+        default="Asia/Kolkata",
+        help_text="User's timezone when attendance was recorded",
+    )
 
     class Meta:
         unique_together = [["employee", "date"]]
