@@ -408,6 +408,34 @@
             font-size: 0.875rem;
         }
     }
+
+    /* Make the tab area scrollable if content overflows vertically */
+    .sa-employee-detail-body {
+        max-height: calc(100vh - 220px); /* Leaves room for header and spacing */
+        overflow-y: auto;
+        /* Add extra right padding to avoid overlap with floating chatbot widget */
+        padding-right: calc(1rem + 140px);
+    }
+
+    /* If viewport is wide, reduce extra padding so layout isn't too narrow */
+    @media (min-width: 1200px) {
+        .sa-employee-detail-body {
+            padding-right: 1rem;
+        }
+    }
+
+    /* Ensure action buttons inside details appear above floating widgets */
+    .sa-employee-detail-body .btn,
+    .sa-employee-detail-body a {
+        position: relative;
+        z-index: 10001;
+    }
+
+    /* Ensure tables/cards inside the scrollable area don't overflow */
+    .sa-employee-detail-body .content-card,
+    .sa-employee-detail-body .compact-table {
+        overflow: visible;
+    }
 </style>
 {% endblock %}
 
@@ -511,6 +539,7 @@
     </ul>
 
     <!-- Tab Content -->
+    <div class="sa-employee-detail-body">
     <div class="tab-content">
         <!-- Overview Tab -->
         <div class="tab-pane fade show active" id="overview">
@@ -931,6 +960,7 @@
     });
     }
 
+    </div> <!-- .sa-employee-detail-body -->
 
 </script>
 {% endblock %}

@@ -150,7 +150,50 @@
         background: white;
         border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        overflow: hidden;
+        overflow: visible; /* allow child scroll wrapper to show scrollbar */
+        padding-bottom: 24px; /* minimal bottom spacing to remove extra empty gap */
+    }
+
+    /* Scroll wrapper for wide tables */
+    .employees-table-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 18px; /* minimal space so scrollbar is visible */
+        padding-right: 24px; /* reduce right padding to avoid extra gap */
+        position: relative;
+        z-index: 10001; /* float above chatbot */
+    }
+
+    .employees-table-scroll::-webkit-scrollbar {
+        height: 12px;
+    }
+    .employees-table-scroll::-webkit-scrollbar-thumb {
+        background: rgba(0,0,0,0.12);
+        border-radius: 6px;
+    }
+
+    .employees-table {
+        min-width: 1000px; /* allow horizontal scroll on small screens */
+    }
+
+    .employees-table-scroll.table-active {
+        z-index: 30001; /* bring above chatbot while active */
+        position: relative;
+    }
+
+    @media (max-width: 768px) {
+        .employees-table {
+            min-width: 700px;
+        }
+        .employees-table-scroll {
+            padding-bottom: 72px; /* modest extra space on small screens */
+            padding-right: 24px;
+            z-index: 10001;
+        }
+
+        .employees-table-container {
+            padding-bottom: 72px;
+        }
     }
 
     .employees-table {
@@ -743,6 +786,7 @@
 
     <!-- Employees Table -->
     <div class="employees-table-container">
+        <div class="table-responsive employees-table-scroll">
         <table class="employees-table" id="employeesTable">
             <thead>
                 <tr>
@@ -831,6 +875,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 
@@ -1007,6 +1052,42 @@
             closeExitModal();
         }
     }
+
+    // Temporarily disable chatbot while interacting with table so action buttons are reachable
+    (function () {
+        const tableWrap = document.querySelector('.employees-table-scroll');
+        const chatbotIcon = document.getElementById('chatbotIcon');
+        const chatbotPanel = document.getElementById('chatbotPanel');
+
+        if (!tableWrap) return;
+
+        const activate = () => {
+            tableWrap.classList.add('table-active');
+            if (chatbotIcon) chatbotIcon.style.pointerEvents = 'none';
+            if (chatbotPanel) chatbotPanel.style.pointerEvents = 'none';
+        };
+
+        const deactivate = () => {
+            tableWrap.classList.remove('table-active');
+            if (chatbotIcon) chatbotIcon.style.pointerEvents = '';
+            if (chatbotPanel) chatbotPanel.style.pointerEvents = '';
+        };
+
+        tableWrap.addEventListener('mouseenter', activate);
+        tableWrap.addEventListener('mouseleave', deactivate);
+        tableWrap.addEventListener('touchstart', activate, { passive: true });
+        document.addEventListener('touchend', deactivate);
+
+        // While user scrolls horizontally, keep it active
+        let scrollTimer;
+        tableWrap.addEventListener('scroll', function () {
+            activate();
+            window.clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(function () {
+                deactivate();
+            }, 600);
+        });
+    })();
 </script>
 
 <!-- Exit Initiative Modal -->

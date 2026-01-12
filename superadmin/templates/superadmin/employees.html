@@ -5,6 +5,66 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'superadmin/css/superadmin.css' %}">
+<style>
+/* Ensure table can scroll horizontally when content is wider than container */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    /* give space so scrollbar and final column are not blocked by floating widgets */
+    padding-bottom: 100px;
+    padding-right: 140px;
+
+    /* bring the table container above floating widgets so the scrollbar is clickable */
+    position: relative;
+    z-index: 10001;
+}
+
+/* Larger clickable area and more visible scrollbar */
+.table-responsive::-webkit-scrollbar {
+    height: 12px;
+}
+.table-responsive::-webkit-scrollbar-track {
+    background: transparent;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.12);
+    border-radius: 6px;
+}
+
+/* Give the table a minimum width so long rows show a horizontal scrollbar */
+.sa-table {
+    min-width: 1000px;
+}
+
+/* Ensure the table container leaves room so floating widgets don't cover the scrollbar */
+.sa-table-container {
+    padding-bottom: 160px; /* extra space for floating chatbot */
+}
+
+/* On small screens, reduce min width and z-index to avoid layout issues */
+@media (max-width: 768px) {
+    /* Allow horizontal scroll but make sure bottom area stays visible above floating widgets */
+    .sa-table {
+        min-width: 700px;
+    }
+    .table-responsive {
+        padding-bottom: 220px; /* larger bottom spacing so scrollbar and final column are accessible */
+        padding-right: 24px;
+        z-index: 10001; /* ensure it's above floating chatbot */
+    }
+
+    .sa-table-container {
+        padding-bottom: 260px; /* extra safe area for floating UI on small screens */
+    }
+
+    /* When table is actively interacted with (hover/scroll/touch), raise it above floating widgets */
+    .table-responsive.table-active {
+        z-index: 30001;
+        position: relative;
+    }
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -169,5 +229,41 @@
         }
         window.location.href = url.toString();
     });
+
+    // Temporarily disable chatbot while interacting with the table so action buttons are reachable
+    (function () {
+        const tableWrap = document.querySelector('.table-responsive');
+        const chatbotIcon = document.getElementById('chatbotIcon');
+        const chatbotPanel = document.getElementById('chatbotPanel');
+
+        if (!tableWrap) return;
+
+        const activate = () => {
+            tableWrap.classList.add('table-active');
+            if (chatbotIcon) chatbotIcon.style.pointerEvents = 'none';
+            if (chatbotPanel) chatbotPanel.style.pointerEvents = 'none';
+        };
+
+        const deactivate = () => {
+            tableWrap.classList.remove('table-active');
+            if (chatbotIcon) chatbotIcon.style.pointerEvents = '';
+            if (chatbotPanel) chatbotPanel.style.pointerEvents = '';
+        };
+
+        tableWrap.addEventListener('mouseenter', activate);
+        tableWrap.addEventListener('mouseleave', deactivate);
+        tableWrap.addEventListener('touchstart', activate, { passive: true });
+        document.addEventListener('touchend', deactivate);
+
+        // While user scrolls horizontally, keep it active
+        let scrollTimer;
+        tableWrap.addEventListener('scroll', function () {
+            activate();
+            window.clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(function () {
+                deactivate();
+            }, 600);
+        });
+    })();
 </script>
 {% endblock %}
