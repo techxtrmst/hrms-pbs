@@ -339,6 +339,17 @@ class Attendance(models.Model):
         null=True, blank=True, help_text="When location tracking should stop"
     )
     
+    # Session tracking
+    daily_sessions_count = models.IntegerField(
+        default=0, help_text="Number of sessions today"
+    )
+    max_daily_sessions = models.IntegerField(
+        default=3, help_text="Maximum allowed sessions per day"
+    )
+    current_session_type = models.CharField(
+        max_length=20, null=True, blank=True, help_text="Current session type (WEB/REMOTE)"
+    )
+    
     # Timezone tracking
     user_timezone = models.CharField(
         max_length=50,
