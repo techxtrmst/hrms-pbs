@@ -136,7 +136,7 @@ def identify_user(
     properties: Dict[str, Any] = None,
 ):
     """
-    Identify a user in PostHog by capturing an $identify event.
+    Identify a user in PostHog by setting their properties.
     
     Args:
         distinct_id: User identifier
@@ -147,13 +147,10 @@ def identify_user(
         return
     
     try:
-        # PostHog Python SDK uses capture with $set for user properties
-        client.capture(
+        # PostHog Python SDK uses set() to set person properties
+        client.set(
             distinct_id=distinct_id,
-            event="$identify",
-            properties={
-                "$set": properties or {},
-            }
+            properties=properties or {},
         )
     except Exception as e:
         logger.error(f"Failed to identify user in PostHog: {e}")
