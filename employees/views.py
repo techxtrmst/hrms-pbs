@@ -965,46 +965,54 @@ def approve_leave(request, pk):
                 {"status": "error", "message": "Permission denied"}, status=403
             )
 
-        leave_request.status = "APPROVED"
-        leave_request.approved_by = user
-        leave_request.approved_at = timezone.now()
-        leave_request.save()
+        prev_status = leave_request.status
+        # Only process deduction/attendance when transitioning to APPROVED from a non-approved state
+        if prev_status != "APPROVED":
+            leave_request.status = "APPROVED"
+            leave_request.approved_by = user
+            leave_request.approved_at = timezone.now()
+            leave_request.save()
 
-        # Deduct Balance
-        balance = leave_request.employee.leave_balance
-        days = leave_request.total_days
+            # Deduct Balance
+            balance = leave_request.employee.leave_balance
+            days = leave_request.total_days
 
-        if leave_request.leave_type == "CL":
-            balance.casual_leave_used += days
-        elif leave_request.leave_type == "SL":
-            balance.sick_leave_used += days
-        elif leave_request.leave_type == "EL":
-            balance.earned_leave_used += days
-        elif leave_request.leave_type == "CO":
-            balance.comp_off_used += days
-        elif leave_request.leave_type == "UL":
-            balance.unpaid_leave += days
+            if leave_request.leave_type == "CL":
+                balance.casual_leave_used += days
+            elif leave_request.leave_type == "SL":
+                balance.sick_leave_used += days
+            elif leave_request.leave_type == "EL":
+                balance.earned_leave_used += days
+            elif leave_request.leave_type == "CO":
+                balance.comp_off_used += days
+            elif leave_request.leave_type == "UL":
+                balance.unpaid_leave += days
 
-        balance.save()
+            balance.save()
 
-        # Update Attendance Records
-        from datetime import timedelta
+            # Update Attendance Records
+            from datetime import timedelta
 
-        current_date = leave_request.start_date
-        while current_date <= leave_request.end_date:
-            # Get or Create Attendance
-            att_record, created = Attendance.objects.get_or_create(
-                employee=leave_request.employee, date=current_date
-            )
+            current_date = leave_request.start_date
+            while current_date <= leave_request.end_date:
+                # Get or Create Attendance
+                att_record, created = Attendance.objects.get_or_create(
+                    employee=leave_request.employee, date=current_date
+                )
 
-            # Update status
-            if leave_request.leave_type == "OD":
-                att_record.status = "ON_DUTY"
-            else:
-                att_record.status = "LEAVE"
+                # Update status
+                if leave_request.leave_type == "OD":
+                    att_record.status = "ON_DUTY"
+                else:
+                    att_record.status = "LEAVE"
 
-            att_record.save()
-            current_date += timedelta(days=1)
+                att_record.save()
+                current_date += timedelta(days=1)
+        else:
+            # Already approved - do not deduct again
+            from django.contrib import messages
+
+            messages.info(request, "Leave was already approved earlier.")
 
         # Send Approval Email
         try:
