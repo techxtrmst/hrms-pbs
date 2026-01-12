@@ -33,6 +33,7 @@ dependencies = [
     "pytz>=2024.1",
     "python-slugify>=8.0.0",
     "phonenumbers>=8.13.0",
+    "timezonefinder>=6.5.0",
     
     # HTTP/API Clients
     "requests>=2.32.0",
