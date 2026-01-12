@@ -39,8 +39,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Get target month/year
         current_date = date.today()
-        target_month = options.get('month', current_date.month)
-        target_year = options.get('year', current_date.year)
+        target_month = options.get('month') or current_date.month
+        target_year = options.get('year') or current_date.year
         company_id = options.get('company_id')
         dry_run = options.get('dry_run', False)
         preserve_manual = options.get('preserve_manual', True)

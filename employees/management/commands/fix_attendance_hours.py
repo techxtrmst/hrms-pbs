@@ -57,7 +57,6 @@ class Command(BaseCommand):
         for attendance in attendances:
             # Get current values
             old_effective_hours = attendance.effective_hours
-            old_total_hours = attendance.total_working_hours
             
             # Calculate new values using session-based logic
             sessions = AttendanceSession.objects.filter(
@@ -118,21 +117,32 @@ class Command(BaseCommand):
             except (ValueError, AttributeError):
                 needs_fixing = True
             
-            if abs(old_total_hours - new_total_hours) > 0.1:
+            # Check if there are any incomplete sessions that need attention
+            incomplete_sessions = AttendanceSession.objects.filter(
+                employee=attendance.employee,
+                date=attendance.date,
+                clock_in__isnull=False,
+                clock_out__isnull=True
+            )
+            
+            if incomplete_sessions.exists():
                 needs_fixing = True
             
             if needs_fixing:
                 fixed_count += 1
                 
+                incomplete_info = f" ({incomplete_sessions.count()} incomplete)" if incomplete_sessions.exists() else ""
+                
                 self.stdout.write(
                     f'   {attendance.employee.user.get_full_name()} ({attendance.date}): '
                     f'{old_effective_hours} → {new_effective_hours} '
-                    f'({session_count} sessions)'
+                    f'({session_count} sessions{incomplete_info})'
                 )
                 
-                # Apply changes if not dry run
+                # Apply changes if not dry run (recalculate using model method)
                 if not dry_run:
-                    attendance.total_working_hours = new_total_hours
+                    # The model's effective_hours property already uses session-based calculation
+                    # So we just need to trigger any necessary updates
                     attendance.save()
         
         # Summary

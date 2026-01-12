@@ -645,10 +645,35 @@ class AttendanceSession(models.Model):
     session_number = models.IntegerField(help_text="Session number for the day (1, 2, 3)")
     
     # Session timing
-    c       percent = (worked_hours / expected_hours) * 100
-            return max(0, min(percent, 100))  # Cap at 100%
-        
-        return 0
+    clock_in = models.DateTimeField()
+    clock_out = models.DateTimeField(null=True, blank=True)
+    
+    # Location coordinates (matching existing structure)
+    clock_in_latitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
+    clock_in_longitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
+    clock_out_latitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
+    clock_out_longitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
+    
+    # Session type and status
+    SESSION_TYPE_CHOICES = [
+        ('WEB', 'Web/Office'),
+        ('REMOTE', 'Remote/WFH'),
+    ]
+    session_type = models.CharField(max_length=50, choices=SESSION_TYPE_CHOICES)
+    is_active = models.BooleanField(default=True)
+    location_validated = models.BooleanField(default=False)
+    
+    # Session duration (in minutes to match existing structure)
+    duration_minutes = models.IntegerField(default=0, help_text="Duration of this session in minutes")
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'employees_attendancesession'
+        unique_together = [['employee', 'date', 'session_number']]
+        ordering = ['date', 'session_number']
     def __str__(self):
         return f"{self.employee} - {self.date} - Session {self.session_number} ({self.session_type})"
     
