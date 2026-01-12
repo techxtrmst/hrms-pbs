@@ -366,6 +366,7 @@ def send_leave_request_notification(leave_request):
     result = {'manager': False, 'hr': False}
     
     try:
+        from datetime import datetime
         employee = leave_request.employee
         company = employee.company
         
@@ -375,6 +376,25 @@ def send_leave_request_notification(leave_request):
         # Get connection using helper that reloads env
         connection = get_hr_email_connection()
         
+        # Helper function to format dates safely
+        def format_date(date_obj, format_str='%d %B %Y'):
+            if isinstance(date_obj, str):
+                # Try to parse string to date
+                try:
+                    date_obj = datetime.strptime(date_obj, '%Y-%m-%d').date()
+                except:
+                    return date_obj  # Return as-is if parsing fails
+            return date_obj.strftime(format_str) if hasattr(date_obj, 'strftime') else str(date_obj)
+        
+        def format_datetime(dt_obj, format_str='%d %B %Y at %I:%M %p'):
+            if isinstance(dt_obj, str):
+                # Try to parse string to datetime
+                try:
+                    dt_obj = datetime.fromisoformat(dt_obj.replace('Z', '+00:00'))
+                except:
+                    return dt_obj  # Return as-is if parsing fails
+            return dt_obj.strftime(format_str) if hasattr(dt_obj, 'strftime') else str(dt_obj)
+        
         # Prepare context for email template
         context = {
             'employee_name': employee.user.get_full_name(),
@@ -382,17 +402,38 @@ def send_leave_request_notification(leave_request):
             'department': employee.department,
             'designation': employee.designation,
             'leave_type': leave_request.get_leave_type_display(),
-            'start_date': leave_request.start_date.strftime('%d %B %Y'),
-            'end_date': leave_request.end_date.strftime('%d %B %Y'),
+            'start_date': format_date(leave_request.start_date),
+            'end_date': format_date(leave_request.end_date),
             'duration': leave_request.get_duration_display(),
             'total_days': leave_request.total_days,
             'reason': leave_request.reason,
             'company_name': company.name,
-            'request_date': leave_request.created_at.strftime('%d %B %Y at %I:%M %p'),
+            'request_date': format_datetime(leave_request.created_at),
         }
         
+        # Log context for debugging
+        logger.info(f"Email context: {context}")
+        
         # Render HTML email
-        html_content = render_to_string('core/emails/leave_request_notification.html', context)
+        try:
+            html_content = render_to_string('core/emails/leave_request_notification.html', context)
+            logger.info(f"Template rendered successfully, length: {len(html_content)}")
+        except Exception as e:
+            logger.error(f"Failed to render email template: {str(e)}")
+            import traceback
+            logger.error(f"Template rendering traceback: {traceback.format_exc()}")
+            # Fallback to simple HTML
+            html_content = f"""
+            <html>
+            <body>
+                <h2>Leave Request from {context['employee_name']}</h2>
+                <p><strong>Leave Type:</strong> {context['leave_type']}</p>
+                <p><strong>Duration:</strong> {context['start_date']} to {context['end_date']}</p>
+                <p><strong>Days:</strong> {context['total_days']}</p>
+                <p><strong>Reason:</strong> {context['reason']}</p>
+            </body>
+            </html>
+            """
         
         # Create email subject
         subject = f'📋 Leave Application: {employee.user.get_full_name()} - {leave_request.get_leave_type_display()}'
@@ -421,6 +462,11 @@ def send_leave_request_notification(leave_request):
             logger.info(f"Leave request notification sent to {', '.join(recipients)} for {employee.user.get_full_name()}")
         except Exception as e:
             logger.error(f"Failed to send leave request email: {str(e)}")
+            logger.error(f"Error type: {type(e).__name__}")
+            logger.error(f"Connection details - Host: {connection.host}, Port: {connection.port}, Username: {connection.username}")
+            logger.error(f"Recipients: {recipients}")
+            import traceback
+            logger.error(f"Full traceback: {traceback.format_exc()}")
         
         # Send Acknowledgment to Employee
         if employee.user.email:
@@ -443,6 +489,8 @@ def send_leave_request_notification(leave_request):
         
     except Exception as e:
         logger.error(f"Failed to send leave request notifications: {str(e)}")
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
         return result
 
 
@@ -626,11 +674,11 @@ def send_leave_rejection_notification(leave_request):
             
         # Determine who rejected
         rejected_by = "Management"
-        if leave_request.approver:
-             rejected_by = leave_request.approver.get_full_name()
-             if leave_request.approver == employee.manager:
+        if leave_request.approved_by:
+             rejected_by = leave_request.approved_by.get_full_name()
+             if leave_request.approved_by == employee.manager:
                  rejected_by += " (Manager)"
-             elif leave_request.approver.role == "COMPANY_ADMIN":
+             elif leave_request.approved_by.role == "COMPANY_ADMIN":
                  rejected_by += " (HR/Admin)"
 
         context = {
@@ -638,31 +686,29 @@ def send_leave_rejection_notification(leave_request):
             'leave_type': leave_request.get_leave_type_display(),
             'start_date': leave_request.start_date.strftime('%d %B %Y'),
             'end_date': leave_request.end_date.strftime('%d %B %Y'),
+            'total_days': leave_request.total_days,
             'rejection_reason': leave_request.rejection_reason or "No reason provided",
             'rejected_by': rejected_by,
             'company_name': company.name,
         }
         
-        html_content = f"""
-        <html>
-        <body style="font-family: sans-serif; color: #333;">
-            <h2 style="color: #d32f2f;">Leave Request Rejected</h2>
-            <p>Dear {context['employee_name']},</p>
-            <p>Your leave request has been reviewed and <strong>rejected</strong>.</p>
-            
-            <table style="border-collapse: collapse; width: 100%; max-width: 600px; margin-top: 15px; margin-bottom: 20px;">
-                <tr><td style="padding: 8px; border-bottom: 1px solid #ddd; width: 150px;"><strong>Leave Type:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">{context['leave_type']}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Duration:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">{context['start_date']} to {context['end_date']}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Rejected By:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">{context['rejected_by']}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Reason:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">{context['rejection_reason']}</td></tr>
-            </table>
-
-            <p>Please contact your manager or HR for further clarification.</p>
-            <br>
-            <p style="color: #666; font-size: 0.9em;">Regards,<br>{context['company_name']} HR Team</p>
-        </body>
-        </html>
-        """
+        # Render HTML email
+        try:
+            html_content = render_to_string('core/emails/leave_rejection_notification.html', context)
+        except Exception as e:
+            logger.error(f"Failed to render leave rejection template: {e}")
+            # Fallback to simple HTML
+            html_content = f"""
+            <html>
+            <body>
+                <h2>Leave Request Rejected</h2>
+                <p>Dear {context['employee_name']},</p>
+                <p>Your leave request has been REJECTED.</p>
+                <p><strong>Reason:</strong> {context['rejection_reason']}</p>
+                <p><strong>Rejected By:</strong> {context['rejected_by']}</p>
+            </body>
+            </html>
+            """
         
         subject = f'❌ Leave Request Rejected: {leave_request.get_leave_type_display()}'
         
@@ -754,24 +800,22 @@ def send_leave_approval_notification(leave_request):
             'company_name': company.name,
         }
         
-        html_content = f"""
-        <html>
-        <body style="font-family: sans-serif; color: #333;">
-            <h2 style="color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 10px;">Leave Request Approved</h2>
-            <p>Dear {context['employee_name']},</p>
-            <p>We are pleased to inform you that your leave request has been <strong>APPROVED</strong>.</p>
-            
-            <table style="border-collapse: collapse; width: 100%; max-width: 600px; margin-top: 15px; margin-bottom: 20px; background-color: #f9f9f9; padding: 10px; border-radius: 5px;">
-                <tr><td style="padding: 10px; border-bottom: 1px solid #ddd; width: 150px;"><strong>Leave Type:</strong></td><td style="padding: 10px; border-bottom: 1px solid #ddd;">{context['leave_type']}</td></tr>
-                <tr><td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>Duration:</strong></td><td style="padding: 10px; border-bottom: 1px solid #ddd;">{context['start_date']} to {context['end_date']}</td></tr>
-                <tr><td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>Days:</strong></td><td style="padding: 10px; border-bottom: 1px solid #ddd;">{context['total_days']}</td></tr>
-                <tr><td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>Approved By:</strong></td><td style="padding: 10px; border-bottom: 1px solid #ddd;">{context['approved_by']}</td></tr>
-            </table>
-
-            <p style="color: #666; font-size: 0.9em;">Regards,<br>{context['company_name']} HR Team</p>
-        </body>
-        </html>
-        """
+        # Render HTML email
+        try:
+            html_content = render_to_string('core/emails/leave_approval_notification.html', context)
+        except Exception as e:
+            logger.error(f"Failed to render leave approval template: {e}")
+            # Fallback to simple HTML if template fails
+            html_content = f"""
+            <html>
+            <body>
+                <h2>Leave Request Approved</h2>
+                <p>Dear {context['employee_name']},</p>
+                <p>Your leave request has been APPROVED.</p>
+                <p><strong>Approved By:</strong> {context['approved_by']}</p>
+            </body>
+            </html>
+            """
         
         subject = f'✅ Leave Request Approved: {context["leave_type"]}'
         

@@ -570,10 +570,35 @@ class LeaveRequest(models.Model):
     @property
     def total_days(self):
         """Calculate total leave days"""
+        from datetime import datetime, date
+        
         if self.duration == 'HALF':
             return 0.5
-        days = (self.end_date - self.start_date).days + 1
-        return float(days)
+        
+        # Helper to convert string to date if needed
+        def to_date(date_obj):
+            if isinstance(date_obj, str):
+                try:
+                    return datetime.strptime(date_obj, '%Y-%m-%d').date()
+                except:
+                    # Try other formats
+                    try:
+                        return datetime.fromisoformat(date_obj).date()
+                    except:
+                        return None
+            elif isinstance(date_obj, datetime):
+                return date_obj.date()
+            return date_obj
+        
+        start = to_date(self.start_date)
+        end = to_date(self.end_date)
+        
+        if start and end:
+            days = (end - start).days + 1
+            return float(days)
+        
+        # Fallback if conversion fails
+        return 1.0
     
     @property
     def is_negative_balance(self):

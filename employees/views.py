@@ -835,17 +835,16 @@ class LeaveApplyView(LoginRequiredMixin, CreateView):
                 logger = logging.getLogger(__name__)
                 logger.error(f"Failed to send leave request email to HR for {self.object.id}")
                 from django.contrib import messages
-                messages.warning(self.request, "Leave request created, but email notification to HR failed. Please notify HR manually.")
+                messages.warning(self.request, "Leave request submitted, but email notification to HR failed. Please notify HR manually.")
+            else:
+                from django.contrib import messages
+                messages.success(self.request, "Leave request submitted successfully.")
         except Exception as e:
             import logging
             logger = logging.getLogger(__name__)
             logger.error(f"Error calling send_leave_request_notification: {e}")
             from django.contrib import messages
-            messages.warning(self.request, "Leave request created, but email notification failed. Please notify HR manually.")
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Error calling send_leave_request_notification: {e}")
+            messages.warning(self.request, "Leave request submitted, but email notification failed. Please notify HR manually.")
 
         return response
 
@@ -943,7 +942,8 @@ def reject_leave(request, pk):
 
         leave_request.status = "REJECTED"
         leave_request.rejection_reason = request.POST.get("rejection_reason", "")
-        leave_request.approver = user  # Track who rejected
+        leave_request.approved_by = user  # Store acts as 'processed_by'
+        leave_request.approved_at = timezone.now()
         leave_request.save()
 
         # Send Rejection Email
