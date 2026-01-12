@@ -322,40 +322,31 @@
         {% endif %}
 
         {% if user.role != 'SUPERADMIN' %}
-        <!-- ME Section (Collapsible) -->
-        <a href="#menuMe" class="sidebar-dropdown-toggle d-flex justify-content-between align-items-center"
-            data-bs-toggle="collapse" role="button" aria-expanded="false">
-            <span class="sidebar-section-title ps-0 mt-0 mb-0 py-2">Me</span>
-            <i class="fas fa-chevron-down small text-muted"></i>
+        <!-- Direct Menu Items (Previously under ME section) -->
+        <a href="{% url 'personal_home' %}"
+            class="{% if request.resolver_match.url_name == 'personal_home' %}active{% endif %}">
+            <i class="fas fa-user-circle"></i> <span>Home</span>
         </a>
-        <div class="collapse {% if 'me/' in request.path or 'profile' in request.path %}show{% endif %}" id="menuMe">
-            <div class="sub-menu">
-                <a href="{% url 'personal_home' %}"
-                    class="{% if request.resolver_match.url_name == 'personal_home' %}active{% endif %}">
-                    <i class="fas fa-user-circle"></i> Home
-                </a>
-                <a href="{% url 'employee_profile' %}" class="{% if 'profile' in request.path %}active{% endif %}">
-                    <i class="fas fa-id-card"></i> My Profile
-                </a>
-                <a href="{% url 'my_leaves' %}"
-                    class="{% if 'leaves' in request.path and 'me' in request.path %}active{% endif %}">
-                    <i class="fas fa-calendar-check"></i> Leave
-                </a>
-                <a href="{% url 'regularization_apply' %}"
-                    class="{% if 'regularization/apply' in request.path %}active{% endif %}">
-                    <i class="fas fa-clock"></i> Regularize
-                </a>
-                <a href="{% url 'my_finance' %}" class="{% if 'finance' in request.path %}active{% endif %}">
-                    <i class="fas fa-rupee-sign"></i> Finance
-                </a>
-                <a href="{% url 'handbook' %}" class="{% if 'handbook' in request.path %}active{% endif %}">
-                    <i class="fas fa-book-reader"></i> Employee Handbook
-                </a>
-                <a href="{% url 'policy' %}" class="{% if 'policy' in request.path %}active{% endif %}">
-                    <i class="fas fa-file-contract"></i> Policy
-                </a>
-            </div>
-        </div>
+        <a href="{% url 'employee_profile' %}" class="{% if 'profile' in request.path %}active{% endif %}">
+            <i class="fas fa-id-card"></i> <span>My Profile</span>
+        </a>
+        <a href="{% url 'my_leaves' %}"
+            class="{% if 'leaves' in request.path and 'me' in request.path %}active{% endif %}">
+            <i class="fas fa-calendar-check"></i> <span>Leave</span>
+        </a>
+        <a href="{% url 'regularization_apply' %}"
+            class="{% if 'regularization/apply' in request.path %}active{% endif %}">
+            <i class="fas fa-clock"></i> <span>Regularize</span>
+        </a>
+        <a href="{% url 'my_finance' %}" class="{% if 'finance' in request.path %}active{% endif %}">
+            <i class="fas fa-rupee-sign"></i> <span>Finance</span>
+        </a>
+        <a href="{% url 'handbook' %}" class="{% if 'handbook' in request.path %}active{% endif %}">
+            <i class="fas fa-book-reader"></i> <span>Employee Handbook</span>
+        </a>
+        <a href="{% url 'policy' %}" class="{% if 'policy' in request.path %}active{% endif %}">
+            <i class="fas fa-file-contract"></i> <span>Policy</span>
+        </a>
         {% endif %}
 
         <!-- Employees / Team (Collapsible) -->

@@ -856,6 +856,13 @@ def personal_home(request):
                 percent = (offset / total_duration) * 100
                 percent = max(0, min(percent, 100))
 
+                # Determine dot class based on session type
+                dot_class = "web"  # Default to web
+                if attendance.current_session_type == "REMOTE":
+                    dot_class = "remote"
+                elif attendance.current_session_type == "WEB":
+                    dot_class = "web"
+
                 timeline_items.append(
                     {
                         "type": "login",
@@ -863,6 +870,7 @@ def personal_home(request):
                         "label": "Login",
                         "percent": percent,
                         "is_late": attendance.is_late,
+                        "dot_class": dot_class,
                     }
                 )
             else:
@@ -874,30 +882,12 @@ def personal_home(request):
                         "label": "Start",
                         "percent": 0,
                         "is_late": False,
+                        "dot_class": "hollow",
                     }
                 )
 
-            # 2. Lunch/Break (Static for now, e.g. 50% or based on break time)
-            # Assuming 1pm lunch for 9-6 shift (4 hours in) -> ~44%
-            # If shift has breaks defined:
-            first_break = shift.breaks.first()
-            if first_break:
-                break_min = to_minutes(first_break.start_time)
-                offset = break_min - shift_start_min
-                percent = (offset / total_duration) * 100
-                timeline_items.append(
-                    {
-                        "type": "break",
-                        "time": first_break.start_time,
-                        "label": "Break",
-                        "percent": percent,
-                    }
-                )
-            else:
-                # Default middle
-                timeline_items.append(
-                    {"type": "break", "time": "13:00", "label": "Lunch", "percent": 50}
-                )
+            # 2. Skip breaks in timeline (they will be shown in footer instead)
+            # No break nodes in timeline anymore
 
             # 3. Logout Node
             if attendance and attendance.clock_out:
@@ -918,6 +908,7 @@ def personal_home(request):
                         "label": "Logout",
                         "percent": percent,
                         "is_early": attendance.is_early_departure,
+                        "dot_class": "logout",
                     }
                 )
             else:
@@ -929,6 +920,7 @@ def personal_home(request):
                         "label": "End",
                         "percent": 100,
                         "is_early": False,
+                        "dot_class": "hollow",
                     }
                 )
 
@@ -1467,141 +1459,189 @@ def attendance_analytics(request):
 def attendance_report(request):
     if not hasattr(request.user, "company") or not request.user.company:
         messages.error(request, "Restricted access.")
-
         return redirect("dashboard")
 
     today = timezone.localtime().date()
-
     year = int(request.GET.get("year", today.year))
-
     month = int(request.GET.get("month", today.month))
     location_id = request.GET.get("location")
-    from companies.models import Location
+    
+    from companies.models import Location, Holiday
 
     # Calculate payroll cycle dates (28th to 27th)
-
-    # If month is selected, show from 28th of previous month to 27th of selected month
-
     if month == 1:
         # January: Dec 28 to Jan 27
-
         start_date = date(year - 1, 12, 28)
-
         end_date = date(year, 1, 27)
-
     else:
         # Other months: Previous month 28th to current month 27th
-
         start_date = date(year, month - 1, 28)
-
         end_date = date(year, month, 27)
 
-    # Generate date range for payroll cycle
+    # Only show data up to current date
+    if end_date > today:
+        end_date = today
 
+    # Generate date range for payroll cycle (only up to current date)
     date_range = []
-
     current_date = start_date
-
     while current_date <= end_date:
         date_range.append(current_date)
-
         current_date += timedelta(days=1)
 
     # Filter Employees based on Role
-
     if request.user.role == User.Role.MANAGER:
         try:
             employees = Employee.objects.filter(
                 manager=request.user.employee_profile
-            ).select_related("user", "manager")
+            ).select_related("user", "manager", "location")
         except:
             employees = Employee.objects.none()
     else:
         employees = Employee.objects.filter(
             company=request.user.company
-        ).select_related("user", "manager")
+        ).select_related("user", "manager", "location")
 
     if location_id:
         employees = employees.filter(location_id=location_id)
 
     locations = Location.objects.filter(company=request.user.company, is_active=True)
-
     employee_ids = employees.values_list("id", flat=True)
 
+    # Get all attendance records for the period
     attendances = Attendance.objects.filter(
         employee__in=employee_ids, date__gte=start_date, date__lte=end_date
     )
 
+    # Get all holidays for the period and company
+    holidays = Holiday.objects.filter(
+        company=request.user.company,
+        date__gte=start_date,
+        date__lte=end_date,
+        is_active=True
+    ).select_related('location')
+
+    # Create holiday map by location and date
+    holiday_map = {}
+    for holiday in holidays:
+        if holiday.location_id not in holiday_map:
+            holiday_map[holiday.location_id] = {}
+        holiday_map[holiday.location_id][holiday.date] = holiday
+
     # Map attendance by employee and date
-
     att_map = {}
-
     for att in attendances:
         if att.employee_id not in att_map:
             att_map[att.employee_id] = {}
-
         att_map[att.employee_id][att.date] = att
 
     reports = []
+    total_stats = {
+        "present": 0, "absent": 0, "leave": 0, 
+        "half_day": 0, "weekly_off": 0, "holiday": 0
+    }
 
     for emp in employees:
         emp_data = {
             "employee": emp,
             "days": [],
-            "stats": {"present": 0, "absent": 0, "leave": 0, "wfh": 0, "half_day": 0, "on_duty": 0, "weekly_off": 0, "holiday": 0},
+            "stats": {
+                "present": 0, "absent": 0, "leave": 0, 
+                "half_day": 0, "weekly_off": 0, "holiday": 0
+            },
         }
 
         for dt in date_range:
             att = att_map.get(emp.id, {}).get(dt)
+            
+            # Determine status based on actual attendance records and clock-in data
+            if att:
+                # Attendance record exists - check if employee actually clocked in
+                if att.clock_in:
+                    # Employee clocked in - determine status
+                    if att.status == "WFH":
+                        status_code = "WFH"  # Will be counted as Present
+                    elif att.status == "PRESENT":
+                        status_code = "PRESENT"
+                    elif att.status == "HYBRID":
+                        status_code = "PRESENT"  # Hybrid counted as present
+                    elif att.status == "HALF_DAY":
+                        status_code = "HALF_DAY"
+                    else:
+                        # Has clock_in but other status (shouldn't happen normally)
+                        status_code = "PRESENT"
+                else:
+                    # Attendance record exists but no clock_in - check the status
+                    if att.status == "LEAVE":
+                        status_code = "LEAVE"
+                    elif att.status == "WEEKLY_OFF":
+                        status_code = "WEEKLY_OFF"
+                    elif att.status == "HOLIDAY":
+                        status_code = "HOLIDAY"
+                    elif att.status == "HALF_DAY":
+                        status_code = "HALF_DAY"
+                    else:
+                        # No clock_in and not leave/holiday/weekoff = absent
+                        status_code = "ABSENT"
+            else:
+                # No attendance record - determine what it should be
+                # Check if it's a holiday for this employee's location
+                if emp.location_id and emp.location_id in holiday_map and dt in holiday_map[emp.location_id]:
+                    status_code = "HOLIDAY"
+                # Check if it's a weekoff for this employee
+                elif emp.is_week_off(dt):
+                    status_code = "WEEKLY_OFF"
+                else:
+                    # No record and not holiday/weekoff = absent
+                    status_code = "ABSENT"
 
-            status_code = att.status if att else "-"
-
+            # Map status to display value and count
             display_val = "-"
-
+            
             if status_code == "PRESENT":
                 display_val = "P"
                 emp_data["stats"]["present"] += 1
-
+                total_stats["present"] += 1
+            elif status_code == "WFH":
+                # Count WFH as present
+                display_val = "P"
+                emp_data["stats"]["present"] += 1
+                total_stats["present"] += 1
             elif status_code == "ABSENT":
                 display_val = "A"
                 emp_data["stats"]["absent"] += 1
-
+                total_stats["absent"] += 1
             elif status_code == "LEAVE":
                 display_val = "L"
                 emp_data["stats"]["leave"] += 1
-
-            elif status_code == "WFH":
-                display_val = "WFH"
-                emp_data["stats"]["wfh"] += 1
-                
+                total_stats["leave"] += 1
             elif status_code == "HALF_DAY":
                 display_val = "HD"
                 emp_data["stats"]["half_day"] += 1
-                
-            elif status_code == "ON_DUTY":
-                display_val = "OD"
-                emp_data["stats"]["on_duty"] += 1
-                
+                total_stats["half_day"] += 1
             elif status_code == "WEEKLY_OFF":
                 display_val = "WO"
                 emp_data["stats"]["weekly_off"] += 1
-                
+                total_stats["weekly_off"] += 1
             elif status_code == "HOLIDAY":
                 display_val = "H"
                 emp_data["stats"]["holiday"] += 1
-                
-            elif status_code == "MISSING_PUNCH":
-                display_val = "MP"
-                emp_data["stats"]["absent"] += 1  # Count as absent for stats
+                total_stats["holiday"] += 1
 
             emp_data["days"].append(display_val)
 
+        # Calculate working days and attendance percentage
+        working_days = len(date_range) - emp_data["stats"]["weekly_off"] - emp_data["stats"]["holiday"]
+        present_days = emp_data["stats"]["present"]  # WFH is already counted as present
+        
+        emp_data["working_days"] = working_days
+        emp_data["present_days"] = present_days
+        emp_data["attendance_percentage"] = round((present_days / working_days * 100) if working_days > 0 else 0, 1)
+        
         reports.append(emp_data)
 
     # Create days display (show date with day number)
-
     days_display = []
-
     for dt in date_range:
         days_display.append(
             {"day": dt.day, "month_short": dt.strftime("%b"), "date": dt}
@@ -1623,6 +1663,8 @@ def attendance_report(request):
             "cycle_label": f"{start_date.strftime('%d %b %Y')} to {end_date.strftime('%d %b %Y')}",
             "locations": locations,
             "location_filter": int(location_id) if location_id else None,
+            "total_stats": total_stats,
+            "total_employees": len(reports),
         },
     )
 
@@ -1632,114 +1674,69 @@ def download_attendance(request):
     if not hasattr(request.user, "company") or not request.user.company:
         return HttpResponse("Unauthorized", status=403)
 
-    # Defaults to current month
-
     today = timezone.localtime().date()
-
     year = int(request.GET.get("year", today.year))
     month = int(request.GET.get("month", today.month))
     location_id = request.GET.get("location")
 
     # Calculate payroll cycle dates (28th to 27th)
-
     if month == 1:
         start_date = date(year - 1, 12, 28)
-
         end_date = date(year, 1, 27)
-
     else:
         start_date = date(year, month - 1, 28)
-
         end_date = date(year, month, 27)
 
-    # File name
+    # Only show data up to current date
+    if end_date > today:
+        end_date = today
 
+    # File name
     filename = f"Attendance_Payroll_Cycle_{start_date.strftime('%d%b')}_to_{end_date.strftime('%d%b%Y')}.xlsx"
 
     # Create Workbook
-
     wb = openpyxl.Workbook()
-
     ws = wb.active
-
     ws.title = f"Payroll {calendar.month_name[month]} {year}"
 
     # Styles
-
     header_font = Font(bold=True, color="FFFFFF")
-
-    header_fill = PatternFill(
-        start_color="2c5282", end_color="2c5282", fill_type="solid"
-    )
+    header_fill = PatternFill(start_color="2c5282", end_color="2c5282", fill_type="solid")
 
     # 1. Define Headers
-
-    # Static Headers
-
     headers = [
-        "Employee Number",
-        "Employee Name",
-        "Job Title",
-        "Department",
-        "Location",
-        "Reporting Manager",
+        "Employee Number", "Employee Name", "Job Title", "Department", 
+        "Location", "Reporting Manager"
     ]
 
-    # Dynamic Date Headers for payroll cycle
-
+    # Dynamic Date Headers for payroll cycle (only up to current date)
     date_cols = []
-
     current_date = start_date
-
     while current_date <= end_date:
-        col_name = current_date.strftime("%d-%b")  # 28-Nov, 29-Nov, etc.
-
+        col_name = current_date.strftime("%d-%b")
         headers.append(col_name)
-
         date_cols.append(current_date)
-
         current_date += timedelta(days=1)
 
-    # Summary Headers
-
+    # Summary Headers (simplified)
     summary_headers = [
-        "Total Days",
-        "WFH",
-        "Pending WFH",
-        "On Duty",
-        "Pending On Duty",
-        "WOH",
-        "Weekly Offs",
-        "Holidays",
-        "Absent Days",
-        "Present Days",
-        "Late Arrival Days",
-        "Penalized Paid Leave",
-        "Paid Leave Taken",
-        "Pending Paid Leave Taken",
-        "Total Paid Leave",
-        "Penalized Unpaid Leave",
-        "Unpaid Leave Taken",
-        "Pending Unpaid Leave Taken",
-        "Total Unpaid Leave",
+        "Total Days", "Present", "Half Day", "Weekly Offs", "Holidays", 
+        "Leave", "Absent Days", "Working Days", "Attendance %", "Late Arrival Days"
     ]
-
     headers.extend(summary_headers)
 
     # Write Headers
-
     for col_num, header_title in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col_num, value=header_title)
-
         cell.font = header_font
-
         cell.fill = header_fill
-
         cell.alignment = Alignment(horizontal="center")
 
     # 2. Fetch Data
+    from companies.models import Holiday
+    
     employees = Employee.objects.filter(company=request.user.company).select_related(
-        "user", "manager"
+        "user", "manager", "location"
     )
     if location_id:
         employees = employees.filter(location_id=location_id)
@@ -1748,215 +1745,151 @@ def download_attendance(request):
         employee__company=request.user.company, date__gte=start_date, date__lte=end_date
     )
 
-    # Map attendance by employee and date
-
-    att_map = {}
-
-    for att in attendances:
-        if att.employee_id not in att_map:
-            att_map[att.employee_id] = {}
-
-        att_map[att.employee_id][att.date] = att
-
-    # 3. Write Rows
-
-    row_num = 2
-
-    # Get holidays for the month to count correctly
-
-    holidays_in_range = Holiday.objects.filter(
+    # Get holidays for the period
+    holidays = Holiday.objects.filter(
         company=request.user.company,
         date__gte=start_date,
         date__lte=end_date,
-        is_active=True,
-    ).values_list("date", flat=True)
+        is_active=True
+    ).select_related('location')
+
+    # Create holiday map by location and date
+    holiday_map = {}
+    for holiday in holidays:
+        if holiday.location_id not in holiday_map:
+            holiday_map[holiday.location_id] = {}
+        holiday_map[holiday.location_id][holiday.date] = holiday
+
+    # Map attendance by employee and date
+    att_map = {}
+    for att in attendances:
+        if att.employee_id not in att_map:
+            att_map[att.employee_id] = {}
+        att_map[att.employee_id][att.date] = att
+
+    # 3. Write Rows
+    row_num = 2
 
     for emp in employees:
         # Basic Info
-
         ws.cell(row=row_num, column=1, value=emp.badge_id)
-
         ws.cell(row=row_num, column=2, value=emp.user.get_full_name())
-
         ws.cell(row=row_num, column=3, value=emp.designation)
-
         ws.cell(row=row_num, column=4, value=emp.department)
+        ws.cell(row=row_num, column=5, value=emp.location.name if emp.location else "N/A")
+        ws.cell(row=row_num, column=6, value=emp.manager.get_full_name() if emp.manager else "-")
 
-        ws.cell(row=row_num, column=5, value="Office")  # Placeholder for Location
-
-        ws.cell(
-            row=row_num,
-            column=6,
-            value=emp.manager.get_full_name() if emp.manager else "-",
-        )
-
-        # Stats Counters
-
+        # Stats Counters (simplified)
         stats = {
-            "present": 0,
-            "absent": 0,
-            "leave": 0,
-            "wfh": 0,
-            "on_duty": 0,
-            "weekly_off": 0,
-            "holiday": 0,
-            "late_arrival": 0,
+            "present": 0, "absent": 0, "leave": 0, "half_day": 0,
+            "weekly_off": 0, "holiday": 0, "late_arrival": 0
         }
 
         # Date Columns
-
         col_idx = 7
-
         for dt in date_cols:
             att = att_map.get(emp.id, {}).get(dt)
+            
+            # Determine status using same logic as report view - check actual clock-in
+            if att:
+                # Attendance record exists - check if employee actually clocked in
+                if att.clock_in:
+                    # Employee clocked in - determine status
+                    if att.status == "WFH":
+                        status_code = "WFH"  # Will be counted as Present
+                    elif att.status == "PRESENT":
+                        status_code = "PRESENT"
+                    elif att.status == "HYBRID":
+                        status_code = "PRESENT"  # Hybrid counted as present
+                    elif att.status == "HALF_DAY":
+                        status_code = "HALF_DAY"
+                    else:
+                        # Has clock_in but other status (shouldn't happen normally)
+                        status_code = "PRESENT"
+                else:
+                    # Attendance record exists but no clock_in - check the status
+                    if att.status == "LEAVE":
+                        status_code = "LEAVE"
+                    elif att.status == "WEEKLY_OFF":
+                        status_code = "WEEKLY_OFF"
+                    elif att.status == "HOLIDAY":
+                        status_code = "HOLIDAY"
+                    elif att.status == "HALF_DAY":
+                        status_code = "HALF_DAY"
+                    else:
+                        # No clock_in and not leave/holiday/weekoff = absent
+                        status_code = "ABSENT"
+            else:
+                # No attendance record - determine what it should be
+                if emp.location_id and emp.location_id in holiday_map and dt in holiday_map[emp.location_id]:
+                    status_code = "HOLIDAY"
+                elif emp.is_week_off(dt):
+                    status_code = "WEEKLY_OFF"
+                else:
+                    status_code = "ABSENT"
 
-            status_code = att.status if att else "-"
-
-            # Simple mapping for display
-
-            display_val = status_code
-
+            # Map status to display value and count
+            display_val = "-"
             if status_code == "PRESENT":
                 display_val = "P"
-
                 stats["present"] += 1
-
-                if att.is_late:
+                if att and att.is_late:
                     display_val += " (L)"
-
                     stats["late_arrival"] += 1
-
+            elif status_code == "WFH":
+                # Count WFH as present
+                display_val = "P"
+                stats["present"] += 1
             elif status_code == "ABSENT":
                 display_val = "A"
-
                 stats["absent"] += 1
-
             elif status_code == "LEAVE":
                 display_val = "L"
-
                 stats["leave"] += 1
-
-            elif status_code == "WFH":
-                display_val = "WFH"
-
-                stats["wfh"] += 1
-
-            elif status_code == "ON_DUTY":
-                display_val = "OD"
-
-                stats["on_duty"] += 1
-
+            elif status_code == "HALF_DAY":
+                display_val = "HD"
+                stats["half_day"] += 1
             elif status_code == "WEEKLY_OFF":
                 display_val = "WO"
-
                 stats["weekly_off"] += 1
-
             elif status_code == "HOLIDAY":
                 display_val = "H"
-
                 stats["holiday"] += 1
 
-            # Auto-detect holiday/weekend if no record (though management command usually handles this)
-
-            if not att:
-                if dt in holidays_in_range:
-                    display_val = "H"
-
-                    stats["holiday"] += 1
-
-                elif dt.weekday() == 6:  # Sunday
-                    display_val = "WO"
-
-                    stats["weekly_off"] += 1
-
             cell = ws.cell(row=row_num, column=col_idx, value=display_val)
-
             cell.alignment = Alignment(horizontal="center")
-
             col_idx += 1
 
         # Summary Columns
-
         total_days = len(date_cols)
+        working_days = total_days - stats["weekly_off"] - stats["holiday"]
+        present_days = stats["present"]  # WFH is already counted as present
+        attendance_percentage = round((present_days / working_days * 100) if working_days > 0 else 0, 1)
 
-        ws.cell(row=row_num, column=col_idx, value=total_days)
-        col_idx += 1  # Total Days
-
-        ws.cell(row=row_num, column=col_idx, value=stats["wfh"])
-        col_idx += 1  # WFH
-
-        ws.cell(row=row_num, column=col_idx, value=0)
-        col_idx += 1  # Pending WFH
-
-        ws.cell(row=row_num, column=col_idx, value=stats["on_duty"])
-        col_idx += 1  # On Duty
-
-        ws.cell(row=row_num, column=col_idx, value=0)
-        col_idx += 1  # Pending OD
-
-        ws.cell(row=row_num, column=col_idx, value=0)
-        col_idx += 1  # WOH
-
-        ws.cell(row=row_num, column=col_idx, value=stats["weekly_off"])
-        col_idx += 1  # Weekly Offs
-
-        ws.cell(row=row_num, column=col_idx, value=stats["holiday"])
-        col_idx += 1  # Holidays
-
-        ws.cell(row=row_num, column=col_idx, value=stats["absent"])
-        col_idx += 1  # Absent
-
-        ws.cell(row=row_num, column=col_idx, value=stats["present"])
-        col_idx += 1  # Present
-
-        ws.cell(row=row_num, column=col_idx, value=stats["late_arrival"])
-        col_idx += 1  # Late Arrival
-
-        # Leaves (Simplified)
-
-        ws.cell(row=row_num, column=col_idx, value=0)
-        col_idx += 1  # Penalized Paid
-
-        ws.cell(row=row_num, column=col_idx, value=stats["leave"])
-        col_idx += 1  # Paid Leave Taken (Assuming all 'LEAVE' are paid for now)
-
-        ws.cell(row=row_num, column=col_idx, value=0)
-        col_idx += 1  # Pending Paid
-
-        ws.cell(row=row_num, column=col_idx, value=stats["leave"])
-        col_idx += 1  # Total Paid
-
-        ws.cell(row=row_num, column=col_idx, value=0)
-        col_idx += 1  # Penalized Unpaid
-
-        ws.cell(row=row_num, column=col_idx, value=stats["absent"])
-        col_idx += 1  # Unpaid Leave Taken (Assuming 'ABSENT' is unpaid)
-
-        ws.cell(row=row_num, column=col_idx, value=0)
-        col_idx += 1  # Pending Unpaid
-
-        ws.cell(row=row_num, column=col_idx, value=stats["absent"])
-        col_idx += 1  # Total Unpaid
+        ws.cell(row=row_num, column=col_idx, value=total_days); col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=stats["present"]); col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=stats["half_day"]); col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=stats["weekly_off"]); col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=stats["holiday"]); col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=stats["leave"]); col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=stats["absent"]); col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=working_days); col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=f"{attendance_percentage}%"); col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=stats["late_arrival"]); col_idx += 1
 
         row_num += 1
 
     # Return Excel File
-
     import io
-
     buffer = io.BytesIO()
-
     wb.save(buffer)
-
     buffer.seek(0)
 
     response = HttpResponse(
         buffer.getvalue(),
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
-
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
-
     return response
 
 

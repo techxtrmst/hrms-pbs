@@ -121,6 +121,46 @@
         background-color: #fed7d7;
     }
 
+    .status-hy {
+        color: #6b46c1;
+        font-weight: bold;
+        background-color: #f3f4f6;
+    }
+
+    .text-purple {
+        color: #805ad5 !important;
+    }
+
+    /* Sticky column adjustments for more columns */
+    .table-report th:nth-child(2),
+    .table-report td:nth-child(2) {
+        left: 100px; /* Adjust based on first column width */
+    }
+
+    /* Legend */
+    .legend {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #e9ecef;
+    }
+
+    .legend-item {
+        display: inline-block;
+        margin: 5px 10px;
+        font-size: 0.85rem;
+    }
+
+    .legend-color {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border-radius: 3px;
+        margin-right: 5px;
+        vertical-align: middle;
+    }
+
     .action-bar {
         background-color: #fff;
         padding: 16px;
@@ -177,6 +217,7 @@
             <select name="year">
                 <option value="2024" {% if year == 2024 %}selected{% endif %}>2024</option>
                 <option value="2025" {% if year == 2025 %}selected{% endif %}>2025</option>
+                <option value="2026" {% if year == 2026 %}selected{% endif %}>2026</option>
             </select>
             <select name="location">
                 <option value="">All Locations</option>
@@ -188,6 +229,35 @@
         </form>
     </div>
 
+    <!-- Legend -->
+    <div class="legend">
+        <h6 class="fw-bold mb-3">Status Legend:</h6>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="legend-item">
+                    <span class="legend-color status-p"></span> P - Present (includes WFH)
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color status-a"></span> A - Absent
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color status-l"></span> L - Leave
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="legend-item">
+                    <span class="legend-color status-hd"></span> HD - Half Day
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color status-wo"></span> WO - Weekly Off
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color status-h"></span> H - Holiday
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="report-container">
         <div class="table-responsive-custom">
             <table class="table-report">
@@ -195,9 +265,14 @@
                     <tr>
                         <th style="min-width: 100px;">ID</th>
                         <th style="min-width: 150px;">Employee</th>
-                        <th class="text-center">Present</th>
-                        <th class="text-center">Absent</th>
-                        <th class="text-center">Leave</th>
+                        <th class="text-center" title="Present Days (includes WFH)">P</th>
+                        <th class="text-center" title="Absent Days">A</th>
+                        <th class="text-center" title="Leave Days">L</th>
+                        <th class="text-center" title="Half Day">HD</th>
+                        <th class="text-center" title="Weekly Off">WO</th>
+                        <th class="text-center" title="Holiday">H</th>
+                        <th class="text-center" title="Working Days">WD</th>
+                        <th class="text-center" title="Attendance %">%</th>
                         {% for day_info in days_display %}
                         <th class="text-center" style="min-width: 50px;">
                             {{ day_info.day }}<br>
@@ -218,15 +293,37 @@
                         <td class="bg-light text-success fw-bold">{{ item.stats.present }}</td>
                         <td class="bg-light text-danger fw-bold">{{ item.stats.absent }}</td>
                         <td class="bg-light text-warning fw-bold">{{ item.stats.leave }}</td>
+                        <td class="bg-light text-warning fw-bold">{{ item.stats.half_day }}</td>
+                        <td class="bg-light text-secondary fw-bold">{{ item.stats.weekly_off }}</td>
+                        <td class="bg-light text-primary fw-bold">{{ item.stats.holiday }}</td>
+                        <td class="bg-light text-dark fw-bold">{{ item.working_days }}</td>
+                        <td class="bg-light fw-bold {% if item.attendance_percentage >= 90 %}text-success{% elif item.attendance_percentage >= 75 %}text-warning{% else %}text-danger{% endif %}">
+                            {{ item.attendance_percentage }}%
+                        </td>
 
                         {% for status in item.days %}
                         <td
-                            class="{% if status == 'P' %}status-p{% elif status == 'A' %}status-a{% elif status == 'L' %}status-l{% elif status == 'WFH' %}status-wfh{% elif status == 'HD' %}status-hd{% elif status == 'OD' %}status-od{% elif status == 'WO' %}status-wo{% elif status == 'H' %}status-h{% elif status == 'MP' %}status-mp{% endif %}">
+                            class="{% if status == 'P' %}status-p{% elif status == 'A' %}status-a{% elif status == 'L' %}status-l{% elif status == 'HD' %}status-hd{% elif status == 'WO' %}status-wo{% elif status == 'H' %}status-h{% endif %}">
                             {{ status }}
                         </td>
                         {% endfor %}
                     </tr>
                     {% endfor %}
+                    
+                    <!-- Summary Row -->
+                    <tr class="table-info fw-bold">
+                        <td colspan="2" class="text-center">TOTAL ({{ total_employees }} employees)</td>
+                        <td class="text-success">{{ total_stats.present }}</td>
+                        <td class="text-danger">{{ total_stats.absent }}</td>
+                        <td class="text-warning">{{ total_stats.leave }}</td>
+                        <td class="text-warning">{{ total_stats.half_day }}</td>
+                        <td class="text-secondary">{{ total_stats.weekly_off }}</td>
+                        <td class="text-primary">{{ total_stats.holiday }}</td>
+                        <td colspan="2" class="text-center">-</td>
+                        {% for day_info in days_display %}
+                        <td>-</td>
+                        {% endfor %}
+                    </tr>
                 </tbody>
             </table>
         </div>

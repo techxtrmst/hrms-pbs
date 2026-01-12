@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 from companies.models import Company
 from datetime import timedelta
 
@@ -186,8 +187,8 @@ class EmployeeIDProof(models.Model):
 class Attendance(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='attendances')
     date = models.DateField()
-    clock_in = models.DateTimeField(null=True, blank=True)
-    clock_out = models.DateTimeField(null=True, blank=True)
+    clock_in = models.DateTimeField(null=True, blank=True)  # First clock-in of the day
+    clock_out = models.DateTimeField(null=True, blank=True)  # Last clock-out of the day
     STATUS_CHOICES = [
         ('PRESENT', 'Present'),
         ('ABSENT', 'Absent'),
@@ -198,10 +199,15 @@ class Attendance(models.Model):
         ('WEEKLY_OFF', 'Weekly Off'),
         ('HOLIDAY', 'Holiday'),
         ('MISSING_PUNCH', 'Missing Punch'),
+        ('HYBRID', 'Hybrid (Web + Remote)'),
     ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ABSENT')
     location_in = models.CharField(max_length=255, null=True, blank=True)  # Lat,Long
     location_out = models.CharField(max_length=255, null=True, blank=True)
+    
+    # Working hours calculation
+    total_working_hours = models.FloatField(default=0.0, help_text="Total working hours for the day")
+    total_break_hours = models.FloatField(default=0.0, help_text="Total break time between sessions")
     
     # Early/Late tracking
     is_late = models.BooleanField(default=False, help_text="Marked late based on shift timing")
@@ -214,15 +220,55 @@ class Attendance(models.Model):
     is_early_departure = models.BooleanField(default=False, help_text="Left before shift end time")
     early_departure_minutes = models.IntegerField(default=0, help_text="Minutes before shift end")
     
-    # Multiple click handling
-    clock_in_attempts = models.IntegerField(default=0, help_text="Number of clock-in attempts (max 3)")
-    daily_clock_count = models.IntegerField(default=0, help_text="Number of valid clock-ins today")
+    # Multiple session handling
+    daily_sessions_count = models.IntegerField(default=0, help_text="Number of clock-in/out sessions today")
     is_currently_clocked_in = models.BooleanField(default=False, help_text="Currently clocked in status")
-    max_daily_clocks = models.IntegerField(default=3, help_text="Maximum allowed clock-ins per day")
+    max_daily_sessions = models.IntegerField(default=3, help_text="Maximum allowed sessions per day")
+    current_session_type = models.CharField(max_length=10, choices=[('WEB', 'Web'), ('REMOTE', 'Remote')], null=True, blank=True)
     
     # Location tracking
     location_tracking_active = models.BooleanField(default=False, help_text="Whether location tracking is currently active")
     location_tracking_end_time = models.DateTimeField(null=True, blank=True, help_text="When location tracking should stop")
+    
+    # Timezone tracking
+    user_timezone = models.CharField(max_length=50, default='Asia/Kolkata', help_text="User's timezone when clocking in")
+    
+    class Meta:
+        unique_together = [['employee', 'date']]
+        ordering = ['-date']
+    
+    def __str__(self):
+        return f"{self.employee} - {self.date}"
+    
+    def calculate_total_working_hours(self):
+        """Calculate total working hours from completed sessions only"""
+        sessions = AttendanceSession.objects.filter(
+            employee=self.employee, 
+            date=self.date,
+            clock_in__isnull=False,
+            clock_out__isnull=False  # Only count completed sessions
+        ).order_by('session_number')
+        
+        total_minutes = 0
+        
+        for session in sessions:
+            duration = session.clock_out - session.clock_in
+            total_minutes += duration.total_seconds() / 60
+        
+        self.total_working_hours = round(total_minutes / 60, 2)
+        return self.total_working_hours
+    
+    def get_current_session(self):
+        """Get the current active session if any"""
+        return AttendanceSession.objects.filter(
+            employee=self.employee, 
+            date=self.date, 
+            clock_out__isnull=True
+        ).first()
+    
+    def can_clock_in(self):
+        """Check if employee can clock in (not already clocked in and under session limit)"""
+        return not self.is_currently_clocked_in and self.daily_sessions_count < self.max_daily_sessions
     
     class Meta:
         unique_together = [['employee', 'date']]
@@ -364,28 +410,63 @@ class Attendance(models.Model):
 
     @property
     def effective_hours(self):
-        from django.utils import timezone
-        if self.clock_in:
-            # Use current time if active, otherwise clock_out time
-            end_time = self.clock_out if self.clock_out else timezone.now()
-            diff = end_time - self.clock_in
-            total_seconds = diff.total_seconds()
-            hours = int(total_seconds // 3600)
-            minutes = int((total_seconds % 3600) // 60)
-            return f"{hours}:{minutes:02d}{'+' if not self.clock_out else ''}"
-        return "0:00"
+        """Calculate effective working hours from completed sessions only"""
+        # Use session-based calculation for accurate hours
+        sessions = AttendanceSession.objects.filter(
+            employee=self.employee, 
+            date=self.date,
+            clock_in__isnull=False,
+            clock_out__isnull=False  # Only count completed sessions
+        ).order_by('session_number')
+        
+        total_minutes = 0
+        for session in sessions:
+            duration = session.clock_out - session.clock_in
+            total_minutes += duration.total_seconds() / 60
+        
+        # Convert to hours and minutes
+        total_hours = total_minutes / 60
+        hours = int(total_hours)
+        minutes = int((total_hours - hours) * 60)
+        
+        # If currently clocked in (has incomplete session), add "+" indicator
+        has_active_session = AttendanceSession.objects.filter(
+            employee=self.employee,
+            date=self.date,
+            clock_in__isnull=False,
+            clock_out__isnull=True
+        ).exists()
+        
+        if total_minutes == 0:
+            return "0:00"
+        
+        return f"{hours}:{minutes:02d}{'+' if has_active_session else ''}"
 
     @property
     def visual_width(self):
-        # Percentage for the visual bar (assuming 9 hours shift)
-        if self.clock_in and self.clock_out:
-            diff = self.clock_out - self.clock_in
-            hours = diff.total_seconds() / 3600
-            percent = max(0, min((hours / 9) * 100, 100))
-            return percent
-        elif self.clock_in:
-             # If currently clocked in, calculate from clock_in to now (handled in view typically, but distinct here)
-             pass
+        """Percentage for the visual bar based on actual worked hours vs shift duration"""
+        # Get total worked hours from all completed sessions
+        sessions = AttendanceSession.objects.filter(
+            employee=self.employee, 
+            date=self.date,
+            clock_in__isnull=False,
+            clock_out__isnull=False
+        )
+        
+        total_minutes = 0
+        for session in sessions:
+            duration = session.clock_out - session.clock_in
+            total_minutes += duration.total_seconds() / 60
+        
+        worked_hours = total_minutes / 60
+        
+        # Get expected shift duration (default 9 hours)
+        expected_hours = self.get_shift_duration_hours()
+        
+        if worked_hours > 0:
+            percent = (worked_hours / expected_hours) * 100
+            return max(0, min(percent, 100))  # Cap at 100%
+        
         return 0
     
     @property
@@ -398,7 +479,65 @@ class Attendance(models.Model):
             status_text += f" (Early by {self.early_departure_minutes} min)"
         return status_text
     
-    def get_shift_duration_hours(self):
+    def get_shift_completion_percentage(self):
+        """Calculate what percentage of the shift has been completed"""
+        # Get total worked hours from all completed sessions
+        sessions = AttendanceSession.objects.filter(
+            employee=self.employee, 
+            date=self.date,
+            clock_in__isnull=False,
+            clock_out__isnull=False
+        )
+        
+        total_minutes = 0
+        for session in sessions:
+            duration = session.clock_out - session.clock_in
+            total_minutes += duration.total_seconds() / 60
+        
+        worked_hours = total_minutes / 60
+        expected_hours = self.get_shift_duration_hours()
+        
+        if expected_hours > 0:
+            percentage = (worked_hours / expected_hours) * 100
+            return min(percentage, 100)  # Cap at 100%
+        
+        return 0
+    
+    def get_combined_session_summary(self):
+        """Get a summary of all sessions combined for the day"""
+        sessions = AttendanceSession.objects.filter(
+            employee=self.employee, 
+            date=self.date
+        ).order_by('session_number')
+        
+        completed_sessions = sessions.filter(
+            clock_in__isnull=False,
+            clock_out__isnull=False
+        )
+        
+        active_sessions = sessions.filter(
+            clock_in__isnull=False,
+            clock_out__isnull=True
+        )
+        
+        total_minutes = 0
+        for session in completed_sessions:
+            duration = session.clock_out - session.clock_in
+            total_minutes += duration.total_seconds() / 60
+        
+        worked_hours = total_minutes / 60
+        expected_hours = self.get_shift_duration_hours()
+        
+        return {
+            'total_sessions': sessions.count(),
+            'completed_sessions': completed_sessions.count(),
+            'active_sessions': active_sessions.count(),
+            'total_worked_hours': round(worked_hours, 2),
+            'expected_hours': expected_hours,
+            'completion_percentage': round((worked_hours / expected_hours) * 100, 1) if expected_hours > 0 else 0,
+            'remaining_hours': max(0, expected_hours - worked_hours),
+            'is_shift_complete': worked_hours >= expected_hours * 0.9,  # 90% completion threshold
+        }
         """Calculate expected shift duration in hours based on employee's shift"""
         from datetime import datetime
         
@@ -454,6 +593,94 @@ class Attendance(models.Model):
         #    return True
         
         return False
+
+
+
+class AttendanceSession(models.Model):
+    """Individual clock-in/clock-out sessions within a day"""
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='attendance_sessions')
+    date = models.DateField()
+    session_number = models.IntegerField(help_text="Session number for the day (1, 2, 3)")
+    
+    # Session timing
+    clock_in = models.DateTimeField()
+    clock_out = models.DateTimeField(null=True, blank=True)
+    
+    # Location coordinates (matching existing structure)
+    clock_in_latitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
+    clock_in_longitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
+    clock_out_latitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
+    clock_out_longitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
+    
+    # Session type and status
+    SESSION_TYPE_CHOICES = [
+        ('WEB', 'Web/Office'),
+        ('REMOTE', 'Remote/WFH'),
+    ]
+    session_type = models.CharField(max_length=50, choices=SESSION_TYPE_CHOICES)
+    is_active = models.BooleanField(default=True)
+    location_validated = models.BooleanField(default=False)
+    
+    # Session duration (in minutes to match existing structure)
+    duration_minutes = models.IntegerField(default=0, help_text="Duration of this session in minutes")
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'employees_attendancesession'
+        unique_together = [['employee', 'date', 'session_number']]
+        ordering = ['date', 'session_number']
+    
+    def __str__(self):
+        return f"{self.employee} - {self.date} - Session {self.session_number} ({self.session_type})"
+    
+    @property
+    def duration_hours(self):
+        """Convert duration from minutes to hours"""
+        return round(self.duration_minutes / 60, 2) if self.duration_minutes else 0.0
+    
+    def calculate_duration(self):
+        """Calculate and update session duration"""
+        if self.clock_in and self.clock_out:
+            duration = self.clock_out - self.clock_in
+            self.duration_minutes = int(duration.total_seconds() / 60)
+        else:
+            self.duration_minutes = 0
+        return self.duration_minutes
+    
+    def save(self, *args, **kwargs):
+        # Auto-calculate duration on save
+        self.calculate_duration()
+        super().save(*args, **kwargs)
+    
+    def get_location_logs(self):
+        """Get all location logs for this session"""
+        return self.location_logs.all().order_by('timestamp')
+    
+    def get_location_count(self):
+        """Get count of location logs for this session"""
+        return self.location_logs.count()
+    
+    def get_latest_location(self):
+        """Get the most recent location for this session"""
+        return self.location_logs.first()  # First due to ordering by -timestamp
+
+
+class SessionLocationLog(models.Model):
+    """Location tracking for specific attendance sessions"""
+    session = models.ForeignKey(AttendanceSession, on_delete=models.CASCADE, related_name='location_logs')
+    timestamp = models.DateTimeField(auto_now_add=True)
+    latitude = models.DecimalField(max_digits=10, decimal_places=7)
+    longitude = models.DecimalField(max_digits=10, decimal_places=7)
+    accuracy = models.FloatField(null=True, blank=True, help_text="GPS accuracy in meters")
+    
+    class Meta:
+        ordering = ['-timestamp']
+    
+    def __str__(self):
+        return f"{self.session.employee} - Session {self.session.session_number} - {self.timestamp}"
 
 
 class LocationLog(models.Model):

@@ -6,6 +6,7 @@ from django.db import transaction
 from .models import (
     Employee,
     Attendance,
+    AttendanceSession,
     LocationLog,
     LeaveRequest,
     LeaveBalance,
@@ -25,6 +26,21 @@ from django.utils import timezone
 import json
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+import requests
+from timezonefinder import TimezoneFinder
+
+
+def detect_timezone_from_coordinates(lat, lng):
+    """
+    Detect timezone from latitude and longitude coordinates
+    """
+    try:
+        tf = TimezoneFinder()
+        timezone_name = tf.timezone_at(lat=float(lat), lng=float(lng))
+        return timezone_name if timezone_name else 'Asia/Kolkata'
+    except Exception as e:
+        print(f"Error detecting timezone: {e}")
+        return 'Asia/Kolkata'
 
 
 class CompanyAdminRequiredMixin(UserPassesTestMixin):
@@ -281,6 +297,7 @@ def clock_in(request):
             data = json.loads(request.body)
             lat = data.get("latitude")
             lng = data.get("longitude")
+            clock_in_type = data.get("type", "office")  # 'office' or 'remote'
 
             # Ensure employee profile exists
             if not hasattr(request.user, "employee_profile"):
@@ -292,72 +309,99 @@ def clock_in(request):
             employee = request.user.employee_profile
             today = timezone.localdate()
 
-            # Try to get existing attendance record for today
-            try:
-                attendance = Attendance.objects.get(employee=employee, date=today)
+            # Get or create attendance record for today
+            attendance, created = Attendance.objects.get_or_create(
+                employee=employee, 
+                date=today,
+                defaults={
+                    'status': 'ABSENT',
+                    'daily_sessions_count': 0,
+                    'is_currently_clocked_in': False,
+                }
+            )
 
-                # Check if already clocked in
-                if attendance.clock_in:
-                    # Increment attempt counter (max 3)
-                    if attendance.clock_in_attempts < 3:
-                        attendance.clock_in_attempts += 1
-                        attendance.save()
-
-                    # Log the duplicate attempt
-                    import logging
-
-                    logger = logging.getLogger(__name__)
-                    logger.info(
-                        f"Duplicate clock-in attempt #{attendance.clock_in_attempts} by {employee.user.username} on {today}"
-                    )
-
+            # Check if employee can clock in
+            if not attendance.can_clock_in():
+                if attendance.is_currently_clocked_in:
                     return JsonResponse(
                         {
                             "status": "error",
-                            "message": "You are already clocked in.",
+                            "message": "You are already clocked in. Please clock out first.",
                             "already_clocked_in": True,
-                            "clock_in_time": attendance.clock_in.strftime("%H:%M:%S"),
+                        }
+                    )
+                elif attendance.daily_sessions_count >= attendance.max_daily_sessions:
+                    return JsonResponse(
+                        {
+                            "status": "error",
+                            "message": f"Maximum {attendance.max_daily_sessions} sessions per day reached.",
                         }
                     )
 
-            except Attendance.DoesNotExist:
-                # Create new attendance record
-                attendance = Attendance(employee=employee, date=today)
+            # Get timezone from request data or detect from coordinates
+            user_timezone = data.get("timezone")
+            
+            if not user_timezone:
+                # Try to detect timezone from coordinates
+                user_timezone = detect_timezone_from_coordinates(lat, lng)
+            
+            if not user_timezone:
+                # Fallback to employee location timezone
+                if employee.location and hasattr(employee.location, 'timezone'):
+                    user_timezone = employee.location.timezone
+                else:
+                    user_timezone = 'Asia/Kolkata'
 
-            # Determine Status based on Type
-            clock_in_type = data.get("type")
-            if clock_in_type == "remote":
-                status = "WFH"
-            elif clock_in_type == "on_duty":
-                status = "ON_DUTY"
-            else:
-                status = "PRESENT"
+            # Determine session type and status
+            session_type = 'WEB' if clock_in_type == 'office' else 'REMOTE'
+            
+            # Create new session
+            session_number = attendance.daily_sessions_count + 1
+            session = AttendanceSession.objects.create(
+                employee=employee,
+                date=today,
+                session_number=session_number,
+                clock_in=timezone.now(),
+                session_type=session_type,
+                clock_in_latitude=lat,
+                clock_in_longitude=lng,
+                is_active=True
+            )
 
-            # Preserve 'ON_DUTY' status if already set (e.g. via approved request)
-            if attendance.pk and attendance.status == 'ON_DUTY':
-                status = 'ON_DUTY'
-
-            # Set clock-in details
-            attendance.clock_in = timezone.now()
-            attendance.location_in = f"{lat},{lng}"
-            attendance.status = status
-            attendance.clock_in_attempts = 1  # First valid attempt
-            attendance.daily_clock_count = 1
+            # Update attendance record
+            attendance.daily_sessions_count = session_number
             attendance.is_currently_clocked_in = True
-            attendance.max_daily_clocks = 3
+            attendance.current_session_type = session_type
+            attendance.user_timezone = user_timezone
+            
+            # Set first clock-in of the day
+            if not attendance.clock_in:
+                attendance.clock_in = session.clock_in
+                attendance.location_in = f"{lat},{lng}"
+            
+            # Determine overall status
+            if session_number == 1:
+                attendance.status = 'WFH' if session_type == 'REMOTE' else 'PRESENT'
+            else:
+                # Multiple sessions - check if mixed types
+                session_types = set(AttendanceSession.objects.filter(
+                    employee=employee, date=today
+                ).values_list('session_type', flat=True))
+                if len(session_types) > 1:
+                    attendance.status = 'HYBRID'
+                else:
+                    attendance.status = 'WFH' if session_type == 'REMOTE' else 'PRESENT'
 
             # Start location tracking
             attendance.location_tracking_active = True
-
+            
             # Calculate location tracking end time based on shift duration
             shift = employee.assigned_shift
             if shift:
-                # Robust check (Fallback for production sync issues)
                 if hasattr(shift, "get_shift_duration_timedelta"):
                     shift_duration = shift.get_shift_duration_timedelta()
                 else:
                     from datetime import datetime, timedelta
-
                     today_date = timezone.localdate()
                     s_start = datetime.combine(today_date, shift.start_time)
                     s_end = datetime.combine(today_date, shift.end_time)
@@ -365,92 +409,35 @@ def clock_in(request):
                         s_end += timedelta(days=1)
                     shift_duration = s_end - s_start
 
-                attendance.location_tracking_end_time = (
-                    attendance.clock_in + shift_duration
-                )
+                attendance.location_tracking_end_time = session.clock_in + shift_duration
             else:
                 # Default to 9 hours if no shift assigned
                 from datetime import timedelta
+                attendance.location_tracking_end_time = session.clock_in + timedelta(hours=9)
 
-                attendance.location_tracking_end_time = attendance.clock_in + timedelta(
-                    hours=9
-                )
-
-            # Calculate late arrival based on shift
-            attendance.calculate_late_arrival()
+            # Calculate late arrival for first session only
+            if session_number == 1:
+                attendance.calculate_late_arrival()
 
             attendance.save()
 
-            # Send WFH Notification
-            if status == "WFH":
-                try:
-                    from django.core.mail import send_mail
-                    from django.conf import settings
-
-                    subject = f"WFH Alert: {employee.user.get_full_name()} has clocked in remotely"
-                    message = f"""
-                    Employee: {employee.user.get_full_name()}
-                    Designation: {employee.designation}
-                    Department: {employee.department}
-                    
-                    Clock In Time: {attendance.clock_in.strftime("%d-%m-%Y %H:%M:%S")}
-                    
-                    This user has clocked in using 'Work From Home' mode.
-                    """
-
-                    # Send to HR/Admin emails (configure in settings or fetch dynamically)
-                    # For now, sending to ADMINs
-                    recipient_list = [
-                        admin.email
-                        for admin in User.objects.filter(role=User.Role.COMPANY_ADMIN)
-                        if admin.email
-                    ]
-
-                    # Also notify manager
-                    if employee.manager and employee.manager.email:
-                        recipient_list.append(employee.manager.email)
-
-                    if recipient_list:
-                        send_mail(
-                            subject,
-                            message,
-                            settings.DEFAULT_FROM_EMAIL,
-                            recipient_list,
-                            fail_silently=True,
-                        )
-                except Exception as email_err:
-                    # Non-blocking error
-                    import logging
-
-                    logger = logging.getLogger(__name__)
-                    logger.error(f"Failed to send WFH email: {str(email_err)}")
-
-            # Prepare response with late status
-            response_data = {
+            return JsonResponse({
                 "status": "success",
-                "time": attendance.clock_in.strftime("%H:%M:%S"),
-                "location_tracking_active": True,
-                "tracking_end_time": attendance.location_tracking_end_time.strftime(
-                    "%H:%M:%S"
-                ),
-            }
+                "message": f"Successfully clocked in for session {session_number} ({session_type.lower()})",
+                "session_number": session_number,
+                "session_type": session_type,
+                "clock_in_time": session.clock_in.strftime("%H:%M:%S"),
+                "total_sessions_today": attendance.daily_sessions_count,
+                "max_sessions": attendance.max_daily_sessions,
+            })
 
-            if attendance.is_late:
-                response_data["is_late"] = True
-                response_data["late_by_minutes"] = attendance.late_by_minutes
-                response_data["message"] = (
-                    f"Clocked in successfully. You are {attendance.late_by_minutes} minutes late."
-                )
-            else:
-                response_data["message"] = "Clocked in successfully."
-
-            return JsonResponse(response_data)
         except Exception as e:
             import logging
-
             logger = logging.getLogger(__name__)
             logger.error(f"Clock-in error: {str(e)}", exc_info=True)
+            print(f"Clock-in error: {str(e)}")
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
     return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
 
 
@@ -462,7 +449,7 @@ def clock_out(request):
             data = json.loads(request.body)
             lat = data.get("latitude")
             lng = data.get("longitude")
-            force_clockout = data.get("force_clockout", False)  # Confirmation flag
+            force_clockout = data.get("force_clockout", False)
 
             if not hasattr(request.user, "employee_profile"):
                 return JsonResponse(
@@ -475,15 +462,38 @@ def clock_out(request):
 
             try:
                 attendance = Attendance.objects.get(employee=employee, date=today)
+                
+                # Check if currently clocked in
+                if not attendance.is_currently_clocked_in:
+                    return JsonResponse(
+                        {
+                            "status": "error",
+                            "message": "You are not currently clocked in.",
+                        }
+                    )
+
+                # Get current active session
+                current_session = attendance.get_current_session()
+                print(f"DEBUG: Clock-out attempt by {employee.user.get_full_name()}")
+                print(f"DEBUG: Attendance is_currently_clocked_in: {attendance.is_currently_clocked_in}")
+                print(f"DEBUG: Current session found: {current_session}")
+                if current_session:
+                    print(f"DEBUG: Session details - Number: {current_session.session_number}, Type: {current_session.session_type}")
+                
+                if not current_session:
+                    return JsonResponse(
+                        {
+                            "status": "error",
+                            "message": "No active session found.",
+                        }
+                    )
 
                 # Check if shift is complete (unless forced)
-                if not force_clockout and not attendance.is_shift_complete():
-                    # Calculate completion percentage and remaining hours
-                    if attendance.clock_in:
-                        worked_hours = (
-                            timezone.now() - attendance.clock_in
-                        ).total_seconds() / 3600
-                        expected_hours = attendance.get_shift_duration_hours()
+                if not force_clockout and current_session.clock_in:
+                    worked_hours = (timezone.now() - current_session.clock_in).total_seconds() / 3600
+                    expected_hours = 8.0  # Default 8 hours, can be customized based on shift
+                    
+                    if worked_hours < expected_hours:
                         completion_percentage = (worked_hours / expected_hours) * 100
                         remaining_hours = expected_hours - worked_hours
 
@@ -491,47 +501,45 @@ def clock_out(request):
                             {
                                 "status": "confirmation_required",
                                 "requires_confirmation": True,
-                                "message": "Your shift is not completed yet. Are you sure you want to clock out?",
+                                "message": f"Session {current_session.session_number} is not completed yet. Are you sure you want to clock out?",
                                 "worked_hours": round(worked_hours, 2),
                                 "expected_hours": round(expected_hours, 2),
-                                "completion_percentage": round(
-                                    completion_percentage, 1
-                                ),
+                                "completion_percentage": round(completion_percentage, 1),
                                 "remaining_hours": round(remaining_hours, 2),
                             }
                         )
 
-                # Process clock-out
-                attendance.clock_out = timezone.now()
-                attendance.location_out = f"{lat},{lng}"
+                # Process clock-out for current session
+                current_session.clock_out = timezone.now()
+                current_session.clock_out_latitude = lat
+                current_session.clock_out_longitude = lng
+                current_session.is_active = False
+                current_session.save()  # This will auto-calculate duration
 
+                # Update attendance record
+                attendance.is_currently_clocked_in = False
+                attendance.current_session_type = None
+                attendance.clock_out = current_session.clock_out  # Update last clock-out
+                attendance.location_out = f"{lat},{lng}"
+                
                 # Stop location tracking
                 attendance.location_tracking_active = False
-                attendance.is_currently_clocked_in = False
-
-                # Calculate early departure based on shift
-                attendance.calculate_early_departure()
-
+                
+                # Calculate total working hours
+                attendance.calculate_total_working_hours()
                 attendance.save()
 
-                # Prepare response with early departure status
-                response_data = {
+                return JsonResponse({
                     "status": "success",
-                    "time": attendance.clock_out.strftime("%H:%M:%S"),
-                    "location_tracking_active": False,
-                    "message": "Clocked out successfully.",
-                }
+                    "message": f"Successfully clocked out from session {current_session.session_number} ({current_session.session_type.lower()})",
+                    "session_number": current_session.session_number,
+                    "session_type": current_session.session_type,
+                    "session_duration": current_session.duration_hours,
+                    "clock_out_time": current_session.clock_out.strftime("%H:%M:%S"),
+                    "total_working_hours": attendance.total_working_hours,
+                    "sessions_remaining": attendance.max_daily_sessions - attendance.daily_sessions_count,
+                })
 
-                if attendance.is_early_departure:
-                    response_data["is_early"] = True
-                    response_data["early_by_minutes"] = (
-                        attendance.early_departure_minutes
-                    )
-                    response_data["message"] = (
-                        f"Clocked out. You left {attendance.early_departure_minutes} minutes early."
-                    )
-
-                return JsonResponse(response_data)
             except Attendance.DoesNotExist:
                 return JsonResponse(
                     {
@@ -542,10 +550,10 @@ def clock_out(request):
 
         except Exception as e:
             import logging
-
             logger = logging.getLogger(__name__)
             logger.error(f"Clock-out error: {str(e)}", exc_info=True)
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
+    
     return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
 
 
@@ -590,44 +598,84 @@ def update_location(request):
         # Otherwise log latitude/longitude (only if tracking is active)
         lat = data.get("latitude")
         lng = data.get("longitude")
+        accuracy = data.get("accuracy")
+        
         if lat is not None and lng is not None:
             # Check if location tracking is active for today's attendance
             today = timezone.localdate()
             try:
                 attendance = Attendance.objects.get(employee=employee, date=today)
 
-                # Check if tracking should be stopped
-                if attendance.should_stop_location_tracking():
-                    attendance.location_tracking_active = False
-                    attendance.save()
+                # Check if currently clocked in and has active session
+                if not attendance.is_currently_clocked_in:
                     return JsonResponse(
                         {
-                            "status": "tracking_stopped",
-                            "message": "Location tracking stopped (shift duration completed)",
+                            "status": "not_clocked_in",
+                            "message": "Not currently clocked in",
                             "location_tracking_active": False,
                         }
                     )
 
-                # Only log if tracking is active
+                # Get current active session
+                current_session = attendance.get_current_session()
+                if not current_session:
+                    return JsonResponse(
+                        {
+                            "status": "no_active_session",
+                            "message": "No active session found",
+                            "location_tracking_active": False,
+                        }
+                    )
+
+                # Check if tracking should be stopped based on session duration
+                if current_session.clock_in:
+                    session_duration = timezone.now() - current_session.clock_in
+                    # Stop tracking after 10 hours for safety
+                    if session_duration.total_seconds() >= 10 * 3600:
+                        attendance.location_tracking_active = False
+                        attendance.save()
+                        return JsonResponse(
+                            {
+                                "status": "tracking_stopped",
+                                "message": "Location tracking stopped (10 hour limit reached)",
+                                "location_tracking_active": False,
+                            }
+                        )
+
+                # Log location for current session
                 if attendance.location_tracking_active:
-                    LocationLog.objects.create(
-                        employee=employee, latitude=lat, longitude=lng
+                    # Create session-specific location log
+                    from employees.models import SessionLocationLog
+                    SessionLocationLog.objects.create(
+                        session=current_session,
+                        latitude=lat,
+                        longitude=lng,
+                        accuracy=accuracy
                     )
                     
-                    # Check for 9-hour notification
+                    # Also create general location log for backward compatibility
+                    LocationLog.objects.create(
+                        employee=employee, 
+                        latitude=str(lat), 
+                        longitude=str(lng)
+                    )
+                    
+                    # Prepare response
                     response_data = {
                         "status": "success",
-                        "message": "Coordinates logged",
+                        "message": f"Location logged for Session {current_session.session_number}",
                         "location_tracking_active": True,
+                        "session_number": current_session.session_number,
+                        "session_type": current_session.session_type,
                     }
                     
-                    # Check if shift duration exceeded (default 9 hours)
-                    if attendance.clock_in:
-                        duration = timezone.now() - attendance.clock_in
-                        # 9 hours = 32400 seconds
-                        if duration.total_seconds() >= 9 * 3600:
-                            response_data["shift_completed"] = True
-                            response_data["notification"] = "Your shift is completed (9 hours). Please clock out."
+                    # Check session duration and provide notifications
+                    session_hours = session_duration.total_seconds() / 3600
+                    if session_hours >= 8:
+                        response_data["session_completed"] = True
+                        response_data["notification"] = f"Session {current_session.session_number} completed ({session_hours:.1f} hours). Consider clocking out."
+                    elif session_hours >= 4:
+                        response_data["session_progress"] = f"Session {current_session.session_number} in progress ({session_hours:.1f} hours)"
                     
                     return JsonResponse(response_data)
                 else:
@@ -1939,6 +1987,9 @@ def approve_regularization(request, pk):
         # Re-calc late/early
         attendance.calculate_late_arrival()
         attendance.calculate_early_departure()
+        
+        # Recalculate working hours after regularization
+        attendance.calculate_total_working_hours()
 
         attendance.save()
 
