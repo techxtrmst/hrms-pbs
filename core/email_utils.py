@@ -24,13 +24,16 @@ def get_hr_email_connection():
     except Exception as e:
         logger.warning(f"Could not reload .env file: {e}")
 
+    # Use EMAIL_HOST_PASSWORD (standard Django env var) with fallback to PETABYTZ_HR_EMAIL_PASSWORD
+    password = env("EMAIL_HOST_PASSWORD", default=env("PETABYTZ_HR_EMAIL_PASSWORD", default=""))
+
     return get_connection(
         backend="django.core.mail.backends.smtp.EmailBackend",
         host="smtp.office365.com",
         port=587,
         use_tls=True,
         username="hrms@petabytz.com",
-        password=env("PETABYTZ_HR_EMAIL_PASSWORD", default=""),
+        password=password,
         fail_silently=False,
     )
 
