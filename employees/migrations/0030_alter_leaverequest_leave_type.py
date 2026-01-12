@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("employees", "0029_add_missing_earned_leave_fields"),
     ]

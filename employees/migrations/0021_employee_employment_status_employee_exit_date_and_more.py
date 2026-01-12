@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("employees", "0020_alter_attendance_options_and_more"),
     ]

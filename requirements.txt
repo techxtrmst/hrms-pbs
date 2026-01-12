@@ -7,6 +7,8 @@ asgiref==3.11.0
     #   django-cors-headers
 certifi==2026.1.4
     # via requests
+cffi==2.0.0
+    # via timezonefinder
 charset-normalizer==3.4.4
     # via requests
 diff-match-patch==20241021
@@ -42,14 +44,20 @@ drf-yasg==1.21.11
     # via hrms-pbs
 et-xmlfile==2.0.0
     # via openpyxl
+flatbuffers==25.12.19
+    # via timezonefinder
 gunicorn==23.0.0
     # via hrms-pbs
+h3==4.4.1
+    # via timezonefinder
 idna==3.11
     # via requests
 inflection==0.5.1
     # via drf-yasg
 numpy==2.4.0
-    # via pandas
+    # via
+    #   pandas
+    #   timezonefinder
 openpyxl==3.1.5
     # via hrms-pbs
 packaging==25.0
@@ -64,6 +72,8 @@ pillow==12.1.0
     # via hrms-pbs
 psycopg2-binary==2.9.11
     # via hrms-pbs
+pycparser==2.23 ; implementation_name != 'PyPy'
+    # via cffi
 pyjwt==2.10.1
     # via djangorestframework-simplejwt
 pypdf2==3.0.1
@@ -97,7 +107,7 @@ tablib==3.9.0
     #   hrms-pbs
 text-unidecode==1.3
     # via python-slugify
-timezonefinder==6.5.4
+timezonefinder==8.2.1
     # via hrms-pbs
 tzdata==2025.3
     # via

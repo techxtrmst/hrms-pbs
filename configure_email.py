@@ -19,7 +19,7 @@ new_config = {
     "EMAIL_HOST": "smtp.office365.com",
     "EMAIL_PORT": "587",
     "EMAIL_USE_TLS": "True",
-    "EMAIL_USE_SSL": "False"
+    "EMAIL_USE_SSL": "False",
 }
 
 updated_lines = []
@@ -28,10 +28,10 @@ processed_keys = set()
 # Update existing keys
 for line in lines:
     line = line.strip()
-    if not line or line.startswith('#'):
-        updated_lines.append(line + '\n')
+    if not line or line.startswith("#"):
+        updated_lines.append(line + "\n")
         continue
-        
+
     try:
         key, value = line.split("=", 1)
         key = key.strip()
@@ -39,9 +39,9 @@ for line in lines:
             updated_lines.append(f"{key}={new_config[key]}\n")
             processed_keys.add(key)
         else:
-            updated_lines.append(line + '\n')
+            updated_lines.append(line + "\n")
     except ValueError:
-        updated_lines.append(line + '\n')
+        updated_lines.append(line + "\n")
 
 # Add missing keys
 for key, val in new_config.items():
@@ -60,7 +60,7 @@ from django.core.mail import send_mail
 import sys
 
 # Setup Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'hrms_core.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hrms_core.settings")
 if str(base_dir) not in sys.path:
     sys.path.append(str(base_dir))
 django.setup()
@@ -68,10 +68,10 @@ django.setup()
 try:
     print(f"Testing with: {settings.EMAIL_HOST_USER}")
     send_mail(
-        'HRMS Email Configuration Test',
-        'Your email configuration is working successfully!',
+        "HRMS Email Configuration Test",
+        "Your email configuration is working successfully!",
         settings.DEFAULT_FROM_EMAIL,
-        ['hrms@petabytz.com'], # Send to self for test
+        ["hrms@petabytz.com"],  # Send to self for test
         fail_silently=False,
     )
     print("Test email sent successfully!")

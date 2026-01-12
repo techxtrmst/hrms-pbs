@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.shortcuts import render
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -12,7 +13,6 @@ from .models import (
     LeaveBalance,
     RegularizationRequest,
 )
-from core.email_utils import send_leave_request_notification
 from .forms import (
     EmployeeCreationForm,
     LeaveApplicationForm,
@@ -26,7 +26,6 @@ from django.utils import timezone
 import json
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
-import requests
 from timezonefinder import TimezoneFinder
 
 
@@ -37,10 +36,10 @@ def detect_timezone_from_coordinates(lat, lng):
     try:
         tf = TimezoneFinder()
         timezone_name = tf.timezone_at(lat=float(lat), lng=float(lng))
-        return timezone_name if timezone_name else 'Asia/Kolkata'
+        return timezone_name if timezone_name else "Asia/Kolkata"
     except Exception as e:
         print(f"Error detecting timezone: {e}")
-        return 'Asia/Kolkata'
+        return "Asia/Kolkata"
 
 
 class CompanyAdminRequiredMixin(UserPassesTestMixin):
@@ -269,22 +268,25 @@ def resend_welcome_email(request, pk):
     """
     if request.user.role != User.Role.COMPANY_ADMIN:
         messages.error(request, "Permission denied.")
-        return redirect('employee_list')
-        
+        return redirect("employee_list")
+
     try:
         employee = Employee.objects.get(pk=pk, company=request.user.company)
         from core.email_utils import send_welcome_email_with_link
-        
+
         domain = request.get_host()
         if send_welcome_email_with_link(employee, domain):
             messages.success(request, f"Welcome email resent to {employee.user.email}")
         else:
-            messages.error(request, "Failed to send email. Please check email settings.")
-            
+            messages.error(
+                request, "Failed to send email. Please check email settings."
+            )
+
     except Employee.DoesNotExist:
         messages.error(request, "Employee not found.")
-        
-    return redirect('employee_list')
+
+    return redirect("employee_list")
+
 
 # --- Attendance & Tracking Views ---
 
@@ -311,13 +313,13 @@ def clock_in(request):
 
             # Get or create attendance record for today
             attendance, created = Attendance.objects.get_or_create(
-                employee=employee, 
+                employee=employee,
                 date=today,
                 defaults={
-                    'status': 'ABSENT',
-                    'daily_sessions_count': 0,
-                    'is_currently_clocked_in': False,
-                }
+                    "status": "ABSENT",
+                    "daily_sessions_count": 0,
+                    "is_currently_clocked_in": False,
+                },
             )
 
             # Check if employee can clock in
@@ -340,21 +342,21 @@ def clock_in(request):
 
             # Get timezone from request data or detect from coordinates
             user_timezone = data.get("timezone")
-            
+
             if not user_timezone:
                 # Try to detect timezone from coordinates
                 user_timezone = detect_timezone_from_coordinates(lat, lng)
-            
+
             if not user_timezone:
                 # Fallback to employee location timezone
-                if employee.location and hasattr(employee.location, 'timezone'):
+                if employee.location and hasattr(employee.location, "timezone"):
                     user_timezone = employee.location.timezone
                 else:
-                    user_timezone = 'Asia/Kolkata'
+                    user_timezone = "Asia/Kolkata"
 
             # Determine session type and status
-            session_type = 'WEB' if clock_in_type == 'office' else 'REMOTE'
-            
+            session_type = "WEB" if clock_in_type == "office" else "REMOTE"
+
             # Create new session
             session_number = attendance.daily_sessions_count + 1
             session = AttendanceSession.objects.create(
@@ -365,7 +367,7 @@ def clock_in(request):
                 session_type=session_type,
                 clock_in_latitude=lat,
                 clock_in_longitude=lng,
-                is_active=True
+                is_active=True,
             )
 
             # Update attendance record
@@ -373,28 +375,30 @@ def clock_in(request):
             attendance.is_currently_clocked_in = True
             attendance.current_session_type = session_type
             attendance.user_timezone = user_timezone
-            
+
             # Set first clock-in of the day
             if not attendance.clock_in:
                 attendance.clock_in = session.clock_in
                 attendance.location_in = f"{lat},{lng}"
-            
+
             # Determine overall status
             if session_number == 1:
-                attendance.status = 'WFH' if session_type == 'REMOTE' else 'PRESENT'
+                attendance.status = "WFH" if session_type == "REMOTE" else "PRESENT"
             else:
                 # Multiple sessions - check if mixed types
-                session_types = set(AttendanceSession.objects.filter(
-                    employee=employee, date=today
-                ).values_list('session_type', flat=True))
+                session_types = set(
+                    AttendanceSession.objects.filter(
+                        employee=employee, date=today
+                    ).values_list("session_type", flat=True)
+                )
                 if len(session_types) > 1:
-                    attendance.status = 'HYBRID'
+                    attendance.status = "HYBRID"
                 else:
-                    attendance.status = 'WFH' if session_type == 'REMOTE' else 'PRESENT'
+                    attendance.status = "WFH" if session_type == "REMOTE" else "PRESENT"
 
             # Start location tracking
             attendance.location_tracking_active = True
-            
+
             # Calculate location tracking end time based on shift duration
             shift = employee.assigned_shift
             if shift:
@@ -402,6 +406,7 @@ def clock_in(request):
                     shift_duration = shift.get_shift_duration_timedelta()
                 else:
                     from datetime import datetime, timedelta
+
                     today_date = timezone.localdate()
                     s_start = datetime.combine(today_date, shift.start_time)
                     s_end = datetime.combine(today_date, shift.end_time)
@@ -409,11 +414,16 @@ def clock_in(request):
                         s_end += timedelta(days=1)
                     shift_duration = s_end - s_start
 
-                attendance.location_tracking_end_time = session.clock_in + shift_duration
+                attendance.location_tracking_end_time = (
+                    session.clock_in + shift_duration
+                )
             else:
                 # Default to 9 hours if no shift assigned
                 from datetime import timedelta
-                attendance.location_tracking_end_time = session.clock_in + timedelta(hours=9)
+
+                attendance.location_tracking_end_time = session.clock_in + timedelta(
+                    hours=9
+                )
 
             # Calculate late arrival for first session only
             if session_number == 1:
@@ -421,18 +431,21 @@ def clock_in(request):
 
             attendance.save()
 
-            return JsonResponse({
-                "status": "success",
-                "message": f"Successfully clocked in for session {session_number} ({session_type.lower()})",
-                "session_number": session_number,
-                "session_type": session_type,
-                "clock_in_time": session.clock_in.strftime("%H:%M:%S"),
-                "total_sessions_today": attendance.daily_sessions_count,
-                "max_sessions": attendance.max_daily_sessions,
-            })
+            return JsonResponse(
+                {
+                    "status": "success",
+                    "message": f"Successfully clocked in for session {session_number} ({session_type.lower()})",
+                    "session_number": session_number,
+                    "session_type": session_type,
+                    "clock_in_time": session.clock_in.strftime("%H:%M:%S"),
+                    "total_sessions_today": attendance.daily_sessions_count,
+                    "max_sessions": attendance.max_daily_sessions,
+                }
+            )
 
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Clock-in error: {str(e)}", exc_info=True)
             print(f"Clock-in error: {str(e)}")
@@ -462,7 +475,7 @@ def clock_out(request):
 
             try:
                 attendance = Attendance.objects.get(employee=employee, date=today)
-                
+
                 # Check if currently clocked in
                 if not attendance.is_currently_clocked_in:
                     return JsonResponse(
@@ -475,11 +488,15 @@ def clock_out(request):
                 # Get current active session
                 current_session = attendance.get_current_session()
                 print(f"DEBUG: Clock-out attempt by {employee.user.get_full_name()}")
-                print(f"DEBUG: Attendance is_currently_clocked_in: {attendance.is_currently_clocked_in}")
+                print(
+                    f"DEBUG: Attendance is_currently_clocked_in: {attendance.is_currently_clocked_in}"
+                )
                 print(f"DEBUG: Current session found: {current_session}")
                 if current_session:
-                    print(f"DEBUG: Session details - Number: {current_session.session_number}, Type: {current_session.session_type}")
-                
+                    print(
+                        f"DEBUG: Session details - Number: {current_session.session_number}, Type: {current_session.session_type}"
+                    )
+
                 if not current_session:
                     return JsonResponse(
                         {
@@ -490,9 +507,13 @@ def clock_out(request):
 
                 # Check if shift is complete (unless forced)
                 if not force_clockout and current_session.clock_in:
-                    worked_hours = (timezone.now() - current_session.clock_in).total_seconds() / 3600
-                    expected_hours = 8.0  # Default 8 hours, can be customized based on shift
-                    
+                    worked_hours = (
+                        timezone.now() - current_session.clock_in
+                    ).total_seconds() / 3600
+                    expected_hours = (
+                        8.0  # Default 8 hours, can be customized based on shift
+                    )
+
                     if worked_hours < expected_hours:
                         completion_percentage = (worked_hours / expected_hours) * 100
                         remaining_hours = expected_hours - worked_hours
@@ -504,7 +525,9 @@ def clock_out(request):
                                 "message": f"Session {current_session.session_number} is not completed yet. Are you sure you want to clock out?",
                                 "worked_hours": round(worked_hours, 2),
                                 "expected_hours": round(expected_hours, 2),
-                                "completion_percentage": round(completion_percentage, 1),
+                                "completion_percentage": round(
+                                    completion_percentage, 1
+                                ),
                                 "remaining_hours": round(remaining_hours, 2),
                             }
                         )
@@ -519,26 +542,33 @@ def clock_out(request):
                 # Update attendance record
                 attendance.is_currently_clocked_in = False
                 attendance.current_session_type = None
-                attendance.clock_out = current_session.clock_out  # Update last clock-out
+                attendance.clock_out = (
+                    current_session.clock_out
+                )  # Update last clock-out
                 attendance.location_out = f"{lat},{lng}"
-                
+
                 # Stop location tracking
                 attendance.location_tracking_active = False
-                
+
                 # Calculate total working hours
                 attendance.calculate_total_working_hours()
                 attendance.save()
 
-                return JsonResponse({
-                    "status": "success",
-                    "message": f"Successfully clocked out from session {current_session.session_number} ({current_session.session_type.lower()})",
-                    "session_number": current_session.session_number,
-                    "session_type": current_session.session_type,
-                    "session_duration": current_session.duration_hours,
-                    "clock_out_time": current_session.clock_out.strftime("%H:%M:%S"),
-                    "total_working_hours": attendance.total_working_hours,
-                    "sessions_remaining": attendance.max_daily_sessions - attendance.daily_sessions_count,
-                })
+                return JsonResponse(
+                    {
+                        "status": "success",
+                        "message": f"Successfully clocked out from session {current_session.session_number} ({current_session.session_type.lower()})",
+                        "session_number": current_session.session_number,
+                        "session_type": current_session.session_type,
+                        "session_duration": current_session.duration_hours,
+                        "clock_out_time": current_session.clock_out.strftime(
+                            "%H:%M:%S"
+                        ),
+                        "total_working_hours": attendance.total_working_hours,
+                        "sessions_remaining": attendance.max_daily_sessions
+                        - attendance.daily_sessions_count,
+                    }
+                )
 
             except Attendance.DoesNotExist:
                 return JsonResponse(
@@ -550,10 +580,11 @@ def clock_out(request):
 
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Clock-out error: {str(e)}", exc_info=True)
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
-    
+
     return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
 
 
@@ -599,7 +630,7 @@ def update_location(request):
         lat = data.get("latitude")
         lng = data.get("longitude")
         accuracy = data.get("accuracy")
-        
+
         if lat is not None and lng is not None:
             # Check if location tracking is active for today's attendance
             today = timezone.localdate()
@@ -646,20 +677,19 @@ def update_location(request):
                 if attendance.location_tracking_active:
                     # Create session-specific location log
                     from employees.models import SessionLocationLog
+
                     SessionLocationLog.objects.create(
                         session=current_session,
                         latitude=lat,
                         longitude=lng,
-                        accuracy=accuracy
+                        accuracy=accuracy,
                     )
-                    
+
                     # Also create general location log for backward compatibility
                     LocationLog.objects.create(
-                        employee=employee, 
-                        latitude=str(lat), 
-                        longitude=str(lng)
+                        employee=employee, latitude=str(lat), longitude=str(lng)
                     )
-                    
+
                     # Prepare response
                     response_data = {
                         "status": "success",
@@ -668,16 +698,20 @@ def update_location(request):
                         "session_number": current_session.session_number,
                         "session_type": current_session.session_type,
                     }
-                    
+
                     # Check session duration and provide notifications
                     session_duration = timezone.now() - current_session.clock_in
                     session_hours = session_duration.total_seconds() / 3600
                     if session_hours >= 8:
                         response_data["session_completed"] = True
-                        response_data["notification"] = f"Session {current_session.session_number} completed ({session_hours:.1f} hours). Consider clocking out."
+                        response_data["notification"] = (
+                            f"Session {current_session.session_number} completed ({session_hours:.1f} hours). Consider clocking out."
+                        )
                     elif session_hours >= 4:
-                        response_data["session_progress"] = f"Session {current_session.session_number} in progress ({session_hours:.1f} hours)"
-                    
+                        response_data["session_progress"] = (
+                            f"Session {current_session.session_number} in progress ({session_hours:.1f} hours)"
+                        )
+
                     return JsonResponse(response_data)
                 else:
                     return JsonResponse(
@@ -779,6 +813,7 @@ def employee_profile(request):
 
         id_proofs.save()
         from django.contrib import messages
+
         messages.success(request, "ID Documents updated successfully.")
 
         # Deletion logic for Admins
@@ -862,7 +897,7 @@ class LeaveApplyView(LoginRequiredMixin, CreateView):
             else:
                 context["cl_balance"] = 0
                 context["el_balance"] = 0
-        except Exception as e:
+        except Exception:
             # Fallback if something goes wrong (e.g. no profile)
             context["cl_balance"] = 0
             context["el_balance"] = 0
@@ -878,22 +913,36 @@ class LeaveApplyView(LoginRequiredMixin, CreateView):
         # Send email notifications
         try:
             from core.email_utils import send_leave_request_notification
+
             result = send_leave_request_notification(self.object)
-            if not result.get('hr', False):
+            if not result.get("hr", False):
                 import logging
+
                 logger = logging.getLogger(__name__)
-                logger.error(f"Failed to send leave request email to HR for {self.object.id}")
+                logger.error(
+                    f"Failed to send leave request email to HR for {self.object.id}"
+                )
                 from django.contrib import messages
-                messages.warning(self.request, "Leave request submitted, but email notification to HR failed. Please notify HR manually.")
+
+                messages.warning(
+                    self.request,
+                    "Leave request submitted, but email notification to HR failed. Please notify HR manually.",
+                )
             else:
                 from django.contrib import messages
+
                 messages.success(self.request, "Leave request submitted successfully.")
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Error calling send_leave_request_notification: {e}")
             from django.contrib import messages
-            messages.warning(self.request, "Leave request submitted, but email notification failed. Please notify HR manually.")
+
+            messages.warning(
+                self.request,
+                "Leave request submitted, but email notification failed. Please notify HR manually.",
+            )
 
         return response
 
@@ -940,34 +989,41 @@ def approve_leave(request, pk):
 
         # Update Attendance Records
         from datetime import timedelta
+
         current_date = leave_request.start_date
         while current_date <= leave_request.end_date:
             # Get or Create Attendance
             att_record, created = Attendance.objects.get_or_create(
-                employee=leave_request.employee,
-                date=current_date
+                employee=leave_request.employee, date=current_date
             )
-            
+
             # Update status
-            if leave_request.leave_type == 'OD':
-                att_record.status = 'ON_DUTY'
+            if leave_request.leave_type == "OD":
+                att_record.status = "ON_DUTY"
             else:
-                att_record.status = 'LEAVE'
-            
+                att_record.status = "LEAVE"
+
             att_record.save()
             current_date += timedelta(days=1)
 
         # Send Approval Email
         try:
-             from core.email_utils import send_leave_approval_notification
-             if send_leave_approval_notification(leave_request):
-                 messages.success(request, f"Leave approved. Email sent to {leave_request.employee.user.first_name}.")
-             else:
-                 messages.warning(request, "Leave approved, but email notification failed.")
+            from core.email_utils import send_leave_approval_notification
+
+            if send_leave_approval_notification(leave_request):
+                messages.success(
+                    request,
+                    f"Leave approved. Email sent to {leave_request.employee.user.first_name}.",
+                )
+            else:
+                messages.warning(
+                    request, "Leave approved, but email notification failed."
+                )
         except Exception as e:
-             import logging
-             logger = logging.getLogger(__name__)
-             logger.error(f"Error sending approval email: {e}")
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error sending approval email: {e}")
 
         return redirect(request.META.get("HTTP_REFERER", "admin_dashboard"))
     return redirect("admin_dashboard")
@@ -998,12 +1054,16 @@ def reject_leave(request, pk):
         # Send Rejection Email
         try:
             from core.email_utils import send_leave_rejection_notification
+
             if send_leave_rejection_notification(leave_request):
                 messages.success(request, "Leave rejected. Notification sent.")
             else:
-                 messages.warning(request, "Leave rejected, but email notification failed.")
+                messages.warning(
+                    request, "Leave rejected, but email notification failed."
+                )
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Error sending rejection email: {e}")
 
@@ -1252,7 +1312,6 @@ def employee_exit_action(request, pk):
     """
     from .models import ExitInitiative
     from datetime import timedelta
-    from dateutil.relativedelta import relativedelta
 
     # Permission check
     if request.user.role not in [User.Role.COMPANY_ADMIN, User.Role.SUPERADMIN]:
@@ -1731,17 +1790,19 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                         # Sync Department & Designation with Role Configuration
                         from companies.models import Department, Designation
 
-                        dept_name = str(row.get("department", "General")).strip().title()
-                        desig_name = str(row.get("designation", "Employee")).strip().title()
+                        dept_name = (
+                            str(row.get("department", "General")).strip().title()
+                        )
+                        desig_name = (
+                            str(row.get("designation", "Employee")).strip().title()
+                        )
 
                         # Ensure they exist in Role Config (prevents duplicates)
                         Department.objects.get_or_create(
-                            company=self.request.user.company, 
-                            name=dept_name
+                            company=self.request.user.company, name=dept_name
                         )
                         Designation.objects.get_or_create(
-                            company=self.request.user.company, 
-                            name=desig_name
+                            company=self.request.user.company, name=desig_name
                         )
 
                         employee = Employee.objects.create(
@@ -1896,19 +1957,32 @@ class RegularizationCreateView(LoginRequiredMixin, CreateView):
         # Send Email Notification
         try:
             from core.email_utils import send_regularization_request_notification
+
             result = send_regularization_request_notification(self.object)
-            if not result.get('hr', False):
+            if not result.get("hr", False):
                 import logging
+
                 logger = logging.getLogger(__name__)
-                logger.error(f"Failed to send regularization request email to HR for {self.object.id}")
+                logger.error(
+                    f"Failed to send regularization request email to HR for {self.object.id}"
+                )
                 from django.contrib import messages
-                messages.warning(self.request, "Request submitted, but email notification to HR failed. Please notify HR manually.")
+
+                messages.warning(
+                    self.request,
+                    "Request submitted, but email notification to HR failed. Please notify HR manually.",
+                )
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Error calling regularization email utility: {e}")
             from django.contrib import messages
-            messages.warning(self.request, "Request submitted, but email notification failed. Please notify HR manually.")
+
+            messages.warning(
+                self.request,
+                "Request submitted, but email notification failed. Please notify HR manually.",
+            )
 
         return response
 
@@ -1988,7 +2062,7 @@ def approve_regularization(request, pk):
         # Re-calc late/early
         attendance.calculate_late_arrival()
         attendance.calculate_early_departure()
-        
+
         # Recalculate working hours after regularization
         attendance.calculate_total_working_hours()
 
@@ -1996,13 +2070,17 @@ def approve_regularization(request, pk):
 
         # Send Approval Email
         try:
-             from core.email_utils import send_regularization_approval_notification
-             if send_regularization_approval_notification(reg_request):
-                 messages.success(request, "Regularization approved. Notification sent.")
-             else:
-                 messages.warning(request, "Regularization approved, but email notification failed.")
+            from core.email_utils import send_regularization_approval_notification
+
+            if send_regularization_approval_notification(reg_request):
+                messages.success(request, "Regularization approved. Notification sent.")
+            else:
+                messages.warning(
+                    request, "Regularization approved, but email notification failed."
+                )
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Error sending regularization approval email: {e}")
 
@@ -2036,12 +2114,16 @@ def reject_regularization(request, pk):
         # Send Rejection Email
         try:
             from core.email_utils import send_regularization_rejection_notification
+
             if send_regularization_rejection_notification(reg_request):
-                 messages.success(request, "Regularization rejected. Notification sent.")
+                messages.success(request, "Regularization rejected. Notification sent.")
             else:
-                 messages.warning(request, "Regularization rejected, but email notification failed.")
+                messages.warning(
+                    request, "Regularization rejected, but email notification failed."
+                )
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Error sending regularization rejection email: {e}")
 
@@ -2072,9 +2154,10 @@ def leave_configuration(request):
 
     # Prefetch leave balances
     employees = employees.select_related("user").order_by("user__first_name")
-    
+
     # Ensure all employees have leave balance records
     from django.core.exceptions import ObjectDoesNotExist
+
     for employee in employees:
         try:
             _ = employee.leave_balance
@@ -2084,34 +2167,32 @@ def leave_configuration(request):
     # Context for Accrual Modal (Safe from template syntax errors)
     import calendar
     from django.utils import timezone
+
     now = timezone.now()
     current_month = now.month
     current_year = now.year
 
     months_ctx = []
     for i in range(1, 13):
-        months_ctx.append({
-            'value': i,
-            'name': calendar.month_name[i],
-            'selected': 'selected' if i == current_month else ''
-        })
-        
+        months_ctx.append(
+            {
+                "value": i,
+                "name": calendar.month_name[i],
+                "selected": "selected" if i == current_month else "",
+            }
+        )
+
     years_ctx = []
     # Show current year and next 2 years, or surrounding
     for y in [2024, 2025, 2026]:
-        years_ctx.append({
-             'value': y,
-             'selected': 'selected' if y == current_year else ''
-        })
+        years_ctx.append(
+            {"value": y, "selected": "selected" if y == current_year else ""}
+        )
 
     return render(
-        request, 
-        "employees/leave_configuration.html", 
-        {
-            "employees": employees,
-            "months_ctx": months_ctx,
-            "years_ctx": years_ctx
-        }
+        request,
+        "employees/leave_configuration.html",
+        {"employees": employees, "months_ctx": months_ctx, "years_ctx": years_ctx},
     )
 
 
@@ -2191,7 +2272,7 @@ def run_monthly_accrual(request):
     try:
         month = request.POST.get("month")
         year = request.POST.get("year")
-        
+
         period_msg = ""
         if month and year:
             try:
@@ -2202,9 +2283,13 @@ def run_monthly_accrual(request):
 
         # Run the command
         call_command("accrue_monthly_leaves")
-        
-        success_msg = f"Monthly accrual processed {period_msg}: +1 Sick and +1 Casual leave added to all employees." if period_msg else "Monthly accrual processed: +1 Sick and +1 Casual leave added to all employees."
-        
+
+        success_msg = (
+            f"Monthly accrual processed {period_msg}: +1 Sick and +1 Casual leave added to all employees."
+            if period_msg
+            else "Monthly accrual processed: +1 Sick and +1 Casual leave added to all employees."
+        )
+
         messages.success(request, success_msg)
 
     except Exception as e:

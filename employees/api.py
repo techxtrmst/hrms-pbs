@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Employee
 from .serializers import EmployeeSerializer
 
+
 class EmployeeViewSet(viewsets.ModelViewSet):
     serializer_class = EmployeeSerializer
     permission_classes = [IsAuthenticated]

@@ -4,54 +4,73 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('employees', '0034_update_attendancesession_structure'),
+        ("employees", "0034_update_attendancesession_structure"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='attendance',
-            name='current_session_type',
+            model_name="attendance",
+            name="current_session_type",
         ),
         migrations.RemoveField(
-            model_name='attendance',
-            name='daily_sessions_count',
+            model_name="attendance",
+            name="daily_sessions_count",
         ),
         migrations.RemoveField(
-            model_name='attendance',
-            name='max_daily_sessions',
+            model_name="attendance",
+            name="max_daily_sessions",
         ),
         migrations.RemoveField(
-            model_name='attendance',
-            name='total_break_hours',
+            model_name="attendance",
+            name="total_break_hours",
         ),
         migrations.RemoveField(
-            model_name='attendance',
-            name='total_working_hours',
+            model_name="attendance",
+            name="total_working_hours",
         ),
         migrations.RemoveField(
-            model_name='attendance',
-            name='user_timezone',
+            model_name="attendance",
+            name="user_timezone",
         ),
         migrations.AddField(
-            model_name='attendance',
-            name='clock_in_attempts',
-            field=models.IntegerField(default=0, help_text='Number of clock-in attempts (max 3)'),
+            model_name="attendance",
+            name="clock_in_attempts",
+            field=models.IntegerField(
+                default=0, help_text="Number of clock-in attempts (max 3)"
+            ),
         ),
         migrations.AddField(
-            model_name='attendance',
-            name='daily_clock_count',
-            field=models.IntegerField(default=0, help_text='Number of valid clock-ins today'),
+            model_name="attendance",
+            name="daily_clock_count",
+            field=models.IntegerField(
+                default=0, help_text="Number of valid clock-ins today"
+            ),
         ),
         migrations.AddField(
-            model_name='attendance',
-            name='max_daily_clocks',
-            field=models.IntegerField(default=3, help_text='Maximum allowed clock-ins per day'),
+            model_name="attendance",
+            name="max_daily_clocks",
+            field=models.IntegerField(
+                default=3, help_text="Maximum allowed clock-ins per day"
+            ),
         ),
         migrations.AlterField(
-            model_name='attendance',
-            name='status',
-            field=models.CharField(choices=[('PRESENT', 'Present'), ('ABSENT', 'Absent'), ('HALF_DAY', 'Half Day'), ('LEAVE', 'On Leave'), ('WFH', 'Work From Home'), ('ON_DUTY', 'On Duty'), ('WEEKLY_OFF', 'Weekly Off'), ('HOLIDAY', 'Holiday'), ('MISSING_PUNCH', 'Missing Punch')], default='ABSENT', max_length=20),
+            model_name="attendance",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("PRESENT", "Present"),
+                    ("ABSENT", "Absent"),
+                    ("HALF_DAY", "Half Day"),
+                    ("LEAVE", "On Leave"),
+                    ("WFH", "Work From Home"),
+                    ("ON_DUTY", "On Duty"),
+                    ("WEEKLY_OFF", "Weekly Off"),
+                    ("HOLIDAY", "Holiday"),
+                    ("MISSING_PUNCH", "Missing Punch"),
+                ],
+                default="ABSENT",
+                max_length=20,
+            ),
         ),
     ]

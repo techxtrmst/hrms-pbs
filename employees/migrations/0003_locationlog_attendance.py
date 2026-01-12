@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("employees", "0002_employee_account_number_employee_badge_id_and_more"),
     ]

@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("companies", "0009_shiftschedule_allowed_late_logins_and_more"),
     ]

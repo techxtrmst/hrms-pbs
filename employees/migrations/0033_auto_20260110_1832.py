@@ -5,15 +5,14 @@ from django.utils import timezone
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('employees', '0032_remove_attendance_clock_in_attempts_and_more'),
+        ("employees", "0032_remove_attendance_clock_in_attempts_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='attendancesession',
-            name='created_at',
+            model_name="attendancesession",
+            name="created_at",
             field=models.DateTimeField(auto_now_add=True, default=timezone.now),
             preserve_default=False,
         ),

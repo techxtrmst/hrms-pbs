@@ -19,12 +19,12 @@ def send_activation_email(user, request=None):
     try:
         # Log the attempt
         logger.info(f"Starting activation email process for user: {user.email}")
-        
+
         # Check if user has employee profile
-        if not hasattr(user, 'employee_profile') or not user.employee_profile:
+        if not hasattr(user, "employee_profile") or not user.employee_profile:
             logger.error(f"User {user.email} has no employee profile")
             return False
-        
+
         # Generate token and UID
         try:
             token = default_token_generator.make_token(user)
@@ -46,17 +46,17 @@ def send_activation_email(user, request=None):
                 # Fallback for when request is not available
                 domain = getattr(settings, "SITE_URL", "http://127.0.0.1:8000")
                 activation_link = f"{domain}{reset_path}"
-            
+
             logger.info(f"Activation link generated: {activation_link}")
         except Exception as e:
-            logger.error(f"Failed to generate activation link for {user.email}: {str(e)}")
+            logger.error(
+                f"Failed to generate activation link for {user.email}: {str(e)}"
+            )
             return False
 
         # Prepare email content
         try:
-            subject = (
-                f"Welcome to {user.employee_profile.company.name} - Activate Your Account"
-            )
+            subject = f"Welcome to {user.employee_profile.company.name} - Activate Your Account"
             first_name = user.first_name or "Employee"
             company_name = user.employee_profile.company.name
 
@@ -73,7 +73,7 @@ def send_activation_email(user, request=None):
             )
             # Create text fallback
             text_content = strip_tags(html_content)
-            
+
             logger.info(f"Email content prepared for {user.email}")
         except Exception as e:
             logger.error(f"Failed to prepare email content for {user.email}: {str(e)}")
@@ -82,13 +82,14 @@ def send_activation_email(user, request=None):
         # Get email connection and send
         try:
             # MANDATORY: Use hrms@petabytz.com for all activation emails
-            from_email = 'Petabytz HR <hrms@petabytz.com>'
-            
+            from_email = "Petabytz HR <hrms@petabytz.com>"
+
             logger.info(f"Getting HR email connection for {user.email}")
             # Get standardized connection
             from core.email_utils import get_hr_email_connection
+
             connection = get_hr_email_connection()
-            
+
             logger.info(f"Creating email object for {user.email}")
             # Create email object
             email = EmailMultiAlternatives(
@@ -96,25 +97,31 @@ def send_activation_email(user, request=None):
                 body=text_content,
                 from_email=from_email,
                 to=[user.email],
-                connection=connection
+                connection=connection,
             )
             email.attach_alternative(html_content, "text/html")
-            
+
             logger.info(f"Sending activation email to {user.email} from {from_email}")
             email.send(fail_silently=False)
-            
-            logger.info(f"✓ Activation email sent successfully to {user.email} for company {company_name}")
+
+            logger.info(
+                f"✓ Activation email sent successfully to {user.email} for company {company_name}"
+            )
             return True
-            
+
         except Exception as e:
             logger.error(f"Failed to send activation email to {user.email}: {str(e)}")
             logger.error(f"Error type: {type(e).__name__}")
             import traceback
+
             logger.error(f"Traceback: {traceback.format_exc()}")
             return False
-            
+
     except Exception as e:
-        logger.error(f"Unexpected error in send_activation_email for {user.email}: {str(e)}")
+        logger.error(
+            f"Unexpected error in send_activation_email for {user.email}: {str(e)}"
+        )
         import traceback
+
         logger.error(f"Traceback: {traceback.format_exc()}")
         return False

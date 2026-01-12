@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("companies", "0012_company_hr_email_company_hr_email_name_and_more"),
     ]

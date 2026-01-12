@@ -3,7 +3,6 @@ Management command to create a test user for development
 """
 
 from django.core.management.base import BaseCommand
-from django.contrib.auth.hashers import make_password
 from companies.models import Company
 from accounts.models import User
 

@@ -4,18 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('employees', '0028_attendance_daily_clock_count_and_more'),
+        ("employees", "0028_attendance_daily_clock_count_and_more"),
     ]
 
     operations = [
         migrations.SeparateDatabaseAndState(
             state_operations=[
                 migrations.AddField(
-                    model_name='leavebalance',
-                    name='earned_leave_allocated',
-                    field=models.FloatField(default=12.0, help_text='Total EL allocated per year'),
+                    model_name="leavebalance",
+                    name="earned_leave_allocated",
+                    field=models.FloatField(
+                        default=12.0, help_text="Total EL allocated per year"
+                    ),
                 ),
             ],
             database_operations=[],

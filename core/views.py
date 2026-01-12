@@ -1,5 +1,4 @@
 from django.shortcuts import render
-from django.core.mail import send_mail
 from django.conf import settings
 
 from django.contrib.auth.decorators import login_required
@@ -14,12 +13,12 @@ from employees.models import (
     HandbookSection,
     PolicySection,
 )
-from companies.models import ShiftTiming, Holiday
+from companies.models import Holiday
 from django.shortcuts import redirect
 from django.contrib import messages
 from django.utils import timezone
 from django.http import HttpResponse
-from django.db.models import Count, Q
+from django.db.models import Q
 
 import calendar
 
@@ -33,15 +32,13 @@ from datetime import timedelta
 
 from accounts.models import User
 
-from .decorators import role_required, manager_required, admin_required
+from .decorators import manager_required, admin_required
 
 from .forms import ForgotPasswordForm, OTPVerificationForm, ResetPasswordForm
 
 from .models import PasswordResetOTP
 
 import random
-
-from django.contrib.auth import update_session_auth_hash
 
 
 @login_required
@@ -153,7 +150,6 @@ def manager_dashboard(request):
     )
 
     # 6. Upcoming Holidays
-    from companies.models import Holiday
 
     upcoming_holidays = (
         Holiday.objects.filter(
@@ -210,8 +206,7 @@ def admin_dashboard(request):
         else:
             return render(request, "core/dashboard.html", {"title": "Dashboard"})
 
-    from datetime import datetime, time as dt_time, timedelta
-    from django.db.models import Q, Count
+    from datetime import time as dt_time, timedelta
     from companies.models import Holiday, Location
 
     today = timezone.localtime().date()
@@ -552,31 +547,37 @@ def admin_dashboard(request):
     try:
         admin_emp = request.user.employee_profile
         celebration_type = None
-        
+
         # Birthday Check
         if admin_emp.dob:
-             try:
-                 # Handle leap years
-                 bday_this_year = admin_emp.dob.replace(year=today.year)
-             except ValueError:
-                 bday_this_year = admin_emp.dob.replace(year=today.year, day=28)
-             
-             if bday_this_year == today:
-                 celebration_type = 'birthday'
+            try:
+                # Handle leap years
+                bday_this_year = admin_emp.dob.replace(year=today.year)
+            except ValueError:
+                bday_this_year = admin_emp.dob.replace(year=today.year, day=28)
+
+            if bday_this_year == today:
+                celebration_type = "birthday"
 
         # Anniversary Check
         if admin_emp.date_of_joining:
             try:
                 anniv_this_year = admin_emp.date_of_joining.replace(year=today.year)
             except ValueError:
-                anniv_this_year = admin_emp.date_of_joining.replace(year=today.year, day=28)
-            
+                anniv_this_year = admin_emp.date_of_joining.replace(
+                    year=today.year, day=28
+                )
+
             if anniv_this_year == today and today.year > admin_emp.date_of_joining.year:
-                celebration_type = 'anniversary' if not celebration_type else 'both'
-        
+                celebration_type = "anniversary" if not celebration_type else "both"
+
         if celebration_type:
-            context['celebration_type'] = celebration_type
-            context['years_service'] = today.year - admin_emp.date_of_joining.year if admin_emp.date_of_joining else 0
+            context["celebration_type"] = celebration_type
+            context["years_service"] = (
+                today.year - admin_emp.date_of_joining.year
+                if admin_emp.date_of_joining
+                else 0
+            )
 
     except:
         pass
@@ -751,26 +752,28 @@ def employee_dashboard(request):
     # Check for celebrations
     celebration_type = None
     if employee.dob:
-         try:
-             # Handle leap years
-             bday_this_year = employee.dob.replace(year=today.year)
-         except ValueError:
-             bday_this_year = employee.dob.replace(year=today.year, day=28)
-         
-         if bday_this_year == today:
-             celebration_type = 'birthday'
+        try:
+            # Handle leap years
+            bday_this_year = employee.dob.replace(year=today.year)
+        except ValueError:
+            bday_this_year = employee.dob.replace(year=today.year, day=28)
+
+        if bday_this_year == today:
+            celebration_type = "birthday"
 
     if employee.date_of_joining:
         try:
             anniv_this_year = employee.date_of_joining.replace(year=today.year)
         except ValueError:
             anniv_this_year = employee.date_of_joining.replace(year=today.year, day=28)
-        
+
         if anniv_this_year == today and today.year > employee.date_of_joining.year:
-            celebration_type = 'anniversary' if not celebration_type else 'both'
-    
-    context['celebration_type'] = celebration_type
-    context['years_service'] = today.year - employee.date_of_joining.year if employee.date_of_joining else 0
+            celebration_type = "anniversary" if not celebration_type else "both"
+
+    context["celebration_type"] = celebration_type
+    context["years_service"] = (
+        today.year - employee.date_of_joining.year if employee.date_of_joining else 0
+    )
 
     return render(request, "core/employee_dashboard.html", context)
 
@@ -1002,17 +1005,24 @@ def my_leaves(request):
             # Send Email Notifications
             try:
                 from core.email_utils import send_leave_request_notification
+
                 result = send_leave_request_notification(leave_request)
-                
-                if not result.get('hr', False):
-                    messages.warning(request, "Leave request submitted, but email notification to HR failed. Please notify HR manually.")
-                
+
+                if not result.get("hr", False):
+                    messages.warning(
+                        request,
+                        "Leave request submitted, but email notification to HR failed. Please notify HR manually.",
+                    )
+
             except Exception as mail_err:
                 import logging
+
                 logger = logging.getLogger(__name__)
                 logger.error(f"Error sending email: {mail_err}")
-                messages.warning(request, "Leave request submitted, but email notification system encountered an error.")
-
+                messages.warning(
+                    request,
+                    "Leave request submitted, but email notification system encountered an error.",
+                )
 
             messages.success(request, "Leave request submitted successfully.")
 
@@ -1091,8 +1101,6 @@ def employee_holidays(request):
         messages.error(request, "Employee profile not found.")
 
         return redirect("personal_home")
-
-    from companies.models import Holiday
 
     # Get current year or selected year
 
@@ -1465,8 +1473,8 @@ def attendance_report(request):
     year = int(request.GET.get("year", today.year))
     month = int(request.GET.get("month", today.month))
     location_id = request.GET.get("location")
-    
-    from companies.models import Location, Holiday
+
+    from companies.models import Location
 
     # Calculate payroll cycle dates (28th to 27th)
     if month == 1:
@@ -1518,8 +1526,8 @@ def attendance_report(request):
         company=request.user.company,
         date__gte=start_date,
         date__lte=end_date,
-        is_active=True
-    ).select_related('location')
+        is_active=True,
+    ).select_related("location")
 
     # Create holiday map by location and date
     holiday_map = {}
@@ -1537,8 +1545,12 @@ def attendance_report(request):
 
     reports = []
     total_stats = {
-        "present": 0, "absent": 0, "leave": 0, 
-        "half_day": 0, "weekly_off": 0, "holiday": 0
+        "present": 0,
+        "absent": 0,
+        "leave": 0,
+        "half_day": 0,
+        "weekly_off": 0,
+        "holiday": 0,
     }
 
     for emp in employees:
@@ -1546,14 +1558,18 @@ def attendance_report(request):
             "employee": emp,
             "days": [],
             "stats": {
-                "present": 0, "absent": 0, "leave": 0, 
-                "half_day": 0, "weekly_off": 0, "holiday": 0
+                "present": 0,
+                "absent": 0,
+                "leave": 0,
+                "half_day": 0,
+                "weekly_off": 0,
+                "holiday": 0,
             },
         }
 
         for dt in date_range:
             att = att_map.get(emp.id, {}).get(dt)
-            
+
             # Determine status based on actual attendance records and clock-in data
             if att:
                 # Attendance record exists - check if employee actually clocked in
@@ -1586,7 +1602,11 @@ def attendance_report(request):
             else:
                 # No attendance record - determine what it should be
                 # Check if it's a holiday for this employee's location
-                if emp.location_id and emp.location_id in holiday_map and dt in holiday_map[emp.location_id]:
+                if (
+                    emp.location_id
+                    and emp.location_id in holiday_map
+                    and dt in holiday_map[emp.location_id]
+                ):
                     status_code = "HOLIDAY"
                 # Check if it's a weekoff for this employee
                 elif emp.is_week_off(dt):
@@ -1597,7 +1617,7 @@ def attendance_report(request):
 
             # Map status to display value and count
             display_val = "-"
-            
+
             if status_code == "PRESENT":
                 display_val = "P"
                 emp_data["stats"]["present"] += 1
@@ -1631,13 +1651,19 @@ def attendance_report(request):
             emp_data["days"].append(display_val)
 
         # Calculate working days and attendance percentage
-        working_days = len(date_range) - emp_data["stats"]["weekly_off"] - emp_data["stats"]["holiday"]
+        working_days = (
+            len(date_range)
+            - emp_data["stats"]["weekly_off"]
+            - emp_data["stats"]["holiday"]
+        )
         present_days = emp_data["stats"]["present"]  # WFH is already counted as present
-        
+
         emp_data["working_days"] = working_days
         emp_data["present_days"] = present_days
-        emp_data["attendance_percentage"] = round((present_days / working_days * 100) if working_days > 0 else 0, 1)
-        
+        emp_data["attendance_percentage"] = round(
+            (present_days / working_days * 100) if working_days > 0 else 0, 1
+        )
+
         reports.append(emp_data)
 
     # Create days display (show date with day number)
@@ -1701,12 +1727,18 @@ def download_attendance(request):
 
     # Styles
     header_font = Font(bold=True, color="FFFFFF")
-    header_fill = PatternFill(start_color="2c5282", end_color="2c5282", fill_type="solid")
+    header_fill = PatternFill(
+        start_color="2c5282", end_color="2c5282", fill_type="solid"
+    )
 
     # 1. Define Headers
     headers = [
-        "Employee Number", "Employee Name", "Job Title", "Department", 
-        "Location", "Reporting Manager"
+        "Employee Number",
+        "Employee Name",
+        "Job Title",
+        "Department",
+        "Location",
+        "Reporting Manager",
     ]
 
     # Dynamic Date Headers for payroll cycle (only up to current date)
@@ -1720,8 +1752,16 @@ def download_attendance(request):
 
     # Summary Headers (simplified)
     summary_headers = [
-        "Total Days", "Present", "Half Day", "Weekly Offs", "Holidays", 
-        "Leave", "Absent Days", "Working Days", "Attendance %", "Late Arrival Days"
+        "Total Days",
+        "Present",
+        "Half Day",
+        "Weekly Offs",
+        "Holidays",
+        "Leave",
+        "Absent Days",
+        "Working Days",
+        "Attendance %",
+        "Late Arrival Days",
     ]
     headers.extend(summary_headers)
 
@@ -1733,8 +1773,7 @@ def download_attendance(request):
         cell.alignment = Alignment(horizontal="center")
 
     # 2. Fetch Data
-    from companies.models import Holiday
-    
+
     employees = Employee.objects.filter(company=request.user.company).select_related(
         "user", "manager", "location"
     )
@@ -1750,8 +1789,8 @@ def download_attendance(request):
         company=request.user.company,
         date__gte=start_date,
         date__lte=end_date,
-        is_active=True
-    ).select_related('location')
+        is_active=True,
+    ).select_related("location")
 
     # Create holiday map by location and date
     holiday_map = {}
@@ -1776,20 +1815,31 @@ def download_attendance(request):
         ws.cell(row=row_num, column=2, value=emp.user.get_full_name())
         ws.cell(row=row_num, column=3, value=emp.designation)
         ws.cell(row=row_num, column=4, value=emp.department)
-        ws.cell(row=row_num, column=5, value=emp.location.name if emp.location else "N/A")
-        ws.cell(row=row_num, column=6, value=emp.manager.get_full_name() if emp.manager else "-")
+        ws.cell(
+            row=row_num, column=5, value=emp.location.name if emp.location else "N/A"
+        )
+        ws.cell(
+            row=row_num,
+            column=6,
+            value=emp.manager.get_full_name() if emp.manager else "-",
+        )
 
         # Stats Counters (simplified)
         stats = {
-            "present": 0, "absent": 0, "leave": 0, "half_day": 0,
-            "weekly_off": 0, "holiday": 0, "late_arrival": 0
+            "present": 0,
+            "absent": 0,
+            "leave": 0,
+            "half_day": 0,
+            "weekly_off": 0,
+            "holiday": 0,
+            "late_arrival": 0,
         }
 
         # Date Columns
         col_idx = 7
         for dt in date_cols:
             att = att_map.get(emp.id, {}).get(dt)
-            
+
             # Determine status using same logic as report view - check actual clock-in
             if att:
                 # Attendance record exists - check if employee actually clocked in
@@ -1821,7 +1871,11 @@ def download_attendance(request):
                         status_code = "ABSENT"
             else:
                 # No attendance record - determine what it should be
-                if emp.location_id and emp.location_id in holiday_map and dt in holiday_map[emp.location_id]:
+                if (
+                    emp.location_id
+                    and emp.location_id in holiday_map
+                    and dt in holiday_map[emp.location_id]
+                ):
                     status_code = "HOLIDAY"
                 elif emp.is_week_off(dt):
                     status_code = "WEEKLY_OFF"
@@ -1864,23 +1918,36 @@ def download_attendance(request):
         total_days = len(date_cols)
         working_days = total_days - stats["weekly_off"] - stats["holiday"]
         present_days = stats["present"]  # WFH is already counted as present
-        attendance_percentage = round((present_days / working_days * 100) if working_days > 0 else 0, 1)
+        attendance_percentage = round(
+            (present_days / working_days * 100) if working_days > 0 else 0, 1
+        )
 
-        ws.cell(row=row_num, column=col_idx, value=total_days); col_idx += 1
-        ws.cell(row=row_num, column=col_idx, value=stats["present"]); col_idx += 1
-        ws.cell(row=row_num, column=col_idx, value=stats["half_day"]); col_idx += 1
-        ws.cell(row=row_num, column=col_idx, value=stats["weekly_off"]); col_idx += 1
-        ws.cell(row=row_num, column=col_idx, value=stats["holiday"]); col_idx += 1
-        ws.cell(row=row_num, column=col_idx, value=stats["leave"]); col_idx += 1
-        ws.cell(row=row_num, column=col_idx, value=stats["absent"]); col_idx += 1
-        ws.cell(row=row_num, column=col_idx, value=working_days); col_idx += 1
-        ws.cell(row=row_num, column=col_idx, value=f"{attendance_percentage}%"); col_idx += 1
-        ws.cell(row=row_num, column=col_idx, value=stats["late_arrival"]); col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=total_days)
+        col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=stats["present"])
+        col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=stats["half_day"])
+        col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=stats["weekly_off"])
+        col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=stats["holiday"])
+        col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=stats["leave"])
+        col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=stats["absent"])
+        col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=working_days)
+        col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=f"{attendance_percentage}%")
+        col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=stats["late_arrival"])
+        col_idx += 1
 
         row_num += 1
 
     # Return Excel File
     import io
+
     buffer = io.BytesIO()
     wb.save(buffer)
     buffer.seek(0)
@@ -1961,10 +2028,14 @@ def leave_requests(request):
                 # Send Approval Email
                 try:
                     from core.email_utils import send_leave_approval_notification
+
                     if not send_leave_approval_notification(leave_request):
-                        messages.warning(request, "Leave approved, but email notification failed.")
+                        messages.warning(
+                            request, "Leave approved, but email notification failed."
+                        )
                 except Exception as e:
                     import logging
+
                     logger = logging.getLogger(__name__)
                     logger.error(f"Error sending approval email: {e}")
 
@@ -1994,10 +2065,14 @@ def leave_requests(request):
                 # Send Rejection Email
                 try:
                     from core.email_utils import send_leave_rejection_notification
+
                     if not send_leave_rejection_notification(leave_request):
-                        messages.warning(request, "Leave rejected, but email notification failed.")
+                        messages.warning(
+                            request, "Leave rejected, but email notification failed."
+                        )
                 except Exception as e:
                     import logging
+
                     logger = logging.getLogger(__name__)
                     logger.error(f"Error sending rejection email: {e}")
 
@@ -2202,8 +2277,7 @@ def holidays(request):
 
         return redirect("dashboard")
 
-    from companies.models import Holiday, Location
-    import json
+    from companies.models import Location
     from datetime import datetime
 
     # Handle POST requests (Add/Edit/Delete/Import)
@@ -2330,7 +2404,7 @@ def holidays(request):
 
                                 imported_count += 1
 
-                            except Exception as e:
+                            except Exception:
                                 continue
 
                     messages.success(
@@ -2484,8 +2558,6 @@ def export_holidays(request):
     if not hasattr(request.user, "company") or not request.user.company:
         return HttpResponse("Unauthorized", status=403)
 
-    from companies.models import Holiday
-
     import openpyxl
 
     from openpyxl.styles import Font, PatternFill, Alignment
@@ -2589,9 +2661,9 @@ def forgot_password_view(request):
             PasswordResetOTP.objects.create(user=user, otp=otp)
 
             # ALWAYS PRINT OTP FOR DEBUGGING/DEV
-            print(f"==========================================")
+            print("==========================================")
             print(f"Generated OTP for {email}: {otp}")
-            print(f"==========================================")
+            print("==========================================")
 
             # Send Email
             try:

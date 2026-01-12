@@ -9,176 +9,222 @@ User = get_user_model()
 
 class PersonalInfoForm(forms.ModelForm):
     """Step 1: Personal Information"""
+
     email = forms.EmailField(required=True, label="Personal Email (Gmail)")
     first_name = forms.CharField(max_length=30, required=True, label="First Name")
     last_name = forms.CharField(max_length=30, required=True, label="Last Name")
-    
+
     # Custom Role Selection
     ROLE_CHOICES = [
-        ('EMPLOYEE', 'Employee'),
-        ('MANAGER', 'Manager'),
-        ('COMPANY_ADMIN', 'Admin') 
+        ("EMPLOYEE", "Employee"),
+        ("MANAGER", "Manager"),
+        ("COMPANY_ADMIN", "Admin"),
     ]
-    role = forms.ChoiceField(choices=ROLE_CHOICES, widget=forms.RadioSelect, initial='EMPLOYEE', label="Role")
+    role = forms.ChoiceField(
+        choices=ROLE_CHOICES, widget=forms.RadioSelect, initial="EMPLOYEE", label="Role"
+    )
 
     # Company selection
     company_selection = forms.ModelChoiceField(
         queryset=Company.objects.all(),
         widget=forms.RadioSelect,
         required=False,
-        label="Company"
+        label="Company",
     )
 
     class Meta:
         model = Employee
         fields = [
-            'first_name', 'last_name', 'email', 'mobile_number', 'gender', 'marital_status', 
-            'dob', 'permanent_address', 'emergency_contact', 'badge_id', 'location',
+            "first_name",
+            "last_name",
+            "email",
+            "mobile_number",
+            "gender",
+            "marital_status",
+            "dob",
+            "permanent_address",
+            "emergency_contact",
+            "badge_id",
+            "location",
         ]
         widgets = {
-            'dob': forms.DateInput(attrs={'type': 'date'}),
-            'permanent_address': forms.Textarea(attrs={'rows': 3}),
+            "dob": forms.DateInput(attrs={"type": "date"}),
+            "permanent_address": forms.Textarea(attrs={"rows": 3}),
         }
 
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
+        self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
-        
+
         # Company Isolation Logic
         if self.user and self.user.role == User.Role.COMPANY_ADMIN:
-            self.fields['company_selection'].queryset = Company.objects.filter(pk=self.user.company.id)
-            self.fields['company_selection'].initial = self.user.company
-            self.fields['company_selection'].widget.attrs['disabled'] = 'disabled'
-            self.fields['company_selection'].required = False
+            self.fields["company_selection"].queryset = Company.objects.filter(
+                pk=self.user.company.id
+            )
+            self.fields["company_selection"].initial = self.user.company
+            self.fields["company_selection"].widget.attrs["disabled"] = "disabled"
+            self.fields["company_selection"].required = False
 
             # Filter locations by company
             from companies.models import Location
-            self.fields['location'].queryset = Location.objects.filter(
-                company=self.user.company,
-                is_active=True
+
+            self.fields["location"].queryset = Location.objects.filter(
+                company=self.user.company, is_active=True
             )
-            self.fields['location'].required = True
-            self.fields['location'].label = "Work Location"
+            self.fields["location"].required = True
+            self.fields["location"].label = "Work Location"
 
     def clean_email(self):
-        email = self.cleaned_data.get('email')
+        email = self.cleaned_data.get("email")
         if User.objects.filter(email=email).exists():
-            raise ValidationError("A user with this email address already exists. Please use a different email.")
+            raise ValidationError(
+                "A user with this email address already exists. Please use a different email."
+            )
         return email
 
     def clean(self):
         cleaned_data = super().clean()
-        
+
         # Manually handle company due to disabled field
         if self.user and self.user.role == User.Role.COMPANY_ADMIN:
-            cleaned_data['company_selection'] = self.user.company
-            
-        if not cleaned_data.get('company_selection'):
-             if self.user.is_superuser:
-                 raise ValidationError("Superusers must select a company.")
-             cleaned_data['company_selection'] = self.user.company
+            cleaned_data["company_selection"] = self.user.company
+
+        if not cleaned_data.get("company_selection"):
+            if self.user.is_superuser:
+                raise ValidationError("Superusers must select a company.")
+            cleaned_data["company_selection"] = self.user.company
 
         return cleaned_data
 
 
 class JobDetailsForm(forms.ModelForm):
     """Step 2: Job Profile"""
-    
+
     designation = forms.ModelChoiceField(
-        queryset=Employee.objects.none(), 
+        queryset=Employee.objects.none(),
         required=True,
-        widget=forms.Select(attrs={'class': 'form-select'}),
-        label="Designation"
+        widget=forms.Select(attrs={"class": "form-select"}),
+        label="Designation",
     )
 
-    manager_selection = forms.ModelChoiceField( # Renamed from manager to avoid conflict
-        queryset=Employee.objects.none(),
-        required=False,
-        widget=forms.Select(attrs={'class': 'form-select'}),
-        label="Reporting Manager"
+    manager_selection = (
+        forms.ModelChoiceField(  # Renamed from manager to avoid conflict
+            queryset=Employee.objects.none(),
+            required=False,
+            widget=forms.Select(attrs={"class": "form-select"}),
+            label="Reporting Manager",
+        )
     )
     department = forms.ModelChoiceField(
         queryset=Employee.objects.none(),
         required=True,
-        widget=forms.Select(attrs={'class': 'form-select'}),
-        label="Department"
+        widget=forms.Select(attrs={"class": "form-select"}),
+        label="Department",
     )
     shift_schedule = forms.ModelChoiceField(
         queryset=ShiftSchedule.objects.none(),
         required=False,
-        widget=forms.Select(attrs={'class': 'form-select'}),
-        label="Shift Schedule"
+        widget=forms.Select(attrs={"class": "form-select"}),
+        label="Shift Schedule",
     )
 
     class Meta:
         model = Employee
         fields = [
-            'designation', 'department', 'work_type', 'shift_schedule', 'date_of_joining',  # 'manager' excluded
+            "designation",
+            "department",
+            "work_type",
+            "shift_schedule",
+            "date_of_joining",  # 'manager' excluded
         ]
         widgets = {
-            'date_of_joining': forms.DateInput(attrs={'type': 'date'}),
+            "date_of_joining": forms.DateInput(attrs={"type": "date"}),
         }
 
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
-        company_id = kwargs.pop('company_id', None)
+        self.user = kwargs.pop("user", None)
+        company_id = kwargs.pop("company_id", None)
         super().__init__(*args, **kwargs)
-        
+
         # Get company object from ID
         if company_id:
             from companies.models import Company, Designation, Department
+
             self.company = Company.objects.get(id=company_id)
         else:
             self.company = None
-        
+
         if self.company:
             # Filter managers by company
-            self.fields['manager_selection'].queryset = Employee.objects.filter(
+            self.fields["manager_selection"].queryset = Employee.objects.filter(
                 company=self.company
             ).exclude(user__role=User.Role.EMPLOYEE)
-            
+
             # Populate Dynamic Fields
             from companies.models import Designation, Department
-            
-            self.fields['designation'].queryset = Designation.objects.filter(company=self.company)
-            self.fields['department'].queryset = Department.objects.filter(company=self.company)
-            self.fields['shift_schedule'].queryset = ShiftSchedule.objects.filter(company=self.company)
-            
+
+            self.fields["designation"].queryset = Designation.objects.filter(
+                company=self.company
+            )
+            self.fields["department"].queryset = Department.objects.filter(
+                company=self.company
+            )
+            self.fields["shift_schedule"].queryset = ShiftSchedule.objects.filter(
+                company=self.company
+            )
+
             # Set initial if data comes from session as name/ID ??
             # The form initialization with 'initial' dict handles basic mapping if keys match.
-            # But if session has stored 'names' (strings) from previous runs/edits, 
+            # But if session has stored 'names' (strings) from previous runs/edits,
             # we might need to find the object.
             # However, for new flow, it should be fine.
             # If editing (back button), we need to ensure initial data is mapped correctly.
-            
-            if 'initial' in kwargs:
-                initial = kwargs['initial']
+
+            if "initial" in kwargs:
+                initial = kwargs["initial"]
                 # If designation is a string name, try to find object
-                if isinstance(initial.get('designation'), str):
-                     try:
-                         desig = Designation.objects.filter(company=self.company, name=initial['designation']).first()
-                         if desig: self.initial['designation'] = desig
-                     except: pass
-                
-                if isinstance(initial.get('department'), str):
-                     try:
-                         dept = Department.objects.filter(company=self.company, name=initial['department']).first()
-                         if dept: self.initial['department'] = dept
-                     except: pass
-                     
-                # Shift: session might have stored name (string)
-                if isinstance(initial.get('shift_schedule'), str):
+                if isinstance(initial.get("designation"), str):
                     try:
-                        shift = ShiftSchedule.objects.filter(company=self.company, name=initial['shift_schedule']).first()
-                        if shift: self.initial['shift_schedule'] = shift
-                    except: pass
+                        desig = Designation.objects.filter(
+                            company=self.company, name=initial["designation"]
+                        ).first()
+                        if desig:
+                            self.initial["designation"] = desig
+                    except:
+                        pass
+
+                if isinstance(initial.get("department"), str):
+                    try:
+                        dept = Department.objects.filter(
+                            company=self.company, name=initial["department"]
+                        ).first()
+                        if dept:
+                            self.initial["department"] = dept
+                    except:
+                        pass
+
+                # Shift: session might have stored name (string)
+                if isinstance(initial.get("shift_schedule"), str):
+                    try:
+                        shift = ShiftSchedule.objects.filter(
+                            company=self.company, name=initial["shift_schedule"]
+                        ).first()
+                        if shift:
+                            self.initial["shift_schedule"] = shift
+                    except:
+                        pass
 
 
 class FinanceDetailsForm(forms.ModelForm):
     """Step 3: Financial Details"""
-    
+
     class Meta:
         model = Employee
         fields = [
-            'annual_ctc', 'bank_name', 'account_number', 'ifsc_code', 'uan', 'pf_enabled'
+            "annual_ctc",
+            "bank_name",
+            "account_number",
+            "ifsc_code",
+            "uan",
+            "pf_enabled",
         ]
