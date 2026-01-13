@@ -165,6 +165,18 @@
         transform: translateY(-1px);
     }
 
+    .btn-submit:disabled {
+        background-color: #9ca3af;
+        color: #6b7280;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .btn-submit:disabled:hover {
+        background-color: #9ca3af;
+        transform: none;
+    }
+
     textarea.form-control {
         resize: none;
         min-height: 100px;
@@ -205,14 +217,53 @@
                 </div>
                 {% endif %}
 
+                {% if validation_warning and show_confirmation %}
+                <div class="alert alert-danger mb-4" id="validationWarning">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-exclamation-triangle me-2 mt-1" style="color: #dc2626; font-size: 1.2rem;"></i>
+                        <div>
+                            <strong style="color: #dc2626;">⚠️ LEAVE BALANCE INSUFFICIENT</strong><br>
+                            <div class="mt-2" style="font-size: 0.95rem;">
+                                {{ validation_warning.message }}
+                            </div>
+                            <div class="mt-2 p-2 bg-light rounded" style="font-size: 0.9rem;">
+                                <strong>Details:</strong><br>
+                                • Requested: <span class="text-primary">{{ validation_warning.requested_days }} days</span><br>
+                                • Available: <span class="text-success">{{ validation_warning.available_balance }} days</span><br>
+                                • Will be LOP: <span class="text-danger">{{ validation_warning.shortfall }} days</span>
+                            </div>
+                            <div class="mt-3">
+                                <button type="button" class="btn btn-secondary me-2" onclick="cancelLeaveApplication()">
+                                    <i class="fas fa-times me-1"></i>Cancel Application
+                                </button>
+                                <button type="button" class="btn btn-warning" onclick="confirmLOPApplication()">
+                                    <i class="fas fa-check me-1"></i>I Understand - Proceed with LOP
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Real-time validation alert -->
+                <div class="alert alert-info mb-4" id="balanceInfo" style="display: none;">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-info-circle me-2 mt-1"></i>
+                        <div id="balanceInfoText"></div>
+                    </div>
+                </div>
+
                 <!-- Info Box -->
                 <div class="info-box">
                     <i class="fas fa-info-circle info-icon"></i>
                     <div class="info-text">
-                        You can apply for <strong>Casual Leave</strong>, <strong>Sick Leave</strong>, or <strong>Unpaid
-                            Leave (LOP)</strong>.
-                        Note that if you have no balance, you should select Unpaid Leave.
-                        Different leave types cannot be combined in a single request.
+                        <strong>Current Leave Balances:</strong><br>
+                        Casual Leave: <span class="fw-bold text-primary">{{ cl_balance|floatformat:1 }}</span> days |
+                        Sick Leave: <span class="fw-bold text-primary">{{ sl_balance|floatformat:1 }}</span> days |
+                        Earned Leave: <span class="fw-bold text-primary">{{ el_balance|floatformat:1 }}</span> days |
+                        Comp Off: <span class="fw-bold text-primary">{{ co_balance|floatformat:1 }}</span> days
+                        <br><br>
+                        <small>If you don't have sufficient balance, the excess days will be processed as <strong>Unpaid Leave (LOP)</strong>.</small>
                     </div>
                 </div>
 
@@ -271,7 +322,8 @@
 
             <div class="leave-footer">
                 <a href="{% url 'employee_profile' %}" class="btn-cancel">Cancel</a>
-                <button type="submit" class="btn-submit">Request Leave</button>
+                <button type="submit" class="btn-submit" id="submitBtn">Request Leave</button>
+                <input type="hidden" name="confirm_lop" id="confirmLopInput" value="false">
             </div>
         </form>
     </div>
@@ -283,14 +335,23 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const clBalance = parseFloat("{{ cl_balance|default:0 }}");
+        const slBalance = parseFloat("{{ sl_balance|default:0 }}");
         const elBalance = parseFloat("{{ el_balance|default:0 }}");
+        const coBalance = parseFloat("{{ co_balance|default:0 }}");
+
+        // Form elements
+        const leaveTypeSelect = document.querySelector('select[name="leave_type"]');
+        const startDateInput = document.querySelector('input[name="start_date"]');
+        const endDateInput = document.querySelector('input[name="end_date"]');
+        const durationInputs = document.querySelectorAll('input[name="duration"]');
+        const balanceInfo = document.getElementById('balanceInfo');
+        const balanceInfoText = document.getElementById('balanceInfoText');
+        const submitBtn = document.getElementById('submitBtn');
 
         // Auto-select Unpaid Leave if no balance
-        if (clBalance <= 0 && elBalance <= 0) {
-            const leaveTypeSelect = document.querySelector('select[name="leave_type"]');
+        if (clBalance <= 0 && slBalance <= 0 && elBalance <= 0 && coBalance <= 0) {
             if (leaveTypeSelect) {
                 leaveTypeSelect.value = 'UL';
-                // Trigger change event if there are listeners
                 leaveTypeSelect.dispatchEvent(new Event('change'));
             }
         }
@@ -299,7 +360,10 @@
         flatpickr("input[name='start_date'], input[name='end_date']", {
             dateFormat: "Y-m-d",
             minDate: "today",
-            allowInput: true
+            allowInput: true,
+            onChange: function() {
+                setTimeout(validateLeaveBalance, 100);
+            }
         });
 
         // Add Bootstrap classes to Django form fields
@@ -316,24 +380,158 @@
                 }
             }
 
-            // Placeholder logic
             if (input.name === 'reason') {
                 input.placeholder = "Type your reason here...";
             }
-            if (input.tagName === 'SELECT') {
-                // Check if it has a placeholder option, otherwise maybe add one via JS? 
-                // Django usually handles empty label if configured.
-            }
         });
 
-        // Dynamic Leave Type Logic (Optional)
-        const leaveTypeSelect = document.querySelector('select[name="leave_type"]');
-        leaveTypeSelect.addEventListener('change', function () {
-            if (this.value === 'UL') {
-                // visual feedback for LOP
-                // maybe show a warning text?
+        // Event listeners for real-time validation
+        leaveTypeSelect.addEventListener('change', validateLeaveBalance);
+        startDateInput.addEventListener('change', validateLeaveBalance);
+        endDateInput.addEventListener('change', validateLeaveBalance);
+        durationInputs.forEach(input => {
+            input.addEventListener('change', validateLeaveBalance);
+        });
+
+        function validateLeaveBalance() {
+            const leaveType = leaveTypeSelect.value;
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+            const duration = document.querySelector('input[name="duration"]:checked')?.value || 'FULL';
+
+            if (!leaveType || !startDate || !endDate) {
+                balanceInfo.style.display = 'none';
+                submitBtn.disabled = false;
+                return;
+            }
+
+            // Make AJAX request to check balance
+            fetch('{% url "api_check_leave_balance" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({
+                    leave_type: leaveType,
+                    start_date: startDate,
+                    end_date: endDate,
+                    duration: duration
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const validation = data.validation;
+                    const requestedDays = data.requested_days;
+                    
+                    if (validation.will_be_lop && leaveType !== 'UL') {
+                        balanceInfo.className = 'alert alert-warning mb-4';
+                        balanceInfoText.innerHTML = `
+                            <strong>⚠️ Insufficient Leave Balance:</strong><br>
+                            ${validation.message}<br>
+                            <small><strong>Requested:</strong> ${requestedDays} days | <strong>Available:</strong> ${validation.available_balance} days | <strong>Will be LOP:</strong> ${validation.shortfall} days</small>
+                            <div class="mt-3">
+                                <button type="button" class="btn btn-sm btn-outline-secondary me-2" onclick="cancelLeaveApplication()">
+                                    <i class="fas fa-times me-1"></i>Cancel
+                                </button>
+                                <button type="button" class="btn btn-sm btn-warning" onclick="confirmLOPApplication()">
+                                    <i class="fas fa-check me-1"></i>Proceed with LOP
+                                </button>
+                            </div>
+                        `;
+                        balanceInfo.style.display = 'block';
+                        
+                        // Disable submit button until user confirms
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = 'Confirm LOP to Proceed';
+                        
+                    } else if (leaveType === 'UL') {
+                        balanceInfo.className = 'alert alert-info mb-4';
+                        balanceInfoText.innerHTML = `
+                            <strong>Unpaid Leave (LOP):</strong><br>
+                            ${requestedDays} days will be processed as Loss of Pay.
+                        `;
+                        balanceInfo.style.display = 'block';
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Request Leave';
+                        
+                    } else {
+                        balanceInfo.className = 'alert alert-success mb-4';
+                        balanceInfoText.innerHTML = `
+                            <strong>✅ Leave Available:</strong><br>
+                            You have sufficient ${validation.leave_type_display} balance for ${requestedDays} days.
+                        `;
+                        balanceInfo.style.display = 'block';
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Request Leave';
+                    }
+                } else {
+                    balanceInfo.style.display = 'none';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Request Leave';
+                }
+            })
+            .catch(error => {
+                console.error('Error checking leave balance:', error);
+                balanceInfo.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Request Leave';
+            });
+        }
+
+        // Initial validation
+        setTimeout(validateLeaveBalance, 500);
+
+        // Prevent form submission if LOP confirmation is required
+        document.getElementById('leaveForm').addEventListener('submit', function(e) {
+            const confirmLopValue = document.getElementById('confirmLopInput').value;
+            
+            if (submitBtn.disabled && confirmLopValue !== 'true') {
+                e.preventDefault();
+                alert('Please confirm the LOP (Loss of Pay) to proceed with your leave application.');
+                return false;
             }
         });
     });
+
+    // Functions for confirmation dialog
+    function cancelLeaveApplication() {
+        window.location.href = '{% url "employee_profile" %}';
+    }
+
+    function confirmLOPApplication() {
+        // Set confirmation value
+        document.getElementById('confirmLopInput').value = 'true';
+        
+        // Enable submit button if it was disabled
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Request Leave (with LOP)';
+        }
+        
+        // Hide the server-side validation warning
+        const validationWarning = document.getElementById('validationWarning');
+        if (validationWarning) {
+            validationWarning.style.display = 'none';
+        }
+        
+        // Update the balance info to show confirmation
+        const balanceInfo = document.getElementById('balanceInfo');
+        const balanceInfoText = document.getElementById('balanceInfoText');
+        if (balanceInfo && balanceInfoText) {
+            balanceInfoText.innerHTML = `
+                <strong>✅ LOP Confirmed:</strong><br>
+                Your leave application will proceed with Loss of Pay for the excess days.
+                <br><small>You can now submit your leave request.</small>
+            `;
+            balanceInfo.className = 'alert alert-success mb-4';
+            balanceInfo.style.display = 'block';
+        }
+        
+        // Auto-submit the form
+        document.getElementById('leaveForm').submit();
+    }
 </script>
 {% endblock %}

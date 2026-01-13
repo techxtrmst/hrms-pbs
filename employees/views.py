@@ -345,8 +345,8 @@ def clock_in(request):
 
             # Check if employee can clock in
             # Check if employee can clock in
-            # FORCE OVERRIDE: Allow up to 10 sessions/day regardless of model setting (user request for consistency)
-            MAX_ALLOWED_SESSIONS = 10 
+            # FORCE OVERRIDE: Allow up to 3 sessions/day regardless of model setting (user request for consistency)
+            MAX_ALLOWED_SESSIONS = 3 
             
             if not attendance.can_clock_in():
                 if attendance.is_currently_clocked_in:
@@ -387,39 +387,121 @@ def clock_in(request):
             # Determine session type and status
             session_type = "WEB" if clock_in_type == "office" else "REMOTE"
 
-            # Create new session
-            session_number = attendance.daily_sessions_count + 1
-            session = AttendanceSession.objects.create(
-                employee=employee,
-                date=today,
-                session_number=session_number,
-                clock_in=timezone.now(),
-                session_type=session_type,
-                clock_in_latitude=lat,
-                clock_in_longitude=lng,
-                is_active=True,
-            )
+            # Use database transaction to prevent race conditions
+            from django.db import transaction
+            
+            try:
+                with transaction.atomic():
+                    # Refresh attendance from database to get latest state
+                    attendance.refresh_from_db()
+                    
+                    # Create new session with proper session number
+                    session_number = attendance.daily_sessions_count + 1
+                    
+                    # Check if session already exists (race condition protection)
+                    existing_session = AttendanceSession.objects.filter(
+                        employee=employee,
+                        date=today,
+                        session_number=session_number
+                    ).first()
+                    
+                    if existing_session:
+                        return JsonResponse(
+                            {
+                                "status": "error",
+                                "message": "Session already exists. Please refresh the page.",
+                            }
+                        )
+                    
+                    session = AttendanceSession.objects.create(
+                        employee=employee,
+                        date=today,
+                        session_number=session_number,
+                        clock_in=timezone.now(),
+                        session_type=session_type,
+                        clock_in_latitude=lat,
+                        clock_in_longitude=lng,
+                        is_active=True,
+                    )
 
-            # Update attendance record
-            attendance.daily_sessions_count = session_number
-            attendance.is_currently_clocked_in = True
-            attendance.current_session_type = session_type
-            attendance.user_timezone = user_timezone
+                    # Log clock-in location
+                    LocationLog.objects.create(
+                        employee=employee,
+                        attendance_session=session,
+                        latitude=lat,
+                        longitude=lng,
+                        log_type='CLOCK_IN',
+                        is_valid=True,
+                    )
 
-            # Set first clock-in of the day
-            if not attendance.clock_in:
-                attendance.clock_in = session.clock_in
-                attendance.location_in = f"{lat},{lng}"
+                    # Update attendance record
+                    attendance.daily_sessions_count = session_number
+                    attendance.is_currently_clocked_in = True
+                    attendance.current_session_type = session_type
+                    attendance.user_timezone = user_timezone
 
-            # Determine overall status
-            if session_number == 1:
-                attendance.status = "WFH" if session_type == "REMOTE" else "PRESENT"
-            else:
-                # Multiple sessions - check if mixed types
-                session_types = set(
-                    AttendanceSession.objects.filter(
-                        employee=employee, date=today
-                    ).values_list("session_type", flat=True)
+                    # Set first clock-in of the day
+                    if not attendance.clock_in:
+                        attendance.clock_in = session.clock_in
+                        attendance.location_in = f"{lat},{lng}"
+
+                    # Determine overall status
+                    if session_number == 1:
+                        attendance.status = "WFH" if session_type == "REMOTE" else "PRESENT"
+                    else:
+                        # Multiple sessions - check if mixed types
+                        session_types = set(
+                            AttendanceSession.objects.filter(
+                                employee=employee, date=today
+                            ).values_list("session_type", flat=True)
+                        )
+                        if len(session_types) > 1:
+                            attendance.status = "HYBRID"
+                        else:
+                            attendance.status = "WFH" if session_type == "REMOTE" else "PRESENT"
+
+                    # Start location tracking
+                    attendance.location_tracking_active = True
+
+                    # Calculate location tracking end time based on shift duration
+                    shift = employee.assigned_shift
+                    if shift:
+                        if hasattr(shift, "get_shift_duration_timedelta"):
+                            shift_duration = shift.get_shift_duration_timedelta()
+                        else:
+                            from datetime import datetime, timedelta
+
+                            today_date = timezone.localdate()
+                            s_start = datetime.combine(today_date, shift.start_time)
+                            s_end = datetime.combine(today_date, shift.end_time)
+                            if s_end < s_start:
+                                s_end += timedelta(days=1)
+                            shift_duration = s_end - s_start
+
+                        attendance.location_tracking_end_time = (
+                            session.clock_in + shift_duration
+                        )
+                    else:
+                        # Default to 9 hours if no shift assigned
+                        from datetime import timedelta
+
+                        attendance.location_tracking_end_time = session.clock_in + timedelta(
+                            hours=9
+                        )
+
+                    # Calculate late arrival for first session only
+                    if session_number == 1:
+                        attendance.calculate_late_arrival()
+
+                    attendance.save()
+
+            except Exception as db_error:
+                return JsonResponse(
+                    {
+                        "status": "error", 
+                        "message": f"Database error: {str(db_error)}. Please try again."
+                    },
+                    status=500
                 )
                 if len(session_types) > 1:
                     attendance.status = "HYBRID"
@@ -574,6 +656,16 @@ def clock_out(request):
                 current_session.clock_out_longitude = lng
                 current_session.is_active = False
                 current_session.save()  # This will auto-calculate duration
+
+                # Log clock-out location
+                LocationLog.objects.create(
+                    employee=employee,
+                    attendance_session=current_session,
+                    latitude=lat,
+                    longitude=lng,
+                    log_type='CLOCK_OUT',
+                    is_valid=True,
+                )
 
                 # Update attendance record
                 attendance.is_currently_clocked_in = False
@@ -976,20 +1068,69 @@ class LeaveApplyView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        employee = safe_get_employee_profile(self.request.user)
-        if employee and hasattr(employee, "leave_balance"):
-            context["cl_balance"] = employee.leave_balance.casual_leave_balance
-            context["el_balance"] = employee.leave_balance.earned_leave_balance
-        else:
+        try:
+            employee = self.request.user.employee_profile
+            if hasattr(employee, "leave_balance"):
+                balance = employee.leave_balance
+                context["cl_balance"] = balance.casual_leave_balance
+                context["sl_balance"] = balance.sick_leave_balance
+                context["el_balance"] = balance.earned_leave_balance
+                context["co_balance"] = balance.comp_off_balance
+                context["leave_balance"] = balance
+            else:
+                context["cl_balance"] = 0
+                context["sl_balance"] = 0
+                context["el_balance"] = 0
+                context["co_balance"] = 0
+        except Exception:
+            # Fallback if something goes wrong (e.g. no profile)
             context["cl_balance"] = 0
+            context["sl_balance"] = 0
             context["el_balance"] = 0
+            context["co_balance"] = 0
         return context
 
     def form_valid(self, form):
         form.instance.employee = self.request.user.employee_profile
-        # Logic to check balance? Optional, but good practice.
-        # We rely on 'is_negative_balance' property validation if we were strict,
-        # but user requirement didn't specify strict blocking on balance, just 0.5 rules.
+        
+        # Check if this is a confirmation submission
+        confirm_lop = self.request.POST.get('confirm_lop', 'false').lower() == 'true'
+        
+        # Validate leave application before saving
+        temp_leave_request = LeaveRequest(
+            employee=form.instance.employee,
+            leave_type=form.cleaned_data['leave_type'],
+            start_date=form.cleaned_data['start_date'],
+            end_date=form.cleaned_data['end_date'],
+            duration=form.cleaned_data.get('duration', 'FULL')
+        )
+        
+        validation = temp_leave_request.validate_leave_application()
+        
+        # If validation shows issues and user hasn't confirmed, ask for confirmation
+        if validation.get('will_be_lop', False) and form.cleaned_data['leave_type'] != 'UL' and not confirm_lop:
+            from django.contrib import messages
+            messages.error(
+                self.request,
+                f"⚠️ Insufficient Leave Balance: {validation['message']} Please confirm if you want to proceed with LOP (Loss of Pay)."
+            )
+            
+            # Return form with validation warning for user confirmation
+            return self.render_to_response(
+                self.get_context_data(
+                    form=form, 
+                    validation_warning=validation,
+                    show_confirmation=True
+                )
+            )
+        
+        # Add a comment to the leave request if it involves LOP
+        if validation.get('will_be_lop', False) and form.cleaned_data['leave_type'] != 'UL':
+            original_reason = form.cleaned_data.get('reason', '')
+            lop_note = f"\n\n[System Note: This application involves {validation.get('shortfall', 0)} days of LOP due to insufficient balance. Available: {validation.get('available_balance', 0)} days, Requested: {validation.get('requested_days', 0)} days]"
+            form.instance.reason = original_reason + lop_note
+        
+        # Proceed with normal save
         response = super().form_valid(form)
 
         # Send email notifications
@@ -1008,25 +1149,73 @@ class LeaveApplyView(LoginRequiredMixin, CreateView):
 
                 messages.warning(
                     self.request,
-                    "Leave request submitted, but email notification to HR failed. Please notify HR manually.",
+                    "Leave request submitted but email notification failed. Please contact HR.",
                 )
-            else:
-                from django.contrib import messages
 
-                messages.success(self.request, "Leave request submitted successfully.")
         except Exception as e:
             import logging
 
             logger = logging.getLogger(__name__)
-            logger.error(f"Error calling send_leave_request_notification: {e}")
-            from django.contrib import messages
-
-            messages.warning(
-                self.request,
-                "Leave request submitted, but email notification failed. Please notify HR manually.",
-            )
+            logger.error(f"Leave request email error: {str(e)}")
 
         return response
+
+
+@csrf_exempt
+@login_required
+def check_leave_balance(request):
+    """AJAX endpoint to check leave balance for real-time validation"""
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            leave_type = data.get('leave_type')
+            start_date = data.get('start_date')
+            end_date = data.get('end_date')
+            duration = data.get('duration', 'FULL')
+            
+            if not hasattr(request.user, 'employee_profile'):
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'No employee profile found'
+                }, status=400)
+            
+            employee = request.user.employee_profile
+            
+            # Create temporary leave request for validation
+            from datetime import datetime
+            temp_leave = LeaveRequest(
+                employee=employee,
+                leave_type=leave_type,
+                start_date=datetime.strptime(start_date, '%Y-%m-%d').date(),
+                end_date=datetime.strptime(end_date, '%Y-%m-%d').date(),
+                duration=duration
+            )
+            
+            validation = temp_leave.validate_leave_application()
+            
+            # Get current balances
+            balance = employee.leave_balance
+            balances = {
+                'CL': balance.casual_leave_balance,
+                'SL': balance.sick_leave_balance,
+                'EL': balance.earned_leave_balance,
+                'CO': balance.comp_off_balance,
+            }
+            
+            return JsonResponse({
+                'status': 'success',
+                'validation': validation,
+                'balances': balances,
+                'requested_days': temp_leave.total_days
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=500)
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=405)
 
 
 @login_required
@@ -1042,36 +1231,12 @@ def approve_leave(request, pk):
         )
 
         if not (is_admin or is_manager):
-            # For demo purposes, maybe looser? No, stick to roles.
             return JsonResponse(
                 {"status": "error", "message": "Permission denied"}, status=403
             )
 
-        prev_status = leave_request.status
-        # Only process deduction/attendance when transitioning to APPROVED from a non-approved state
-        if prev_status != "APPROVED":
-            leave_request.status = "APPROVED"
-            leave_request.approved_by = user
-            leave_request.approved_at = timezone.now()
-            leave_request.save()
-
-            # Deduct Balance
-            balance = leave_request.employee.leave_balance
-            days = leave_request.total_days
-
-            if leave_request.leave_type == "CL":
-                balance.casual_leave_used += days
-            elif leave_request.leave_type == "SL":
-                balance.sick_leave_used += days
-            elif leave_request.leave_type == "EL":
-                balance.earned_leave_used += days
-            elif leave_request.leave_type == "CO":
-                balance.comp_off_used += days
-            elif leave_request.leave_type == "UL":
-                balance.unpaid_leave += days
-
-            balance.save()
-
+        # Use the new approval method from the model
+        if leave_request.approve_leave(user):
             # Update Attendance Records
             from datetime import timedelta
 
@@ -1090,32 +1255,28 @@ def approve_leave(request, pk):
 
                 att_record.save()
                 current_date += timedelta(days=1)
-        else:
-            # Already approved - do not deduct again
-            from django.contrib import messages
 
-            messages.info(request, "Leave was already approved earlier.")
+            # Send Approval Email
+            try:
+                from core.email_utils import send_leave_approval_notification
 
-        # Send Approval Email
-        try:
-            from core.email_utils import send_leave_approval_notification
+                if send_leave_approval_notification(leave_request):
+                    from django.contrib import messages
+                    messages.success(
+                        request,
+                        f"Leave approved successfully. Email sent to {leave_request.employee.user.first_name}.",
+                    )
+                else:
+                    from django.contrib import messages
+                    messages.warning(
+                        request,
+                        "Leave approved but email notification failed.",
+                    )
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Leave approval email error: {str(e)}")
 
-            if send_leave_approval_notification(leave_request):
-                messages.success(
-                    request,
-                    f"Leave approved. Email sent to {leave_request.employee.user.first_name}.",
-                )
-            else:
-                messages.warning(
-                    request, "Leave approved, but email notification failed."
-                )
-        except Exception as e:
-            import logging
-
-            logger = logging.getLogger(__name__)
-            logger.error(f"Error sending approval email: {e}")
-
-        return redirect(request.META.get("HTTP_REFERER", "admin_dashboard"))
     return redirect("admin_dashboard")
 
 
@@ -2583,4 +2744,236 @@ def update_emergency_contact(request, contact_id):
             {"status": "error", "message": "Contact not found"}, status=404
         )
     except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+# --- Location Tracking API Endpoints ---
+
+@csrf_exempt
+@login_required
+def submit_hourly_location(request):
+    """
+    API endpoint for employees to submit their hourly location updates
+    """
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        lat = data.get("latitude")
+        lng = data.get("longitude")
+        accuracy = data.get("accuracy")
+        
+        if not lat or not lng:
+            return JsonResponse(
+                {"status": "error", "message": "Latitude and longitude are required"}, 
+                status=400
+            )
+        
+        if not hasattr(request.user, "employee_profile"):
+            return JsonResponse(
+                {"status": "error", "message": "No employee profile found"}, 
+                status=400
+            )
+        
+        employee = request.user.employee_profile
+        today = timezone.localdate()
+        
+        # Find the current active session
+        active_session = AttendanceSession.objects.filter(
+            employee=employee,
+            date=today,
+            clock_out__isnull=True,
+            is_active=True
+        ).first()
+        
+        if not active_session:
+            return JsonResponse(
+                {"status": "error", "message": "No active session found"}, 
+                status=400
+            )
+        
+        # Create location log
+        location_log = LocationLog.objects.create(
+            employee=employee,
+            attendance_session=active_session,
+            latitude=lat,
+            longitude=lng,
+            log_type='HOURLY',
+            accuracy=accuracy,
+            is_valid=True,
+        )
+        
+        return JsonResponse({
+            "status": "success",
+            "message": "Location updated successfully",
+            "log_id": location_log.id,
+            "timestamp": location_log.timestamp.isoformat()
+        })
+        
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Hourly location update error: {str(e)}", exc_info=True)
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+@csrf_exempt
+@login_required
+def get_location_tracking_status(request):
+    """
+    API endpoint to check if employee needs to provide location update
+    """
+    if request.method != "GET":
+        return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
+    
+    try:
+        if not hasattr(request.user, "employee_profile"):
+            return JsonResponse(
+                {"status": "error", "message": "No employee profile found"}, 
+                status=400
+            )
+        
+        employee = request.user.employee_profile
+        today = timezone.localdate()
+        current_time = timezone.now()
+        
+        # Find the current active session
+        active_session = AttendanceSession.objects.filter(
+            employee=employee,
+            date=today,
+            clock_out__isnull=True,
+            is_active=True
+        ).first()
+        
+        if not active_session:
+            return JsonResponse({
+                "status": "success",
+                "needs_location": False,
+                "message": "No active session"
+            })
+        
+        # Check if location update is needed
+        last_log = LocationLog.objects.filter(
+            attendance_session=active_session,
+            log_type__in=['CLOCK_IN', 'HOURLY']
+        ).order_by('-timestamp').first()
+        
+        needs_location = False
+        next_update_time = None
+        
+        if not last_log:
+            # No logs yet, check if it's been 1 hour since clock-in
+            time_since_clockin = current_time - active_session.clock_in
+            if time_since_clockin >= timedelta(hours=1):
+                needs_location = True
+        else:
+            # Check if it's been 1 hour since last log
+            time_since_last_log = current_time - last_log.timestamp
+            if time_since_last_log >= timedelta(hours=1):
+                needs_location = True
+            else:
+                # Calculate when next update is needed
+                next_update_time = (last_log.timestamp + timedelta(hours=1)).isoformat()
+        
+        return JsonResponse({
+            "status": "success",
+            "needs_location": needs_location,
+            "active_session": True,
+            "session_start": active_session.clock_in.isoformat(),
+            "next_update_time": next_update_time,
+            "last_update": last_log.timestamp.isoformat() if last_log else None
+        })
+        
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Location tracking status error: {str(e)}", exc_info=True)
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+@login_required
+def get_employee_location_history(request, employee_id):
+    """
+    API endpoint to get location history for an employee (for managers/admins)
+    """
+    try:
+        # Check permissions
+        if request.user.role not in [User.Role.COMPANY_ADMIN, User.Role.MANAGER]:
+            return JsonResponse(
+                {"status": "error", "message": "Permission denied"}, 
+                status=403
+            )
+        
+        employee = Employee.objects.get(id=employee_id)
+        
+        # If manager, ensure they can only see their subordinates
+        if request.user.role == User.Role.MANAGER:
+            if employee.manager != request.user:
+                return JsonResponse(
+                    {"status": "error", "message": "Permission denied"}, 
+                    status=403
+                )
+        
+        # Get date range from query params
+        from datetime import datetime
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        
+        if start_date:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        else:
+            start_date = timezone.localdate() - timedelta(days=7)  # Default to last 7 days
+            
+        if end_date:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        else:
+            end_date = timezone.localdate()
+        
+        # Get location logs
+        location_logs = LocationLog.objects.filter(
+            employee=employee,
+            timestamp__date__gte=start_date,
+            timestamp__date__lte=end_date,
+            is_valid=True
+        ).select_related('attendance_session').order_by('-timestamp')
+        
+        # Format response
+        logs_data = []
+        for log in location_logs:
+            logs_data.append({
+                'id': log.id,
+                'timestamp': log.timestamp.isoformat(),
+                'latitude': float(log.latitude),
+                'longitude': float(log.longitude),
+                'log_type': log.log_type,
+                'accuracy': log.accuracy,
+                'session_number': log.attendance_session.session_number if log.attendance_session else None,
+                'session_type': log.attendance_session.session_type if log.attendance_session else None,
+            })
+        
+        return JsonResponse({
+            "status": "success",
+            "employee": {
+                "id": employee.id,
+                "name": employee.user.get_full_name(),
+                "email": employee.user.email
+            },
+            "date_range": {
+                "start": start_date.isoformat(),
+                "end": end_date.isoformat()
+            },
+            "location_logs": logs_data,
+            "total_logs": len(logs_data)
+        })
+        
+    except Employee.DoesNotExist:
+        return JsonResponse(
+            {"status": "error", "message": "Employee not found"}, 
+            status=404
+        )
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Location history error: {str(e)}", exc_info=True)
         return JsonResponse({"status": "error", "message": str(e)}, status=500)

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Employee, EmergencyContact
+from .models import Employee, EmergencyContact, Attendance, AttendanceSession
 
 
 class EmergencyContactInline(admin.TabularInline):
@@ -54,3 +54,26 @@ class HandbookSectionAdmin(admin.ModelAdmin):
 class PolicySectionAdmin(admin.ModelAdmin):
     list_display = ("title", "order", "is_active", "updated_at")
     list_editable = ("order", "is_active")
+
+
+@admin.register(Attendance)
+class AttendanceAdmin(admin.ModelAdmin):
+    list_display = (
+        "employee", "date", "status", "clock_in", "clock_out", 
+        "daily_sessions_count", "total_working_hours", "is_currently_clocked_in"
+    )
+    list_filter = ("status", "date", "is_currently_clocked_in", "is_late")
+    search_fields = ("employee__user__first_name", "employee__user__last_name")
+    readonly_fields = ("total_working_hours",)
+    date_hierarchy = "date"
+
+
+@admin.register(AttendanceSession)
+class AttendanceSessionAdmin(admin.ModelAdmin):
+    list_display = (
+        "employee", "date", "session_number", "session_type", 
+        "clock_in", "clock_out", "duration_hours"
+    )
+    list_filter = ("session_type", "date")
+    search_fields = ("employee__user__first_name", "employee__user__last_name")
+    date_hierarchy = "date"

@@ -4,6 +4,8 @@ from django.utils import timezone
 from companies.models import Company
 from datetime import timedelta
 from loguru import logger
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class Employee(models.Model):
@@ -337,6 +339,12 @@ class Attendance(models.Model):
     max_daily_clocks = models.IntegerField(
         default=3, help_text="Maximum allowed clock-ins per day"
     )
+    
+    # Working hours tracking
+    total_working_hours = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0.00,
+        help_text="Total working hours for the day"
+    )
 
     # Location tracking
     location_tracking_active = models.BooleanField(
@@ -362,6 +370,18 @@ class Attendance(models.Model):
         max_length=50,
         default="Asia/Kolkata",
         help_text="User's timezone when attendance was recorded",
+    )
+    
+    # Session tracking
+    current_session_type = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        choices=[
+            ("WEB", "Web"),
+            ("REMOTE", "Remote"),
+        ],
+        help_text="Current session type (WEB/REMOTE)",
     )
 
     class Meta:
@@ -530,10 +550,44 @@ class Attendance(models.Model):
         if self.clock_in:
             # Use current time if active, otherwise clock_out time
             end_time = self.clock_out if self.clock_out else timezone.now()
+            
+            # Ensure we don't count beyond the same day
+            from datetime import datetime, time
+            
+            # Get the end of the attendance date (23:59:59)
+            attendance_date_end = datetime.combine(
+                self.date, 
+                time(23, 59, 59)
+            )
+            
+            # Convert to timezone-aware datetime if needed
+            if timezone.is_aware(self.clock_in):
+                attendance_date_end = timezone.make_aware(attendance_date_end)
+            
+            # Cap end_time to not exceed the attendance date
+            if end_time > attendance_date_end:
+                end_time = attendance_date_end
+            
+            # Calculate difference
             diff = end_time - self.clock_in
             total_seconds = diff.total_seconds()
+            
+            # Cap at 24 hours maximum (86400 seconds)
+            if total_seconds > 86400:  # 24 hours
+                total_seconds = 86400
+            
+            # Ensure non-negative
+            if total_seconds < 0:
+                total_seconds = 0
+            
             hours = int(total_seconds // 3600)
             minutes = int((total_seconds % 3600) // 60)
+            
+            # Cap display at 24 hours
+            if hours > 24:
+                hours = 24
+                minutes = 0
+            
             return f"{hours}:{minutes:02d}{'+' if not self.clock_out else ''}"
         return "0:00"
 
@@ -589,6 +643,77 @@ class Attendance(models.Model):
         sessions = AttendanceSession.objects.filter(
             employee=self.employee, date=self.date
         ).order_by("session_number")
+
+    def calculate_total_working_hours(self):
+        """Calculate total working hours from all completed sessions with 24-hour daily cap"""
+        from decimal import Decimal
+        from datetime import datetime, time
+        
+        sessions = AttendanceSession.objects.filter(
+            employee=self.employee,
+            date=self.date,
+            clock_in__isnull=False,
+        )
+        
+        total_seconds = 0
+        attendance_date_end = datetime.combine(self.date, time(23, 59, 59))
+        
+        # Convert to timezone-aware datetime if needed
+        if sessions.exists() and timezone.is_aware(sessions.first().clock_in):
+            attendance_date_end = timezone.make_aware(attendance_date_end)
+        
+        for session in sessions:
+            if session.clock_in:
+                # Determine end time for this session
+                if session.clock_out:
+                    session_end = session.clock_out
+                else:
+                    # For active sessions, use current time but cap at end of day
+                    session_end = min(timezone.now(), attendance_date_end)
+                
+                # Ensure session doesn't extend beyond the attendance date
+                if session_end > attendance_date_end:
+                    session_end = attendance_date_end
+                
+                # Calculate session duration
+                if session_end > session.clock_in:
+                    duration = session_end - session.clock_in
+                    session_seconds = duration.total_seconds()
+                    
+                    # Ensure non-negative duration
+                    if session_seconds > 0:
+                        total_seconds += session_seconds
+        
+        # Cap total hours at 24 hours (86400 seconds) per day
+        if total_seconds > 86400:
+            total_seconds = 86400
+        
+        # Convert to hours and round to 2 decimal places
+        total_hours = Decimal(total_seconds / 3600).quantize(Decimal('0.01'))
+        
+        # Ensure maximum of 24.00 hours
+        if total_hours > 24:
+            total_hours = Decimal('24.00')
+        
+        self.total_working_hours = total_hours
+        return total_hours
+
+    def can_clock_in(self):
+        """Check if employee can clock in"""
+        # Can't clock in if already clocked in
+        if self.is_currently_clocked_in:
+            return False
+        
+        # Can't clock in if max sessions reached
+        if self.daily_sessions_count >= self.max_daily_sessions:
+            return False
+            
+        return True
+
+    def can_clock_out(self):
+        """Check if employee can clock out"""
+        # Can only clock out if currently clocked in
+        return self.is_currently_clocked_in
 
         completed_sessions = sessions.filter(
             clock_in__isnull=False, clock_out__isnull=False
@@ -839,12 +964,41 @@ class LocationLog(models.Model):
     employee = models.ForeignKey(
         Employee, on_delete=models.CASCADE, related_name="location_logs"
     )
+    attendance_session = models.ForeignKey(
+        'AttendanceSession', 
+        on_delete=models.CASCADE, 
+        related_name="employee_location_logs",  # Changed to avoid conflict
+        null=True, 
+        blank=True
+    )
     timestamp = models.DateTimeField(auto_now_add=True)
-    latitude = models.CharField(max_length=50)
-    longitude = models.CharField(max_length=50)
+    latitude = models.DecimalField(max_digits=10, decimal_places=7)
+    longitude = models.DecimalField(max_digits=10, decimal_places=7)
+    
+    # Tracking metadata
+    LOG_TYPE_CHOICES = [
+        ('CLOCK_IN', 'Clock In'),
+        ('CLOCK_OUT', 'Clock Out'),
+        ('HOURLY', 'Hourly Tracking'),
+        ('MANUAL', 'Manual Update'),
+    ]
+    log_type = models.CharField(max_length=20, choices=LOG_TYPE_CHOICES, default='MANUAL')
+    accuracy = models.FloatField(null=True, blank=True, help_text="GPS accuracy in meters")
+    address = models.TextField(null=True, blank=True, help_text="Reverse geocoded address")
+    
+    # Tracking status
+    is_valid = models.BooleanField(default=True, help_text="Whether this location is valid")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['employee', 'timestamp']),
+            models.Index(fields=['attendance_session', 'log_type']),
+        ]
 
     def __str__(self):
-        return f"{self.employee} - {self.timestamp}"
+        return f"{self.employee} - {self.get_log_type_display()} - {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
 
 
 class LeaveBalance(models.Model):
@@ -881,19 +1035,66 @@ class LeaveBalance(models.Model):
 
     @property
     def casual_leave_balance(self):
-        return self.casual_leave_allocated - self.casual_leave_used
+        return max(0, self.casual_leave_allocated - self.casual_leave_used)
 
     @property
     def sick_leave_balance(self):
-        return self.sick_leave_allocated - self.sick_leave_used
+        return max(0, self.sick_leave_allocated - self.sick_leave_used)
 
     @property
     def earned_leave_balance(self):
-        return self.earned_leave_allocated - self.earned_leave_used
+        return max(0, self.earned_leave_allocated - self.earned_leave_used)
 
     @property
     def comp_off_balance(self):
-        return self.comp_off_allocated - self.comp_off_used
+        return max(0, self.comp_off_allocated - self.comp_off_used)
+
+    def get_available_balance(self, leave_type):
+        """Get available balance for a specific leave type"""
+        if leave_type == 'CL':
+            return self.casual_leave_balance
+        elif leave_type == 'SL':
+            return self.sick_leave_balance
+        elif leave_type == 'EL':
+            return self.earned_leave_balance
+        elif leave_type == 'CO':
+            return self.comp_off_balance
+        else:
+            return 0
+
+    def can_apply_leave(self, leave_type, days_requested):
+        """Check if employee can apply for the requested leave"""
+        available_balance = self.get_available_balance(leave_type)
+        
+        if leave_type == 'UL':  # Unpaid Leave (LOP) - always allowed
+            return {
+                'can_apply': True,
+                'available': float('inf'),
+                'shortfall': 0,
+                'will_be_lop': True
+            }
+        
+        return {
+            'can_apply': available_balance >= days_requested,
+            'available': available_balance,
+            'shortfall': max(0, days_requested - available_balance),
+            'will_be_lop': available_balance < days_requested
+        }
+
+    def apply_leave_deduction(self, leave_type, days_approved):
+        """Deduct approved leave from balance"""
+        if leave_type == 'CL':
+            self.casual_leave_used += days_approved
+        elif leave_type == 'SL':
+            self.sick_leave_used += days_approved
+        elif leave_type == 'EL':
+            self.earned_leave_used += days_approved
+        elif leave_type == 'CO':
+            self.comp_off_used += days_approved
+        elif leave_type == 'UL':
+            self.unpaid_leave += days_approved
+        
+        self.save()
 
     @property
     def total_balance(self):
@@ -1035,6 +1236,91 @@ class LeaveRequest(models.Model):
             logger.warning("Error checking leave balance", error=str(e), leave_request_id=self.id)
             return False
         return False
+
+    def validate_leave_application(self):
+        """Validate leave application and return detailed information"""
+        try:
+            balance = self.employee.leave_balance
+            leave_check = balance.can_apply_leave(self.leave_type, self.total_days)
+            
+            return {
+                'is_valid': leave_check['can_apply'] or self.leave_type == 'UL',
+                'available_balance': leave_check['available'],
+                'requested_days': self.total_days,
+                'shortfall': leave_check['shortfall'],
+                'will_be_lop': leave_check['will_be_lop'],
+                'leave_type_display': self.get_leave_type_display(),
+                'message': self._generate_validation_message(leave_check)
+            }
+        except Exception as e:
+            return {
+                'is_valid': False,
+                'error': str(e),
+                'message': 'Unable to validate leave application. Please contact HR.'
+            }
+
+    def _generate_validation_message(self, leave_check):
+        """Generate user-friendly validation message"""
+        if self.leave_type == 'UL':
+            return f"Unpaid Leave (LOP) application for {self.total_days} days will be processed."
+        
+        if leave_check['can_apply']:
+            return f"Leave application approved. You have {leave_check['available']} days available."
+        else:
+            available = leave_check['available']
+            shortfall = leave_check['shortfall']
+            
+            if available == 0:
+                return f"You don't have any {self.get_leave_type_display()} balance. This will be processed as Unpaid Leave (LOP)."
+            else:
+                return f"You only have {available} days of {self.get_leave_type_display()} available. {shortfall} days will be processed as Unpaid Leave (LOP)."
+
+    def save(self, *args, **kwargs):
+        """Override save to validate leave application"""
+        if not self.pk:  # Only validate on creation
+            validation = self.validate_leave_application()
+            if not validation['is_valid'] and self.leave_type != 'UL':
+                # Convert to mixed leave (partial paid + LOP) if needed
+                pass  # We'll handle this in the view
+        
+        super().save(*args, **kwargs)
+
+    def approve_leave(self, approved_by_user):
+        """Approve leave and deduct from balance"""
+        if self.status != 'PENDING':
+            return False
+        
+        self.status = 'APPROVED'
+        self.approved_by = approved_by_user
+        self.approved_at = timezone.now()
+        
+        # Deduct from leave balance
+        try:
+            balance = self.employee.leave_balance
+            validation = self.validate_leave_application()
+            
+            if validation['will_be_lop'] and self.leave_type != 'UL':
+                # Split into paid leave + LOP
+                available = validation['available_balance']
+                lop_days = validation['shortfall']
+                
+                if available > 0:
+                    balance.apply_leave_deduction(self.leave_type, available)
+                if lop_days > 0:
+                    balance.apply_leave_deduction('UL', lop_days)
+            else:
+                # Full deduction from requested leave type
+                balance.apply_leave_deduction(self.leave_type, self.total_days)
+            
+            self.save()
+            return True
+            
+        except Exception as e:
+            # Rollback status change
+            self.status = 'PENDING'
+            self.approved_by = None
+            self.approved_at = None
+            return False
 
     def __str__(self):
         return f"{self.get_leave_type_display()} - {self.employee.user.get_full_name()} ({self.start_date} to {self.end_date})"
@@ -1223,3 +1509,46 @@ class ExitInitiative(models.Model):
             )
 
         return self.last_working_day
+
+# Signal to automatically create leave balance for new employees
+@receiver(post_save, sender=Employee)
+def create_leave_balance(sender, instance, created, **kwargs):
+    """Automatically create leave balance when a new employee is created"""
+    if created:
+        # Get company-specific leave rules or use defaults
+        company = instance.company
+        
+        # Default allocations (can be customized per company)
+        casual_leave = 12.0
+        sick_leave = 12.0
+        earned_leave = 12.0
+        comp_off = 0.0
+        
+        # Company-specific rules
+        if company:
+            company_name = company.name.lower()
+            if 'petabytz' in company_name:
+                # Petabytz specific rules
+                casual_leave = 12.0
+                sick_leave = 12.0
+                earned_leave = 15.0
+            elif 'bluebix' in company_name:
+                # Bluebix specific rules
+                casual_leave = 10.0
+                sick_leave = 10.0
+                earned_leave = 12.0
+            elif 'softstandard' in company_name or 'soft standard' in company_name:
+                # SoftStandard specific rules
+                casual_leave = 12.0
+                sick_leave = 8.0
+                earned_leave = 12.0
+        
+        LeaveBalance.objects.get_or_create(
+            employee=instance,
+            defaults={
+                'casual_leave_allocated': casual_leave,
+                'sick_leave_allocated': sick_leave,
+                'earned_leave_allocated': earned_leave,
+                'comp_off_allocated': comp_off,
+            }
+        )

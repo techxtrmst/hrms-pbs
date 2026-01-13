@@ -655,15 +655,39 @@
                             <div class="text-label mb-1">Today's Progress</div>
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <div class="fw-bold text-dark">{{ attendance.total_working_hours|floatformat:1 }}
-                                        hours</div>
-                                    <small class="text-muted">{{ attendance.daily_sessions_count }} session{{ attendance.daily_sessions_count|pluralize }} completed</small>
+                                    <div class="fw-bold text-dark">{{ attendance.total_working_hours|floatformat:1 }} hours</div>
+                                    <!-- Sessions completed text removed -->
                                 </div>
                                 <div class="text-end">
-                                    <span
-                                        class="badge bg-{{ attendance.status|lower }} bg-opacity-20 text-{{ attendance.status|lower }}">
-                                        {{ attendance.get_status_display }}
-                                    </span>
+                                    {% if attendance.status == 'PRESENT' %}
+                                        <span class="badge" style="background-color: #6366f1; color: white;">
+                                            {{ attendance.get_status_display }}
+                                        </span>
+                                    {% elif attendance.status == 'WFH' %}
+                                        <span class="badge bg-primary bg-opacity-20 text-primary">
+                                            {{ attendance.get_status_display }}
+                                        </span>
+                                    {% elif attendance.status == 'ABSENT' %}
+                                        <span class="badge bg-danger bg-opacity-20 text-danger">
+                                            {{ attendance.get_status_display }}
+                                        </span>
+                                    {% elif attendance.status == 'HALF_DAY' %}
+                                        <span class="badge bg-warning bg-opacity-20 text-warning">
+                                            {{ attendance.get_status_display }}
+                                        </span>
+                                    {% elif attendance.status == 'LEAVE' %}
+                                        <span class="badge bg-info bg-opacity-20 text-info">
+                                            {{ attendance.get_status_display }}
+                                        </span>
+                                    {% elif attendance.status == 'HYBRID' %}
+                                        <span class="badge bg-secondary bg-opacity-20 text-secondary">
+                                            {{ attendance.get_status_display }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary bg-opacity-20 text-secondary">
+                                            {{ attendance.get_status_display }}
+                                        </span>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -1103,7 +1127,10 @@
                         <div>
                             <div class="small fw-bold opacity-75" style="font-size: 0.65rem; letter-spacing: 0.05em;">
                                 BREAKS</div>
-                            <div class="fw-bold text-white opacity-75" style="font-size: 0.85rem;">Lunch: 13:00 - 14:00
+                            <div class="fw-bold text-white opacity-75" style="font-size: 0.85rem;">
+                                Refreshment: 10:45 - 11:00<br>
+                                Lunch Break: 13:00 - 13:45<br>
+                                Evening Tea: 16:30 - 16:45
                             </div>
                         </div>
                         <div class="text-end">
@@ -1816,6 +1843,130 @@
     });
 
     // Pulse Effect for Active Day (CSS handled)
+
+    // Hourly Location Tracking
+    let locationTrackingInterval;
+    
+    function startLocationTracking() {
+        // Check location tracking status immediately
+        checkLocationTrackingStatus();
+        
+        // Set up interval to check every 5 minutes
+        locationTrackingInterval = setInterval(checkLocationTrackingStatus, 5 * 60 * 1000);
+    }
+    
+    function checkLocationTrackingStatus() {
+        fetch("{% url 'api_location_tracking_status' %}", {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success' && data.needs_location) {
+                requestLocationUpdate();
+            }
+        })
+        .catch(error => {
+            console.log('Location tracking status check failed:', error);
+        });
+    }
+    
+    function requestLocationUpdate() {
+        if (!navigator.geolocation) {
+            console.log('Geolocation not supported');
+            return;
+        }
+        
+        // Show a subtle notification
+        showLocationUpdateNotification();
+        
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                submitHourlyLocation(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
+            },
+            (error) => {
+                console.log('Location access denied or failed:', error);
+                // Still try to submit with null coordinates to mark the attempt
+                submitHourlyLocation(null, null, null);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 300000 // 5 minutes
+            }
+        );
+    }
+    
+    function submitHourlyLocation(lat, lng, accuracy) {
+        const requestData = {
+            latitude: lat,
+            longitude: lng,
+            accuracy: accuracy
+        };
+        
+        fetch("{% url 'api_submit_hourly_location' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                console.log('Hourly location updated successfully');
+                hideLocationUpdateNotification();
+            } else {
+                console.log('Location update failed:', data.message);
+            }
+        })
+        .catch(error => {
+            console.log('Location update error:', error);
+        });
+    }
+    
+    function showLocationUpdateNotification() {
+        // Create or show a subtle notification
+        let notification = document.getElementById('location-notification');
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.id = 'location-notification';
+            notification.innerHTML = `
+                <div style="position: fixed; top: 20px; right: 20px; background: #6366f1; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; font-size: 14px;">
+                    <i class="fas fa-map-marker-alt me-2"></i>
+                    Updating location for attendance tracking...
+                </div>
+            `;
+            document.body.appendChild(notification);
+        }
+        notification.style.display = 'block';
+    }
+    
+    function hideLocationUpdateNotification() {
+        const notification = document.getElementById('location-notification');
+        if (notification) {
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 2000);
+        }
+    }
+    
+    // Start location tracking when page loads (only if user is clocked in)
+    {% if attendance and attendance.is_currently_clocked_in %}
+    document.addEventListener('DOMContentLoaded', function() {
+        startLocationTracking();
+    });
+    {% endif %}
+    
+    // Clean up interval when page unloads
+    window.addEventListener('beforeunload', function() {
+        if (locationTrackingInterval) {
+            clearInterval(locationTrackingInterval);
+        }
+    });
 
 </script>
 {% endblock %}
