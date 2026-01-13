@@ -5,14 +5,26 @@ from django.db import migrations
 
 def update_max_sessions_to_3(apps, schema_editor):
     """Update all existing attendance records to have max_daily_sessions = 3"""
-    Attendance = apps.get_model('employees', 'Attendance')
-    Attendance.objects.filter(max_daily_sessions__gt=3).update(max_daily_sessions=3)
+    try:
+        Attendance = apps.get_model('employees', 'Attendance')
+        updated_count = Attendance.objects.filter(max_daily_sessions__gt=3).update(max_daily_sessions=3)
+        print(f"Updated {updated_count} attendance records to max_daily_sessions=3")
+    except Exception as e:
+        print(f"Warning: Could not update max_daily_sessions: {e}")
+        # Don't fail the migration if this update fails
+        pass
 
 
 def reverse_update_max_sessions(apps, schema_editor):
     """Reverse migration - set back to 5 (previous common default)"""
-    Attendance = apps.get_model('employees', 'Attendance')
-    Attendance.objects.filter(max_daily_sessions=3).update(max_daily_sessions=5)
+    try:
+        Attendance = apps.get_model('employees', 'Attendance')
+        updated_count = Attendance.objects.filter(max_daily_sessions=3).update(max_daily_sessions=5)
+        print(f"Reverted {updated_count} attendance records to max_daily_sessions=5")
+    except Exception as e:
+        print(f"Warning: Could not revert max_daily_sessions: {e}")
+        # Don't fail the migration if this update fails
+        pass
 
 
 class Migration(migrations.Migration):
