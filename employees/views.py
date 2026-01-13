@@ -345,8 +345,8 @@ def clock_in(request):
 
             # Check if employee can clock in
             # Check if employee can clock in
-            # FORCE OVERRIDE: Allow up to 10 sessions/day regardless of model setting (user request for consistency)
-            MAX_ALLOWED_SESSIONS = 10 
+            # FORCE OVERRIDE: Allow up to 3 sessions/day regardless of model setting (user request for consistency)
+            MAX_ALLOWED_SESSIONS = 3 
             
             if not attendance.can_clock_in():
                 if attendance.is_currently_clocked_in:

@@ -340,14 +340,6 @@ class Attendance(models.Model):
         default=3, help_text="Maximum allowed clock-ins per day"
     )
     
-    # Session management
-    daily_sessions_count = models.IntegerField(
-        default=0, help_text="Number of sessions completed today"
-    )
-    max_daily_sessions = models.IntegerField(
-        default=5, help_text="Maximum allowed sessions per day"
-    )
-    
     # Working hours tracking
     total_working_hours = models.DecimalField(
         max_digits=5, decimal_places=2, default=0.00,
