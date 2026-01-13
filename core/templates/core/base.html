@@ -341,7 +341,7 @@
         <a href="{% url 'my_finance' %}" class="{% if 'finance' in request.path %}active{% endif %}">
             <i class="fas fa-rupee-sign"></i> <span>Finance</span>
         </a>
-        <a href="{% url 'handbook' %}" class="{% if 'handbook' in request.path %}active{% endif %}">
+        <a href="{% url 'handbooks:handbook_list' %}" class="{% if 'handbooks' in request.path %}active{% endif %}">
             <i class="fas fa-book-reader"></i> <span>Employee Handbook</span>
         </a>
         <a href="{% url 'policy' %}" class="{% if 'policy' in request.path %}active{% endif %}">
@@ -461,6 +461,10 @@
                 <a href="{% url 'leave_configuration' %}"
                     class="{% if 'leave/configuration' in request.path %}active{% endif %}">
                     <i class="fas fa-cog"></i> Leave Configuration
+                </a>
+                <a href="{% url 'handbooks:admin_handbook_list' %}"
+                    class="{% if 'handbooks/admin' in request.path %}active{% endif %}">
+                    <i class="fas fa-book"></i> Handbook & Policies
                 </a>
             </div>
         </div>

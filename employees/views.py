@@ -35,6 +35,12 @@ from core.error_handling import (
     safe_parse_location,
     capture_exception,
 )
+from .location_tracking_views import (
+    submit_hourly_location,
+    get_location_tracking_status,
+    get_employee_location_history,
+)
+
 
 
 def detect_timezone_from_coordinates(lat, lng):
@@ -1114,9 +1120,11 @@ def approve_leave(request, pk):
 
         # Security check: Only Manager or Admin can approve
         user = request.user
-        is_admin = user.role == User.Role.COMPANY_ADMIN
+        is_admin = user.role == User.Role.COMPANY_ADMIN or user.is_superuser
         is_manager = (
-            user.role == User.Role.MANAGER and leave_request.employee.manager == user
+            user.role == User.Role.MANAGER 
+            and leave_request.employee.manager 
+            and leave_request.employee.manager.user == user
         )
 
         if not (is_admin or is_manager):
@@ -1203,9 +1211,11 @@ def reject_leave(request, pk):
         leave_request = LeaveRequest.objects.get(pk=pk)
 
         user = request.user
-        is_admin = user.role == User.Role.COMPANY_ADMIN
+        is_admin = user.role == User.Role.COMPANY_ADMIN or user.is_superuser
         is_manager = (
-            user.role == User.Role.MANAGER and leave_request.employee.manager == user
+            user.role == User.Role.MANAGER 
+            and leave_request.employee.manager 
+            and leave_request.employee.manager.user == user
         )
 
         if not (is_admin or is_manager):
@@ -1247,8 +1257,12 @@ def attendance_map(request, pk):
 
         # Permission Check
         user = request.user
-        is_admin = user.role == User.Role.COMPANY_ADMIN
-        is_manager = user.role == User.Role.MANAGER and user == employee.manager
+        is_admin = user.role == User.Role.COMPANY_ADMIN or user.is_superuser
+        is_manager = (
+            user.role == User.Role.MANAGER 
+            and employee.manager 
+            and employee.manager.user == user
+        )
         is_self = user == employee.user
 
         if not (is_admin or is_manager or is_self):
@@ -1328,8 +1342,12 @@ def employee_detail(request, pk):
 
         # Permission Check (Company Admin or Manager of the employee)
         user = request.user
-        is_admin = user.role == User.Role.COMPANY_ADMIN
-        is_manager = user.role == User.Role.MANAGER and employee.manager == user
+        is_admin = user.role == User.Role.COMPANY_ADMIN or user.is_superuser
+        is_manager = (
+            user.role == User.Role.MANAGER 
+            and employee.manager 
+            and employee.manager.user == user
+        )
 
         if not (is_admin or is_manager):
             messages.error(request, "Permission denied")
@@ -1738,7 +1756,9 @@ def get_attendance_map_data(request, pk):
         if request.user.role == User.Role.MANAGER and hasattr(
             request.user, "employee_profile"
         ):
-            is_manager = attendance.employee.manager == request.user
+            # Compare manager's user object with request user
+            if attendance.employee.manager:
+                is_manager = attendance.employee.manager.user == request.user
 
         is_self = attendance.employee.user == request.user
 
@@ -2168,9 +2188,11 @@ def approve_regularization(request, pk):
         reg_request = RegularizationRequest.objects.get(pk=pk)
 
         user = request.user
-        is_admin = user.role == User.Role.COMPANY_ADMIN
+        is_admin = user.role == User.Role.COMPANY_ADMIN or user.is_superuser
         is_manager = (
-            user.role == User.Role.MANAGER and reg_request.employee.manager == user
+            user.role == User.Role.MANAGER 
+            and reg_request.employee.manager 
+            and reg_request.employee.manager.user == user
         )
 
         if not (is_admin or is_manager):
@@ -2241,9 +2263,11 @@ def reject_regularization(request, pk):
         reg_request = RegularizationRequest.objects.get(pk=pk)
 
         user = request.user
-        is_admin = user.role == User.Role.COMPANY_ADMIN
+        is_admin = user.role == User.Role.COMPANY_ADMIN or user.is_superuser
         is_manager = (
-            user.role == User.Role.MANAGER and reg_request.employee.manager == user
+            user.role == User.Role.MANAGER 
+            and reg_request.employee.manager 
+            and reg_request.employee.manager.user == user
         )
 
         if not (is_admin or is_manager):

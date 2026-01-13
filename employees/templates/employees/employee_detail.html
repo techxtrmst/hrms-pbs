@@ -530,31 +530,33 @@
         // Initialize Map
         map = L.map('activityMap').setView([20.5937, 78.9629], 5); // Default Center
 
-        // OSM Layer (Default)
+        // Google Layers
+        const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '© Google Maps'
+        });
+
+        const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '© Google Maps'
+        });
+
+        // OSM Layer (optional)
         const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap'
         });
 
-        // Google Layers (keep as optional)
-        const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-            maxZoom: 20,
-            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-        });
-
-        const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
-            maxZoom: 20,
-            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-        });
-
-        // Add OSM by default
-        osm.addTo(map);
+        // Add Google Streets by default (like Keka)
+        googleStreets.addTo(map);
 
         // Layer Control
         const baseMaps = {
-            "OpenStreetMap": osm,
             "Google Streets": googleStreets,
-            "Satellite": googleHybrid
+            "Satellite": googleHybrid,
+            "OpenStreetMap": osm
         };
         L.control.layers(baseMaps).addTo(map);
 
@@ -582,6 +584,24 @@
     });
 
     function drawMap(mapData) {
+        console.log('=== drawMap called ===');
+        console.log('mapData:', mapData);
+        console.log('mapData type:', typeof mapData);
+        console.log('mapData length:', mapData ? mapData.length : 'null/undefined');
+
+        // Parse if string (sometimes Django sends JSON as string)
+        if (typeof mapData === 'string') {
+            console.log('mapData is a string, parsing JSON...');
+            try {
+                mapData = JSON.parse(mapData);
+                console.log('Successfully parsed mapData:', mapData);
+            } catch (e) {
+                console.error('Failed to parse mapData:', e);
+                alert('Error parsing location data');
+                return;
+            }
+        }
+
         // Ensure map handles container size updates
         map.invalidateSize();
 
@@ -590,51 +610,80 @@
         pathLayer.clearLayers();
 
         if (!mapData || mapData.length === 0) {
+            console.error('No location data - mapData is empty or null');
             alert("No location data available for this record.");
             return;
         }
 
+        console.log(`Processing ${mapData.length} location points...`);
         const latlngs = [];
 
-        mapData.forEach(point => {
+
+        // Create custom icons for different marker types - LARGE and VISIBLE like Keka
+        const createCustomIcon = (color, iconClass, size = 40) => {
+            return L.divIcon({
+                className: 'custom-marker',
+                html: `<div style="background-color: ${color}; width: ${size}px; height: ${size}px; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                    <i class="${iconClass}" style="color: white; font-size: ${size / 2.5}px;"></i>
+                </div>`,
+                iconSize: [size, size],
+                iconAnchor: [size / 2, size / 2],
+                popupAnchor: [0, -size / 2]
+            });
+        };
+
+        mapData.forEach((point, index) => {
             latlngs.push([point.lat, point.lng]);
 
-            // Custom Icon based on type
-            let markerColor = 'blue';
-            let radius = 6;
+            // Custom Icon based on type - LARGER markers for better visibility
+            let icon;
+            let markerColor;
 
-            if (point.type === 'start') { markerColor = 'green'; radius = 8; }
-            if (point.type === 'end') { markerColor = 'red'; radius = 8; }
+            if (point.type === 'start') {
+                icon = createCustomIcon('#10b981', 'fas fa-play', 50); // Larger for start - 50px
+                markerColor = '#10b981';
+            } else if (point.type === 'end') {
+                icon = createCustomIcon('#ef4444', 'fas fa-stop', 50); // Larger for end - 50px
+                markerColor = '#ef4444';
+            } else {
+                icon = createCustomIcon('#3b82f6', 'fas fa-circle', 40); // Tracking points - 40px
+                markerColor = '#3b82f6';
+            }
 
-            // Simple Circle Markers
-            L.circleMarker([point.lat, point.lng], {
-                radius: radius,
-                fillColor: markerColor,
-                color: '#fff',
-                weight: 2,
-                opacity: 1,
-                fillOpacity: 0.8
-            }).addTo(markersLayer)
+            // Create marker with custom icon
+            const marker = L.marker([point.lat, point.lng], { icon: icon })
+                .addTo(markersLayer)
                 .bindPopup(`
-                <div class="text-center">
-                    <strong class="text-primary">${point.type_display || point.title}</strong><br>
-                    <div class="my-1"><i class="far fa-clock me-1"></i> ${point.time_display || ''}</div>
-                    <small class="text-muted"><i class="fas fa-map-marker-alt me-1"></i> ${point.lat.toFixed(4)}, ${point.lng.toFixed(4)}</small>
-                </div>
-            `);
+                    <div class="text-center" style="min-width: 220px; padding: 10px;">
+                        <strong style="color: ${markerColor}; font-size: 18px; display: block; margin-bottom: 8px;">${point.type_display || point.title}</strong>
+                        <div class="my-2" style="font-size: 15px; color: #333;"><i class="far fa-clock me-2"></i> ${point.time_display || ''}</div>
+                        <small class="text-muted" style="font-size: 12px;"><i class="fas fa-map-marker-alt me-1"></i> ${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}</small>
+                    </div>
+                `);
+
+            // Auto-open popup for start marker only
+            if (point.type === 'start') {
+                setTimeout(() => marker.openPopup(), 600);
+            }
         });
 
-        // Draw Path Line
+        // Draw Path Line - Make it more visible
         if (latlngs.length > 1) {
-            L.polyline(latlngs, { color: '#4f46e5', weight: 4, opacity: 0.7, dashArray: '10, 10' }).addTo(pathLayer);
+            L.polyline(latlngs, {
+                color: '#2563eb',  // Brighter blue
+                weight: 5,         // Thicker line
+                opacity: 0.9,      // More opaque
+                smoothFactor: 1
+            }).addTo(pathLayer);
+
             setTimeout(() => {
                 map.invalidateSize();
-                map.fitBounds(latlngs, { padding: [50, 50] });
+                map.fitBounds(latlngs, { padding: [50, 50], maxZoom: 16 });
             }, 100);
         } else if (latlngs.length === 1) {
             setTimeout(() => {
                 map.invalidateSize();
-                map.setView(latlngs[0], 15);
+                map.setView(latlngs[0], 16);
             }, 100);
         }
     }
