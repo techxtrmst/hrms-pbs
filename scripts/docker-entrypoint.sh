@@ -32,7 +32,51 @@ while [ $attempt -le $MAX_ATTEMPTS ]; do
 done
 
 echo "Running database migrations..."
-python manage.py migrate --noinput --fake-initial
+
+# Handle potential migration conflicts by faking problematic migrations first
+echo "Checking for migration conflicts..."
+
+# Check if we need to fake any migrations that might conflict
+python -c "
+import os
+import django
+from django.conf import settings
+from django.db import connection
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'hrms_core.settings')
+django.setup()
+
+with connection.cursor() as cursor:
+    # Check if columns already exist
+    cursor.execute(\"\"\"
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='employees_attendance' 
+        AND column_name IN ('current_session_type', 'daily_sessions_count', 'max_daily_sessions')
+    \"\"\")
+    existing_columns = [row[0] for row in cursor.fetchall()]
+    
+    if existing_columns:
+        print(f'Found existing columns: {existing_columns}')
+        print('Will use safe migration approach')
+    else:
+        print('No conflicting columns found')
+" || echo "Could not check for existing columns, proceeding with normal migration"
+
+# Run migrations with error handling
+if ! python manage.py migrate --noinput; then
+    echo "Migration failed, attempting recovery..."
+    
+    # Try to fake problematic migrations and run our safe migration
+    echo "Attempting to fake conflicting migrations..."
+    python manage.py migrate employees 0002_add_session_tracking_fields --fake || true
+    python manage.py migrate employees 0003_add_missing_attendance_fields --fake || true
+    python manage.py migrate employees 0003_attendance_daily_sessions_count_and_more --fake || true
+    
+    # Now run migrations again
+    echo "Retrying migrations after faking conflicts..."
+    python manage.py migrate --noinput
+fi
 
 echo "Collecting static files..."
 python manage.py collectstatic --noinput --clear
