@@ -3,6 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.utils import timezone
 from django.db.models import Q, Count
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 from .models import Handbook, HandbookSection, HandbookAcknowledgment, HandbookAttachment
 from employees.models import Employee
 
@@ -138,6 +141,48 @@ def acknowledge_handbook(request, handbook_id):
     # Get user agent
     acknowledgment.user_agent = request.META.get('HTTP_USER_AGENT', '')
     acknowledgment.save()
+
+    # Send email notifications
+    try:
+        # Context for emails
+        email_context = {
+            'employee_name': employee.user.get_full_name(),
+            'handbook_title': handbook.title,
+            'version': handbook.version,
+            'acknowledged_at': acknowledgment.acknowledged_at.strftime('%Y-%m-%d %H:%M'),
+            'company_name': employee.company.name,
+            'department': employee.department.name if employee.department else 'N/A',
+        }
+        
+        # 1. Email to Employee
+        html_message_employee = render_to_string('core/emails/handbook_acknowledgment_employee.html', email_context)
+        plain_message_employee = strip_tags(html_message_employee)
+        
+        send_mail(
+            subject=f'Handbook Acknowledged: {handbook.title}',
+            message=plain_message_employee,
+            from_email='hrms@petabytz.com',
+            recipient_list=[employee.user.email],
+            html_message=html_message_employee,
+            fail_silently=True,
+        )
+
+        # 2. Email to Admin (hrms@petabytz.com)
+        html_message_admin = render_to_string('core/emails/handbook_acknowledgment_admin.html', email_context)
+        plain_message_admin = strip_tags(html_message_admin)
+        
+        send_mail(
+            subject=f'Handbook Signed: {employee.user.get_full_name()} - {handbook.title}',
+            message=plain_message_admin,
+            from_email='hrms@petabytz.com',
+            recipient_list=['hrms@petabytz.com'],
+            html_message=html_message_admin,
+            fail_silently=True,
+        )
+        
+    except Exception as e:
+        print(f"Error sending acknowledgment emails: {e}")
+        # We don't return error to user as acknowledgment is successful
 
     return JsonResponse({
         'success': True,
