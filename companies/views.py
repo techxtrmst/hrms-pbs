@@ -177,15 +177,33 @@ def quick_add_department(request):
         try:
             data = json.loads(request.body)
             name = data.get("name")
+            company_id = data.get("company_id")
 
             # Get Company
             company = None
-            if hasattr(request.user, "company") and request.user.company:
-                company = request.user.company
-            elif (
-                request.user.employee_profile and request.user.employee_profile.company
-            ):
-                company = request.user.employee_profile.company
+            
+            if company_id:
+                from .models import Company
+                try:
+                    # Allow if superuser or if ID matches user's company
+                    target_company = Company.objects.get(id=company_id)
+                    if request.user.is_superuser:
+                         company = target_company
+                    elif hasattr(request.user, "company") and request.user.company == target_company:
+                         company = target_company
+                    elif request.user.employee_profile and request.user.employee_profile.company == target_company:
+                         company = target_company
+                except Company.DoesNotExist:
+                    pass
+
+            # Fallback if no ID or lookup failed
+            if not company:
+                if hasattr(request.user, "company") and request.user.company:
+                    company = request.user.company
+                elif (
+                    request.user.employee_profile and request.user.employee_profile.company
+                ):
+                    company = request.user.employee_profile.company
 
             if not company:
                 return JsonResponse(
@@ -226,15 +244,31 @@ def quick_add_designation(request):
         try:
             data = json.loads(request.body)
             name = data.get("name")
+            company_id = data.get("company_id")
 
             # Get Company
             company = None
-            if hasattr(request.user, "company") and request.user.company:
-                company = request.user.company
-            elif (
-                request.user.employee_profile and request.user.employee_profile.company
-            ):
-                company = request.user.employee_profile.company
+            
+            if company_id:
+                from .models import Company
+                try:
+                    target_company = Company.objects.get(id=company_id)
+                    if request.user.is_superuser:
+                         company = target_company
+                    elif hasattr(request.user, "company") and request.user.company == target_company:
+                         company = target_company
+                    elif request.user.employee_profile and request.user.employee_profile.company == target_company:
+                         company = target_company
+                except Company.DoesNotExist:
+                    pass
+
+            if not company:
+                if hasattr(request.user, "company") and request.user.company:
+                    company = request.user.company
+                elif (
+                    request.user.employee_profile and request.user.employee_profile.company
+                ):
+                    company = request.user.employee_profile.company
 
             if not company:
                 return JsonResponse(
@@ -285,14 +319,31 @@ def quick_add_shift(request):
                     status=400,
                 )
 
+            company_id = data.get("company_id")
+
             # Get Company
             company = None
-            if hasattr(request.user, "company") and request.user.company:
-                company = request.user.company
-            elif (
-                request.user.employee_profile and request.user.employee_profile.company
-            ):
-                company = request.user.employee_profile.company
+            
+            if company_id:
+                from .models import Company
+                try:
+                    target_company = Company.objects.get(id=company_id)
+                    if request.user.is_superuser:
+                         company = target_company
+                    elif hasattr(request.user, "company") and request.user.company == target_company:
+                         company = target_company
+                    elif request.user.employee_profile and request.user.employee_profile.company == target_company:
+                         company = target_company
+                except Company.DoesNotExist:
+                    pass
+
+            if not company:
+                if hasattr(request.user, "company") and request.user.company:
+                    company = request.user.company
+                elif (
+                    request.user.employee_profile and request.user.employee_profile.company
+                ):
+                    company = request.user.employee_profile.company
 
             if not company:
                 return JsonResponse(
@@ -300,6 +351,22 @@ def quick_add_shift(request):
                 )
 
             from .models import ShiftSchedule
+
+            # Check for existing shift with same name (case-insensitive)
+            existing_shift = ShiftSchedule.objects.filter(
+                company=company, name__iexact=name
+            ).first()
+
+            if existing_shift:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": f"Shift '{existing_shift.name}' already exists",
+                        "id": existing_shift.id,
+                        "name": str(existing_shift),
+                        "display": str(existing_shift),
+                    }
+                )
 
             # Create Shift
             shift = ShiftSchedule.objects.create(

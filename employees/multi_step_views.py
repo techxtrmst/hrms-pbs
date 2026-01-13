@@ -116,7 +116,9 @@ def add_employee_step2(request):
 
             # Save job details to session
             request.session["employee_job_data"] = {
+                "designation_id": desig_obj.id if desig_obj else None,
                 "designation": desig_obj.name if desig_obj else "",
+                "department_id": dept_obj.id if dept_obj else None,
                 "department": dept_obj.name if dept_obj else "",
                 "manager_id": form.cleaned_data.get("manager_selection").user.id
                 if form.cleaned_data.get("manager_selection")
@@ -140,7 +142,9 @@ def add_employee_step2(request):
         )
 
     return render(
-        request, "employees/add_employee_step2.html", {"form": form, "step": 2}
+        request,
+        "employees/add_employee_step2.html",
+        {"form": form, "step": 2, "company_id": company_id},
     )
 
 
