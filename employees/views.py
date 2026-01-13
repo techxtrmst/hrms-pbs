@@ -379,6 +379,7 @@ def clock_in(request):
             data = json.loads(request.body)
             lat = data.get("latitude")
             lng = data.get("longitude")
+            accuracy = data.get("accuracy")
             clock_in_type = data.get("type", "office")  # 'office' or 'remote'
 
             # Ensure employee profile exists
@@ -508,6 +509,7 @@ def clock_in(request):
                         attendance_session=session,
                         latitude=lat,
                         longitude=lng,
+                        accuracy=accuracy,
                         log_type='CLOCK_IN',
                         is_valid=True,
                     )
@@ -658,6 +660,7 @@ def clock_out(request):
             data = json.loads(request.body)
             lat = data.get("latitude")
             lng = data.get("longitude")
+            accuracy = data.get("accuracy")
             force_clockout = data.get("force_clockout", False)
 
             if not hasattr(request.user, "employee_profile"):
@@ -741,6 +744,7 @@ def clock_out(request):
                     attendance_session=current_session,
                     latitude=lat,
                     longitude=lng,
+                    accuracy=accuracy,
                     log_type='CLOCK_OUT',
                     is_valid=True,
                 )
@@ -2871,6 +2875,14 @@ def submit_hourly_location(request):
                 status=400
             )
         
+        # Check for 9-hour limit
+        time_since_clockin = timezone.now() - active_session.clock_in
+        if time_since_clockin >= timedelta(hours=9):
+             return JsonResponse({
+                "status": "tracking_stopped", 
+                "message": "Shift limit reached (9 hours)"
+            })
+        
         # Create location log
         location_log = LocationLog.objects.create(
             employee=employee,
@@ -2941,8 +2953,16 @@ def get_location_tracking_status(request):
         next_update_time = None
         
         if not last_log:
-            # No logs yet, check if it's been 1 hour since clock-in
+            # Check if shift duration (9 hours) exceeded
             time_since_clockin = current_time - active_session.clock_in
+            if time_since_clockin >= timedelta(hours=9):
+                return JsonResponse({
+                    "status": "success",
+                    "needs_location": False,
+                    "tracking_stopped": True,
+                    "message": "Shift limit reached"
+                })
+
             if time_since_clockin >= timedelta(hours=1):
                 needs_location = True
         else:
