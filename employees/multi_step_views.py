@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django.contrib import messages
 from .multi_step_forms import PersonalInfoForm, JobDetailsForm, FinanceDetailsForm
-from .models import Employee, LeaveBalance
+from .models import Employee
 
 User = get_user_model()
 
@@ -180,15 +180,35 @@ def add_employee_step3(request):
 
             company = Company.objects.get(id=personal_data["company_id"])
 
-            user = User.objects.create_user(
-                username=personal_data["email"],
-                email=personal_data["email"],
-                password=password,
-                first_name=first_name,
-                last_name=personal_data["last_name"],
-                role=personal_data["role"],
-                company=company,
-            )
+            # Check if user already exists
+            try:
+                user = User.objects.get(email=personal_data["email"])
+                # Check if this user has an employee profile
+                if hasattr(user, "employee_profile"):
+                    messages.error(
+                        request,
+                        f"Employee with email {personal_data['email']} already exists.",
+                    )
+                    return redirect("add_employee_step1")
+                else:
+                    # User exists but no employee profile - reuse this user (zombie record case)
+                    user.username = personal_data["email"]
+                    user.set_password(password)
+                    user.first_name = first_name
+                    user.last_name = personal_data["last_name"]
+                    user.role = personal_data["role"]
+                    user.company = company
+                    user.save()
+            except User.DoesNotExist:
+                user = User.objects.create_user(
+                    username=personal_data["email"],
+                    email=personal_data["email"],
+                    password=password,
+                    first_name=first_name,
+                    last_name=personal_data["last_name"],
+                    role=personal_data["role"],
+                    company=company,
+                )
 
             # Create Employee
             from datetime import datetime
@@ -227,8 +247,7 @@ def add_employee_step3(request):
                 pf_enabled=finance_data.get("pf_enabled", False),
             )
 
-            # Create Leave Balance
-            LeaveBalance.objects.create(employee=employee)
+
 
             # Create Emergency Contacts
             emergency_contacts = request.session.get("employee_emergency_contacts", [])

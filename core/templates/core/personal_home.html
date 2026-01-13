@@ -1516,9 +1516,9 @@
         let bestPosition = null;
         let watchId = null;
 
-        const TARGET_ACCURACY = 2500;     // Ideal: 2.5km (Accepts standard WiFi/IP location immediately)
-        const ACCEPTABLE_ACCURACY = 5000; // Limit: 5000 meters
-        const MAX_WAIT_TIME = 3000;       // Fast timeout: 3s
+        const TARGET_ACCURACY = 100;      // Keka-like: Aim for high precision (100m)
+        const ACCEPTABLE_ACCURACY = 3000; // Fallback: 3km (Desktops)
+        const MAX_WAIT_TIME = 10000;       // increased timeout to 10s to allow slower GPS lock
 
         // Clean up function
         const stopLocationWatch = () => {
@@ -1820,88 +1820,7 @@
     updateTimelinePosition(); // Run immediately
 
     // --- Location Tracking Service ---
-    {% if attendance.clock_in and not attendance.clock_out %}
-    (function () {
-        let trackingInterval;
-        const TRACKING_INTERVAL_MS = 3600000; // 1 hour
 
-        function sendLocationUpdate() {
-            if (!navigator.geolocation) {
-                console.error("Geolocation is not supported by your browser. Attendance tracking may not work correctly.");
-                return;
-            }
-
-            navigator.geolocation.getCurrentPosition((pos) => {
-                // strict accuracy check
-                if (pos.coords.accuracy > 500) {
-                    console.warn("Location accuracy too low (" + pos.coords.accuracy + "m). Skipping update to prevent fake location.");
-                    return;
-                }
-
-                const data = {
-                    latitude: pos.coords.latitude,
-                    longitude: pos.coords.longitude,
-                    accuracy: pos.coords.accuracy
-                };
-
-                fetch("{% url 'api_update_location' %}", {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.getElementById('page-context')?.dataset.csrf || '' },
-                    body: JSON.stringify(data)
-                })
-                    .then(r => r.json())
-                    .then(res => {
-                        if (res.status === 'shift_completed') {
-                            console.log(res.message);
-                            if (trackingInterval) clearInterval(trackingInterval);
-                            location.reload();
-                        } else if (res.status === 'tracking_stopped' || res.location_tracking_active === false) {
-                            console.log("Tracking stopped by server rule.");
-                            if (trackingInterval) clearInterval(trackingInterval);
-                        }
-                    })
-                    .catch(err => console.error("Tracking sync error:", err));
-
-            }, (err) => {
-                console.warn("Location access failed:", err.message);
-                // Log error if persistent issue
-                if (err.code === 1) { // PERMISSION_DENIED
-                    console.error("Location permission revoked. Attendance tracking requires location access.");
-                }
-            }, {
-                enableHighAccuracy: true,
-                timeout: 30000,
-                maximumAge: 0
-            });
-        }
-
-        console.log(`Tracking Service: Started. Updates every ${Math.round(TRACKING_INTERVAL_MS / 1000 / 60)} minutes.`);
-
-        // Calculate time until next hourly mark relative to clock-in
-        const ctxEl = document.getElementById('page-context');
-        const clockInTimeStr = ctxEl?.dataset.clockIn || "";
-        // Ensure robust parsing
-        const clockInTime = new Date(clockInTimeStr.replace(' ', 'T'));
-        const now = new Date();
-
-        let delay = TRACKING_INTERVAL_MS; // Default 1 hour
-        if (!isNaN(clockInTime.getTime())) {
-            const elapsed = now - clockInTime;
-            if (elapsed > 0) {
-                delay = TRACKING_INTERVAL_MS - (elapsed % TRACKING_INTERVAL_MS);
-            }
-        }
-
-        console.log(`Next update scheduled in ${Math.round(delay / 1000 / 60)} minutes.`);
-
-        // Schedule first run, then interval
-        setTimeout(() => {
-            sendLocationUpdate();
-            trackingInterval = setInterval(sendLocationUpdate, TRACKING_INTERVAL_MS);
-        }, delay);
-
-    })();
-    {% endif %}
     // 3D Tilt Effect for Shift Card
     const card = document.querySelector('.shift-card');
     if (card) {
@@ -1945,8 +1864,8 @@
         // Check location tracking status immediately
         checkLocationTrackingStatus();
 
-        // Set up interval to check every 5 minutes
-        locationTrackingInterval = setInterval(checkLocationTrackingStatus, 5 * 60 * 1000);
+        // Set up interval to check every 1 minute (to catch hourly marks precisely)
+        locationTrackingInterval = setInterval(checkLocationTrackingStatus, 60000); // 1 minute
     }
 
     function checkLocationTrackingStatus() {
@@ -1960,6 +1879,12 @@
             .then(data => {
                 if (data.status === 'success' && data.needs_location) {
                     requestLocationUpdate();
+                } else if (data.tracking_stopped) {
+                    // Server says stop (9 hours done)
+                    console.log("Tracking stopped by server: " + data.message);
+                    if (locationTrackingInterval) {
+                        clearInterval(locationTrackingInterval);
+                    }
                 }
             })
             .catch(error => {
@@ -2013,6 +1938,10 @@
                 if (data.status === 'success') {
                     console.log('Hourly location updated successfully');
                     hideLocationUpdateNotification();
+                } else if (data.status === 'tracking_stopped') {
+                    console.log("Tracking stopped during submission: " + data.message);
+                    hideLocationUpdateNotification();
+                    if (locationTrackingInterval) clearInterval(locationTrackingInterval);
                 } else {
                     console.log('Location update failed:', data.message);
                 }
