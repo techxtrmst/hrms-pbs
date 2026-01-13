@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 # Path to .env file
-base_dir = Path(r"c:\Users\sathi\Downloads\hrms-pbs-main")
+base_dir = Path(__file__).resolve().parent
 env_path = base_dir / ".env"
 
 # Existing config to preserve
