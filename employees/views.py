@@ -26,6 +26,7 @@ from django.utils import timezone
 import json
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from timezonefinder import TimezoneFinder
 from loguru import logger
 from core.error_handling import (
@@ -251,14 +252,92 @@ class EmployeeDeleteView(LoginRequiredMixin, CompanyAdminRequiredMixin, DeleteVi
     def get_queryset(self):
         return Employee.objects.filter(company=self.request.user.company)
 
+    @transaction.atomic
     def form_valid(self, form):
+        """
+        Perform complete permanent deletion of employee and all related data.
+        This mimics Keka's permanent delete functionality.
+        """
         from django.shortcuts import redirect
+        from django.contrib import messages
 
         employee = self.get_object()
-        if employee.user:
-            employee.user.delete()
-        else:
-            employee.delete()
+        employee_name = employee.user.get_full_name() if employee.user else "Employee"
+        
+        try:
+            # Log the deletion for audit purposes
+            logger.info(
+                f"Permanent deletion initiated for employee: {employee_name} (ID: {employee.id})",
+                user=self.request.user.email
+            )
+
+            # Delete all related data in the correct order to avoid foreign key constraints
+            
+            # 1. Delete Attendance Sessions and Location Logs
+            if hasattr(employee, 'attendances'):
+                for attendance in employee.attendances.all():
+                    # Delete session location logs
+                    if hasattr(attendance, 'sessions'):
+                        for session in attendance.sessions.all():
+                            # Delete session-specific location logs
+                            if hasattr(session, 'location_logs'):
+                                session.location_logs.all().delete()
+                            session.delete()
+                    attendance.delete()
+
+            # 2. Delete Location Logs (general)
+            if hasattr(employee, 'location_logs'):
+                employee.location_logs.all().delete()
+
+            # 3. Delete Leave Requests
+            if hasattr(employee, 'leave_requests'):
+                employee.leave_requests.all().delete()
+
+            # 4. Delete Leave Balances
+            if hasattr(employee, 'leave_balances'):
+                employee.leave_balances.all().delete()
+
+            # 5. Delete Regularization Requests
+            if hasattr(employee, 'regularization_requests'):
+                employee.regularization_requests.all().delete()
+
+            # 6. Delete Emergency Contacts
+            if hasattr(employee, 'emergency_contacts'):
+                employee.emergency_contacts.all().delete()
+
+            # 7. Delete ID Proofs
+            if hasattr(employee, 'id_proofs'):
+                try:
+                    employee.id_proofs.delete()
+                except Exception as e:
+                    logger.warning(f"Error deleting ID proofs: {e}")
+
+            # 8. Delete the User account (this will cascade delete the Employee due to CASCADE)
+            user = employee.user
+            if user:
+                user_email = user.email
+                user.delete()  # This will also delete the employee due to CASCADE
+                logger.info(f"Successfully deleted user account: {user_email}")
+            else:
+                # If no user exists, delete employee directly
+                employee.delete()
+                logger.info(f"Successfully deleted employee: {employee_name}")
+
+            # Success message
+            messages.success(
+                self.request,
+                f"Employee '{employee_name}' and all associated data have been permanently deleted."
+            )
+            
+            logger.info(f"Permanent deletion completed for: {employee_name}")
+
+        except Exception as e:
+            logger.error(f"Error during permanent deletion: {str(e)}", exc_info=True)
+            messages.error(
+                self.request,
+                f"An error occurred during deletion: {str(e)}"
+            )
+
         return redirect(self.success_url)
 
 
@@ -344,9 +423,8 @@ def clock_in(request):
             )
 
             # Check if employee can clock in
-            # Check if employee can clock in
-            # FORCE OVERRIDE: Allow up to 3 sessions/day regardless of model setting (user request for consistency)
-            MAX_ALLOWED_SESSIONS = 3 
+            # FORCE OVERRIDE: Allow up to 3 sessions/day regardless of model setting (user request)
+            MAX_ALLOWED_SESSIONS = 3
             
             if not attendance.can_clock_in():
                 if attendance.is_currently_clocked_in:

@@ -150,34 +150,42 @@
         background: white;
         border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        overflow: visible; /* allow child scroll wrapper to show scrollbar */
-        padding-bottom: 24px; /* minimal bottom spacing to remove extra empty gap */
+        overflow: visible;
+        /* allow child scroll wrapper to show scrollbar */
+        padding-bottom: 24px;
+        /* minimal bottom spacing to remove extra empty gap */
     }
 
     /* Scroll wrapper for wide tables */
     .employees-table-scroll {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        padding-bottom: 18px; /* minimal space so scrollbar is visible */
-        padding-right: 24px; /* reduce right padding to avoid extra gap */
+        padding-bottom: 18px;
+        /* minimal space so scrollbar is visible */
+        padding-right: 24px;
+        /* reduce right padding to avoid extra gap */
         position: relative;
-        z-index: 10001; /* float above chatbot */
+        z-index: 10001;
+        /* float above chatbot */
     }
 
     .employees-table-scroll::-webkit-scrollbar {
         height: 12px;
     }
+
     .employees-table-scroll::-webkit-scrollbar-thumb {
-        background: rgba(0,0,0,0.12);
+        background: rgba(0, 0, 0, 0.12);
         border-radius: 6px;
     }
 
     .employees-table {
-        min-width: 1000px; /* allow horizontal scroll on small screens */
+        min-width: 1000px;
+        /* allow horizontal scroll on small screens */
     }
 
     .employees-table-scroll.table-active {
-        z-index: 30001; /* bring above chatbot while active */
+        z-index: 30001;
+        /* bring above chatbot while active */
         position: relative;
     }
 
@@ -185,8 +193,10 @@
         .employees-table {
             min-width: 700px;
         }
+
         .employees-table-scroll {
-            padding-bottom: 72px; /* modest extra space on small screens */
+            padding-bottom: 72px;
+            /* modest extra space on small screens */
             padding-right: 24px;
             z-index: 10001;
         }
@@ -456,30 +466,33 @@
     .exit-modal {
         display: none;
         position: fixed;
-        z-index: 9999;
+        z-index: 99999;
         left: 0;
         top: 0;
         width: 100%;
         height: 100%;
-        background: rgba(15, 23, 42, 0.6);
+        background: rgba(15, 23, 42, 0.75);
         /* Darker, premium backdrop */
-        backdrop-filter: blur(4px);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         justify-content: center;
         align-items: center;
         padding: 1rem;
+        overflow-y: auto;
     }
 
     .exit-modal-content {
         background: #ffffff;
-        border-radius: 12px;
+        border-radius: 16px;
         width: 100%;
-        max-width: 600px;
-        max-height: 90vh;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        max-width: 650px;
+        max-height: 85vh;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
         display: flex;
         flex-direction: column;
         animation: slideUp 0.3s ease-out;
         position: relative;
+        margin: auto;
     }
 
     @keyframes slideUp {
@@ -499,10 +512,11 @@
         color: #0f172a;
         padding: 1.5rem 2rem;
         border-bottom: 1px solid #e2e8f0;
-        border-radius: 12px 12px 0 0;
+        border-radius: 16px 16px 0 0;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-shrink: 0;
     }
 
     .exit-modal-header h2 {
@@ -520,24 +534,27 @@
         cursor: pointer;
         width: 32px;
         height: 32px;
-        border-radius: 6px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 0.2s;
+        flex-shrink: 0;
     }
 
     .close-modal:hover {
-        background: rgba(255, 255, 255, 0.3);
+        background: #f1f5f9;
+        color: #0f172a;
         transform: rotate(90deg);
     }
 
     .exit-modal-body {
         padding: 2rem;
         overflow-y: auto;
-        flex: 1;
+        flex: 1 1 auto;
         background: #f8fafc;
         /* Subtle grey background for body */
+        min-height: 0;
     }
 
     .exit-type-buttons {
@@ -660,12 +677,13 @@
     }
 
     .exit-modal-footer {
-        padding: 1rem 2rem;
+        padding: 1.25rem 2rem;
         border-top: 1px solid #e2e8f0;
         background: #ffffff;
-        border-radius: 0 0 12px 12px;
+        border-radius: 0 0 16px 16px;
         display: flex;
         justify-content: flex-end;
+        flex-shrink: 0;
     }
 
     .exit-actions-group {
@@ -787,94 +805,94 @@
     <!-- Employees Table -->
     <div class="employees-table-container">
         <div class="table-responsive employees-table-scroll">
-        <table class="employees-table" id="employeesTable">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Designation</th>
-                    <th>Department</th>
-                    <th>Manager</th>
-                    {% if user.role == 'COMPANY_ADMIN' %}
-                    <th>Actions</th>
-                    {% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for employee in employees %}
-                <tr class="{% if not employee.is_active %}employee-row-inactive{% endif %}">
-                    <td>
-                        <span class="employee-number">{{ forloop.counter }}</span>
-                    </td>
-                    <td>
-                        <div class="employee-name">
-                            <div class="employee-avatar">
-                                {{ employee.user.first_name|first|upper }}{{ employee.user.last_name|first|upper }}
-                            </div>
-                            <div>
-                                <div>{{ employee.user.get_full_name }}
-                                    {% if not employee.is_active %}
-                                    <span class="status-badge-inactive">{{ employee.get_employment_status_display
-                                        }}</span>
-                                    {% endif %}
+            <table class="employees-table" id="employeesTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Designation</th>
+                        <th>Department</th>
+                        <th>Manager</th>
+                        {% if user.role == 'COMPANY_ADMIN' %}
+                        <th>Actions</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for employee in employees %}
+                    <tr class="{% if not employee.is_active %}employee-row-inactive{% endif %}">
+                        <td>
+                            <span class="employee-number">{{ forloop.counter }}</span>
+                        </td>
+                        <td>
+                            <div class="employee-name">
+                                <div class="employee-avatar">
+                                    {{ employee.user.first_name|first|upper }}{{ employee.user.last_name|first|upper }}
                                 </div>
-                                <div class="employee-email">{{ employee.user.email }}</div>
+                                <div>
+                                    <div>{{ employee.user.get_full_name }}
+                                        {% if not employee.is_active %}
+                                        <span class="status-badge-inactive">{{ employee.get_employment_status_display
+                                            }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="employee-email">{{ employee.user.email }}</div>
+                                </div>
                             </div>
-                        </div>
-                    </td>
-                    <td>{{ employee.user.email }}</td>
-                    <td>
-                        <span class="badge-designation">{{ employee.designation|default:"-" }}</span>
-                    </td>
-                    <td>
-                        <span class="badge-department">{{ employee.department|default:"-" }}</span>
-                    </td>
-                    <td>{{ employee.manager.get_full_name|default:"-" }}</td>
-                    {% if user.role == 'COMPANY_ADMIN' %}
-                    <td>
-                        <div class="action-buttons">
-                            <a href="{% url 'employee_detail' employee.pk %}" class="btn-action btn-edit"
-                                style="background:#e0e7ff; color:#4338ca; border-color:#c7d2fe;">
-                                <i class="fas fa-eye"></i> View
-                            </a>
-                            <a href="{% url 'employee_edit' employee.pk %}" class="btn-action btn-edit">
-                                <i class="fas fa-edit"></i> Edit
-                            </a>
-                            <a href="{% url 'resend_welcome_email' employee.pk %}" class="btn-action"
-                                style="background:#f3e8ff; color:#9333ea; border: 1px solid #d8b4fe;"
-                                title="Resend Activation Link">
-                                <i class="fas fa-paper-plane"></i> Resend
-                            </a>
-                            {% if employee.is_active %}
-                            <button class="btn-action"
-                                style="background:#fef3c7; color:#d97706; border:1px solid #fde68a;"
-                                onclick="openExitModal({{ employee.pk }}, '{{ employee.user.get_full_name|escapejs }}')">
-                                <i class="fas fa-ellipsis-v"></i> Exit
-                            </button>
-                            {% else %}
-                            <a href="{% url 'employee_delete' employee.pk %}" class="btn-action btn-delete"
-                                onclick="return confirm('Are you sure you want to delete this employee?')">
-                                <i class="fas fa-trash"></i> Delete
-                            </a>
-                            {% endif %}
-                        </div>
-                    </td>
-                    {% endif %}
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="7">
-                        <div class="empty-state">
-                            <i class="fas fa-users-slash"></i>
-                            <h3>No employees found</h3>
-                            <p>Start by adding your first employee to the system.</p>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        </td>
+                        <td>{{ employee.user.email }}</td>
+                        <td>
+                            <span class="badge-designation">{{ employee.designation|default:"-" }}</span>
+                        </td>
+                        <td>
+                            <span class="badge-department">{{ employee.department|default:"-" }}</span>
+                        </td>
+                        <td>{{ employee.manager.get_full_name|default:"-" }}</td>
+                        {% if user.role == 'COMPANY_ADMIN' %}
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{% url 'employee_detail' employee.pk %}" class="btn-action btn-edit"
+                                    style="background:#e0e7ff; color:#4338ca; border-color:#c7d2fe;">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                <a href="{% url 'employee_edit' employee.pk %}" class="btn-action btn-edit">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <a href="{% url 'resend_welcome_email' employee.pk %}" class="btn-action"
+                                    style="background:#f3e8ff; color:#9333ea; border: 1px solid #d8b4fe;"
+                                    title="Resend Activation Link">
+                                    <i class="fas fa-paper-plane"></i> Resend
+                                </a>
+                                {% if employee.is_active %}
+                                <button class="btn-action"
+                                    style="background:#fef3c7; color:#d97706; border:1px solid #fde68a;"
+                                    onclick="openExitModal({{ employee.pk }}, '{{ employee.user.get_full_name|escapejs }}')">
+                                    <i class="fas fa-ellipsis-v"></i> Exit
+                                </button>
+                                {% else %}
+                                <a href="{% url 'employee_delete' employee.pk %}" class="btn-action btn-delete"
+                                    onclick="return confirm('Are you sure you want to delete this employee?')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <i class="fas fa-users-slash"></i>
+                                <h3>No employees found</h3>
+                                <p>Start by adding your first employee to the system.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -945,10 +963,9 @@
     }
 
     function confirmDelete() {
-        if (confirm(`Are you sure you want to PERMANENTLY DELETE ${currentEmployeeName}?\n\nThis action cannot be undone and will remove all employee data from the system.`)) {
-            // Redirect to delete URL
-            window.location.href = `/employees/${currentEmployeeId}/delete/`;
-        }
+        // Navigate directly to the confirmation page
+        // The confirmation page has comprehensive warnings and proper confirmation
+        window.location.href = `/employees/${currentEmployeeId}/delete/`;
     }
 
     function selectExitType(type) {
@@ -1053,41 +1070,41 @@
         }
     }
 
-    // Temporarily disable chatbot while interacting with table so action buttons are reachable
-    (function () {
-        const tableWrap = document.querySelector('.employees-table-scroll');
-        const chatbotIcon = document.getElementById('chatbotIcon');
-        const chatbotPanel = document.getElementById('chatbotPanel');
+        // Temporarily disable chatbot while interacting with table so action buttons are reachable
+        (function () {
+            const tableWrap = document.querySelector('.employees-table-scroll');
+            const chatbotIcon = document.getElementById('chatbotIcon');
+            const chatbotPanel = document.getElementById('chatbotPanel');
 
-        if (!tableWrap) return;
+            if (!tableWrap) return;
 
-        const activate = () => {
-            tableWrap.classList.add('table-active');
-            if (chatbotIcon) chatbotIcon.style.pointerEvents = 'none';
-            if (chatbotPanel) chatbotPanel.style.pointerEvents = 'none';
-        };
+            const activate = () => {
+                tableWrap.classList.add('table-active');
+                if (chatbotIcon) chatbotIcon.style.pointerEvents = 'none';
+                if (chatbotPanel) chatbotPanel.style.pointerEvents = 'none';
+            };
 
-        const deactivate = () => {
-            tableWrap.classList.remove('table-active');
-            if (chatbotIcon) chatbotIcon.style.pointerEvents = '';
-            if (chatbotPanel) chatbotPanel.style.pointerEvents = '';
-        };
+            const deactivate = () => {
+                tableWrap.classList.remove('table-active');
+                if (chatbotIcon) chatbotIcon.style.pointerEvents = '';
+                if (chatbotPanel) chatbotPanel.style.pointerEvents = '';
+            };
 
-        tableWrap.addEventListener('mouseenter', activate);
-        tableWrap.addEventListener('mouseleave', deactivate);
-        tableWrap.addEventListener('touchstart', activate, { passive: true });
-        document.addEventListener('touchend', deactivate);
+            tableWrap.addEventListener('mouseenter', activate);
+            tableWrap.addEventListener('mouseleave', deactivate);
+            tableWrap.addEventListener('touchstart', activate, { passive: true });
+            document.addEventListener('touchend', deactivate);
 
-        // While user scrolls horizontally, keep it active
-        let scrollTimer;
-        tableWrap.addEventListener('scroll', function () {
-            activate();
-            window.clearTimeout(scrollTimer);
-            scrollTimer = setTimeout(function () {
-                deactivate();
-            }, 600);
-        });
-    })();
+            // While user scrolls horizontally, keep it active
+            let scrollTimer;
+            tableWrap.addEventListener('scroll', function () {
+                activate();
+                window.clearTimeout(scrollTimer);
+                scrollTimer = setTimeout(function () {
+                    deactivate();
+                }, 600);
+            });
+        })();
 </script>
 
 <!-- Exit Initiative Modal -->

@@ -408,7 +408,10 @@
                     'Content-Type': 'application/json',
                     'X-CSRFToken': getCookie('csrftoken')
                 },
-                body: JSON.stringify({ name: name })
+                body: JSON.stringify({
+                    name: name,
+                    company_id: "{{ company_id }}"
+                })
             });
             const data = await response.json();
 
@@ -450,7 +453,10 @@
                     'Content-Type': 'application/json',
                     'X-CSRFToken': getCookie('csrftoken')
                 },
-                body: JSON.stringify({ name: name })
+                body: JSON.stringify({
+                    name: name,
+                    company_id: "{{ company_id }}"
+                })
             });
             const data = await response.json();
 
@@ -495,7 +501,8 @@
                 body: JSON.stringify({
                     name: name,
                     start_time: start,
-                    end_time: end
+                    end_time: end,
+                    company_id: "{{ company_id }}"
                 })
             });
             const data = await response.json();
@@ -514,6 +521,16 @@
                 document.getElementById('newShiftEnd').value = '';
             } else {
                 alert(data.message);
+                // If shift already exists, select it in the dropdown
+                if (data.id) {
+                    const select = document.getElementById('id_shift_schedule');
+                    select.value = data.id;
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addShiftModal'));
+                    modal.hide();
+                    document.getElementById('newShiftName').value = '';
+                    document.getElementById('newShiftStart').value = '';
+                    document.getElementById('newShiftEnd').value = '';
+                }
             }
         } catch (error) {
             console.error('Error:', error);
