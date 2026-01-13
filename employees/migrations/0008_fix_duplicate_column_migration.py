@@ -73,6 +73,24 @@ def check_and_add_columns_safely(apps, schema_editor):
             """)
             updated_count = cursor.rowcount
             print(f"✅ Updated {updated_count} records to max_daily_sessions=3")
+        
+        # Check if total_working_hours column exists
+        cursor.execute("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='employees_attendance' 
+            AND column_name='total_working_hours'
+        """)
+        
+        if not cursor.fetchone():
+            print("Adding total_working_hours column...")
+            cursor.execute("""
+                ALTER TABLE employees_attendance 
+                ADD COLUMN total_working_hours DECIMAL(5,2) DEFAULT 0.00 NOT NULL
+            """)
+            print("✅ Added total_working_hours column")
+        else:
+            print("✅ total_working_hours column already exists, skipping")
 
 
 def reverse_column_additions(apps, schema_editor):

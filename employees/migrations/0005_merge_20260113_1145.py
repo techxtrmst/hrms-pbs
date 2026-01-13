@@ -7,7 +7,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('employees', '0004_alter_locationlog_options_locationlog_accuracy_and_more'),
-        ('employees', '0004_attendance_total_working_hours'),
+        ('employees', '0003_add_missing_attendance_fields'),
     ]
 
     operations = [
