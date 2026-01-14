@@ -1269,33 +1269,35 @@
                     </div>
                 </div>
 
-                <!-- Announcements -->
+                <!-- Holidays -->
                 <div class="keka-card animate-enter delay-200">
                     <div class="card-header-clean">
                         <span class="card-title-text">
-                            <span class="card-icon-soft warning"><i class="fas fa-bullhorn"></i></span>
-                            Announcements
+                            <span class="card-icon-soft warning"><i class="fas fa-calendar-day"></i></span>
+                            Holidays This Month
                         </span>
                     </div>
                     <div class="card-body-clean p-0">
-                        {% if announcements %}
+                        {% if upcoming_holidays %}
                         <div class="list-group list-group-flush">
-                            {% for ann in announcements %}
+                            {% for holiday in upcoming_holidays %}
                             <div class="list-group-item border-0 p-3 bg-transparent">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill"
-                                        style="font-size: 0.65rem;">New</span>
-                                    <small class="text-muted" style="font-size: 0.7rem;">
-                                        {{ ann.created_at|date:"M d" }}
-                                    </small>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold text-dark small">{{ holiday.name }}</div>
+                                        <div class="text-muted" style="font-size: 0.7rem;">
+                                            {{ holiday.date|date:"M d, Y (l)" }}
+                                        </div>
+                                    </div>
+                                    <div class="text-warning">
+                                        <i class="fas fa-umbrella-beach"></i>
+                                    </div>
                                 </div>
-                                <div class="fw-bold text-dark small mb-1">{{ ann.title }}</div>
-                                <div class="text-muted small text-truncate">{{ ann.content }}</div>
                             </div>
                             {% endfor %}
                         </div>
                         {% else %}
-                        <div class="p-4 text-center text-muted small">No active announcements</div>
+                        <div class="p-4 text-center text-muted small">No holidays this month</div>
                         {% endif %}
                     </div>
                 </div>
@@ -1305,7 +1307,7 @@
                     <div class="card-header-clean">
                         <span class="card-title-text">
                             <span class="card-icon-soft danger"><i class="fas fa-birthday-cake"></i></span>
-                            Celebrations
+                            Celebrations This Month
                         </span>
                     </div>
                     <div class="card-body-clean">
@@ -1313,9 +1315,11 @@
                         {% for emp in birthdays %}
                         <div class="celebration-item">
                             <div class="celebration-avatar">{{ emp.user.first_name|first }}</div>
-                            <div class="lh-1">
+                            <div class="lh-1 flex-grow-1">
                                 <div class="fw-bold text-dark small">{{ emp.user.get_full_name }}</div>
-                                <div class="text-muted" style="font-size: 0.7rem;">Birthday</div>
+                                <div class="text-muted" style="font-size: 0.7rem;">
+                                    Birthday - {{ emp.dob|date:"M d" }}
+                                </div>
                             </div>
                             <div class="celebration-icon"><i class="fas fa-gift"></i></div>
                         </div>
@@ -1326,15 +1330,17 @@
                             <div class="celebration-avatar bg-warning bg-opacity-25 text-warning">
                                 {{ emp.user.first_name|first }}
                             </div>
-                            <div class="lh-1">
+                            <div class="lh-1 flex-grow-1">
                                 <div class="fw-bold text-dark small">{{ emp.user.get_full_name }}</div>
-                                <div class="text-muted" style="font-size: 0.7rem;">Anniversary</div>
+                                <div class="text-muted" style="font-size: 0.7rem;">
+                                    Work Anniversary - {{ emp.date_of_joining|date:"M d" }}
+                                </div>
                             </div>
                             <div class="celebration-icon text-warning"><i class="fas fa-medal"></i></div>
                         </div>
                         {% endfor %}
                         {% else %}
-                        <div class="text-center text-muted small py-2">No celebrations today.</div>
+                        <div class="text-center text-muted small py-2">No celebrations this month</div>
                         {% endif %}
                     </div>
                 </div>
