@@ -20,6 +20,7 @@ env = environ.Env(
     CORS_ALLOW_ALL_ORIGINS=(bool, True),
     EMAIL_USE_TLS=(bool, True),
     EMAIL_USE_SSL=(bool, False),
+    POSTHOG_ENABLED=(bool, True),
 )
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -65,6 +66,8 @@ INSTALLED_APPS = [
     "core.apps.CoreConfig",  # Changed to use AppConfig for signal handling
     "superadmin",
     "ai_assistant",  # AI-powered features
+    "handbooks",  # Employee handbooks with location-based access
+    "policies",  # Company Policies
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -81,6 +84,8 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "core.middleware.CompanyIsolationMiddleware",
+    "core.middleware.LoggingMiddleware",  # Loguru request logging
+    "hrms_core.posthog_config.PostHogMiddleware",  # PostHog error tracking
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -201,6 +206,20 @@ EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="HR <noreply@example.com>")
 SERVER_EMAIL = env("SERVER_EMAIL", default="")
+
+# PostHog Configuration for Error Tracking and Analytics
+POSTHOG_API_KEY = env("POSTHOG_API_KEY", default="")
+POSTHOG_HOST = env("POSTHOG_HOST", default="https://us.i.posthog.com")
+POSTHOG_ENABLED = env("POSTHOG_ENABLED")
+
+# Logging Configuration
+LOG_LEVEL = env("LOG_LEVEL", default="DEBUG" if DEBUG else "INFO")
+LOG_DIR = env("LOG_DIR", default=str(BASE_DIR / "_logs"))
+
+# Initialize Loguru logging (only once)
+from hrms_core.logging_config import initialize_logging, setup_django_logging
+initialize_logging()
+setup_django_logging()
 
 # reload
 # reload2

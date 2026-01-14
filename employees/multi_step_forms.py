@@ -156,9 +156,15 @@ class JobDetailsForm(forms.ModelForm):
 
         if self.company:
             # Filter managers by company
-            self.fields["manager_selection"].queryset = Employee.objects.filter(
-                company=self.company
-            ).exclude(user__role=User.Role.EMPLOYEE)
+            if self.user and self.user.is_superuser:
+                # Superadmin sees all eligible managers from all companies
+                self.fields["manager_selection"].queryset = Employee.objects.exclude(
+                    user__role=User.Role.EMPLOYEE
+                ).select_related("company", "user")
+            else:
+                self.fields["manager_selection"].queryset = Employee.objects.filter(
+                    company=self.company
+                ).exclude(user__role=User.Role.EMPLOYEE)
 
             # Populate Dynamic Fields
             from companies.models import Designation, Department
@@ -173,7 +179,7 @@ class JobDetailsForm(forms.ModelForm):
                 company=self.company
             )
 
-            # Set initial if data comes from session as name/ID ??
+            # Set initial if data comes from session as name/ID
             # The form initialization with 'initial' dict handles basic mapping if keys match.
             # But if session has stored 'names' (strings) from previous runs/edits,
             # we might need to find the object.
@@ -182,8 +188,18 @@ class JobDetailsForm(forms.ModelForm):
 
             if "initial" in kwargs:
                 initial = kwargs["initial"]
-                # If designation is a string name, try to find object
-                if isinstance(initial.get("designation"), str):
+                
+                # Handle designation - can be ID or name
+                if initial.get("designation_id"):
+                    try:
+                        desig = Designation.objects.filter(
+                            company=self.company, id=initial["designation_id"]
+                        ).first()
+                        if desig:
+                            self.initial["designation"] = desig
+                    except:
+                        pass
+                elif isinstance(initial.get("designation"), str):
                     try:
                         desig = Designation.objects.filter(
                             company=self.company, name=initial["designation"]
@@ -193,7 +209,17 @@ class JobDetailsForm(forms.ModelForm):
                     except:
                         pass
 
-                if isinstance(initial.get("department"), str):
+                # Handle department - can be ID or name
+                if initial.get("department_id"):
+                    try:
+                        dept = Department.objects.filter(
+                            company=self.company, id=initial["department_id"]
+                        ).first()
+                        if dept:
+                            self.initial["department"] = dept
+                    except:
+                        pass
+                elif isinstance(initial.get("department"), str):
                     try:
                         dept = Department.objects.filter(
                             company=self.company, name=initial["department"]
@@ -203,8 +229,17 @@ class JobDetailsForm(forms.ModelForm):
                     except:
                         pass
 
-                # Shift: session might have stored name (string)
-                if isinstance(initial.get("shift_schedule"), str):
+                # Handle shift - can be ID or name
+                if initial.get("shift_schedule_id"):
+                    try:
+                        shift = ShiftSchedule.objects.filter(
+                            company=self.company, id=initial["shift_schedule_id"]
+                        ).first()
+                        if shift:
+                            self.initial["shift_schedule"] = shift
+                    except:
+                        pass
+                elif isinstance(initial.get("shift_schedule"), str):
                     try:
                         shift = ShiftSchedule.objects.filter(
                             company=self.company, name=initial["shift_schedule"]

@@ -403,10 +403,10 @@
             let label = '';
             let color = '#94a3b8'; // Default Gray
 
-            if (loc.type === 'start') {
+            if (loc.type === 'start' || loc.type === 'in') {
                 color = '#6366f1';
                 label = 'A';
-            } else if (loc.type === 'end') {
+            } else if (loc.type === 'end' || loc.type === 'out') {
                 color = '#ef4444';
                 label = 'R'; // As per screenshot 'R' for remote clock out? Or E
             } else {

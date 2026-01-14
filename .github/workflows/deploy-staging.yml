@@ -237,6 +237,11 @@ jobs:
           STATIC_ROOT=${{ secrets.STAGING_STATIC_ROOT }}
           MEDIA_URL=${{ secrets.STAGING_MEDIA_URL }}
           MEDIA_ROOT=${{ secrets.STAGING_MEDIA_ROOT }}
+          POSTHOG_API_KEY=${{ secrets.STAGING_POSTHOG_API_KEY }}
+          POSTHOG_HOST=${{ secrets.STAGING_POSTHOG_HOST }}
+          POSTHOG_ENABLED=${{ secrets.STAGING_POSTHOG_ENABLED }}
+          LOG_LEVEL=${{ secrets.STAGING_LOG_LEVEL }}
+          LOG_DIR=/app/_logs
           EOF
 
           # Create deployment archive

@@ -26,7 +26,21 @@ from django.utils import timezone
 import json
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from timezonefinder import TimezoneFinder
+from loguru import logger
+from core.error_handling import (
+    safe_get_employee_profile,
+    safe_queryset_filter,
+    safe_parse_location,
+    capture_exception,
+)
+from .location_tracking_views import (
+    submit_hourly_location,
+    get_location_tracking_status,
+    get_employee_location_history,
+)
+
 
 
 def detect_timezone_from_coordinates(lat, lng):
@@ -38,7 +52,7 @@ def detect_timezone_from_coordinates(lat, lng):
         timezone_name = tf.timezone_at(lat=float(lat), lng=float(lng))
         return timezone_name if timezone_name else "Asia/Kolkata"
     except Exception as e:
-        print(f"Error detecting timezone: {e}")
+        logger.warning("Error detecting timezone", lat=lat, lng=lng, error=str(e))
         return "Asia/Kolkata"
 
 
@@ -72,10 +86,7 @@ class EmployeeListView(LoginRequiredMixin, ListView):
             except Employee.DoesNotExist:
                 queryset = Employee.objects.none()
         else:
-            try:
-                queryset = Employee.objects.filter(user=user)
-            except:
-                queryset = Employee.objects.none()
+            queryset = safe_queryset_filter(Employee, user=user)
 
         # Apply employment status filter
         status_filter = self.request.GET.get("status", "active")
@@ -117,10 +128,7 @@ class EmployeeListView(LoginRequiredMixin, ListView):
             except Employee.DoesNotExist:
                 all_employees = Employee.objects.none()
         else:
-            try:
-                all_employees = Employee.objects.filter(user=user)
-            except:
-                all_employees = Employee.objects.none()
+            all_employees = safe_queryset_filter(Employee, user=user)
 
         context["active_count"] = all_employees.filter(is_active=True).count()
         context["inactive_count"] = all_employees.filter(is_active=False).count()
@@ -227,8 +235,8 @@ class EmployeeUpdateView(LoginRequiredMixin, CompanyAdminRequiredMixin, UpdateVi
                     EmergencyContact.objects.filter(
                         id=contact_id, employee=employee
                     ).delete()
-                except:
-                    pass
+                except Exception as e:
+                    logger.warning("Failed to delete emergency contact", contact_id=contact_id, error=str(e))
 
         # Delete contacts that were removed (not in processed list)
         # This handles contacts that were removed from the form
@@ -250,14 +258,92 @@ class EmployeeDeleteView(LoginRequiredMixin, CompanyAdminRequiredMixin, DeleteVi
     def get_queryset(self):
         return Employee.objects.filter(company=self.request.user.company)
 
+    @transaction.atomic
     def form_valid(self, form):
+        """
+        Perform complete permanent deletion of employee and all related data.
+        This mimics Keka's permanent delete functionality.
+        """
         from django.shortcuts import redirect
+        from django.contrib import messages
 
         employee = self.get_object()
-        if employee.user:
-            employee.user.delete()
-        else:
-            employee.delete()
+        employee_name = employee.user.get_full_name() if employee.user else "Employee"
+        
+        try:
+            # Log the deletion for audit purposes
+            logger.info(
+                f"Permanent deletion initiated for employee: {employee_name} (ID: {employee.id})",
+                user=self.request.user.email
+            )
+
+            # Delete all related data in the correct order to avoid foreign key constraints
+            
+            # 1. Delete Attendance Sessions and Location Logs
+            if hasattr(employee, 'attendances'):
+                for attendance in employee.attendances.all():
+                    # Delete session location logs
+                    if hasattr(attendance, 'sessions'):
+                        for session in attendance.sessions.all():
+                            # Delete session-specific location logs
+                            if hasattr(session, 'location_logs'):
+                                session.location_logs.all().delete()
+                            session.delete()
+                    attendance.delete()
+
+            # 2. Delete Location Logs (general)
+            if hasattr(employee, 'location_logs'):
+                employee.location_logs.all().delete()
+
+            # 3. Delete Leave Requests
+            if hasattr(employee, 'leave_requests'):
+                employee.leave_requests.all().delete()
+
+            # 4. Delete Leave Balances
+            if hasattr(employee, 'leave_balances'):
+                employee.leave_balances.all().delete()
+
+            # 5. Delete Regularization Requests
+            if hasattr(employee, 'regularization_requests'):
+                employee.regularization_requests.all().delete()
+
+            # 6. Delete Emergency Contacts
+            if hasattr(employee, 'emergency_contacts'):
+                employee.emergency_contacts.all().delete()
+
+            # 7. Delete ID Proofs
+            if hasattr(employee, 'id_proofs'):
+                try:
+                    employee.id_proofs.delete()
+                except Exception as e:
+                    logger.warning(f"Error deleting ID proofs: {e}")
+
+            # 8. Delete the User account (this will cascade delete the Employee due to CASCADE)
+            user = employee.user
+            if user:
+                user_email = user.email
+                user.delete()  # This will also delete the employee due to CASCADE
+                logger.info(f"Successfully deleted user account: {user_email}")
+            else:
+                # If no user exists, delete employee directly
+                employee.delete()
+                logger.info(f"Successfully deleted employee: {employee_name}")
+
+            # Success message
+            messages.success(
+                self.request,
+                f"Employee '{employee_name}' and all associated data have been permanently deleted."
+            )
+            
+            logger.info(f"Permanent deletion completed for: {employee_name}")
+
+        except Exception as e:
+            logger.error(f"Error during permanent deletion: {str(e)}", exc_info=True)
+            messages.error(
+                self.request,
+                f"An error occurred during deletion: {str(e)}"
+            )
+
         return redirect(self.success_url)
 
 
@@ -299,14 +385,35 @@ def clock_in(request):
             data = json.loads(request.body)
             lat = data.get("latitude")
             lng = data.get("longitude")
+            accuracy = data.get("accuracy")
             clock_in_type = data.get("type", "office")  # 'office' or 'remote'
 
             # Ensure employee profile exists
             if not hasattr(request.user, "employee_profile"):
-                return JsonResponse(
-                    {"status": "error", "message": "No employee profile found"},
-                    status=400,
-                )
+                # Auto-create for Company Admin to prevent setup deadlock
+                if request.user.role == User.Role.COMPANY_ADMIN and request.user.company:
+                    from .models import Employee
+                    try:
+                        Employee.objects.create(
+                            user=request.user,
+                            company=request.user.company,
+                            designation="Administrator",
+                            department="Management",
+                            badge_id=f"ADM{request.user.id}",
+                        )
+                        # Refresh user to get the profile
+                        request.user.refresh_from_db()
+                    except Exception as e:
+                        logger.error(f"Failed to auto-create profile in clock-in: {e}")
+                        return JsonResponse(
+                            {"status": "error", "message": "No employee profile found. Please contact support."},
+                            status=400,
+                        )
+                else:
+                    return JsonResponse(
+                        {"status": "error", "message": "No employee profile found. Please set up your profile first."},
+                        status=400,
+                    )
 
             employee = request.user.employee_profile
             today = timezone.localdate()
@@ -323,6 +430,9 @@ def clock_in(request):
             )
 
             # Check if employee can clock in
+            # FORCE OVERRIDE: Allow up to 3 sessions/day regardless of model setting (user request)
+            MAX_ALLOWED_SESSIONS = 3
+            
             if not attendance.can_clock_in():
                 if attendance.is_currently_clocked_in:
                     return JsonResponse(
@@ -332,13 +442,18 @@ def clock_in(request):
                             "already_clocked_in": True,
                         }
                     )
-                elif attendance.daily_sessions_count >= attendance.max_daily_sessions:
+                # Use loose check instead of strict model field check
+                elif attendance.daily_sessions_count >= MAX_ALLOWED_SESSIONS:
                     return JsonResponse(
                         {
                             "status": "error",
-                            "message": f"Maximum {attendance.max_daily_sessions} sessions per day reached.",
+                            "message": f"Maximum {MAX_ALLOWED_SESSIONS} sessions per day reached.",
                         }
                     )
+                    
+            # Ensure model reflects this override if needed
+            if attendance.max_daily_sessions < MAX_ALLOWED_SESSIONS:
+                attendance.max_daily_sessions = MAX_ALLOWED_SESSIONS
 
             # Get timezone from request data or detect from coordinates
             user_timezone = data.get("timezone")
@@ -400,6 +515,7 @@ def clock_in(request):
                         attendance_session=session,
                         latitude=lat,
                         longitude=lng,
+                        accuracy=accuracy,
                         log_type='CLOCK_IN',
                         is_valid=True,
                     )
@@ -473,6 +589,51 @@ def clock_in(request):
                     },
                     status=500
                 )
+                if len(session_types) > 1:
+                    attendance.status = "HYBRID"
+                else:
+                    attendance.status = "WFH" if session_type == "REMOTE" else "PRESENT"
+
+            # Start location tracking
+            attendance.location_tracking_active = True
+
+            # Calculate location tracking end time based on shift duration
+            shift = employee.assigned_shift
+            attendance.location_tracking_end_time = None
+            
+            if shift and shift.start_time and shift.end_time:
+                try:
+                    if hasattr(shift, "get_shift_duration_timedelta"):
+                        shift_duration = shift.get_shift_duration_timedelta()
+                    else:
+                        from datetime import datetime, timedelta
+
+                        today_date = timezone.localdate()
+                        s_start = datetime.combine(today_date, shift.start_time)
+                        s_end = datetime.combine(today_date, shift.end_time)
+                        if s_end < s_start:
+                            s_end += timedelta(days=1)
+                        shift_duration = s_end - s_start
+
+                    attendance.location_tracking_end_time = (
+                        session.clock_in + shift_duration
+                    )
+                except Exception as e:
+                    logger.warning(f"Error calculating shift duration for {employee}: {e}.Using default 9h.")
+
+            if not attendance.location_tracking_end_time:
+                # Default to 9 hours if no shift assigned or error occurred
+                from datetime import timedelta
+
+                attendance.location_tracking_end_time = session.clock_in + timedelta(
+                    hours=9
+                )
+
+            # Calculate late arrival for first session only
+            if session_number == 1:
+                attendance.calculate_late_arrival()
+
+            attendance.save()
 
             return JsonResponse(
                 {
@@ -505,6 +666,7 @@ def clock_out(request):
             data = json.loads(request.body)
             lat = data.get("latitude")
             lng = data.get("longitude")
+            accuracy = data.get("accuracy")
             force_clockout = data.get("force_clockout", False)
 
             if not hasattr(request.user, "employee_profile"):
@@ -554,7 +716,7 @@ def clock_out(request):
                         timezone.now() - current_session.clock_in
                     ).total_seconds() / 3600
                     expected_hours = (
-                        8.0  # Default 8 hours, can be customized based on shift
+                        9.0  # Default 9 hours shift
                     )
 
                     if worked_hours < expected_hours:
@@ -565,13 +727,13 @@ def clock_out(request):
                             {
                                 "status": "confirmation_required",
                                 "requires_confirmation": True,
-                                "message": f"Session {current_session.session_number} is not completed yet. Are you sure you want to clock out?",
-                                "worked_hours": round(worked_hours, 2),
-                                "expected_hours": round(expected_hours, 2),
+                                "message": f"Your {int(expected_hours)}-hour shift is not completed yet. Do you want to clock out?",
+                                "worked_hours": round(worked_hours, 1),
+                                "expected_hours": round(expected_hours, 1),
                                 "completion_percentage": round(
                                     completion_percentage, 1
                                 ),
-                                "remaining_hours": round(remaining_hours, 2),
+                                "remaining_hours": round(remaining_hours, 1),
                             }
                         )
 
@@ -588,6 +750,7 @@ def clock_out(request):
                     attendance_session=current_session,
                     latitude=lat,
                     longitude=lng,
+                    accuracy=accuracy,
                     log_type='CLOCK_OUT',
                     is_valid=True,
                 )
@@ -639,6 +802,37 @@ def clock_out(request):
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
     return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
+
+
+def perform_auto_clock_out(attendance, session, lat, lng):
+    """
+    Helper to perform system-triggered clock out when shift ends
+    """
+    try:
+        current_time = timezone.now()
+        
+        # Process clock-out
+        session.clock_out = current_time
+        session.clock_out_latitude = lat
+        session.clock_out_longitude = lng
+        session.is_active = False
+        session.save()
+
+        # Update attendance
+        attendance.is_currently_clocked_in = False
+        attendance.current_session_type = None
+        attendance.clock_out = current_time
+        attendance.location_out = f"{lat},{lng}"
+        attendance.location_tracking_active = False
+        
+        attendance.calculate_total_working_hours()
+        attendance.save()
+        
+        return True
+    except Exception as e:
+        logger.error(f"Auto clock-out failed: {str(e)}")
+        return False
+
 
 
 @csrf_exempt
@@ -711,20 +905,33 @@ def update_location(request):
                         }
                     )
 
-                # Check if tracking should be stopped based on session duration
+                # Check if shift is complete (9 hours)
                 if current_session.clock_in:
                     session_duration = timezone.now() - current_session.clock_in
-                    # Stop tracking after 10 hours for safety
-                    if session_duration.total_seconds() >= 10 * 3600:
-                        attendance.location_tracking_active = False
-                        attendance.save()
-                        return JsonResponse(
-                            {
-                                "status": "tracking_stopped",
-                                "message": "Location tracking stopped (10 hour limit reached)",
-                                "location_tracking_active": False,
-                            }
-                        )
+                    # Auto-stop after 9 hours (Exact shift duration)
+                    if session_duration.total_seconds() >= 9 * 3600:
+                        
+                        # Perform auto clock-out
+                        if perform_auto_clock_out(attendance, current_session, lat, lng):
+                            return JsonResponse(
+                                {
+                                    "status": "shift_completed",
+                                    "message": "Shift completed (9 hours). Auto clocked out.",
+                                    "location_tracking_active": False,
+                                    "clock_out_performed": True
+                                }
+                            )
+                        else:
+                            # Fallback if auto-clockout fails, just stop tracking
+                            attendance.location_tracking_active = False
+                            attendance.save()
+                            return JsonResponse(
+                                {
+                                    "status": "tracking_stopped",
+                                    "message": "Shift time exceeded. Tracking stopped.",
+                                    "location_tracking_active": False,
+                                }
+                            )
 
                 # Log location for current session
                 if attendance.location_tracking_active:
@@ -737,11 +944,21 @@ def update_location(request):
                         longitude=lng,
                         accuracy=accuracy,
                     )
-
-                    # Also create general location log for backward compatibility
-                    LocationLog.objects.create(
-                        employee=employee, latitude=str(lat), longitude=str(lng)
-                    )
+                    
+                    # Log to generic LocationLog as well - ONLY if accuracy is good
+                    # Filter out poor accuracy (likely network based or bad signal) to avoid "fake" look
+                    # Threshold: 2500 meters (Relaxed to ensure tracking works for all users/devices)
+                    is_accurate = True
+                    if accuracy and float(accuracy) > 2500:
+                         is_accurate = False
+                         
+                    if is_accurate:     
+                        # Also create general location log for backward compatibility
+                        LocationLog.objects.create(
+                            employee=employee,
+                            latitude=str(lat),
+                            longitude=str(lng)
+                        )
 
                     # Prepare response
                     response_data = {
@@ -807,10 +1024,7 @@ def employee_profile(request):
 
     # Try to get or create employee profile if User is a Company Admin/Manager
     # This prevents the "blank page" issue for the initial admin user.
-    try:
-        employee = user.employee_profile
-    except Exception:
-        employee = None
+    employee = safe_get_employee_profile(user)
 
     if not employee:
         if user.company:
@@ -1091,9 +1305,11 @@ def approve_leave(request, pk):
 
         # Security check: Only Manager or Admin can approve
         user = request.user
-        is_admin = user.role == User.Role.COMPANY_ADMIN
+        is_admin = user.role == User.Role.COMPANY_ADMIN or user.is_superuser
         is_manager = (
-            user.role == User.Role.MANAGER and leave_request.employee.manager == user
+            user.role == User.Role.MANAGER 
+            and leave_request.employee.manager 
+            and leave_request.employee.manager.user == user
         )
 
         if not (is_admin or is_manager):
@@ -1142,18 +1358,6 @@ def approve_leave(request, pk):
                 import logging
                 logger = logging.getLogger(__name__)
                 logger.error(f"Leave approval email error: {str(e)}")
-                from django.contrib import messages
-                messages.warning(
-                    request,
-                    "Leave approved but email notification failed.",
-                )
-
-            return JsonResponse({"status": "success", "message": "Leave approved successfully"})
-        else:
-            return JsonResponse(
-                {"status": "error", "message": "Failed to approve leave. Please try again."}, 
-                status=500
-            )
 
     return redirect("admin_dashboard")
 
@@ -1164,9 +1368,11 @@ def reject_leave(request, pk):
         leave_request = LeaveRequest.objects.get(pk=pk)
 
         user = request.user
-        is_admin = user.role == User.Role.COMPANY_ADMIN
+        is_admin = user.role == User.Role.COMPANY_ADMIN or user.is_superuser
         is_manager = (
-            user.role == User.Role.MANAGER and leave_request.employee.manager == user
+            user.role == User.Role.MANAGER 
+            and leave_request.employee.manager 
+            and leave_request.employee.manager.user == user
         )
 
         if not (is_admin or is_manager):
@@ -1208,8 +1414,12 @@ def attendance_map(request, pk):
 
         # Permission Check
         user = request.user
-        is_admin = user.role == User.Role.COMPANY_ADMIN
-        is_manager = user.role == User.Role.MANAGER and user == employee.manager
+        is_admin = user.role == User.Role.COMPANY_ADMIN or user.is_superuser
+        is_manager = (
+            user.role == User.Role.MANAGER 
+            and employee.manager 
+            and employee.manager.user == user
+        )
         is_self = user == employee.user
 
         if not (is_admin or is_manager or is_self):
@@ -1230,16 +1440,9 @@ def attendance_map(request, pk):
         # Prepare Map Data
         map_locations = []
 
-        def parse_loc(loc_str):
-            try:
-                parts = loc_str.split(",")
-                return float(parts[0]), float(parts[1])
-            except:
-                return None, None
-
         # 1. Clock In
         if attendance.location_in:
-            lat, lng = parse_loc(attendance.location_in)
+            lat, lng = safe_parse_location(attendance.location_in)
             if lat:
                 map_locations.append(
                     {
@@ -1263,7 +1466,7 @@ def attendance_map(request, pk):
 
         # 3. Clock Out
         if attendance.location_out:
-            lat, lng = parse_loc(attendance.location_out)
+            lat, lng = safe_parse_location(attendance.location_out)
             if lat:
                 map_locations.append(
                     {
@@ -1296,8 +1499,12 @@ def employee_detail(request, pk):
 
         # Permission Check (Company Admin or Manager of the employee)
         user = request.user
-        is_admin = user.role == User.Role.COMPANY_ADMIN
-        is_manager = user.role == User.Role.MANAGER and employee.manager == user
+        is_admin = user.role == User.Role.COMPANY_ADMIN or user.is_superuser
+        is_manager = (
+            user.role == User.Role.MANAGER 
+            and employee.manager 
+            and employee.manager.user == user
+        )
 
         if not (is_admin or is_manager):
             messages.error(request, "Permission denied")
@@ -1345,17 +1552,9 @@ def employee_detail(request, pk):
 
         map_data = []
         if map_attendance:
-            # Parse Lat/Lng helper
-            def parse_loc(loc_str):
-                try:
-                    parts = loc_str.split(",")
-                    return float(parts[0]), float(parts[1])
-                except:
-                    return None, None
-
             # Clock In Marker
             if map_attendance.location_in:
-                lat, lng = parse_loc(map_attendance.location_in)
+                lat, lng = safe_parse_location(map_attendance.location_in)
                 if lat:
                     map_data.append(
                         {
@@ -1393,7 +1592,7 @@ def employee_detail(request, pk):
 
             # Clock Out Marker
             if map_attendance.location_out:
-                lat, lng = parse_loc(map_attendance.location_out)
+                lat, lng = safe_parse_location(map_attendance.location_out)
                 if lat:
                     map_data.append(
                         {
@@ -1714,7 +1913,9 @@ def get_attendance_map_data(request, pk):
         if request.user.role == User.Role.MANAGER and hasattr(
             request.user, "employee_profile"
         ):
-            is_manager = attendance.employee.manager == request.user
+            # Compare manager's user object with request user
+            if attendance.employee.manager:
+                is_manager = attendance.employee.manager.user == request.user
 
         is_self = attendance.employee.user == request.user
 
@@ -1725,16 +1926,9 @@ def get_attendance_map_data(request, pk):
 
         map_locations = []
 
-        def parse_loc(loc_str):
-            try:
-                parts = loc_str.split(",")
-                return float(parts[0]), float(parts[1])
-            except:
-                return None, None
-
         # 1. Clock In
         if attendance.location_in:
-            lat, lng = parse_loc(attendance.location_in)
+            lat, lng = safe_parse_location(attendance.location_in)
             if lat:
                 map_locations.append(
                     {
@@ -1772,7 +1966,7 @@ def get_attendance_map_data(request, pk):
 
         # 3. Clock Out
         if attendance.location_out:
-            lat, lng = parse_loc(attendance.location_out)
+            lat, lng = safe_parse_location(attendance.location_out)
             if lat:
                 map_locations.append(
                     {
@@ -2139,10 +2333,10 @@ class RegularizationListView(LoginRequiredMixin, ListView):
             return qs.filter(employee__manager=user)
         else:
             # Employees see their own
-            try:
-                return qs.filter(employee=user.employee_profile)
-            except:
-                return qs.none()
+            employee = safe_get_employee_profile(user)
+            if employee:
+                return qs.filter(employee=employee)
+            return qs.none()
 
 
 @login_required
@@ -2151,9 +2345,11 @@ def approve_regularization(request, pk):
         reg_request = RegularizationRequest.objects.get(pk=pk)
 
         user = request.user
-        is_admin = user.role == User.Role.COMPANY_ADMIN
+        is_admin = user.role == User.Role.COMPANY_ADMIN or user.is_superuser
         is_manager = (
-            user.role == User.Role.MANAGER and reg_request.employee.manager == user
+            user.role == User.Role.MANAGER 
+            and reg_request.employee.manager 
+            and reg_request.employee.manager.user == user
         )
 
         if not (is_admin or is_manager):
@@ -2224,9 +2420,11 @@ def reject_regularization(request, pk):
         reg_request = RegularizationRequest.objects.get(pk=pk)
 
         user = request.user
-        is_admin = user.role == User.Role.COMPANY_ADMIN
+        is_admin = user.role == User.Role.COMPANY_ADMIN or user.is_superuser
         is_manager = (
-            user.role == User.Role.MANAGER and reg_request.employee.manager == user
+            user.role == User.Role.MANAGER 
+            and reg_request.employee.manager 
+            and reg_request.employee.manager.user == user
         )
 
         if not (is_admin or is_manager):
@@ -2407,8 +2605,8 @@ def run_monthly_accrual(request):
             try:
                 month_name = calendar.month_name[int(month)]
                 period_msg = f"for {month_name} {year}"
-            except:
-                pass
+            except (ValueError, IndexError) as e:
+                logger.debug("Failed to parse month/year for accrual message", month=month, year=year, error=str(e))
 
         # Run the command
         call_command("accrue_monthly_leaves")
@@ -2422,6 +2620,8 @@ def run_monthly_accrual(request):
         messages.success(request, success_msg)
 
     except Exception as e:
+        logger.exception("Error running monthly leave accrual", error=str(e))
+        capture_exception(e, properties={"action": "manual_accrual"})
         messages.error(request, f"Error running accrual: {str(e)}")
 
     return redirect("leave_configuration")
@@ -2691,6 +2891,14 @@ def submit_hourly_location(request):
                 status=400
             )
         
+        # Check for 9-hour limit
+        time_since_clockin = timezone.now() - active_session.clock_in
+        if time_since_clockin >= timedelta(hours=9):
+             return JsonResponse({
+                "status": "tracking_stopped", 
+                "message": "Shift limit reached (9 hours)"
+            })
+        
         # Create location log
         location_log = LocationLog.objects.create(
             employee=employee,
@@ -2761,8 +2969,16 @@ def get_location_tracking_status(request):
         next_update_time = None
         
         if not last_log:
-            # No logs yet, check if it's been 1 hour since clock-in
+            # Check if shift duration (9 hours) exceeded
             time_since_clockin = current_time - active_session.clock_in
+            if time_since_clockin >= timedelta(hours=9):
+                return JsonResponse({
+                    "status": "success",
+                    "needs_location": False,
+                    "tracking_stopped": True,
+                    "message": "Shift limit reached"
+                })
+
             if time_since_clockin >= timedelta(hours=1):
                 needs_location = True
         else:

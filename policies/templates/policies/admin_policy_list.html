@@ -1,0 +1,261 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Manage Policies - {{ user.company.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-blue: #2563eb;
+        --secondary-purple: #7c3aed;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --bg-light: #f8fafc;
+        --border-color: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .admin-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1.5rem;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .page-title h1 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .page-title p {
+        color: var(--text-secondary);
+        margin-top: 0.5rem;
+        margin-bottom: 0;
+    }
+
+    .btn-create {
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-purple) 100%);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: transform 0.2s;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn-create:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        color: white;
+    }
+
+    .policy-table-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th {
+        background: var(--bg-light);
+        padding: 1rem 1.5rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    td {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .status-published {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #059669;
+    }
+
+    .status-draft {
+        background-color: rgba(245, 158, 11, 0.1);
+        color: #d97706;
+    }
+
+    .action-btn {
+        padding: 0.5rem;
+        border-radius: 6px;
+        color: var(--text-secondary);
+        transition: all 0.2s;
+        display: inline-flex;
+        margin-left: 0.25rem;
+    }
+
+    .action-btn:hover {
+        background-color: var(--bg-light);
+        color: var(--primary-blue);
+    }
+
+    .location-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        background-color: #eff6ff;
+        color: #1d4ed8;
+        padding: 0.25rem 0.6rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .empty-state {
+        padding: 4rem 2rem;
+        text-align: center;
+        color: var(--text-secondary);
+    }
+
+    .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="page-header">
+        <div class="page-title">
+            <h1>Manage Policies</h1>
+            <p>Create and manage company policies for your location.</p>
+        </div>
+        <a href="{% url 'policies:admin_policy_create' %}" class="btn-create">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12h14" />
+            </svg>
+            Create Policy
+        </a>
+    </div>
+
+    <div class="policy-table-card">
+        {% if policies %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Location</th>
+                        <th>Section</th>
+                        <th>Status</th>
+                        <th>Last Updated</th>
+                        <th>Acknowledgments</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for policy in policies %}
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600;">{{ policy.title }}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">v{{ policy.version }}</div>
+                        </td>
+                        <td>
+                            <span class="location-tag">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                    <circle cx="12" cy="10" r="3"></circle>
+                                </svg>
+                                {{ policy.location.name }}
+                            </span>
+                        </td>
+                        <td>{{ policy.section.title|default:"General" }}</td>
+                        <td>
+                            {% if policy.is_published %}
+                            <span class="status-badge status-published">Published</span>
+                            {% else %}
+                            <span class="status-badge status-draft">Draft</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ policy.updated_at|date:"M d, Y" }}</td>
+                        <td>
+                            {% if policy.requires_acknowledgment %}
+                            <a href="{% url 'policies:admin_acknowledgment_report' policy.id %}"
+                                style="text-decoration: underline; color: var(--primary-blue);">
+                                {{ policy.acknowledgment_count }} signatures
+                            </a>
+                            {% else %}
+                            <span style="color: var(--text-secondary);">-</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;">
+                            <a href="{% url 'policies:policy_detail' policy.id %}" class="action-btn" title="View">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </a>
+                            <a href="{% url 'policies:admin_policy_edit' policy.id %}" class="action-btn" title="Edit">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📂</div>
+            <h3>No policies found</h3>
+            <p>Get started by creating your first policy for this location.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

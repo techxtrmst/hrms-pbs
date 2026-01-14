@@ -1,0 +1,511 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ policy.title }} - Company Policy{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-blue: #2563eb;
+        --primary-blue-dark: #1e40af;
+        --secondary-purple: #7c3aed;
+        --accent-green: #10b981;
+        --bg-light: #f8fafc;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --border-color: #e2e8f0;
+        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .policy-detail-container {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 0 1.5rem;
+    }
+
+    .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        color: var(--text-primary);
+        padding: 0.75rem 1.25rem;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        box-shadow: var(--shadow-md);
+        transition: all 0.3s ease;
+    }
+
+    .back-button:hover {
+        transform: translateX(-5px);
+        background: white;
+        color: var(--text-primary);
+    }
+
+    .policy-content-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 3rem;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        margin-bottom: 2rem;
+    }
+
+    .policy-header-section {
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 2rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .policy-main-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-purple) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+        line-height: 1.2;
+    }
+
+    .policy-subtitle-text {
+        font-size: 1.2rem;
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+    }
+
+    .policy-meta-info {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        margin-top: 1.5rem;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .meta-item svg {
+        color: var(--primary-blue);
+    }
+
+    .policy-body-content {
+        font-size: 1.05rem;
+        line-height: 1.8;
+        color: var(--text-primary);
+    }
+
+    .policy-body-content h1,
+    .policy-body-content h2,
+    .policy-body-content h3 {
+        color: var(--text-primary);
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+
+    .policy-body-content h1 {
+        font-size: 2rem;
+        border-bottom: 3px solid var(--primary-blue);
+        padding-bottom: 0.5rem;
+    }
+
+    .policy-body-content h2 {
+        font-size: 1.6rem;
+    }
+
+    .policy-body-content h3 {
+        font-size: 1.3rem;
+    }
+
+    .policy-body-content p {
+        margin-bottom: 1.25rem;
+    }
+
+    .policy-body-content ul,
+    .policy-body-content ol {
+        margin-left: 2rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .policy-body-content li {
+        margin-bottom: 0.5rem;
+    }
+
+    .policy-body-content blockquote {
+        border-left: 4px solid var(--primary-blue);
+        padding-left: 1.5rem;
+        margin: 1.5rem 0;
+        font-style: italic;
+        color: var(--text-secondary);
+    }
+
+    .attachments-section {
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(124, 58, 237, 0.05) 100%);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-top: 3rem;
+    }
+
+    .attachments-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .attachment-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: white;
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        box-shadow: var(--shadow-md);
+        transition: all 0.3s ease;
+    }
+
+    .attachment-item:hover {
+        transform: translateX(5px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .attachment-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .attachment-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-purple) 100%);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+    }
+
+    .attachment-details h4 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .attachment-details p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .download-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .download-btn:hover {
+        transform: scale(1.05);
+        color: white;
+    }
+
+    .acknowledgment-section {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.05) 100%);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-top: 3rem;
+        border: 2px dashed var(--accent-green);
+    }
+
+    .acknowledgment-section.pending {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(217, 119, 6, 0.05) 100%);
+        border-color: #f59e0b;
+    }
+
+    .acknowledgment-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2rem;
+    }
+
+    .acknowledgment-text {
+        flex: 1;
+    }
+
+    .acknowledgment-text h3 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .acknowledgment-text p {
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    .acknowledge-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: linear-gradient(135deg, var(--accent-green) 0%, #059669 100%);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        border: none;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-md);
+    }
+
+    .acknowledge-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .acknowledge-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .acknowledged-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: var(--accent-green);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .policy-content-card {
+            padding: 2rem 1.5rem;
+        }
+
+        .policy-main-title {
+            font-size: 2rem;
+        }
+
+        .acknowledgment-content {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="policy-detail-container">
+    <a href="{% url 'policies:policy_list' %}" class="back-button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        Back to Policies
+    </a>
+
+    <div class="policy-content-card">
+        <div class="policy-header-section">
+            <h1 class="policy-main-title">{{ policy.title }}</h1>
+
+            {% if policy.subtitle %}
+            <p class="policy-subtitle-text">{{ policy.subtitle }}</p>
+            {% endif %}
+
+            <div class="policy-meta-info">
+                <div class="meta-item">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <span>{{ policy.location.name }}</span>
+                </div>
+
+                <div class="meta-item">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span>Version {{ policy.version }}</span>
+                </div>
+
+                <div class="meta-item">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span>Effective: {{ policy.effective_date|date:"M d, Y" }}</span>
+                </div>
+
+                {% if policy.updated_at %}
+                <div class="meta-item">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2">
+                        </path>
+                    </svg>
+                    <span>Updated: {{ policy.updated_at|date:"M d, Y" }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="policy-body-content">
+            {{ policy.content|safe }}
+        </div>
+
+        {% if attachments %}
+        <div class="attachments-section">
+            <h3 class="attachments-title">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                        d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48">
+                    </path>
+                </svg>
+                Attachments
+            </h3>
+
+            {% for attachment in attachments %}
+            <div class="attachment-item">
+                <div class="attachment-info">
+                    <div class="attachment-icon">
+                        {{ attachment.file_type|upper|slice:":3" }}
+                    </div>
+                    <div class="attachment-details">
+                        <h4>{{ attachment.title }}</h4>
+                        <p>{{ attachment.file_size|filesizeformat }} • {{ attachment.file_type|upper }}</p>
+                    </div>
+                </div>
+                <a href="{{ attachment.file.url }}" class="download-btn" download>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Download
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if policy.requires_acknowledgment %}
+        <div class="acknowledgment-section {% if not acknowledgment.acknowledged %}pending{% endif %}">
+            <div class="acknowledgment-content">
+                <div class="acknowledgment-text">
+                    {% if acknowledgment.acknowledged %}
+                    <h3>✓ You have acknowledged this policy</h3>
+                    <p>Acknowledged on {{ acknowledgment.acknowledged_at|date:"F d, Y \a\t h:i A" }}</p>
+                    {% else %}
+                    <h3>⏳ Acknowledgment Required</h3>
+                    <p>Please confirm that you have read and understood this policy by clicking the button.</p>
+                    {% endif %}
+                </div>
+
+                {% if acknowledgment.acknowledged %}
+                <div class="acknowledged-badge">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Acknowledged
+                </div>
+                {% else %}
+                <button id="acknowledgeBtn" class="acknowledge-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    I Acknowledge
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    {% if policy.requires_acknowledgment and not acknowledgment.acknowledged %}
+    document.getElementById('acknowledgeBtn').addEventListener('click', function () {
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span>Processing...</span>';
+
+        fetch('{% url "policies:acknowledge_policy" policy.id %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload page to show acknowledged state
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to acknowledge policy'));
+                    btn.disabled = false;
+                    btn.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    I Acknowledge
+                `;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+                btn.disabled = false;
+                btn.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                I Acknowledge
+            `;
+            });
+    });
+    {% endif %}
+</script>
+{% endblock %}

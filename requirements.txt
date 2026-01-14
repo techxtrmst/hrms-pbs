@@ -119,3 +119,7 @@ urllib3==2.6.2
     # via requests
 whitenoise==6.11.0
     # via hrms-pbs
+
+backoff==2.2.1
+loguru==0.7.3
+posthog==7.5.1

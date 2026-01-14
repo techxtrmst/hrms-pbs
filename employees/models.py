@@ -3,6 +3,7 @@ from django.conf import settings
 from django.utils import timezone
 from companies.models import Company
 from datetime import timedelta
+from loguru import logger
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -304,6 +305,12 @@ class Attendance(models.Model):
         default=0, help_text="Minutes late after grace period"
     )
 
+    total_working_hours = models.FloatField(
+        default=0.0, help_text="Total hours worked today across all sessions"
+    )
+
+
+
     # Grace Period Logic
     is_grace_used = models.BooleanField(
         default=False, help_text="Logged in late but within grace period"
@@ -333,14 +340,6 @@ class Attendance(models.Model):
         default=3, help_text="Maximum allowed clock-ins per day"
     )
     
-    # Session management
-    daily_sessions_count = models.IntegerField(
-        default=0, help_text="Number of sessions completed today"
-    )
-    max_daily_sessions = models.IntegerField(
-        default=5, help_text="Maximum allowed sessions per day"
-    )
-    
     # Working hours tracking
     total_working_hours = models.DecimalField(
         max_digits=5, decimal_places=2, default=0.00,
@@ -353,6 +352,17 @@ class Attendance(models.Model):
     )
     location_tracking_end_time = models.DateTimeField(
         null=True, blank=True, help_text="When location tracking should stop"
+    )
+    
+    # Session tracking
+    daily_sessions_count = models.IntegerField(
+        default=0, help_text="Number of sessions today"
+    )
+    max_daily_sessions = models.IntegerField(
+        default=3, help_text="Maximum allowed sessions per day"
+    )
+    current_session_type = models.CharField(
+        max_length=20, null=True, blank=True, help_text="Current session type (WEB/REMOTE)"
     )
     
     # Timezone tracking
@@ -735,6 +745,35 @@ class Attendance(models.Model):
             >= expected_hours * 0.9,  # 90% completion threshold
         }
 
+
+
+    def calculate_total_working_hours(self):
+        """Calculate and update total working hours from all sessions"""
+        try:
+            from .models import AttendanceSession
+            
+            # Fetch all completed sessions for this attendance record
+            sessions = AttendanceSession.objects.filter(
+                employee=self.employee,
+                date=self.date,
+                clock_in__isnull=False,
+                clock_out__isnull=False
+            )
+
+            total_seconds = 0
+            for session in sessions:
+                duration = session.clock_out - session.clock_in
+                total_seconds += duration.total_seconds()
+
+            # Convert to hours
+            self.total_working_hours = round(total_seconds / 3600, 2)
+            self.save(update_fields=['total_working_hours'])
+            return self.total_working_hours
+            
+        except Exception as e:
+            logger.error(f"Error calculating total working hours: {str(e)}")
+            return 0.0
+
     def get_shift_duration_hours(self):
         """Calculate expected shift duration in hours based on employee's shift"""
         from datetime import datetime
@@ -792,13 +831,26 @@ class Attendance(models.Model):
         return False
 
     def get_current_session(self):
-        """Get the currently active session for this attendance record"""
+        """Get the currently active session (not clocked out)"""
+        from .models import AttendanceSession
         return AttendanceSession.objects.filter(
             employee=self.employee,
             date=self.date,
             clock_out__isnull=True,
             is_active=True,
         ).order_by("-session_number").first()
+
+    def can_clock_in(self):
+        """Check if employee can clock in based on current state and session limits"""
+        # Cannot clock in if already clocked in
+        if self.is_currently_clocked_in:
+            return False
+        
+        # Cannot clock in if maximum daily sessions reached
+        if self.daily_sessions_count >= self.max_daily_sessions:
+            return False
+        
+        return True
 
 
 class AttendanceSession(models.Model):
@@ -1119,11 +1171,12 @@ class LeaveRequest(models.Model):
             if isinstance(date_obj, str):
                 try:
                     return datetime.strptime(date_obj, "%Y-%m-%d").date()
-                except:
-                    # Try other formats
+                except ValueError:
+                    # Try ISO format
                     try:
                         return datetime.fromisoformat(date_obj).date()
-                    except:
+                    except (ValueError, TypeError):
+                        logger.debug("Failed to parse date for leave calculation", date_obj=date_obj)
                         return None
             elif isinstance(date_obj, datetime):
                 return date_obj.date()

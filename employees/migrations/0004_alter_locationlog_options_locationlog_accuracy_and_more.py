@@ -8,7 +8,7 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('employees', '0003_attendance_daily_sessions_count_and_more'),
+        ('employees', '0003_add_missing_attendance_fields'),
     ]
 
     operations = [

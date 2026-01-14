@@ -9,6 +9,8 @@ from .attendance_intelligence import AttendanceIntelligence
 from .leave_prediction import LeavePrediction
 from .smart_notifications import SmartNotifications
 from employees.models import Employee
+from loguru import logger
+from core.error_handling import safe_get_employee_profile, capture_exception
 import json
 
 
@@ -103,9 +105,8 @@ def chatbot_query(request):
             return JsonResponse({"error": "No question provided"}, status=400)
 
         # Get employee profile
-        try:
-            employee = request.user.employee_profile
-        except:
+        employee = safe_get_employee_profile(request.user)
+        if not employee:
             return JsonResponse({"error": "Employee profile not found"}, status=404)
 
         # Determine role (simplified for standard chatbot view)
@@ -396,9 +397,8 @@ def my_leave_insights(request):
     """
     Personal leave insights for employees
     """
-    try:
-        employee = request.user.employee_profile
-    except:
+    employee = safe_get_employee_profile(request.user)
+    if not employee:
         messages.error(request, "Employee profile not found.")
         return redirect("dashboard")
 
@@ -418,9 +418,8 @@ def smart_notifications_dashboard(request):
     """
     Smart Notifications Dashboard
     """
-    try:
-        employee = request.user.employee_profile
-    except:
+    employee = safe_get_employee_profile(request.user)
+    if not employee:
         messages.error(request, "Employee profile not found.")
         return redirect("dashboard")
 
@@ -451,9 +450,8 @@ def get_notifications_api(request):
     """
     API endpoint to get notifications (for AJAX calls)
     """
-    try:
-        employee = request.user.employee_profile
-    except:
+    employee = safe_get_employee_profile(request.user)
+    if not employee:
         return JsonResponse({"error": "Employee profile not found"}, status=404)
 
     # Get alerts
@@ -559,9 +557,8 @@ def chatbot_query_floating(request):
             return JsonResponse({"error": "No query provided"}, status=400)
 
         # Get employee profile
-        try:
-            employee = request.user.employee_profile
-        except:
+        employee = safe_get_employee_profile(request.user)
+        if not employee:
             return JsonResponse(
                 {
                     "response": "I need your employee profile to assist you. Please contact your administrator.",
@@ -588,7 +585,7 @@ def chatbot_query_floating(request):
                 user=request.user, user_message=query, bot_response=response_text
             )
         except Exception as e:
-            print(f"Error saving chat history: {e}")
+            logger.warning("Error saving chat history", error=str(e))
 
         # Check if escalation is needed (if fallback was triggered or error)
         show_escalation = False

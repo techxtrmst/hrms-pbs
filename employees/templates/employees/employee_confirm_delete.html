@@ -1,25 +1,246 @@
 {% extends 'core/base.html' %}
 
-{% block title %}Delete Employee - HRMS{% endblock %}
+{% block title %}Permanent Delete - HRMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delete-confirmation-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+
+    .delete-card {
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        max-width: 550px;
+        width: 100%;
+        overflow: hidden;
+        border: 1px solid #fee2e2;
+    }
+
+    .delete-header {
+        background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .delete-icon {
+        width: 80px;
+        height: 80px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 2.5rem;
+    }
+
+    .delete-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .delete-body {
+        padding: 2rem;
+    }
+
+    .employee-info {
+        background: #fef2f2;
+        border: 2px solid #fecaca;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .employee-name {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #991b1b;
+        margin-bottom: 0.5rem;
+    }
+
+    .employee-email {
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+
+    .warning-list {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .warning-list h4 {
+        color: #d97706;
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .warning-list ul {
+        margin: 0;
+        padding-left: 1.5rem;
+        color: #92400e;
+    }
+
+    .warning-list li {
+        margin-bottom: 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .danger-notice {
+        background: #fee2e2;
+        border-left: 4px solid #dc2626;
+        padding: 1rem 1.25rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+
+    .danger-notice p {
+        margin: 0;
+        color: #991b1b;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .btn-cancel {
+        background: #ffffff;
+        color: #64748b;
+        border: 2px solid #cbd5e1;
+        padding: 0.75rem 2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-cancel:hover {
+        background: #f8fafc;
+        color: #475569;
+        border-color: #94a3b8;
+        transform: translateY(-1px);
+    }
+
+    .btn-delete-confirm {
+        background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    .btn-delete-confirm:hover {
+        background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(220, 38, 38, 0.4);
+    }
+
+    @keyframes shake {
+
+        0%,
+        100% {
+            transform: translateX(0);
+        }
+
+        25% {
+            transform: translateX(-5px);
+        }
+
+        75% {
+            transform: translateX(5px);
+        }
+    }
+
+    .delete-icon {
+        animation: shake 0.5s ease-in-out;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card mt-5">
-            <div class="card-header bg-danger text-white">
-                <h5 class="mb-0">Delete Employee</h5>
+<div class="delete-confirmation-container">
+    <div class="delete-card">
+        <div class="delete-header">
+            <div class="delete-icon">
+                <i class="fas fa-exclamation-triangle"></i>
             </div>
-            <div class="card-body">
-                <p>Are you sure you want to delete the employee <strong>{{ object.user.get_full_name }}</strong>?</p>
-                <p class="text-danger"><small>This action cannot be undone and will delete the associated user
-                        account.</small></p>
+            <h2>Permanent Delete Confirmation</h2>
+        </div>
 
-                <form method="post">
-                    {% csrf_token %}
-                    <a href="{% url 'employee_list' %}" class="btn btn-secondary">Cancel</a>
-                    <button type="submit" class="btn btn-danger">Confirm Delete</button>
-                </form>
+        <div class="delete-body">
+            <div class="employee-info">
+                <div class="employee-name">
+                    <i class="fas fa-user-circle"></i> {{ object.user.get_full_name }}
+                </div>
+                <div class="employee-email">{{ object.user.email }}</div>
             </div>
+
+            <div class="warning-list">
+                <h4>
+                    <i class="fas fa-info-circle"></i>
+                    The following data will be permanently deleted:
+                </h4>
+                <ul>
+                    <li>User account and login credentials</li>
+                    <li>All attendance records and sessions</li>
+                    <li>Location tracking history</li>
+                    <li>Leave requests and balances</li>
+                    <li>Regularization requests</li>
+                    <li>Emergency contacts</li>
+                    <li>ID proof documents</li>
+                    <li>All other employee-related data</li>
+                </ul>
+            </div>
+
+            <div class="danger-notice">
+                <p>
+                    <i class="fas fa-exclamation-circle"></i>
+                    This action is irreversible and cannot be undone!
+                </p>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="action-buttons">
+                    <a href="{% url 'employee_list' %}" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn-delete-confirm">
+                        <i class="fas fa-trash-alt"></i>
+                        Confirm Permanent Delete
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

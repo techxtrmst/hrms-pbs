@@ -6,6 +6,7 @@ Automated intelligent notifications for various HR scenarios
 from datetime import timedelta
 from django.utils import timezone
 from employees.models import Employee, Attendance, LeaveRequest
+from loguru import logger
 
 
 class SmartNotifications:
@@ -75,8 +76,8 @@ class SmartNotifications:
                     "old_pending": old_pending.count(),
                     "pending_requests": pending_leaves,
                 }
-        except:
-            pass
+        except Exception as e:
+            logger.debug("Error checking manager pending approvals", error=str(e))
 
         return {"alert": False}
 

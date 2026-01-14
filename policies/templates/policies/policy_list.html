@@ -1,0 +1,403 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load policy_tags %}
+
+{% block title %}Company Policies - {{ employee.company.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-blue: #2563eb;
+        --primary-blue-dark: #1e40af;
+        --secondary-purple: #7c3aed;
+        --accent-cyan: #06b6d4;
+        --bg-light: #f8fafc;
+        --bg-card: #ffffff;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --border-color: #e2e8f0;
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .policy-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1.5rem;
+    }
+
+    .policy-header {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .policy-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-purple) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+    }
+
+    .policy-subtitle {
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    .location-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--primary-blue) 100%);
+        color: white;
+        padding: 0.5rem 1.25rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .section-container {
+        margin-bottom: 2rem;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem 1.5rem;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        border-left: 5px solid var(--primary-blue);
+        box-shadow: var(--shadow-md);
+    }
+
+    .section-icon {
+        font-size: 2rem;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    }
+
+    .section-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .policy-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .policy-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 1.75rem;
+        box-shadow: var(--shadow-md);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .policy-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-blue) 0%, var(--secondary-purple) 100%);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.3s ease;
+    }
+
+    .policy-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .policy-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .policy-card-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.75rem;
+        line-height: 1.4;
+    }
+
+    .policy-card-meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .meta-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        background: rgba(37, 99, 235, 0.1);
+        color: var(--primary-blue);
+    }
+
+    .meta-badge.acknowledged {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+
+    .meta-badge.pending {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+
+    .policy-excerpt {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin-bottom: 1.25rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .view-policy-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .view-policy-btn:hover {
+        transform: translateX(5px);
+        box-shadow: var(--shadow-md);
+        color: white;
+    }
+
+    .empty-state {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 4rem 2rem;
+        text-align: center;
+        box-shadow: var(--shadow-md);
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .empty-state-text {
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+    }
+
+    @media (max-width: 768px) {
+        .policy-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .policy-title {
+            font-size: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="policy-container">
+    <div class="policy-header">
+        <h1 class="policy-title">📋 Company Policies</h1>
+        <p class="policy-subtitle">Your comprehensive guide to company policies, procedures, and culture.</p>
+
+        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-top: 1rem;">
+            <span class="location-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                {{ employee.location.name }}
+            </span>
+
+            {% if user.role == 'COMPANY_ADMIN' or user.role == 'SUPERADMIN' %}
+            <a href="{% url 'policies:admin_policy_list' %}"
+                style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.9); color: var(--text-primary); padding: 0.5rem 1rem; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 0.9rem; box-shadow: var(--shadow-sm);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                Manage Policies
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </a>
+            {% endif %}
+
+            <a href="{% url 'personal_home' %}"
+                style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.5); color: var(--text-primary); padding: 0.5rem 1rem; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
+                <i class="fas fa-home"></i> Back to Home
+            </a>
+        </div>
+    </div>
+
+    {% if policies_by_section or no_section_policies %}
+    {% for section, policies in policies_by_section.items %}
+    <div class="section-container">
+        <div class="section-header">
+            <span class="section-icon">{{ section.icon|default:"📄" }}</span>
+            <h2 class="section-title">{{ section.title }}</h2>
+        </div>
+
+        <div class="policy-grid">
+            {% for policy in policies %}
+            <div class="policy-card">
+                <h3 class="policy-card-title">{{ policy.title }}</h3>
+
+                <div class="policy-card-meta">
+                    <span class="meta-badge">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        v{{ policy.version }}
+                    </span>
+
+                    {% if policy.requires_acknowledgment %}
+                    {% if acknowledgment_dict|get_item:policy.id %}
+                    <span class="meta-badge acknowledged">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Acknowledged
+                    </span>
+                    {% else %}
+                    <span class="meta-badge pending">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        Pending
+                    </span>
+                    {% endif %}
+                    {% endif %}
+                </div>
+
+                {% if policy.subtitle %}
+                <p class="policy-excerpt">{{ policy.subtitle }}</p>
+                {% else %}
+                <p class="policy-excerpt">{{ policy.content|striptags|truncatewords:25 }}</p>
+                {% endif %}
+
+                <a href="{% url 'policies:policy_detail' policy.id %}" class="view-policy-btn">
+                    View Policy
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+
+    {% if no_section_policies %}
+    <div class="section-container">
+        <div class="section-header">
+            <span class="section-icon">📋</span>
+            <h2 class="section-title">General Information</h2>
+        </div>
+
+        <div class="policy-grid">
+            {% for policy in no_section_policies %}
+            <div class="policy-card">
+                <h3 class="policy-card-title">{{ policy.title }}</h3>
+
+                <div class="policy-card-meta">
+                    <span class="meta-badge">v{{ policy.version }}</span>
+
+                    {% if policy.requires_acknowledgment %}
+                    {% if acknowledgment_dict|get_item:policy.id %}
+                    <span class="meta-badge acknowledged">✓ Acknowledged</span>
+                    {% else %}
+                    <span class="meta-badge pending">⏳ Pending</span>
+                    {% endif %}
+                    {% endif %}
+                </div>
+
+                {% if policy.subtitle %}
+                <p class="policy-excerpt">{{ policy.subtitle }}</p>
+                {% else %}
+                <p class="policy-excerpt">{{ policy.content|striptags|truncatewords:25 }}</p>
+                {% endif %}
+
+                <a href="{% url 'policies:policy_detail' policy.id %}" class="view-policy-btn">
+                    View Policy
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">📚</div>
+        <p class="empty-state-text">No company policies are currently available for your location.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

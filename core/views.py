@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.conf import settings
 
 from django.contrib.auth.decorators import login_required
-
+from loguru import logger
 
 from employees.models import (
     Attendance,
@@ -37,6 +37,12 @@ from .decorators import manager_required, admin_required
 from .forms import ForgotPasswordForm, OTPVerificationForm, ResetPasswordForm
 
 from .models import PasswordResetOTP
+
+from .error_handling import (
+    safe_get_employee_profile,
+    safe_queryset_filter,
+    capture_exception,
+)
 
 import random
 
@@ -579,8 +585,8 @@ def admin_dashboard(request):
                 else 0
             )
 
-    except:
-        pass
+    except Exception as e:
+        logger.debug("Error checking celebration dates for admin dashboard", error=str(e))
 
     return render(request, "core/admin_dashboard.html", context)
 
@@ -632,9 +638,8 @@ def search_employees_api(request):
 @login_required
 def employee_dashboard(request):
     """Employee Personal Dashboard - Their own attendance, leaves, stats"""
-    try:
-        employee = request.user.employee_profile
-    except:
+    employee = safe_get_employee_profile(request.user)
+    if not employee:
         messages.error(request, "Employee profile not found.")
         return redirect("personal_home")
 
@@ -704,10 +709,7 @@ def employee_dashboard(request):
         year_attendance_rate = round(((year_present + year_wfh) / year_total) * 100)
 
     # Leave balance
-    try:
-        leave_balance = employee.leave_balance
-    except:
-        leave_balance = None
+    leave_balance = getattr(employee, 'leave_balance', None)
 
     # Recent leave requests
     recent_leave_requests = LeaveRequest.objects.filter(employee=employee).order_by(
@@ -1093,11 +1095,8 @@ def employee_holidays(request):
         return redirect("personal_home")
 
     # Get employee profile to access location
-
-    try:
-        employee = request.user.employee_profile
-
-    except:
+    employee = safe_get_employee_profile(request.user)
+    if not employee:
         messages.error(request, "Employee profile not found.")
 
         return redirect("personal_home")
@@ -1343,10 +1342,11 @@ def attendance_analytics(request):
 
     # Filter for Manager vs Admin
     if request.user.role == User.Role.MANAGER:
-        try:
-            # Get direct reports
-            employees = Employee.objects.filter(manager=request.user.employee_profile)
-        except:
+        # Get direct reports
+        manager_profile = safe_get_employee_profile(request.user)
+        if manager_profile:
+            employees = Employee.objects.filter(manager=manager_profile)
+        else:
             employees = Employee.objects.none()
     else:
         # Admin gets all company employees
@@ -1499,11 +1499,12 @@ def attendance_report(request):
 
     # Filter Employees based on Role
     if request.user.role == User.Role.MANAGER:
-        try:
+        manager_profile = safe_get_employee_profile(request.user)
+        if manager_profile:
             employees = Employee.objects.filter(
-                manager=request.user.employee_profile
+                manager=manager_profile
             ).select_related("user", "manager", "location")
-        except:
+        else:
             employees = Employee.objects.none()
     else:
         employees = Employee.objects.filter(
@@ -2147,10 +2148,10 @@ def leave_history(request):
     # Base query based on Role
 
     if request.user.role == User.Role.MANAGER:
-        try:
-            employees = Employee.objects.filter(manager=request.user.employee_profile)
-
-        except:
+        manager_profile = safe_get_employee_profile(request.user)
+        if manager_profile:
+            employees = Employee.objects.filter(manager=manager_profile)
+        else:
             employees = Employee.objects.none()
 
         leave_history = LeaveRequest.objects.filter(

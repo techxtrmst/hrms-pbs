@@ -106,6 +106,21 @@ gh secret set STAGING_STATIC_ROOT --repo $REPO --body "/app/staticfiles"
 gh secret set STAGING_MEDIA_URL --repo $REPO --body "/media/"
 gh secret set STAGING_MEDIA_ROOT --repo $REPO --body "/app/media"
 
+# === PostHog Configuration ===
+Write-Host "📊 Setting PostHog Configuration..." -ForegroundColor Cyan
+if ($envVars['POSTHOG_API_KEY']) {
+    gh secret set STAGING_POSTHOG_API_KEY --repo $REPO --body $envVars['POSTHOG_API_KEY']
+    gh secret set STAGING_POSTHOG_HOST --repo $REPO --body $envVars['POSTHOG_HOST']
+    gh secret set STAGING_POSTHOG_ENABLED --repo $REPO --body $envVars['POSTHOG_ENABLED']
+    Write-Host "✅ PostHog configuration set from .env.staging" -ForegroundColor Green
+} else {
+    Write-Host "⚠️ POSTHOG_API_KEY not found in .env.staging - skipping" -ForegroundColor Yellow
+}
+
+# === Logging Configuration ===
+Write-Host "📝 Setting Logging Configuration..." -ForegroundColor Cyan
+gh secret set STAGING_LOG_LEVEL --repo $REPO --body "INFO"
+
 Write-Host ""
 Write-Host "✅ All secrets have been configured!" -ForegroundColor Green
 Write-Host ""
