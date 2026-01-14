@@ -64,7 +64,7 @@ from django.contrib.auth.views import PasswordResetConfirmView
 
 class CustomPasswordResetConfirmView(PasswordResetConfirmView):
     template_name = "accounts/password_reset_confirm.html"
-    success_url = reverse_lazy("password_reset_complete")
+    success_url = reverse_lazy("login")  # Redirect to login page instead
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -72,4 +72,9 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
         user = form.user
         user.must_change_password = False
         user.save(update_fields=["must_change_password"])
+        
+        # Add success message
+        from django.contrib import messages
+        messages.success(self.request, "Password reset successful! Please log in with your new password.")
+        
         return response

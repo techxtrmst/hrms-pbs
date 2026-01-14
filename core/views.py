@@ -817,6 +817,51 @@ def personal_home(request):
         # Attendance History
         history = Attendance.objects.filter(employee=employee).order_by("-date")[:30]
         context["attendance_history"] = history
+        
+        # Announcements - current month
+        from companies.models import Announcement
+        from django.db.models import Q
+        
+        announcements = (
+            Announcement.objects.filter(company=employee.company, is_active=True)
+            .filter(Q(location__isnull=True) | Q(location=employee.location))
+            .order_by("-created_at")[:5]
+        )
+        context["announcements"] = announcements
+        
+        # Current month start and end dates
+        current_month = today.month
+        current_year = today.year
+        from calendar import monthrange
+        _, last_day = monthrange(current_year, current_month)
+        month_start = today.replace(day=1)
+        month_end = today.replace(day=last_day)
+        
+        # Celebrations - Birthdays this month (all dates in current month)
+        company_employees = Employee.objects.filter(company=employee.company)
+        birthdays = company_employees.filter(dob__month=current_month).order_by('dob__day')
+        context["birthdays"] = birthdays
+        
+        # Work Anniversaries this month (all dates in current month)
+        work_anniversaries = company_employees.filter(
+            date_of_joining__month=current_month
+        ).exclude(date_of_joining__year=current_year).order_by('date_of_joining__day')
+        context["work_anniversaries"] = work_anniversaries
+        
+        # Holidays - All holidays in current month (past and upcoming)
+        from companies.models import Holiday
+        
+        upcoming_holidays = (
+            Holiday.objects.filter(
+                company=employee.company,
+                date__gte=month_start,
+                date__lte=month_end,
+                is_active=True
+            )
+            .filter(Q(location__isnull=True) | Q(location=employee.location))
+            .order_by("date")
+        )
+        context["upcoming_holidays"] = upcoming_holidays
 
         # Shift Timings & Timeline Data
         if employee.assigned_shift:
