@@ -432,10 +432,9 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary view-map-btn" type="button"
-                                        data-attendance-id="{{ att.id }}" data-date="{{ att.date|date:'Y-m-d' }}">
+                                    <a href="{% url 'attendance_map' att.id %}" class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-map-marked-alt me-1"></i> View Map
-                                    </button>
+                                    </a>
                                 </td>
                                 <td>
                                     {{ att.effective_hours|default:"-" }}

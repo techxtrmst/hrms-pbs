@@ -3,30 +3,43 @@
 
 {% block title %}Map View{% endblock %}
 
-
-
 {% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <style>
     :root {
-        --keka-sidebar-width: 300px;
-        --keka-timeline-color: #e2e8f0;
-        --keka-primary: #6366f1;
+        --keka-sidebar-width: 320px;
+        --keka-bg-gray: #f8fafc;
+        --keka-text-primary: #1e293b;
+        --keka-text-secondary: #64748b;
+        --keka-border: #e2e8f0;
+        --keka-blue: #4f46e5;
+        --keka-red: #ef4444;
+        --keka-green: #10b981;
     }
 
-    /* Override base container styles to full width/height for this view if needed */
-    .content {
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Force full screen layout for map view */
+    .content,
+    .main-content {
         padding: 0 !important;
         margin: 0 !important;
         height: 100vh;
         overflow: hidden;
     }
 
+    /* Hide default sidebar/header if they exist in base */
+    .sidebar,
+    .navbar,
     .base-layout-container {
-        display: none;
-        /* Hide standard layout container if present */
+        display: none !important;
     }
 
-    /* Custom Layout for Map View */
+    /* Map View Layout */
     .map-view-wrapper {
         display: flex;
         height: 100vh;
@@ -35,57 +48,59 @@
         position: fixed;
         top: 0;
         left: 0;
-        z-index: 2000;
-        /* Above sidebar */
+        z-index: 9999;
     }
 
-    /* Sidebar Styling */
+    /* Sidebar Styles */
     .map-sidebar {
         width: var(--keka-sidebar-width);
         background: #fff;
-        border-right: 1px solid #e2e8f0;
+        border-right: 1px solid var(--keka-border);
         display: flex;
         flex-direction: column;
-        z-index: 10;
-        box-shadow: 4px 0 15px rgba(0, 0, 0, 0.05);
+        z-index: 20;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+        flex-shrink: 0;
     }
 
     .map-header {
-        padding: 20px;
-        border-bottom: 1px solid #e2e8f0;
+        padding: 24px;
+        border-bottom: 1px solid var(--keka-border);
+        background: #fff;
     }
 
     .map-header h5 {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 700;
-        color: #64748b;
+        color: #7d8fb3;
         text-transform: uppercase;
         margin: 0;
         letter-spacing: 0.5px;
+        line-height: 1.4;
     }
 
     .timeline-container {
         flex: 1;
         overflow-y: auto;
-        padding: 20px 0;
+        padding: 24px 0;
     }
 
     .timeline-section-title {
         font-size: 11px;
         text-transform: uppercase;
         color: #94a3b8;
-        font-weight: 600;
-        padding: 0 20px 10px;
+        font-weight: 700;
+        padding: 0 24px 12px;
         letter-spacing: 0.5px;
     }
 
     .timeline-item {
-        position: relative;
-        padding: 10px 20px;
+        padding: 12px 24px;
         display: flex;
         align-items: flex-start;
         cursor: pointer;
-        transition: background 0.2s;
+        transition: background 0.15s ease;
+        position: relative;
     }
 
     .timeline-item:hover {
@@ -94,101 +109,93 @@
 
     .timeline-item.active {
         background: #f1f5f9;
+        border-right: 3px solid var(--keka-blue);
     }
 
-    /* Timeline Line */
-    .timeline-item::before {
-        content: '';
-        position: absolute;
-        left: 36px;
-        /* Adjust based on layout */
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: var(--keka-timeline-color);
-        z-index: 0;
-        display: none;
-        /* Hidden by default, enable if we want connected line */
-    }
-
-    .timeline-marker {
+    .timeline-icon-col {
         width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        background: #cbd5e0;
-        color: white;
-        font-size: 10px;
-        font-weight: 700;
         display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-left: auto;
-        /* Right align marker */
-        z-index: 1;
-        flex-shrink: 0;
+        justify-content: flex-start;
+        padding-top: 2px;
     }
 
-    .timeline-content {
+    .timeline-info-col {
         flex: 1;
+        padding-left: 4px;
+    }
+
+    .timeline-badge-col {
+        margin-left: auto;
+        padding-left: 12px;
     }
 
     .timeline-time {
         font-size: 14px;
         font-weight: 600;
-        color: #334155;
-        display: flex;
-        align-items: center;
+        color: var(--keka-text-primary);
+        line-height: 1.2;
     }
 
     .timeline-coords {
-        font-size: 10px;
+        font-size: 11px;
         color: #94a3b8;
+        margin-top: 4px;
         font-family: monospace;
-        margin-top: 2px;
     }
 
-    .marker-clock-in {
-        background: #6366f1;
-        /* Indigo */
+    /* Badges (A, R, 1) */
+    .badge-circle {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        color: white;
+        font-size: 12px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
-    .marker-clock-out {
-        background: #ef4444;
-        /* Red */
+    .bg-indigo {
+        background-color: #6366f1;
     }
 
-    .marker-log {
-        background: #94a3b8;
-        /* Gray */
+    .bg-red {
+        background-color: #ef4444;
     }
 
-    /* Status Indicators */
-    .status-icon {
-        font-size: 10px;
-        margin-right: 8px;
+    .bg-gray {
+        background-color: #94a3b8;
     }
 
-    .status-in {
-        color: #10b981;
+    /* Icons */
+    .icon-check {
+        color: var(--keka-green);
+        font-size: 14px;
     }
 
-    .status-out {
-        color: #ef4444;
+    .icon-up {
+        color: var(--keka-red);
+        font-size: 14px;
     }
 
-    .status-log {
+    .icon-down {
         color: #64748b;
+        font-size: 14px;
     }
 
     /* Map Area */
     .map-wrapper {
         flex: 1;
         position: relative;
+        background: #f1f5f9;
     }
 
     #map {
         height: 100%;
         width: 100%;
+        z-index: 1;
     }
 
     /* Close Button */
@@ -198,39 +205,28 @@
         right: 20px;
         z-index: 1000;
         background: white;
-        border: none;
+        border: 1px solid #e2e8f0;
         width: 40px;
         height: 40px;
-        border-radius: 50%;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        opacity: 0.9;
-        transition: all 0.2s;
         text-decoration: none;
         color: #64748b;
+        font-size: 16px;
+        transition: all 0.2s;
     }
 
     .btn-close-view:hover {
-        opacity: 1;
-        transform: scale(1.05);
+        background: #f8fafc;
         color: #ef4444;
-    }
-
-    /* Scrollbar for sidebar */
-    .timeline-container::-webkit-scrollbar {
-        width: 4px;
-    }
-
-    .timeline-container::-webkit-scrollbar-thumb {
-        background: #cbd5e0;
-        border-radius: 2px;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
     }
 </style>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 {% endblock %}
 
 {% block content %}
@@ -239,65 +235,76 @@
     <div class="map-sidebar">
         <!-- Header -->
         <div class="map-header">
-            <h5>Map View - {{ attendance.date|date:"d M Y"|upper }} - {{ attendance.employee.user.first_name|upper }}
+            <h5>MAP VIEW - {{ attendance.date|date:"d M Y"|upper }} - {{ attendance.employee.user.get_full_name|upper }}
             </h5>
         </div>
 
         <!-- Timeline -->
         <div class="timeline-container">
-            <!-- Remote Clock In Section -->
+
+            {% if attendance.clock_in or attendance.clock_out %}
+            <div class="timeline-section-title">Remote Clock In</div>
+
+            <!-- Clock In -->
             {% if attendance.clock_in %}
-            <div class="timeline-section-title mt-2">Remote Clock In</div>
             <div class="timeline-item" onclick="panToLocation('{{ attendance.location_in }}')">
-                <div class="timeline-content">
-                    <div class="timeline-time">
-                        <i class="fas fa-check status-icon status-in"></i>
-                        {{ attendance.clock_in|time:"h:i A" }}
-                    </div>
+                <div class="timeline-icon-col">
+                    <i class="fas fa-check icon-check"></i>
+                </div>
+                <div class="timeline-info-col">
+                    <div class="timeline-time">{{ attendance.clock_in|time:"h:i A" }}</div>
                     <div class="timeline-coords">{{ attendance.location_in }}</div>
                 </div>
-                <div class="timeline-marker marker-clock-in">A</div>
+                <div class="timeline-badge-col">
+                    <div class="badge-circle bg-indigo">A</div>
+                </div>
             </div>
             {% endif %}
 
+            <!-- Clock Out -->
             {% if attendance.clock_out %}
             <div class="timeline-item" onclick="panToLocation('{{ attendance.location_out }}')">
-                <div class="timeline-content">
-                    <div class="timeline-time">
-                        <i class="fas fa-arrow-up status-icon status-out"></i>
-                        {{ attendance.clock_out|time:"h:i A" }}
-                    </div>
+                <div class="timeline-icon-col">
+                    <i class="fas fa-arrow-up icon-up"></i>
+                </div>
+                <div class="timeline-info-col">
+                    <div class="timeline-time">{{ attendance.clock_out|time:"h:i A" }}</div>
                     <div class="timeline-coords">{{ attendance.location_out }}</div>
                 </div>
-                <div class="timeline-marker marker-clock-out">R</div>
+                <div class="timeline-badge-col">
+                    <div class="badge-circle bg-red">R</div>
+                </div>
             </div>
             {% endif %}
+            {% endif %}
 
-            <!-- Location Punch Section -->
+            <!-- Logs -->
             {% if logs %}
             <div class="timeline-section-title mt-4">Location Punch</div>
             {% for log in logs %}
-            <div class="timeline-item"
-                onclick="panToPoint('{{ log.latitude }}', '{{ log.longitude }}', '{{ forloop.counter }}')">
-                <div class="timeline-content">
-                    <div class="timeline-time">
-                        <i class="fas fa-arrow-down status-icon status-log"></i>
-                        {{ log.timestamp|time:"h:i A" }}
-                    </div>
-                    <div class="timeline-coords">{{ log.latitude|floatformat:6 }},{{ log.longitude|floatformat:6 }}
+            <div class="timeline-item" onclick="panToPoint('{{ log.latitude }}', '{{ log.longitude }}')">
+                <div class="timeline-icon-col">
+                    <i class="fas fa-arrow-down icon-down"></i>
+                </div>
+                <div class="timeline-info-col">
+                    <div class="timeline-time">{{ log.timestamp|time:"h:i A" }}</div>
+                    <div class="timeline-coords">{{ log.latitude|floatformat:6 }}, {{ log.longitude|floatformat:6 }}
                     </div>
                 </div>
-                <div class="timeline-marker marker-log">{{ forloop.counter }}</div>
+                <div class="timeline-badge-col">
+                    <div class="badge-circle bg-gray">{{ forloop.counter }}</div>
+                </div>
             </div>
             {% endfor %}
             {% endif %}
+
         </div>
     </div>
 
     <!-- Map -->
     <div class="map-wrapper">
         <div id="map"></div>
-        <a href="javascript:history.back()" class="btn-close-view">
+        <a href="javascript:history.back()" class="btn-close-view" title="Close Map View">
             <i class="fas fa-times"></i>
         </a>
     </div>
@@ -312,18 +319,14 @@
 
 <script>
     let map;
-    const markers = {};
 
     document.addEventListener('DOMContentLoaded', function () {
-        // Parse Locations
         const locations = JSON.parse(document.getElementById('map-data').textContent);
-        console.log('Map locations:', locations);
 
-        // Default View if no data
-
-        // Default View if no data
+        // Handle Empty State
         if (locations.length === 0) {
-            map = L.map('map').setView([20.5937, 78.9629], 5); // India center
+            // Default center India
+            map = L.map('map', { zoomControl: false }).setView([20.5937, 78.9629], 5);
             L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
                 maxZoom: 20,
                 subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
@@ -331,122 +334,129 @@
             return;
         }
 
-
-        // Initialize Map
         const startPoint = locations[0];
 
-        // Google Map Layers
+        // Google Maps Layers
         const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
             maxZoom: 20,
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
         });
 
-        const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
-            maxZoom: 20,
-            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-        });
-
-        const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        });
-
-        // Initialize Map with Google Street View by default as requested
+        // Initialize Map
         map = L.map('map', {
             zoomControl: false,
-            layers: [googleStreets] // Default to Google Streets
+            layers: [googleStreets]
         }).setView([startPoint.lat, startPoint.lng], 16);
 
-        // Layer Control
-        const baseMaps = {
-            "Google Streets": googleStreets,
-            "Google Satellite": googleHybrid,
-            "OpenStreetMap": osm
-        };
-
-        L.control.layers(baseMaps).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-
-        // Define Icons matching the timeline colors
-        const createIcon = (color, label) => {
+        // Custom Marker Icon Creator
+        const createMarkerIcon = (color, label) => {
             return L.divIcon({
-                className: 'custom-map-marker',
-                html: `<div style="
-                    background: ${color};
-                    color: white;
-                    width: 30px;
-                    height: 30px;
-                    border-radius: 50% 50% 50% 0;
-                    transform: rotate(-45deg);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-                    border: 2px solid white;">
-                    <div style="transform: rotate(45deg); font-weight: bold; font-size: 12px;">${label}</div>
-                </div>`,
-                iconSize: [30, 30],
-                iconAnchor: [15, 30],
-                popupAnchor: [0, -30]
+                className: 'custom-pin',
+                html: `
+                    <div style="
+                        position: relative;
+                        width: 36px;
+                        height: 36px;
+                    ">
+                        <div style="
+                            background-color: ${color};
+                            width: 36px;
+                            height: 36px;
+                            border-radius: 50% 50% 50% 0;
+                            transform: rotate(-45deg);
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+                            border: 2px solid white;
+                        "></div>
+                        <div style="
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            width: 36px;
+                            height: 36px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            color: white;
+                            font-weight: bold;
+                            font-size: 13px;
+                            z-index: 2;
+                            margin-top: -3px; /* visual adjust for the rotated alignment */
+                        ">${label}</div>
+                    </div>
+                `,
+                iconSize: [36, 36],
+                iconAnchor: [18, 36], // Point of the pin
+                popupAnchor: [0, -36]
             });
         };
 
         const pathCoords = [];
-        let indexLog = 1;
+        let logIndex = 1;
 
         locations.forEach(loc => {
             const lat = parseFloat(loc.lat);
             const lng = parseFloat(loc.lng);
             pathCoords.push([lat, lng]);
 
-            let icon;
-            let label = '';
             let color = '#94a3b8'; // Default Gray
+            let label = '';
 
-            if (loc.type === 'start' || loc.type === 'in') {
-                color = '#6366f1';
+            if (loc.type === 'in') {
+                color = '#6366f1'; // Indigo
                 label = 'A';
-            } else if (loc.type === 'end' || loc.type === 'out') {
-                color = '#ef4444';
-                label = 'R'; // As per screenshot 'R' for remote clock out? Or E
+            } else if (loc.type === 'out') {
+                color = '#ef4444'; // Red
+                label = 'R';
             } else {
-                label = indexLog++;
+                label = logIndex++;
+                color = '#94a3b8'; // Gray
             }
 
-            icon = createIcon(color, label);
+            const icon = createMarkerIcon(color, label);
 
-            const marker = L.marker([lat, lng], { icon: icon })
+            L.marker([lat, lng], { icon: icon })
                 .addTo(map)
                 .bindPopup(`<b>${loc.title}</b><br>${lat}, ${lng}`);
-
-            // Store reference/id if we want to link from timeline
         });
 
-        // Draw Polyline
+        // Polyline
         if (pathCoords.length > 1) {
             const polyline = L.polyline(pathCoords, {
                 color: '#6366f1',
-                weight: 3,
-                opacity: 0.8,
-                dashArray: '10, 10'
+                weight: 4,
+                opacity: 0.6,
+                dashArray: '1, 0',
+                lineJoin: 'round'
             }).addTo(map);
-            map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
+
+            map.fitBounds(polyline.getBounds(), { padding: [100, 100] });
         }
     });
 
-    // Helper to pan map
-    window.panToPoint = function (lat, lng, label) {
-        if (map) {
-            map.flyTo([parseFloat(lat), parseFloat(lng)], 18);
-        }
-    }
-
+    // Sidebar Interactions
     window.panToLocation = function (locStr) {
         if (!locStr) return;
         const [lat, lng] = locStr.split(',').map(Number);
         if (map && lat && lng) {
-            map.flyTo([lat, lng], 18);
+            map.flyTo([lat, lng], 18, {
+                animate: true,
+                duration: 1.5
+            });
         }
-    }
+    };
+
+    window.panToPoint = function (lat, lng) {
+        if (map && lat && lng) {
+            map.flyTo([parseFloat(lat), parseFloat(lng)], 18, {
+                animate: true,
+                duration: 1.5
+            });
+        }
+    };
 </script>
 {% endblock %}
