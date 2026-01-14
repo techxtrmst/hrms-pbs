@@ -62,7 +62,7 @@ desktop.ini
 
 # Logs
 *.log
-logs/
+*logs/
 sent_emails/
 
 # Markdown files in root (except README)
