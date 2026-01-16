@@ -631,7 +631,8 @@
                             </div>
 
                             {% if attendance.clock_in %}
-                            <div class="text-muted small mt-1">Started at {{ attendance.get_current_session.clock_in|default:attendance.clock_in|time:"h:i A" }}
+                            <div class="text-muted small mt-1">Started at {{
+                                attendance.get_current_session.clock_in|default:attendance.clock_in|time:"h:i A" }}
                             </div>
                             {% endif %}
 
@@ -841,22 +842,6 @@
                         justify-content: center;
                     }
 
-<<<<<<< Updated upstream
-                    @keyframes pulse {
-                        0% {
-                            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
-                        }
-
-                        70% {
-                            box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
-                        }
-
-                        100% {
-                            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
-                        }
-                    }
-
-=======
                     .timeline-handle::after {
                         content: '';
                         position: absolute;
@@ -899,7 +884,6 @@
                         pointer-events: none;
                     }
 
->>>>>>> Stashed changes
                     .t-node {
                         position: absolute;
                         top: 0;
@@ -908,9 +892,6 @@
                         display: flex;
                         flex-direction: column;
                         align-items: center;
-<<<<<<< Updated upstream
-                        text-align: center;
-                        width: 80px;
                         transition: transform 0.3s ease;
                         cursor: default;
                     }
@@ -918,10 +899,8 @@
                     .t-node:hover {
                         transform: translateX(-50%) translateY(-5px) !important;
                         /* Keep the X transform but lift up */
-=======
                         z-index: 10;
                         pointer-events: auto;
->>>>>>> Stashed changes
                     }
 
                     .t-time {
@@ -929,10 +908,10 @@
                         bottom: 18px;
                         /* Time above dot */
                         font-weight: 700;
-<<<<<<< Updated upstream
-                        font-size: 0.95rem;
+                        font-size: 0.9rem;
                         margin-bottom: 14px;
                         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                        color: white;
                     }
 
                     .t-dot {
@@ -989,71 +968,14 @@
                     }
 
                     .shift-footer {
-                        background: rgba(0, 0, 0, 0.2);
-                        padding: 18px 28px;
-                        margin: 0;
-                        /* Full width now */
-=======
-                        font-size: 0.9rem;
-                        color: white;
-                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-                        white-space: nowrap;
-                    }
-
-                    .t-dot {
-                        width: 16px;
-                        height: 16px;
-                        border-radius: 50%;
-                        background: transparent;
-                        border: 3px solid white;
-                        box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-                        transition: all 0.3s ease;
-                    }
-
-                    /* Active/Past dots */
-                    .t-dot.web,
-                    .t-dot.remote {
-                        background: white;
-                        box-shadow: 0 0 15px white;
-                    }
-
-                    .t-dot.logout {
-                        background: white;
-                        box-shadow: 0 0 15px white;
-                    }
-
-                    .t-dot.clock-in-dot {
-                        background: #065f46;
-                        /* Dark Green */
-                        border-color: #065f46;
-                        box-shadow: 0 0 10px rgba(6, 95, 70, 0.5);
-                    }
-
-                    .t-dot.clock-out-dot {
-                        background: #991b1b;
-                        /* Dark Red */
-                        border-color: #991b1b;
-                        box-shadow: 0 0 10px rgba(153, 27, 27, 0.5);
-                    }
-
-                    .t-node.no-time .t-time {
-                        display: none;
-                    }
-
-                    .shift-footer {
                         background: rgba(0, 0, 0, 0.08);
                         padding: 18px 30px;
->>>>>>> Stashed changes
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
                         border-top: 1px solid rgba(255, 255, 255, 0.1);
                         position: relative;
-<<<<<<< Updated upstream
-                        z-index: 1;
-=======
                         z-index: 2;
->>>>>>> Stashed changes
                     }
                 </style>
 
@@ -1070,7 +992,8 @@
                                 </h3>
                                 <div class="opacity-75 fw-medium" style="font-size: 1.1rem; letter-spacing: 0.02em;">
                                     {% if assigned_shift %}
-                                    {{ assigned_shift.start_time|time:"h:i A" }} - {{ assigned_shift.end_time|time:"h:i A" }}
+                                    {{ assigned_shift.start_time|time:"h:i A" }} - {{ assigned_shift.end_time|time:"h:i
+                                    A" }}
                                     {% else %}
                                     09:00 AM - 06:00 PM
                                     {% endif %}
@@ -1081,14 +1004,6 @@
                         <div class="shift-badge">{% if assigned_shift %}Active{% else %}Default{% endif %}</div>
                     </div>
 
-<<<<<<< Updated upstream
-                    <div class="timeline-container" id="shift-timeline"
-                        data-start="{% if assigned_shift %}{{ assigned_shift.start_time|time:'H:i' }}{% else %}09:00{% endif %}"
-                        data-end="{% if assigned_shift %}{{ assigned_shift.end_time|time:'H:i' }}{% else %}18:00{% endif %}">
-                        <div class="timeline-track">
-                            <div class="timeline-progress-bar" id="timeline-progress">
-                                <div class="timeline-dot-indicator"></div>
-=======
                     <div class="d-flex justify-content-around align-items-center px-4 py-5">
                         <!-- Clock In Block -->
                         <div class="text-center">
@@ -1097,9 +1012,9 @@
                                     style="width: 50px; height: 50px;">
                                     <i class="fas fa-sign-in-alt text-white fs-4"></i>
                                 </div>
->>>>>>> Stashed changes
                             </div>
-                            <div class="text-white opacity-75 small text-uppercase fw-bold mb-1">Clock In</div>
+                            <div class="text-white opacity-75 small text-uppercase fw-bold mb-1">Clock In
+                            </div>
                             <div class="fs-2 fw-bold text-white mb-0" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 {% if attendance and attendance.clock_in %}
                                 {{ attendance.clock_in|time:"h:i A" }}
@@ -1120,9 +1035,11 @@
                                     <i class="fas fa-sign-out-alt text-white fs-4"></i>
                                 </div>
                             </div>
-                            <div class="text-white opacity-75 small text-uppercase fw-bold mb-1">Clock Out</div>
+                            <div class="text-white opacity-75 small text-uppercase fw-bold mb-1">Clock Out
+                            </div>
                             <div class="fs-2 fw-bold text-white mb-0" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                                {% if attendance and attendance.clock_out and not attendance.is_currently_clocked_in %}
+                                {% if attendance and attendance.clock_out and not
+                                attendance.is_currently_clocked_in %}
                                 {{ attendance.clock_out|time:"h:i A" }}
                                 {% else %}
                                 --:--
@@ -1145,7 +1062,8 @@
                             </div>
                             {% endfor %}
                             {% else %}
-                            <div class="fw-bold text-white opacity-75" style="font-size: 0.85rem;">No breaks configured
+                            <div class="fw-bold text-white opacity-75" style="font-size: 0.85rem;">No breaks
+                                configured
                             </div>
                             {% endif %}
                         </div>
@@ -1223,7 +1141,8 @@
                 <!-- Recent Activity Table -->
                 <div class="keka-card animate-enter delay-200">
                     <div class="card-header-clean">
-                        <span class="card-title-text"><i class="fas fa-list text-muted"></i> Attendance Log</span>
+                        <span class="card-title-text"><i class="fas fa-list text-muted"></i> Attendance
+                            Log</span>
                         <a href="{% url 'attendance_report' %}"
                             class="btn btn-sm btn-light text-primary fw-bold rounded-pill px-3">View All</a>
                     </div>
@@ -1249,16 +1168,19 @@
                                         </td>
                                         <td>
                                             {% if att.clock_in %}
-                                            <div class="fw-bold text-dark">{{ att.clock_in|time:"h:i A" }}</div>
+                                            <div class="fw-bold text-dark">{{ att.clock_in|time:"h:i A" }}
+                                            </div>
                                             {% else %}<span class="text-muted">-</span>{% endif %}
                                         </td>
                                         <td>
                                             {% if att.clock_out %}
-                                            <div class="fw-bold text-dark">{{ att.clock_out|time:"h:i A" }}</div>
+                                            <div class="fw-bold text-dark">{{ att.clock_out|time:"h:i A" }}
+                                            </div>
                                             {% else %}<span class="text-muted">-</span>{% endif %}
                                         </td>
                                         <td>
-                                            <div class="fw-bold text-secondary">{{ att.effective_hours|default:"-" }}
+                                            <div class="fw-bold text-secondary">{{
+                                                att.effective_hours|default:"-" }}
                                             </div>
                                         </td>
                                         <td>
@@ -1279,7 +1201,8 @@
                                     </tr>
                                     {% empty %}
                                     <tr>
-                                        <td colspan="6" class="text-center py-4 text-muted">No records found.</td>
+                                        <td colspan="6" class="text-center py-4 text-muted">No records
+                                            found.</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -1311,7 +1234,6 @@
                     </div>
                 </div>
 
-<<<<<<< Updated upstream
                 <!-- Announcements -->
                 <div class="keka-card animate-enter delay-200">
                     <div class="card-header-clean">
@@ -1336,835 +1258,758 @@
                                 <div class="text-muted small text-truncate">{{ ann.content }}</div>
                             </div>
                             {% endfor %}
-=======
-                <!-- Today's Celebrations Widget -->
-                <div class="keka-card animate-enter delay-150">
-                    <div class="p-3"
-                        style="background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); color: white;">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 text-white fw-bold"><i class="fas fa-calendar-star me-2"></i> Today's
-                                Celebrations</h6>
-                            <span class="badge bg-white text-dark">{{ today|date:"d M" }}</span>
-                        </div>
-                    </div>
 
-                    <div class="p-0">
-                        <div class="list-group list-group-flush">
-                            <!-- Today's Birthdays -->
-                            {% if todays_birthdays %}
-                            {% for emp in todays_birthdays %}
-                            <div class="list-group-item p-3 border-0 border-bottom">
-                                <div class="d-flex align-items-center">
-                                    <div class="flex-shrink-0"
-                                        style="width: 40px; height: 40px; background: #fce7f3; color: #db2777; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                                        {% if emp.profile_picture %}
-                                        <img src="{{ emp.profile_picture.url }}" alt="{{ emp.user.get_full_name }}"
-                                            style="width: 100%; height: 100%; object-fit: cover;">
-                                        {% else %}
-                                        <i class="fas fa-birthday-cake" style="font-size: 1rem;"></i>
-                                        {% endif %}
-                                    </div>
-                                    <div class="flex-grow-1 ms-3">
-                                        <h6 class="mb-0 fw-bold text-dark">{{ emp.user.get_full_name }}</h6>
-                                        <div class="text-muted small">Happy Birthday! 🎂</div>
+                            <!-- Today's Celebrations Widget -->
+                            <div class="keka-card animate-enter delay-150">
+                                <div class="p-3"
+                                    style="background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); color: white;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="m-0 text-white fw-bold"><i class="fas fa-calendar-star me-2"></i>
+                                            Today's
+                                            Celebrations</h6>
+                                        <span class="badge bg-white text-dark">{{ today|date:"d M" }}</span>
                                     </div>
                                 </div>
-                            </div>
-                            {% endfor %}
-                            {% endif %}
 
-                            <!-- Today's Work Anniversaries -->
-                            {% if todays_anniversaries %}
-                            {% for emp in todays_anniversaries %}
-                            <div class="list-group-item p-3 border-0 border-bottom">
-                                <div class="d-flex align-items-center">
-                                    <div class="flex-shrink-0"
-                                        style="width: 40px; height: 40px; background: #fffbeb; color: #d97706; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                                        {% if emp.profile_picture %}
-                                        <img src="{{ emp.profile_picture.url }}" alt="{{ emp.user.get_full_name }}"
-                                            style="width: 100%; height: 100%; object-fit: cover;">
-                                        {% else %}
-                                        <i class="fas fa-medal" style="font-size: 1rem;"></i>
-                                        {% endif %}
-                                    </div>
-                                    <div class="flex-grow-1 ms-3">
-                                        <h6 class="mb-0 fw-bold text-dark">{{ emp.user.get_full_name }}</h6>
-                                        <div class="text-muted small">
-                                            {% with years=emp.date_of_joining|timesince %}
-                                            Work Anniversary 🌟
-                                            {% endwith %}
+                                <div class="p-0">
+                                    <div class="list-group list-group-flush">
+                                        <!-- Today's Birthdays -->
+                                        {% if todays_birthdays %}
+                                        {% for emp in todays_birthdays %}
+                                        <div class="list-group-item p-3 border-0 border-bottom">
+                                            <div class="d-flex align-items-center">
+                                                <div class="flex-shrink-0"
+                                                    style="width: 40px; height: 40px; background: #fce7f3; color: #db2777; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                                                    {% if emp.profile_picture %}
+                                                    <img src="{{ emp.profile_picture.url }}"
+                                                        alt="{{ emp.user.get_full_name }}"
+                                                        style="width: 100%; height: 100%; object-fit: cover;">
+                                                    {% else %}
+                                                    <i class="fas fa-birthday-cake" style="font-size: 1rem;"></i>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="flex-grow-1 ms-3">
+                                                    <h6 class="mb-0 fw-bold text-dark">{{
+                                                        emp.user.get_full_name }}</h6>
+                                                    <div class="text-muted small">Happy Birthday! 🎂</div>
+                                                </div>
+                                            </div>
                                         </div>
+                                        {% endfor %}
+                                        {% endif %}
+
+                                        <!-- Today's Work Anniversaries -->
+                                        {% if todays_anniversaries %}
+                                        {% for emp in todays_anniversaries %}
+                                        <div class="list-group-item p-3 border-0 border-bottom">
+                                            <div class="d-flex align-items-center">
+                                                <div class="flex-shrink-0"
+                                                    style="width: 40px; height: 40px; background: #fffbeb; color: #d97706; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                                                    {% if emp.profile_picture %}
+                                                    <img src="{{ emp.profile_picture.url }}"
+                                                        alt="{{ emp.user.get_full_name }}"
+                                                        style="width: 100%; height: 100%; object-fit: cover;">
+                                                    {% else %}
+                                                    <i class="fas fa-medal" style="font-size: 1rem;"></i>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="flex-grow-1 ms-3">
+                                                    <h6 class="mb-0 fw-bold text-dark">{{
+                                                        emp.user.get_full_name }}</h6>
+                                                    <div class="text-muted small">
+                                                        {% with years=emp.date_of_joining|timesince %}
+                                                        Work Anniversary 🌟
+                                                        {% endwith %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                        {% endif %}
+
+                                        {% if not todays_birthdays and not todays_anniversaries %}
+                                        <div class="text-center py-4 text-muted small">
+                                            No celebrations today
+                                        </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
-                            {% endfor %}
-                            {% endif %}
 
-                            {% if not todays_birthdays and not todays_anniversaries %}
-                            <div class="text-center py-4 text-muted small">
-                                No celebrations today
-                            </div>
-                            {% endif %}
->>>>>>> Stashed changes
-                        </div>
-                        {% else %}
-                        <div class="p-4 text-center text-muted small">No active announcements</div>
-                        {% endif %}
-                    </div>
-                </div>
+                            <!-- Removed Holidays and Celebrations blocks as per request -->
 
-<<<<<<< Updated upstream
-                <!-- Celebrations -->
-                <div class="keka-card animate-enter delay-300">
-                    <div class="card-header-clean">
-                        <span class="card-title-text">
-                            <span class="card-icon-soft danger"><i class="fas fa-birthday-cake"></i></span>
-                            Celebrations
-                        </span>
-                    </div>
-                    <div class="card-body-clean">
-                        {% if birthdays or work_anniversaries %}
-                        {% for emp in birthdays %}
-                        <div class="celebration-item">
-                            <div class="celebration-avatar">{{ emp.user.first_name|first }}</div>
-                            <div class="lh-1">
-                                <div class="fw-bold text-dark small">{{ emp.user.get_full_name }}</div>
-                                <div class="text-muted" style="font-size: 0.7rem;">Birthday</div>
-                            </div>
-                            <div class="celebration-icon"><i class="fas fa-gift"></i></div>
-                        </div>
-                        {% endfor %}
-=======
-                <!-- Removed Holidays and Celebrations blocks as per request -->
->>>>>>> Stashed changes
-
-                        {% for emp in work_anniversaries %}
-                        <div class="celebration-item">
-                            <div class="celebration-avatar bg-warning bg-opacity-25 text-warning">
-                                {{ emp.user.first_name|first }}
-                            </div>
-                            <div class="lh-1">
-                                <div class="fw-bold text-dark small">{{ emp.user.get_full_name }}</div>
-                                <div class="text-muted" style="font-size: 0.7rem;">Anniversary</div>
-                            </div>
-                            <div class="celebration-icon text-warning"><i class="fas fa-medal"></i></div>
-                        </div>
-                        {% endfor %}
-                        {% else %}
-                        <div class="text-center text-muted small py-2">No celebrations today.</div>
-                        {% endif %}
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-    </div>
-
-    {% if is_birthday or is_work_anniversary %}
-    <!-- Overlay -->
-    <div id="celebration-overlay">
-        <div class="text-center p-5 bg-white rounded-4 shadow-lg animate-enter" style="max-width: 500px;">
-            <div class="display-1 mb-3">&#127881;</div>
-            <h2 class="fw-bold text-primary mb-2">
-                {% if is_birthday %}Happy Birthday!{% elif is_work_anniversary %}Happy Anniversary!{% endif %}
-            </h2>
-            <h4 class="fw-bold text-dark mb-4">{{ request.user.first_name }}</h4>
-            <p class="text-muted mb-4">Wishing you a fantastic day filled with joy and success!</p>
-            <button class="btn btn-primary rounded-pill px-5 fw-bold"
-                onclick="document.getElementById('celebration-overlay').style.display='none'">Thank You!</button>
-        </div>
-    </div>
-    {% endif %}
-    <!-- Early Clock Out Confirmation Modal -->
-    <div class="modal fade" id="clockOutConfirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-                <div class="modal-header bg-warning bg-opacity-10 border-0 pt-4 px-4 pb-0">
-                    <h5 class="modal-title fw-bold text-warning d-flex align-items-center gap-2">
-                        <i class="fas fa-exclamation-triangle"></i> Early Departure
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="text-center mb-4">
-                        <div class="mb-2">
-                            <span class="display-6 fw-bold text-dark" id="modal-remaining-hours">--</span>
-                            <span class="text-muted">hrs remaining</span>
-                        </div>
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar bg-success rounded-pill" role="progressbar" style="width: 0%"
-                                id="modal-progress-bar"></div>
-                        </div>
-                        <div class="d-flex justify-content-between small text-muted mt-1">
-                            <span id="modal-worked-hours">0h worked</span>
-                            <span id="modal-expected-hours">9h goal</span>
                         </div>
                     </div>
-                    <p class="text-muted text-center mb-0">
-                        You have not completed your full shift yet. Are you sure you want to clock out now?
-                    </p>
+
                 </div>
-                <div class="modal-footer border-0 justify-content-center pb-4 bg-light">
-                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-medium"
-                        data-bs-dismiss="modal" id="btn-cancel-clockout">Cancel</button>
-                    <button type="button" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm"
-                        id="btn-confirm-clockout">
-                        Yes, Clock Out
-                    </button>
+
+                {% if is_birthday or is_work_anniversary %}
+                <!-- Overlay -->
+                <div id="celebration-overlay">
+                    <div class="text-center p-5 bg-white rounded-4 shadow-lg animate-enter" style="max-width: 500px;">
+                        <div class="display-1 mb-3">&#127881;</div>
+                        <h2 class="fw-bold text-primary mb-2">
+                            {% if is_birthday %}Happy Birthday!{% elif is_work_anniversary %}Happy
+                            Anniversary!{% endif %}
+                        </h2>
+                        <h4 class="fw-bold text-dark mb-4">{{ request.user.first_name }}</h4>
+                        <p class="text-muted mb-4">Wishing you a fantastic day filled with joy and success!
+                        </p>
+                        <button class="btn btn-primary rounded-pill px-5 fw-bold"
+                            onclick="document.getElementById('celebration-overlay').style.display='none'">Thank
+                            You!</button>
+                    </div>
+                </div>
+                {% endif %}
+                <!-- Early Clock Out Confirmation Modal -->
+                <div class="modal fade" id="clockOutConfirmModal" tabindex="-1" aria-hidden="true"
+                    data-bs-backdrop="static">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                            <div class="modal-header bg-warning bg-opacity-10 border-0 pt-4 px-4 pb-0">
+                                <h5 class="modal-title fw-bold text-warning d-flex align-items-center gap-2">
+                                    <i class="fas fa-exclamation-triangle"></i> Early Departure
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body p-4">
+                                <div class="text-center mb-4">
+                                    <div class="mb-2">
+                                        <span class="display-6 fw-bold text-dark" id="modal-remaining-hours">--</span>
+                                        <span class="text-muted">hrs remaining</span>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-success rounded-pill" role="progressbar"
+                                            style="width: 0%" id="modal-progress-bar"></div>
+                                    </div>
+                                    <div class="d-flex justify-content-between small text-muted mt-1">
+                                        <span id="modal-worked-hours">0h worked</span>
+                                        <span id="modal-expected-hours">9h goal</span>
+                                    </div>
+                                </div>
+                                <p class="text-muted text-center mb-0">
+                                    You have not completed your full shift yet. Are you sure you want to
+                                    clock out now?
+                                </p>
+                            </div>
+                            <div class="modal-footer border-0 justify-content-center pb-4 bg-light">
+                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-medium"
+                                    data-bs-dismiss="modal" id="btn-cancel-clockout">Cancel</button>
+                                <button type="button" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm"
+                                    id="btn-confirm-clockout">
+                                    Yes, Clock Out
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
+            {% endblock %}
 
-{% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-<script>
-    // Clock
-    function updateClock() {
-        const now = new Date();
-        const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-        const dateString = now.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+            {% block extra_js %}
+            <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+            <script>
+                // Clock
+                function updateClock() {
+                    const now = new Date();
+                    const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    const dateString = now.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
 
-        document.getElementById('clock').innerText = timeString;
-        document.getElementById('date-sub').innerText = dateString;
+                    document.getElementById('clock').innerText = timeString;
+                    document.getElementById('date-sub').innerText = dateString;
 
-        // Header Date
-        const headerDate = document.getElementById('header-date');
-        if (headerDate) headerDate.innerText = dateString;
+                    // Header Date
+                    const headerDate = document.getElementById('header-date');
+                    if (headerDate) headerDate.innerText = dateString;
 
-        // Update dynamic greeting based on time
-        updateGreeting(now);
-    }
+                    // Update dynamic greeting based on time
+                    updateGreeting(now);
+                }
 
-    // Dynamic Greeting based on time of day
-    function updateGreeting(now) {
-        const hour = now.getHours();
-        const greetingElement = document.getElementById('dynamic-greeting');
+                // Dynamic Greeting based on time of day
+                function updateGreeting(now) {
+                    const hour = now.getHours();
+                    const greetingElement = document.getElementById('dynamic-greeting');
 
-        if (!greetingElement) return;
+                    if (!greetingElement) return;
 
-        let greeting;
-        if (hour >= 5 && hour < 12) {
-            greeting = 'Good Morning';
-        } else if (hour >= 12 && hour < 17) {
-            greeting = 'Good Afternoon';
-        } else if (hour >= 17 && hour < 21) {
-            greeting = 'Good Evening';
-        } else {
-            greeting = 'Good Night';
-        }
+                    let greeting;
+                    if (hour >= 5 && hour < 12) {
+                        greeting = 'Good Morning';
+                    } else if (hour >= 12 && hour < 17) {
+                        greeting = 'Good Afternoon';
+                    } else if (hour >= 17 && hour < 21) {
+                        greeting = 'Good Evening';
+                    } else {
+                        greeting = 'Good Night';
+                    }
 
-        greetingElement.textContent = greeting;
-    }
+                    greetingElement.textContent = greeting;
+                }
 
-    setInterval(updateClock, 1000);
-    updateClock();
+                setInterval(updateClock, 1000);
+                updateClock();
 
-    // Stats Ring Animation
-    setTimeout(() => {
-        // Mock calculation for circle progress (Max 8hrs = 100%)
-        // stroke-dashoffset = 283 - (283 * percent / 100)
-        const dataEl = document.getElementById('page-context');
-        const avgHours = dataEl?.dataset.avgHours || "00:00"; // "HH:MM"
-        const [h, m] = avgHours.split(':').map(Number);
-        const decimalHours = h + (m / 60);
-        const percent = Math.min((decimalHours / 9) * 100, 100); // 9 hours usually max
+                // Stats Ring Animation
+                setTimeout(() => {
+                    // Mock calculation for circle progress (Max 8hrs = 100%)
+                    // stroke-dashoffset = 283 - (283 * percent / 100)
+                    const dataEl = document.getElementById('page-context');
+                    const avgHours = dataEl?.dataset.avgHours || "00:00"; // "HH:MM"
+                    const [h, m] = avgHours.split(':').map(Number);
+                    const decimalHours = h + (m / 60);
+                    const percent = Math.min((decimalHours / 9) * 100, 100); // 9 hours usually max
 
-        const circle = document.getElementById('avg-progress');
-        if (circle) {
-            const offset = 283 - (283 * percent / 100);
-            circle.style.strokeDashoffset = offset;
-        }
-    }, 500);
+                    const circle = document.getElementById('avg-progress');
+                    if (circle) {
+                        const offset = 283 - (283 * percent / 100);
+                        circle.style.strokeDashoffset = offset;
+                    }
+                }, 500);
 
-    // Active Day Highlight
-    const currentDay = new Date().getDay(); // 0 = Sun, 1 = Mon...
-    const dayBadges = document.querySelectorAll('.day-badge');
-    if (dayBadges[currentDay]) {
-        dayBadges.forEach(b => b.classList.remove('active'));
-        dayBadges[currentDay].classList.add('active');
-    }
+                // Active Day Highlight
+                const currentDay = new Date().getDay(); // 0 = Sun, 1 = Mon...
+                const dayBadges = document.querySelectorAll('.day-badge');
+                if (dayBadges[currentDay]) {
+                    dayBadges.forEach(b => b.classList.remove('active'));
+                    dayBadges[currentDay].classList.add('active');
+                }
 
-    // Celebration Overlay
-    const isBirthdayRaw = "{{ is_birthday|yesno:'true,false' }}";
-    const isWorkAnniversaryRaw = "{{ is_work_anniversary|yesno:'true,false' }}";
-    const isBirthday = isBirthdayRaw === "true";
-    const isWorkAnniversary = isWorkAnniversaryRaw === "true";
+                // Celebration Overlay
+                const isBirthdayRaw = "{{ is_birthday|yesno:'true,false' }}";
+                const isWorkAnniversaryRaw = "{{ is_work_anniversary|yesno:'true,false' }}";
+                const isBirthday = isBirthdayRaw === "true";
+                const isWorkAnniversary = isWorkAnniversaryRaw === "true";
 
-    if (isBirthday || isWorkAnniversary) {
-        setTimeout(() => {
-            const ov = document.getElementById('celebration-overlay');
-            if (ov) {
-                ov.style.display = 'flex';
-                ov.offsetHeight;
-                ov.style.opacity = '1';
-                ov.style.opacity = '1';
-                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-            }
-        }, 1000);
-    }
+                if (isBirthday || isWorkAnniversary) {
+                    setTimeout(() => {
+                        const ov = document.getElementById('celebration-overlay');
+                        if (ov) {
+                            ov.style.display = 'flex';
+                            ov.offsetHeight;
+                            ov.style.opacity = '1';
+                            ov.style.opacity = '1';
+                            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                        }
+                    }, 1000);
+                }
 
-    // Live Timer for clocked in
-    {% if attendance.is_currently_clocked_in %}
-    const dataEl = document.getElementById('page-context');
-<<<<<<< Updated upstream
-    const clockInTimeStr = dataEl?.dataset.clockIn || "";
-    // Parse Date safely (Safari/iOS compatibility often requires T or /)
-    // Assuming ISO format from Django often effectively works or use Date.parse
-    const clockInTime = new Date(clockInTimeStr.replace(' ', 'T'));
-=======
-    // For timer, we want the CURRENT session start time, not the first clock-in of the day
-    // We can rely on the fact that if we are clocked in, there is an active session.
-    // However, data-clock-in in context might be the first clock in.
-    // Let's rely on a calculated field or the generic attendance.clock_in if it matches.
+                // Live Timer for clocked in
+                {% if attendance.is_currently_clocked_in %}
+                const dataEl = document.getElementById('page-context');
+                // For timer, we want the CURRENT session start time, not the first clock-in of the day
+                // We can rely on the fact that if we are clocked in, there is an active session.
+                // However, data-clock-in in context might be the first clock in.
+                // Let's rely on a calculated field or the generic attendance.clock_in if it matches.
 
-    // We need to fetch the current session start time and previous duration. 
-    // Since we handle this in JS, we need these values in the DOM data attributes.
-    // See the modification in the HTML above for data attributes.
+                // We need to fetch the current session start time and previous duration.
+                // Since we handle this in JS, we need these values in the DOM data attributes.
+                // See the modification in the HTML above for data attributes.
 
-    const currentSessionStartStr = "{{ attendance.get_current_session.clock_in.isoformat }}";
-    const previousHours = parseFloat("{{ attendance.total_working_hours|default:0 }}");
+                const currentSessionStartStr = "{{ attendance.get_current_session.clock_in.isoformat }}";
+                const previousHours = parseFloat("{{ attendance.total_working_hours|default:0 }}");
 
-    const clockInTime = new Date(currentSessionStartStr);
->>>>>>> Stashed changes
+                const clockInTime = new Date(currentSessionStartStr);
 
-    function updateDuration() {
-        if (!clockInTime) return;
-        const now = new Date();
-        const currentSessionDiff = now - clockInTime; // milliseconds
+                function updateDuration() {
+                    if (!clockInTime) return;
+                    const now = new Date();
+                    const currentSessionDiff = now - clockInTime; // milliseconds
 
-<<<<<<< Updated upstream
-        if (diff < 0) return; // Should not happen with server time sync, but safe guard
-=======
-        if (currentSessionDiff < 0) {
-            const timerEl = document.getElementById('timer-display');
-            if (timerEl) timerEl.innerText = "00:00:00";
-            return;
-        }
->>>>>>> Stashed changes
+                    if (currentSessionDiff < 0) {
+                        const timerEl = document.getElementById('timer-display');
+                        if (timerEl) timerEl.innerText = "00:00:00";
+                        return;
+                    }
 
-        // Total duration = Previous Sessions (in ms) + Current Session (in ms)
-        const totalMs = (previousHours * 3600 * 1000) + currentSessionDiff;
+                    // Total duration = Previous Sessions (in ms) + Current Session (in ms)
+                    const totalMs = (previousHours * 3600 * 1000) + currentSessionDiff;
 
-        const seconds = Math.floor((totalMs / 1000) % 60);
-        const minutes = Math.floor((totalMs / (1000 * 60)) % 60);
-        const hours = Math.floor((totalMs / (1000 * 60 * 60)));
+                    const seconds = Math.floor((totalMs / 1000) % 60);
+                    const minutes = Math.floor((totalMs / (1000 * 60)) % 60);
+                    const hours = Math.floor((totalMs / (1000 * 60 * 60)));
 
-        const formatted =
-            String(hours).padStart(2, '0') + ':' +
-            String(minutes).padStart(2, '0') + ':' +
-            String(seconds).padStart(2, '0');
+                    const formatted =
+                        String(hours).padStart(2, '0') + ':' +
+                        String(minutes).padStart(2, '0') + ':' +
+                        String(seconds).padStart(2, '0');
 
-        const timerEl = document.getElementById('timer-display');
-        if (timerEl) timerEl.innerText = formatted;
-    }
-    setInterval(updateDuration, 1000);
-    updateDuration();
-    {% endif %}
+                    const timerEl = document.getElementById('timer-display');
+                    if (timerEl) timerEl.innerText = formatted;
+                }
+                setInterval(updateDuration, 1000);
+                updateDuration();
+                {% endif %}
 
-    // Clock Actions
-    function handleClockAction(action, type, btnElement) {
-        if (!navigator.geolocation) {
-            alert("Geolocation is not supported by your browser. Please use a mobile device with GPS for accurate attendance.");
-            return;
-        }
+                // Clock Actions
+                function handleClockAction(action, type, btnElement) {
+                    if (!navigator.geolocation) {
+                        alert("Geolocation is not supported by your browser. Please use a mobile device with GPS for accurate attendance.");
+                        return;
+                    }
 
-        // Get the button that was clicked
-        const btn = btnElement || (event ? event.currentTarget : document.querySelector('.btn-clock'));
-        const origText = btn.innerHTML;
+                    // Get the button that was clicked
+                    const btn = btnElement || (event ? event.currentTarget : document.querySelector('.btn-clock'));
+                    const origText = btn.innerHTML;
 
-        // Immediate feedback
-        btn.innerHTML = '<span class="status-text me-2">Locating...</span> <i class="fas fa-satellite-dish fa-spin"></i>';
-        btn.disabled = true;
+                    // Immediate feedback
+                    btn.innerHTML = '<span class="status-text me-2">Locating...</span> <i class="fas fa-satellite-dish fa-spin"></i>';
+                    btn.disabled = true;
 
-        const csrfToken = document.getElementById('page-context')?.dataset.csrf || '';
+                    const csrfToken = document.getElementById('page-context')?.dataset.csrf || '';
 
-        // --- STRICT LOCATION STRATEGY (Keka-like) ---
-        // 1. Force High Accuracy
-        // 2. Reject cached locations (maximumAge: 0)
-        // 3. Continuous watching to let GPS 'settle'
-        // 4. Strict thresholds: Aim for 20m, Reject > 100m
+                    // --- STRICT LOCATION STRATEGY (Keka-like) ---
+                    // 1. Force High Accuracy
+                    // 2. Reject cached locations (maximumAge: 0)
+                    // 3. Continuous watching to let GPS 'settle'
+                    // 4. Strict thresholds: Aim for 20m, Reject > 100m
 
-        let bestPosition = null;
-        let watchId = null;
+                    let bestPosition = null;
+                    let watchId = null;
 
-        const TARGET_ACCURACY = 100;      // Keka-like: Aim for high precision (100m)
-        const ACCEPTABLE_ACCURACY = 3000; // Fallback: 3km (Desktops)
-        const MAX_WAIT_TIME = 10000;       // increased timeout to 10s to allow slower GPS lock
+                    const TARGET_ACCURACY = 100;      // Keka-like: Aim for high precision (100m)
+                    const ACCEPTABLE_ACCURACY = 3000; // Fallback: 3km (Desktops)
+                    const MAX_WAIT_TIME = 10000;       // increased timeout to 10s to allow slower GPS lock
 
-        // Clean up function
-        const stopLocationWatch = () => {
-            if (watchId !== null) {
-                navigator.geolocation.clearWatch(watchId);
-                watchId = null;
-            }
-        };
+                    // Clean up function
+                    const stopLocationWatch = () => {
+                        if (watchId !== null) {
+                            navigator.geolocation.clearWatch(watchId);
+                            watchId = null;
+                        }
+                    };
 
-        const finishLocationSearch = () => {
-            stopLocationWatch();
+                    const finishLocationSearch = () => {
+                        stopLocationWatch();
 
-            if (!bestPosition) {
-                // If we have NO position after 3s, try one last check or fail
-                // For now, fail but arguably we could retry
-                btn.innerHTML = origText;
-                btn.disabled = false;
-                alert("Could not acquire location signal. Please ensure GPS is enabled.");
-                return;
-            }
+                        if (!bestPosition) {
+                            // If we have NO position after 3s, try one last check or fail
+                            // For now, fail but arguably we could retry
+                            btn.innerHTML = origText;
+                            btn.disabled = false;
+                            alert("Could not acquire location signal. Please ensure GPS is enabled.");
+                            return;
+                        }
 
-            const acc = bestPosition.coords.accuracy;
+                        const acc = bestPosition.coords.accuracy;
 
-            // STRICT CHECK - REMOVED CONFIRMATION for speed
-            // If acc > ACCEPTABLE_ACCURACY, we just log it but proceed to avoid blocking user
+                        // STRICT CHECK - REMOVED CONFIRMATION for speed
+                        // If acc > ACCEPTABLE_ACCURACY, we just log it but proceed to avoid blocking user
 
-            // If good enough (or best we have), submit
-            submitClockRequest(bestPosition);
-        };
+                        // If good enough (or best we have), submit
+                        submitClockRequest(bestPosition);
+                    };
 
-        const timeoutId = setTimeout(finishLocationSearch, MAX_WAIT_TIME);
+                    const timeoutId = setTimeout(finishLocationSearch, MAX_WAIT_TIME);
 
-        const geoOptions = {
-            enableHighAccuracy: true,
-            timeout: 25000,
-            maximumAge: 0
-        };
+                    const geoOptions = {
+                        enableHighAccuracy: true,
+                        timeout: 25000,
+                        maximumAge: 0
+                    };
 
-        watchId = navigator.geolocation.watchPosition(
-            (pos) => {
-                const acc = Math.round(pos.coords.accuracy);
-                // Real-time feedback implementation like precise apps
-                // We show lat/long only if accuracy is decent, else just 'Acquiring'
-                // Actually showing Lat/Long gives confidence.
-                const lat = pos.coords.latitude.toFixed(5);
-                const lng = pos.coords.longitude.toFixed(5);
+                    watchId = navigator.geolocation.watchPosition(
+                        (pos) => {
+                            const acc = Math.round(pos.coords.accuracy);
+                            // Real-time feedback implementation like precise apps
+                            // We show lat/long only if accuracy is decent, else just 'Acquiring'
+                            // Actually showing Lat/Long gives confidence.
+                            const lat = pos.coords.latitude.toFixed(5);
+                            const lng = pos.coords.longitude.toFixed(5);
 
-                console.log(`GPS Update: Accuracy ${acc}m at ${lat},${lng}`);
+                            console.log(`GPS Update: Accuracy ${acc}m at ${lat},${lng}`);
 
-                btn.innerHTML = `<div class="d-flex flex-column align-items-center" style="line-height:1.2">
+                            btn.innerHTML = `<div class="d-flex flex-column align-items-center" style="line-height:1.2">
                     <span style="font-size:0.85rem">Accuracy: ${acc}m</span>
                     <span style="font-size:0.7rem; opacity:0.8">${lat}, ${lng}</span>
                 </div>`;
 
-                // Logic to track best position
-                if (!bestPosition || pos.coords.accuracy < bestPosition.coords.accuracy) {
-                    bestPosition = pos;
-                }
+                            // Logic to track best position
+                            if (!bestPosition || pos.coords.accuracy < bestPosition.coords.accuracy) {
+                                bestPosition = pos;
+                            }
 
-                // If we hit target (20m), stop immediately
-                if (pos.coords.accuracy <= TARGET_ACCURACY) {
-                    clearTimeout(timeoutId);
-                    finishLocationSearch();
-                }
-            },
-            (err) => {
-                console.warn("GPS Error:", err.message);
-                if (err.code === 1) { // PERMISSION_DENIED
-                    clearTimeout(timeoutId);
-                    stopLocationWatch();
-                    btn.innerHTML = origText;
-                    btn.disabled = false;
-                    alert("Location request denied. Attendance requires location access.");
-                }
-            },
-            geoOptions
-        );
-
-        function submitClockRequest(pos) {
-            // Update status
-            const acc = Math.round(pos.coords.accuracy);
-            btn.innerHTML = `<span class="status-text me-2">Verifying (${acc}m)...</span> <i class="fas fa-spinner fa-spin"></i>`;
-
-            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-            const requestData = {
-                latitude: pos.coords.latitude,
-                longitude: pos.coords.longitude,
-                accuracy: pos.coords.accuracy, // Send accuracy to server
-                type: type,
-                timezone: userTimezone
-            };
-
-            const apiUrl = action === 'in' ? "{% url 'api_clock_in' %}" : "{% url 'api_clock_out' %}";
-
-            fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                },
-                body: JSON.stringify(requestData)
-            })
-                .then(r => {
-                    if (!r.ok) {
-                        return r.text().then(text => {
-                            console.error("Server Error Detail:", text);
-                            throw new Error(`Server Error: ${r.status} - ${text.substring(0, 150)}...`)
-                        });
-                    }
-                    return r.json();
-                })
-                .then(data => {
-                    if (data.status === 'success') {
-                        // Success Animation
-                        if (typeof confetti === 'function') {
-                            confetti({
-                                particleCount: 150,
-                                spread: 70,
-                                origin: { y: 0.6 },
-                                colors: ['#6366f1', '#10b981', '#f59e0b']
-                            });
-                        }
-                        location.reload();
-                    }
-                    else if (data.status === 'confirmation_required' || data.requires_confirmation) {
-                        handleConfirmationModal(data, pos, csrfToken, btn, origText);
-                    }
-                    else if (data.already_clocked_in) {
-                        alert(data.message || 'You are already clocked in.');
-                        btn.innerHTML = origText;
-                        btn.disabled = false;
-                    }
-                    else {
-                        alert(data.message || 'An error occurred');
-                        btn.innerHTML = origText;
-                        btn.disabled = false;
-                    }
-                })
-                .catch((error) => {
-                    console.error("Fetch Error:", error);
-                    alert("Unable to connect to server: " + error.message);
-                    btn.innerHTML = origText;
-                    btn.disabled = false;
-                });
-        }
-
-        // Helper for Confirmation Modal
-        function handleConfirmationModal(data, pos, csrfToken, btn, origText) {
-            try {
-                const workedHours = data.worked_hours || 0;
-                const expectedHours = data.expected_hours || 9;
-                const remainingHours = (expectedHours - workedHours).toFixed(1);
-                const percent = data.completion_percentage || 0;
-
-                // Update Modal Content
-                const remainEl = document.getElementById('modal-remaining-hours');
-                if (remainEl) remainEl.innerText = remainingHours;
-
-                const workedEl = document.getElementById('modal-worked-hours');
-                if (workedEl) workedEl.innerText = workedHours + 'h worked';
-
-                const expectEl = document.getElementById('modal-expected-hours');
-                if (expectEl) expectEl.innerText = expectedHours + 'h goal';
-
-                const progEl = document.getElementById('modal-progress-bar');
-                if (progEl) progEl.style.width = percent + '%';
-
-                // Try to show Bootstrap Modal
-                const modalEl = document.getElementById('clockOutConfirmModal');
-                let bsModal = null;
-
-                if (modalEl && typeof bootstrap !== 'undefined') {
-                    bsModal = new bootstrap.Modal(modalEl);
-                    bsModal.show();
-
-                    const confirmBtn = document.getElementById('btn-confirm-clockout');
-                    const cancelBtn = document.getElementById('btn-cancel-clockout');
-
-                    // Clean up previous listeners
-                    const newConfirmBtn = confirmBtn.cloneNode(true);
-                    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-                    const newCancelBtn = cancelBtn.cloneNode(true);
-                    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-
-                    newCancelBtn.addEventListener('click', () => {
-                        btn.innerHTML = origText;
-                        btn.disabled = false;
-                    });
-
-                    // Handle modal close via X or click outside
-                    modalEl.addEventListener('hidden.bs.modal', function () {
-                        if (btn.disabled && btn.innerHTML.includes('Verifying')) {
-                            // If we didn't confirm, reset button
-                            btn.innerHTML = origText;
-                            btn.disabled = false;
-                        }
-                    }, { once: true });
-
-                    newConfirmBtn.addEventListener('click', () => {
-                        bsModal.hide();
-                        executeClockOut(true);
-                    });
-                } else {
-                    // Fallback if modal/bootstrap fails
-                    console.warn("Bootstrap modal not available, using fallback confirm");
-                    const proceed = confirm(
-                        `Early Departure Warning:\n` +
-                        `You have ${remainingHours} hours remaining in your shift.\n` +
-                        `Worked: ${workedHours}h / Goal: ${expectedHours}h\n\n` +
-                        `Are you sure you want to clock out?`
+                            // If we hit target (20m), stop immediately
+                            if (pos.coords.accuracy <= TARGET_ACCURACY) {
+                                clearTimeout(timeoutId);
+                                finishLocationSearch();
+                            }
+                        },
+                        (err) => {
+                            console.warn("GPS Error:", err.message);
+                            if (err.code === 1) { // PERMISSION_DENIED
+                                clearTimeout(timeoutId);
+                                stopLocationWatch();
+                                btn.innerHTML = origText;
+                                btn.disabled = false;
+                                alert("Location request denied. Attendance requires location access.");
+                            }
+                        },
+                        geoOptions
                     );
 
-                    if (proceed) {
-                        executeClockOut(true);
-                    } else {
-                        btn.innerHTML = origText;
-                        btn.disabled = false;
+                    function submitClockRequest(pos) {
+                        // Update status
+                        const acc = Math.round(pos.coords.accuracy);
+                        btn.innerHTML = `<span class="status-text me-2">Verifying (${acc}m)...</span> <i class="fas fa-spinner fa-spin"></i>`;
+
+                        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+                        const requestData = {
+                            latitude: pos.coords.latitude,
+                            longitude: pos.coords.longitude,
+                            accuracy: pos.coords.accuracy, // Send accuracy to server
+                            type: type,
+                            timezone: userTimezone
+                        };
+
+                        const apiUrl = action === 'in' ? "{% url 'api_clock_in' %}" : "{% url 'api_clock_out' %}";
+
+                        fetch(apiUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken
+                            },
+                            body: JSON.stringify(requestData)
+                        })
+                            .then(r => {
+                                if (!r.ok) {
+                                    return r.text().then(text => {
+                                        console.error("Server Error Detail:", text);
+                                        throw new Error(`Server Error: ${r.status} - ${text.substring(0, 150)}...`)
+                                    });
+                                }
+                                return r.json();
+                            })
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    // Success Animation
+                                    if (typeof confetti === 'function') {
+                                        confetti({
+                                            particleCount: 150,
+                                            spread: 70,
+                                            origin: { y: 0.6 },
+                                            colors: ['#6366f1', '#10b981', '#f59e0b']
+                                        });
+                                    }
+                                    location.reload();
+                                }
+                                else if (data.status === 'confirmation_required' || data.requires_confirmation) {
+                                    handleConfirmationModal(data, pos, csrfToken, btn, origText);
+                                }
+                                else if (data.already_clocked_in) {
+                                    alert(data.message || 'You are already clocked in.');
+                                    btn.innerHTML = origText;
+                                    btn.disabled = false;
+                                }
+                                else {
+                                    alert(data.message || 'An error occurred');
+                                    btn.innerHTML = origText;
+                                    btn.disabled = false;
+                                }
+                            })
+                            .catch((error) => {
+                                console.error("Fetch Error:", error);
+                                alert("Unable to connect to server: " + error.message);
+                                btn.innerHTML = origText;
+                                btn.disabled = false;
+                            });
+                    }
+
+                    // Helper for Confirmation Modal
+                    function handleConfirmationModal(data, pos, csrfToken, btn, origText) {
+                        try {
+                            const workedHours = data.worked_hours || 0;
+                            const expectedHours = data.expected_hours || 9;
+                            const remainingHours = (expectedHours - workedHours).toFixed(1);
+                            const percent = data.completion_percentage || 0;
+
+                            // Update Modal Content
+                            const remainEl = document.getElementById('modal-remaining-hours');
+                            if (remainEl) remainEl.innerText = remainingHours;
+
+                            const workedEl = document.getElementById('modal-worked-hours');
+                            if (workedEl) workedEl.innerText = workedHours + 'h worked';
+
+                            const expectEl = document.getElementById('modal-expected-hours');
+                            if (expectEl) expectEl.innerText = expectedHours + 'h goal';
+
+                            const progEl = document.getElementById('modal-progress-bar');
+                            if (progEl) progEl.style.width = percent + '%';
+
+                            // Try to show Bootstrap Modal
+                            const modalEl = document.getElementById('clockOutConfirmModal');
+                            let bsModal = null;
+
+                            if (modalEl && typeof bootstrap !== 'undefined') {
+                                bsModal = new bootstrap.Modal(modalEl);
+                                bsModal.show();
+
+                                const confirmBtn = document.getElementById('btn-confirm-clockout');
+                                const cancelBtn = document.getElementById('btn-cancel-clockout');
+
+                                // Clean up previous listeners
+                                const newConfirmBtn = confirmBtn.cloneNode(true);
+                                confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+                                const newCancelBtn = cancelBtn.cloneNode(true);
+                                cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+                                newCancelBtn.addEventListener('click', () => {
+                                    btn.innerHTML = origText;
+                                    btn.disabled = false;
+                                });
+
+                                // Handle modal close via X or click outside
+                                modalEl.addEventListener('hidden.bs.modal', function () {
+                                    if (btn.disabled && btn.innerHTML.includes('Verifying')) {
+                                        // If we didn't confirm, reset button
+                                        btn.innerHTML = origText;
+                                        btn.disabled = false;
+                                    }
+                                }, { once: true });
+
+                                newConfirmBtn.addEventListener('click', () => {
+                                    bsModal.hide();
+                                    executeClockOut(true);
+                                });
+                            } else {
+                                // Fallback if modal/bootstrap fails
+                                console.warn("Bootstrap modal not available, using fallback confirm");
+                                const proceed = confirm(
+                                    `Early Departure Warning:\n` +
+                                    `You have ${remainingHours} hours remaining in your shift.\n` +
+                                    `Worked: ${workedHours}h / Goal: ${expectedHours}h\n\n` +
+                                    `Are you sure you want to clock out?`
+                                );
+
+                                if (proceed) {
+                                    executeClockOut(true);
+                                } else {
+                                    btn.innerHTML = origText;
+                                    btn.disabled = false;
+                                }
+                            }
+                        } catch (e) {
+                            console.error("Modal Error:", e);
+                            // Last ditch fallback
+                            if (confirm("You are leaving early. Continue to clock out?")) {
+                                executeClockOut(true);
+                            } else {
+                                btn.innerHTML = origText;
+                                btn.disabled = false;
+                            }
+                        }
+
+                        function executeClockOut(force) {
+                            btn.innerHTML = '<span class="status-text me-2">Processing...</span> <i class="fas fa-spinner fa-spin"></i>';
+
+                            fetch("{% url 'api_clock_out' %}", {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                                body: JSON.stringify({
+                                    latitude: pos.coords.latitude,
+                                    longitude: pos.coords.longitude,
+                                    force_clockout: true,
+                                    accuracy: pos.coords.accuracy
+                                })
+                            })
+                                .then(r => r.json())
+                                .then(data2 => {
+                                    if (data2.status === 'success') {
+                                        location.reload();
+                                    } else {
+                                        alert(data2.message);
+                                        btn.innerHTML = origText;
+                                        btn.disabled = false;
+                                    }
+                                })
+                                .catch((err) => {
+                                    console.error(err);
+                                    alert("Network error during clock out.");
+                                    btn.innerHTML = origText;
+                                    btn.disabled = false;
+                                });
+                        }
                     }
                 }
-            } catch (e) {
-                console.error("Modal Error:", e);
-                // Last ditch fallback
-                if (confirm("You are leaving early. Continue to clock out?")) {
-                    executeClockOut(true);
-                } else {
-                    btn.innerHTML = origText;
-                    btn.disabled = false;
+
+                // Timeline Animation Removed
+
+
+
+                // --- Location Tracking Service ---
+
+                // 3D Tilt Effect for Shift Card
+                const card = document.querySelector('.shift-card');
+                if (card) {
+                    card.addEventListener('mousemove', (e) => {
+                        const rect = card.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+
+                        const centerX = rect.width / 2;
+                        const centerY = rect.height / 2;
+
+                        const rotateX = ((y - centerY) / centerY) * -5;
+                        const rotateY = ((x - centerX) / centerX) * 5;
+
+                        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+                    });
+
+                    card.addEventListener('mouseleave', () => {
+                        card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
+                    });
                 }
-            }
 
-            function executeClockOut(force) {
-                btn.innerHTML = '<span class="status-text me-2">Processing...</span> <i class="fas fa-spinner fa-spin"></i>';
+                // Staggered Week Days Animation
+                const badges = document.querySelectorAll('.day-badge');
+                badges.forEach((badge, index) => {
+                    badge.style.opacity = '0';
+                    badge.style.transform = 'translateY(10px)';
+                    badge.style.transition = 'all 0.3s ease-out';
+                    setTimeout(() => {
+                        badge.style.opacity = '1';
+                        badge.style.transform = 'translateY(0)';
+                    }, 500 + (index * 100)); // Start after initial load 500ms
+                });
 
-                fetch("{% url 'api_clock_out' %}", {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-                    body: JSON.stringify({
-                        latitude: pos.coords.latitude,
-                        longitude: pos.coords.longitude,
-                        force_clockout: true,
-                        accuracy: pos.coords.accuracy
-                    })
-                })
-                    .then(r => r.json())
-                    .then(data2 => {
-                        if (data2.status === 'success') {
-                            location.reload();
-                        } else {
-                            alert(data2.message);
-                            btn.innerHTML = origText;
-                            btn.disabled = false;
+                // Pulse Effect for Active Day (CSS handled)
+
+                // Hourly Location Tracking
+                let locationTrackingInterval;
+
+                function startLocationTracking() {
+                    // Check location tracking status immediately
+                    checkLocationTrackingStatus();
+
+                    // Set up interval to check every 1 minute (to catch hourly marks precisely)
+                    locationTrackingInterval = setInterval(checkLocationTrackingStatus, 60000); // 1 minute
+                }
+
+                function checkLocationTrackingStatus() {
+                    fetch("{% url 'api_location_tracking_status' %}", {
+                        method: 'GET',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
                         }
                     })
-                    .catch((err) => {
-                        console.error(err);
-                        alert("Network error during clock out.");
-                        btn.innerHTML = origText;
-                        btn.disabled = false;
-                    });
-            }
-        }
-    }
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success' && data.needs_location) {
+                                requestLocationUpdate();
+                            } else if (data.tracking_stopped) {
+                                // Server says stop (9 hours done)
+                                console.log("Tracking stopped by server: " + data.message);
+                                if (locationTrackingInterval) {
+                                    clearInterval(locationTrackingInterval);
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.log('Location tracking status check failed:', error);
+                        });
+                }
 
-    // Timeline Animation Removed
-
-<<<<<<< Updated upstream
-        const startTimeStr = container.getAttribute('data-start'); // "HH:MM"
-        const endTimeStr = container.getAttribute('data-end');     // "HH:MM"
-        const progressBar = document.getElementById('timeline-progress');
-
-        const now = new Date();
-        const currentTotalMinutes = (now.getHours() * 60) + now.getMinutes();
-
-        const [startH, startM] = startTimeStr.split(':').map(Number);
-        const [endH, endM] = endTimeStr.split(':').map(Number);
-
-        const startTotalMinutes = (startH * 60) + startM;
-        const endTotalMinutes = (endH * 60) + endM;
-
-        let totalDuration = endTotalMinutes - startTotalMinutes;
-        if (totalDuration <= 0) totalDuration = 24 * 60; // Handle cross-midnight
-
-        let elapsed = currentTotalMinutes - startTotalMinutes;
-        let percent = (elapsed / totalDuration) * 100;
-
-        // Clamp
-        if (percent < 0) percent = 0;
-        if (percent > 100) percent = 100;
-
-        if (progressBar) {
-            progressBar.style.width = percent + '%';
-        }
-    }
-
-    setInterval(updateTimelinePosition, 60000); // Every minute
-    updateTimelinePosition(); // Run immediately
-=======
->>>>>>> Stashed changes
-
-    // --- Location Tracking Service ---
-
-    // 3D Tilt Effect for Shift Card
-    const card = document.querySelector('.shift-card');
-    if (card) {
-        card.addEventListener('mousemove', (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-
-            const rotateX = ((y - centerY) / centerY) * -5;
-            const rotateY = ((x - centerX) / centerX) * 5;
-
-            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
-        });
-
-        card.addEventListener('mouseleave', () => {
-            card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
-        });
-    }
-
-    // Staggered Week Days Animation
-    const badges = document.querySelectorAll('.day-badge');
-    badges.forEach((badge, index) => {
-        badge.style.opacity = '0';
-        badge.style.transform = 'translateY(10px)';
-        badge.style.transition = 'all 0.3s ease-out';
-        setTimeout(() => {
-            badge.style.opacity = '1';
-            badge.style.transform = 'translateY(0)';
-        }, 500 + (index * 100)); // Start after initial load 500ms
-    });
-
-    // Pulse Effect for Active Day (CSS handled)
-
-    // Hourly Location Tracking
-    let locationTrackingInterval;
-
-    function startLocationTracking() {
-        // Check location tracking status immediately
-        checkLocationTrackingStatus();
-
-        // Set up interval to check every 1 minute (to catch hourly marks precisely)
-        locationTrackingInterval = setInterval(checkLocationTrackingStatus, 60000); // 1 minute
-    }
-
-    function checkLocationTrackingStatus() {
-        fetch("{% url 'api_location_tracking_status' %}", {
-            method: 'GET',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
-            }
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success' && data.needs_location) {
-                    requestLocationUpdate();
-                } else if (data.tracking_stopped) {
-                    // Server says stop (9 hours done)
-                    console.log("Tracking stopped by server: " + data.message);
-                    if (locationTrackingInterval) {
-                        clearInterval(locationTrackingInterval);
+                function requestLocationUpdate() {
+                    if (!navigator.geolocation) {
+                        console.log('Geolocation not supported');
+                        return;
                     }
+
+                    // Show a subtle notification
+                    showLocationUpdateNotification();
+
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            submitHourlyLocation(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
+                        },
+                        (error) => {
+                            console.log('Location access denied or failed:', error);
+                            // Still try to submit with null coordinates to mark the attempt
+                            submitHourlyLocation(null, null, null);
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 300000 // 5 minutes
+                        }
+                    );
                 }
-            })
-            .catch(error => {
-                console.log('Location tracking status check failed:', error);
-            });
-    }
 
-    function requestLocationUpdate() {
-        if (!navigator.geolocation) {
-            console.log('Geolocation not supported');
-            return;
-        }
+                function submitHourlyLocation(lat, lng, accuracy) {
+                    const requestData = {
+                        latitude: lat,
+                        longitude: lng,
+                        accuracy: accuracy
+                    };
 
-        // Show a subtle notification
-        showLocationUpdateNotification();
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                submitHourlyLocation(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
-            },
-            (error) => {
-                console.log('Location access denied or failed:', error);
-                // Still try to submit with null coordinates to mark the attempt
-                submitHourlyLocation(null, null, null);
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 300000 // 5 minutes
-            }
-        );
-    }
-
-    function submitHourlyLocation(lat, lng, accuracy) {
-        const requestData = {
-            latitude: lat,
-            longitude: lng,
-            accuracy: accuracy
-        };
-
-        fetch("{% url 'api_submit_hourly_location' %}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify(requestData)
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    console.log('Hourly location updated successfully');
-                    hideLocationUpdateNotification();
-                } else if (data.status === 'tracking_stopped') {
-                    console.log("Tracking stopped during submission: " + data.message);
-                    hideLocationUpdateNotification();
-                    if (locationTrackingInterval) clearInterval(locationTrackingInterval);
-                } else {
-                    console.log('Location update failed:', data.message);
+                    fetch("{% url 'api_submit_hourly_location' %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify(requestData)
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                console.log('Hourly location updated successfully');
+                                hideLocationUpdateNotification();
+                            } else if (data.status === 'tracking_stopped') {
+                                console.log("Tracking stopped during submission: " + data.message);
+                                hideLocationUpdateNotification();
+                                if (locationTrackingInterval) clearInterval(locationTrackingInterval);
+                            } else {
+                                console.log('Location update failed:', data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.log('Location update error:', error);
+                        });
                 }
-            })
-            .catch(error => {
-                console.log('Location update error:', error);
-            });
-    }
 
-    function showLocationUpdateNotification() {
-        // Create or show a subtle notification
-        let notification = document.getElementById('location-notification');
-        if (!notification) {
-            notification = document.createElement('div');
-            notification.id = 'location-notification';
-            notification.innerHTML = `
+                function showLocationUpdateNotification() {
+                    // Create or show a subtle notification
+                    let notification = document.getElementById('location-notification');
+                    if (!notification) {
+                        notification = document.createElement('div');
+                        notification.id = 'location-notification';
+                        notification.innerHTML = `
                 <div style="position: fixed; top: 20px; right: 20px; background: #6366f1; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; font-size: 14px;">
                     <i class="fas fa-map-marker-alt me-2"></i>
                     Updating location for attendance tracking...
                 </div>
             `;
-            document.body.appendChild(notification);
-        }
-        notification.style.display = 'block';
-    }
+                        document.body.appendChild(notification);
+                    }
+                    notification.style.display = 'block';
+                }
 
-    function hideLocationUpdateNotification() {
-        const notification = document.getElementById('location-notification');
-        if (notification) {
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 2000);
-        }
-    }
+                function hideLocationUpdateNotification() {
+                    const notification = document.getElementById('location-notification');
+                    if (notification) {
+                        setTimeout(() => {
+                            notification.style.display = 'none';
+                        }, 2000);
+                    }
+                }
 
-    // Start location tracking when page loads (only if user is clocked in)
-    {% if attendance and attendance.is_currently_clocked_in %}
-    document.addEventListener('DOMContentLoaded', function () {
-        startLocationTracking();
-    });
-    {% endif %}
+                // Start location tracking when page loads (only if user is clocked in)
+                {% if attendance and attendance.is_currently_clocked_in %}
+                document.addEventListener('DOMContentLoaded', function () {
+                    startLocationTracking();
+                });
+                {% endif %}
 
-    // Clean up interval when page unloads
-    window.addEventListener('beforeunload', function () {
-        if (locationTrackingInterval) {
-            clearInterval(locationTrackingInterval);
-        }
-    });
+                // Clean up interval when page unloads
+                window.addEventListener('beforeunload', function () {
+                    if (locationTrackingInterval) {
+                        clearInterval(locationTrackingInterval);
+                    }
+                });
 
-</script>
-{% endblock %}
+            </script>
+            {% endblock %}
