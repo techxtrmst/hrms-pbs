@@ -211,8 +211,14 @@
                 <div class="request-list">
                     {% for leave in pending_leaves %}
                     <div class="request-item">
-                        <div class="req-avatar">
+                        <div class="req-avatar" style="overflow: hidden;">
+                            {% if leave.employee.profile_picture %}
+                            <img src="{{ leave.employee.profile_picture.url }}"
+                                alt="{{ leave.employee.user.get_full_name }}"
+                                style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
                             {{ leave.employee.user.first_name|first }}{{ leave.employee.user.last_name|first }}
+                            {% endif %}
                         </div>
                         <div class="req-info">
                             <div class="req-name">{{ leave.employee.user.get_full_name }}</div>
@@ -309,8 +315,7 @@
                                             <h6 class="mb-1 fw-bold text-dark">{{ announcement.title }}</h6>
                                             <small class="text-muted">{{ announcement.created_at|date:"d M" }}</small>
                                         </div>
-                                        <p class="mb-0 text-muted small" style="line-height: 1.4;">{{
-                                            announcement.content|truncatechars:80 }}</p>
+                                        <p class="mb-0 text-muted small" style="line-height: 1.4;">{{ announcement.content|truncatechars:80 }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -331,8 +336,14 @@
                             {% for emp in birthdays %}
                             <div class="list-group-item p-3 border-0 border-bottom">
                                 <div class="d-flex align-items-center">
-                                    <div class="req-avatar flex-shrink-0" style="background:#e0e7ff; color:#4338ca;">
+                                    <div class="req-avatar flex-shrink-0"
+                                        style="background:#e0e7ff; color:#4338ca; overflow: hidden;">
+                                        {% if emp.profile_picture %}
+                                        <img src="{{ emp.profile_picture.url }}" alt="{{ emp.user.get_full_name }}"
+                                            style="width: 100%; height: 100%; object-fit: cover;">
+                                        {% else %}
                                         <i class="fas fa-birthday-cake"></i>
+                                        {% endif %}
                                     </div>
                                     <div class="flex-grow-1 ms-3">
                                         <div class="d-flex justify-content-between align-items-center">
@@ -361,16 +372,21 @@
                             {% for emp in work_anniversaries %}
                             <div class="list-group-item p-3 border-0 border-bottom">
                                 <div class="d-flex align-items-center">
-                                    <div class="req-avatar flex-shrink-0" style="background:#fff7ed; color:#ea580c;">
+                                    <div class="req-avatar flex-shrink-0"
+                                        style="background:#fff7ed; color:#ea580c; overflow: hidden;">
+                                        {% if emp.profile_picture %}
+                                        <img src="{{ emp.profile_picture.url }}" alt="{{ emp.user.get_full_name }}"
+                                            style="width: 100%; height: 100%; object-fit: cover;">
+                                        {% else %}
                                         <i class="fas fa-medal"></i>
+                                        {% endif %}
                                     </div>
                                     <div class="flex-grow-1 ms-3">
                                         <h6 class="mb-0 fw-bold text-dark">{{ emp.user.get_full_name }}</h6>
                                         <div class="text-muted small mt-1">{{ emp.years_of_service }} Years of Service
                                             🌟</div>
                                     </div>
-                                    <span class="badge bg-soft-warning text-warning rounded-pill">{{
-                                        emp.date_of_joining|date:"d M" }}</span>
+                                    <span class="badge bg-soft-warning text-warning rounded-pill">{{ emp.date_of_joining|date:"d M" }}</span>
                                 </div>
                             </div>
                             {% endfor %}
@@ -397,8 +413,7 @@
                                         <h6 class="mb-0 fw-bold text-dark">{{ holiday.name }}</h6>
                                         <div class="text-muted small mt-1">{{ holiday.date|date:"l" }}</div>
                                     </div>
-                                    <span class="badge bg-soft-success text-success rounded-pill">{{
-                                        holiday.date|date:"d M" }}</span>
+                                    <span class="badge bg-soft-success text-success rounded-pill">{{ holiday.date|date:"d M" }}</span>
                                 </div>
                             </div>
                             {% endfor %}
@@ -448,8 +463,13 @@
                 <div class="request-list">
                     {% for member in team_members %}
                     <div class="request-item">
-                        <div class="req-avatar">
+                        <div class="req-avatar" style="overflow: hidden;">
+                            {% if member.profile_picture %}
+                            <img src="{{ member.profile_picture.url }}" alt="{{ member.user.get_full_name }}"
+                                style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
                             {{ member.user.first_name|first }}{{ member.user.last_name|first }}
+                            {% endif %}
                         </div>
                         <div class="req-info">
                             <div class="req-name">{{ member.user.get_full_name }}</div>
