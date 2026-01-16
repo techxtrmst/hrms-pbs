@@ -10,6 +10,11 @@ urlpatterns = [
     path("week-off-config/", views.week_off_config, name="week_off_config"),
     path("role-configuration/", views.role_configuration, name="role_configuration"),
     path(
+        "announcement-configuration/",
+        views.announcement_configuration,
+        name="announcement_configuration",
+    ),
+    path(
         "api/quick-add-department/",
         views.quick_add_department,
         name="quick_add_department",

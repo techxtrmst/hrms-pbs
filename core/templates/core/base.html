@@ -473,6 +473,10 @@
                     class="{% if 'policies/admin' in request.path %}active{% endif %}">
                     <i class="fas fa-file-contract"></i> Policies
                 </a>
+                <a href="{% url 'announcement_configuration' %}"
+                    class="{% if 'announcement-configuration' in request.path %}active{% endif %}">
+                    <i class="fas fa-bullhorn"></i> Announcements
+                </a>
             </div>
         </div>
         {% endif %}

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Company, Holiday, ShiftSchedule, Location
+from .models import Company, Holiday, ShiftSchedule, Location, Announcement
 
 
 @admin.register(Company)
@@ -91,3 +91,21 @@ class ShiftScheduleAdmin(admin.ModelAdmin):
             {"fields": ("created_at", "updated_at"), "classes": ("collapse",)},
         ),
     )
+
+
+@admin.register(Announcement)
+class AnnouncementAdmin(admin.ModelAdmin):
+    list_display = ("title", "company", "location", "is_active", "created_at")
+    search_fields = ("title", "content", "company__name")
+    list_filter = ("company", "location", "is_active", "created_at")
+    readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        ("Basic Information", {"fields": ("company", "location", "title")}),
+        ("Content", {"fields": ("content",)}),
+        ("Status", {"fields": ("is_active",)}),
+        (
+            "Metadata",
+            {"fields": ("created_at", "updated_at"), "classes": ("collapse",)},
+        ),
+    )
+
