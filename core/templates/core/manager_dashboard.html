@@ -159,6 +159,32 @@
         background: #fee2e2;
         color: #991b1b;
     }
+
+    .tab-btn {
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+        opacity: 0.9;
+    }
+
+    .hover-shadow:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transition: all 0.2s ease;
+    }
+
+    .bg-soft-primary {
+        background-color: rgba(91, 71, 251, 0.1);
+    }
+
+    .bg-soft-success {
+        background-color: rgba(0, 196, 140, 0.1);
+    }
+
+    .bg-soft-warning {
+        background-color: rgba(255, 162, 107, 0.1);
+    }
 </style>
 {% endblock %}
 
@@ -203,49 +229,7 @@
     </div>
 
     <div class="row">
-        <!-- Pending Leave Requests -->
         <div class="col-lg-8">
-<<<<<<< Updated upstream
-            <div class="card-box">
-                <h2 class="section-title">Pending Leave Requests</h2>
-                {% if pending_leaves %}
-                <div class="request-list">
-                    {% for leave in pending_leaves %}
-                    <div class="request-item">
-                        <div class="req-avatar">
-                            {{ leave.employee.user.first_name|first }}{{ leave.employee.user.last_name|first }}
-                        </div>
-                        <div class="req-info">
-                            <div class="req-name">{{ leave.employee.user.get_full_name }}</div>
-                            <div class="req-detail">
-                                {{ leave.get_leave_type_display }} • {{ leave.total_days }} Days <br>
-                                {{ leave.start_date|date:"M d" }} - {{ leave.end_date|date:"M d" }}
-                                <div class="mt-1 small text-muted">Reason: {{ leave.reason|default:"-" }}</div>
-                            </div>
-                        </div>
-                        <div class="req-actions">
-                            <form method="post" action="{% url 'leave_requests' %}" style="display:inline;">
-                                {% csrf_token %}
-                                <input type="hidden" name="leave_id" value="{{ leave.id }}">
-                                <input type="hidden" name="action" value="approve">
-                                <button type="submit" class="btn-sm btn-approve">Approve</button>
-                            </form>
-                            <form method="post" action="{% url 'leave_requests' %}" style="display:inline;"
-                                onsubmit="return confirm('Reject this request?');">
-                                {% csrf_token %}
-                                <input type="hidden" name="leave_id" value="{{ leave.id }}">
-                                <input type="hidden" name="action" value="reject">
-                                <button type="submit" class="btn-sm btn-reject">Reject</button>
-                            </form>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p style="color: #999; text-align: center; padding: 20px;">No pending requests.</p>
-                {% endif %}
-            </div>
-
             <!-- Recent Team Activity -->
             <div class="card-box">
                 <h2 class="section-title">Recent Team Activity (Clock-Ins)</h2>
@@ -267,41 +251,125 @@
                     {% endfor %}
                 </div>
                 {% else %}
-                <p style="color: #999; text-align: center;">No activity recorded today.</p>
+                <p style="color: #999; text-align: center; padding: 20px;">No activity recorded today.</p>
                 {% endif %}
+            </div>
+
+            <!-- My Team List (Moved to bottom of col-8 for better space) -->
+            <div class="card-box">
+                <h2 class="section-title">My Team</h2>
+                <div class="request-list">
+                    {% for member in team_members %}
+                    <div class="request-item">
+                        <div class="req-avatar">
+                            {% if member.profile_picture %}
+                            <img src="{{ member.profile_picture.url }}" alt="{{ member.user.get_full_name }}"
+                                style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                            {% else %}
+                            {{ member.user.first_name|first }}{{ member.user.last_name|first }}
+                            {% endif %}
+                        </div>
+                        <div class="req-info">
+                            <div class="req-name">{{ member.user.get_full_name }}</div>
+                            <div class="req-detail">{{ member.designation|default:"Employee" }} • {{ member.location.name|default:"Main Office" }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
 
-        <!-- Team Sidebar -->
         <div class="col-lg-4">
-            <!-- Consolidated Announcements & Celebrations Card -->
-=======
->>>>>>> Stashed changes
-            <div class="card-box p-0 overflow-hidden" style="min-height: 400px;">
+            <!-- Consolidated Sidebar Card -->
+            <div class="card-box p-0 overflow-hidden" style="min-height: 500px;">
                 <div class="p-4" style="background: linear-gradient(135deg, #5b47fb 0%, #4834d4 100%); color: white;">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h2 class="section-title m-0 text-white"><i class="fas fa-bullhorn me-2"></i> Announcements</h2>
+                        <h2 class="section-title m-0 text-white" id="sidebar-tab-title">
+                            <i class="fas fa-bullhorn me-2"></i> Announcements
+                        </h2>
                         <button class="btn btn-sm btn-light rounded-pill px-3 fw-bold" onclick="openAnnouncementModal()"
                             style="color: var(--keka-primary);">
                             <i class="fas fa-expand me-1"></i> Expand
                         </button>
                     </div>
 
-                    <div class="d-flex gap-2 justify-content-end">
+                    <div class="d-flex gap-2 overflow-auto pb-1" style="scrollbar-width: none;">
                         <button class="btn btn-sm btn-light rounded-pill px-3 fw-bold tab-btn active"
-                            data-target="tab-announcements">All</button>
+                            data-target="tab-leaves" data-title="Announcements">Leaves</button>
                         <button class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold tab-btn"
-                            data-target="tab-birthdays">Birthdays</button>
+                            data-target="tab-announcements" data-title="Announcements">Ads</button>
                         <button class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold tab-btn"
-                            data-target="tab-anniv">Work Anniv</button>
+                            data-target="tab-birthdays" data-title="Birthdays">B'days</button>
                         <button class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold tab-btn"
-                            data-target="tab-holidays">Holidays</button>
+                            data-target="tab-anniv" data-title="Work Anniversaries">Anniv</button>
+                        <button class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold tab-btn"
+                            data-target="tab-holidays" data-title="Upcoming Holidays">Hols</button>
                     </div>
                 </div>
 
                 <div class="p-0">
+                    <!-- Tab: Pending Leaves -->
+                    <div id="tab-leaves" class="tab-content d-block px-3">
+                        {% if pending_leaves %}
+                        <div class="request-list">
+                            {% for leave in pending_leaves %}
+                            <div class="request-item flex-column align-items-start py-3">
+                                <div class="d-flex align-items-center w-100 mb-2">
+                                    <div class="req-avatar">
+                                        {% if leave.employee.profile_picture %}
+                                        <img src="{{ leave.employee.profile_picture.url }}"
+                                            alt="{{ leave.employee.user.get_full_name }}"
+                                            style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                                        {% else %}
+                                        {{ leave.employee.user.first_name|first }}{{ leave.employee.user.last_name|first }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="req-info">
+                                        <div class="req-name">{{ leave.employee.user.get_full_name }}</div>
+                                        <div class="req-detail text-primary fw-bold">{{ leave.get_leave_type_display }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="req-detail mb-3 w-100">
+                                    <i class="far fa-calendar-alt me-1"></i> {{ leave.start_date|date:"M d" }} - {{ leave.end_date|date:"M d" }}
+                                    <span class="badge bg-soft-primary text-primary ms-1">{{ leave.total_days }}
+                                        Days</span>
+                                    {% if leave.reason %}
+                                    <div class="mt-2 p-2 bg-light rounded italic small"
+                                        style="border-left: 3px solid #ddd;">
+                                        "{{ leave.reason|truncatechars:100 }}"
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="req-actions w-100">
+                                    <form method="post" action="{% url 'leave_requests' %}" style="flex:1;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="leave_id" value="{{ leave.id }}">
+                                        <input type="hidden" name="action" value="approve">
+                                        <button type="submit" class="btn-sm btn-approve w-100">Approve</button>
+                                    </form>
+                                    <form method="post" action="{% url 'leave_requests' %}" style="flex:1;"
+                                        onsubmit="return handleReject(this, '{{ leave.employee.user.get_full_name }}', '{{ leave.id }}');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="leave_id" value="{{ leave.id }}">
+                                        <input type="hidden" name="action" value="reject">
+                                        <input type="hidden" name="admin_comment" id="reject_comment_{{ leave.id }}">
+                                        <button type="submit" class="btn-sm btn-reject w-100">Reject</button>
+                                    </form>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-check-circle fa-3x text-light mb-3"></i>
+                            <p class="text-muted">No pending leave requests.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
                     <!-- Tab: Announcements -->
-                    <div id="tab-announcements" class="tab-content d-block">
+                    <div id="tab-announcements" class="tab-content d-none px-3">
                         {% if announcements %}
                         <div class="list-group list-group-flush">
                             {% for announcement in announcements %}
@@ -312,22 +380,18 @@
                                         <i class="fas fa-scroll"></i>
                                     </div>
                                     <div class="flex-grow-1 ms-3">
-                                        <div class="d-flex justify-content-between">
-                                            <h6 class="mb-1 fw-bold text-dark">{{ announcement.title }}</h6>
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <h6 class="mb-0 fw-bold text-dark">{{ announcement.title }}</h6>
                                             <small class="text-muted">{{ announcement.created_at|date:"d M" }}</small>
                                         </div>
-<<<<<<< Updated upstream
-                                        <p class="mb-0 text-muted small" style="line-height: 1.4;">{{
-                                            announcement.content|truncatechars:80 }}</p>
-=======
                                         {% if announcement.image %}
                                         <div class="mb-2 mt-1">
                                             <img src="{{ announcement.image.url }}" alt="{{ announcement.title }}"
-                                                class="img-fluid rounded" style="max-height: 150px; width: auto;">
+                                                class="img-fluid rounded"
+                                                style="max-height: 120px; width: 100%; object-fit: cover;">
                                         </div>
                                         {% endif %}
                                         <p class="mb-0 text-muted small" style="line-height: 1.4;">{{ announcement.content|truncatechars:80 }}</p>
->>>>>>> Stashed changes
                                     </div>
                                 </div>
                             </div>
@@ -336,13 +400,13 @@
                         {% else %}
                         <div class="text-center py-5">
                             <i class="fas fa-bullhorn fa-3x text-light mb-3"></i>
-                            <p class="text-muted">No valid announcements.</p>
+                            <p class="text-muted">No new announcements.</p>
                         </div>
                         {% endif %}
                     </div>
 
                     <!-- Tab: Birthdays -->
-                    <div id="tab-birthdays" class="tab-content d-none">
+                    <div id="tab-birthdays" class="tab-content d-none px-3">
                         {% if birthdays %}
                         <div class="list-group list-group-flush">
                             {% for emp in birthdays %}
@@ -355,9 +419,9 @@
                                         <div class="d-flex justify-content-between align-items-center">
                                             <h6 class="mb-0 fw-bold text-dark">{{ emp.user.get_full_name }}</h6>
                                             <span
-                                                class="badge bg-soft-primary text-primary rounded-pill px-2">Today</span>
+                                                class="badge bg-soft-success text-success rounded-pill px-2">Today</span>
                                         </div>
-                                        <div class="text-success small fw-bold mt-1">Happy Birthday Today! 🎉</div>
+                                        <div class="text-muted small mt-1">Happy Birthday! 🎂</div>
                                     </div>
                                 </div>
                             </div>
@@ -372,7 +436,7 @@
                     </div>
 
                     <!-- Tab: Work Anniversary -->
-                    <div id="tab-anniv" class="tab-content d-none">
+                    <div id="tab-anniv" class="tab-content d-none px-3">
                         {% if work_anniversaries %}
                         <div class="list-group list-group-flush">
                             {% for emp in work_anniversaries %}
@@ -383,11 +447,9 @@
                                     </div>
                                     <div class="flex-grow-1 ms-3">
                                         <h6 class="mb-0 fw-bold text-dark">{{ emp.user.get_full_name }}</h6>
-                                        <div class="text-muted small mt-1">{{ emp.years_of_service }} Years of Service
+                                        <div class="text-muted small mt-1">{{ emp.years_of_service }} Years Celebration!
                                             🌟</div>
                                     </div>
-                                    <span class="badge bg-soft-warning text-warning rounded-pill">{{
-                                        emp.date_of_joining|date:"d M" }}</span>
                                 </div>
                             </div>
                             {% endfor %}
@@ -401,7 +463,7 @@
                     </div>
 
                     <!-- Tab: Holidays -->
-                    <div id="tab-holidays" class="tab-content d-none">
+                    <div id="tab-holidays" class="tab-content d-none px-3">
                         {% if upcoming_holidays %}
                         <div class="list-group list-group-flush">
                             {% for holiday in upcoming_holidays %}
@@ -412,10 +474,8 @@
                                     </div>
                                     <div class="flex-grow-1 ms-3">
                                         <h6 class="mb-0 fw-bold text-dark">{{ holiday.name }}</h6>
-                                        <div class="text-muted small mt-1">{{ holiday.date|date:"l" }}</div>
+                                        <div class="text-muted small mt-1">{{ holiday.date|date:"l, d M" }}</div>
                                     </div>
-                                    <span class="badge bg-soft-success text-success rounded-pill">{{
-                                        holiday.date|date:"d M" }}</span>
                                 </div>
                             </div>
                             {% endfor %}
@@ -429,145 +489,24 @@
                     </div>
                 </div>
             </div>
-
-            <script>
-                document.querySelectorAll('.tab-btn').forEach(button => {
-                    button.addEventListener('click', () => {
-                        // Remove active class from all buttons
-                        document.querySelectorAll('.tab-btn').forEach(btn => {
-                            btn.classList.remove('btn-light', 'text-dark', 'active');
-                            btn.classList.add('btn-outline-light');
-                        });
-
-                        // Add active class to clicked button
-                        button.classList.remove('btn-outline-light');
-                        button.classList.add('btn-light', 'text-dark', 'active');
-
-                        // Hide all tab content
-                        document.querySelectorAll('.tab-content').forEach(content => {
-                            content.classList.remove('d-block');
-                            content.classList.add('d-none');
-                        });
-
-                        // Show target tab content
-                        const targetId = button.getAttribute('data-target');
-                        const targetContent = document.getElementById(targetId);
-                        if (targetContent) {
-                            targetContent.classList.remove('d-none');
-                            targetContent.classList.add('d-block');
-                        }
-                    });
-                });
-            </script>
-
-
-            <!-- Recent Team Activity -->
-            <div class="card-box">
-                <h2 class="section-title">Recent Team Activity (Clock-Ins)</h2>
-                {% if recent_activity %}
-                <div class="request-list">
-                    {% for activity in recent_activity %}
-                    <div class="request-item">
-                        <div class="req-avatar" style="background:#dcfce7; color:#166534;">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="req-info">
-                            <div class="req-name">{{ activity.employee.user.get_full_name }}</div>
-                            <div class="req-detail">
-                                Clocked in at {{ activity.clock_in|time:"H:i A" }}
-                                {% if activity.status == 'WFH' %} (WFH){% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p style="color: #999; text-align: center;">No activity recorded today.</p>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Team Sidebar -->
-        <div class="col-lg-4">
-            <!-- Consolidated Announcements & Celebrations Card -->
-            <div class="card-box">
-                <h2 class="section-title">Pending Leave Requests</h2>
-                {% if pending_leaves %}
-                <div class="request-list">
-                    {% for leave in pending_leaves %}
-                    <div class="request-item">
-                        <div class="req-avatar" style="overflow: hidden;">
-                            {% if leave.employee.profile_picture %}
-                            <img src="{{ leave.employee.profile_picture.url }}"
-                                alt="{{ leave.employee.user.get_full_name }}"
-                                style="width: 100%; height: 100%; object-fit: cover;">
-                            {% else %}
-                            {{ leave.employee.user.first_name|first }}{{ leave.employee.user.last_name|first }}
-                            {% endif %}
-                        </div>
-                        <div class="req-info">
-                            <div class="req-name">{{ leave.employee.user.get_full_name }}</div>
-                            <div class="req-detail">
-                                {{ leave.get_leave_type_display }} • {{ leave.total_days }} Days <br>
-                                {{ leave.start_date|date:"M d" }} - {{ leave.end_date|date:"M d" }}
-                                <div class="mt-1 small text-muted">Reason: {{ leave.reason|default:"-" }}</div>
-                            </div>
-                        </div>
-                        <div class="req-actions">
-                            <form method="post" action="{% url 'leave_requests' %}" style="display:inline;">
-                                {% csrf_token %}
-                                <input type="hidden" name="leave_id" value="{{ leave.id }}">
-                                <input type="hidden" name="action" value="approve">
-                                <button type="submit" class="btn-sm btn-approve">Approve</button>
-                            </form>
-                            <form method="post" action="{% url 'leave_requests' %}" style="display:inline;"
-                                onsubmit="return confirm('Reject this request?');">
-                                {% csrf_token %}
-                                <input type="hidden" name="leave_id" value="{{ leave.id }}">
-                                <input type="hidden" name="action" value="reject">
-                                <button type="submit" class="btn-sm btn-reject">Reject</button>
-                            </form>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p style="color: #999; text-align: center; padding: 20px;">No pending requests.</p>
-                {% endif %}
-            </div>
-            <div class="card-box">
-                <h2 class="section-title">My Team</h2>
-                <div class="request-list">
-                    {% for member in team_members %}
-                    <div class="request-item">
-                        <div class="req-avatar">
-                            {{ member.user.first_name|first }}{{ member.user.last_name|first }}
-                        </div>
-                        <div class="req-info">
-                            <div class="req-name">{{ member.user.get_full_name }}</div>
-                            <div class="req-detail">{{ member.designation }}</div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
         </div>
     </div>
 </div>
-</div>
 
-<!-- Announcement Modal -->
+<!-- Modal for expanded view -->
 <div id="announcementModal" class="announcement-modal">
     <div class="announcement-modal-content">
         <div class="announcement-modal-header">
-            <h3 class="m-0"><i class="fas fa-bullhorn me-2"></i> Announcements & Events</h3>
+            <h3 class="m-0"><i class="fas fa-bullhorn me-2"></i> Company Updates</h3>
             <button class="btn-close-modal" onclick="closeAnnouncementModal()"><i class="fas fa-times"></i></button>
         </div>
         <div class="announcement-modal-body">
             <!-- Modal Tabs -->
-            <div class="d-flex gap-2 mb-4 border-bottom pb-3">
+            <div class="d-flex gap-2 mb-4 border-bottom pb-3 overflow-auto">
                 <button class="btn btn-sm btn-primary rounded-pill px-4 fw-bold modal-tab-btn active"
-                    data-target="modal-announcements">All Announcements</button>
+                    data-target="modal-leaves">Leaves</button>
+                <button class="btn btn-sm btn-outline-primary rounded-pill px-4 fw-bold modal-tab-btn"
+                    data-target="modal-announcements">Announcements</button>
                 <button class="btn btn-sm btn-outline-primary rounded-pill px-4 fw-bold modal-tab-btn"
                     data-target="modal-birthdays">Birthdays</button>
                 <button class="btn btn-sm btn-outline-primary rounded-pill px-4 fw-bold modal-tab-btn"
@@ -578,8 +517,70 @@
 
             <!-- Modal Content Areas -->
             <div class="modal-tab-content-area">
+                <!-- Leave Requests -->
+                <div id="modal-leaves" class="modal-tab-pane d-block">
+                    {% if pending_leaves %}
+                    <div class="list-group">
+                        {% for leave in pending_leaves %}
+                        <div class="list-group-item p-4 border mb-3 rounded hover-shadow">
+                            <div class="d-flex align-items-start">
+                                <div class="req-avatar flex-shrink-0 mt-1" style="width: 50px; height: 50px;">
+                                    {% if leave.employee.profile_picture %}
+                                    <img src="{{ leave.employee.profile_picture.url }}"
+                                        alt="{{ leave.employee.user.get_full_name }}"
+                                        style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                                    {% else %}
+                                    {{ leave.employee.user.first_name|first }}{{ leave.employee.user.last_name|first }}
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1 ms-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h5 class="mb-0 fw-bold text-dark">{{ leave.employee.user.get_full_name }}</h5>
+                                        <span class="badge bg-soft-primary text-primary">{{ leave.get_leave_type_display }}</span>
+                                    </div>
+                                    <div class="mb-3">
+                                        <i class="far fa-calendar-alt me-2"></i><strong>{{ leave.start_date|date:"d M Y" }}</strong> to <strong>{{ leave.end_date|date:"d M Y" }}</strong>
+                                        <span class="ms-3 badge bg-light text-dark">{{ leave.total_days }} days</span>
+                                    </div>
+                                    {% if leave.reason %}
+                                    <div class="p-3 bg-light rounded mb-3">
+                                        <small class="text-muted d-block mb-1">Reason:</small>
+                                        {{ leave.reason }}
+                                    </div>
+                                    {% endif %}
+                                    <div class="d-flex gap-3">
+                                        <form method="post" action="{% url 'leave_requests' %}" style="flex:1;">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="leave_id" value="{{ leave.id }}">
+                                            <input type="hidden" name="action" value="approve">
+                                            <button type="submit" class="btn btn-success w-100">Approve Request</button>
+                                        </form>
+                                        <form method="post" action="{% url 'leave_requests' %}" style="flex:1;"
+                                            onsubmit="return handleReject(this, '{{ leave.employee.user.get_full_name }}', '{{ leave.id }}');">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="leave_id" value="{{ leave.id }}">
+                                            <input type="hidden" name="action" value="reject">
+                                            <input type="hidden" name="admin_comment"
+                                                id="reject_comment_modal_{{ leave.id }}">
+                                            <button type="submit" class="btn btn-outline-danger w-100">Reject
+                                                Request</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-check-circle fa-4x text-muted mb-3 opacity-25"></i>
+                        <p class="text-muted fs-5">All caught up! No pending leave requests.</p>
+                    </div>
+                    {% endif %}
+                </div>
+
                 <!-- Announcements -->
-                <div id="modal-announcements" class="modal-tab-pane d-block">
+                <div id="modal-announcements" class="modal-tab-pane d-none">
                     {% if announcements %}
                     <div class="list-group">
                         {% for announcement in announcements %}
@@ -592,7 +593,7 @@
                                 <div class="flex-grow-1 ms-4">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <h5 class="mb-0 fw-bold text-dark">{{ announcement.title }}</h5>
-                                        <span class="badge bg-soft-primary">{{ announcement.created_at|date:"d M Y" }}</span>
+                                        <span class="badge bg-soft-primary text-primary">{{ announcement.created_at|date:"d M Y" }}</span>
                                     </div>
                                     {% if announcement.image %}
                                     <div class="mb-3 mt-2">
@@ -614,7 +615,7 @@
                     {% endif %}
                 </div>
 
-                <!-- Birthdays -->
+                <!-- Birthdays, Anniversaries, Holidays - Similarly structured but I'll keeping it concise for now -->
                 <div id="modal-birthdays" class="modal-tab-pane d-none">
                     {% if birthdays %}
                     <div class="row g-3">
@@ -625,7 +626,7 @@
                                     style="background:#e0e7ff; color:#4338ca; width: 80px; height: 80px; font-size: 2rem;">
                                     {% if emp.profile_picture %}
                                     <img src="{{ emp.profile_picture.url }}" alt="{{ emp.user.get_full_name }}"
-                                        style="width: 100%; height: 100%; object-fit: cover;">
+                                        style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
                                     {% else %}
                                     <i class="fas fa-birthday-cake"></i>
                                     {% endif %}
@@ -644,7 +645,6 @@
                     {% endif %}
                 </div>
 
-                <!-- Work Anniversaries -->
                 <div id="modal-anniv" class="modal-tab-pane d-none">
                     {% if work_anniversaries %}
                     <div class="row g-3">
@@ -655,7 +655,7 @@
                                     style="background:#fff7ed; color:#ea580c; width: 80px; height: 80px; font-size: 2rem;">
                                     {% if emp.profile_picture %}
                                     <img src="{{ emp.profile_picture.url }}" alt="{{ emp.user.get_full_name }}"
-                                        style="width: 100%; height: 100%; object-fit: cover;">
+                                        style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
                                     {% else %}
                                     <i class="fas fa-medal"></i>
                                     {% endif %}
@@ -675,7 +675,6 @@
                     {% endif %}
                 </div>
 
-                <!-- Holidays -->
                 <div id="modal-holidays" class="modal-tab-pane d-none">
                     {% if upcoming_holidays %}
                     <div class="row g-3">
@@ -761,17 +760,7 @@
         font-size: 1.2rem;
         color: #6b7280;
         cursor: pointer;
-        padding: 5px;
         transition: color 0.2s;
-    }
-
-    .btn-close-modal:hover {
-        color: #1f2937;
-    }
-
-    .hover-shadow:hover {
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        transition: box-shadow 0.2s;
     }
 
     @keyframes slideUp {
@@ -785,51 +774,88 @@
             transform: translateY(0);
         }
     }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
 </style>
 
 <script>
-    function openAnnouncementModal() {
-        document.getElementById('announcementModal').classList.add('show');
-        document.body.style.overflow = 'hidden'; // Prevent scrolling background
-    }
-
-    function closeAnnouncementModal() {
-        document.getElementById('announcementModal').classList.remove('show');
-        document.body.style.overflow = ''; // Restore scrolling
-    }
-
-    // Modal Tabs Logic
-    document.querySelectorAll('.modal-tab-btn').forEach(button => {
+    // Tab switching logic for sidebar
+    document.querySelectorAll('.tab-btn').forEach(button => {
         button.addEventListener('click', () => {
-            // Remove active class from all modal buttons
-            document.querySelectorAll('.modal-tab-btn').forEach(btn => {
-                btn.classList.remove('btn-primary', 'active');
-                btn.classList.add('btn-outline-primary');
-            });
-
-            // Add active class to clicked button
-            button.classList.remove('btn-outline-primary');
-            button.classList.add('btn-primary', 'active');
-
-            // Hide all modal tab content
-            document.querySelectorAll('.modal-tab-pane').forEach(content => {
-                content.classList.remove('d-block');
-                content.classList.add('d-none');
-            });
-
-            // Show target modal content
             const targetId = button.getAttribute('data-target');
+            const targetTitle = button.getAttribute('data-title');
+
+            // Update Title
+            document.getElementById('sidebar-tab-title').innerHTML = `<i class="fas fa-${targetId === 'tab-leaves' ? 'bullhorn' : (targetId === 'tab-announcements' ? 'bullhorn' : (targetId === 'tab-birthdays' ? 'birthday-cake' : (targetId === 'tab-anniv' ? 'medal' : 'umbrella-beach')))} me-2"></i> ${targetTitle}`;
+
+            // Update Buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('btn-light', 'active');
+                btn.classList.add('btn-outline-light');
+            });
+            button.classList.remove('btn-outline-light');
+            button.classList.add('btn-light', 'active');
+
+            // Update Content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('d-none');
+                content.classList.remove('d-block');
+            });
             document.getElementById(targetId).classList.remove('d-none');
             document.getElementById(targetId).classList.add('d-block');
         });
     });
 
-    // Close on outside click
-    document.getElementById('announcementModal').addEventListener('click', function (e) {
-        if (e.target === this) {
-            closeAnnouncementModal();
-        }
-    });
-</script>
+    // Modal Logic
+    function openAnnouncementModal() {
+        document.getElementById('announcementModal').classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
 
+    function closeAnnouncementModal() {
+        document.getElementById('announcementModal').classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    // Modal Tab switching
+    document.querySelectorAll('.modal-tab-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            const targetId = button.getAttribute('data-target');
+            document.querySelectorAll('.modal-tab-btn').forEach(btn => {
+                btn.classList.remove('btn-primary', 'active');
+                btn.classList.add('btn-outline-primary');
+            });
+            button.classList.remove('btn-outline-primary');
+            button.classList.add('btn-primary', 'active');
+
+            document.querySelectorAll('.modal-tab-pane').forEach(content => {
+                content.classList.add('d-none');
+                content.classList.remove('d-block');
+            });
+            document.getElementById(targetId).classList.remove('d-none');
+            document.getElementById(targetId).classList.add('d-block');
+        });
+    });
+
+    // Handle rejection with comment
+    function handleReject(form, name, leaveId) {
+        const reason = prompt(`Please provide a reason for rejecting ${name}'s leave request:`);
+        if (reason === null) return false; // Cancelled
+        if (reason.trim() === "") {
+            alert("A rejection reason is mandatory.");
+            return false;
+        }
+        const commentInput = document.getElementById('reject_comment_' + leaveId) || document.getElementById('reject_comment_modal_' + leaveId);
+        if (commentInput) commentInput.value = reason;
+        return true;
+    }
+</script>
 {% endblock %}

@@ -950,18 +950,15 @@
                 <div class="announcements-header">
                     <h3 class="announcements-title"><i class="fas fa-bullhorn"></i> Announcements</h3>
                     <div class="announcements-tabs">
-                        <button class="tab-btn active" onclick="switchTab('birthdays')">Birthdays</button>
+                        <button class="tab-btn active" onclick="switchTab('announcements')">Announcements</button>
+                        <button class="tab-btn" onclick="switchTab('birthdays')">Birthdays</button>
                         <button class="tab-btn" onclick="switchTab('anniv')">Work Anniv.</button>
                         <button class="tab-btn" onclick="switchTab('holidays')">Holidays</button>
                     </div>
                 </div>
 
                 <div class="announcements-body" id="announcementsContent">
-                    <!-- Dynamic Content Loaded Here -->
-
-<<<<<<< Updated upstream
-=======
-                    <!-- 0. Custom Announcements Content (NEW) -->
+                    <!-- 0. Custom Announcements Content -->
                     <div id="tab-announcements" class="tab-content fade-in">
                         {% if announcements %}
                         {% for announcement in announcements %}
@@ -1000,9 +997,8 @@
                         {% endif %}
                     </div>
 
->>>>>>> Stashed changes
                     <!-- 1. Birthdays Content -->
-                    <div id="tab-birthdays" class="tab-content fade-in">
+                    <div id="tab-birthdays" class="tab-content fade-in" style="display: none;">
                         {% if upcoming_birthdays %}
                         {% for bday in upcoming_birthdays %}
                         <div class="announcement-item">

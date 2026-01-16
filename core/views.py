@@ -504,7 +504,19 @@ def admin_dashboard(request):
 
     upcoming_anniversaries.sort(key=lambda x: x["days_left"])
 
-    # 3. Upcoming Holidays
+    # 3. Announcements
+    from companies.models import Announcement
+    
+    announcements = (
+        Announcement.objects.filter(
+            company=request.user.company,
+            is_active=True
+        )
+        .select_related("location")
+        .order_by("-created_at")[:10]
+    )
+
+    # 4. Upcoming Holidays
     # Using the Holiday model directly
     upcoming_holidays_qs = (
         Holiday.objects.filter(
@@ -531,6 +543,7 @@ def admin_dashboard(request):
         "work_from_office": work_from_office,
         "remote_clockins": remote_clockins,
         "pending_leave_requests": pending_leave_requests,
+        "announcements": announcements,
         "upcoming_birthdays": upcoming_birthdays,
         "upcoming_anniversaries": upcoming_anniversaries,
         "upcoming_holidays": upcoming_holidays_qs,
