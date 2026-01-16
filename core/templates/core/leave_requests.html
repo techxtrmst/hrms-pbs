@@ -784,7 +784,7 @@
         {% if leave.status == 'PENDING' %}
         <div class="action-section">
             <button class="btn-keka btn-success-keka"
-                onclick='approveLeave({{ leave.id }}, "{{ leave.employee.user.get_full_name|escapejs }}")'>
+                onclick='approveLeave({{ leave.id }}, "{{ leave.employee.user.get_full_name|escapejs }}", {{ leave.is_negative_balance|yesno:"true,false" }})'>
                 <i class="fas fa-check-circle"></i>
                 Approve Leave
             </button>
@@ -804,6 +804,20 @@
                 <span class="approval-label">Action Date:</span>
                 <span class="approval-value">{{ leave.approved_at|date:"d M, Y H:i"|default:"N/A" }}</span>
             </div>
+            {% if leave.approval_type %}
+            <div class="approval-row">
+                <span class="approval-label">Approval Type:</span>
+                <span class="approval-value">
+                    {% if leave.approval_type == 'FULL' %}
+                        ✅ Full Balance
+                    {% elif leave.approval_type == 'WITH_LOP' %}
+                        ⚠️ With LOP
+                    {% elif leave.approval_type == 'ONLY_AVAILABLE' %}
+                        📊 Only Available Days
+                    {% endif %}
+                </span>
+            </div>
+            {% endif %}
             {% if leave.admin_comment %}
             <div class="approval-row">
                 <span class="approval-label">Comment:</span>
@@ -835,21 +849,44 @@
                 {% csrf_token %}
                 <input type="hidden" name="action" value="approve">
                 <input type="hidden" name="leave_id" id="approveLeaveId">
+                <input type="hidden" name="approval_type" id="approvalTypeInput" value="FULL">
+                
                 <div class="modal-body">
+                    <!-- Show approval options if insufficient balance -->
+                    <div id="approvalOptionsSection" style="display: none; margin-bottom: 20px;">
+                        <div class="alert alert-warning" style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                            <i class="fas fa-exclamation-triangle" style="color: #856404;"></i>
+                            <strong style="color: #856404;">⚠️ Insufficient Leave Balance</strong>
+                            <p style="margin: 8px 0 0 0; color: #856404; font-size: 14px;" id="balanceWarningText">
+                                This employee doesn't have enough leave balance. Choose how to proceed:
+                            </p>
+                        </div>
+                    </div>
+                    
                     <div class="form-group">
                         <label class="form-label">Admin Comment (Optional)</label>
                         <textarea name="admin_comment" class="form-control" rows="4"
                             placeholder="Add any remarks or notes..."></textarea>
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer" style="display: flex; justify-content: space-between; gap: 8px;">
                     <button type="button" class="btn-keka btn-outline-keka" onclick="closeModal('approveModal')">
                         Cancel
                     </button>
-                    <button type="submit" class="btn-keka btn-success-keka">
-                        <i class="fas fa-check"></i>
-                        Confirm Approval
-                    </button>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn-keka btn-danger-keka" onclick="rejectFromApprovalModal()">
+                            <i class="fas fa-times"></i>
+                            Reject
+                        </button>
+                        <button type="button" class="btn-keka" style="background-color: #f59e0b; color: white;" id="approveOnlyAvailableBtn" onclick="approveWithType('ONLY_AVAILABLE')">
+                            <i class="fas fa-check-circle"></i>
+                            Approve (Only Available)
+                        </button>
+                        <button type="button" class="btn-keka btn-success-keka" onclick="approveWithType('WITH_LOP')">
+                            <i class="fas fa-check-double"></i>
+                            Approve with LOP
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -896,10 +933,79 @@
 </div>
 
 <script>
-    function approveLeave(leaveId, employeeName) {
+    let currentLeaveId = null;
+    let currentEmployeeName = null;
+    
+    function approveLeave(leaveId, employeeName, hasInsufficientBalance) {
+        currentLeaveId = leaveId;
+        currentEmployeeName = employeeName;
+        
         document.getElementById('approveLeaveId').value = leaveId;
         document.getElementById('approveEmployeeName').textContent = 'For: ' + employeeName;
+        
+        // Show/hide approval options based on balance
+        const approvalOptionsSection = document.getElementById('approvalOptionsSection');
+        const approveOnlyAvailableBtn = document.getElementById('approveOnlyAvailableBtn');
+        
+        if (hasInsufficientBalance) {
+            approvalOptionsSection.style.display = 'block';
+            // Show the "Approve (Only Available)" button
+            approveOnlyAvailableBtn.style.display = 'inline-flex';
+        } else {
+            approvalOptionsSection.style.display = 'none';
+            // Hide the "Approve (Only Available)" button when balance is sufficient
+            approveOnlyAvailableBtn.style.display = 'none';
+        }
+        
         document.getElementById('approveModal').style.display = 'block';
+    }
+    
+    function approveWithType(approvalType) {
+        // Set the approval type
+        document.getElementById('approvalTypeInput').value = approvalType;
+        
+        // Submit the form
+        const form = document.getElementById('approveForm');
+        const formData = new FormData(form);
+        const leaveId = currentLeaveId;
+        
+        // Create a form and submit it
+        const submitForm = document.createElement('form');
+        submitForm.method = 'POST';
+        submitForm.action = `/employees/leave/${leaveId}/approve/`;
+        
+        // Add CSRF token
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = formData.get('csrfmiddlewaretoken');
+        submitForm.appendChild(csrfInput);
+        
+        // Add approval type
+        const approvalTypeInput = document.createElement('input');
+        approvalTypeInput.type = 'hidden';
+        approvalTypeInput.name = 'approval_type';
+        approvalTypeInput.value = approvalType;
+        submitForm.appendChild(approvalTypeInput);
+        
+        // Add admin comment if provided
+        const adminComment = formData.get('admin_comment');
+        if (adminComment) {
+            const commentInput = document.createElement('input');
+            commentInput.type = 'hidden';
+            commentInput.name = 'admin_comment';
+            commentInput.value = adminComment;
+            submitForm.appendChild(commentInput);
+        }
+        
+        document.body.appendChild(submitForm);
+        submitForm.submit();
+    }
+    
+    function rejectFromApprovalModal() {
+        // Close approve modal and open reject modal
+        closeModal('approveModal');
+        rejectLeave(currentLeaveId, currentEmployeeName);
     }
 
     function rejectLeave(leaveId, employeeName) {
@@ -918,6 +1024,39 @@
             closeModal('approveModal');
             closeModal('rejectModal');
         }
+    });
+    
+    // Handle form submission for rejection
+    document.getElementById('rejectForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const leaveId = formData.get('leave_id');
+        
+        // Create a form and submit it
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/employees/leave/${leaveId}/reject/`;
+        
+        // Add CSRF token
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = formData.get('csrfmiddlewaretoken');
+        form.appendChild(csrfInput);
+        
+        // Add rejection reason
+        const rejectionReason = formData.get('admin_comment');
+        if (rejectionReason) {
+            const reasonInput = document.createElement('input');
+            reasonInput.type = 'hidden';
+            reasonInput.name = 'rejection_reason';
+            reasonInput.value = rejectionReason;
+            form.appendChild(reasonInput);
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
     });
 </script>
 {% endblock %}

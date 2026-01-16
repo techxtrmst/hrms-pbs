@@ -1146,6 +1146,17 @@ class LeaveRequest(models.Model):
         related_name="approved_leaves",
     )
     approved_at = models.DateTimeField(null=True, blank=True)
+    approval_type = models.CharField(
+        max_length=20,
+        choices=[
+            ("FULL", "Approved (Full Balance)"),
+            ("WITH_LOP", "Approved with LOP"),
+            ("ONLY_AVAILABLE", "Approved (Only Available Days)"),
+        ],
+        null=True,
+        blank=True,
+        help_text="How the leave was approved"
+    )
     admin_comment = models.TextField(
         blank=True, null=True, help_text="Admin/Manager remarks"
     )
@@ -1253,8 +1264,14 @@ class LeaveRequest(models.Model):
         
         super().save(*args, **kwargs)
 
-    def approve_leave(self, approved_by_user):
-        """Approve leave and deduct from balance"""
+    def approve_leave(self, approved_by_user, approval_type='FULL'):
+        """
+        Approve leave and deduct from balance
+        
+        Args:
+            approved_by_user: User who is approving
+            approval_type: 'FULL', 'WITH_LOP', or 'ONLY_AVAILABLE'
+        """
         if self.status != 'PENDING':
             return False
         
@@ -1263,29 +1280,55 @@ class LeaveRequest(models.Model):
             balance = self.employee.leave_balance
             validation = self.validate_leave_application()
             
-            if self.leave_type == 'UL':
-                # Direct unpaid leave application
-                balance.apply_leave_deduction('UL', self.total_days)
-            elif validation['will_be_lop']:
-                # Split into paid leave + LOP
+            if approval_type == 'ONLY_AVAILABLE':
+                # Approve only available days, don't process LOP
                 available = validation['available_balance']
-                lop_days = validation['shortfall']
-                
-                # Deduct available balance from requested leave type
                 if available > 0:
                     balance.apply_leave_deduction(self.leave_type, available)
-                
-                # Deduct remaining days as LOP
-                if lop_days > 0:
-                    balance.apply_leave_deduction('UL', lop_days)
+                # Update the leave request to reflect only approved days
+                # Note: This changes the original request
+                from datetime import timedelta
+                if self.duration == 'HALF':
+                    # Can't split half day
+                    if available >= 0.5:
+                        balance.apply_leave_deduction(self.leave_type, 0.5)
+                    else:
+                        return False  # Can't approve
+                else:
+                    # Adjust end date to match available days
+                    self.end_date = self.start_date + timedelta(days=int(available) - 1)
+                    
+            elif self.leave_type == 'UL' or approval_type == 'WITH_LOP':
+                # Direct unpaid leave application OR approval with LOP
+                if self.leave_type == 'UL':
+                    balance.apply_leave_deduction('UL', self.total_days)
+                elif validation['will_be_lop']:
+                    # Split into paid leave + LOP
+                    available = validation['available_balance']
+                    lop_days = validation['shortfall']
+                    
+                    # Deduct available balance from requested leave type
+                    if available > 0:
+                        balance.apply_leave_deduction(self.leave_type, available)
+                    
+                    # Deduct remaining days as LOP
+                    if lop_days > 0:
+                        balance.apply_leave_deduction('UL', lop_days)
+                else:
+                    # Full deduction from requested leave type (sufficient balance)
+                    balance.apply_leave_deduction(self.leave_type, self.total_days)
             else:
-                # Full deduction from requested leave type (sufficient balance)
+                # FULL approval - deduct from requested leave type
+                if validation['will_be_lop'] and approval_type != 'WITH_LOP':
+                    # Insufficient balance and not approved with LOP
+                    return False
                 balance.apply_leave_deduction(self.leave_type, self.total_days)
             
             # Update status after successful deduction
             self.status = 'APPROVED'
             self.approved_by = approved_by_user
             self.approved_at = timezone.now()
+            self.approval_type = approval_type
             self.save()
             return True
             

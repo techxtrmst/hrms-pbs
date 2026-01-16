@@ -345,7 +345,7 @@
         const submitBtn = document.getElementById('submitBtn');
 
         // Auto-select Unpaid Leave if no balance
-        if (clBalance <= 0 && slBalance <= 0 && elBalance <= 0 && coBalance <= 0) {
+        if (clBalance <= 0 && slBalance <= 0) {
             if (leaveTypeSelect) {
                 leaveTypeSelect.value = 'UL';
                 leaveTypeSelect.dispatchEvent(new Event('change'));
@@ -395,6 +395,8 @@
             const endDate = endDateInput.value;
             const duration = document.querySelector('input[name="duration"]:checked')?.value || 'FULL';
 
+            console.log('Validating leave:', { leaveType, startDate, endDate, duration });
+
             if (!leaveType || !startDate || !endDate) {
                 balanceInfo.style.display = 'none';
                 submitBtn.disabled = false;
@@ -417,6 +419,8 @@
             })
             .then(response => response.json())
             .then(data => {
+                console.log('Validation response:', data);
+                
                 if (data.status === 'success') {
                     const validation = data.validation;
                     const requestedDays = data.requested_days;
@@ -456,13 +460,14 @@
                         balanceInfo.className = 'alert alert-success mb-4';
                         balanceInfoText.innerHTML = `
                             <strong>✅ Leave Available:</strong><br>
-                            You have sufficient ${validation.leave_type_display} balance for ${requestedDays} days.
+                            You have sufficient ${validation.leave_type_display || 'leave'} balance for ${requestedDays} days.
                         `;
                         balanceInfo.style.display = 'block';
                         submitBtn.disabled = false;
                         submitBtn.textContent = 'Request Leave';
                     }
                 } else {
+                    console.error('Validation failed:', data.message);
                     balanceInfo.style.display = 'none';
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Request Leave';

@@ -1331,8 +1331,15 @@ def approve_leave(request, pk):
                 {"status": "error", "message": "Permission denied"}, status=403
             )
 
+        # Get approval type from POST data
+        approval_type = request.POST.get('approval_type', 'FULL')
+        
+        # Validate approval type
+        if approval_type not in ['FULL', 'WITH_LOP', 'ONLY_AVAILABLE']:
+            approval_type = 'FULL'
+
         # Use the new approval method from the model
-        if leave_request.approve_leave(user):
+        if leave_request.approve_leave(user, approval_type=approval_type):
             # Update Attendance Records
             from datetime import timedelta
 
@@ -1346,21 +1353,37 @@ def approve_leave(request, pk):
                 # Update status
                 if leave_request.leave_type == "OD":
                     att_record.status = "ON_DUTY"
+                elif approval_type == 'WITH_LOP' or leave_request.leave_type == 'UL':
+                    # Mark as LOP for days beyond available balance
+                    validation = leave_request.validate_leave_application()
+                    days_from_start = (current_date - leave_request.start_date).days
+                    available_days = validation.get('available_balance', 0)
+                    
+                    if days_from_start < available_days:
+                        att_record.status = "LEAVE"
+                    else:
+                        att_record.status = "LEAVE"  # Still mark as leave, LOP tracked in balance
                 else:
                     att_record.status = "LEAVE"
 
                 att_record.save()
                 current_date += timedelta(days=1)
 
-            # Send Approval Email
+            # Send Approval Email with approval type info
             try:
                 from core.email_utils import send_leave_approval_notification
 
                 if send_leave_approval_notification(leave_request):
                     from django.contrib import messages
+                    approval_msg = {
+                        'FULL': 'Leave approved successfully (Full Balance).',
+                        'WITH_LOP': 'Leave approved with LOP for excess days.',
+                        'ONLY_AVAILABLE': 'Leave approved for available days only.'
+                    }.get(approval_type, 'Leave approved successfully.')
+                    
                     messages.success(
                         request,
-                        f"Leave approved successfully. Email sent to {leave_request.employee.user.first_name}.",
+                        f"{approval_msg} Email sent to {leave_request.employee.user.first_name}.",
                     )
                 else:
                     from django.contrib import messages
@@ -1373,7 +1396,8 @@ def approve_leave(request, pk):
                 logger = logging.getLogger(__name__)
                 logger.error(f"Leave approval email error: {str(e)}")
 
-    return redirect("admin_dashboard")
+    # Redirect back to leave requests page or dashboard
+    return redirect("leave_requests")
 
 
 @login_required
@@ -1416,8 +1440,8 @@ def reject_leave(request, pk):
             logger = logging.getLogger(__name__)
             logger.error(f"Error sending rejection email: {e}")
 
-        return redirect(request.META.get("HTTP_REFERER", "admin_dashboard"))
-    return redirect("admin_dashboard")
+        return redirect(request.META.get("HTTP_REFERER", "leave_requests"))
+    return redirect("leave_requests")
 
 
 @login_required

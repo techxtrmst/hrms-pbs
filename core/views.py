@@ -277,12 +277,13 @@ def admin_dashboard(request):
 
     # --- Department Performance Logic ---
     # Get distinct departments present today
-    departments_list = employees.values_list("department", flat=True).distinct()
+    departments_list = list(set(employees.values_list("department", flat=True)))
+    # Remove None/empty values and sort
+    departments_list = sorted([dept for dept in departments_list if dept])
+    
     department_performance = []
 
     for dept in departments_list:
-        if not dept:
-            continue
 
         dept_emps = employees.filter(department=dept)
         dept_total = dept_emps.count()
@@ -847,37 +848,52 @@ def personal_home(request):
         )
         context["announcements"] = announcements
         
-        # Current month start and end dates
-        current_month = today.month
-        current_year = today.year
-        from calendar import monthrange
-        _, last_day = monthrange(current_year, current_month)
-        month_start = today.replace(day=1)
-        month_end = today.replace(day=last_day)
-        
-        # Celebrations - Birthdays this month (all dates in current month)
+        # Upcoming Celebrations - Top 3 birthdays and anniversaries (from today onwards)
         company_employees = Employee.objects.filter(company=employee.company)
-        birthdays = company_employees.filter(dob__month=current_month).order_by('dob__day')
-        context["birthdays"] = birthdays
         
-        # Work Anniversaries this month (all dates in current month)
-        work_anniversaries = company_employees.filter(
-            date_of_joining__month=current_month
-        ).exclude(date_of_joining__year=current_year).order_by('date_of_joining__day')
-        context["work_anniversaries"] = work_anniversaries
+        # Get all employees with birthdays/anniversaries and calculate their next occurrence
+        celebrations = []
         
-        # Holidays - All holidays in current month (past and upcoming)
+        for emp in company_employees:
+            # Birthday
+            if emp.dob:
+                next_birthday = emp.dob.replace(year=today.year)
+                if next_birthday < today:
+                    next_birthday = emp.dob.replace(year=today.year + 1)
+                celebrations.append({
+                    'type': 'birthday',
+                    'employee': emp,
+                    'date': next_birthday,
+                    'days_until': (next_birthday - today).days
+                })
+            
+            # Work Anniversary
+            if emp.date_of_joining and emp.date_of_joining.year < today.year:
+                next_anniversary = emp.date_of_joining.replace(year=today.year)
+                if next_anniversary < today:
+                    next_anniversary = emp.date_of_joining.replace(year=today.year + 1)
+                celebrations.append({
+                    'type': 'anniversary',
+                    'employee': emp,
+                    'date': next_anniversary,
+                    'days_until': (next_anniversary - today).days
+                })
+        
+        # Sort by date and get top 3
+        celebrations.sort(key=lambda x: x['days_until'])
+        context["upcoming_celebrations"] = celebrations[:3]
+        
+        # Upcoming Holidays - Top 3 from today onwards (any month)
         from companies.models import Holiday
         
         upcoming_holidays = (
             Holiday.objects.filter(
                 company=employee.company,
-                date__gte=month_start,
-                date__lte=month_end,
+                date__gte=today,
                 is_active=True
             )
             .filter(Q(location__isnull=True) | Q(location=employee.location))
-            .order_by("date")
+            .order_by("date")[:3]
         )
         context["upcoming_holidays"] = upcoming_holidays
 
