@@ -25,6 +25,7 @@ urlpatterns = [
         "api/search-employees/", views.search_employees_api, name="search_employees_api"
     ),
     path("org-chart/", views.org_chart, name="org_chart"),
+    path("employee/org-chart/", views.employee_org_chart, name="employee_org_chart"),
     path(
         "analytics/attendance/", views.attendance_analytics, name="attendance_analytics"
     ),

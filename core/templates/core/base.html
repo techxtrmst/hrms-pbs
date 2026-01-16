@@ -347,6 +347,9 @@
         <a href="{% url 'policy' %}" class="{% if 'policy' in request.path %}active{% endif %}">
             <i class="fas fa-file-contract"></i> <span>Policy</span>
         </a>
+        <a href="{% url 'employee_org_chart' %}" class="{% if 'org-chart' in request.path %}active{% endif %}">
+            <i class="fas fa-sitemap"></i> <span>Organisation</span>
+        </a>
         {% endif %}
 
         <!-- Employees / Team (Collapsible) -->
