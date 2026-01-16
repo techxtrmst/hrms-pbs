@@ -1255,202 +1255,105 @@
                     </div>
                 </div>
 
-                <!-- Announcements Widget -->
-                <div class="keka-card animate-enter delay-150" style="overflow: hidden;">
-                    <div class="p-3"
-                        style="background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); color: white;">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="m-0 text-white fw-bold"><i class="fas fa-bullhorn me-2"></i> Announcements</h6>
-                        </div>
-
-                        <div class="d-flex gap-2 flex-wrap">
-                            <button class="btn btn-sm btn-light rounded-pill px-3 fw-bold tab-btn-emp active"
-                                data-target="tab-emp-announcements">All</button>
-                            <button class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold tab-btn-emp"
-                                data-target="tab-emp-birthdays">Birthdays</button>
-                            <button class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold tab-btn-emp"
-                                data-target="tab-emp-anniv">Work Anniv</button>
-                            <button class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold tab-btn-emp"
-                                data-target="tab-emp-holidays">Holidays</button>
-                        </div>
-                    </div>
-
-                    <div class="p-0" style="max-height: 400px; overflow-y: auto;">
-                        <!-- Tab: Announcements -->
-                        <div id="tab-emp-announcements" class="tab-content-emp d-block">
-                            {% if announcements %}
-                            <div class="list-group list-group-flush">
-                                {% for announcement in announcements %}
-                                <div class="list-group-item p-3 border-0 border-bottom">
-                                    <div class="d-flex align-items-start">
-                                        <div class="flex-shrink-0 mt-1"
-                                            style="width: 36px; height: 36px; background: #e0e7ff; color: #4338ca; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-                                            <i class="fas fa-bullhorn" style="font-size: 0.9rem;"></i>
-                                        </div>
-                                        <div class="flex-grow-1 ms-3">
-                                            <div class="d-flex justify-content-between">
-                                                <h6 class="mb-1 fw-bold text-dark" style="font-size: 0.9rem;">{{ announcement.title }}</h6>
-                                                <small class="text-muted" style="font-size: 0.7rem;">{{ announcement.created_at|date:"d M" }}</small>
-                                            </div>
-                                            <p class="mb-1 text-muted small"
-                                                style="line-height: 1.4; font-size: 0.8rem;">{{ announcement.content|truncatechars:80 }}</p>
-                                            {% if announcement.location %}
-                                            <small class="text-primary" style="font-size: 0.7rem;"><i
-                                                    class="fas fa-map-marker-alt"></i> {{ announcement.location.name }}</small>
-                                            {% else %}
-                                            <small class="text-warning" style="font-size: 0.7rem;"><i
-                                                    class="fas fa-globe"></i> Company-wide</small>
-                                            {% endif %}
-                                        </div>
+                <!-- Upcoming Holidays and Celebrations Row -->
+                <div class="row">
+                    <!-- Upcoming Holidays Box -->
+                    <div class="col-12 mb-4">
+                        <div class="card border-0 shadow-sm rounded-4 h-100">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="icon-box bg-success bg-opacity-10 text-success me-3">
+                                        <i class="fas fa-calendar-alt"></i>
                                     </div>
-                                </div>
-                                {% endfor %}
+                                <h5 class="card-title mb-0 fw-bold">Upcoming Holidays</h5>
                             </div>
-                            {% else %}
-                            <div class="text-center py-5">
-                                <i class="fas fa-bullhorn fa-3x text-light mb-3"></i>
-                                <p class="text-muted">No announcements yet</p>
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Tab: Birthdays -->
-                        <div id="tab-emp-birthdays" class="tab-content-emp d-none">
-                            {% if birthdays %}
-                            <div class="list-group list-group-flush">
-                                {% for emp in birthdays %}
-                                <div class="list-group-item p-3 border-0 border-bottom">
-                                    <div class="d-flex align-items-center">
-                                        <div class="flex-shrink-0"
-                                            style="width: 36px; height: 36px; background: #fce7f3; color: #db2777; border-radius: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                                            {% if emp.profile_picture %}
-                                            <img src="{{ emp.profile_picture.url }}" alt="{{ emp.user.get_full_name }}"
-                                                style="width: 100%; height: 100%; object-fit: cover;">
-                                            {% else %}
-                                            <i class="fas fa-birthday-cake" style="font-size: 0.9rem;"></i>
-                                            {% endif %}
-                                        </div>
-                                        <div class="flex-grow-1 ms-3">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.9rem;">{{ emp.user.get_full_name }}</h6>
-                                                <span class="badge bg-primary rounded-pill"
-                                                    style="font-size: 0.65rem;">{{ emp.dob|date:"d M" }}</span>
-                                            </div>
-                                            <div class="text-muted small mt-1" style="font-size: 0.75rem;">🎉 Birthday
-                                                this month!</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% else %}
-                            <div class="text-center py-5">
-                                <i class="fas fa-birthday-cake fa-3x text-light mb-3"></i>
-                                <p class="text-muted">No birthdays this month</p>
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Tab: Work Anniversary -->
-                        <div id="tab-emp-anniv" class="tab-content-emp d-none">
-                            {% if work_anniversaries %}
-                            <div class="list-group list-group-flush">
-                                {% for emp in work_anniversaries %}
-                                <div class="list-group-item p-3 border-0 border-bottom">
-                                    <div class="d-flex align-items-center">
-                                        <div class="flex-shrink-0"
-                                            style="width: 36px; height: 36px; background: #fef3c7; color: #d97706; border-radius: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                                            {% if emp.profile_picture %}
-                                            <img src="{{ emp.profile_picture.url }}" alt="{{ emp.user.get_full_name }}"
-                                                style="width: 100%; height: 100%; object-fit: cover;">
-                                            {% else %}
-                                            <i class="fas fa-medal" style="font-size: 0.9rem;"></i>
-                                            {% endif %}
-                                        </div>
-                                        <div class="flex-grow-1 ms-3">
-                                            <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.9rem;">{{ emp.user.get_full_name }}</h6>
-                                            <div class="text-muted small mt-1" style="font-size: 0.75rem;">
-                                                {% with years=emp.date_of_joining|timesince %}
-                                                Celebrating work anniversary 🌟
-                                                {% endwith %}
-                                            </div>
-                                        </div>
-                                        <span class="badge bg-warning rounded-pill" style="font-size: 0.65rem;">{{ emp.date_of_joining|date:"d M" }}</span>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% else %}
-                            <div class="text-center py-5">
-                                <i class="fas fa-medal fa-3x text-light mb-3"></i>
-                                <p class="text-muted">No work anniversaries this month</p>
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Tab: Holidays -->
-                        <div id="tab-emp-holidays" class="tab-content-emp d-none">
                             {% if upcoming_holidays %}
                             <div class="list-group list-group-flush">
                                 {% for holiday in upcoming_holidays %}
-                                <div class="list-group-item p-3 border-0 border-bottom">
-                                    <div class="d-flex align-items-center">
-                                        <div class="flex-shrink-0"
-                                            style="width: 36px; height: 36px; background: #d1fae5; color: #059669; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-                                            <i class="fas fa-umbrella-beach" style="font-size: 0.9rem;"></i>
+                                <div class="list-group-item px-0 py-3 border-bottom">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1 fw-semibold">{{ holiday.name }}</h6>
+                                            <small class="text-muted">{{ holiday.date|date:"l, F d, Y" }}</small>
                                         </div>
-                                        <div class="flex-grow-1 ms-3">
-                                            <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.9rem;">{{ holiday.name }}</h6>
-                                            <div class="text-muted small mt-1" style="font-size: 0.75rem;">{{ holiday.date|date:"l" }}</div>
-                                        </div>
-                                        <span class="badge bg-success rounded-pill" style="font-size: 0.65rem;">{{ holiday.date|date:"d M" }}</span>
+                                        <span class="badge bg-success-subtle text-success rounded-pill">
+                                            <i class="fas fa-umbrella-beach me-1"></i>
+                                        </span>
                                     </div>
                                 </div>
                                 {% endfor %}
                             </div>
                             {% else %}
-                            <div class="text-center py-5">
-                                <i class="fas fa-glass-cheers fa-3x text-light mb-3"></i>
-                                <p class="text-muted">No upcoming holidays</p>
+                            <div class="text-center py-4">
+                                <i class="fas fa-calendar-times fa-3x text-muted opacity-25 mb-3"></i>
+                                <p class="text-muted mb-0">No upcoming holidays</p>
                             </div>
                             {% endif %}
                         </div>
                     </div>
                 </div>
 
-                <script>
-                    // Tab switching for employee announcements widget
-                    document.querySelectorAll('.tab-btn-emp').forEach(button => {
-                        button.addEventListener('click', () => {
-                            // Remove active class from all buttons
-                            document.querySelectorAll('.tab-btn-emp').forEach(btn => {
-                                btn.classList.remove('btn-light', 'text-dark', 'active');
-                                btn.classList.add('btn-outline-light');
-                            });
-
-                            // Add active class to clicked button
-                            button.classList.remove('btn-outline-light');
-                            button.classList.add('btn-light', 'text-dark', 'active');
-
-                            // Hide all tab content
-                            document.querySelectorAll('.tab-content-emp').forEach(content => {
-                                content.classList.remove('d-block');
-                                content.classList.add('d-none');
-                            });
-
-                            // Show target tab content
-                            const targetId = button.getAttribute('data-target');
-                            const targetContent = document.getElementById(targetId);
-                            if (targetContent) {
-                                targetContent.classList.remove('d-none');
-                                targetContent.classList.add('d-block');
-                            }
-                        });
-                    });
-                </script>
-
-                <!-- Removed Holidays and Celebrations blocks as per request -->
-
+                <!-- Upcoming Celebrations Box -->
+                <div class="col-12 mb-4">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="icon-box bg-primary bg-opacity-10 text-primary me-3">
+                                    <i class="fas fa-birthday-cake"></i>
+                                </div>
+                                <h5 class="card-title mb-0 fw-bold">Upcoming Celebrations</h5>
+                            </div>
+                            {% if upcoming_celebrations %}
+                            <div class="list-group list-group-flush">
+                                {% for celebration in upcoming_celebrations %}
+                                <div class="list-group-item px-0 py-3 border-bottom">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0 me-3">
+                                            {% if celebration.employee.profile_picture %}
+                                            <img src="{{ celebration.employee.profile_picture.url }}" 
+                                                 alt="{{ celebration.employee.user.get_full_name }}"
+                                                 class="rounded-circle"
+                                                 style="width: 40px; height: 40px; object-fit: cover;">
+                                            {% else %}
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width: 40px; height: 40px; background: {% if celebration.type == 'birthday' %}#e0e7ff{% else %}#fef3c7{% endif %}; color: {% if celebration.type == 'birthday' %}#4338ca{% else %}#d97706{% endif %};">
+                                                <i class="fas fa-{% if celebration.type == 'birthday' %}birthday-cake{% else %}medal{% endif %}"></i>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-0 fw-semibold">{{ celebration.employee.user.get_full_name }}</h6>
+                                            <small class="text-muted">
+                                                {% if celebration.type == 'birthday' %}
+                                                🎉 Birthday
+                                                {% else %}
+                                                🌟 Work Anniversary
+                                                {% endif %}
+                                                - {{ celebration.date|date:"M d" }}
+                                                {% if celebration.days_until == 0 %}
+                                                (Today!)
+                                                {% elif celebration.days_until == 1 %}
+                                                (Tomorrow)
+                                                {% else %}
+                                                (in {{ celebration.days_until }} days)
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-gift fa-3x text-muted opacity-25 mb-3"></i>
+                                <p class="text-muted mb-0">No upcoming celebrations</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                </div>
+                <!-- End of Upcoming Holidays and Celebrations Row -->
 
             </div>
         </div>
