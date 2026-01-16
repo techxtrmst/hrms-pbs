@@ -649,6 +649,206 @@
             transform: rotate(360deg);
         }
     }
+
+    /* Announcements Section */
+    .announcements-section {
+        background: white;
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        border: 1px solid var(--border-color);
+        margin-top: 1.5rem;
+        overflow: hidden;
+    }
+
+    .announcement-header {
+        background: #5b47fb;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .announcement-title {
+        color: white;
+        font-size: 1.1rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .ann-tabs {
+        display: flex;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.25rem;
+        border-radius: 50px;
+    }
+
+    .ann-tab-btn {
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        border: none;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .ann-tab-btn.active {
+        background: white;
+        color: #5b47fb;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        font-weight: 600;
+    }
+
+    .ann-tab-btn:hover:not(.active) {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+
+    .ann-content-area {
+        padding: 0;
+        min-height: 300px;
+    }
+
+    .ann-tab-pane {
+        display: none;
+        animation: fadeIn 0.3s;
+    }
+
+    .ann-tab-pane.active {
+        display: block;
+    }
+
+    .ann-item {
+        display: flex;
+        align-items: flex-start;
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        gap: 1rem;
+        transition: background 0.2s;
+    }
+
+    .ann-item:last-child {
+        border-bottom: none;
+    }
+
+    .ann-item:hover {
+        background: #f9fafb;
+    }
+
+    .ann-icon-box {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        background: #eff6ff;
+        color: #3b82f6;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+
+    .ann-content {
+        flex: 1;
+    }
+
+    .ann-heading {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+    }
+
+    .ann-text {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        margin-bottom: 0.5rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .ann-meta {
+        font-size: 0.75rem;
+        color: #6b7280;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .ann-date-badge {
+        background: #f3f0ff;
+        color: #7c3aed;
+        padding: 0.25rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .celebration-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        gap: 1rem;
+    }
+
+    .celebration-avatar {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: #e0e7ff;
+        color: #4f46e5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1rem;
+        overflow: hidden;
+    }
+
+    .celebration-info h4 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .celebration-info p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: #6b7280;
+    }
+
+    /* Mobile Responsive for Tabs */
+    @media (max-width: 576px) {
+        .announcement-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+
+        .ann-tabs {
+            justify-content: space-between;
+            overflow-x: auto;
+        }
+
+        .ann-tab-btn {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -717,7 +917,7 @@
 
     <div class="row">
         <!-- Attendance Statistics Section -->
-        <div class="col-lg-8 mb-4">
+        <div class="col-lg-12 mb-4">
             <div class="attendance-stats-section animate__animated animate__fadeInLeft">
                 <h2 class="section-title-modern">
                     <i class="fas fa-chart-line"></i>
@@ -913,61 +1113,138 @@
             </div>
         </div>
 
-        <!-- Leave Balance & Requests -->
-        <div class="col-lg-4 mb-4">
-            <div class="leave-balance-card animate__animated animate__fadeInRight">
-                <h2 class="section-title-modern">
-                    <i class="fas fa-chart-pie"></i>
-                    Leave Balance
-                </h2>
-                {% if leave_balance %}
-                <div class="balance-grid">
-                    <div class="balance-item-modern">
-                        <div class="balance-value">{{ leave_balance.casual_leave_balance }}</div>
-                        <div class="balance-label">Casual</div>
-                    </div>
-                    <div class="balance-item-modern">
-                        <div class="balance-value">{{ leave_balance.sick_leave_balance }}</div>
-                        <div class="balance-label">Sick</div>
-                    </div>
-
-                    <div class="balance-item-modern">
-                        <div class="balance-value">{{ leave_balance.comp_off_balance }}</div>
-                        <div class="balance-label">Comp Off</div>
-                    </div>
+        <!-- Announcements & Upcoming Section -->
+        <div class="announcements-section animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+            <div class="announcement-header">
+                <div class="announcement-title">
+                    <i class="fas fa-bullhorn"></i>
+                    Announcements
                 </div>
-                {% else %}
-                <p style="text-align: center; color: #6b7280; padding: 2rem;">
-                    No leave balance information
-                </p>
-                {% endif %}
+                <div class="ann-tabs">
+                    <button class="ann-tab-btn active" data-ann-tab="tab-announcements">Announcements</button>
+                    <button class="ann-tab-btn" data-ann-tab="tab-birthdays">Birthdays</button>
+                    <button class="ann-tab-btn" data-ann-tab="tab-anniv">Work Anniv.</button>
+                    <button class="ann-tab-btn" data-ann-tab="tab-holidays">Holidays</button>
+                </div>
+            </div>
 
-                <h3 style="font-size: 1.25rem; font-weight: 700; margin: 2rem 0 1rem 0; color: #1f2937;">
-                    Recent Requests
-                </h3>
-                <div>
-                    {% for request in recent_leave_requests %}
-                    <div class="leave-request-item">
-                        <div class="request-header">
-                            <span class="request-type">{{ request.get_leave_type_display }}</span>
-                            <span
-                                class="status-badge-modern {% if request.status == 'APPROVED' %}approved{% elif request.status == 'REJECTED' %}rejected{% else %}pending{% endif %}">
-                                {{ request.status }}
-                            </span>
+            <div class="ann-content-area">
+                <!-- Announcements Tab -->
+                <div class="ann-tab-pane active" id="tab-announcements">
+                    {% if announcements %}
+                    {% for ann in announcements %}
+                    <div class="ann-item">
+                        <div class="ann-icon-box">
+                            <i class="fas fa-bullhorn"></i>
                         </div>
-                        <div class="request-dates">
-                            {{ request.start_date|date:"M d" }} - {{ request.end_date|date:"M d, Y" }}
+                        <div class="ann-content">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h4 class="ann-heading">{{ ann.title }}</h4>
+                                <div class="ann-date-badge">{{ ann.created_at|date:"d M" }}</div>
+                            </div>
+                            {% if ann.image %}
+                            <div class="mb-2 mt-1">
+                                <img src="{{ ann.image.url }}" alt="{{ ann.title }}" class="img-fluid rounded"
+                                    style="max-height: 150px; width: auto;">
+                            </div>
+                            {% endif %}
+                            <p class="ann-text">
+                                {{ ann.content|striptags|truncatechars:100 }}
+                            </p>
+                            {% if ann.location or ann.department %}
+                            <div class="ann-meta">
+                                {% if ann.location %}<i class="fas fa-map-marker-alt"></i> {{ ann.location }}{% endif %}
+                                {% if ann.department %}<i class="fas fa-building"></i> {{ ann.department }}{% endif %}
+                            </div>
+                            {% else %}
+                            <div class="ann-meta text-warning">
+                                <i class="fas fa-globe"></i> Company-wide
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
-                    {% empty %}
-                    <p style="text-align: center; color: #6b7280; padding: 1.5rem; font-size: 0.9rem;">
-                        No leave requests yet
-                    </p>
                     {% endfor %}
+                    {% else %}
+                    <div class="p-4 text-center text-muted">No recent announcements</div>
+                    {% endif %}
+                </div>
+
+                <!-- Birthdays Tab -->
+                <div class="ann-tab-pane" id="tab-birthdays">
+                    {% if upcoming_birthdays %}
+                    {% for item in upcoming_birthdays %}
+                    <div class="celebration-item">
+                        <div class="celebration-avatar">
+                            {% if item.employee.profile_picture %}
+                            <img src="{{ item.employee.profile_picture.url }}" alt="">
+                            {% else %}
+                            {{ item.employee.user.first_name|first }}{{ item.employee.user.last_name|first }}
+                            {% endif %}
+                        </div>
+                        <div class="celebration-info flex-grow-1">
+                            <h4>{{ item.employee.user.get_full_name }}</h4>
+                            <p>{{ item.display_date|date:"M d" }} • {% if item.is_today %}Today! 🎉{% else %}in {{ item.days_left }} days{% endif %}</p>
+                        </div>
+                        <div class="ann-date-badge" style="background: #eef2ff; color: #4f46e5;">
+                            <i class="fas fa-birthday-cake"></i>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="p-4 text-center text-muted">No upcoming birthdays</div>
+                    {% endif %}
+                </div>
+
+                <!-- Work Anniv Tab -->
+                <div class="ann-tab-pane" id="tab-anniv">
+                    {% if upcoming_anniversaries %}
+                    {% for item in upcoming_anniversaries %}
+                    <div class="celebration-item">
+                        <div class="celebration-avatar" style="background: #f0f9ff; color: #0284c7;">
+                            {{ item.employee.user.first_name|first }}{{ item.employee.user.last_name|first }}
+                        </div>
+                        <div class="celebration-info flex-grow-1">
+                            <h4>{{ item.employee.user.get_full_name }}</h4>
+                            <p>{{ item.years }} Year{% if item.years > 1 %}s{% endif %} • {{ item.date|date:"M d" }}</p>
+                        </div>
+                        <div class="ann-date-badge" style="background: #eef2ff; color: #0284c7;">
+                            <i class="fas fa-medal"></i>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="p-4 text-center text-muted">No upcoming anniversaries</div>
+                    {% endif %}
+                </div>
+
+                <!-- Holidays Tab -->
+                <div class="ann-tab-pane" id="tab-holidays">
+                    {% if upcoming_holidays %}
+                    {% for hol in upcoming_holidays %}
+                    <div class="ann-item">
+                        <div class="ann-icon-box" style="background: #ecfdf5; color: #059669;">
+                            <i class="fas fa-umbrella-beach"></i>
+                        </div>
+                        <div class="ann-content">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h4 class="ann-heading">{{ hol.name }}</h4>
+                                <div class="ann-date-badge">{{ hol.date|date:"d M" }}</div>
+                            </div>
+                            <p class="ann-text">{{ hol.date|date:"l" }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="p-4 text-center text-muted">No upcoming holidays</div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Leave Balance & Requests -->
+
+</div>
 </div>
 {% endblock %}
 
@@ -993,6 +1270,24 @@
 
                 // Load data for the selected tab
                 loadTabData(targetTab);
+            });
+        });
+
+        // Announcement Tabs
+        const annTabButtons = document.querySelectorAll('.ann-tab-btn');
+        const annTabContents = document.querySelectorAll('.ann-tab-pane');
+
+        annTabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetId = button.getAttribute('data-ann-tab');
+
+                // Remove active
+                annTabButtons.forEach(b => b.classList.remove('active'));
+                annTabContents.forEach(c => c.classList.remove('active'));
+
+                // Add active
+                button.classList.add('active');
+                document.getElementById(targetId).classList.add('active');
             });
         });
 

@@ -205,20 +205,15 @@
     <div class="row">
         <!-- Pending Leave Requests -->
         <div class="col-lg-8">
+<<<<<<< Updated upstream
             <div class="card-box">
                 <h2 class="section-title">Pending Leave Requests</h2>
                 {% if pending_leaves %}
                 <div class="request-list">
                     {% for leave in pending_leaves %}
                     <div class="request-item">
-                        <div class="req-avatar" style="overflow: hidden;">
-                            {% if leave.employee.profile_picture %}
-                            <img src="{{ leave.employee.profile_picture.url }}"
-                                alt="{{ leave.employee.user.get_full_name }}"
-                                style="width: 100%; height: 100%; object-fit: cover;">
-                            {% else %}
+                        <div class="req-avatar">
                             {{ leave.employee.user.first_name|first }}{{ leave.employee.user.last_name|first }}
-                            {% endif %}
                         </div>
                         <div class="req-info">
                             <div class="req-name">{{ leave.employee.user.get_full_name }}</div>
@@ -280,10 +275,16 @@
         <!-- Team Sidebar -->
         <div class="col-lg-4">
             <!-- Consolidated Announcements & Celebrations Card -->
+=======
+>>>>>>> Stashed changes
             <div class="card-box p-0 overflow-hidden" style="min-height: 400px;">
                 <div class="p-4" style="background: linear-gradient(135deg, #5b47fb 0%, #4834d4 100%); color: white;">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h2 class="section-title m-0 text-white"><i class="fas fa-bullhorn me-2"></i> Announcements</h2>
+                        <button class="btn btn-sm btn-light rounded-pill px-3 fw-bold" onclick="openAnnouncementModal()"
+                            style="color: var(--keka-primary);">
+                            <i class="fas fa-expand me-1"></i> Expand
+                        </button>
                     </div>
 
                     <div class="d-flex gap-2 justify-content-end">
@@ -315,7 +316,18 @@
                                             <h6 class="mb-1 fw-bold text-dark">{{ announcement.title }}</h6>
                                             <small class="text-muted">{{ announcement.created_at|date:"d M" }}</small>
                                         </div>
+<<<<<<< Updated upstream
+                                        <p class="mb-0 text-muted small" style="line-height: 1.4;">{{
+                                            announcement.content|truncatechars:80 }}</p>
+=======
+                                        {% if announcement.image %}
+                                        <div class="mb-2 mt-1">
+                                            <img src="{{ announcement.image.url }}" alt="{{ announcement.title }}"
+                                                class="img-fluid rounded" style="max-height: 150px; width: auto;">
+                                        </div>
+                                        {% endif %}
                                         <p class="mb-0 text-muted small" style="line-height: 1.4;">{{ announcement.content|truncatechars:80 }}</p>
+>>>>>>> Stashed changes
                                     </div>
                                 </div>
                             </div>
@@ -336,14 +348,8 @@
                             {% for emp in birthdays %}
                             <div class="list-group-item p-3 border-0 border-bottom">
                                 <div class="d-flex align-items-center">
-                                    <div class="req-avatar flex-shrink-0"
-                                        style="background:#e0e7ff; color:#4338ca; overflow: hidden;">
-                                        {% if emp.profile_picture %}
-                                        <img src="{{ emp.profile_picture.url }}" alt="{{ emp.user.get_full_name }}"
-                                            style="width: 100%; height: 100%; object-fit: cover;">
-                                        {% else %}
+                                    <div class="req-avatar flex-shrink-0" style="background:#e0e7ff; color:#4338ca;">
                                         <i class="fas fa-birthday-cake"></i>
-                                        {% endif %}
                                     </div>
                                     <div class="flex-grow-1 ms-3">
                                         <div class="d-flex justify-content-between align-items-center">
@@ -372,21 +378,16 @@
                             {% for emp in work_anniversaries %}
                             <div class="list-group-item p-3 border-0 border-bottom">
                                 <div class="d-flex align-items-center">
-                                    <div class="req-avatar flex-shrink-0"
-                                        style="background:#fff7ed; color:#ea580c; overflow: hidden;">
-                                        {% if emp.profile_picture %}
-                                        <img src="{{ emp.profile_picture.url }}" alt="{{ emp.user.get_full_name }}"
-                                            style="width: 100%; height: 100%; object-fit: cover;">
-                                        {% else %}
+                                    <div class="req-avatar flex-shrink-0" style="background:#fff7ed; color:#ea580c;">
                                         <i class="fas fa-medal"></i>
-                                        {% endif %}
                                     </div>
                                     <div class="flex-grow-1 ms-3">
                                         <h6 class="mb-0 fw-bold text-dark">{{ emp.user.get_full_name }}</h6>
                                         <div class="text-muted small mt-1">{{ emp.years_of_service }} Years of Service
                                             🌟</div>
                                     </div>
-                                    <span class="badge bg-soft-warning text-warning rounded-pill">{{ emp.date_of_joining|date:"d M" }}</span>
+                                    <span class="badge bg-soft-warning text-warning rounded-pill">{{
+                                        emp.date_of_joining|date:"d M" }}</span>
                                 </div>
                             </div>
                             {% endfor %}
@@ -413,7 +414,8 @@
                                         <h6 class="mb-0 fw-bold text-dark">{{ holiday.name }}</h6>
                                         <div class="text-muted small mt-1">{{ holiday.date|date:"l" }}</div>
                                     </div>
-                                    <span class="badge bg-soft-success text-success rounded-pill">{{ holiday.date|date:"d M" }}</span>
+                                    <span class="badge bg-soft-success text-success rounded-pill">{{
+                                        holiday.date|date:"d M" }}</span>
                                 </div>
                             </div>
                             {% endfor %}
@@ -458,18 +460,88 @@
                 });
             </script>
 
+
+            <!-- Recent Team Activity -->
+            <div class="card-box">
+                <h2 class="section-title">Recent Team Activity (Clock-Ins)</h2>
+                {% if recent_activity %}
+                <div class="request-list">
+                    {% for activity in recent_activity %}
+                    <div class="request-item">
+                        <div class="req-avatar" style="background:#dcfce7; color:#166534;">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="req-info">
+                            <div class="req-name">{{ activity.employee.user.get_full_name }}</div>
+                            <div class="req-detail">
+                                Clocked in at {{ activity.clock_in|time:"H:i A" }}
+                                {% if activity.status == 'WFH' %} (WFH){% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: #999; text-align: center;">No activity recorded today.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Team Sidebar -->
+        <div class="col-lg-4">
+            <!-- Consolidated Announcements & Celebrations Card -->
+            <div class="card-box">
+                <h2 class="section-title">Pending Leave Requests</h2>
+                {% if pending_leaves %}
+                <div class="request-list">
+                    {% for leave in pending_leaves %}
+                    <div class="request-item">
+                        <div class="req-avatar" style="overflow: hidden;">
+                            {% if leave.employee.profile_picture %}
+                            <img src="{{ leave.employee.profile_picture.url }}"
+                                alt="{{ leave.employee.user.get_full_name }}"
+                                style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                            {{ leave.employee.user.first_name|first }}{{ leave.employee.user.last_name|first }}
+                            {% endif %}
+                        </div>
+                        <div class="req-info">
+                            <div class="req-name">{{ leave.employee.user.get_full_name }}</div>
+                            <div class="req-detail">
+                                {{ leave.get_leave_type_display }} • {{ leave.total_days }} Days <br>
+                                {{ leave.start_date|date:"M d" }} - {{ leave.end_date|date:"M d" }}
+                                <div class="mt-1 small text-muted">Reason: {{ leave.reason|default:"-" }}</div>
+                            </div>
+                        </div>
+                        <div class="req-actions">
+                            <form method="post" action="{% url 'leave_requests' %}" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="leave_id" value="{{ leave.id }}">
+                                <input type="hidden" name="action" value="approve">
+                                <button type="submit" class="btn-sm btn-approve">Approve</button>
+                            </form>
+                            <form method="post" action="{% url 'leave_requests' %}" style="display:inline;"
+                                onsubmit="return confirm('Reject this request?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="leave_id" value="{{ leave.id }}">
+                                <input type="hidden" name="action" value="reject">
+                                <button type="submit" class="btn-sm btn-reject">Reject</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: #999; text-align: center; padding: 20px;">No pending requests.</p>
+                {% endif %}
+            </div>
             <div class="card-box">
                 <h2 class="section-title">My Team</h2>
                 <div class="request-list">
                     {% for member in team_members %}
                     <div class="request-item">
-                        <div class="req-avatar" style="overflow: hidden;">
-                            {% if member.profile_picture %}
-                            <img src="{{ member.profile_picture.url }}" alt="{{ member.user.get_full_name }}"
-                                style="width: 100%; height: 100%; object-fit: cover;">
-                            {% else %}
+                        <div class="req-avatar">
                             {{ member.user.first_name|first }}{{ member.user.last_name|first }}
-                            {% endif %}
                         </div>
                         <div class="req-info">
                             <div class="req-name">{{ member.user.get_full_name }}</div>
@@ -482,4 +554,282 @@
         </div>
     </div>
 </div>
+</div>
+
+<!-- Announcement Modal -->
+<div id="announcementModal" class="announcement-modal">
+    <div class="announcement-modal-content">
+        <div class="announcement-modal-header">
+            <h3 class="m-0"><i class="fas fa-bullhorn me-2"></i> Announcements & Events</h3>
+            <button class="btn-close-modal" onclick="closeAnnouncementModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="announcement-modal-body">
+            <!-- Modal Tabs -->
+            <div class="d-flex gap-2 mb-4 border-bottom pb-3">
+                <button class="btn btn-sm btn-primary rounded-pill px-4 fw-bold modal-tab-btn active"
+                    data-target="modal-announcements">All Announcements</button>
+                <button class="btn btn-sm btn-outline-primary rounded-pill px-4 fw-bold modal-tab-btn"
+                    data-target="modal-birthdays">Birthdays</button>
+                <button class="btn btn-sm btn-outline-primary rounded-pill px-4 fw-bold modal-tab-btn"
+                    data-target="modal-anniv">Work Anniversaries</button>
+                <button class="btn btn-sm btn-outline-primary rounded-pill px-4 fw-bold modal-tab-btn"
+                    data-target="modal-holidays">Holidays</button>
+            </div>
+
+            <!-- Modal Content Areas -->
+            <div class="modal-tab-content-area">
+                <!-- Announcements -->
+                <div id="modal-announcements" class="modal-tab-pane d-block">
+                    {% if announcements %}
+                    <div class="list-group">
+                        {% for announcement in announcements %}
+                        <div class="list-group-item p-4 border mb-3 rounded hover-shadow">
+                            <div class="d-flex align-items-start">
+                                <div class="req-avatar flex-shrink-0 mt-1"
+                                    style="background:#f3f0ff; color:#5b47fb; width: 50px; height: 50px; font-size: 1.2rem;">
+                                    <i class="fas fa-scroll"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h5 class="mb-0 fw-bold text-dark">{{ announcement.title }}</h5>
+                                        <span class="badge bg-soft-primary">{{ announcement.created_at|date:"d M Y" }}</span>
+                                    </div>
+                                    {% if announcement.image %}
+                                    <div class="mb-3 mt-2">
+                                        <img src="{{ announcement.image.url }}" alt="{{ announcement.title }}"
+                                            class="img-fluid rounded shadow-sm" style="max-height: 300px; width: auto;">
+                                    </div>
+                                    {% endif %}
+                                    <div class="text-secondary" style="line-height: 1.6;">{{ announcement.content|linebreaks }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-bullhorn fa-4x text-muted mb-3 opacity-25"></i>
+                        <p class="text-muted fs-5">No valid announcements.</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Birthdays -->
+                <div id="modal-birthdays" class="modal-tab-pane d-none">
+                    {% if birthdays %}
+                    <div class="row g-3">
+                        {% for emp in birthdays %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="p-4 border rounded card-hover text-center h-100">
+                                <div class="req-avatar mx-auto mb-3"
+                                    style="background:#e0e7ff; color:#4338ca; width: 80px; height: 80px; font-size: 2rem;">
+                                    {% if emp.profile_picture %}
+                                    <img src="{{ emp.profile_picture.url }}" alt="{{ emp.user.get_full_name }}"
+                                        style="width: 100%; height: 100%; object-fit: cover;">
+                                    {% else %}
+                                    <i class="fas fa-birthday-cake"></i>
+                                    {% endif %}
+                                </div>
+                                <h5 class="fw-bold text-dark">{{ emp.user.get_full_name }}</h5>
+                                <div class="text-success fw-bold mt-2">Happy Birthday Today! 🎉</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-birthday-cake fa-4x text-muted mb-3 opacity-25"></i>
+                        <p class="text-muted fs-5">No birthdays today.</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Work Anniversaries -->
+                <div id="modal-anniv" class="modal-tab-pane d-none">
+                    {% if work_anniversaries %}
+                    <div class="row g-3">
+                        {% for emp in work_anniversaries %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="p-4 border rounded card-hover text-center h-100">
+                                <div class="req-avatar mx-auto mb-3"
+                                    style="background:#fff7ed; color:#ea580c; width: 80px; height: 80px; font-size: 2rem;">
+                                    {% if emp.profile_picture %}
+                                    <img src="{{ emp.profile_picture.url }}" alt="{{ emp.user.get_full_name }}"
+                                        style="width: 100%; height: 100%; object-fit: cover;">
+                                    {% else %}
+                                    <i class="fas fa-medal"></i>
+                                    {% endif %}
+                                </div>
+                                <h5 class="fw-bold text-dark">{{ emp.user.get_full_name }}</h5>
+                                <div class="text-muted mt-1">{{ emp.years_of_service }} Years of Service 🌟</div>
+                                <div class="mt-2 badge bg-soft-warning text-warning">{{ emp.date_of_joining|date:"d M Y" }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-medal fa-4x text-muted mb-3 opacity-25"></i>
+                        <p class="text-muted fs-5">No work anniversaries today.</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Holidays -->
+                <div id="modal-holidays" class="modal-tab-pane d-none">
+                    {% if upcoming_holidays %}
+                    <div class="row g-3">
+                        {% for holiday in upcoming_holidays %}
+                        <div class="col-md-6">
+                            <div class="p-3 border rounded card-hover d-flex align-items-center">
+                                <div class="req-avatar flex-shrink-0"
+                                    style="background:#ecfdf5; color:#059669; width: 60px; height: 60px; font-size: 1.5rem;">
+                                    <i class="fas fa-umbrella-beach"></i>
+                                </div>
+                                <div class="ms-3">
+                                    <h5 class="mb-1 fw-bold text-dark">{{ holiday.name }}</h5>
+                                    <div class="text-muted">{{ holiday.date|date:"l, d F Y" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-glass-cheers fa-4x text-muted mb-3 opacity-25"></i>
+                        <p class="text-muted fs-5">No upcoming holidays.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .announcement-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        z-index: 9999;
+        backdrop-filter: blur(5px);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .announcement-modal.show {
+        display: flex;
+    }
+
+    .announcement-modal-content {
+        background: white;
+        width: 100%;
+        max-width: 900px;
+        height: 85vh;
+        border-radius: 16px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: slideUp 0.3s ease-out;
+    }
+
+    .announcement-modal-header {
+        padding: 20px 30px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f9fafb;
+    }
+
+    .announcement-modal-body {
+        padding: 30px;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .btn-close-modal {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        color: #6b7280;
+        cursor: pointer;
+        padding: 5px;
+        transition: color 0.2s;
+    }
+
+    .btn-close-modal:hover {
+        color: #1f2937;
+    }
+
+    .hover-shadow:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.2s;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<script>
+    function openAnnouncementModal() {
+        document.getElementById('announcementModal').classList.add('show');
+        document.body.style.overflow = 'hidden'; // Prevent scrolling background
+    }
+
+    function closeAnnouncementModal() {
+        document.getElementById('announcementModal').classList.remove('show');
+        document.body.style.overflow = ''; // Restore scrolling
+    }
+
+    // Modal Tabs Logic
+    document.querySelectorAll('.modal-tab-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active class from all modal buttons
+            document.querySelectorAll('.modal-tab-btn').forEach(btn => {
+                btn.classList.remove('btn-primary', 'active');
+                btn.classList.add('btn-outline-primary');
+            });
+
+            // Add active class to clicked button
+            button.classList.remove('btn-outline-primary');
+            button.classList.add('btn-primary', 'active');
+
+            // Hide all modal tab content
+            document.querySelectorAll('.modal-tab-pane').forEach(content => {
+                content.classList.remove('d-block');
+                content.classList.add('d-none');
+            });
+
+            // Show target modal content
+            const targetId = button.getAttribute('data-target');
+            document.getElementById(targetId).classList.remove('d-none');
+            document.getElementById(targetId).classList.add('d-block');
+        });
+    });
+
+    // Close on outside click
+    document.getElementById('announcementModal').addEventListener('click', function (e) {
+        if (e.target === this) {
+            closeAnnouncementModal();
+        }
+    });
+</script>
+
 {% endblock %}

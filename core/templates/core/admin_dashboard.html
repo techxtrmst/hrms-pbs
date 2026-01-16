@@ -950,8 +950,7 @@
                 <div class="announcements-header">
                     <h3 class="announcements-title"><i class="fas fa-bullhorn"></i> Announcements</h3>
                     <div class="announcements-tabs">
-                        <button class="tab-btn active" onclick="switchTab('announcements')">Announcements</button>
-                        <button class="tab-btn" onclick="switchTab('birthdays')">Birthdays</button>
+                        <button class="tab-btn active" onclick="switchTab('birthdays')">Birthdays</button>
                         <button class="tab-btn" onclick="switchTab('anniv')">Work Anniv.</button>
                         <button class="tab-btn" onclick="switchTab('holidays')">Holidays</button>
                     </div>
@@ -960,6 +959,8 @@
                 <div class="announcements-body" id="announcementsContent">
                     <!-- Dynamic Content Loaded Here -->
 
+<<<<<<< Updated upstream
+=======
                     <!-- 0. Custom Announcements Content (NEW) -->
                     <div id="tab-announcements" class="tab-content fade-in">
                         {% if announcements %}
@@ -970,6 +971,12 @@
                             </div>
                             <div class="announcement-details">
                                 <div class="announcement-text">{{ announcement.title }}</div>
+                                {% if announcement.image %}
+                                <div class="mb-2 mt-1">
+                                    <img src="{{ announcement.image.url }}" alt="{{ announcement.title }}"
+                                        class="img-fluid rounded" style="max-height: 150px; width: auto;">
+                                </div>
+                                {% endif %}
                                 <div class="announcement-subtext">
                                     {{ announcement.content|truncatewords:20 }}
                                     {% if announcement.location %}
@@ -993,20 +1000,14 @@
                         {% endif %}
                     </div>
 
+>>>>>>> Stashed changes
                     <!-- 1. Birthdays Content -->
-                    <div id="tab-birthdays" class="tab-content fade-in" style="display: none;">
+                    <div id="tab-birthdays" class="tab-content fade-in">
                         {% if upcoming_birthdays %}
                         {% for bday in upcoming_birthdays %}
                         <div class="announcement-item">
-                            <div class="announcement-icon"
-                                style="background: #e0e7ff; color: #4338ca; overflow: hidden;">
-                                {% if bday.employee.profile_picture %}
-                                <img src="{{ bday.employee.profile_picture.url }}"
-                                    alt="{{ bday.employee.user.get_full_name }}"
-                                    style="width: 100%; height: 100%; object-fit: cover;">
-                                {% else %}
+                            <div class="announcement-icon" style="background: #e0e7ff; color: #4338ca;">
                                 <i class="fas fa-birthday-cake"></i>
-                                {% endif %}
                             </div>
                             <div class="announcement-details">
                                 <div class="announcement-text">{{ bday.employee.user.get_full_name }}</div>
@@ -1036,15 +1037,8 @@
                         {% if upcoming_anniversaries %}
                         {% for anniv in upcoming_anniversaries %}
                         <div class="announcement-item">
-                            <div class="announcement-icon"
-                                style="background: #fef3c7; color: #d97706; overflow: hidden;">
-                                {% if anniv.employee.profile_picture %}
-                                <img src="{{ anniv.employee.profile_picture.url }}"
-                                    alt="{{ anniv.employee.user.get_full_name }}"
-                                    style="width: 100%; height: 100%; object-fit: cover;">
-                                {% else %}
+                            <div class="announcement-icon" style="background: #fef3c7; color: #d97706;">
                                 <i class="fas fa-medal"></i>
-                                {% endif %}
                             </div>
                             <div class="announcement-details">
                                 <div class="announcement-text">{{ anniv.employee.user.get_full_name }}</div>
@@ -1156,13 +1150,7 @@
                     {% for request in pending_leave_requests %}
                     <div class="request-card">
                         <div class="employee-avatar">
-                            {% if request.employee.profile_picture %}
-                            <img src="{{ request.employee.profile_picture.url }}"
-                                alt="{{ request.employee.user.get_full_name }}"
-                                style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                            {% else %}
                             {{ request.employee.user.first_name|first }}{{ request.employee.user.last_name|first }}
-                            {% endif %}
                         </div>
                         <div class="request-info">
                             <div class="employee-name">
@@ -1231,14 +1219,8 @@
                         <td>
                             <div class="employee-info">
                                 <div class="employee-mini-avatar">
-                                    {% if emp_data.employee.profile_picture %}
-                                    <img src="{{ emp_data.employee.profile_picture.url }}"
-                                        alt="{{ emp_data.employee.user.get_full_name }}"
-                                        style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                                    {% else %}
                                     {{ emp_data.employee.user.first_name|first }}
                                     {{ emp_data.employee.user.last_name|first }}
-                                    {% endif %}
                                 </div>
                                 <div class="employee-details">
                                     <div class="employee-details-name">{{ emp_data.employee.user.get_full_name }}</div>
@@ -1468,21 +1450,15 @@
 
         let html = '';
         employees.forEach(emp => {
-            let avatarHtml = '';
-            if (emp.profile_picture_url) {
-                avatarHtml = `<img src="${emp.profile_picture_url}" class="search-result-avatar" style="object-fit: cover;">`;
-            } else {
-                // Get initials for avatar
-                const nameParts = emp.name.split(' ');
-                const initials = nameParts.length > 1
-                    ? nameParts[0][0] + nameParts[nameParts.length - 1][0]
-                    : nameParts[0][0];
-                avatarHtml = `<div class="search-result-avatar">${initials.toUpperCase()}</div>`;
-            }
+            // Get initials for avatar
+            const nameParts = emp.name.split(' ');
+            const initials = nameParts.length > 1
+                ? nameParts[0][0] + nameParts[nameParts.length - 1][0]
+                : nameParts[0][0];
 
             html += `
                 <div class="search-result-item" onclick="navigateToEmployee('${emp.profile_url}')">
-                    ${avatarHtml}
+                    <div class="search-result-avatar">${initials.toUpperCase()}</div>
                     <div class="search-result-details">
                         <div class="search-result-name">${emp.name}</div>
                         <div class="search-result-meta">

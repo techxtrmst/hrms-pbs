@@ -364,7 +364,7 @@
             </h2>
         </div>
 
-        <form method="POST" action="{% url 'announcement_configuration' %}">
+        <form method="POST" action="{% url 'announcement_configuration' %}" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="hidden" name="action" value="create">
 
@@ -382,6 +382,14 @@
                 </label>
                 <textarea id="content" name="content" class="form-control-modern"
                     placeholder="Enter announcement content" required></textarea>
+            </div>
+
+            <div class="form-group-modern">
+                <label class="form-label-modern" for="image">
+                    <i class="fas fa-image"></i> Image (Optional)
+                </label>
+                <input type="file" id="image" name="image" class="form-control-modern" accept="image/*">
+                <small class="text-muted">Upload an image to display with the announcement</small>
             </div>
 
             <div class="form-group-modern">
@@ -457,6 +465,12 @@
                 </div>
 
                 <div class="announcement-content">
+                    {% if announcement.image %}
+                    <div class="mb-3">
+                        <img src="{{ announcement.image.url }}" alt="{{ announcement.title }}" class="img-fluid rounded"
+                            style="max-height: 200px; width: auto;">
+                    </div>
+                    {% endif %}
                     {{ announcement.content|linebreaks }}
                 </div>
 
@@ -506,7 +520,7 @@
             <button class="btn-close" onclick="closeEditModal()">&times;</button>
         </div>
 
-        <form method="POST" action="{% url 'announcement_configuration' %}">
+        <form method="POST" action="{% url 'announcement_configuration' %}" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="announcement_id" id="edit_announcement_id">
@@ -523,6 +537,13 @@
                     <i class="fas fa-align-left"></i> Content *
                 </label>
                 <textarea id="edit_content" name="content" class="form-control-modern" required></textarea>
+            </div>
+
+            <div class="form-group-modern">
+                <label class="form-label-modern" for="edit_image">
+                    <i class="fas fa-image"></i> Update Image (Optional)
+                </label>
+                <input type="file" id="edit_image" name="image" class="form-control-modern" accept="image/*">
             </div>
 
             <div class="form-group-modern">

@@ -1,8 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .models import Location, LocationWeekOff, Company, Announcement
+from .models import Location, LocationWeekOff, Company
 from employees.models import Employee
+<<<<<<< Updated upstream
+=======
 from core.decorators import admin_required
 
 
@@ -35,6 +37,7 @@ def announcement_configuration(request):
             content = request.POST.get("content")
             location_id = request.POST.get("location")
             is_active = request.POST.get("is_active") == "on"
+            image = request.FILES.get("image")
 
             if title and content:
                 location = None
@@ -48,6 +51,7 @@ def announcement_configuration(request):
                     location=location,
                     title=title,
                     content=content,
+                    image=image,
                     is_active=is_active,
                 )
                 messages.success(request, f"Announcement '{title}' created successfully!")
@@ -69,6 +73,10 @@ def announcement_configuration(request):
                 else None
             )
             announcement.is_active = request.POST.get("is_active") == "on"
+            
+            if "image" in request.FILES:
+                announcement.image = request.FILES["image"]
+                
             announcement.save()
 
             messages.success(
@@ -100,6 +108,7 @@ def announcement_configuration(request):
             "company": company,
         },
     )
+>>>>>>> Stashed changes
 
 
 @login_required
