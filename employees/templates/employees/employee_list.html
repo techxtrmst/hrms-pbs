@@ -269,6 +269,7 @@
         font-weight: 600;
         font-size: 0.75rem;
         flex-shrink: 0;
+        overflow: hidden;
     }
 
     .employee-email {
@@ -828,13 +829,18 @@
                         <td>
                             <div class="employee-name">
                                 <div class="employee-avatar">
+                                    {% if employee.profile_picture %}
+                                    <img src="{{ employee.profile_picture.url }}"
+                                        alt="{{ employee.user.get_full_name }}"
+                                        style="width: 100%; height: 100%; object-fit: cover;">
+                                    {% else %}
                                     {{ employee.user.first_name|first|upper }}{{ employee.user.last_name|first|upper }}
+                                    {% endif %}
                                 </div>
                                 <div>
                                     <div>{{ employee.user.get_full_name }}
                                         {% if not employee.is_active %}
-                                        <span class="status-badge-inactive">{{ employee.get_employment_status_display
-                                            }}</span>
+                                        <span class="status-badge-inactive">{{ employee.get_employment_status_display }}</span>
                                         {% endif %}
                                     </div>
                                     <div class="employee-email">{{ employee.user.email }}</div>
@@ -867,7 +873,7 @@
                                 {% if employee.is_active %}
                                 <button class="btn-action"
                                     style="background:#fef3c7; color:#d97706; border:1px solid #fde68a;"
-                                    onclick="openExitModal({{ employee.pk }}, '{{ employee.user.get_full_name|escapejs }}')">
+                                    onclick='openExitModal({{ employee.pk }}, "{{ employee.user.get_full_name|escapejs }}")'>
                                     <i class="fas fa-ellipsis-v"></i> Exit
                                 </button>
                                 {% else %}
