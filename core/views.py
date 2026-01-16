@@ -517,6 +517,14 @@ def admin_dashboard(request):
         .order_by("date")
     )
 
+    # Get announcements for the company
+    from companies.models import Announcement
+    
+    announcements = (
+        Announcement.objects.filter(company=company, is_active=True)
+        .order_by("-created_at")[:5]
+    )
+
     # Context updates
 
     context = {
@@ -534,6 +542,7 @@ def admin_dashboard(request):
         "upcoming_birthdays": upcoming_birthdays,
         "upcoming_anniversaries": upcoming_anniversaries,
         "upcoming_holidays": upcoming_holidays_qs,
+        "announcements": announcements,
         "employee_calendar_data": employee_calendar_data,
         "current_month": cal.month_name[current_month],
         "current_year": current_year,

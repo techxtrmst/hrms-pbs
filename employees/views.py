@@ -499,27 +499,33 @@ def clock_in(request):
                             }
                         )
                     
+                    
                     session = AttendanceSession.objects.create(
                         employee=employee,
                         date=today,
                         session_number=session_number,
                         clock_in=timezone.now(),
                         session_type=session_type,
-                        clock_in_latitude=lat,
-                        clock_in_longitude=lng,
+                        clock_in_latitude=lat if lat is not None else None,
+                        clock_in_longitude=lng if lng is not None else None,
                         is_active=True,
                     )
 
-                    # Log clock-in location
-                    LocationLog.objects.create(
-                        employee=employee,
-                        attendance_session=session,
-                        latitude=lat,
-                        longitude=lng,
-                        accuracy=accuracy,
-                        log_type='CLOCK_IN',
-                        is_valid=True,
-                    )
+                    # Log clock-in location only if coordinates are available
+                    if lat is not None and lng is not None:
+                        LocationLog.objects.create(
+                            employee=employee,
+                            attendance_session=session,
+                            latitude=lat,
+                            longitude=lng,
+                            accuracy=accuracy if accuracy is not None else 9999,  # Use high value for unknown accuracy
+                            log_type='CLOCK_IN',
+                            is_valid=True,
+                        )
+                    else:
+                        # Log with null coordinates to track that location was unavailable
+                        logger.warning(f"Clock-in without location data for {employee.user.get_full_name()}")
+
 
                     # Update attendance record
                     attendance.daily_sessions_count = session_number
@@ -530,7 +536,8 @@ def clock_in(request):
                     # Set first clock-in of the day
                     if not attendance.clock_in:
                         attendance.clock_in = session.clock_in
-                        attendance.location_in = f"{lat},{lng}"
+                        attendance.location_in = f"{lat},{lng}" if lat is not None and lng is not None else "N/A"
+
 
                     # Determine overall status
                     if session_number == 1:
@@ -740,21 +747,26 @@ def clock_out(request):
 
                 # Process clock-out for current session
                 current_session.clock_out = timezone.now()
-                current_session.clock_out_latitude = lat
-                current_session.clock_out_longitude = lng
+                current_session.clock_out_latitude = lat if lat is not None else None
+                current_session.clock_out_longitude = lng if lng is not None else None
                 current_session.is_active = False
                 current_session.save()  # This will auto-calculate duration
 
-                # Log clock-out location
-                LocationLog.objects.create(
-                    employee=employee,
-                    attendance_session=current_session,
-                    latitude=lat,
-                    longitude=lng,
-                    accuracy=accuracy,
-                    log_type='CLOCK_OUT',
-                    is_valid=True,
-                )
+                # Log clock-out location only if coordinates are available
+                if lat is not None and lng is not None:
+                    LocationLog.objects.create(
+                        employee=employee,
+                        attendance_session=current_session,
+                        latitude=lat,
+                        longitude=lng,
+                        accuracy=accuracy if accuracy is not None else 9999,  # Use high value for unknown accuracy
+                        log_type='CLOCK_OUT',
+                        is_valid=True,
+                    )
+                else:
+                    # Log that location was unavailable
+                    logger.warning(f"Clock-out without location data for {employee.user.get_full_name()}")
+
 
                 # Update attendance record
                 attendance.is_currently_clocked_in = False
@@ -762,7 +774,8 @@ def clock_out(request):
                 attendance.clock_out = (
                     current_session.clock_out
                 )  # Update last clock-out
-                attendance.location_out = f"{lat},{lng}"
+                attendance.location_out = f"{lat},{lng}" if lat is not None and lng is not None else "N/A"
+
 
                 # Stop location tracking
                 attendance.location_tracking_active = False
