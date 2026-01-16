@@ -637,6 +637,7 @@ def search_employees_api(request):
                 "designation": emp.designation or "N/A",
                 "email": emp.user.email,
                 "phone": emp.mobile_number or "N/A",
+                "profile_picture_url": emp.profile_picture.url if emp.profile_picture else None,
                 "profile_url": f"/employees/{emp.id}/detail/",
             }
         )
