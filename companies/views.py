@@ -1,8 +1,105 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .models import Location, LocationWeekOff, Company
+from .models import Location, LocationWeekOff, Company, Announcement
 from employees.models import Employee
+from core.decorators import admin_required
+
+
+@login_required
+@admin_required
+def announcement_configuration(request):
+    """
+    Announcement Configuration View - Admin can create and manage announcements
+    """
+    # Get Company
+    company = None
+    if hasattr(request.user, "company") and request.user.company:
+        company = request.user.company
+    elif request.user.employee_profile and request.user.employee_profile.company:
+        company = request.user.employee_profile.company
+
+    if not company:
+        messages.error(request, "No company associated.")
+        return redirect("dashboard")
+
+    # Get all locations for this company
+    locations = Location.objects.filter(company=company, is_active=True)
+
+    # Handle POST requests (Create/Update/Delete)
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        if action == "create":
+            title = request.POST.get("title")
+            content = request.POST.get("content")
+            location_id = request.POST.get("location")
+            is_active = request.POST.get("is_active") == "on"
+
+            if title and content:
+                location = None
+                if location_id:
+                    location = Location.objects.filter(
+                        id=location_id, company=company
+                    ).first()
+
+                Announcement.objects.create(
+                    company=company,
+                    location=location,
+                    title=title,
+                    content=content,
+                    is_active=is_active,
+                )
+                messages.success(request, f"Announcement '{title}' created successfully!")
+            else:
+                messages.error(request, "Title and content are required.")
+
+        elif action == "update":
+            announcement_id = request.POST.get("announcement_id")
+            announcement = get_object_or_404(
+                Announcement, id=announcement_id, company=company
+            )
+
+            announcement.title = request.POST.get("title")
+            announcement.content = request.POST.get("content")
+            location_id = request.POST.get("location")
+            announcement.location = (
+                Location.objects.filter(id=location_id, company=company).first()
+                if location_id
+                else None
+            )
+            announcement.is_active = request.POST.get("is_active") == "on"
+            announcement.save()
+
+            messages.success(
+                request, f"Announcement '{announcement.title}' updated successfully!"
+            )
+
+        elif action == "delete":
+            announcement_id = request.POST.get("announcement_id")
+            announcement = get_object_or_404(
+                Announcement, id=announcement_id, company=company
+            )
+            title = announcement.title
+            announcement.delete()
+            messages.success(request, f"Announcement '{title}' deleted successfully!")
+
+        return redirect("announcement_configuration")
+
+    # Get all announcements for this company
+    announcements = Announcement.objects.filter(company=company).order_by(
+        "-created_at"
+    )
+
+    return render(
+        request,
+        "companies/announcement_configuration.html",
+        {
+            "announcements": announcements,
+            "locations": locations,
+            "company": company,
+        },
+    )
 
 
 @login_required

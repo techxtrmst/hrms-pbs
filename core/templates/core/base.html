@@ -347,6 +347,9 @@
         <a href="{% url 'policy' %}" class="{% if 'policy' in request.path %}active{% endif %}">
             <i class="fas fa-file-contract"></i> <span>Policy</span>
         </a>
+        <a href="{% url 'employee_org_chart' %}" class="{% if 'org-chart' in request.path %}active{% endif %}">
+            <i class="fas fa-sitemap"></i> <span>Organisation</span>
+        </a>
         {% endif %}
 
         <!-- Employees / Team (Collapsible) -->
@@ -469,6 +472,10 @@
                 <a href="{% url 'policies:admin_policy_list' %}"
                     class="{% if 'policies/admin' in request.path %}active{% endif %}">
                     <i class="fas fa-file-contract"></i> Policies
+                </a>
+                <a href="{% url 'announcement_configuration' %}"
+                    class="{% if 'announcement-configuration' in request.path %}active{% endif %}">
+                    <i class="fas fa-bullhorn"></i> Announcements
                 </a>
             </div>
         </div>

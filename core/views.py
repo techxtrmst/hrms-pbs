@@ -517,6 +517,14 @@ def admin_dashboard(request):
         .order_by("date")
     )
 
+    # Get announcements for the company
+    from companies.models import Announcement
+    
+    announcements = (
+        Announcement.objects.filter(company=company, is_active=True)
+        .order_by("-created_at")[:5]
+    )
+
     # Context updates
 
     context = {
@@ -534,6 +542,7 @@ def admin_dashboard(request):
         "upcoming_birthdays": upcoming_birthdays,
         "upcoming_anniversaries": upcoming_anniversaries,
         "upcoming_holidays": upcoming_holidays_qs,
+        "announcements": announcements,
         "employee_calendar_data": employee_calendar_data,
         "current_month": cal.month_name[current_month],
         "current_year": current_year,
@@ -1369,6 +1378,108 @@ def org_chart(request):
             "title": "Organisation Chart",
             "roots": final_roots,
             "company": request.user.company,
+        },
+    )
+
+
+@login_required
+def employee_org_chart(request):
+    """
+    Employee-specific org chart - shows only their department hierarchy
+    """
+    # Ensure user has a company and employee profile
+    if not hasattr(request.user, "company") or not request.user.company:
+        messages.error(request, "You are not linked to any company.")
+        return redirect("dashboard")
+    
+    if not hasattr(request.user, "employee_profile"):
+        messages.error(request, "Employee profile not found.")
+        return redirect("dashboard")
+    
+    employee_profile = request.user.employee_profile
+    employee_department = employee_profile.department
+    
+    # Fetch only ACTIVE employees from the same department
+    employees = Employee.objects.filter(
+        company=request.user.company,
+        department=employee_department,
+        employment_status="ACTIVE",
+        is_active=True
+    ).select_related("user", "manager")
+
+    # Build dictionary Key=USER_ID (not Employee ID)
+    nodes = {}
+    for emp in employees:
+        nodes[emp.user.id] = {
+            "id": emp.user.id,
+            "employee": emp,
+            "user": emp.user,
+            "direct_reports": [],
+            "is_superadmin": False,
+        }
+
+    roots = []
+
+    for emp in employees:
+        current_node = nodes[emp.user.id]
+        manager_user = emp.manager  # User object
+
+        if manager_user:
+            # Case A: Manager is in the company (exists in nodes)
+            if manager_user.id in nodes:
+                nodes[manager_user.id]["direct_reports"].append(current_node)
+            else:
+                # Case B: Manager is External (SuperAdmin or from another department)
+                if manager_user.id not in nodes:
+                    # Check if manager is a superadmin
+                    if manager_user.role == User.Role.SUPERADMIN:
+                        nodes[manager_user.id] = {
+                            "id": manager_user.id,
+                            "employee": None,
+                            "user": manager_user,
+                            "direct_reports": [],
+                            "is_superadmin": True,
+                        }
+                        roots.append(nodes[manager_user.id])
+                    else:
+                        # Manager from another department - show as root with manager info
+                        try:
+                            manager_emp = Employee.objects.get(user=manager_user, company=request.user.company)
+                            nodes[manager_user.id] = {
+                                "id": manager_user.id,
+                                "employee": manager_emp,
+                                "user": manager_user,
+                                "direct_reports": [],
+                                "is_superadmin": False,
+                            }
+                            roots.append(nodes[manager_user.id])
+                        except Employee.DoesNotExist:
+                            # Manager doesn't exist in company, treat as root
+                            roots.append(current_node)
+
+                if manager_user.id in nodes:
+                    nodes[manager_user.id]["direct_reports"].append(current_node)
+                else:
+                    roots.append(current_node)
+        else:
+            roots.append(current_node)
+
+    # Filter roots to ensure no children (though logic above should handle it somewhat)
+    child_ids = set()
+    for uid, node in nodes.items():
+        for child in node["direct_reports"]:
+            child_ids.add(child["id"])
+
+    final_roots = [node for uid, node in nodes.items() if uid not in child_ids]
+
+    return render(
+        request,
+        "core/org_chart.html",
+        {
+            "title": f"Organisation Hierarchy - {employee_department}",
+            "roots": final_roots,
+            "company": request.user.company,
+            "department_filter": employee_department,
         },
     )
 
