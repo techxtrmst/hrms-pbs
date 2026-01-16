@@ -277,12 +277,13 @@ def admin_dashboard(request):
 
     # --- Department Performance Logic ---
     # Get distinct departments present today
-    departments_list = employees.values_list("department", flat=True).distinct()
+    departments_list = list(set(employees.values_list("department", flat=True)))
+    # Remove None/empty values and sort
+    departments_list = sorted([dept for dept in departments_list if dept])
+    
     department_performance = []
 
     for dept in departments_list:
-        if not dept:
-            continue
 
         dept_emps = employees.filter(department=dept)
         dept_total = dept_emps.count()
