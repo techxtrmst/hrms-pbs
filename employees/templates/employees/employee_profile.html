@@ -632,7 +632,7 @@
                                                         class="fas fa-building me-2 text-secondary"></i> Permanent
                                                     Address</div>
                                                 <p class="address-text">
-                                                    {{employee.permanent_address|default:"-"|linebreaksbr}}</p>
+                                                    {{ employee.permanent_address|default:"-"|linebreaksbr }}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -728,7 +728,7 @@
                                 <div class="col-sm-6">
                                     <div class="info-label">Work Shift</div>
                                     <div class="info-value text-primary"><i class="far fa-clock me-1"></i>
-                                        {{employee.assigned_shift.name|default:"General Shift"}}</div>
+                                        {{ employee.assigned_shift.name|default:"General Shift" }}</div>
                                 </div>
                                 <div class="col-12 border-top pt-3 mt-3">
                                     <div class="info-label">Location</div>

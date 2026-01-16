@@ -598,8 +598,7 @@
                                 <div class="h4 mb-0 text-danger">{{ working_hours_compliance.undertime_count }}</div>
                             </div>
                         </div>
-                        <div class="small text-muted mb-1">Compliance: {{ working_hours_compliance.compliance_percentage
-                            }}%</div>
+                        <div class="small text-muted mb-1">Compliance: {{ working_hours_compliance.compliance_percentage }}%</div>
                         <div class="progress-compact" style="height: 10px;">
                             <div class="progress-bar-compact"
                                 style="--bar-color: var(--success); width: {{ working_hours_compliance.compliance_percentage }}%">
@@ -897,8 +896,7 @@
     // Punctuality Chart
     const ctx = document.getElementById('punctualityChart');
     if (ctx) {
-        const data = {{ punctuality_analysis.clock_in_times| safe
-    }};
+        const data = {{ punctuality_analysis.clock_in_times| safe }};
 
     new Chart(ctx, {
         type: 'line',

@@ -2440,7 +2440,7 @@ def leave_history(request):
     if request.user.role == User.Role.MANAGER:
         manager_profile = safe_get_employee_profile(request.user)
         if manager_profile:
-            employees = Employee.objects.filter(manager=manager_profile)
+            employees = Employee.objects.filter(manager=request.user)
         else:
             employees = Employee.objects.none()
 

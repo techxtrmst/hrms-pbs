@@ -230,8 +230,7 @@
     // Leave Distribution Chart
     const leaveDistCtx = document.getElementById('leaveDistributionChart');
     if (leaveDistCtx) {
-        const leaveDistData = {{ leave_analytics.distribution| safe
-    }};
+        const leaveDistData = {{ leave_analytics.distribution| safe }};
     new Chart(leaveDistCtx, {
         type: 'doughnut',
         data: {
@@ -281,8 +280,7 @@
     // Monthly Trends Chart
     const monthlyTrendsCtx = document.getElementById('monthlyTrendsChart');
     if (monthlyTrendsCtx) {
-        const trendsData = {{ leave_analytics.monthly_trends| safe
-    }};
+        const trendsData = {{ leave_analytics.monthly_trends| safe }};
     new Chart(monthlyTrendsCtx, {
         type: 'line',
         data: {

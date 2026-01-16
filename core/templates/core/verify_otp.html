@@ -163,6 +163,7 @@
         .brand-logo-small i {
             font-size: 2rem;
             background: var(--primary-gradient);
+            background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-right: 0.8rem;
@@ -298,7 +299,10 @@
             <div class="circle-2"></div>
 
             <div class="login-card">
-                <div class="brand-logo-small"><i class="fas fa-cubes"></i> Petabytz</div>
+                <div class="brand-logo-small">
+                    <img src="{% static 'img/petabytz_logo.jpg' %}" alt="PetaBytz Logo"
+                        style="height: 60px; width: auto; max-width: 100%; border-radius: 8px;">
+                </div>
                 <div class="welcome-text text-center">
                     <h3>Verify OTP</h3>
                     <p>Enter the code sent to <strong>{{ email }}</strong></p>

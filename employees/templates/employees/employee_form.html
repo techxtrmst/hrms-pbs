@@ -344,8 +344,7 @@
             <div>
                 <h1 class="page-title mb-0">{% if form.instance.pk %}Edit Employee{% else %}Add New Employee{% endif %}
                 </h1>
-                <p class="page-subtitle mb-0">{% if form.instance.pk %}Update employee details and profile{% else
-                    %}Create a comprehensive employee profile{% endif %}</p>
+                <p class="page-subtitle mb-0">{% if form.instance.pk %}Update employee details and profile{% else %}Create a comprehensive employee profile{% endif %}</p>
             </div>
             <a href="{% url 'employee_list' %}" class="btn btn-back">
                 <i class="fas fa-arrow-left me-2"></i>Back

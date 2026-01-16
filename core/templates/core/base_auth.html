@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -30,7 +31,27 @@
         <div class="row justify-content-center">
             <div class="col-md-6 col-lg-4">
                 <div class="text-center mb-4">
-                    <h2 class="fw-bold text-primary"><i class="fas fa-cube me-2"></i>Petabytz HRMS</h2>
+                    {% if request.company %}
+                    {% if request.company.slug == 'softstandard' %}
+                    <img src="https://softstandard.com/wp-content/uploads/2016/05/logo.jpg" alt="Softstandard Logo"
+                        style="height: 60px; width: auto; max-width: 100%; border-radius: 8px;">
+                    {% elif request.company.slug == 'bluebix' %}
+                    <img src="https://media.licdn.com/dms/image/v2/C510BAQF_jSPngDmYig/company-logo_200_200/company-logo_200_200/0/1630611564837?e=2147483647&v=beta&t=K0Ip6YC5bjvQcpJwIyTAbBV_01rzUJhP4bwlIDO8hPw"
+                        alt="Bluebix Logo" style="height: 60px; width: auto; max-width: 100%; border-radius: 8px;">
+                    {% elif request.company.slug == 'petabytz' %}
+                    <img src="{% static 'img/petabytz_logo.jpg' %}" alt="PetaBytz Logo"
+                        style="height: 60px; width: auto; max-width: 100%; border-radius: 8px;">
+                    {% elif request.company.logo %}
+                    <img src="{{ request.company.logo.url }}" alt="{{ request.company.name }} Logo"
+                        style="height: 60px; width: auto; max-width: 100%; border-radius: 8px;">
+                    {% else %}
+                    <img src="{% static 'img/petabytz_logo.jpg' %}" alt="HRMS Logo"
+                        style="height: 60px; width: auto; max-width: 100%; border-radius: 8px;">
+                    {% endif %}
+                    {% else %}
+                    <img src="{% static 'img/petabytz_logo.jpg' %}" alt="HRMS Logo"
+                        style="height: 60px; width: auto; max-width: 100%; border-radius: 8px;">
+                    {% endif %}
                 </div>
                 {% block content %}{% endblock %}
             </div>

@@ -40,8 +40,7 @@
                         <div class="d-flex justify-content-between align-items-center mt-1">
                             <span>{{ shift.grace_period_minutes }} mins</span>
                             <!-- prettier-ignore -->
-                            <span class="badge bg-info text-dark" title="Allowed Late Logins">{{
-                                shift.allowed_late_logins }}/month</span>
+                            <span class="badge bg-info text-dark" title="Allowed Late Logins">{{ shift.allowed_late_logins }}/month</span>
                         </div>
                         <small class="text-muted d-block mt-1">
                             Action: {{ shift.get_grace_exceeded_action_display }}
@@ -55,8 +54,7 @@
                             <li class="d-flex justify-content-between mb-1">
                                 <span>{{ brk.name }}</span>
                                 <!-- prettier-ignore -->
-                                <span class="text-muted small">{{ brk.start_time|time:"h:i A" }} ({{
-                                    brk.duration_minutes }}m)</span>
+                                <span class="text-muted small">{{ brk.start_time|time:"h:i A" }} ({{ brk.duration_minutes }}m)</span>
                             </li>
                             {% empty %}
                             <li class="text-muted fst-italic">No breaks configured</li>

@@ -482,8 +482,7 @@
         <div class="d-flex align-items-center">
             <div class="text-end me-3">
                 <div class="fw-bold text-dark">{{ request.user.first_name|default:request.user.username }}</div>
-                <div class="text-muted small" style="font-size: 0.8rem;">{{
-                    request.user.employee_profile.designation|default:request.user.role }}</div>
+                <div class="text-muted small" style="font-size: 0.8rem;">{{ request.user.employee_profile.designation|default:request.user.role }}</div>
             </div>
             {% if request.user.employee_profile.profile_picture %}
             <img src="{{ request.user.employee_profile.profile_picture.url }}"

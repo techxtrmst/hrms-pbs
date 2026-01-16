@@ -23,8 +23,7 @@
 
                 <p class="text-muted">
                     <i class="fas fa-info-circle me-1"></i>
-                    This shift is currently assigned to <strong>{{ shift.employees.count }}</strong> employee{{
-                    shift.employees.count|pluralize }}.
+                    This shift is currently assigned to <strong>{{ shift.employees.count }}</strong> employee{{ shift.employees.count|pluralize }}.
                     {% if shift.employees.count > 0 %}
                     They will need to be reassigned to a different shift.
                     {% endif %}

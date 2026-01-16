@@ -602,10 +602,10 @@
                 <label class="form-label">Status</label>
                 <select name="status" class="form-select">
                     <option value="">All Status</option>
-                    <option value="PENDING" {% if status_filter=='PENDING' %}selected{% endif %}>Pending</option>
-                    <option value="APPROVED" {% if status_filter=='APPROVED' %}selected{% endif %}>Approved</option>
-                    <option value="REJECTED" {% if status_filter=='REJECTED' %}selected{% endif %}>Rejected</option>
-                    <option value="CANCELLED" {% if status_filter=='CANCELLED' %}selected{% endif %}>Cancelled</option>
+                    <option value="PENDING" {% if status_filter == 'PENDING' %}selected{% endif %}>Pending</option>
+                    <option value="APPROVED" {% if status_filter == 'APPROVED' %}selected{% endif %}>Approved</option>
+                    <option value="REJECTED" {% if status_filter == 'REJECTED' %}selected{% endif %}>Rejected</option>
+                    <option value="CANCELLED" {% if status_filter == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
                 </select>
             </div>
             <div class="form-group">
@@ -618,7 +618,7 @@
                 <select name="department" class="form-select">
                     <option value="">All Departments</option>
                     {% for dept in departments %}
-                    <option value="{{ dept }}" {% if department_filter==dept %}selected{% endif %}>{{ dept }}</option>
+                    <option value="{{ dept }}" {% if department_filter == dept %}selected{% endif %}>{{ dept }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -626,11 +626,11 @@
                 <label class="form-label">Leave Type</label>
                 <select name="leave_type" class="form-select">
                     <option value="">All Types</option>
-                    <option value="CL" {% if leave_type_filter=='CL' %}selected{% endif %}>Casual Leave</option>
-                    <option value="SL" {% if leave_type_filter=='SL' %}selected{% endif %}>Sick Leave</option>
-                    <option value="UL" {% if leave_type_filter=='UL' %}selected{% endif %}>Unpaid Leave (LOP)</option>
-                    <option value="OD" {% if leave_type_filter=='OD' %}selected{% endif %}>On Duty</option>
-                    <option value="OT" {% if leave_type_filter=='OT' %}selected{% endif %}>Others</option>
+                    <option value="CL" {% if leave_type_filter == 'CL' %}selected{% endif %}>Casual Leave</option>
+                    <option value="SL" {% if leave_type_filter == 'SL' %}selected{% endif %}>Sick Leave</option>
+                    <option value="UL" {% if leave_type_filter == 'UL' %}selected{% endif %}>Unpaid Leave (LOP)</option>
+                    <option value="OD" {% if leave_type_filter == 'OD' %}selected{% endif %}>On Duty</option>
+                    <option value="OT" {% if leave_type_filter == 'OT' %}selected{% endif %}>Others</option>
                 </select>
             </div>
             <div class="form-group">

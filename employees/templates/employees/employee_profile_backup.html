@@ -297,8 +297,7 @@
                     <div class="profile-designation">
                         <i class="fas fa-briefcase text-primary"></i>
                         {{ employee.designation }}
-                        <span class="badge rounded-pill bg-light text-muted ms-2 fs-6 fw-normal px-2 border">{{
-                            employee.get_work_type_display }}</span>
+                        <span class="badge rounded-pill bg-light text-muted ms-2 fs-6 fw-normal px-2 border">{{ employee.get_work_type_display }}</span>
                     </div>
                 </div>
 
@@ -315,8 +314,7 @@
                     <div class="divider-vertical"></div>
                     <div class="quick-stat">
                         <div class="qs-label">Location</div>
-                        <div class="qs-value"><i class="fas fa-map-marker-alt text-danger me-1"></i>{{
-                            employee.location.name|default:"Remote" }}</div>
+                        <div class="qs-value"><i class="fas fa-map-marker-alt text-danger me-1"></i>{{ employee.location.name|default:"Remote" }}</div>
                     </div>
                     <div class="divider-vertical"></div>
                     <div class="quick-stat">
@@ -430,8 +428,7 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="field-label">Work Shift</div>
-                                <div class="field-value">{{ employee.shift_schedule|default:"General Shift (09:00 -
-                                    18:00)" }}</div>
+                                <div class="field-value">{{ employee.shift_schedule|default:"General Shift (09:00 - 18:00)" }}</div>
                             </div>
                             <div class="col-md-6">
                                 <div class="field-label">Joining Date</div>
@@ -453,8 +450,7 @@
                             </div>
                             <div>
                                 <div class="small text-muted">Reporting Manager</div>
-                                <div class="fw-bold text-dark">{{ employee.manager.user.get_full_name|default:"Not
-                                    Assigned" }}</div>
+                                <div class="fw-bold text-dark">{{ employee.manager.user.get_full_name|default:"Not Assigned" }}</div>
                                 <div class="small text-muted">{{ employee.manager.designation }}</div>
                             </div>
                         </div>
