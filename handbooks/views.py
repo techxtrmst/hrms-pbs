@@ -342,11 +342,15 @@ def admin_acknowledgment_report(request, handbook_id):
             'acknowledged_at': ack.acknowledged_at if ack and ack.acknowledged else None,
         })
 
+    total_employees = len(employee_data)
+    acknowledged_count = sum(1 for ed in employee_data if ed['acknowledged'])
+
     context = {
         'handbook': handbook,
         'employee_data': employee_data,
-        'total_employees': len(employee_data),
-        'acknowledged_count': sum(1 for ed in employee_data if ed['acknowledged']),
+        'total_employees': total_employees,
+        'acknowledged_count': acknowledged_count,
+        'pending_count': total_employees - acknowledged_count,
     }
 
     return render(request, 'handbooks/admin_acknowledgment_report.html', context)
