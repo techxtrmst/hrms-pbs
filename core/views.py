@@ -789,26 +789,34 @@ def personal_home(request):
 
         # Today's attendance
         attendance = Attendance.objects.filter(employee=employee, date=today).first()
+        
+        # Update today's working hours if attendance exists (handles missing clock-out)
+        if attendance:
+            attendance.calculate_total_working_hours()
+            attendance.refresh_from_db()
+        
         context["attendance"] = attendance
 
-        # Stats (Last 7 days)
+        # Stats (Last 7 days) - use calculated total_working_hours
         last_week = today - timedelta(days=7)
         recent_attendance = Attendance.objects.filter(
             employee=employee, date__gte=last_week
         )
 
-        total_seconds = 0
+        total_hours = 0
         count = 0
         for att in recent_attendance:
-            if att.clock_in and att.clock_out:
-                total_seconds += (att.clock_out - att.clock_in).total_seconds()
+            # Recalculate to ensure up-to-date hours (handles missing clock-outs)
+            att.calculate_total_working_hours()
+            if att.total_working_hours > 0:
+                total_hours += float(att.total_working_hours)
                 count += 1
 
         avg_hours = "00:00"
         if count > 0:
-            avg_sec = total_seconds / count
-            h = int(avg_sec // 3600)
-            m = int((avg_sec % 3600) // 60)
+            avg_hours_decimal = total_hours / count
+            h = int(avg_hours_decimal)
+            m = int((avg_hours_decimal % 1) * 60)
             avg_hours = f"{h:02d}:{m:02d}"
 
         context["avg_hours"] = avg_hours

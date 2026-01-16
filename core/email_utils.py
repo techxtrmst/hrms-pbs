@@ -377,7 +377,7 @@ def send_probation_completion_email(employee):
 
 def send_leave_request_notification(leave_request):
     """
-    Send leave request notification to hrms@petabytz.com (MANDATORY) and reporting manager
+    Send leave request notification to company HR email and reporting manager
 
     Args:
         leave_request: LeaveRequest model instance
@@ -393,8 +393,10 @@ def send_leave_request_notification(leave_request):
         employee = leave_request.employee
         company = employee.company
 
-        # MANDATORY: Use hrms@petabytz.com for all leave request notifications
-        from_email = "Petabytz HR <hrms@petabytz.com>"
+        # Use company's HR email or fallback to hrms@petabytz.com
+        company_hr_email = company.hr_email or "hrms@petabytz.com"
+        hr_display_name = company.hr_email_name or f"{company.name} HR"
+        from_email = f"{hr_display_name} <{company_hr_email}>"
 
         # Get connection using helper that reloads env
         connection = get_hr_email_connection()
@@ -472,14 +474,14 @@ def send_leave_request_notification(leave_request):
         # Create email subject
         subject = f"📋 Leave Application: {employee.user.get_full_name()} - {leave_request.get_leave_type_display()}"
 
-        # Build recipient list - MANDATORY: hrms@petabytz.com MUST receive all leave requests
-        recipients = ["hrms@petabytz.com"]
+        # Build recipient list - Use company's HR email
+        recipients = [company_hr_email]
 
         # Add reporting manager to recipients if exists
         if employee.manager and employee.manager.email:
             recipients.append(employee.manager.email)
 
-        # Send to all recipients (hrms@petabytz.com + manager)
+        # Send to all recipients (company HR + manager)
         try:
             email = EmailMultiAlternatives(
                 subject, "", from_email, recipients, connection=connection
@@ -532,7 +534,7 @@ def send_leave_request_notification(leave_request):
 
 def send_regularization_request_notification(regularization_request):
     """
-    Send regularization request notification to hrms@petabytz.com (MANDATORY) and reporting manager
+    Send regularization request notification to company HR email and reporting manager
 
     Args:
         regularization_request: RegularizationRequest model instance
@@ -546,8 +548,10 @@ def send_regularization_request_notification(regularization_request):
         employee = regularization_request.employee
         company = employee.company
 
-        # MANDATORY: Use hrms@petabytz.com for all regularization request notifications
-        from_email = "Petabytz HR <hrms@petabytz.com>"
+        # Use company-specific HR email
+        company_hr_email = company.hr_email or "hrms@petabytz.com"
+        hr_display_name = company.hr_email_name or f"{company.name} HR"
+        from_email = f"{hr_display_name} <{company_hr_email}>"
 
         # Get connection using helper
         connection = get_hr_email_connection()
@@ -582,8 +586,8 @@ def send_regularization_request_notification(regularization_request):
             f"⏰ Attendance Regularization Request from {employee.user.get_full_name()}"
         )
 
-        # Build recipient list - MANDATORY: hrms@petabytz.com MUST receive all regularization requests
-        recipients = ["hrms@petabytz.com"]
+        # Build recipient list - Use company-specific HR email
+        recipients = [company_hr_email]
 
         # Add reporting manager to recipients if exists
         if employee.manager and employee.manager.email:
@@ -775,14 +779,16 @@ def send_leave_rejection_notification(leave_request):
 def send_regularization_rejection_notification(reg_request):
     """
     Send email when regularization is rejected.
-    MANDATORY: Uses hrms@petabytz.com as sender
+    Uses company-specific HR email as sender
     """
     try:
         employee = reg_request.employee
         company = employee.company
 
-        # MANDATORY: Use hrms@petabytz.com for all regularization notifications
-        from_email = "Petabytz HR <hrms@petabytz.com>"
+        # Use company-specific HR email
+        company_hr_email = company.hr_email or "hrms@petabytz.com"
+        hr_display_name = company.hr_email_name or f"{company.name} HR"
+        from_email = f"{hr_display_name} <{company_hr_email}>"
 
         # Get connection using helper
         connection = get_hr_email_connection()
@@ -883,14 +889,16 @@ def send_leave_approval_notification(leave_request):
 def send_regularization_approval_notification(reg_request):
     """
     Send email when regularization is APPROVED.
-    MANDATORY: Uses hrms@petabytz.com as sender
+    Uses company-specific HR email as sender
     """
     try:
         employee = reg_request.employee
         company = employee.company
 
-        # MANDATORY: Use hrms@petabytz.com for all regularization notifications
-        from_email = "Petabytz HR <hrms@petabytz.com>"
+        # Use company-specific HR email
+        company_hr_email = company.hr_email or "hrms@petabytz.com"
+        hr_display_name = company.hr_email_name or f"{company.name} HR"
+        from_email = f"{hr_display_name} <{company_hr_email}>"
 
         # Get connection using helper
         connection = get_hr_email_connection()
