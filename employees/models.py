@@ -1330,6 +1330,25 @@ class LeaveRequest(models.Model):
             self.approved_at = timezone.now()
             self.approval_type = approval_type
             self.save()
+            
+            # Create attendance records for each day of the leave
+            from datetime import timedelta
+            current_date = self.start_date
+            while current_date <= self.end_date:
+                # Skip weekends/weekly offs if they exist
+                if not self.employee.is_week_off(current_date):
+                    # Create or update attendance record with LEAVE status
+                    Attendance.objects.update_or_create(
+                        employee=self.employee,
+                        date=current_date,
+                        defaults={
+                            'status': 'LEAVE',
+                            'clock_in': None,
+                            'clock_out': None,
+                        }
+                    )
+                current_date += timedelta(days=1)
+            
             return True
             
         except Exception as e:
