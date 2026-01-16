@@ -920,25 +920,26 @@
 
                     .timeline-time-tooltip {
                         position: absolute;
-                        top: 24px;
+                        top: 28px;
+                        /* Push clearly below the dot */
                         left: 50%;
                         transform: translateX(-50%);
                         background: #fff;
                         color: #4338ca;
-                        padding: 4px 12px;
-                        border-radius: 20px;
+                        padding: 4px 10px;
+                        border-radius: 6px;
                         font-size: 0.75rem;
-                        font-weight: 700;
+                        font-weight: 800;
                         white-space: nowrap;
-                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                        z-index: 100;
-                        pointer-events: none;
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+                        z-index: 200;
+                        /* Ensure it floats above other elements */
                     }
 
                     .timeline-time-tooltip::after {
                         content: '';
                         position: absolute;
-                        top: -4px;
+                        top: -5px;
                         left: 50%;
                         transform: translateX(-50%);
                         border-left: 5px solid transparent;
@@ -951,87 +952,74 @@
                         flex-direction: column;
                         align-items: center;
                         text-align: center;
-                        width: 80px;
+                        width: auto;
+                        /* Allow auto width to prevent crushing */
+                        min-width: 40px;
                         transition: transform 0.3s ease;
                         cursor: default;
+                        z-index: 50;
                     }
 
                     .t-node:hover {
-                        transform: translateX(-50%) translateY(-5px) !important;
-                        /* Keep the X transform but lift up */
+                        z-index: 100;
                     }
 
                     .t-time {
                         font-weight: 700;
-                        font-size: 0.95rem;
-                        margin-bottom: 14px;
-                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                        font-size: 0.8rem;
+                        margin-bottom: 12px;
+                        color: rgba(255, 255, 255, 0.95);
+                        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+                        /* Prevent overlap by basic staggering or background */
+                        position: relative;
+                        background: rgba(67, 56, 202, 0.4);
+                        /* Semi-transparent bg for legibility */
+                        padding: 2px 6px;
+                        border-radius: 4px;
+                        backdrop-filter: blur(2px);
                     }
 
                     .t-dot {
-                        width: 18px;
-                        height: 18px;
+                        width: 14px;
+                        height: 14px;
                         border-radius: 50%;
-                        background: rgba(255, 255, 255, 0.2);
-                        border: 2px solid rgba(255, 255, 255, 0.6);
-                        margin-bottom: 10px;
+                        background: rgba(255, 255, 255, 0.3);
+                        border: 2px solid rgba(255, 255, 255, 0.8);
+                        margin-bottom: 0px;
+                        /* Align precisely */
                         position: relative;
                         transition: all 0.3s ease;
-                    }
-
-                    .t-node:hover .t-dot {
-                        background: rgba(255, 255, 255, 1);
-                        box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
-                    }
-
-                    .t-dot.green {
-                        background: #10b981;
-                        border-color: #fff;
-                        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.3);
-                    }
-
-                    .t-dot.web {
-                        background: #3b82f6;
-                        /* Blue for web clock-in */
-                        border-color: #fff;
-                        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
-                    }
-
-                    .t-dot.remote {
-                        background: #8b5cf6;
-                        /* Purple for remote clock-in */
-                        border-color: #fff;
-                        box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.3);
-                    }
-
-                    .t-dot.logout {
-                        background: #ef4444;
-                        /* Red for logout */
-                        border-color: #fff;
-                        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.3);
+                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
                     }
 
                     .t-label {
-                        font-size: 0.75rem;
-                        font-weight: 600;
-                        opacity: 0.9;
-                        letter-spacing: 0.03em;
-                        background: rgba(0, 0, 0, 0.15);
-                        padding: 2px 8px;
-                        border-radius: 4px;
+                        display: none;
+                        /* Hide labels to reduce clutter as requested */
                     }
 
                     .shift-footer {
-                        background: rgba(0, 0, 0, 0.2);
-                        padding: 18px 28px;
+                        background: rgba(0, 0, 0, 0.15);
+                        padding: 16px 24px;
                         margin: 0;
-                        /* Full width now */
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
-                        border-top: 1px solid rgba(255, 255, 255, 0.1);
+                        border-top: 1px solid rgba(255, 255, 255, 0.05);
                         position: relative;
                         z-index: 1;
+                    }
+
+                    /* Fix alignment of nodes to track */
+                    .timeline-nodes {
+                        margin-top: -8px;
+                        /* Pull nodes down/up to align dots with track */
+                        pointer-events: none;
+                        /* Let clicks pass to track/cards */
+                    }
+
+                    /* Ensure node dots are interactive though */
+                    .t-node {
+                        pointer-events: auto;
                     }
                 </style>
 
@@ -1098,8 +1086,8 @@
                             {% for break_item in assigned_shift.breaks.all %}
                             <div class="fw-bold text-white" style="font-size: 0.85rem;">
                                 {{ break_item.name }}:
-                                {% if break_item.start_time %}{{ break_item.start_time|time:"H:i" }}{% else %}--:--{% endif %} -
-                                {% if break_item.end_time %}{{ break_item.end_time|time:"H:i" }}{% else %}--:--{% endif %}
+                                {% if break_item.start_time %}{{ break_item.start_time|time:"H:i" }}{% else %}--:--{% endif%} -
+                                {% if break_item.end_time %}{{ break_item.end_time|time:"H:i" }}{% else %}--:--{% endif%}
                             </div>
                             {% endfor %}
                             {% else %}
@@ -1557,9 +1545,9 @@
         let bestPosition = null;
         let watchId = null;
 
-        const TARGET_ACCURACY = 100;      // Keka-like: Aim for high precision (100m)
-        const ACCEPTABLE_ACCURACY = 3000; // Fallback: 3km (Desktops)
-        const MAX_WAIT_TIME = 10000;       // increased timeout to 10s to allow slower GPS lock
+        const TARGET_ACCURACY = 100;      // Strict 100m target
+        const ACCEPTABLE_ACCURACY = 2000; // Acceptable fallback if strict target fails
+        const MAX_WAIT_TIME = 4000;       // 4s Timeout for better accuracy
 
         // Clean up function
         const stopLocationWatch = () => {
@@ -1572,46 +1560,48 @@
         const finishLocationSearch = () => {
             stopLocationWatch();
 
-            if (!bestPosition) {
-                // If we have NO position after 3s, try one last check or fail
-                // For now, fail but arguably we could retry
-                btn.innerHTML = origText;
-                btn.disabled = false;
-                alert("Could not acquire location signal. Please ensure GPS is enabled.");
+            // Keka Behavior: Always submit the best location we found.
+            // Never block the user with an alert unless we have NO location at all.
+            if (bestPosition) {
+                console.log("Submitting best available location:", bestPosition.coords.accuracy + "m");
+                submitClockRequest(bestPosition);
                 return;
             }
 
-            const acc = bestPosition.coords.accuracy;
+            // Only alert if we have absolutely 0 data (e.g. permission denied or offline)
+            console.warn("No location data found.");
+            btn.innerHTML = origText;
+            btn.disabled = false;
 
-            // STRICT CHECK - REMOVED CONFIRMATION for speed
-            // If acc > ACCEPTABLE_ACCURACY, we just log it but proceed to avoid blocking user
-
-            // If good enough (or best we have), submit
-            submitClockRequest(bestPosition);
+            // Try one last-ditch forceful grab
+            navigator.geolocation.getCurrentPosition(
+                (pos) => submitClockRequest(pos),
+                (err) => alert("Could not acquire any location. Please ensure location is ON."),
+                { enableHighAccuracy: false, timeout: 2000 }
+            );
         };
 
         const timeoutId = setTimeout(finishLocationSearch, MAX_WAIT_TIME);
 
+        // Options: Keka-style (High Accuracy, but accept cache for speed)
         const geoOptions = {
             enableHighAccuracy: true,
-            timeout: 25000,
-            maximumAge: 0
+            timeout: 3000,     // High-acc timeout
+            maximumAge: 1800000  // 10 minutes cache
         };
 
         watchId = navigator.geolocation.watchPosition(
             (pos) => {
                 const acc = Math.round(pos.coords.accuracy);
-                // Real-time feedback implementation like precise apps
-                // We show lat/long only if accuracy is decent, else just 'Acquiring'
-                // Actually showing Lat/Long gives confidence.
+                // Real-time feedback
+                // Show acquiring status
                 const lat = pos.coords.latitude.toFixed(5);
                 const lng = pos.coords.longitude.toFixed(5);
 
-                console.log(`GPS Update: Accuracy ${acc}m at ${lat},${lng}`);
+                console.log(`GPS Update: Accuracy ${acc}m`);
 
                 btn.innerHTML = `<div class="d-flex flex-column align-items-center" style="line-height:1.2">
-                    <span style="font-size:0.85rem">Accuracy: ${acc}m</span>
-                    <span style="font-size:0.7rem; opacity:0.8">${lat}, ${lng}</span>
+                    <span style="font-size:0.85rem">Locating...</span>
                 </div>`;
 
                 // Logic to track best position
@@ -1619,21 +1609,16 @@
                     bestPosition = pos;
                 }
 
-                // If we hit target (20m), stop immediately
+                // SPEED OPTIMIZATION:
+                // If we hit target accuracy (500m for laptops is good), SUBMIT IMMEDIATELY
                 if (pos.coords.accuracy <= TARGET_ACCURACY) {
                     clearTimeout(timeoutId);
                     finishLocationSearch();
                 }
             },
             (err) => {
-                console.warn("GPS Error:", err.message);
-                if (err.code === 1) { // PERMISSION_DENIED
-                    clearTimeout(timeoutId);
-                    stopLocationWatch();
-                    btn.innerHTML = origText;
-                    btn.disabled = false;
-                    alert("Location request denied. Attendance requires location access.");
-                }
+                console.warn("GPS Warning:", err.message);
+                // Don't fail immediately, wait for timeout to trigger fallback
             },
             geoOptions
         );
@@ -1641,7 +1626,7 @@
         function submitClockRequest(pos) {
             // Update status
             const acc = Math.round(pos.coords.accuracy);
-            btn.innerHTML = `<span class="status-text me-2">Verifying (${acc}m)...</span> <i class="fas fa-spinner fa-spin"></i>`;
+            btn.innerHTML = `<span class="status-text me-2">Verifying...</span> <i class="fas fa-spinner fa-spin"></i>`;
 
             const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
