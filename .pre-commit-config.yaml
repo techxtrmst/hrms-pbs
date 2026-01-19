@@ -1,0 +1,83 @@
+# Pre-commit hooks configuration for HRMS PBS
+# Install: pre-commit install
+# Run manually: pre-commit run --all-files
+# Update hooks: pre-commit autoupdate
+
+repos:
+  # Secret detection using Gitleaks
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
+        name: Detect secrets and credentials
+        description: Scan for secrets, API keys, tokens, and credentials
+        stages: [pre-commit]
+
+  # Pre-commit hooks for basic file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+        exclude: '\.md$|\.txt$'
+      - id: end-of-file-fixer
+        name: Fix end of files
+        exclude: '\.md$|\.txt$'
+      - id: check-yaml
+        name: Check YAML syntax
+        args: ["--unsafe"] # Allow custom tags in Django templates
+      - id: check-added-large-files
+        name: Check for large files
+        args: ["--maxkb=1000"]
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+      - id: check-json
+        name: Check JSON syntax
+      - id: detect-private-key
+        name: Detect private keys
+      - id: mixed-line-ending
+        name: Fix mixed line endings
+        args: ["--fix=lf"]
+
+  # Python-specific checks
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.13
+    hooks:
+      - id: ruff
+        name: Ruff linter (with auto-fix)
+        args: [--fix, --exit-non-zero-on-fix]
+        types_or: [python, pyi]
+      - id: ruff-format
+        name: Ruff formatter
+        types_or: [python, pyi]
+
+  # Local custom hooks for Django-specific checks
+  - repo: local
+    hooks:
+      - id: check-debug-statements
+        name: Check for debug/print statements
+        entry: python scripts/check_debug_statements.py
+        language: system
+        types: [python]
+        pass_filenames: true
+
+      - id: django-check
+        name: Django system check (manual only)
+        entry: python scripts/django_checks.py
+        language: system
+        pass_filenames: false
+        stages: [manual]
+
+      - id: check-migrations
+        name: Check for missing migrations (manual only)
+        entry: python scripts/check_migrations.py
+        language: system
+        pass_filenames: false
+        stages: [manual]
+
+      - id: check-env-example
+        name: Verify .env.example is up to date
+        entry: python scripts/check_env_example.py
+        language: system
+        files: '^\.env\.example$|^\.env\.staging$'
+        pass_filenames: false
