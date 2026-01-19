@@ -2252,8 +2252,12 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                             else 0,
                         )
 
-                        # 6. Create Leave Balance (Default)
-                        LeaveBalance.objects.create(employee=employee)
+                        # 6. Create Leave Balance (0 for probation period)
+                        LeaveBalance.objects.create(
+                            employee=employee,
+                            casual_leave_allocated=0.0,
+                            sick_leave_allocated=0.0
+                        )
 
                         # 7. Send Activation Email
                         send_activation_email(user, self.request)
@@ -2624,7 +2628,12 @@ def leave_configuration(request):
         try:
             _ = employee.leave_balance
         except ObjectDoesNotExist:
-            LeaveBalance.objects.create(employee=employee)
+            # Create with 0 leaves for new employees (probation period)
+            LeaveBalance.objects.create(
+                employee=employee,
+                casual_leave_allocated=0.0,
+                sick_leave_allocated=0.0
+            )
 
     # Context for Accrual Modal (Safe from template syntax errors)
     import calendar

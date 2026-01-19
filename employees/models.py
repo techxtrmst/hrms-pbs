@@ -1564,33 +1564,12 @@ class ExitInitiative(models.Model):
 def create_leave_balance(sender, instance, created, **kwargs):
     """Automatically create leave balance when a new employee is created"""
     if created:
-        # Get company-specific leave rules or use defaults
-        company = instance.company
-
-        # Default allocations (can be customized per company)
-        casual_leave = 12.0
-        sick_leave = 12.0
-
-        # Company-specific rules
-        if company:
-            company_name = company.name.lower()
-            if "petabytz" in company_name:
-                # Petabytz specific rules
-                casual_leave = 12.0
-                sick_leave = 12.0
-            elif "bluebix" in company_name:
-                # Bluebix specific rules
-                casual_leave = 10.0
-                sick_leave = 10.0
-            elif "softstandard" in company_name or "soft standard" in company_name:
-                # SoftStandard specific rules
-                casual_leave = 12.0
-                sick_leave = 8.0
-
+        # New employees start with 0 leaves during probation period
+        # Leaves will be allocated after probation completion or manually by admin
         LeaveBalance.objects.get_or_create(
             employee=instance,
             defaults={
-                "casual_leave_allocated": casual_leave,
-                "sick_leave_allocated": sick_leave,
-            },
+                'casual_leave_allocated': 0.0,
+                'sick_leave_allocated': 0.0,
+            }
         )
