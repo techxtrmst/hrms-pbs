@@ -116,6 +116,8 @@ class Company(models.Model):
             d_lower = d.lower()
             if d_lower not in domains:
                 domains.append(d_lower)
+        if "bluebix" in self.name.lower() and "bluebixinc.com" not in domains:
+            domains.append("bluebixinc.com")
         return domains
 
     def is_email_domain_allowed(self, email):

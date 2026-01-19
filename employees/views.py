@@ -2267,12 +2267,8 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                             else 0,
                         )
 
-                        # 6. Create Leave Balance (0 for probation period)
-                        LeaveBalance.objects.create(
-                            employee=employee,
-                            casual_leave_allocated=0.0,
-                            sick_leave_allocated=0.0
-                        )
+                        # 6. Create Leave Balance (handled by signal)
+                        # LeaveBalance.objects.create(...) - REMOVED to avoid duplicate key error
 
                         # 7. Send Activation Email
                         send_activation_email(user, self.request)
