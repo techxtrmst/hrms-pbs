@@ -65,6 +65,22 @@ def submit_hourly_location(request):
                     }
                 )
 
+            # Prevent Duplicate Hourly Logs (Rate Limit)
+            last_hourly_log = LocationLog.objects.filter(
+                employee=employee, log_type="HOURLY"
+            ).order_by("-timestamp").first()
+
+            if last_hourly_log:
+                time_diff = timezone.now() - last_hourly_log.timestamp
+                if time_diff.total_seconds() < 3300:  # 55 minutes
+                    return JsonResponse(
+                        {
+                            "status": "ignored",
+                            "message": "Hourly location already logged recently",
+                            "location_tracking_active": True,
+                        }
+                    )
+
             # Create location log
             LocationLog.objects.create(
                 employee=employee,
@@ -137,20 +153,32 @@ def get_location_tracking_status(request):
             # Determine if we need a location update (every hour)
             needs_location = False
             if attendance.is_currently_clocked_in and not tracking_stopped:
-                # Check last location log time
+                # Check last location log time or clock-in time
                 last_log = (
                     LocationLog.objects.filter(employee=employee, log_type="HOURLY")
                     .order_by("-timestamp")
                     .first()
                 )
 
-                if last_log:
-                    # If last log was more than 55 minutes ago, we need a new one
-                    time_since_last = timezone.now() - last_log.timestamp
-                    if time_since_last.total_seconds() >= 3300:  # 55 minutes
+                # Determine reference time (latest of clock-in or last log)
+                reference_time = attendance.clock_in
+                
+                # If we have a current session, use its clock-in as baseline if it's later
+                current_session = attendance.get_current_session()
+                if current_session and current_session.clock_in:
+                    if not reference_time or current_session.clock_in > reference_time:
+                        reference_time = current_session.clock_in
+
+                if last_log and last_log.timestamp > reference_time:
+                    reference_time = last_log.timestamp
+                
+                if reference_time:
+                    # STRICT 1 Hour Interval (3600 seconds)
+                    time_since_last = timezone.now() - reference_time
+                    if time_since_last.total_seconds() >= 3600:  # 60 minutes
                         needs_location = True
                 else:
-                    # No hourly logs yet, need one
+                    # Should not trigger if clocked in properly
                     needs_location = True
 
             return JsonResponse(

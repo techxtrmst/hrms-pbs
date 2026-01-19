@@ -66,6 +66,15 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
     template_name = "accounts/password_reset_confirm.html"
     success_url = reverse_lazy("login")  # Redirect to login page instead
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Inject company for logo display
+        if hasattr(self, "user") and self.user and self.user.company:
+            context["company"] = self.user.company
+            # Also update request.company so base_auth.html picks it up
+            self.request.company = self.user.company
+        return context
+
     def form_valid(self, form):
         response = super().form_valid(form)
         # The form's save method returns the user

@@ -1556,8 +1556,23 @@ def attendance_map(request, pk):
                     }
                 )
 
+        # Filter logs to show only hourly points (approx)
+        filtered_logs = []
+        if logs:
+            last_added_time = None
+            for log in logs:
+                if last_added_time is None:
+                    filtered_logs.append(log)
+                    last_added_time = log.timestamp
+                else:
+                    diff = log.timestamp - last_added_time
+                    # Only show if > 50 mins apart to satisfying "Every 1 Hour" request
+                    if diff.total_seconds() >= 3000: 
+                        filtered_logs.append(log)
+                        last_added_time = log.timestamp
+
         # 2. Logs
-        for log in logs:
+        for log in filtered_logs:
             map_locations.append(
                 {
                     "lat": float(log.latitude),
