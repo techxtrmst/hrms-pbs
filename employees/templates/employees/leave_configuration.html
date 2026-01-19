@@ -430,7 +430,7 @@
                     <div class="control-wrapper">
                         <button class="control-btn" onclick="modifyVal('sick_val_{{ employee.id }}', -0.5)">-</button>
                         <input type="number" id="sick_val_{{ employee.id }}" class="control-input"
-                            value="{{ employee.leave_balance.sick_leave_allocated }}" step="0.5">
+                            value="{{ employee.leave_balance.sick_leave_balance }}" step="0.5">
                         <button class="control-btn" onclick="modifyVal('sick_val_{{ employee.id }}', 0.5)">+</button>
                     </div>
                 </div>
@@ -451,7 +451,7 @@
                     <div class="control-wrapper">
                         <button class="control-btn" onclick="modifyVal('casual_val_{{ employee.id }}', -0.5)">-</button>
                         <input type="number" id="casual_val_{{ employee.id }}" class="control-input"
-                            value="{{ employee.leave_balance.casual_leave_allocated }}" step="0.5">
+                            value="{{ employee.leave_balance.casual_leave_balance }}" step="0.5">
                         <button class="control-btn" onclick="modifyVal('casual_val_{{ employee.id }}', 0.5)">+</button>
                     </div>
                 </div>

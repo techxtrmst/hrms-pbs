@@ -2716,19 +2716,25 @@ def update_leave_balance(request, pk):
 
         # Get data
         data = json.loads(request.body)
-        sick_allocated = data.get("sick_leave_allocated")
-        casual_allocated = data.get("casual_leave_allocated")
+        sick_balance_desired = data.get("sick_leave_allocated")  # This is actually the desired balance
+        casual_balance_desired = data.get("casual_leave_allocated")  # This is actually the desired balance
 
-        if sick_allocated is not None:
+        if sick_balance_desired is not None:
             # Handle empty strings or invalid input gracefully
             try:
-                balance.sick_leave_allocated = float(sick_allocated)
+                desired_balance = float(sick_balance_desired)
+                # Calculate new allocation: desired_balance + current_used
+                new_allocation = desired_balance + balance.sick_leave_used
+                balance.sick_leave_allocated = new_allocation
             except ValueError:
                 pass  # Ignore invalid
 
-        if casual_allocated is not None:
+        if casual_balance_desired is not None:
             try:
-                balance.casual_leave_allocated = float(casual_allocated)
+                desired_balance = float(casual_balance_desired)
+                # Calculate new allocation: desired_balance + current_used
+                new_allocation = desired_balance + balance.casual_leave_used
+                balance.casual_leave_allocated = new_allocation
             except ValueError:
                 pass
 
