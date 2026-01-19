@@ -1506,64 +1506,106 @@ def org_chart(request):
         company=request.user.company, employment_status="ACTIVE", is_active=True
     ).select_related("user", "manager")
 
-    # Build dictionary Key=USER_ID (not Employee ID)
-    nodes = {}
-    for emp in employees:
-        nodes[emp.user.id] = {
-            "id": emp.user.id,
-            "employee": emp,
-            "user": emp.user,
-            "direct_reports": [],
-            "is_superadmin": False,
-        }
+    # Helper to detect cycles
+    def creates_cycle(parent_node, child_node):
+        """Check if adding child_node to parent_node would create a cycle"""
+        queue = [child_node]
+        visited = {child_node['id']}
+        while queue:
+            curr = queue.pop(0)
+            if curr['id'] == parent_node['id']:
+                return True
+            for grandchild in curr['direct_reports']:
+                if grandchild['id'] not in visited:
+                    visited.add(grandchild['id'])
+                    queue.append(grandchild)
+        return False
 
-    roots = []
+    try:
+        # Build dictionary Key=USER_ID (not Employee ID)
+        nodes = {}
+        for emp in employees:
+            if emp.user:
+                nodes[emp.user.id] = {
+                    "id": emp.user.id,
+                    "employee": emp,
+                    "user": emp.user,
+                    "direct_reports": [],
+                    "is_superadmin": False,
+                }
 
-    for emp in employees:
-        current_node = nodes[emp.user.id]
-        manager_user = emp.manager  # User object
+        roots = []
+        for emp in employees:
+            if not emp.user:
+                continue
+                
+            current_node = nodes[emp.user.id]
+            manager_user = emp.manager  # User object
 
-        if manager_user:
-            # Case A: Manager is in the company (exists in nodes)
-            if manager_user.id in nodes:
-                nodes[manager_user.id]["direct_reports"].append(current_node)
-            else:
-                # Case B: Manager is External (SuperAdmin)
-                if manager_user.id not in nodes:
-                    if manager_user.role == User.Role.SUPERADMIN:
-                        nodes[manager_user.id] = {
-                            "id": manager_user.id,
-                            "employee": None,
-                            "user": manager_user,
-                            "direct_reports": [],
-                            "is_superadmin": True,
-                        }
-                        roots.append(nodes[manager_user.id])
-
+            if manager_user and manager_user.id != emp.user.id:
+                # Case A: Manager is in the company (exists in nodes)
                 if manager_user.id in nodes:
-                    nodes[manager_user.id]["direct_reports"].append(current_node)
+                    manager_node = nodes[manager_user.id]
+                    if not creates_cycle(manager_node, current_node):
+                        if current_node not in manager_node["direct_reports"]:
+                            manager_node["direct_reports"].append(current_node)
+                    else:
+                        if current_node not in roots:
+                            roots.append(current_node)
                 else:
+                    # Case B: Manager is External (SuperAdmin)
+                    if manager_user.role == User.Role.SUPERADMIN:
+                        if manager_user.id not in nodes:
+                            nodes[manager_user.id] = {
+                                "id": manager_user.id,
+                                "employee": None,
+                                "user": manager_user,
+                                "direct_reports": [],
+                                "is_superadmin": True,
+                            }
+                            roots.append(nodes[manager_user.id])
+                        
+                        manager_node = nodes[manager_user.id]
+                        if not creates_cycle(manager_node, current_node):
+                            if current_node not in manager_node["direct_reports"]:
+                                manager_node["direct_reports"].append(current_node)
+                    else:
+                        if current_node not in roots:
+                            roots.append(current_node)
+            else:
+                if current_node not in roots:
                     roots.append(current_node)
-        else:
-            roots.append(current_node)
 
-    # Filter roots to ensure no children (though logic above should handle it somewhat)
-    child_ids = set()
-    for uid, node in nodes.items():
-        for child in node["direct_reports"]:
-            child_ids.add(child["id"])
+        # Filter roots to ensure no children
+        child_ids = set()
+        for uid, node in nodes.items():
+            for child in node["direct_reports"]:
+                child_ids.add(child["id"])
 
-    final_roots = [node for uid, node in nodes.items() if uid not in child_ids]
+        final_roots = [node for uid, node in nodes.items() if uid not in child_ids]
 
-    return render(
-        request,
-        "core/org_chart.html",
-        {
-            "title": "Organisation Chart",
-            "roots": final_roots,
-            "company": request.user.company,
-        },
-    )
+        return render(
+            request,
+            "core/org_chart.html",
+            {
+                "title": "Organisation Chart",
+                "roots": final_roots,
+                "company": request.user.company,
+            },
+        )
+    except Exception as e:
+        import traceback
+        logger.error(f"Admin Org Chart Error: {str(e)}\n{traceback.format_exc()}")
+        return render(
+            request,
+            "core/org_chart.html",
+            {
+                "title": "Organisation Chart",
+                "roots": [],
+                "company": request.user.company,
+                "error": "Could not generate hierarchical view. Please check reporting structures.",
+            },
+        )
 
 
 @login_required
@@ -1591,18 +1633,25 @@ def employee_org_chart(request):
                 subordinates_map[emp.manager_id] = []
             subordinates_map[emp.manager_id].append(emp)
 
-    def get_subtree(user_id):
-        """Recursively get all subordinates"""
+    def get_subtree(user_id, visited=None):
+        """Recursively get all subordinates with cycle protection"""
+        if visited is None:
+            visited = set()
+        
+        if user_id in visited:
+            return []
+        visited.add(user_id)
+        
         result = []
         if user_id in subordinates_map:
             for sub in subordinates_map[user_id]:
                 result.append(sub)
-                result.extend(get_subtree(sub.user.id))
+                result.extend(get_subtree(sub.user.id, visited))
         return result
 
     # Determine context
     current_emp = getattr(request.user, "employee_profile", None)
-    role = request.user.role if hasattr(request.user, "role") else None
+    role = getattr(request.user, "role", None)
 
     if current_emp:
         if role == User.Role.EMPLOYEE:
@@ -1628,8 +1677,7 @@ def employee_org_chart(request):
         elif role in [User.Role.MANAGER, User.Role.COMPANY_ADMIN]:
             # Manager/Admin View
             # Rule: "his team and his reporting manager"
-            # Keep "CEO condition" -> If no manager, show all.
-
+            
             if current_emp.manager_id:
                 # Restricted View
                 added_ids = set()
@@ -1652,7 +1700,7 @@ def employee_org_chart(request):
                         final_employees.append(member)
                         added_ids.add(member.id)
             else:
-                # Top Level / CEO -> Show All
+                # Top Level / CEO / No Manager -> Show All
                 final_employees = list(all_employees)
         else:
             # Unknown role -> Show All
@@ -1661,67 +1709,117 @@ def employee_org_chart(request):
         # No profile (e.g. SuperAdmin or Error) -> Show All
         final_employees = list(all_employees)
 
-    # Use the filtered list for node building
-    employees = final_employees
+    # Helper to detect cycles
+    def creates_cycle(parent_node, child_node):
+        """Check if adding child_node to parent_node would create a cycle"""
+        # BFS to see if parent is reachable from child (meaning child is already an ancestor of parent)
+        queue = [child_node]
+        visited = {child_node['id']}
+        while queue:
+            curr = queue.pop(0)
+            if curr['id'] == parent_node['id']:
+                return True
+            for grandchild in curr['direct_reports']:
+                if grandchild['id'] not in visited:
+                    visited.add(grandchild['id'])
+                    queue.append(grandchild)
+        return False
 
-    # Build dictionary Key=USER_ID (not Employee ID)
-    nodes = {}
-    for emp in employees:
-        nodes[emp.user.id] = {
-            "id": emp.user.id,
-            "employee": emp,
-            "user": emp.user,
-            "direct_reports": [],
-            "is_superadmin": False,
-        }
+    try:
+        # Use the filtered list for node building
+        employees = final_employees
 
-    roots = []
+        # Build dictionary Key=USER_ID (not Employee ID)
+        nodes = {}
+        for emp in employees:
+            if emp.user:
+                nodes[emp.user.id] = {
+                    "id": emp.user.id,
+                    "employee": emp,
+                    "user": emp.user,
+                    "direct_reports": [],
+                    "is_superadmin": False,
+                }
 
-    for emp in employees:
-        current_node = nodes[emp.user.id]
-        manager_user = emp.manager  # User object
+        roots = []
+        for emp in employees:
+            if not emp.user:
+                continue
+                
+            current_node = nodes[emp.user.id]
+            manager_user = emp.manager  # User object
 
-        if manager_user:
-            # Case A: Manager is in the company (exists in nodes)
-            if manager_user.id in nodes:
-                nodes[manager_user.id]["direct_reports"].append(current_node)
-            else:
-                # Case B: Manager is External (SuperAdmin)
-                if manager_user.id not in nodes:
-                    if manager_user.role == User.Role.SUPERADMIN:
-                        nodes[manager_user.id] = {
-                            "id": manager_user.id,
-                            "employee": None,
-                            "user": manager_user,
-                            "direct_reports": [],
-                            "is_superadmin": True,
-                        }
-                        roots.append(nodes[manager_user.id])
-
+            if manager_user and manager_user.id != emp.user.id:
+                # Case A: Manager is in the company (exists in nodes)
                 if manager_user.id in nodes:
-                    nodes[manager_user.id]["direct_reports"].append(current_node)
+                    manager_node = nodes[manager_user.id]
+                    # Check for cycle before adding
+                    if not creates_cycle(manager_node, current_node):
+                        if current_node not in manager_node["direct_reports"]:
+                            manager_node["direct_reports"].append(current_node)
+                    else:
+                         # Cycle detected - do not link, treat as root to safely display
+                         if current_node not in roots:
+                            roots.append(current_node)
+
                 else:
+                    # Case B: Manager is External (SuperAdmin) or not in the filtered set
+                    if manager_user.role == User.Role.SUPERADMIN:
+                        # Create external manager node if needed
+                        if manager_user.id not in nodes:
+                            nodes[manager_user.id] = {
+                                "id": manager_user.id,
+                                "employee": None,
+                                "user": manager_user,
+                                "direct_reports": [],
+                                "is_superadmin": True,
+                            }
+                            roots.append(nodes[manager_user.id])
+                        
+                        manager_node = nodes[manager_user.id]
+                        if not creates_cycle(manager_node, current_node):
+                            if current_node not in manager_node["direct_reports"]:
+                                manager_node["direct_reports"].append(current_node)
+                    else:
+                        # Manager not in current view, add as root to prevent orphan
+                        if current_node not in roots:
+                            roots.append(current_node)
+            else:
+                # No manager or self-managed (shouldn't happen)
+                if current_node not in roots:
                     roots.append(current_node)
-        else:
-            roots.append(current_node)
 
-    # Filter roots to ensure no children
-    child_ids = set()
-    for uid, node in nodes.items():
-        for child in node["direct_reports"]:
-            child_ids.add(child["id"])
+        # Filter roots to ensure no children - building from child_ids set is safer
+        child_ids = set()
+        for uid, node in nodes.items():
+            for child in node["direct_reports"]:
+                child_ids.add(child["id"])
 
-    final_roots = [node for uid, node in nodes.items() if uid not in child_ids]
+        final_roots = [node for uid, node in nodes.items() if uid not in child_ids]
 
-    return render(
-        request,
-        "core/org_chart.html",
-        {
-            "title": "Organisation Chart",
-            "roots": final_roots,
-            "company": request.user.company,
-        },
-    )
+        return render(
+            request,
+            "core/org_chart.html",
+            {
+                "title": "Organisation Chart",
+                "roots": final_roots,
+                "company": request.user.company,
+            },
+        )
+    except Exception as e:
+        import traceback
+        logger.error(f"Org Chart Error: {str(e)}\n{traceback.format_exc()}")
+        # Fallback to simple list if tree fails
+        return render(
+            request,
+            "core/org_chart.html",
+            {
+                "title": "Organisation Chart",
+                "roots": [],
+                "company": request.user.company,
+                "error": "Could not generate hierarchical view. Please check reporting structures.",
+            },
+        )
 
 
 @login_required
