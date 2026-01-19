@@ -1207,14 +1207,10 @@ class LeaveRequest(models.Model):
     def is_negative_balance(self):
         """Check if this leave will result in negative balance"""
         try:
-            balance = self.employee.leave_balance
-            if self.leave_type == "CL":
-                return balance.casual_leave_balance < self.total_days
-            elif self.leave_type == "SL":
-                return balance.sick_leave_balance < self.total_days
+            validation = self.validate_leave_application()
+            return validation.get('will_be_lop', False)
         except:
             return False
-        return False
 
     def validate_leave_application(self):
         """Validate leave application and return detailed information"""
