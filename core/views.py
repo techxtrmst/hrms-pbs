@@ -276,29 +276,34 @@ def admin_dashboard(request):
             early_departures += 1
 
     # --- Department Performance Logic ---
-    # Get distinct departments with triple-layer deduplication
+    # Get distinct departments with improved deduplication
     departments_raw = employees.values_list("department", flat=True).distinct()
-    departments_set = set()
+    departments_map = {}  # Maps normalized name to original names
     
-    # Normalize and deduplicate departments
+    # Build mapping of normalized names to original names
     for dept in departments_raw:
         if dept and dept.strip():
-            # Use stripped version for deduplication
-            departments_set.add(dept.strip())
+            normalized = dept.strip()
+            if normalized not in departments_map:
+                departments_map[normalized] = []
+            departments_map[normalized].append(dept)
     
-    # Get sorted unique departments
-    departments_list = sorted(list(departments_set))
+    # Get sorted unique departments (normalized)
+    departments_list = sorted(departments_map.keys())
     
     department_performance = []
 
-    for dept in departments_list:
-        # Filter employees by exact department match (case-sensitive after normalization)
-        dept_emps = employees.filter(department=dept)
+    for normalized_dept in departments_list:
+        # Get all original department names that map to this normalized name
+        original_dept_names = departments_map[normalized_dept]
+        
+        # Filter employees by any of the original department names
+        dept_emps = employees.filter(department__in=original_dept_names)
         dept_total = dept_emps.count()
 
-        # Count present (any positive attendance status)
+        # Count present (any positive attendance status) using original names
         dept_present = today_attendance.filter(
-            employee__department=dept,
+            employee__department__in=original_dept_names,
             status__in=["PRESENT", "WFH", "ON_DUTY", "HALF_DAY"],
         ).count()
 
@@ -308,7 +313,7 @@ def admin_dashboard(request):
 
         department_performance.append(
             {
-                "name": dept,
+                "name": normalized_dept,
                 "present": dept_present,
                 "total": dept_total,
                 "percentage": round(percentage, 1),
@@ -417,13 +422,31 @@ def admin_dashboard(request):
                     status_class = "no-attendance"
                 elif att.status == "HOLIDAY":
                     status_class = "holiday"
-                else:
+                elif att.status in ["PRESENT", "ON_DUTY", "HALF_DAY"]:
                     status_class = "present"
+                else:
+                    status_class = "present"  # Default for any other status with clock-in
             else:
+                # No attendance record - determine what it should be
                 if day_date > today:
                     status_class = "future"
                 else:
-                    status_class = "no-data"
+                    # Check if it's a holiday for this employee's location
+                    is_holiday = Holiday.objects.filter(
+                        company=emp.company,
+                        location=emp.location,
+                        date=day_date,
+                        is_active=True
+                    ).exists()
+                    
+                    if is_holiday:
+                        status_class = "holiday"
+                    # Check if it's a weekly off for this employee
+                    elif emp.is_week_off(day_date):
+                        status_class = "weekly-off"
+                    else:
+                        # No record and not holiday/weekoff = absent
+                        status_class = "no-attendance"
 
             emp_data["days"].append(
                 {"day": day, "status": status_class, "date": day_date}
