@@ -107,6 +107,25 @@ class Company(models.Model):
         allowed = self.get_allowed_domains_list()
         return domain.lower() in [d.lower() for d in allowed]
 
+    def get_allowed_email_domains_list(self):
+        """Returns list of allowed email domains"""
+        domains = [d.strip().lower() for d in self.email_domain.split(",")]
+        # Also include allowed_domains that look like they could be email domains
+        access_domains = self.get_allowed_domains_list()
+        for d in access_domains:
+            d_lower = d.lower()
+            if d_lower not in domains:
+                domains.append(d_lower)
+        return domains
+
+    def is_email_domain_allowed(self, email):
+        """Check if an email domain is allowed for this company"""
+        if not email or "@" not in email:
+            return False
+        domain = email.split("@")[1].lower()
+        allowed_email_domains = self.get_allowed_email_domains_list()
+        return domain in allowed_email_domains
+
     class Meta:
         verbose_name_plural = "Companies"
         indexes = [

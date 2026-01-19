@@ -48,10 +48,23 @@ def fix_file(file_path):
         operators = ['==', '!=', '<=', '>=', '<', '>']
         for op in operators:
             e_op = re.escape(op)
+            
+            # Default patterns
+            pattern_before = fr'(?<=\S){e_op}'
+            pattern_after = fr'{e_op}(?=\S)'
+            
+            # Special handling for < and > to avoid breaking <=, >=, ->
+            if op == '>':
+                # Don't add space if preceded by = (>=) or - (->)
+                pattern_before = fr'(?<=\S)(?<![=-]){e_op}'
+            if op == '<':
+                # Don't add space if followed by = (<=)
+                pattern_after = fr'{e_op}(?!=)(?=\S)'
+
             # Space before
-            cleaned = re.sub(fr'(?<=\S){e_op}', f' {op}', cleaned)
+            cleaned = re.sub(pattern_before, f' {op}', cleaned)
             # Space after
-            cleaned = re.sub(fr'{e_op}(?=\S)', f'{op} ', cleaned)
+            cleaned = re.sub(pattern_after, f'{op} ', cleaned)
         
         cleaned = re.sub(r'\s+', ' ', cleaned).strip()
         return f"{{% {cleaned} %}}"
