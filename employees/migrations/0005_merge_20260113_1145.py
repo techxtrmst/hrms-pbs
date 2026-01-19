@@ -4,11 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('employees', '0004_alter_locationlog_options_locationlog_accuracy_and_more'),
-        ('employees', '0003_add_missing_attendance_fields'),
+        ("employees", "0004_alter_locationlog_options_locationlog_accuracy_and_more"),
+        ("employees", "0003_add_missing_attendance_fields"),
     ]
 
-    operations = [
-    ]
+    operations = []

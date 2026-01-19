@@ -279,7 +279,7 @@ def admin_dashboard(request):
     # Get distinct departments with improved deduplication
     departments_raw = employees.values_list("department", flat=True).distinct()
     departments_map = {}  # Maps normalized name to original names
-    
+
     # Build mapping of normalized names to original names
     for dept in departments_raw:
         if dept and dept.strip():
@@ -287,16 +287,16 @@ def admin_dashboard(request):
             if normalized not in departments_map:
                 departments_map[normalized] = []
             departments_map[normalized].append(dept)
-    
+
     # Get sorted unique departments (normalized)
     departments_list = sorted(departments_map.keys())
-    
+
     department_performance = []
 
     for normalized_dept in departments_list:
         # Get all original department names that map to this normalized name
         original_dept_names = departments_map[normalized_dept]
-        
+
         # Filter employees by any of the original department names
         dept_emps = employees.filter(department__in=original_dept_names)
         dept_total = dept_emps.count()
@@ -425,7 +425,9 @@ def admin_dashboard(request):
                 elif att.status in ["PRESENT", "ON_DUTY", "HALF_DAY"]:
                     status_class = "present"
                 else:
-                    status_class = "present"  # Default for any other status with clock-in
+                    status_class = (
+                        "present"  # Default for any other status with clock-in
+                    )
             else:
                 # No attendance record - determine what it should be
                 if day_date > today:
@@ -436,9 +438,9 @@ def admin_dashboard(request):
                         company=emp.company,
                         location=emp.location,
                         date=day_date,
-                        is_active=True
+                        is_active=True,
                     ).exists()
-                    
+
                     if is_holiday:
                         status_class = "holiday"
                     # Check if it's a weekly off for this employee
@@ -538,12 +540,9 @@ def admin_dashboard(request):
 
     # 3. Announcements
     from companies.models import Announcement
-    
+
     announcements = (
-        Announcement.objects.filter(
-            company=request.user.company,
-            is_active=True
-        )
+        Announcement.objects.filter(company=request.user.company, is_active=True)
         .select_related("location")
         .order_by("-created_at")[:10]
     )
@@ -631,7 +630,9 @@ def admin_dashboard(request):
             )
 
     except Exception as e:
-        logger.debug("Error checking celebration dates for admin dashboard", error=str(e))
+        logger.debug(
+            "Error checking celebration dates for admin dashboard", error=str(e)
+        )
 
     return render(request, "core/admin_dashboard.html", context)
 
@@ -754,7 +755,7 @@ def employee_dashboard(request):
         year_attendance_rate = round(((year_present + year_wfh) / year_total) * 100)
 
     # Leave balance
-    leave_balance = getattr(employee, 'leave_balance', None)
+    leave_balance = getattr(employee, "leave_balance", None)
 
     # Recent leave requests
     recent_leave_requests = LeaveRequest.objects.filter(employee=employee).order_by(
@@ -769,13 +770,14 @@ def employee_dashboard(request):
     from django.db.models import Q
 
     # Get all company employees for celebrations
-    company_employees = Employee.objects.filter(company=employee.company, is_active=True)
-    
-    # 1. Announcements
-    announcements = (
-        Announcement.objects.filter(company=employee.company, is_active=True)
-        .order_by("-created_at")[:5]
+    company_employees = Employee.objects.filter(
+        company=employee.company, is_active=True
     )
+
+    # 1. Announcements
+    announcements = Announcement.objects.filter(
+        company=employee.company, is_active=True
+    ).order_by("-created_at")[:5]
 
     # 2. Upcoming Birthdays & Anniversaries
     future_date = today + timedelta(days=30)
@@ -789,7 +791,7 @@ def employee_dashboard(request):
                 this_year_bday = emp.dob.replace(year=today.year)
             except ValueError:
                 this_year_bday = emp.dob.replace(year=today.year, day=28)
-            
+
             if this_year_bday < today:
                 try:
                     next_birthday = emp.dob.replace(year=today.year + 1)
@@ -800,13 +802,15 @@ def employee_dashboard(request):
 
             if today <= next_birthday <= future_date:
                 days_left = (next_birthday - today).days
-                upcoming_birthdays.append({
-                    "employee": emp,
-                    "date": next_birthday,
-                    "display_date": next_birthday,
-                    "is_today": days_left == 0,
-                    "days_left": days_left,
-                })
+                upcoming_birthdays.append(
+                    {
+                        "employee": emp,
+                        "date": next_birthday,
+                        "display_date": next_birthday,
+                        "is_today": days_left == 0,
+                        "days_left": days_left,
+                    }
+                )
 
         # Work Anniversary
         if emp.date_of_joining:
@@ -821,20 +825,24 @@ def employee_dashboard(request):
                     next_anniv = emp.date_of_joining.replace(year=today.year + 1)
                     years_completed += 1
                 except ValueError:
-                    next_anniv = emp.date_of_joining.replace(year=today.year + 1, day=28)
+                    next_anniv = emp.date_of_joining.replace(
+                        year=today.year + 1, day=28
+                    )
                     years_completed += 1
             else:
                 next_anniv = this_year_anniv
 
             if today <= next_anniv <= future_date and years_completed > 0:
                 days_left = (next_anniv - today).days
-                upcoming_anniversaries.append({
-                    "employee": emp,
-                    "date": next_anniv,
-                    "years": years_completed,
-                    "is_today": days_left == 0,
-                    "days_left": days_left,
-                })
+                upcoming_anniversaries.append(
+                    {
+                        "employee": emp,
+                        "date": next_anniv,
+                        "years": years_completed,
+                        "is_today": days_left == 0,
+                        "days_left": days_left,
+                    }
+                )
 
     upcoming_birthdays.sort(key=lambda x: x["days_left"])
     upcoming_anniversaries.sort(key=lambda x: x["days_left"])
@@ -957,50 +965,56 @@ def personal_home(request):
         # Announcements - current month
         from companies.models import Announcement
         from django.db.models import Q
-        
+
         announcements = (
             Announcement.objects.filter(company=employee.company, is_active=True)
             .filter(Q(location__isnull=True) | Q(location=employee.location))
             .order_by("-created_at")[:5]
         )
         context["announcements"] = announcements
-        
+
         # Current month start and end dates
         current_month = today.month
         current_year = today.year
         from calendar import monthrange
+
         _, last_day = monthrange(current_year, current_month)
         month_start = today.replace(day=1)
         month_end = today.replace(day=last_day)
-        
+
         # Celebrations - Birthdays this month (all dates in current month)
         company_employees = Employee.objects.filter(company=employee.company)
-        birthdays = company_employees.filter(dob__month=current_month).order_by('dob__day')
+        birthdays = company_employees.filter(dob__month=current_month).order_by(
+            "dob__day"
+        )
         context["birthdays"] = birthdays
-        
+
         # Today's specific celebrations
         context["today"] = today
-        context["todays_birthdays"] = company_employees.filter(dob__month=today.month, dob__day=today.day)
+        context["todays_birthdays"] = company_employees.filter(
+            dob__month=today.month, dob__day=today.day
+        )
         context["todays_anniversaries"] = company_employees.filter(
-            date_of_joining__month=today.month, 
-            date_of_joining__day=today.day
+            date_of_joining__month=today.month, date_of_joining__day=today.day
         ).exclude(date_of_joining__year=today.year)
-        
+
         # Work Anniversaries this month (all dates in current month)
-        work_anniversaries = company_employees.filter(
-            date_of_joining__month=current_month
-        ).exclude(date_of_joining__year=current_year).order_by('date_of_joining__day')
+        work_anniversaries = (
+            company_employees.filter(date_of_joining__month=current_month)
+            .exclude(date_of_joining__year=current_year)
+            .order_by("date_of_joining__day")
+        )
         context["work_anniversaries"] = work_anniversaries
-        
+
         # Holidays - All holidays in current month (past and upcoming)
         from companies.models import Holiday
-        
+
         upcoming_holidays = (
             Holiday.objects.filter(
                 company=employee.company,
                 date__gte=month_start,
                 date__lte=month_end,
-                is_active=True
+                is_active=True,
             )
             .filter(Q(location__isnull=True) | Q(location=employee.location))
             .order_by("date")
@@ -1036,109 +1050,130 @@ def personal_home(request):
                 total_duration += 24 * 60  # Overnight shift
 
             timeline_items = []
-            
+
             from employees.models import AttendanceSession
+
             sessions = AttendanceSession.objects.filter(
-                employee=employee,
-                date=today
-            ).order_by('session_number')
+                employee=employee, date=today
+            ).order_by("session_number")
 
             if sessions.exists():
                 session_list = list(sessions)
                 for i, session in enumerate(session_list):
-                    is_first = (i == 0)
-                    is_last_recorded = (i == len(session_list) - 1)
-                    
+                    is_first = i == 0
+                    is_last_recorded = i == len(session_list) - 1
+
                     # Clock In Node
                     if session.clock_in:
                         login_time = timezone.localtime(session.clock_in).time()
                         login_min = to_minutes(login_time)
                         offset = login_min - shift_start_min
-                        if offset < 0: offset += 24 * 60
+                        if offset < 0:
+                            offset += 24 * 60
                         percent = (offset / total_duration) * 100
                         percent = max(0, min(percent, 100))
-                        
+
                         # Dot class logic: 1st clock-in shows time and session type
                         if is_first:
-                            dot_class = "web" if session.session_type == "WEB" else "remote"
+                            dot_class = (
+                                "web" if session.session_type == "WEB" else "remote"
+                            )
                             show_time = True
                         else:
                             dot_class = "clock-in-dot"
                             show_time = False
-                            
-                        timeline_items.append({
-                            "type": "login",
-                            "time": login_time,
-                            "label": f"Login {session.session_number}",
-                            "percent": percent,
-                            "dot_class": dot_class,
-                            "show_time": show_time,
-                            "is_late": attendance.is_late if is_first else False
-                        })
-                    
+
+                        timeline_items.append(
+                            {
+                                "type": "login",
+                                "time": login_time,
+                                "label": f"Login {session.session_number}",
+                                "percent": percent,
+                                "dot_class": dot_class,
+                                "show_time": show_time,
+                                "is_late": attendance.is_late if is_first else False,
+                            }
+                        )
+
                     # Clock Out Node
                     if session.clock_out:
                         logout_time = timezone.localtime(session.clock_out).time()
                         logout_min = to_minutes(logout_time)
                         offset = logout_min - shift_start_min
-                        if offset < 0: offset += 24 * 60
+                        if offset < 0:
+                            offset += 24 * 60
                         percent = (offset / total_duration) * 100
                         percent = max(0, min(percent, 100))
-                        
+
                         # Dot class logic: Last clock-out shows time
                         # Special Case: Only show time for the VERY LAST clockout of the day if session_count == max_sessions
                         # or if it's the last one recorded and they are not clocked in.
-                        is_clocked_in = attendance.is_currently_clocked_in if attendance else False
-                        
+                        is_clocked_in = (
+                            attendance.is_currently_clocked_in if attendance else False
+                        )
+
                         if is_last_recorded and not is_clocked_in:
                             dot_class = "logout"
                             show_time = True
                         else:
                             dot_class = "clock-out-dot"
                             show_time = False
-                            
-                        timeline_items.append({
-                            "type": "logout",
-                            "time": logout_time,
-                            "label": f"Logout {session.session_number}",
-                            "percent": percent,
-                            "dot_class": dot_class,
-                            "show_time": show_time,
-                            "is_early": attendance.is_early_departure if is_last_recorded else False
-                        })
-                
-                # If currently clocked in, or not reached max sessions, 
+
+                        timeline_items.append(
+                            {
+                                "type": "logout",
+                                "time": logout_time,
+                                "label": f"Logout {session.session_number}",
+                                "percent": percent,
+                                "dot_class": dot_class,
+                                "show_time": show_time,
+                                "is_early": attendance.is_early_departure
+                                if is_last_recorded
+                                else False,
+                            }
+                        )
+
+                # If currently clocked in, or not reached max sessions,
                 # we don't necessarily need to add the hollow End node if we have recorded sessions,
                 # but it helps to fill the bar.
-                if not sessions.filter(clock_out__isnull=False, session_number=attendance.max_daily_sessions if attendance else 3).exists():
-                     if not timeline_items or timeline_items[-1]['percent'] < 100:
-                        timeline_items.append({
-                            "type": "logout",
-                            "time": shift.end_time,
-                            "label": "End",
-                            "percent": 100,
-                            "dot_class": "hollow",
-                            "show_time": True
-                        })
-            
+                if not sessions.filter(
+                    clock_out__isnull=False,
+                    session_number=attendance.max_daily_sessions if attendance else 3,
+                ).exists():
+                    if not timeline_items or timeline_items[-1]["percent"] < 100:
+                        timeline_items.append(
+                            {
+                                "type": "logout",
+                                "time": shift.end_time,
+                                "label": "End",
+                                "percent": 100,
+                                "dot_class": "hollow",
+                                "show_time": True,
+                            }
+                        )
+
             else:
                 # No sessions yet
-                timeline_items.append({
-                    "type": "login",
-                    "time": shift.start_time,
-                    "label": "Start",
-                    "percent": 0,
-                    "dot_class": "hollow",
-                    "show_time": True
-                })
-                timeline_items.append({
-                    "type": "logout",
-                    "time": shift.end_time,
-                    "label": "End",
-                    "percent": 100,
-                    "dot_class": "hollow",
-                    "show_time": True
-                })
+                timeline_items.append(
+                    {
+                        "type": "login",
+                        "time": shift.start_time,
+                        "label": "Start",
+                        "percent": 0,
+                        "dot_class": "hollow",
+                        "show_time": True,
+                    }
+                )
+                timeline_items.append(
+                    {
+                        "type": "logout",
+                        "time": shift.end_time,
+                        "label": "End",
+                        "percent": 100,
+                        "dot_class": "hollow",
+                        "show_time": True,
+                    }
+                )
 
             context["timeline_items"] = timeline_items
 
@@ -1870,9 +1905,9 @@ def attendance_report(request):
     if request.user.role == User.Role.MANAGER:
         manager_profile = safe_get_employee_profile(request.user)
         if manager_profile:
-            employees = Employee.objects.filter(
-                manager=manager_profile
-            ).select_related("user", "manager", "location")
+            employees = Employee.objects.filter(manager=manager_profile).select_related(
+                "user", "manager", "location"
+            )
         else:
             employees = Employee.objects.none()
     else:
@@ -2399,7 +2434,9 @@ def leave_requests(request):
                         f"Leave request approved for {leave_request.employee.user.get_full_name()}",
                     )
                 else:
-                    messages.info(request, "Leave request was already approved earlier.")
+                    messages.info(
+                        request, "Leave request was already approved earlier."
+                    )
 
                 # Send Approval Email
                 try:

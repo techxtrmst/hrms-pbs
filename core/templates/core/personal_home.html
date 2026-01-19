@@ -628,8 +628,7 @@
                             </div>
 
                             {% if attendance.clock_in %}
-                            <div class="text-muted small mt-1">Started at {{
-                                attendance.get_current_session.clock_in|default:attendance.clock_in|time:"h:i A" }}
+                            <div class="text-muted small mt-1">Started at {{ attendance.get_current_session.clock_in|default:attendance.clock_in|time:"h:i A" }}
                             </div>
                             {% endif %}
 
@@ -989,8 +988,7 @@
                                 </h3>
                                 <div class="opacity-75 fw-medium" style="font-size: 1.1rem; letter-spacing: 0.02em;">
                                     {% if assigned_shift %}
-                                    {{ assigned_shift.start_time|time:"h:i A" }} - {{ assigned_shift.end_time|time:"h:i
-                                    A" }}
+                                    {{ assigned_shift.start_time|time:"h:i A" }} - {{ assigned_shift.end_time|time:"h:i A" }}
                                     {% else %}
                                     09:00 AM - 06:00 PM
                                     {% endif %}
@@ -1104,8 +1102,7 @@
                             {% if assigned_shift.breaks.all %}
                             {% for break_item in assigned_shift.breaks.all %}
                             <div class="fw-bold text-white" style="font-size: 0.85rem;">
-                                {{ break_item.name }}: {{ break_item.start_time|time:"H:i" }} - {{
-                                break_item.end_time|time:"H:i" }}
+                                {{ break_item.name }}: {{ break_item.start_time|time:"H:i" }} - {{ break_item.end_time|time:"H:i" }}
                             </div>
                             {% endfor %}
                             {% else %}

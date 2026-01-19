@@ -25,7 +25,9 @@ def get_hr_email_connection():
         logger.warning(f"Could not reload .env file: {e}")
 
     # Use EMAIL_HOST_PASSWORD (standard Django env var) with fallback to PETABYTZ_HR_EMAIL_PASSWORD
-    password = env("EMAIL_HOST_PASSWORD", default=env("PETABYTZ_HR_EMAIL_PASSWORD", default=""))
+    password = env(
+        "EMAIL_HOST_PASSWORD", default=env("PETABYTZ_HR_EMAIL_PASSWORD", default="")
+    )
 
     return get_connection(
         backend="django.core.mail.backends.smtp.EmailBackend",
@@ -253,7 +255,9 @@ def send_birthday_announcement(employee, company_employees, recipient_list=None)
         return 0
 
 
-def send_anniversary_announcement(employee, years, company_employees, recipient_list=None):
+def send_anniversary_announcement(
+    employee, years, company_employees, recipient_list=None
+):
     """
     Send work anniversary announcement to all employees in the company using hrms@petabytz.com
 
@@ -604,6 +608,9 @@ def send_regularization_request_notification(regularization_request):
         # Add reporting manager to recipients if exists
         if employee.manager and employee.manager.email:
             recipients.append(employee.manager.email)
+
+        # Deduplicate recipients to prevent sending multiple emails to the same address
+        recipients = list(set(recipients))
 
         # Send to all recipients (hrms@petabytz.com + manager)
         try:

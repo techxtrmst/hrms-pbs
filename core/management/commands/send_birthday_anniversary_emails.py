@@ -140,7 +140,9 @@ class Command(BaseCommand):
                         f"   Location: {emp.location.name if emp.location else 'Not set'}"
                     )
                     self.stdout.write(f"   Timezone: {tz_name}")
-                    self.stdout.write(f"   Local time: {local_time.strftime('%I:%M %p')}")
+                    self.stdout.write(
+                        f"   Local time: {local_time.strftime('%I:%M %p')}"
+                    )
 
                     if not test_mode:
                         # Send individual birthday email
@@ -160,10 +162,10 @@ class Command(BaseCommand):
                             self.stdout.write(
                                 f"   ✅ Announcement sent to {announcement_count} employees"
                             )
-                        
+
                         # Mark as sent
                         emp.last_birthday_email_year = local_date.year
-                        emp.save(update_fields=['last_birthday_email_year'])
+                        emp.save(update_fields=["last_birthday_email_year"])
                     else:
                         self.stdout.write(
                             f"   Would send birthday email to: {emp.user.email}"
@@ -179,7 +181,6 @@ class Command(BaseCommand):
                         self.stdout.write(
                             f"   Would send announcement to {recipient_count} employees"
                         )
-
 
             # Check for work anniversary
             if (
@@ -210,7 +211,9 @@ class Command(BaseCommand):
                         f"   Location: {emp.location.name if emp.location else 'Not set'}"
                     )
                     self.stdout.write(f"   Timezone: {tz_name}")
-                    self.stdout.write(f"   Local time: {local_time.strftime('%I:%M %p')}")
+                    self.stdout.write(
+                        f"   Local time: {local_time.strftime('%I:%M %p')}"
+                    )
                     self.stdout.write(f"   Years of service: {years}")
 
                     if not test_mode:
@@ -231,10 +234,10 @@ class Command(BaseCommand):
                             self.stdout.write(
                                 f"   ✅ Announcement sent to {announcement_count} employees"
                             )
-                        
+
                         # Mark as sent
                         emp.last_anniversary_email_year = local_date.year
-                        emp.save(update_fields=['last_anniversary_email_year'])
+                        emp.save(update_fields=["last_anniversary_email_year"])
                     else:
                         self.stdout.write(
                             f"   Would send anniversary email to: {emp.user.email}"
@@ -250,7 +253,6 @@ class Command(BaseCommand):
                         self.stdout.write(
                             f"   Would send announcement to {recipient_count} employees"
                         )
-
 
             # Check for probation completion (3 months from joining date)
             if emp.date_of_joining:

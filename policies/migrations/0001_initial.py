@@ -7,110 +7,269 @@ import django.utils.timezone
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('employees', '0011_fix_locationlog_schema'),
-        ('companies', '0014_alter_company_domains'),
+        ("employees", "0011_fix_locationlog_schema"),
+        ("companies", "0014_alter_company_domains"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Policy',
+            name="Policy",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=300)),
-                ('subtitle', models.CharField(blank=True, max_length=500)),
-                ('content', models.TextField(help_text='Main policy content (supports HTML/rich text)')),
-                ('version', models.CharField(default='1.0', help_text='Version number of this policy', max_length=50)),
-                ('is_published', models.BooleanField(default=False, help_text='Only published policies are visible to employees')),
-                ('effective_date', models.DateField(default=django.utils.timezone.now, help_text='Date when this policy becomes effective')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('requires_acknowledgment', models.BooleanField(default=False, help_text='Employees must acknowledge reading this policy')),
-                ('company', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='policies', to='companies.company')),
-                ('created_by', models.ForeignKey(help_text='Admin who created this policy', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='policies_created', to=settings.AUTH_USER_MODEL)),
-                ('location', models.ForeignKey(help_text='Location/Entity this policy belongs to', on_delete=django.db.models.deletion.CASCADE, related_name='policies', to='companies.location')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=300)),
+                ("subtitle", models.CharField(blank=True, max_length=500)),
+                (
+                    "content",
+                    models.TextField(
+                        help_text="Main policy content (supports HTML/rich text)"
+                    ),
+                ),
+                (
+                    "version",
+                    models.CharField(
+                        default="1.0",
+                        help_text="Version number of this policy",
+                        max_length=50,
+                    ),
+                ),
+                (
+                    "is_published",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Only published policies are visible to employees",
+                    ),
+                ),
+                (
+                    "effective_date",
+                    models.DateField(
+                        default=django.utils.timezone.now,
+                        help_text="Date when this policy becomes effective",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "requires_acknowledgment",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Employees must acknowledge reading this policy",
+                    ),
+                ),
+                (
+                    "company",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="policies",
+                        to="companies.company",
+                    ),
+                ),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        help_text="Admin who created this policy",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="policies_created",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "location",
+                    models.ForeignKey(
+                        help_text="Location/Entity this policy belongs to",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="policies",
+                        to="companies.location",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Policy',
-                'verbose_name_plural': 'Policies',
-                'ordering': ['-updated_at'],
+                "verbose_name": "Policy",
+                "verbose_name_plural": "Policies",
+                "ordering": ["-updated_at"],
             },
         ),
         migrations.CreateModel(
-            name='PolicySection',
+            name="PolicySection",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=200)),
-                ('icon', models.CharField(blank=True, help_text='Emoji or icon class (e.g., 📘, 🎯, 📋)', max_length=50)),
-                ('order', models.PositiveIntegerField(default=0, help_text='Display order')),
-                ('is_active', models.BooleanField(default=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('company', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='policy_sections', to='companies.company')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=200)),
+                (
+                    "icon",
+                    models.CharField(
+                        blank=True,
+                        help_text="Emoji or icon class (e.g., 📘, 🎯, 📋)",
+                        max_length=50,
+                    ),
+                ),
+                (
+                    "order",
+                    models.PositiveIntegerField(default=0, help_text="Display order"),
+                ),
+                ("is_active", models.BooleanField(default=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "company",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="policy_sections",
+                        to="companies.company",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Policy Section',
-                'verbose_name_plural': 'Policy Sections',
-                'ordering': ['order', 'title'],
-                'unique_together': {('company', 'title')},
+                "verbose_name": "Policy Section",
+                "verbose_name_plural": "Policy Sections",
+                "ordering": ["order", "title"],
+                "unique_together": {("company", "title")},
             },
         ),
         migrations.CreateModel(
-            name='PolicyAttachment',
+            name="PolicyAttachment",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=200)),
-                ('file', models.FileField(help_text='Upload PDF, images, or other documents', upload_to='policy_attachments/%Y/%m/')),
-                ('file_type', models.CharField(blank=True, max_length=50)),
-                ('file_size', models.PositiveIntegerField(default=0, help_text='File size in bytes')),
-                ('uploaded_at', models.DateTimeField(auto_now_add=True)),
-                ('policy', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='attachments', to='policies.policy')),
-                ('uploaded_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=200)),
+                (
+                    "file",
+                    models.FileField(
+                        help_text="Upload PDF, images, or other documents",
+                        upload_to="policy_attachments/%Y/%m/",
+                    ),
+                ),
+                ("file_type", models.CharField(blank=True, max_length=50)),
+                (
+                    "file_size",
+                    models.PositiveIntegerField(
+                        default=0, help_text="File size in bytes"
+                    ),
+                ),
+                ("uploaded_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "policy",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="attachments",
+                        to="policies.policy",
+                    ),
+                ),
+                (
+                    "uploaded_by",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Policy Attachment',
-                'verbose_name_plural': 'Policy Attachments',
-                'ordering': ['-uploaded_at'],
+                "verbose_name": "Policy Attachment",
+                "verbose_name_plural": "Policy Attachments",
+                "ordering": ["-uploaded_at"],
             },
         ),
         migrations.AddField(
-            model_name='policy',
-            name='section',
-            field=models.ForeignKey(blank=True, help_text='Section this content belongs to', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='policy_entries', to='policies.policysection'),
+            model_name="policy",
+            name="section",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Section this content belongs to",
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="policy_entries",
+                to="policies.policysection",
+            ),
         ),
         migrations.AddField(
-            model_name='policy',
-            name='updated_by',
-            field=models.ForeignKey(help_text='Admin who last updated this policy', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='policies_updated', to=settings.AUTH_USER_MODEL),
+            model_name="policy",
+            name="updated_by",
+            field=models.ForeignKey(
+                help_text="Admin who last updated this policy",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="policies_updated",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.CreateModel(
-            name='PolicyAcknowledgment',
+            name="PolicyAcknowledgment",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('acknowledged', models.BooleanField(default=False)),
-                ('acknowledged_at', models.DateTimeField(blank=True, null=True)),
-                ('ip_address', models.GenericIPAddressField(blank=True, null=True)),
-                ('user_agent', models.TextField(blank=True)),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='policy_acknowledgments', to='employees.employee')),
-                ('policy', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='acknowledgments', to='policies.policy')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("acknowledged", models.BooleanField(default=False)),
+                ("acknowledged_at", models.DateTimeField(blank=True, null=True)),
+                ("ip_address", models.GenericIPAddressField(blank=True, null=True)),
+                ("user_agent", models.TextField(blank=True)),
+                (
+                    "employee",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="policy_acknowledgments",
+                        to="employees.employee",
+                    ),
+                ),
+                (
+                    "policy",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="acknowledgments",
+                        to="policies.policy",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Policy Acknowledgment',
-                'verbose_name_plural': 'Policy Acknowledgments',
-                'ordering': ['-acknowledged_at'],
-                'unique_together': {('policy', 'employee')},
+                "verbose_name": "Policy Acknowledgment",
+                "verbose_name_plural": "Policy Acknowledgments",
+                "ordering": ["-acknowledged_at"],
+                "unique_together": {("policy", "employee")},
             },
         ),
         migrations.AddIndex(
-            model_name='policy',
-            index=models.Index(fields=['company', 'location'], name='policies_po_company_10fc8f_idx'),
+            model_name="policy",
+            index=models.Index(
+                fields=["company", "location"], name="policies_po_company_10fc8f_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='policy',
-            index=models.Index(fields=['is_published', 'effective_date'], name='policies_po_is_publ_482260_idx'),
+            model_name="policy",
+            index=models.Index(
+                fields=["is_published", "effective_date"],
+                name="policies_po_is_publ_482260_idx",
+            ),
         ),
     ]

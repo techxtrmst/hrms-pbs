@@ -4,15 +4,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('employees', '0013_alter_leaverequest_leave_type'),
+        ("employees", "0013_alter_leaverequest_leave_type"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='leaverequest',
-            name='approval_type',
-            field=models.CharField(blank=True, choices=[('FULL', 'Approved (Full Balance)'), ('WITH_LOP', 'Approved with LOP'), ('ONLY_AVAILABLE', 'Approved (Only Available Days)')], help_text='How the leave was approved', max_length=20, null=True),
+            model_name="leaverequest",
+            name="approval_type",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("FULL", "Approved (Full Balance)"),
+                    ("WITH_LOP", "Approved with LOP"),
+                    ("ONLY_AVAILABLE", "Approved (Only Available Days)"),
+                ],
+                help_text="How the leave was approved",
+                max_length=20,
+                null=True,
+            ),
         ),
     ]

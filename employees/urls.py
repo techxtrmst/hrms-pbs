@@ -32,7 +32,11 @@ urlpatterns = [
     path("leave/apply/", views.LeaveApplyView.as_view(), name="leave_apply"),
     path("leave/<int:pk>/approve/", views.approve_leave, name="approve_leave"),
     path("leave/<int:pk>/reject/", views.reject_leave, name="reject_leave"),
-    path("api/leave/check-balance/", views.check_leave_balance, name="api_check_leave_balance"),
+    path(
+        "api/leave/check-balance/",
+        views.check_leave_balance,
+        name="api_check_leave_balance",
+    ),
     # API endpoints for attendance
     path("api/clock-in/", views.clock_in, name="api_clock_in"),
     path("api/clock-out/", views.clock_out, name="api_clock_out"),
@@ -43,9 +47,21 @@ urlpatterns = [
         name="api_attendance_map_data",
     ),
     # Location Tracking API endpoints
-    path("api/location/hourly/", views.submit_hourly_location, name="api_submit_hourly_location"),
-    path("api/location/status/", views.get_location_tracking_status, name="api_location_tracking_status"),
-    path("api/location/history/<int:employee_id>/", views.get_employee_location_history, name="api_employee_location_history"),
+    path(
+        "api/location/hourly/",
+        views.submit_hourly_location,
+        name="api_submit_hourly_location",
+    ),
+    path(
+        "api/location/status/",
+        views.get_location_tracking_status,
+        name="api_location_tracking_status",
+    ),
+    path(
+        "api/location/history/<int:employee_id>/",
+        views.get_employee_location_history,
+        name="api_employee_location_history",
+    ),
     path("attendance/<int:pk>/map/", views.attendance_map, name="attendance_map"),
     # Employee Exit Actions
     path(

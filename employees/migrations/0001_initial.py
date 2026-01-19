@@ -34,328 +34,1082 @@ class SafeAddField(migrations.AddField):
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('companies', '0001_initial'),
+        ("companies", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Employee',
+            name="Employee",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('designation', models.CharField(max_length=100)),
-                ('department', models.CharField(max_length=100)),
-                ('date_of_joining', models.DateField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('company', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='employees', to='companies.company')),
-                ('manager', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='subordinates_user', to=settings.AUTH_USER_MODEL)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='employee_profile', to=settings.AUTH_USER_MODEL)),
-                ('account_number', models.CharField(blank=True, max_length=50, null=True)),
-                ('badge_id', models.CharField(max_length=20, null=True, unique=True, verbose_name='Employee ID')),
-                ('bank_name', models.CharField(blank=True, max_length=100, null=True)),
-                ('dob', models.DateField(blank=True, null=True, verbose_name='Date of Birth')),
-                ('emergency_contact', models.CharField(blank=True, help_text='Legacy field - use EmergencyContact model instead', max_length=100, null=True)),
-                ('gender', models.CharField(blank=True, choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')], max_length=1, null=True)),
-                ('ifsc_code', models.CharField(blank=True, max_length=20, null=True, verbose_name='IFSC Code')),
-                ('marital_status', models.CharField(blank=True, choices=[('S', 'Single'), ('M', 'Married'), ('D', 'Divorced'), ('W', 'Widowed')], max_length=1, null=True)),
-                ('mobile_number', models.CharField(blank=True, max_length=15, null=True)),
-                ('permanent_address', models.TextField(blank=True, null=True)),
-                ('pf_enabled', models.BooleanField(default=False, verbose_name='Provident Fund')),
-                ('uan', models.CharField(blank=True, max_length=20, null=True, verbose_name='UAN')),
-                ('work_type', models.CharField(choices=[('FT', 'Full Time'), ('PT', 'Part Time'), ('CT', 'Contract'), ('RM', 'Remote')], default='FT', max_length=2)),
-                ('profile_picture', models.ImageField(blank=True, null=True, upload_to='employee_avatars/')),
-                ('annual_ctc', models.DecimalField(blank=True, decimal_places=2, max_digits=12, null=True, verbose_name='Annual CTC')),
-                ('shift_schedule', models.CharField(blank=True, help_text='Legacy: Assigned shift schedule (e.g., 09:00 AM - 06:00 PM)', max_length=100, null=True)),
-                ('location', models.ForeignKey(blank=True, help_text='Employee work location for holiday filtering', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='employees', to='companies.location')),
-                ('assigned_shift', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='assigned_employees', to='companies.shiftschedule')),
-                ('employment_status', models.CharField(choices=[('ACTIVE', 'Active'), ('RESIGNED', 'Resigned'), ('ABSCONDED', 'Absconded'), ('TERMINATED', 'Terminated')], default='ACTIVE', help_text='Current employment status', max_length=20)),
-                ('exit_date', models.DateField(blank=True, help_text='Date when employee exited the organization', null=True, verbose_name='Last Working Date')),
-                ('exit_note', models.TextField(blank=True, help_text='Detailed reason for employee exit', null=True, verbose_name='Exit Reason/Note')),
-                ('is_active', models.BooleanField(default=True, help_text='Whether employee is currently active in the organization')),
-                ('week_off_friday', models.BooleanField(default=False, help_text='Friday is week-off')),
-                ('week_off_monday', models.BooleanField(default=False, help_text='Monday is week-off')),
-                ('week_off_saturday', models.BooleanField(default=True, help_text='Saturday is week-off')),
-                ('week_off_sunday', models.BooleanField(default=True, help_text='Sunday is week-off')),
-                ('week_off_thursday', models.BooleanField(default=False, help_text='Thursday is week-off')),
-                ('week_off_tuesday', models.BooleanField(default=False, help_text='Tuesday is week-off')),
-                ('week_off_wednesday', models.BooleanField(default=False, help_text='Wednesday is week-off')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("designation", models.CharField(max_length=100)),
+                ("department", models.CharField(max_length=100)),
+                ("date_of_joining", models.DateField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "company",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="employees",
+                        to="companies.company",
+                    ),
+                ),
+                (
+                    "manager",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="subordinates_user",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "user",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="employee_profile",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "account_number",
+                    models.CharField(blank=True, max_length=50, null=True),
+                ),
+                (
+                    "badge_id",
+                    models.CharField(
+                        max_length=20,
+                        null=True,
+                        unique=True,
+                        verbose_name="Employee ID",
+                    ),
+                ),
+                ("bank_name", models.CharField(blank=True, max_length=100, null=True)),
+                (
+                    "dob",
+                    models.DateField(
+                        blank=True, null=True, verbose_name="Date of Birth"
+                    ),
+                ),
+                (
+                    "emergency_contact",
+                    models.CharField(
+                        blank=True,
+                        help_text="Legacy field - use EmergencyContact model instead",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                (
+                    "gender",
+                    models.CharField(
+                        blank=True,
+                        choices=[("M", "Male"), ("F", "Female"), ("O", "Other")],
+                        max_length=1,
+                        null=True,
+                    ),
+                ),
+                (
+                    "ifsc_code",
+                    models.CharField(
+                        blank=True, max_length=20, null=True, verbose_name="IFSC Code"
+                    ),
+                ),
+                (
+                    "marital_status",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("S", "Single"),
+                            ("M", "Married"),
+                            ("D", "Divorced"),
+                            ("W", "Widowed"),
+                        ],
+                        max_length=1,
+                        null=True,
+                    ),
+                ),
+                (
+                    "mobile_number",
+                    models.CharField(blank=True, max_length=15, null=True),
+                ),
+                ("permanent_address", models.TextField(blank=True, null=True)),
+                (
+                    "pf_enabled",
+                    models.BooleanField(default=False, verbose_name="Provident Fund"),
+                ),
+                (
+                    "uan",
+                    models.CharField(
+                        blank=True, max_length=20, null=True, verbose_name="UAN"
+                    ),
+                ),
+                (
+                    "work_type",
+                    models.CharField(
+                        choices=[
+                            ("FT", "Full Time"),
+                            ("PT", "Part Time"),
+                            ("CT", "Contract"),
+                            ("RM", "Remote"),
+                        ],
+                        default="FT",
+                        max_length=2,
+                    ),
+                ),
+                (
+                    "profile_picture",
+                    models.ImageField(
+                        blank=True, null=True, upload_to="employee_avatars/"
+                    ),
+                ),
+                (
+                    "annual_ctc",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        max_digits=12,
+                        null=True,
+                        verbose_name="Annual CTC",
+                    ),
+                ),
+                (
+                    "shift_schedule",
+                    models.CharField(
+                        blank=True,
+                        help_text="Legacy: Assigned shift schedule (e.g., 09:00 AM - 06:00 PM)",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                (
+                    "location",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Employee work location for holiday filtering",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="employees",
+                        to="companies.location",
+                    ),
+                ),
+                (
+                    "assigned_shift",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="assigned_employees",
+                        to="companies.shiftschedule",
+                    ),
+                ),
+                (
+                    "employment_status",
+                    models.CharField(
+                        choices=[
+                            ("ACTIVE", "Active"),
+                            ("RESIGNED", "Resigned"),
+                            ("ABSCONDED", "Absconded"),
+                            ("TERMINATED", "Terminated"),
+                        ],
+                        default="ACTIVE",
+                        help_text="Current employment status",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "exit_date",
+                    models.DateField(
+                        blank=True,
+                        help_text="Date when employee exited the organization",
+                        null=True,
+                        verbose_name="Last Working Date",
+                    ),
+                ),
+                (
+                    "exit_note",
+                    models.TextField(
+                        blank=True,
+                        help_text="Detailed reason for employee exit",
+                        null=True,
+                        verbose_name="Exit Reason/Note",
+                    ),
+                ),
+                (
+                    "is_active",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Whether employee is currently active in the organization",
+                    ),
+                ),
+                (
+                    "week_off_friday",
+                    models.BooleanField(default=False, help_text="Friday is week-off"),
+                ),
+                (
+                    "week_off_monday",
+                    models.BooleanField(default=False, help_text="Monday is week-off"),
+                ),
+                (
+                    "week_off_saturday",
+                    models.BooleanField(default=True, help_text="Saturday is week-off"),
+                ),
+                (
+                    "week_off_sunday",
+                    models.BooleanField(default=True, help_text="Sunday is week-off"),
+                ),
+                (
+                    "week_off_thursday",
+                    models.BooleanField(
+                        default=False, help_text="Thursday is week-off"
+                    ),
+                ),
+                (
+                    "week_off_tuesday",
+                    models.BooleanField(default=False, help_text="Tuesday is week-off"),
+                ),
+                (
+                    "week_off_wednesday",
+                    models.BooleanField(
+                        default=False, help_text="Wednesday is week-off"
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='LocationLog',
+            name="LocationLog",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('timestamp', models.DateTimeField(auto_now_add=True)),
-                ('latitude', models.CharField(max_length=50)),
-                ('longitude', models.CharField(max_length=50)),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='location_logs', to='employees.employee')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("timestamp", models.DateTimeField(auto_now_add=True)),
+                ("latitude", models.CharField(max_length=50)),
+                ("longitude", models.CharField(max_length=50)),
+                (
+                    "employee",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="location_logs",
+                        to="employees.employee",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='EmployeeIDProof',
+            name="EmployeeIDProof",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('aadhar_front', models.ImageField(blank=True, null=True, upload_to='id_proofs/aadhar/')),
-                ('aadhar_back', models.ImageField(blank=True, null=True, upload_to='id_proofs/aadhar/')),
-                ('pan_card', models.ImageField(blank=True, null=True, upload_to='id_proofs/pan/')),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('employee', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='id_proofs', to='employees.employee')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "aadhar_front",
+                    models.ImageField(
+                        blank=True, null=True, upload_to="id_proofs/aadhar/"
+                    ),
+                ),
+                (
+                    "aadhar_back",
+                    models.ImageField(
+                        blank=True, null=True, upload_to="id_proofs/aadhar/"
+                    ),
+                ),
+                (
+                    "pan_card",
+                    models.ImageField(
+                        blank=True, null=True, upload_to="id_proofs/pan/"
+                    ),
+                ),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "employee",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="id_proofs",
+                        to="employees.employee",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Payslip',
+            name="Payslip",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('month', models.DateField(help_text='Select any date in the month')),
-                ('pdf_file', models.FileField(blank=True, null=True, upload_to='payslips/')),
-                ('net_salary', models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True)),
-                ('generated_at', models.DateTimeField(auto_now_add=True)),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='payslips', to='employees.employee')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("month", models.DateField(help_text="Select any date in the month")),
+                (
+                    "pdf_file",
+                    models.FileField(blank=True, null=True, upload_to="payslips/"),
+                ),
+                (
+                    "net_salary",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=10, null=True
+                    ),
+                ),
+                ("generated_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "employee",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="payslips",
+                        to="employees.employee",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-month'],
+                "ordering": ["-month"],
             },
         ),
         migrations.CreateModel(
-            name='HandbookSection',
+            name="HandbookSection",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=100)),
-                ('content', models.TextField(help_text='HTML content is supported')),
-                ('order', models.IntegerField(default=0)),
-                ('is_active', models.BooleanField(default=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=100)),
+                ("content", models.TextField(help_text="HTML content is supported")),
+                ("order", models.IntegerField(default=0)),
+                ("is_active", models.BooleanField(default=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'ordering': ['order'],
+                "ordering": ["order"],
             },
         ),
         migrations.CreateModel(
-            name='PolicySection',
+            name="PolicySection",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=100)),
-                ('content', models.TextField(help_text='HTML content is supported')),
-                ('order', models.IntegerField(default=0)),
-                ('is_active', models.BooleanField(default=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=100)),
+                ("content", models.TextField(help_text="HTML content is supported")),
+                ("order", models.IntegerField(default=0)),
+                ("is_active", models.BooleanField(default=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name_plural': 'Policy Sections',
-                'ordering': ['order'],
+                "verbose_name_plural": "Policy Sections",
+                "ordering": ["order"],
             },
         ),
         migrations.CreateModel(
-            name='LeaveBalance',
+            name="LeaveBalance",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('unpaid_leave', models.FloatField(default=0.0)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('employee', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='leave_balance', to='employees.employee')),
-                ('carry_forward_leave', models.FloatField(default=0.0, help_text='Leave carried from previous year')),
-                ('casual_leave_allocated', models.FloatField(default=12.0, help_text='Total CL allocated per year')),
-                ('casual_leave_used', models.FloatField(default=0.0)),
-                ('comp_off_allocated', models.FloatField(default=0.0, help_text='Comp off earned')),
-                ('comp_off_used', models.FloatField(default=0.0)),
-                ('earned_leave_allocated', models.FloatField(default=12.0, help_text='Total EL allocated per year')),
-                ('earned_leave_used', models.FloatField(default=0.0)),
-                ('lapsed_leave', models.FloatField(default=0.0, help_text='Leave that expired')),
-                ('sick_leave_allocated', models.FloatField(default=12.0, help_text='Total SL allocated per year')),
-                ('sick_leave_used', models.FloatField(default=0.0)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("unpaid_leave", models.FloatField(default=0.0)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "employee",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="leave_balance",
+                        to="employees.employee",
+                    ),
+                ),
+                (
+                    "carry_forward_leave",
+                    models.FloatField(
+                        default=0.0, help_text="Leave carried from previous year"
+                    ),
+                ),
+                (
+                    "casual_leave_allocated",
+                    models.FloatField(
+                        default=12.0, help_text="Total CL allocated per year"
+                    ),
+                ),
+                ("casual_leave_used", models.FloatField(default=0.0)),
+                (
+                    "comp_off_allocated",
+                    models.FloatField(default=0.0, help_text="Comp off earned"),
+                ),
+                ("comp_off_used", models.FloatField(default=0.0)),
+                (
+                    "earned_leave_allocated",
+                    models.FloatField(
+                        default=12.0, help_text="Total EL allocated per year"
+                    ),
+                ),
+                ("earned_leave_used", models.FloatField(default=0.0)),
+                (
+                    "lapsed_leave",
+                    models.FloatField(default=0.0, help_text="Leave that expired"),
+                ),
+                (
+                    "sick_leave_allocated",
+                    models.FloatField(
+                        default=12.0, help_text="Total SL allocated per year"
+                    ),
+                ),
+                ("sick_leave_used", models.FloatField(default=0.0)),
             ],
         ),
         migrations.CreateModel(
-            name='RegularizationRequest',
+            name="RegularizationRequest",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date', models.DateField(help_text='Date to be regularized')),
-                ('check_in', models.TimeField(blank=True, null=True, verbose_name='New Check-In Time')),
-                ('check_out', models.TimeField(blank=True, null=True, verbose_name='New Check-Out Time')),
-                ('reason', models.TextField(help_text='Reason for regularization')),
-                ('status', models.CharField(choices=[('PENDING', 'Pending'), ('APPROVED', 'Approved'), ('REJECTED', 'Rejected'), ('CANCELLED', 'Cancelled')], default='PENDING', max_length=10)),
-                ('approved_at', models.DateTimeField(blank=True, null=True)),
-                ('manager_comment', models.TextField(blank=True, null=True, verbose_name='Manager Remarks')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('approved_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='approved_regularizations', to=settings.AUTH_USER_MODEL)),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='regularization_requests', to='employees.employee')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("date", models.DateField(help_text="Date to be regularized")),
+                (
+                    "check_in",
+                    models.TimeField(
+                        blank=True, null=True, verbose_name="New Check-In Time"
+                    ),
+                ),
+                (
+                    "check_out",
+                    models.TimeField(
+                        blank=True, null=True, verbose_name="New Check-Out Time"
+                    ),
+                ),
+                ("reason", models.TextField(help_text="Reason for regularization")),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("PENDING", "Pending"),
+                            ("APPROVED", "Approved"),
+                            ("REJECTED", "Rejected"),
+                            ("CANCELLED", "Cancelled"),
+                        ],
+                        default="PENDING",
+                        max_length=10,
+                    ),
+                ),
+                ("approved_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "manager_comment",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Manager Remarks"
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "approved_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="approved_regularizations",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "employee",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="regularization_requests",
+                        to="employees.employee",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-created_at'],
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='Attendance',
+            name="Attendance",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date', models.DateField()),
-                ('clock_in', models.DateTimeField(blank=True, null=True)),
-                ('clock_out', models.DateTimeField(blank=True, null=True)),
-                ('status', models.CharField(choices=[('PRESENT', 'Present'), ('ABSENT', 'Absent'), ('HALF_DAY', 'Half Day'), ('LEAVE', 'On Leave'), ('WFH', 'Work From Home'), ('ON_DUTY', 'On Duty'), ('WEEKLY_OFF', 'Weekly Off'), ('HOLIDAY', 'Holiday'), ('MISSING_PUNCH', 'Missing Punch')], default='ABSENT', max_length=20)),
-                ('location_in', models.CharField(blank=True, max_length=255, null=True)),
-                ('location_out', models.CharField(blank=True, max_length=255, null=True)),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='attendances', to='employees.employee')),
-                ('early_departure_minutes', models.IntegerField(default=0, help_text='Minutes before shift end')),
-                ('is_early_departure', models.BooleanField(default=False, help_text='Left before shift end time')),
-                ('is_late', models.BooleanField(default=False, help_text='Marked late based on shift timing')),
-                ('late_by_minutes', models.IntegerField(default=0, help_text='Minutes late after grace period')),
-                ('is_grace_used', models.BooleanField(default=False, help_text='Logged in late but within grace period')),
-                ('is_half_day_late', models.BooleanField(default=False, help_text='Marked as Half Day due to late login exceed')),
-                ('clock_in_attempts', models.IntegerField(default=0, help_text='Number of clock-in attempts (max 3)')),
-                ('location_tracking_active', models.BooleanField(default=False, help_text='Whether location tracking is currently active')),
-                ('location_tracking_end_time', models.DateTimeField(blank=True, help_text='When location tracking should stop', null=True)),
-                ('daily_clock_count', models.IntegerField(default=0, help_text='Number of valid clock-ins today')),
-                ('is_currently_clocked_in', models.BooleanField(default=False, help_text='Currently clocked in status')),
-                ('max_daily_clocks', models.IntegerField(default=3, help_text='Maximum allowed clock-ins per day')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("date", models.DateField()),
+                ("clock_in", models.DateTimeField(blank=True, null=True)),
+                ("clock_out", models.DateTimeField(blank=True, null=True)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("PRESENT", "Present"),
+                            ("ABSENT", "Absent"),
+                            ("HALF_DAY", "Half Day"),
+                            ("LEAVE", "On Leave"),
+                            ("WFH", "Work From Home"),
+                            ("ON_DUTY", "On Duty"),
+                            ("WEEKLY_OFF", "Weekly Off"),
+                            ("HOLIDAY", "Holiday"),
+                            ("MISSING_PUNCH", "Missing Punch"),
+                        ],
+                        default="ABSENT",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "location_in",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "location_out",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "employee",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="attendances",
+                        to="employees.employee",
+                    ),
+                ),
+                (
+                    "early_departure_minutes",
+                    models.IntegerField(
+                        default=0, help_text="Minutes before shift end"
+                    ),
+                ),
+                (
+                    "is_early_departure",
+                    models.BooleanField(
+                        default=False, help_text="Left before shift end time"
+                    ),
+                ),
+                (
+                    "is_late",
+                    models.BooleanField(
+                        default=False, help_text="Marked late based on shift timing"
+                    ),
+                ),
+                (
+                    "late_by_minutes",
+                    models.IntegerField(
+                        default=0, help_text="Minutes late after grace period"
+                    ),
+                ),
+                (
+                    "is_grace_used",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Logged in late but within grace period",
+                    ),
+                ),
+                (
+                    "is_half_day_late",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Marked as Half Day due to late login exceed",
+                    ),
+                ),
+                (
+                    "clock_in_attempts",
+                    models.IntegerField(
+                        default=0, help_text="Number of clock-in attempts (max 3)"
+                    ),
+                ),
+                (
+                    "location_tracking_active",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Whether location tracking is currently active",
+                    ),
+                ),
+                (
+                    "location_tracking_end_time",
+                    models.DateTimeField(
+                        blank=True,
+                        help_text="When location tracking should stop",
+                        null=True,
+                    ),
+                ),
+                (
+                    "daily_clock_count",
+                    models.IntegerField(
+                        default=0, help_text="Number of valid clock-ins today"
+                    ),
+                ),
+                (
+                    "is_currently_clocked_in",
+                    models.BooleanField(
+                        default=False, help_text="Currently clocked in status"
+                    ),
+                ),
+                (
+                    "max_daily_clocks",
+                    models.IntegerField(
+                        default=3, help_text="Maximum allowed clock-ins per day"
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-date'],
-                'unique_together': {('employee', 'date')},
+                "ordering": ["-date"],
+                "unique_together": {("employee", "date")},
             },
         ),
         migrations.CreateModel(
-            name='ExitInitiative',
+            name="ExitInitiative",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('exit_type', models.CharField(choices=[('RESIGNATION', 'Resignation'), ('ABSCONDED', 'Absconded'), ('TERMINATED', 'Terminated')], help_text='Type of exit', max_length=20)),
-                ('submission_date', models.DateField(help_text='Date when exit was initiated')),
-                ('exit_note', models.TextField(help_text='Reason for exit')),
-                ('notice_period_days', models.IntegerField(blank=True, help_text='Notice period in days (for absconding/termination)', null=True)),
-                ('last_working_day', models.DateField(blank=True, help_text='Calculated or approved last working day', null=True)),
-                ('status', models.CharField(choices=[('PENDING', 'Pending Approval'), ('APPROVED', 'Approved'), ('REJECTED', 'Rejected'), ('COMPLETED', 'Completed')], default='PENDING', help_text='Status of exit request (mainly for resignations)', max_length=20)),
-                ('approved_at', models.DateTimeField(blank=True, null=True)),
-                ('rejection_reason', models.TextField(blank=True, help_text='Reason for rejection (if applicable)', null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('approved_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='approved_exits', to=settings.AUTH_USER_MODEL)),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='exit_initiatives', to='employees.employee')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "exit_type",
+                    models.CharField(
+                        choices=[
+                            ("RESIGNATION", "Resignation"),
+                            ("ABSCONDED", "Absconded"),
+                            ("TERMINATED", "Terminated"),
+                        ],
+                        help_text="Type of exit",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "submission_date",
+                    models.DateField(help_text="Date when exit was initiated"),
+                ),
+                ("exit_note", models.TextField(help_text="Reason for exit")),
+                (
+                    "notice_period_days",
+                    models.IntegerField(
+                        blank=True,
+                        help_text="Notice period in days (for absconding/termination)",
+                        null=True,
+                    ),
+                ),
+                (
+                    "last_working_day",
+                    models.DateField(
+                        blank=True,
+                        help_text="Calculated or approved last working day",
+                        null=True,
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("PENDING", "Pending Approval"),
+                            ("APPROVED", "Approved"),
+                            ("REJECTED", "Rejected"),
+                            ("COMPLETED", "Completed"),
+                        ],
+                        default="PENDING",
+                        help_text="Status of exit request (mainly for resignations)",
+                        max_length=20,
+                    ),
+                ),
+                ("approved_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "rejection_reason",
+                    models.TextField(
+                        blank=True,
+                        help_text="Reason for rejection (if applicable)",
+                        null=True,
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "approved_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="approved_exits",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "employee",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="exit_initiatives",
+                        to="employees.employee",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Exit Initiative',
-                'verbose_name_plural': 'Exit Initiatives',
-                'ordering': ['-created_at'],
+                "verbose_name": "Exit Initiative",
+                "verbose_name_plural": "Exit Initiatives",
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='LeaveRequest',
+            name="LeaveRequest",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('leave_type', models.CharField(choices=[('CL', 'Casual Leave'), ('SL', 'Sick Leave'), ('EL', 'Earned Leave'), ('CO', 'Comp Off'), ('UL', 'Unpaid Leave (LOP)'), ('OT', 'Others')], max_length=2)),
-                ('start_date', models.DateField()),
-                ('end_date', models.DateField()),
-                ('reason', models.TextField(blank=True)),
-                ('status', models.CharField(choices=[('PENDING', 'Pending'), ('APPROVED', 'Approved'), ('REJECTED', 'Rejected'), ('CANCELLED', 'Cancelled')], default='PENDING', max_length=10)),
-                ('rejection_reason', models.TextField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='leave_requests', to='employees.employee')),
-                ('admin_comment', models.TextField(blank=True, help_text='Admin/Manager remarks', null=True)),
-                ('approval_level', models.CharField(choices=[('MANAGER', 'Manager'), ('HR', 'HR/Admin')], default='MANAGER', max_length=10)),
-                ('approved_at', models.DateTimeField(blank=True, null=True)),
-                ('approved_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='approved_leaves', to=settings.AUTH_USER_MODEL)),
-                ('duration', models.CharField(choices=[('FULL', 'Full Day'), ('HALF', 'Half Day')], default='FULL', max_length=4)),
-                ('supporting_document', models.FileField(blank=True, null=True, upload_to='leave_documents/')),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "leave_type",
+                    models.CharField(
+                        choices=[
+                            ("CL", "Casual Leave"),
+                            ("SL", "Sick Leave"),
+                            ("EL", "Earned Leave"),
+                            ("CO", "Comp Off"),
+                            ("UL", "Unpaid Leave (LOP)"),
+                            ("OT", "Others"),
+                        ],
+                        max_length=2,
+                    ),
+                ),
+                ("start_date", models.DateField()),
+                ("end_date", models.DateField()),
+                ("reason", models.TextField(blank=True)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("PENDING", "Pending"),
+                            ("APPROVED", "Approved"),
+                            ("REJECTED", "Rejected"),
+                            ("CANCELLED", "Cancelled"),
+                        ],
+                        default="PENDING",
+                        max_length=10,
+                    ),
+                ),
+                ("rejection_reason", models.TextField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "employee",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="leave_requests",
+                        to="employees.employee",
+                    ),
+                ),
+                (
+                    "admin_comment",
+                    models.TextField(
+                        blank=True, help_text="Admin/Manager remarks", null=True
+                    ),
+                ),
+                (
+                    "approval_level",
+                    models.CharField(
+                        choices=[("MANAGER", "Manager"), ("HR", "HR/Admin")],
+                        default="MANAGER",
+                        max_length=10,
+                    ),
+                ),
+                ("approved_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "approved_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="approved_leaves",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "duration",
+                    models.CharField(
+                        choices=[("FULL", "Full Day"), ("HALF", "Half Day")],
+                        default="FULL",
+                        max_length=4,
+                    ),
+                ),
+                (
+                    "supporting_document",
+                    models.FileField(
+                        blank=True, null=True, upload_to="leave_documents/"
+                    ),
+                ),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'ordering': ['-created_at'],
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='EmergencyContact',
+            name="EmergencyContact",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(help_text='Full name of emergency contact', max_length=100)),
-                ('phone_number', models.CharField(help_text='Contact phone number', max_length=15)),
-                ('relationship', models.CharField(help_text='Relationship to employee (e.g., Spouse, Parent, Sibling)', max_length=50)),
-                ('is_primary', models.BooleanField(default=False, help_text='Primary emergency contact')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='emergency_contacts', to='employees.employee')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "name",
+                    models.CharField(
+                        help_text="Full name of emergency contact", max_length=100
+                    ),
+                ),
+                (
+                    "phone_number",
+                    models.CharField(help_text="Contact phone number", max_length=15),
+                ),
+                (
+                    "relationship",
+                    models.CharField(
+                        help_text="Relationship to employee (e.g., Spouse, Parent, Sibling)",
+                        max_length=50,
+                    ),
+                ),
+                (
+                    "is_primary",
+                    models.BooleanField(
+                        default=False, help_text="Primary emergency contact"
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "employee",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="emergency_contacts",
+                        to="employees.employee",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Emergency Contact',
-                'verbose_name_plural': 'Emergency Contacts',
-                'ordering': ['-is_primary', 'created_at'],
+                "verbose_name": "Emergency Contact",
+                "verbose_name_plural": "Emergency Contacts",
+                "ordering": ["-is_primary", "created_at"],
             },
         ),
         migrations.SeparateDatabaseAndState(
             state_operations=[
                 migrations.AddField(
-                    model_name='leavebalance',
-                    name='earned_leave_allocated',
-                    field=models.FloatField(default=12.0, help_text='Total EL allocated per year'),
+                    model_name="leavebalance",
+                    name="earned_leave_allocated",
+                    field=models.FloatField(
+                        default=12.0, help_text="Total EL allocated per year"
+                    ),
                 ),
             ],
         ),
         migrations.AlterField(
-            model_name='leaverequest',
-            name='leave_type',
-            field=models.CharField(choices=[('CL', 'Casual Leave'), ('SL', 'Sick Leave'), ('EL', 'Earned Leave'), ('CO', 'Comp Off'), ('UL', 'Unpaid Leave (LOP)'), ('OD', 'On Duty'), ('OT', 'Others')], max_length=2),
+            model_name="leaverequest",
+            name="leave_type",
+            field=models.CharField(
+                choices=[
+                    ("CL", "Casual Leave"),
+                    ("SL", "Sick Leave"),
+                    ("EL", "Earned Leave"),
+                    ("CO", "Comp Off"),
+                    ("UL", "Unpaid Leave (LOP)"),
+                    ("OD", "On Duty"),
+                    ("OT", "Others"),
+                ],
+                max_length=2,
+            ),
         ),
         SafeAddField(
-            model_name='attendance',
-            name='user_timezone',
-            field=models.CharField(default='Asia/Kolkata', help_text="User's timezone when attendance was recorded", max_length=50),
+            model_name="attendance",
+            name="user_timezone",
+            field=models.CharField(
+                default="Asia/Kolkata",
+                help_text="User's timezone when attendance was recorded",
+                max_length=50,
+            ),
         ),
         migrations.SeparateDatabaseAndState(
             database_operations=[
                 migrations.RunSQL(
                     sql="\n                    -- Add employee_id column if not exists\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS employee_id INTEGER;\n                    \n                    -- Add date column if not exists\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS date DATE;\n                    \n                    -- Populate employee_id and date from attendance FK\n                    UPDATE employees_attendancesession AS s\n                    SET employee_id = a.employee_id, date = a.date\n                    FROM employees_attendance AS a\n                    WHERE s.attendance_id = a.id AND s.employee_id IS NULL;\n                    \n                    -- Add location coordinate columns\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS clock_in_latitude DECIMAL(10,7);\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS clock_in_longitude DECIMAL(10,7);\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS clock_out_latitude DECIMAL(10,7);\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS clock_out_longitude DECIMAL(10,7);\n                    \n                    -- Add new boolean columns\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS location_validated BOOLEAN DEFAULT FALSE;\n                    \n                    -- Add duration_minutes (convert from duration_hours if exists)\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS duration_minutes INTEGER DEFAULT 0;\n                    \n                    -- Convert duration_hours to duration_minutes if duration_hours exists\n                    DO $$\n                    BEGIN\n                        IF EXISTS (\n                            SELECT 1 FROM information_schema.columns \n                            WHERE table_name = 'employees_attendancesession' AND column_name = 'duration_hours'\n                        ) THEN\n                            UPDATE employees_attendancesession \n                            SET duration_minutes = COALESCE(ROUND(duration_hours * 60)::INTEGER, 0)\n                            WHERE duration_minutes = 0 OR duration_minutes IS NULL;\n                        END IF;\n                    END $$;\n                    \n                    -- Add updated_at column\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();\n                    \n                    -- Update session_type values to match new choices\n                    UPDATE employees_attendancesession \n                    SET session_type = 'WEB' \n                    WHERE session_type NOT IN ('WEB', 'REMOTE');\n                    \n                    -- Alter session_type column size if needed\n                    ALTER TABLE employees_attendancesession \n                    ALTER COLUMN session_type TYPE VARCHAR(50);\n                    \n                    -- Drop old columns that are no longer needed\n                    ALTER TABLE employees_attendancesession \n                    DROP COLUMN IF EXISTS attendance_id CASCADE;\n                    ALTER TABLE employees_attendancesession \n                    DROP COLUMN IF EXISTS location_in CASCADE;\n                    ALTER TABLE employees_attendancesession \n                    DROP COLUMN IF EXISTS location_out CASCADE;\n                    ALTER TABLE employees_attendancesession \n                    DROP COLUMN IF EXISTS duration_hours CASCADE;\n                    ALTER TABLE employees_attendancesession \n                    DROP COLUMN IF EXISTS user_timezone CASCADE;\n                    \n                    -- Add foreign key constraint for employee\n                    DO $$\n                    BEGIN\n                        IF NOT EXISTS (\n                            SELECT 1 FROM information_schema.table_constraints \n                            WHERE constraint_name = 'employees_attendancesession_employee_id_fk' \n                            AND table_name = 'employees_attendancesession'\n                        ) THEN\n                            ALTER TABLE employees_attendancesession \n                            ADD CONSTRAINT employees_attendancesession_employee_id_fk \n                            FOREIGN KEY (employee_id) REFERENCES employees_employee(id) ON DELETE CASCADE;\n                        END IF;\n                    END $$;\n                    \n                    -- Add NOT NULL constraint to employee_id (only for rows that have valid data)\n                    DELETE FROM employees_attendancesession WHERE employee_id IS NULL;\n                    ALTER TABLE employees_attendancesession \n                    ALTER COLUMN employee_id SET NOT NULL;\n                    \n                    -- Add NOT NULL constraint to date\n                    ALTER TABLE employees_attendancesession \n                    ALTER COLUMN date SET NOT NULL;\n                    \n                    -- Drop old unique constraint and add new one\n                    DO $$\n                    DECLARE\n                        constraint_rec RECORD;\n                    BEGIN\n                        FOR constraint_rec IN \n                            SELECT constraint_name FROM information_schema.table_constraints \n                            WHERE table_name = 'employees_attendancesession' AND constraint_type = 'UNIQUE'\n                        LOOP\n                            EXECUTE 'ALTER TABLE employees_attendancesession DROP CONSTRAINT IF EXISTS ' || constraint_rec.constraint_name;\n                        END LOOP;\n                    END $$;\n                    \n                    -- Create new unique constraint\n                    DO $$\n                    BEGIN\n                        IF NOT EXISTS (\n                            SELECT 1 FROM information_schema.table_constraints \n                            WHERE constraint_name = 'employees_attendancesession_employee_date_session_unique' \n                            AND table_name = 'employees_attendancesession'\n                        ) THEN\n                            ALTER TABLE employees_attendancesession \n                            ADD CONSTRAINT employees_attendancesession_employee_date_session_unique \n                            UNIQUE (employee_id, date, session_number);\n                        END IF;\n                    END $$;\n                    ",
-                    reverse_sql='',
+                    reverse_sql="",
                 ),
             ],
             state_operations=[
                 migrations.CreateModel(
-                    name='AttendanceSession',
+                    name="AttendanceSession",
                     fields=[
-                        ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                        ('session_number', models.IntegerField(help_text='Session number for the day (1, 2, 3)')),
-                        ('clock_in', models.DateTimeField()),
-                        ('clock_out', models.DateTimeField(blank=True, null=True)),
-                        ('clock_in_latitude', models.DecimalField(blank=True, decimal_places=7, max_digits=10, null=True)),
-                        ('clock_in_longitude', models.DecimalField(blank=True, decimal_places=7, max_digits=10, null=True)),
-                        ('clock_out_latitude', models.DecimalField(blank=True, decimal_places=7, max_digits=10, null=True)),
-                        ('clock_out_longitude', models.DecimalField(blank=True, decimal_places=7, max_digits=10, null=True)),
-                        ('session_type', models.CharField(choices=[('WEB', 'Web/Office'), ('REMOTE', 'Remote/WFH')], max_length=50)),
-                        ('is_active', models.BooleanField(default=True)),
-                        ('location_validated', models.BooleanField(default=False)),
-                        ('duration_minutes', models.IntegerField(default=0, help_text='Duration of this session in minutes')),
-                        ('created_at', models.DateTimeField(auto_now_add=True)),
-                        ('updated_at', models.DateTimeField(auto_now=True)),
-                        ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='attendance_sessions', to='employees.employee')),
-                        ('date', models.DateField()),
+                        (
+                            "id",
+                            models.BigAutoField(
+                                auto_created=True,
+                                primary_key=True,
+                                serialize=False,
+                                verbose_name="ID",
+                            ),
+                        ),
+                        (
+                            "session_number",
+                            models.IntegerField(
+                                help_text="Session number for the day (1, 2, 3)"
+                            ),
+                        ),
+                        ("clock_in", models.DateTimeField()),
+                        ("clock_out", models.DateTimeField(blank=True, null=True)),
+                        (
+                            "clock_in_latitude",
+                            models.DecimalField(
+                                blank=True, decimal_places=7, max_digits=10, null=True
+                            ),
+                        ),
+                        (
+                            "clock_in_longitude",
+                            models.DecimalField(
+                                blank=True, decimal_places=7, max_digits=10, null=True
+                            ),
+                        ),
+                        (
+                            "clock_out_latitude",
+                            models.DecimalField(
+                                blank=True, decimal_places=7, max_digits=10, null=True
+                            ),
+                        ),
+                        (
+                            "clock_out_longitude",
+                            models.DecimalField(
+                                blank=True, decimal_places=7, max_digits=10, null=True
+                            ),
+                        ),
+                        (
+                            "session_type",
+                            models.CharField(
+                                choices=[
+                                    ("WEB", "Web/Office"),
+                                    ("REMOTE", "Remote/WFH"),
+                                ],
+                                max_length=50,
+                            ),
+                        ),
+                        ("is_active", models.BooleanField(default=True)),
+                        ("location_validated", models.BooleanField(default=False)),
+                        (
+                            "duration_minutes",
+                            models.IntegerField(
+                                default=0,
+                                help_text="Duration of this session in minutes",
+                            ),
+                        ),
+                        ("created_at", models.DateTimeField(auto_now_add=True)),
+                        ("updated_at", models.DateTimeField(auto_now=True)),
+                        (
+                            "employee",
+                            models.ForeignKey(
+                                on_delete=django.db.models.deletion.CASCADE,
+                                related_name="attendance_sessions",
+                                to="employees.employee",
+                            ),
+                        ),
+                        ("date", models.DateField()),
                     ],
                     options={
-                        'db_table': 'employees_attendancesession',
-                        'ordering': ['date', 'session_number'],
-                        'unique_together': {('employee', 'date', 'session_number')},
+                        "db_table": "employees_attendancesession",
+                        "ordering": ["date", "session_number"],
+                        "unique_together": {("employee", "date", "session_number")},
                     },
                 ),
             ],
         ),
         migrations.RunSQL(
-            sql='\n            -- Add clock_in_attempts column\n            ALTER TABLE employees_attendance \n            ADD COLUMN IF NOT EXISTS clock_in_attempts INTEGER DEFAULT 0;\n            \n            -- Add daily_clock_count column\n            ALTER TABLE employees_attendance \n            ADD COLUMN IF NOT EXISTS daily_clock_count INTEGER DEFAULT 0;\n            \n            -- Add max_daily_clocks column\n            ALTER TABLE employees_attendance \n            ADD COLUMN IF NOT EXISTS max_daily_clocks INTEGER DEFAULT 3;\n            \n            -- Remove old columns no longer in model\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS user_timezone CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS current_session_type CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS daily_sessions_count CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS max_daily_sessions CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS total_break_hours CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS total_working_hours CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS local_clock_in_time CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS local_clock_out_time CASCADE;\n            ',
-            reverse_sql='',
+            sql="\n            -- Add clock_in_attempts column\n            ALTER TABLE employees_attendance \n            ADD COLUMN IF NOT EXISTS clock_in_attempts INTEGER DEFAULT 0;\n            \n            -- Add daily_clock_count column\n            ALTER TABLE employees_attendance \n            ADD COLUMN IF NOT EXISTS daily_clock_count INTEGER DEFAULT 0;\n            \n            -- Add max_daily_clocks column\n            ALTER TABLE employees_attendance \n            ADD COLUMN IF NOT EXISTS max_daily_clocks INTEGER DEFAULT 3;\n            \n            -- Remove old columns no longer in model\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS user_timezone CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS current_session_type CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS daily_sessions_count CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS max_daily_sessions CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS total_break_hours CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS total_working_hours CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS local_clock_in_time CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS local_clock_out_time CASCADE;\n            ",
+            reverse_sql="",
         ),
         migrations.CreateModel(
-            name='SessionLocationLog',
+            name="SessionLocationLog",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('timestamp', models.DateTimeField(auto_now_add=True)),
-                ('latitude', models.DecimalField(decimal_places=7, max_digits=10)),
-                ('longitude', models.DecimalField(decimal_places=7, max_digits=10)),
-                ('accuracy', models.FloatField(blank=True, help_text='GPS accuracy in meters', null=True)),
-                ('session', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='location_logs', to='employees.attendancesession')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("timestamp", models.DateTimeField(auto_now_add=True)),
+                ("latitude", models.DecimalField(decimal_places=7, max_digits=10)),
+                ("longitude", models.DecimalField(decimal_places=7, max_digits=10)),
+                (
+                    "accuracy",
+                    models.FloatField(
+                        blank=True, help_text="GPS accuracy in meters", null=True
+                    ),
+                ),
+                (
+                    "session",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="location_logs",
+                        to="employees.attendancesession",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-timestamp'],
+                "ordering": ["-timestamp"],
             },
         ),
     ]

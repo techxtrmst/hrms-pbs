@@ -200,7 +200,7 @@ class JobDetailsForm(forms.ModelForm):
 
             if "initial" in kwargs:
                 initial = kwargs["initial"]
-                
+
                 # Handle designation - can be ID or name
                 if initial.get("designation_id"):
                     try:

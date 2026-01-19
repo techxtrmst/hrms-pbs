@@ -12,9 +12,9 @@ def reset_staging_migration_state(apps, schema_editor):
     3. We need to ensure Django's state matches the actual database
     """
     from django.db import connection
-    
+
     print("🔄 Resetting migration state for staging deployment...")
-    
+
     with connection.cursor() as cursor:
         # Get current table structure
         cursor.execute("""
@@ -23,25 +23,27 @@ def reset_staging_migration_state(apps, schema_editor):
             WHERE table_name='employees_attendance'
             ORDER BY ordinal_position
         """)
-        
+
         columns = cursor.fetchall()
         column_names = [col[0] for col in columns]
-        
+
         print(f"📋 Current attendance table columns: {len(column_names)}")
         for col in columns:
-            print(f"  - {col[0]} ({col[1]}) {'NULL' if col[2] == 'YES' else 'NOT NULL'}")
-        
+            print(
+                f"  - {col[0]} ({col[1]}) {'NULL' if col[2] == 'YES' else 'NOT NULL'}"
+            )
+
         # Ensure all required columns exist with correct defaults
         required_columns = {
-            'current_session_type': "VARCHAR(20) NULL",
-            'daily_sessions_count': "INTEGER DEFAULT 0 NOT NULL",
-            'max_daily_sessions': "INTEGER DEFAULT 3 NOT NULL", 
-            'total_working_hours': "DECIMAL(5,2) DEFAULT 0.00 NOT NULL",
-            'location_tracking_active': "BOOLEAN DEFAULT FALSE NOT NULL",
-            'location_tracking_end_time': "TIMESTAMP NULL",
-            'user_timezone': "VARCHAR(50) DEFAULT 'Asia/Kolkata' NOT NULL"
+            "current_session_type": "VARCHAR(20) NULL",
+            "daily_sessions_count": "INTEGER DEFAULT 0 NOT NULL",
+            "max_daily_sessions": "INTEGER DEFAULT 3 NOT NULL",
+            "total_working_hours": "DECIMAL(5,2) DEFAULT 0.00 NOT NULL",
+            "location_tracking_active": "BOOLEAN DEFAULT FALSE NOT NULL",
+            "location_tracking_end_time": "TIMESTAMP NULL",
+            "user_timezone": "VARCHAR(50) DEFAULT 'Asia/Kolkata' NOT NULL",
         }
-        
+
         for col_name, col_definition in required_columns.items():
             if col_name not in column_names:
                 print(f"➕ Adding missing column: {col_name}")
@@ -51,7 +53,7 @@ def reset_staging_migration_state(apps, schema_editor):
                 """)
             else:
                 print(f"✅ Column exists: {col_name}")
-        
+
         # Update max_daily_sessions to 3 for existing records
         cursor.execute("""
             UPDATE employees_attendance 
@@ -61,7 +63,7 @@ def reset_staging_migration_state(apps, schema_editor):
         updated_count = cursor.rowcount
         if updated_count > 0:
             print(f"📝 Updated {updated_count} records to max_daily_sessions=3")
-        
+
         # Ensure user_timezone has default value
         cursor.execute("""
             UPDATE employees_attendance 
@@ -71,7 +73,7 @@ def reset_staging_migration_state(apps, schema_editor):
         timezone_updated = cursor.rowcount
         if timezone_updated > 0:
             print(f"🌍 Set timezone for {timezone_updated} records")
-        
+
         print("✅ Staging database state reset completed successfully")
 
 
@@ -84,9 +86,8 @@ def reverse_staging_reset(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('employees', '0009_attendance_total_working_hours_and_more'),
+        ("employees", "0009_attendance_total_working_hours_and_more"),
     ]
 
     operations = [

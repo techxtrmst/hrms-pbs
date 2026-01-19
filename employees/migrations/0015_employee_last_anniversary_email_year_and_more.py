@@ -4,20 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('employees', '0014_leaverequest_approval_type'),
+        ("employees", "0014_leaverequest_approval_type"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='employee',
-            name='last_anniversary_email_year',
-            field=models.IntegerField(blank=True, help_text='Year of last sent anniversary email', null=True),
+            model_name="employee",
+            name="last_anniversary_email_year",
+            field=models.IntegerField(
+                blank=True, help_text="Year of last sent anniversary email", null=True
+            ),
         ),
         migrations.AddField(
-            model_name='employee',
-            name='last_birthday_email_year',
-            field=models.IntegerField(blank=True, help_text='Year of last sent birthday email', null=True),
+            model_name="employee",
+            name="last_birthday_email_year",
+            field=models.IntegerField(
+                blank=True, help_text="Year of last sent birthday email", null=True
+            ),
         ),
     ]

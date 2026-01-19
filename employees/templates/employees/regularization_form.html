@@ -276,8 +276,11 @@
                         {% endif %}
                     </div>
 
-                    <button type="submit" class="btn-submit-modern mt-3">
-                        Submit Request <i class="fas fa-arrow-right ms-2 opacity-75"></i>
+                    <button type="submit" class="btn-submit-modern mt-3" id="submitBtn">
+                        <span id="submitText">Submit Request <i class="fas fa-arrow-right ms-2 opacity-75"></i></span>
+                        <span id="loadingText" style="display: none;">
+                            <i class="fas fa-spinner fa-spin me-2"></i>Submitting...
+                        </span>
                     </button>
 
                     <p class="text-center text-muted small mt-4 mb-0">
@@ -369,6 +372,28 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Prevent double submission
+        const form = document.getElementById('regForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const submitText = document.getElementById('submitText');
+        const loadingText = document.getElementById('loadingText');
+        let isSubmitting = false;
+
+        form.addEventListener('submit', function(e) {
+            if (isSubmitting) {
+                e.preventDefault();
+                return false;
+            }
+
+            // Disable button and show loading state
+            isSubmitting = true;
+            submitBtn.disabled = true;
+            submitText.style.display = 'none';
+            loadingText.style.display = 'inline';
+            submitBtn.style.opacity = '0.7';
+            submitBtn.style.cursor = 'not-allowed';
+        });
+
         // Add specific classes to Django rendered form inputs
         const inputs = document.querySelectorAll('#regForm input, #regForm textarea');
         inputs.forEach(input => {

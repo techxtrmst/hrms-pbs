@@ -182,30 +182,30 @@ class CompanyIsolationMiddleware:
 class LoggingMiddleware:
     """
     Middleware for request/response logging using Loguru.
-    
+
     Logs:
     - Request start with method, path, user
     - Response with status code and duration
     - Provides request_id for tracing
     """
-    
+
     def __init__(self, get_response):
         self.get_response = get_response
-    
+
     def __call__(self, request):
         # Generate unique request ID
         request_id = str(uuid.uuid4())[:8]
         request.request_id = request_id
-        
+
         # Skip logging for static files and health checks
         if self._should_skip_logging(request.path):
             return self.get_response(request)
-        
+
         # Get user identifier
         user = "anonymous"
-        if hasattr(request, 'user') and request.user.is_authenticated:
+        if hasattr(request, "user") and request.user.is_authenticated:
             user = request.user.email or str(request.user.id)
-        
+
         # Bind context to logger for this request
         with logger.contextualize(
             request_id=request_id,
@@ -214,13 +214,13 @@ class LoggingMiddleware:
             path=request.path,
         ):
             start_time = time.time()
-            
+
             logger.debug(
                 "Request started",
                 client_ip=self._get_client_ip(request),
                 user_agent=request.META.get("HTTP_USER_AGENT", "")[:100],
             )
-            
+
             try:
                 response = self.get_response(request)
             except Exception as e:
@@ -230,13 +230,19 @@ class LoggingMiddleware:
                     exception_type=type(e).__name__,
                 )
                 raise
-            
+
             # Calculate duration
             duration = (time.time() - start_time) * 1000  # ms
-            
+
             # Log access with status
-            log_level = "info" if response.status_code < 400 else "warning" if response.status_code < 500 else "error"
-            
+            log_level = (
+                "info"
+                if response.status_code < 400
+                else "warning"
+                if response.status_code < 500
+                else "error"
+            )
+
             # Log access entry
             logger.bind(
                 access_log=True,
@@ -246,9 +252,9 @@ class LoggingMiddleware:
                 log_level.upper(),
                 f"{request.method} {request.path} - {response.status_code}",
             )
-            
+
             return response
-    
+
     def _should_skip_logging(self, path: str) -> bool:
         """Check if path should skip logging."""
         skip_prefixes = [
@@ -259,7 +265,7 @@ class LoggingMiddleware:
             "/__debug__/",
         ]
         return any(path.startswith(prefix) for prefix in skip_prefixes)
-    
+
     def _get_client_ip(self, request) -> str:
         """Extract client IP from request headers."""
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")

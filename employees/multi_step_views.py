@@ -89,14 +89,17 @@ def add_employee_step1(request):
         # Calculate next sequence based on highest existing badge ID number
         try:
             # Get all badge IDs for the company
-            existing_ids = Employee.objects.filter(company=company).values_list('badge_id', flat=True)
-            
+            existing_ids = Employee.objects.filter(company=company).values_list(
+                "badge_id", flat=True
+            )
+
             max_number = 0
             import re
+
             for bid in existing_ids:
                 if bid:
                     # Extract all matches of digits
-                    numbers = re.findall(r'\d+', bid)
+                    numbers = re.findall(r"\d+", bid)
                     if numbers:
                         # Take the last group of digits as the ID number (usually at the end)
                         try:
@@ -105,7 +108,7 @@ def add_employee_step1(request):
                                 max_number = num
                         except ValueError:
                             continue
-            
+
             next_sequence_placeholder = f"{max_number + 1:03d}"
         except Exception:
             # Fallback to 001 if any error occurs
@@ -129,11 +132,11 @@ def add_employee_step1(request):
         request,
         "employees/add_employee_step1.html",
         {
-            "form": form, 
-            "step": 1, 
+            "form": form,
+            "step": 1,
             "company_prefix": company_prefix,
             "next_sequence": next_sequence_placeholder,
-            "email_placeholder": email_placeholder
+            "email_placeholder": email_placeholder,
         },
     )
 
@@ -289,8 +292,6 @@ def add_employee_step3(request):
                 uan=finance_data.get("uan"),
                 pf_enabled=finance_data.get("pf_enabled", False),
             )
-
-
 
             # Create Emergency Contacts
             emergency_contacts = request.session.get("employee_emergency_contacts", [])

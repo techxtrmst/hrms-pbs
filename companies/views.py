@@ -52,7 +52,9 @@ def announcement_configuration(request):
                     image=image,
                     is_active=is_active,
                 )
-                messages.success(request, f"Announcement '{title}' created successfully!")
+                messages.success(
+                    request, f"Announcement '{title}' created successfully!"
+                )
             else:
                 messages.error(request, "Title and content are required.")
 
@@ -71,10 +73,10 @@ def announcement_configuration(request):
                 else None
             )
             announcement.is_active = request.POST.get("is_active") == "on"
-            
+
             if "image" in request.FILES:
                 announcement.image = request.FILES["image"]
-                
+
             announcement.save()
 
             messages.success(
@@ -93,9 +95,7 @@ def announcement_configuration(request):
         return redirect("announcement_configuration")
 
     # Get all announcements for this company
-    announcements = Announcement.objects.filter(company=company).order_by(
-        "-created_at"
-    )
+    announcements = Announcement.objects.filter(company=company).order_by("-created_at")
 
     return render(
         request,
@@ -106,7 +106,6 @@ def announcement_configuration(request):
             "company": company,
         },
     )
-
 
 
 @login_required
@@ -285,18 +284,25 @@ def quick_add_department(request):
 
             # Get Company
             company = None
-            
+
             if company_id:
                 from .models import Company
+
                 try:
                     # Allow if superuser or if ID matches user's company
                     target_company = Company.objects.get(id=company_id)
                     if request.user.is_superuser:
-                         company = target_company
-                    elif hasattr(request.user, "company") and request.user.company == target_company:
-                         company = target_company
-                    elif request.user.employee_profile and request.user.employee_profile.company == target_company:
-                         company = target_company
+                        company = target_company
+                    elif (
+                        hasattr(request.user, "company")
+                        and request.user.company == target_company
+                    ):
+                        company = target_company
+                    elif (
+                        request.user.employee_profile
+                        and request.user.employee_profile.company == target_company
+                    ):
+                        company = target_company
                 except Company.DoesNotExist:
                     pass
 
@@ -305,7 +311,8 @@ def quick_add_department(request):
                 if hasattr(request.user, "company") and request.user.company:
                     company = request.user.company
                 elif (
-                    request.user.employee_profile and request.user.employee_profile.company
+                    request.user.employee_profile
+                    and request.user.employee_profile.company
                 ):
                     company = request.user.employee_profile.company
 
@@ -352,17 +359,24 @@ def quick_add_designation(request):
 
             # Get Company
             company = None
-            
+
             if company_id:
                 from .models import Company
+
                 try:
                     target_company = Company.objects.get(id=company_id)
                     if request.user.is_superuser:
-                         company = target_company
-                    elif hasattr(request.user, "company") and request.user.company == target_company:
-                         company = target_company
-                    elif request.user.employee_profile and request.user.employee_profile.company == target_company:
-                         company = target_company
+                        company = target_company
+                    elif (
+                        hasattr(request.user, "company")
+                        and request.user.company == target_company
+                    ):
+                        company = target_company
+                    elif (
+                        request.user.employee_profile
+                        and request.user.employee_profile.company == target_company
+                    ):
+                        company = target_company
                 except Company.DoesNotExist:
                     pass
 
@@ -370,7 +384,8 @@ def quick_add_designation(request):
                 if hasattr(request.user, "company") and request.user.company:
                     company = request.user.company
                 elif (
-                    request.user.employee_profile and request.user.employee_profile.company
+                    request.user.employee_profile
+                    and request.user.employee_profile.company
                 ):
                     company = request.user.employee_profile.company
 
@@ -427,17 +442,24 @@ def quick_add_shift(request):
 
             # Get Company
             company = None
-            
+
             if company_id:
                 from .models import Company
+
                 try:
                     target_company = Company.objects.get(id=company_id)
                     if request.user.is_superuser:
-                         company = target_company
-                    elif hasattr(request.user, "company") and request.user.company == target_company:
-                         company = target_company
-                    elif request.user.employee_profile and request.user.employee_profile.company == target_company:
-                         company = target_company
+                        company = target_company
+                    elif (
+                        hasattr(request.user, "company")
+                        and request.user.company == target_company
+                    ):
+                        company = target_company
+                    elif (
+                        request.user.employee_profile
+                        and request.user.employee_profile.company == target_company
+                    ):
+                        company = target_company
                 except Company.DoesNotExist:
                     pass
 
@@ -445,7 +467,8 @@ def quick_add_shift(request):
                 if hasattr(request.user, "company") and request.user.company:
                     company = request.user.company
                 elif (
-                    request.user.employee_profile and request.user.employee_profile.company
+                    request.user.employee_profile
+                    and request.user.employee_profile.company
                 ):
                     company = request.user.employee_profile.company
 

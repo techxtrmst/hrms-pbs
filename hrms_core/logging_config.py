@@ -19,7 +19,7 @@ from loguru import logger
 def configure_logging():
     """
     Configure Loguru for the HRMS application.
-    
+
     Sets up:
     - Console handler with colored output (development)
     - File handlers with rotation and compression
@@ -28,22 +28,22 @@ def configure_logging():
     """
     # Remove default handler
     logger.remove()
-    
+
     # Get settings from environment
     debug = os.environ.get("DEBUG", "True").lower() == "true"
     log_level = os.environ.get("LOG_LEVEL", "DEBUG" if debug else "INFO")
-    
+
     # Log directory - use _logs in project root for Docker compatibility
     base_dir = Path(__file__).resolve().parent.parent
     log_dir = Path(os.environ.get("LOG_DIR", base_dir / "_logs"))
     log_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Common format for file logs
     file_format = (
         "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | "
         "{name}:{function}:{line} | {extra[request_id]} | {message}"
     )
-    
+
     # Console handler - colored output for development
     if debug:
         logger.add(
@@ -67,7 +67,7 @@ def configure_logging():
             level="WARNING",
             colorize=False,
         )
-    
+
     # Main application log - rotates at 50MB, keeps 10 days
     logger.add(
         log_dir / "hrms.log",
@@ -80,7 +80,7 @@ def configure_logging():
         backtrace=True,
         diagnose=not debug,  # Only in production to avoid sensitive data exposure in dev
     )
-    
+
     # Error-specific log with full backtrace
     logger.add(
         log_dir / "errors.log",
@@ -93,7 +93,7 @@ def configure_logging():
         backtrace=True,
         diagnose=True,
     )
-    
+
     # Structured JSON log for production analysis and log aggregation
     logger.add(
         log_dir / "hrms_structured.json",
@@ -104,7 +104,7 @@ def configure_logging():
         compression="zip",
         enqueue=True,
     )
-    
+
     # Access/audit log - separate file for request tracking
     logger.add(
         log_dir / "access.log",
@@ -116,7 +116,7 @@ def configure_logging():
         enqueue=True,
         filter=lambda record: record["extra"].get("access_log", False),
     )
-    
+
     # Configure default extra fields
     logger.configure(
         extra={
@@ -129,19 +129,21 @@ def configure_logging():
             "access_log": False,
         }
     )
-    
-    logger.info("Logging configured successfully", log_level=log_level, log_dir=str(log_dir))
-    
+
+    logger.info(
+        "Logging configured successfully", log_level=log_level, log_dir=str(log_dir)
+    )
+
     return logger
 
 
 def get_logger(name: str = None):
     """
     Get a logger instance with optional name binding.
-    
+
     Args:
         name: Optional module name to bind to the logger
-        
+
     Returns:
         Logger instance with name bound
     """
@@ -154,23 +156,23 @@ def get_logger(name: str = None):
 class InterceptHandler(logging.Handler):
     """
     Handler to intercept standard logging calls and redirect to Loguru.
-    
+
     This ensures all Django internal logging also goes through Loguru.
     """
-    
+
     def emit(self, record):
         # Get corresponding Loguru level
         try:
             level = logger.level(record.levelname).name
         except ValueError:
             level = record.levelno
-        
+
         # Find caller from where originated the logged message
         frame, depth = sys._getframe(6), 6
         while frame and frame.f_code.co_filename == logging.__file__:
             frame = frame.f_back
             depth += 1
-        
+
         logger.opt(depth=depth, exception=record.exc_info).log(
             level, record.getMessage()
         )
@@ -179,13 +181,13 @@ class InterceptHandler(logging.Handler):
 def setup_django_logging():
     """
     Configure Django to use Loguru for all logging.
-    
+
     This intercepts Django's standard logging and routes it through Loguru.
     """
-    
+
     # Intercept all standard logging
     logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
-    
+
     # Suppress noisy loggers
     for logger_name in [
         "django.server",

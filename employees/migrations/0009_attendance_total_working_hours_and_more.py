@@ -5,9 +5,8 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('employees', '0008_fix_duplicate_column_migration'),
+        ("employees", "0008_fix_duplicate_column_migration"),
     ]
 
     operations = [
@@ -16,14 +15,25 @@ class Migration(migrations.Migration):
         migrations.SeparateDatabaseAndState(
             state_operations=[
                 migrations.AddField(
-                    model_name='attendance',
-                    name='total_working_hours',
-                    field=models.DecimalField(decimal_places=2, default=0.0, help_text='Total working hours for the day', max_digits=5),
+                    model_name="attendance",
+                    name="total_working_hours",
+                    field=models.DecimalField(
+                        decimal_places=2,
+                        default=0.0,
+                        help_text="Total working hours for the day",
+                        max_digits=5,
+                    ),
                 ),
                 migrations.AlterField(
-                    model_name='attendance',
-                    name='current_session_type',
-                    field=models.CharField(blank=True, choices=[('WEB', 'Web'), ('REMOTE', 'Remote')], help_text='Current session type (WEB/REMOTE)', max_length=20, null=True),
+                    model_name="attendance",
+                    name="current_session_type",
+                    field=models.CharField(
+                        blank=True,
+                        choices=[("WEB", "Web"), ("REMOTE", "Remote")],
+                        help_text="Current session type (WEB/REMOTE)",
+                        max_length=20,
+                        null=True,
+                    ),
                 ),
             ],
             database_operations=[

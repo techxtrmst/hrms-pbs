@@ -320,7 +320,12 @@
 
             <div class="leave-footer">
                 <a href="{% url 'employee_profile' %}" class="btn-cancel">Cancel</a>
-                <button type="submit" class="btn-submit" id="submitBtn">Request Leave</button>
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <span id="submitText">Request Leave</span>
+                    <span id="loadingText" style="display: none;">
+                        <i class="fas fa-spinner fa-spin me-1"></i>Submitting...
+                    </span>
+                </button>
                 <input type="hidden" name="confirm_lop" id="confirmLopInput" value="false">
             </div>
         </form>
@@ -484,6 +489,11 @@
         // Initial validation
         setTimeout(validateLeaveBalance, 500);
 
+        // Prevent double submission
+        let isSubmitting = false;
+        const submitText = document.getElementById('submitText');
+        const loadingText = document.getElementById('loadingText');
+
         // Prevent form submission if LOP confirmation is required
         document.getElementById('leaveForm').addEventListener('submit', function(e) {
             const confirmLopValue = document.getElementById('confirmLopInput').value;
@@ -493,6 +503,20 @@
                 alert('Please confirm the LOP (Loss of Pay) to proceed with your leave application.');
                 return false;
             }
+
+            // Prevent double submission
+            if (isSubmitting) {
+                e.preventDefault();
+                return false;
+            }
+
+            // Disable button and show loading state
+            isSubmitting = true;
+            submitBtn.disabled = true;
+            submitText.style.display = 'none';
+            loadingText.style.display = 'inline';
+            submitBtn.style.opacity = '0.7';
+            submitBtn.style.cursor = 'not-allowed';
         });
     });
 

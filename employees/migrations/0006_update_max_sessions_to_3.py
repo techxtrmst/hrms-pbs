@@ -4,20 +4,21 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('employees', '0005_merge_20260113_1145'),
+        ("employees", "0005_merge_20260113_1145"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='attendance',
-            name='daily_sessions_count',
-            field=models.IntegerField(default=0, help_text='Number of sessions today'),
+            model_name="attendance",
+            name="daily_sessions_count",
+            field=models.IntegerField(default=0, help_text="Number of sessions today"),
         ),
         migrations.AlterField(
-            model_name='attendance',
-            name='max_daily_sessions',
-            field=models.IntegerField(default=3, help_text='Maximum allowed sessions per day'),
+            model_name="attendance",
+            name="max_daily_sessions",
+            field=models.IntegerField(
+                default=3, help_text="Maximum allowed sessions per day"
+            ),
         ),
     ]

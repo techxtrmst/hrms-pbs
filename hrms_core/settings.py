@@ -218,6 +218,7 @@ LOG_DIR = env("LOG_DIR", default=str(BASE_DIR / "_logs"))
 
 # Initialize Loguru logging (only once)
 from hrms_core.logging_config import initialize_logging, setup_django_logging
+
 initialize_logging()
 setup_django_logging()
 

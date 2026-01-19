@@ -21,27 +21,27 @@ _posthog_client = None
 def get_posthog_client():
     """
     Get or create the PostHog client instance.
-    
+
     Returns:
         PostHog client instance or None if not configured
     """
     global _posthog_client
-    
+
     if _posthog_client is not None:
         return _posthog_client
-    
+
     api_key = os.environ.get("POSTHOG_API_KEY")
-    
+
     if not api_key:
         logger.warning("PostHog API key not configured - analytics disabled")
         return None
-    
+
     try:
         from posthog import Posthog
-        
+
         host = os.environ.get("POSTHOG_HOST", "https://us.i.posthog.com")
         debug = os.environ.get("DEBUG", "True").lower() == "true"
-        
+
         _posthog_client = Posthog(
             project_api_key=api_key,
             host=host,
@@ -59,10 +59,10 @@ def get_posthog_client():
             enable_exception_autocapture=True,
             log_captured_exceptions=True,
         )
-        
+
         logger.info("PostHog client initialized successfully", host=host)
         return _posthog_client
-        
+
     except ImportError:
         logger.error("PostHog package not installed")
         return None
@@ -78,7 +78,7 @@ def capture_event(
 ):
     """
     Capture a custom event in PostHog.
-    
+
     Args:
         event_name: Name of the event
         distinct_id: User identifier (optional - uses 'anonymous' if not provided)
@@ -87,7 +87,7 @@ def capture_event(
     client = get_posthog_client()
     if not client:
         return
-    
+
     try:
         client.capture(
             distinct_id=distinct_id or "anonymous",
@@ -105,7 +105,7 @@ def capture_exception(
 ):
     """
     Manually capture an exception in PostHog.
-    
+
     Args:
         exception: The exception to capture
         distinct_id: User identifier (optional)
@@ -114,9 +114,11 @@ def capture_exception(
     client = get_posthog_client()
     if not client:
         # Still log the exception even if PostHog is not available
-        logger.exception("Exception captured (PostHog unavailable)", exception=str(exception))
+        logger.exception(
+            "Exception captured (PostHog unavailable)", exception=str(exception)
+        )
         return
-    
+
     try:
         client.capture_exception(
             exception,
@@ -137,7 +139,7 @@ def identify_user(
 ):
     """
     Identify a user in PostHog by setting their properties.
-    
+
     Args:
         distinct_id: User identifier
         properties: User properties (name, email, company, etc.)
@@ -145,7 +147,7 @@ def identify_user(
     client = get_posthog_client()
     if not client:
         return
-    
+
     try:
         # PostHog Python SDK uses set() to set person properties
         client.set(
@@ -159,12 +161,12 @@ def identify_user(
 def shutdown_posthog():
     """
     Gracefully shutdown PostHog client.
-    
+
     Should be called when the application is shutting down to flush
     any pending events.
     """
     global _posthog_client
-    
+
     if _posthog_client:
         try:
             _posthog_client.shutdown()
@@ -178,46 +180,50 @@ def shutdown_posthog():
 class PostHogMiddleware:
     """
     Django middleware for PostHog integration.
-    
+
     This middleware:
     - Captures all unhandled exceptions and sends them to PostHog
     - Identifies users on each request
     - Tracks request context for exceptions
     """
-    
+
     def __init__(self, get_response):
         self.get_response = get_response
         # Initialize PostHog client on middleware creation
         get_posthog_client()
-    
+
     def __call__(self, request):
         # Add request context for exception capture
         request._posthog_context = self._build_request_context(request)
-        
+
         # Identify user if authenticated
-        if hasattr(request, 'user') and request.user.is_authenticated:
+        if hasattr(request, "user") and request.user.is_authenticated:
             self._identify_request_user(request)
-        
+
         response = self.get_response(request)
         return response
-    
+
     def process_exception(self, request, exception):
         """
         Process unhandled exceptions and send to PostHog.
-        
+
         This is called by Django when an unhandled exception occurs.
         """
         distinct_id = "anonymous"
-        properties = getattr(request, '_posthog_context', {})
-        
-        if hasattr(request, 'user') and request.user.is_authenticated:
+        properties = getattr(request, "_posthog_context", {})
+
+        if hasattr(request, "user") and request.user.is_authenticated:
             distinct_id = str(request.user.id)
-            properties.update({
-                "user_email": request.user.email,
-                "user_role": getattr(request.user, 'role', 'unknown'),
-                "company_id": str(request.user.company_id) if hasattr(request.user, 'company_id') and request.user.company_id else None,
-            })
-        
+            properties.update(
+                {
+                    "user_email": request.user.email,
+                    "user_role": getattr(request.user, "role", "unknown"),
+                    "company_id": str(request.user.company_id)
+                    if hasattr(request.user, "company_id") and request.user.company_id
+                    else None,
+                }
+            )
+
         # Log the exception
         logger.exception(
             "Unhandled exception in request",
@@ -226,17 +232,17 @@ class PostHogMiddleware:
             user=distinct_id,
             exception_type=type(exception).__name__,
         )
-        
+
         # Capture in PostHog
         capture_exception(
             exception,
             distinct_id=distinct_id,
             properties=properties,
         )
-        
+
         # Return None to let Django continue with its normal exception handling
         return None
-    
+
     def _build_request_context(self, request) -> Dict[str, Any]:
         """Build context dict from request for exception properties."""
         return {
@@ -247,22 +253,24 @@ class PostHogMiddleware:
             "ip_address": self._get_client_ip(request),
             "referer": request.META.get("HTTP_REFERER", ""),
         }
-    
+
     def _identify_request_user(self, request):
         """Identify the authenticated user in PostHog."""
         user = request.user
         properties = {
             "email": user.email,
-            "name": user.get_full_name() if hasattr(user, 'get_full_name') else str(user),
-            "role": getattr(user, 'role', 'unknown'),
+            "name": user.get_full_name()
+            if hasattr(user, "get_full_name")
+            else str(user),
+            "role": getattr(user, "role", "unknown"),
         }
-        
-        if hasattr(user, 'company') and user.company:
+
+        if hasattr(user, "company") and user.company:
             properties["company_id"] = str(user.company.id)
             properties["company_name"] = user.company.name
-        
+
         identify_user(str(user.id), properties)
-    
+
     def _get_client_ip(self, request) -> str:
         """Extract client IP from request headers."""
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
@@ -274,16 +282,17 @@ class PostHogMiddleware:
 def track_error(error_type: str = None, reraise: bool = True):
     """
     Decorator to track errors in functions and send to PostHog.
-    
+
     Args:
         error_type: Custom error type label
         reraise: Whether to re-raise the exception after capturing
-        
+
     Example:
         @track_error(error_type="payment_processing")
         def process_payment(amount):
             # ... payment logic
     """
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -305,5 +314,7 @@ def track_error(error_type: str = None, reraise: bool = True):
                 )
                 if reraise:
                     raise
+
         return wrapper
+
     return decorator

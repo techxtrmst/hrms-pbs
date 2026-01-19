@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("employees", "0001_initial"),
     ]
@@ -28,7 +27,9 @@ class Migration(migrations.Migration):
                 migrations.AddField(
                     model_name="attendance",
                     name="daily_sessions_count",
-                    field=models.IntegerField(default=0, help_text="Number of sessions today"),
+                    field=models.IntegerField(
+                        default=0, help_text="Number of sessions today"
+                    ),
                 ),
                 migrations.AddField(
                     model_name="attendance",

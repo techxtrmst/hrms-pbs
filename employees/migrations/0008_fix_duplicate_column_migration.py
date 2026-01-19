@@ -9,7 +9,7 @@ def check_and_add_columns_safely(apps, schema_editor):
     This handles the case where staging DB has columns that migrations think don't exist.
     """
     from django.db import connection
-    
+
     with connection.cursor() as cursor:
         # Check if current_session_type column exists
         cursor.execute("""
@@ -18,7 +18,7 @@ def check_and_add_columns_safely(apps, schema_editor):
             WHERE table_name='employees_attendance' 
             AND column_name='current_session_type'
         """)
-        
+
         if not cursor.fetchone():
             print("Adding current_session_type column...")
             cursor.execute("""
@@ -28,7 +28,7 @@ def check_and_add_columns_safely(apps, schema_editor):
             print("✅ Added current_session_type column")
         else:
             print("✅ current_session_type column already exists, skipping")
-        
+
         # Check if daily_sessions_count column exists
         cursor.execute("""
             SELECT column_name 
@@ -36,7 +36,7 @@ def check_and_add_columns_safely(apps, schema_editor):
             WHERE table_name='employees_attendance' 
             AND column_name='daily_sessions_count'
         """)
-        
+
         if not cursor.fetchone():
             print("Adding daily_sessions_count column...")
             cursor.execute("""
@@ -46,7 +46,7 @@ def check_and_add_columns_safely(apps, schema_editor):
             print("✅ Added daily_sessions_count column")
         else:
             print("✅ daily_sessions_count column already exists, skipping")
-        
+
         # Check if max_daily_sessions column exists
         cursor.execute("""
             SELECT column_name 
@@ -54,7 +54,7 @@ def check_and_add_columns_safely(apps, schema_editor):
             WHERE table_name='employees_attendance' 
             AND column_name='max_daily_sessions'
         """)
-        
+
         if not cursor.fetchone():
             print("Adding max_daily_sessions column...")
             cursor.execute("""
@@ -64,7 +64,7 @@ def check_and_add_columns_safely(apps, schema_editor):
             print("✅ Added max_daily_sessions column")
         else:
             print("✅ max_daily_sessions column already exists, skipping")
-            
+
             # Update existing records to have max 3 sessions
             cursor.execute("""
                 UPDATE employees_attendance 
@@ -73,7 +73,7 @@ def check_and_add_columns_safely(apps, schema_editor):
             """)
             updated_count = cursor.rowcount
             print(f"✅ Updated {updated_count} records to max_daily_sessions=3")
-        
+
         # Check if total_working_hours column exists
         cursor.execute("""
             SELECT column_name 
@@ -81,7 +81,7 @@ def check_and_add_columns_safely(apps, schema_editor):
             WHERE table_name='employees_attendance' 
             AND column_name='total_working_hours'
         """)
-        
+
         if not cursor.fetchone():
             print("Adding total_working_hours column...")
             cursor.execute("""
@@ -102,9 +102,8 @@ def reverse_column_additions(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('employees', '0007_update_existing_max_sessions'),
+        ("employees", "0007_update_existing_max_sessions"),
     ]
 
     operations = [

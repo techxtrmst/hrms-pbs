@@ -4,15 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('employees', '0012_remove_el_co_fields'),
+        ("employees", "0012_remove_el_co_fields"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='leaverequest',
-            name='leave_type',
-            field=models.CharField(choices=[('CL', 'Casual Leave'), ('SL', 'Sick Leave'), ('UL', 'Unpaid Leave (LOP)'), ('OD', 'On Duty'), ('OT', 'Others')], max_length=2),
+            model_name="leaverequest",
+            name="leave_type",
+            field=models.CharField(
+                choices=[
+                    ("CL", "Casual Leave"),
+                    ("SL", "Sick Leave"),
+                    ("UL", "Unpaid Leave (LOP)"),
+                    ("OD", "On Duty"),
+                    ("OT", "Others"),
+                ],
+                max_length=2,
+            ),
         ),
     ]
