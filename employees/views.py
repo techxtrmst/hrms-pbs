@@ -2165,25 +2165,32 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                         if not email:
                             raise ValueError("Email is required")
 
-                        if User.objects.filter(email=email).exists():
-                            # Skip existing users
-                            raise ValueError(f"User with email {email} already exists")
-
-                        first_name = str(row.get("first_name", "")).strip()
-                        last_name = str(row.get("last_name", "")).strip()
-
-                        # 2. Create User (Unusable password for activation)
-                        user = User.objects.create_user(
-                            username=email,
-                            email=email,
-                            password=None,
-                            first_name=first_name,
-                            last_name=last_name,
-                            role="EMPLOYEE",
-                            company=self.request.user.company,
-                        )
-                        user.set_unusable_password()
-                        user.save()
+                        # Check if user already exists
+                        user = User.objects.filter(email=email).first()
+                        if user:
+                            # Check if the user already has an employee profile (is a real employee)
+                            if hasattr(user, 'employee_profile'):
+                                raise ValueError(f"User with email {email} already exists")
+                            else:
+                                # User exists but no employee profile (Zombie record) -> Reuse it
+                                user.first_name = str(row.get("first_name", "")).strip()
+                                user.last_name = str(row.get("last_name", "")).strip()
+                                user.save()
+                        else:
+                            # 2. Create New User
+                            first_name = str(row.get("first_name", "")).strip()
+                            last_name = str(row.get("last_name", "")).strip()
+                            user = User.objects.create_user(
+                                username=email,
+                                email=email,
+                                password=None,
+                                first_name=first_name,
+                                last_name=last_name,
+                                role="EMPLOYEE",
+                                company=self.request.user.company,
+                            )
+                            user.set_unusable_password()
+                            user.save()
 
                         # 3. Parse Dates
                         doj = row.get("date_of_joining")
@@ -2267,12 +2274,8 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                             else 0,
                         )
 
-                        # 6. Create Leave Balance (0 for probation period)
-                        LeaveBalance.objects.create(
-                            employee=employee,
-                            casual_leave_allocated=0.0,
-                            sick_leave_allocated=0.0
-                        )
+                        # 6. Create Leave Balance (handled by signal)
+                        # LeaveBalance.objects.create(...) - REMOVED to avoid duplicate key error
 
                         # 7. Send Activation Email
                         send_activation_email(user, self.request)
