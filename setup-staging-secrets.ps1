@@ -47,12 +47,17 @@ Get-Content $envFile | Where-Object { $_ -match '^\s*[^#]' } | ForEach-Object {
 
 # === SSH Configuration ===
 Write-Host "📡 Setting SSH Configuration..." -ForegroundColor Cyan
-gh secret set STAGING_SSH_HOST --repo $REPO --body "138.128.242.42"
-gh secret set STAGING_SSH_USERNAME --repo $REPO --body "dev"
-gh secret set STAGING_SSH_PASSWORD --repo $REPO --body "OXP9vh33LFnChVau"
-gh secret set STAGING_SSH_PORT --repo $REPO --body "22"
-gh secret set STAGING_DEPLOY_PATH --repo $REPO --body "/var/www/hrms-pbs-staging"
-gh secret set STAGING_BACKUP_PATH --repo $REPO --body "/var/www/hrms-pbs-staging-backups"
+if ($envVars['STAGING_SSH_HOST']) {
+    gh secret set STAGING_SSH_HOST --repo $REPO --body $envVars['STAGING_SSH_HOST']
+    gh secret set STAGING_SSH_USERNAME --repo $REPO --body $envVars['STAGING_SSH_USERNAME']
+    gh secret set STAGING_SSH_PASSWORD --repo $REPO --body $envVars['STAGING_SSH_PASSWORD']
+    gh secret set STAGING_SSH_PORT --repo $REPO --body $envVars['STAGING_SSH_PORT']
+    gh secret set STAGING_DEPLOY_PATH --repo $REPO --body $envVars['STAGING_DEPLOY_PATH']
+    gh secret set STAGING_BACKUP_PATH --repo $REPO --body $envVars['STAGING_BACKUP_PATH']
+    Write-Host "✅ SSH configuration set from .env.staging" -ForegroundColor Green
+} else {
+    Write-Host "⚠️ SSH configuration not found in .env.staging - skipping" -ForegroundColor Yellow
+}
 
 # === MS Teams Notifications ===
 Write-Host "📢 Setting Notifications..." -ForegroundColor Cyan
@@ -65,46 +70,76 @@ if ($envVars['STAGING_TEAMS_WEBHOOK_URL']) {
 
 # === Django Configuration ===
 Write-Host "🐍 Setting Django Configuration..." -ForegroundColor Cyan
-gh secret set STAGING_DEBUG --repo $REPO --body "False"
-gh secret set STAGING_SECRET_KEY --repo $REPO --body "-a6@yotquastoq*og+m^e62llncp2`$`$wh5g@is*a9%7qo)6)kfk"
-gh secret set STAGING_APP_PORT --repo $REPO --body "8421"
-gh secret set STAGING_TIME_ZONE --repo $REPO --body "UTC"
+if ($envVars['DEBUG']) {
+    gh secret set STAGING_DEBUG --repo $REPO --body $envVars['DEBUG']
+    gh secret set STAGING_SECRET_KEY --repo $REPO --body $envVars['SECRET_KEY']
+    gh secret set STAGING_APP_PORT --repo $REPO --body $envVars['APP_PORT']
+    gh secret set STAGING_TIME_ZONE --repo $REPO --body $envVars['TIME_ZONE']
+    Write-Host "✅ Django configuration set from .env.staging" -ForegroundColor Green
+} else {
+    Write-Host "⚠️ Django configuration not found in .env.staging - skipping" -ForegroundColor Yellow
+}
 
 # === Database Configuration ===
 Write-Host "🗄️ Setting Database Configuration..." -ForegroundColor Cyan
-gh secret set STAGING_DB_ENGINE --repo $REPO --body "django.db.backends.postgresql"
-gh secret set STAGING_DB_NAME --repo $REPO --body "postgres"
-gh secret set STAGING_DB_USER --repo $REPO --body "postgres"
-gh secret set STAGING_DB_PASSWORD --repo $REPO --body "postgres"
-gh secret set STAGING_DB_HOST --repo $REPO --body "db"
-gh secret set STAGING_DB_PORT --repo $REPO --body "5432"
+if ($envVars['DB_ENGINE']) {
+    gh secret set STAGING_DB_ENGINE --repo $REPO --body $envVars['DB_ENGINE']
+    gh secret set STAGING_DB_NAME --repo $REPO --body $envVars['DB_NAME']
+    gh secret set STAGING_DB_USER --repo $REPO --body $envVars['DB_USER']
+    gh secret set STAGING_DB_PASSWORD --repo $REPO --body $envVars['DB_PASSWORD']
+    gh secret set STAGING_DB_HOST --repo $REPO --body $envVars['DB_HOST']
+    gh secret set STAGING_DB_PORT --repo $REPO --body $envVars['DB_PORT']
+    Write-Host "✅ Database configuration set from .env.staging" -ForegroundColor Green
+} else {
+    Write-Host "⚠️ Database configuration not found in .env.staging - skipping" -ForegroundColor Yellow
+}
 
 # === Domain and Security ===
 Write-Host "🔒 Setting Domain and Security Configuration..." -ForegroundColor Cyan
-gh secret set STAGING_ALLOWED_HOSTS --repo $REPO --body $envVars['ALLOWED_HOSTS']
-gh secret set STAGING_CSRF_TRUSTED_ORIGINS --repo $REPO --body "http://138.128.242.42,https://petabytzglobal.com,https://www.petabytzglobal.com"
+if ($envVars['ALLOWED_HOSTS']) {
+    gh secret set STAGING_ALLOWED_HOSTS --repo $REPO --body $envVars['ALLOWED_HOSTS']
+    gh secret set STAGING_CSRF_TRUSTED_ORIGINS --repo $REPO --body $envVars['CSRF_TRUSTED_ORIGINS']
+    Write-Host "✅ Domain and security configuration set from .env.staging" -ForegroundColor Green
+} else {
+    Write-Host "⚠️ Domain configuration not found in .env.staging - skipping" -ForegroundColor Yellow
+}
 
 # === CORS Configuration ===
 Write-Host "🌐 Setting CORS Configuration..." -ForegroundColor Cyan
-gh secret set STAGING_CORS_ALLOW_ALL_ORIGINS --repo $REPO --body "False"
+if ($envVars['CORS_ALLOW_ALL_ORIGINS']) {
+    gh secret set STAGING_CORS_ALLOW_ALL_ORIGINS --repo $REPO --body $envVars['CORS_ALLOW_ALL_ORIGINS']
+    Write-Host "✅ CORS configuration set from .env.staging" -ForegroundColor Green
+} else {
+    Write-Host "⚠️ CORS configuration not found in .env.staging - skipping" -ForegroundColor Yellow
+}
 
 # === Email Configuration ===
 Write-Host "📧 Setting Email Configuration..." -ForegroundColor Cyan
-gh secret set STAGING_EMAIL_BACKEND --repo $REPO --body "django.core.mail.backends.smtp.EmailBackend"
-gh secret set STAGING_EMAIL_HOST --repo $REPO --body "smtp.gmail.com"
-gh secret set STAGING_EMAIL_PORT --repo $REPO --body "587"
-gh secret set STAGING_EMAIL_USE_TLS --repo $REPO --body "True"
-gh secret set STAGING_EMAIL_USE_SSL --repo $REPO --body "False"
-gh secret set STAGING_EMAIL_HOST_USER --repo $REPO --body "hrms@petabytz.com"
-gh secret set STAGING_EMAIL_HOST_PASSWORD --repo $REPO --body "Rminds@0007"
-gh secret set STAGING_DEFAULT_FROM_EMAIL --repo $REPO --body "HRMS <hrms@petabytz.com>"
+if ($envVars['EMAIL_BACKEND']) {
+    gh secret set STAGING_EMAIL_BACKEND --repo $REPO --body $envVars['EMAIL_BACKEND']
+    gh secret set STAGING_EMAIL_HOST --repo $REPO --body $envVars['EMAIL_HOST']
+    gh secret set STAGING_EMAIL_PORT --repo $REPO --body $envVars['EMAIL_PORT']
+    gh secret set STAGING_EMAIL_USE_TLS --repo $REPO --body $envVars['EMAIL_USE_TLS']
+    gh secret set STAGING_EMAIL_USE_SSL --repo $REPO --body $envVars['EMAIL_USE_SSL']
+    gh secret set STAGING_EMAIL_HOST_USER --repo $REPO --body $envVars['EMAIL_HOST_USER']
+    gh secret set STAGING_EMAIL_HOST_PASSWORD --repo $REPO --body $envVars['EMAIL_HOST_PASSWORD']
+    gh secret set STAGING_DEFAULT_FROM_EMAIL --repo $REPO --body $envVars['DEFAULT_FROM_EMAIL']
+    Write-Host "✅ Email configuration set from .env.staging" -ForegroundColor Green
+} else {
+    Write-Host "⚠️ Email configuration not found in .env.staging - skipping" -ForegroundColor Yellow
+}
 
 # === Static and Media Files ===
 Write-Host "📁 Setting Static and Media Files Configuration..." -ForegroundColor Cyan
-gh secret set STAGING_STATIC_URL --repo $REPO --body "/static/"
-gh secret set STAGING_STATIC_ROOT --repo $REPO --body "/app/staticfiles"
-gh secret set STAGING_MEDIA_URL --repo $REPO --body "/media/"
-gh secret set STAGING_MEDIA_ROOT --repo $REPO --body "/app/media"
+if ($envVars['STATIC_URL']) {
+    gh secret set STAGING_STATIC_URL --repo $REPO --body $envVars['STATIC_URL']
+    gh secret set STAGING_STATIC_ROOT --repo $REPO --body $envVars['STATIC_ROOT']
+    gh secret set STAGING_MEDIA_URL --repo $REPO --body $envVars['MEDIA_URL']
+    gh secret set STAGING_MEDIA_ROOT --repo $REPO --body $envVars['MEDIA_ROOT']
+    Write-Host "✅ Static and media files configuration set from .env.staging" -ForegroundColor Green
+} else {
+    Write-Host "⚠️ Static files configuration not found in .env.staging - skipping" -ForegroundColor Yellow
+}
 
 # === PostHog Configuration ===
 Write-Host "📊 Setting PostHog Configuration..." -ForegroundColor Cyan
@@ -119,7 +154,12 @@ if ($envVars['POSTHOG_API_KEY']) {
 
 # === Logging Configuration ===
 Write-Host "📝 Setting Logging Configuration..." -ForegroundColor Cyan
-gh secret set STAGING_LOG_LEVEL --repo $REPO --body "INFO"
+if ($envVars['LOG_LEVEL']) {
+    gh secret set STAGING_LOG_LEVEL --repo $REPO --body $envVars['LOG_LEVEL']
+    Write-Host "✅ Logging configuration set from .env.staging" -ForegroundColor Green
+} else {
+    Write-Host "⚠️ Logging configuration not found in .env.staging - skipping" -ForegroundColor Yellow
+}
 
 Write-Host ""
 Write-Host "✅ All secrets have been configured!" -ForegroundColor Green
@@ -129,4 +169,6 @@ Write-Host "   1. Create a 'staging' branch if it doesn't exist" -ForegroundColo
 Write-Host "   2. Push to the staging branch to trigger deployment" -ForegroundColor Gray
 Write-Host "   3. Monitor the GitHub Actions workflow" -ForegroundColor Gray
 Write-Host ""
-Write-Host "🌐 Application will be available at: http://138.128.242.42:8421" -ForegroundColor Cyan
+if ($envVars['STAGING_SSH_HOST'] -and $envVars['APP_PORT']) {
+    Write-Host "🌐 Application will be available at: http://$($envVars['STAGING_SSH_HOST']):$($envVars['APP_PORT'])" -ForegroundColor Cyan
+}

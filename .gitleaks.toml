@@ -1,0 +1,122 @@
+# Gitleaks configuration for HRMS PBS
+# This file customizes secret detection rules
+
+title = "HRMS PBS Gitleaks Configuration"
+
+[extend]
+# Use default gitleaks rules as base
+useDefault = true
+
+[allowlist]
+description = "Allowlist for known false positives"
+
+# Paths to exclude from scanning
+paths = [
+    '''\.env\.example$''',
+    '''\.md$''',
+    '''\.txt$''',
+    '''node_modules/''',
+    '''\.venv/''',
+    '''venv/''',
+    '''__pycache__/''',
+    '''\.git/''',
+    '''staticfiles/''',
+    '''media/''',
+    '''_logs/''',
+    '''\.ruff_cache/''',
+]
+
+# Regexes to exclude
+regexes = [
+    # Django SECRET_KEY in settings (should come from env)
+    '''SECRET_KEY\s*=\s*os\.environ''',
+    '''SECRET_KEY\s*=\s*env\(''',
+    # Example/placeholder values
+    '''your-secret-key-here''',
+    '''your-api-key-here''',
+    '''your-token-here''',
+    '''example\.com''',
+    '''localhost''',
+    '''127\.0\.0\.1''',
+    # Test data
+    '''test_password''',
+    '''test_secret''',
+    '''dummy_key''',
+]
+
+# Stopwords - if these are in the line, ignore it
+stopwords = [
+    'example',
+    'placeholder',
+    'dummy',
+    'test',
+    'fake',
+    'sample',
+]
+
+[[rules]]
+id = "django-secret-key"
+description = "Django SECRET_KEY in code"
+regex = '''SECRET_KEY\s*=\s*['"]['"]([^'"]{20,})[''"]['"]'''
+tags = ["django", "secret"]
+[rules.allowlist]
+regexes = [
+    '''SECRET_KEY\s*=\s*os\.environ''',
+    '''SECRET_KEY\s*=\s*env\(''',
+]
+
+[[rules]]
+id = "email-password"
+description = "Email password in code"
+regex = '''EMAIL_HOST_PASSWORD\s*=\s*['"]['"]([^'"]+)[''"]['"]'''
+tags = ["email", "password"]
+[rules.allowlist]
+regexes = [
+    '''EMAIL_HOST_PASSWORD\s*=\s*os\.environ''',
+    '''EMAIL_HOST_PASSWORD\s*=\s*env\(''',
+]
+
+[[rules]]
+id = "database-password"
+description = "Database password in code"
+regex = '''(DB_PASSWORD|DATABASE_PASSWORD)\s*=\s*['"]['"]([^'"]+)[''"]['"]'''
+tags = ["database", "password"]
+[rules.allowlist]
+regexes = [
+    '''DB_PASSWORD\s*=\s*os\.environ''',
+    '''DB_PASSWORD\s*=\s*env\(''',
+]
+
+[[rules]]
+id = "api-key-in-code"
+description = "API key hardcoded in code"
+regex = '''(api[_-]?key|apikey)\s*=\s*['"]['"]([a-zA-Z0-9]{20,})[''"]['"]'''
+tags = ["api", "key"]
+[rules.allowlist]
+regexes = [
+    '''api[_-]?key\s*=\s*os\.environ''',
+    '''api[_-]?key\s*=\s*env\(''',
+    '''api[_-]?key\s*=\s*settings\.''',
+]
+
+[[rules]]
+id = "ssh-credentials"
+description = "SSH credentials in code"
+regex = '''(ssh[_-]?password|ssh[_-]?key)\s*=\s*['"]['"]([^'"]+)[''"]['"]'''
+tags = ["ssh", "credentials"]
+[rules.allowlist]
+regexes = [
+    '''ssh[_-]?password\s*=\s*os\.environ''',
+    '''ssh[_-]?password\s*=\s*env\(''',
+]
+
+[[rules]]
+id = "webhook-url"
+description = "Webhook URL with potential secrets"
+regex = '''webhook[_-]?url\s*=\s*['"]['"]https?://[^'"]+[''"]['"]'''
+tags = ["webhook", "url"]
+[rules.allowlist]
+regexes = [
+    '''webhook[_-]?url\s*=\s*os\.environ''',
+    '''webhook[_-]?url\s*=\s*env\(''',
+]

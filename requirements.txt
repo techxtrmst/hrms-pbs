@@ -5,14 +5,20 @@ asgiref==3.11.0
     # via
     #   django
     #   django-cors-headers
+backoff==2.2.1
+    # via posthog
 certifi==2026.1.4
     # via requests
 cffi==2.0.0
     # via timezonefinder
 charset-normalizer==3.4.4
     # via requests
+colorama==0.4.6 ; sys_platform == 'win32'
+    # via loguru
 diff-match-patch==20241021
     # via django-import-export
+distro==1.9.0
+    # via posthog
 django==4.2.27
     # via
     #   django-cors-headers
@@ -54,6 +60,8 @@ idna==3.11
     # via requests
 inflection==0.5.1
     # via drf-yasg
+loguru==0.7.3
+    # via hrms-pbs
 numpy==2.4.0
     # via
     #   pandas
@@ -70,6 +78,8 @@ phonenumbers==9.0.21
     # via hrms-pbs
 pillow==12.1.0
     # via hrms-pbs
+posthog==7.5.1
+    # via hrms-pbs
 psycopg2-binary==2.9.11
     # via hrms-pbs
 pycparser==2.23 ; implementation_name != 'PyPy'
@@ -82,6 +92,7 @@ python-dateutil==2.9.0.post0
     # via
     #   hrms-pbs
     #   pandas
+    #   posthog
 python-slugify==8.0.4
     # via hrms-pbs
 pytz==2025.2
@@ -96,9 +107,13 @@ redis==7.1.0
     #   django-redis
     #   hrms-pbs
 requests==2.32.5
-    # via hrms-pbs
+    # via
+    #   hrms-pbs
+    #   posthog
 six==1.17.0
-    # via python-dateutil
+    # via
+    #   posthog
+    #   python-dateutil
 sqlparse==0.5.5
     # via django
 tablib==3.9.0
@@ -109,6 +124,8 @@ text-unidecode==1.3
     # via python-slugify
 timezonefinder==8.2.1
     # via hrms-pbs
+typing-extensions==4.15.0
+    # via posthog
 tzdata==2025.3
     # via
     #   django
@@ -119,7 +136,5 @@ urllib3==2.6.2
     # via requests
 whitenoise==6.11.0
     # via hrms-pbs
-
-backoff==2.2.1
-loguru==0.7.3
-posthog==7.5.1
+win32-setctime==1.2.0 ; sys_platform == 'win32'
+    # via loguru
