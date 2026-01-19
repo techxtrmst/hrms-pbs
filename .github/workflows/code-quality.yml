@@ -1,0 +1,189 @@
+name: Code Quality Checks
+
+on:
+  push:
+    branches: [main, staging, develop]
+  pull_request:
+    branches: [main, staging, develop]
+
+jobs:
+  pre-commit:
+    name: Pre-commit Hooks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pre-commit
+
+      - name: Run pre-commit hooks
+        run: |
+          pre-commit run --all-files --show-diff-on-failure
+        continue-on-error: false
+
+  secret-scan:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for gitleaks
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+
+  code-quality:
+    name: Code Quality (Ruff)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Ruff
+        run: pip install ruff
+
+      - name: Run Ruff linter
+        run: ruff check . --output-format=github
+        continue-on-error: false
+
+      - name: Run Ruff formatter check
+        run: ruff format . --check
+        continue-on-error: false
+
+  django-checks:
+    name: Django System Checks
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_hrms
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          DEBUG=False
+          SECRET_KEY=test-secret-key-for-ci-only-not-for-production
+          DB_ENGINE=django.db.backends.postgresql
+          DB_NAME=test_hrms
+          DB_USER=postgres
+          DB_PASSWORD=postgres
+          DB_HOST=localhost
+          DB_PORT=5432
+          ALLOWED_HOSTS=localhost,127.0.0.1
+          CORS_ALLOW_ALL_ORIGINS=True
+          EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+          POSTHOG_ENABLED=False
+          EOF
+
+      - name: Run Django system check
+        run: python manage.py check --deploy
+
+      - name: Check for missing migrations
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Run migrations
+        run: python manage.py migrate --noinput
+
+      - name: Collect static files
+        run: python manage.py collectstatic --noinput
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Run security audit
+        run: pip-audit -r requirements.txt
+        continue-on-error: true # Don't fail on vulnerabilities, just report
+
+  summary:
+    name: Quality Check Summary
+    runs-on: ubuntu-latest
+    needs:
+      [pre-commit, secret-scan, code-quality, django-checks, security-audit]
+    if: always()
+
+    steps:
+      - name: Check results
+        run: |
+          echo "Pre-commit: ${{ needs.pre-commit.result }}"
+          echo "Secret Scan: ${{ needs.secret-scan.result }}"
+          echo "Code Quality: ${{ needs.code-quality.result }}"
+          echo "Django Checks: ${{ needs.django-checks.result }}"
+          echo "Security Audit: ${{ needs.security-audit.result }}"
+
+          if [ "${{ needs.pre-commit.result }}" != "success" ] || \
+             [ "${{ needs.secret-scan.result }}" != "success" ] || \
+             [ "${{ needs.code-quality.result }}" != "success" ] || \
+             [ "${{ needs.django-checks.result }}" != "success" ]; then
+            echo "❌ Some quality checks failed!"
+            exit 1
+          else
+            echo "✅ All quality checks passed!"
+          fi

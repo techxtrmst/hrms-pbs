@@ -1,0 +1,54 @@
+name: Setup Pre-commit for New Contributors
+
+on:
+  pull_request:
+    types: [opened]
+  workflow_dispatch:
+
+jobs:
+  notify-setup:
+    name: Notify about pre-commit setup
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const message = `## 👋 Welcome!
+
+            Thanks for contributing to HRMS PBS!
+
+            ### 🔧 Setup Pre-commit Hooks (One-time setup)
+
+            To ensure code quality, please run this command in your local repository:
+
+            \`\`\`bash
+            python scripts/setup_precommit.py
+            \`\`\`
+
+            This will:
+            - ✅ Install pre-commit hooks
+            - ✅ Check for secrets before commit
+            - ✅ Auto-format your code
+            - ✅ Run linting checks
+            - ✅ Validate Django configuration
+
+            ### 📚 Documentation
+
+            - Quick Start: [QUICK_START_PRECOMMIT.md](../blob/main/QUICK_START_PRECOMMIT.md)
+            - Full Guide: [docs/PRE_COMMIT_HOOKS.md](../blob/main/docs/PRE_COMMIT_HOOKS.md)
+            - Security: [docs/SECURITY_CHECKLIST.md](../blob/main/docs/SECURITY_CHECKLIST.md)
+
+            ### 🤖 Automated Checks
+
+            Don't worry if you forget! Our CI/CD will automatically run all checks on your PR.
+
+            Happy coding! 🚀`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            });
