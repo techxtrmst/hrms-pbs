@@ -80,6 +80,18 @@ class PersonalInfoForm(forms.ModelForm):
             raise ValidationError(
                 "A user with this email address already exists. Please use a different email."
             )
+
+        # Domain Validation
+        company = self.cleaned_data.get("company_selection")
+        if not company and self.user and self.user.company:
+            company = self.user.company
+
+        if company and not company.is_email_domain_allowed(email):
+            allowed_domains = company.get_allowed_email_domains_list()
+            raise ValidationError(
+                f"Email domain not allowed. For {company.name}, allowed domains are: {', '.join(allowed_domains)}"
+            )
+
         return email
 
     def clean(self):

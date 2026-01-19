@@ -185,6 +185,31 @@
     .bg-soft-warning {
         background-color: rgba(255, 162, 107, 0.1);
     }
+
+    /* Carousel Animation */
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    .hover-scale {
+        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .hover-scale:hover {
+        transform: scale(1.1);
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 </style>
 {% endblock %}
 
@@ -369,38 +394,65 @@
                     </div>
 
                     <!-- Tab: Announcements -->
-                    <div id="tab-announcements" class="tab-content d-none px-3">
+                    <div id="tab-announcements" class="tab-content d-none px-3 position-relative"
+                        style="height: 200px;">
                         {% if announcements %}
-                        <div class="list-group list-group-flush">
+                        <div class="announcement-carousel h-100 position-relative">
                             {% for announcement in announcements %}
-                            <div class="list-group-item p-3 border-0 border-bottom">
-                                <div class="d-flex align-items-start">
-                                    <div class="req-avatar flex-shrink-0 mt-1"
-                                        style="background:#f3f0ff; color:#5b47fb;">
-                                        <i class="fas fa-scroll"></i>
+                            <div class="announcement-slide {% if not forloop.first %}d-none{% endif %} fade-in h-100 d-flex flex-column"
+                                data-index="{{ forloop.counter0 }}">
+                                <div class="flex-grow-1 overflow-auto pe-1 custom-scrollbar">
+                                    <div class="d-flex justify-content-between align-items-start mb-2 mt-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm flex-shrink-0"
+                                                style="width: 32px; height: 32px; background:#e0e7ff; color:#4338ca;">
+                                                <i class="fas fa-bullhorn small"></i>
+                                            </div>
+                                            <div>
+                                                <div class="small fw-bold text-muted text-uppercase"
+                                                    style="font-size: 0.6rem;">{{ announcement.created_at|date:"d M" }}
+                                                </div>
+                                                <h6 class="fw-bold text-dark m-0 line-clamp-1"
+                                                    style="font-size: 0.9rem;">{{ announcement.title }}</h6>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="flex-grow-1 ms-3">
-                                        <div class="d-flex justify-content-between mb-1">
-                                            <h6 class="mb-0 fw-bold text-dark">{{ announcement.title }}</h6>
-                                            <small class="text-muted">{{ announcement.created_at|date:"d M" }}</small>
-                                        </div>
-                                        {% if announcement.image %}
-                                        <div class="mb-2 mt-1">
-                                            <img src="{{ announcement.image.url }}" alt="{{ announcement.title }}"
-                                                class="img-fluid rounded"
-                                                style="max-height: 120px; width: 100%; object-fit: cover;">
-                                        </div>
-                                        {% endif %}
-                                        <p class="mb-0 text-muted small" style="line-height: 1.4;">{{ announcement.content|truncatechars:80 }}</p>
+
+                                    {% if announcement.image %}
+                                    <div class="mb-2 position-relative">
+                                        <img src="{{ announcement.image.url }}" alt="{{ announcement.title }}"
+                                            class="img-fluid rounded-3 w-100 shadow-sm"
+                                            style="max-height: 90px; object-fit: cover;">
+                                    </div>
+                                    {% endif %}
+
+                                    <div class="text-dark small" style="line-height: 1.4; font-size: 0.85rem;">
+                                        {{ announcement.content|linebreaksbr }}
+                                    </div>
+
+                                    <div class="mt-2 pt-2 border-top d-flex align-items-center text-muted small"
+                                        style="font-size: 0.75rem;">
+                                        <i class="fas fa-user-circle me-1"></i> {{ announcement.author.get_full_name|default:"HR Team" }}
                                     </div>
                                 </div>
                             </div>
                             {% endfor %}
+
+                            <!-- Floating Scroll Button (Next) -->
+                            {% if announcements|length > 1 %}
+                            <button
+                                class="btn btn-primary rounded-circle shadow-lg hover-scale position-absolute bottom-0 end-0 m-1"
+                                onclick="rotateAnnouncement()"
+                                style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; z-index: 10;">
+                                <i class="fas fa-chevron-right text-white" style="font-size: 0.8rem;"></i>
+                            </button>
+                            {% endif %}
                         </div>
                         {% else %}
-                        <div class="text-center py-5">
-                            <i class="fas fa-bullhorn fa-3x text-light mb-3"></i>
-                            <p class="text-muted">No new announcements.</p>
+                        <div
+                            class="text-center h-100 d-flex flex-column justify-content-center align-items-center opacity-50">
+                            <i class="fas fa-bullhorn fa-3x mb-2 text-muted"></i>
+                            <p class="text-muted fw-medium small">No announcements</p>
                         </div>
                         {% endif %}
                     </div>
@@ -856,6 +908,24 @@
         const commentInput = document.getElementById('reject_comment_' + leaveId) || document.getElementById('reject_comment_modal_' + leaveId);
         if (commentInput) commentInput.value = reason;
         return true;
+    }
+
+    // Announcement Carousel Logic
+    let currentAnnouncementIndex = 0;
+    function rotateAnnouncement() {
+        const slides = document.querySelectorAll('.announcement-slide');
+        if (slides.length < 2) return;
+
+        // Hide current
+        slides[currentAnnouncementIndex].classList.add('d-none');
+        slides[currentAnnouncementIndex].classList.remove('animate-fade-in');
+
+        // Next index
+        currentAnnouncementIndex = (currentAnnouncementIndex + 1) % slides.length;
+
+        // Show next
+        slides[currentAnnouncementIndex].classList.remove('d-none');
+        slides[currentAnnouncementIndex].classList.add('animate-fade-in');
     }
 </script>
 {% endblock %}

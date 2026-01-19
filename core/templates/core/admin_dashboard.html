@@ -323,12 +323,14 @@
 
     .request-card {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         padding: 16px;
         border: 1.5px solid var(--keka-border);
-        border-radius: 10px;
+        border-radius: 12px;
         margin-bottom: 12px;
         transition: all 0.2s;
+        gap: 12px;
+        flex-wrap: wrap;
     }
 
     .request-card:hover {
@@ -337,8 +339,8 @@
     }
 
     .employee-avatar {
-        width: 48px;
-        height: 48px;
+        width: 42px;
+        height: 42px;
         border-radius: 50%;
         background: linear-gradient(135deg, var(--keka-primary), var(--keka-purple));
         display: flex;
@@ -346,33 +348,45 @@
         justify-content: center;
         color: white;
         font-weight: 700;
-        font-size: 18px;
-        margin-right: 16px;
+        font-size: 16px;
+        flex-shrink: 0;
+        margin-right: 0;
     }
 
     .request-info {
         flex: 1;
+        min-width: 140px;
     }
 
     .employee-name {
-        font-size: 15px;
-        font-weight: 600;
+        font-size: 14px;
+        font-weight: 700;
         color: var(--keka-text-primary);
-        margin-bottom: 2px;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
     }
 
     .request-meta {
         font-size: 12px;
         color: var(--keka-text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
     .leave-badge {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 600;
-        margin-left: 8px;
+        display: inline-flex;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 700;
+        white-space: nowrap;
+        vertical-align: middle;
+        text-transform: uppercase;
+        margin-left: 0;
     }
 
     .leave-badge.medical {
@@ -392,17 +406,20 @@
 
     .request-actions {
         display: flex;
-        gap: 8px;
+        gap: 6px;
+        align-self: center;
+        margin-left: auto;
     }
 
     .btn-action {
-        padding: 6px 16px;
+        padding: 6px 12px;
         border-radius: 6px;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 600;
         border: none;
         cursor: pointer;
         transition: all 0.2s;
+        white-space: nowrap;
     }
 
     .btn-reject {
@@ -541,8 +558,9 @@
         transform: scale(1.1);
     }
 
-    .day-cell.wfh {
-        background: var(--keka-purple);
+    .day-cell.wfh,
+    .day-cell.present {
+        background: var(--keka-success);
         color: white;
     }
 
@@ -551,8 +569,10 @@
         color: white;
     }
 
-    .day-cell.paid-leave {
-        background: var(--keka-teal);
+    .day-cell.paid-leave,
+    .day-cell.sick-leave {
+        background: #f59e0b;
+        /* Amber/Orange for all leaves */
         color: white;
     }
 
@@ -566,21 +586,16 @@
         color: white;
     }
 
-    .day-cell.sick-leave {
-        background: #ec4899;
-        /* Pink/Reddish */
-        color: white;
-    }
-
-    .day-cell.present {
-        background: var(--keka-success);
-        color: white;
-    }
-
     .day-cell.future {
         background: transparent;
         color: var(--keka-text-secondary);
         opacity: 0.4;
+    }
+
+    .day-cell.no-data {
+        background: #f3f4f6;
+        color: var(--keka-text-secondary);
+        border: 1px dashed #d1d5db;
     }
 
     .legend {
@@ -850,6 +865,95 @@
         /* Corner overlaps both top and left sticky */
         background: #f8f9fa;
     }
+
+    /* Professional Announcement Styles */
+    .announcement-icon-lg {
+        width: 48px;
+        height: 48px;
+        background: #eff6ff;
+        color: var(--keka-primary);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+    .announcement-title-large {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--keka-text-primary);
+        margin-bottom: 4px;
+        line-height: 1.3;
+    }
+
+    .announcement-meta-row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        font-size: 13px;
+        color: var(--keka-text-secondary);
+        gap: 12px;
+    }
+
+    .announcement-hero-image {
+        width: 100%;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        object-fit: contain;
+        max-height: 300px;
+        background-color: #f8f9fa;
+    }
+
+    .announcement-body-text {
+        font-size: 14px;
+        line-height: 1.7;
+        color: #374151;
+        white-space: pre-line;
+    }
+
+    .carousel-nav-btn {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: white;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        color: var(--keka-primary);
+        border: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        bottom: 24px;
+        right: 24px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 10;
+        font-size: 16px;
+    }
+
+    .carousel-nav-btn:hover {
+        background: var(--keka-primary);
+        color: white;
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 8px 25px rgba(91, 71, 251, 0.25);
+        border-color: var(--keka-primary);
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background-color: #d1d5db;
+        border-radius: 20px;
+    }
 </style>
 {% endblock %}
 
@@ -959,35 +1063,59 @@
 
                 <div class="announcements-body" id="announcementsContent">
                     <!-- 0. Custom Announcements Content -->
-                    <div id="tab-announcements" class="tab-content fade-in">
+                    <div id="tab-announcements" class="tab-content fade-in" style="height: 100%; min-height: 300px;">
                         {% if announcements %}
-                        {% for announcement in announcements %}
-                        <div class="announcement-item">
-                            <div class="announcement-icon" style="background: #dbeafe; color: #1e40af;">
-                                <i class="fas fa-bullhorn"></i>
-                            </div>
-                            <div class="announcement-details">
-                                <div class="announcement-text">{{ announcement.title }}</div>
-                                {% if announcement.image %}
-                                <div class="mb-2 mt-1">
-                                    <img src="{{ announcement.image.url }}" alt="{{ announcement.title }}"
-                                        class="img-fluid rounded" style="max-height: 150px; width: auto;">
-                                </div>
-                                {% endif %}
-                                <div class="announcement-subtext">
-                                    {{ announcement.content|truncatewords:20 }}
-                                    {% if announcement.location %}
-                                    <br><small class="text-primary"><i class="fas fa-map-marker-alt"></i> {{ announcement.location.name }}</small>
-                                    {% else %}
-                                    <br><small class="text-warning"><i class="fas fa-globe"></i> Company-wide</small>
+                        <div class="announcement-carousel h-100 position-relative p-4">
+                            {% for announcement in announcements %}
+                            <div class="announcement-slide {% if not forloop.first %}d-none{% endif %} fade-in h-100 d-flex flex-column"
+                                data-index="{{ forloop.counter0 }}">
+
+                                <div class="announcement-content-wrapper custom-scrollbar pe-2"
+                                    style="overflow-y: auto; flex: 1;">
+                                    <div class="d-flex align-items-start mb-4">
+                                        <div class="announcement-icon-lg me-3">
+                                            <i class="fas fa-bullhorn"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="announcement-title-large">{{ announcement.title }}</h4>
+                                            <div class="announcement-meta-row">
+                                                <span><i class="far fa-calendar-alt me-1"></i> {{ announcement.created_at|date:"d M Y" }}</span>
+                                                {% if announcement.location %}
+                                                <span class="text-primary bg-soft-primary px-2 py-1 rounded small"><i
+                                                        class="fas fa-map-marker-alt me-1"></i> {{ announcement.location.name }}</span>
+                                                {% else %}
+                                                <span class="text-warning bg-soft-warning px-2 py-1 rounded small"><i
+                                                        class="fas fa-globe me-1"></i> Global</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {% if announcement.image %}
+                                    <div class="mb-3">
+                                        <img src="{{ announcement.image.url }}" alt="{{ announcement.title }}"
+                                            class="announcement-hero-image">
+                                    </div>
                                     {% endif %}
+
+                                    <div class="announcement-body-text">
+                                        {{ announcement.content|linebreaksbr }}
+                                    </div>
+
+                                    <div class="mt-4 pt-3 border-top text-muted small d-flex align-items-center">
+                                        <i class="fas fa-pen-nib me-2"></i> Posted by {{ announcement.author.get_full_name|default:"Admin" }}
+                                    </div>
                                 </div>
                             </div>
-                            <div class="announcement-date">
-                                {{ announcement.created_at|date:"d M" }}
-                            </div>
+                            {% endfor %}
+
+                            {% if announcements|length > 1 %}
+                            <button class="carousel-nav-btn" onclick="rotateAdminAnnouncement()"
+                                title="Next Announcement">
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                            {% endif %}
                         </div>
-                        {% endfor %}
                         {% else %}
                         <div class="empty-state">
                             <i class="fas fa-bullhorn"></i>
@@ -1239,16 +1367,16 @@
         <!-- Legend -->
         <div class="legend">
             <div class="legend-item">
-                <div class="legend-dot" style="background: var(--keka-purple);"></div>
-                <span>Work from home</span>
+                <div class="legend-dot" style="background: var(--keka-success);"></div>
+                <span>Present</span>
             </div>
             <div class="legend-item">
                 <div class="legend-dot" style="background: var(--keka-warning);"></div>
                 <span>Weekly off</span>
             </div>
             <div class="legend-item">
-                <div class="legend-dot" style="background: var(--keka-teal);"></div>
-                <span>Paid leave</span>
+                <div class="legend-dot" style="background: #f59e0b;"></div>
+                <span>Leave</span>
             </div>
             <div class="legend-item">
                 <div class="legend-dot" style="background: var(--keka-danger);"></div>
@@ -1257,14 +1385,6 @@
             <div class="legend-item">
                 <div class="legend-dot" style="background: var(--keka-info);"></div>
                 <span>Holiday</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-dot" style="background: #ec4899;"></div>
-                <span>Sick leave</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-dot" style="background: var(--keka-success);"></div>
-                <span>Present</span>
             </div>
         </div>
     </div>
@@ -1478,5 +1598,21 @@
     // Auto-rotate tabs occasionally if user is idle? Maybe too distracting.
     // Let's keep it manual for now as requested "advance css js" implies sleekness not necessarily chaos.
 
+    // Announcement Carousel Logic for Admin Dashboard
+    let currentAdminAnnouncementIndex = 0;
+    function rotateAdminAnnouncement() {
+        const container = document.getElementById('tab-announcements');
+        const slides = container.querySelectorAll('.announcement-slide');
+        if (slides.length < 2) return;
+
+        // Hide current
+        slides[currentAdminAnnouncementIndex].classList.add('d-none');
+
+        // Next index
+        currentAdminAnnouncementIndex = (currentAdminAnnouncementIndex + 1) % slides.length;
+
+        // Show next
+        slides[currentAdminAnnouncementIndex].classList.remove('d-none');
+    }
 </script>
 {% endblock %}
