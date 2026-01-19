@@ -121,7 +121,7 @@ def add_employee_step1(request):
             company_prefix = "SSS"
             email_placeholder = "e.g. john.doe@softstandard.com"
         elif "bluebix" in c_name:
-            company_prefix = request.user.company.name[:3].upper()
+            company_prefix = "BBS"
             email_placeholder = "e.g. john.doe@bluebixinc.com"
         else:
             company_prefix = request.user.company.name[:3].upper()
