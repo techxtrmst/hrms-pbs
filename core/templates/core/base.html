@@ -309,7 +309,7 @@
             background: white;
             border: 1px solid #e8ecf4;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             z-index: 1000;
             max-height: 300px;
             overflow-y: auto;
@@ -394,8 +394,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         /* Scrollbar Styling for Search Results */
@@ -547,7 +552,7 @@
             <span class="sidebar-section-title ps-0 mt-0 mb-0 py-2">Leaves</span>
             <i class="fas fa-chevron-down small text-muted"></i>
         </a>
-        <div class="collapse {% if 'leaves/requests' in request.path or 'leaves/history' in request.path %}show{% endif %}"
+        <div class="collapse {% if 'leaves/requests' in request.path or 'leaves/history' in request.path or 'exit-initiatives' in request.path %}show{% endif %}"
             id="menuLeaves">
             <div class="sub-menu">
                 <a href="{% url 'leave_requests' %}"
@@ -557,6 +562,10 @@
                 <a href="{% url 'regularization_list' %}"
                     class="{% if 'regularization/requests' in request.path %}active{% endif %}">
                     <i class="fas fa-check-double"></i> Regularization Requests
+                </a>
+                <a href="{% url 'exit_initiatives_list' %}"
+                    class="{% if 'exit-initiatives' in request.path %}active{% endif %}">
+                    <i class="fas fa-door-open"></i> Exit Initiatives
                 </a>
                 <a href="{% url 'leave_history' %}" class="{% if 'history' in request.path %}active{% endif %}">
                     <i class="fas fa-history"></i> Leave History
@@ -734,15 +743,17 @@
                 HRMS Portal
                 {% endif %}
             </h4>
-            
             <!-- Employee Search Bar (for Company Admins on all pages) -->
             {% if user.role == 'COMPANY_ADMIN' %}
             <div class="employee-search-container" style="position: relative;">
-                <i class="fas fa-search search-icon" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #6c7293; font-size: 14px;"></i>
-                <input type="text" id="employeeSearchInput" class="form-control" 
+                <i class="fas fa-search search-icon"
+                    style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #6c7293; font-size: 14px;"></i>
+                <input type="text" id="employeeSearchInput" class="form-control"
                     style="padding-left: 35px; width: 300px; border: 1.5px solid #e8ecf4; border-radius: 8px; font-size: 14px;"
                     placeholder="Search employees by name or ID..." autocomplete="off">
-                <div id="searchResults" class="search-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #e8ecf4; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1000; max-height: 300px; overflow-y: auto;"></div>
+                <div id="searchResults" class="search-results"
+                    style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #e8ecf4; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1000; max-height: 300px; overflow-y: auto;">
+                </div>
             </div>
             {% endif %}
         </div>

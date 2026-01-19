@@ -840,7 +840,8 @@
                                 <div>
                                     <div>{{ employee.user.get_full_name }}
                                         {% if not employee.is_active %}
-                                        <span class="status-badge-inactive">{{ employee.get_employment_status_display }}</span>
+                                        <span class="status-badge-inactive">{{ employee.get_employment_status_display
+                                            }}</span>
                                         {% endif %}
                                     </div>
                                     <div class="employee-email">{{ employee.user.email }}</div>
@@ -1187,8 +1188,8 @@
                     <textarea name="exit_note" placeholder="Please provide details..." required></textarea>
                 </div>
                 <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 1rem;">
-                    <i class="fas fa-info-circle"></i> Last working day will be calculated as: Submission Date + Notice
-                    Period. Employee login will be disabled immediately.
+                    <i class="fas fa-info-circle"></i> This will be sent to admin/manager for approval. Last working day
+                    will be calculated as: Submission Date + Notice Period. Access will be disabled upon approval.
                 </p>
             </div>
 
@@ -1214,8 +1215,8 @@
                         required></textarea>
                 </div>
                 <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 1rem;">
-                    <i class="fas fa-info-circle"></i> Last working day will be calculated as: Submission Date + Notice
-                    Period. Employee login will be disabled immediately.
+                    <i class="fas fa-info-circle"></i> This will be sent to admin/manager for approval. Last working day
+                    will be calculated as: Submission Date + Notice Period. Access will be disabled upon approval.
                 </p>
             </div>
         </div>
@@ -1231,13 +1232,15 @@
             <!-- Absconded Actions -->
             <div id="actions-absconded" class="exit-actions-group">
                 <button type="button" class="btn-cancel" onclick="closeExitModal()">Cancel</button>
-                <button type="button" class="btn-submit" onclick="submitExitForm('absconded')">Submit</button>
+                <button type="button" class="btn-submit" onclick="submitExitForm('absconded')">Submit for
+                    Approval</button>
             </div>
 
             <!-- Terminated Actions -->
             <div id="actions-terminated" class="exit-actions-group">
                 <button type="button" class="btn-cancel" onclick="closeExitModal()">Cancel</button>
-                <button type="button" class="btn-submit" onclick="submitExitForm('terminated')">Submit</button>
+                <button type="button" class="btn-submit" onclick="submitExitForm('terminated')">Submit for
+                    Approval</button>
             </div>
         </div>
     </div>

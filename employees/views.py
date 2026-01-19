@@ -1916,6 +1916,7 @@ def employee_exit_action(request, pk):
                 }
             )
 
+
         elif exit_type in ["ABSCONDED", "TERMINATED"]:
             # Validate notice period
             if not notice_period_days:
@@ -1943,7 +1944,7 @@ def employee_exit_action(request, pk):
             # Calculate last working day
             last_working_day = submission_date + timedelta(days=notice_period)
 
-            # Create ExitInitiative with APPROVED status (no approval needed)
+            # Create ExitInitiative with PENDING status (requires approval)
             exit_initiative = ExitInitiative.objects.create(
                 employee=employee,
                 exit_type=exit_type,
@@ -1951,56 +1952,84 @@ def employee_exit_action(request, pk):
                 exit_note=exit_note,
                 notice_period_days=notice_period,
                 last_working_day=last_working_day,
-                status="APPROVED",
-                approved_by=request.user,
-                approved_at=timezone.now(),
+                status="PENDING",  # Changed to PENDING
             )
 
-            # Update employee record
+            # Update employee status but keep them active until approval
             employee.employment_status = exit_type
-            employee.exit_date = last_working_day
             employee.exit_note = exit_note
+            # Don't set exit_date yet - will be set upon approval
+            # Don't disable login - employee can work until approved
+            employee.save()
 
-            # Check if exit is effective today/past or future
-            today = timezone.localdate()
-            is_immediate = last_working_day <= today
+            # --- Email Notification to HR/Admin/Manager ---
+            try:
+                from django.core.mail import send_mail
 
-            if is_immediate:
-                # Immediate Exit
-                employee.is_active = False
-                employee.save()
+                # 1. Recipients
+                recipients = []
 
-                # Disable user login immediately
-                user = employee.user
-                user.is_active = False
-                user.save()
+                # Reporting Manager
+                if employee.manager and employee.manager.user.email:
+                    recipients.append(employee.manager.user.email)
 
-                action_msg = f"Employee {employee.user.get_full_name()} marked as {exit_type.lower()}. Access blocked immediately."
-            else:
-                # Future Exit
-                # Keep active until that date
-                employee.is_active = True
-                employee.save()
+                # HR/Admins
+                company_admins = User.objects.filter(
+                    company=employee.company, role="COMPANY_ADMIN"
+                ).values_list("email", flat=True)
+                recipients.extend(list(company_admins))
 
-                # Ensure user is active (in case they were blocked)
-                user = employee.user
-                user.is_active = True
-                user.save()
+                # Company HR Email
+                if employee.company.hr_email:
+                    recipients.append(employee.company.hr_email)
 
-                action_msg = f"Employee {employee.user.get_full_name()} marked as {exit_type.lower()}. Access will be blocked on {last_working_day.strftime('%d %b %Y')}."
+                # Deduplicate
+                recipients = list(set(filter(None, recipients)))
 
-            # TODO: Create announcement for last working day
-            # create_exit_announcement(employee, exit_initiative)
+                if recipients:
+                    subject = f"{exit_initiative.get_exit_type_display()} Submitted: {employee.user.get_full_name()} ({employee.designation})"
+                    message = f"""
+Dear Team,
 
-            messages.success(request, action_msg)
+This is to inform you that a {exit_initiative.get_exit_type_display().lower()} request has been submitted for {employee.user.get_full_name()} ({employee.designation}) on {submission_date.strftime("%d %b %Y")}.
+
+Reason:
+{exit_note}
+
+Notice Period: {notice_period} days
+Proposed Last Working Day: {last_working_day.strftime("%d %b %Y")}
+
+Current Status: Pending Approval
+
+Please login to the HRMS portal to review and take necessary action.
+
+Regards,
+HRMS System
+                    """
+                    send_mail(
+                        subject,
+                        message,
+                        settings.EMAIL_HOST_USER or settings.DEFAULT_FROM_EMAIL,
+                        recipients,
+                        fail_silently=True,
+                    )
+
+            except Exception as e:
+                print(f"Error in {exit_type.lower()} notification: {e}")
+
+            messages.success(
+                request,
+                f"{exit_initiative.get_exit_type_display()} request for {employee.user.get_full_name()} has been submitted for approval.",
+            )
 
             return JsonResponse(
                 {
                     "status": "success",
-                    "message": action_msg,
+                    "message": f"{exit_initiative.get_exit_type_display()} request submitted successfully. Awaiting approval.",
                     "redirect_url": reverse("employee_list"),
                 }
             )
+
 
     except Employee.DoesNotExist:
         return JsonResponse(
@@ -2013,6 +2042,319 @@ def employee_exit_action(request, pk):
         return JsonResponse(
             {"status": "error", "message": f"An error occurred: {str(e)}"}, status=500
         )
+
+
+@login_required
+def approve_exit_initiative(request, pk):
+    """
+    Approve an exit initiative (resignation, termination, or absconding)
+    Accessible by Admin and Manager
+    """
+    from .models import ExitInitiative
+    from datetime import timedelta, datetime
+    from dateutil.relativedelta import relativedelta
+
+    try:
+        exit_initiative = ExitInitiative.objects.get(pk=pk)
+        employee = exit_initiative.employee
+
+        # Permission check: Admin or Manager
+        user = request.user
+        is_admin = user.role in [User.Role.COMPANY_ADMIN, User.Role.SUPERADMIN]
+        is_manager = (
+            user.role == User.Role.MANAGER
+            and employee.manager
+            and employee.manager.user == user
+        )
+
+        if not (is_admin or is_manager):
+            messages.error(request, "Permission denied. Only Admin or Manager can approve exit initiatives.")
+            return redirect("exit_initiatives_list")
+
+        # Check if already processed
+        if exit_initiative.status != "PENDING":
+            messages.warning(request, f"This exit initiative has already been {exit_initiative.status.lower()}.")
+            return redirect("exit_initiatives_list")
+
+        # Get last working day from POST request
+        if request.method == "POST":
+            last_working_day_str = request.POST.get("last_working_day")
+            if not last_working_day_str:
+                messages.error(request, "Last working day is required.")
+                return redirect("exit_initiatives_list")
+            
+            try:
+                last_working_day = datetime.strptime(last_working_day_str, "%Y-%m-%d").date()
+            except ValueError:
+                messages.error(request, "Invalid date format for last working day.")
+                return redirect("exit_initiatives_list")
+            
+            # Validate that last working day is not before submission date
+            if last_working_day < exit_initiative.submission_date:
+                messages.error(request, "Last working day cannot be before submission date.")
+                return redirect("exit_initiatives_list")
+        else:
+            # For backward compatibility with GET requests (if any direct links exist)
+            # Calculate last working day based on exit type
+            if exit_initiative.exit_type == "RESIGNATION":
+                # 2 months from approval date
+                last_working_day = timezone.now().date() + relativedelta(months=2)
+            elif exit_initiative.exit_type in ["ABSCONDED", "TERMINATED"]:
+                # Already calculated during submission or use submission date
+                if exit_initiative.last_working_day:
+                    last_working_day = exit_initiative.last_working_day
+                else:
+                    last_working_day = exit_initiative.submission_date + timedelta(
+                        days=exit_initiative.notice_period_days or 0
+                    )
+            else:
+                last_working_day = timezone.now().date()
+
+        # Approve the exit initiative
+        exit_initiative.status = "APPROVED"
+        exit_initiative.approved_by = user
+        exit_initiative.approved_at = timezone.now()
+        exit_initiative.last_working_day = last_working_day
+        exit_initiative.save()
+
+        # Update employee record
+        employee.exit_date = last_working_day
+        employee.exit_note = exit_initiative.exit_note
+
+        # Check if exit is effective today/past or future
+        today = timezone.localdate()
+        is_immediate = last_working_day <= today
+
+        if is_immediate:
+            # Immediate Exit - change to Ex-Employee type and disable employee
+            employee.employment_status = "EX_EMPLOYEE"
+            employee.is_active = False
+            employee.save()
+
+            # Disable user login
+            emp_user = employee.user
+            emp_user.is_active = False
+            emp_user.save()
+
+            status_msg = f"Exit initiative approved. {employee.user.get_full_name()}'s account has been changed to Ex-Employee type and access has been disabled immediately."
+        else:
+            # Future Exit - keep active until last working day
+            # Keep current employment status until last working day
+            employee.employment_status = exit_initiative.exit_type
+            employee.is_active = True
+            employee.save()
+
+            # Ensure user is active
+            emp_user = employee.user
+            emp_user.is_active = True
+            emp_user.save()
+
+            status_msg = f"Exit initiative approved. {employee.user.get_full_name()}'s last working day is {last_working_day.strftime('%d %b %Y')}. Account will be changed to Ex-Employee type on that date."
+
+        # Send email notification to employee
+        try:
+            from django.core.mail import send_mail
+
+            subject = f"Exit Initiative Approved - {exit_initiative.get_exit_type_display()}"
+            message = f"""
+Dear {employee.user.get_full_name()},
+
+Your {exit_initiative.get_exit_type_display().lower()} request has been approved.
+
+Submission Date: {exit_initiative.submission_date.strftime('%d %b %Y')}
+Last Working Day: {last_working_day.strftime('%d %b %Y')}
+Approved By: {user.get_full_name()}
+
+Reason:
+{exit_initiative.exit_note}
+
+On your last working day, your account will be changed to Ex-Employee type and access will be disabled.
+
+Please complete all exit formalities before your last working day.
+
+Regards,
+{employee.company.name} HR Team
+            """
+
+            send_mail(
+                subject,
+                message,
+                settings.EMAIL_HOST_USER or settings.DEFAULT_FROM_EMAIL,
+                [employee.user.email],
+                fail_silently=True,
+            )
+        except Exception as e:
+            print(f"Error sending approval email: {e}")
+
+        messages.success(request, status_msg)
+        return redirect("exit_initiatives_list")
+
+    except ExitInitiative.DoesNotExist:
+        messages.error(request, "Exit initiative not found.")
+        return redirect("exit_initiatives_list")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        messages.error(request, f"An error occurred: {str(e)}")
+        return redirect("exit_initiatives_list")
+
+
+@login_required
+def reject_exit_initiative(request, pk):
+    """
+    Reject an exit initiative
+    Accessible by Admin and Manager
+    """
+    from .models import ExitInitiative
+
+    if request.method != "POST":
+        messages.error(request, "Invalid request method.")
+        return redirect("exit_initiatives_list")
+
+    try:
+        exit_initiative = ExitInitiative.objects.get(pk=pk)
+        employee = exit_initiative.employee
+
+        # Permission check: Admin or Manager
+        user = request.user
+        is_admin = user.role in [User.Role.COMPANY_ADMIN, User.Role.SUPERADMIN]
+        is_manager = (
+            user.role == User.Role.MANAGER
+            and employee.manager
+            and employee.manager.user == user
+        )
+
+        if not (is_admin or is_manager):
+            messages.error(request, "Permission denied. Only Admin or Manager can reject exit initiatives.")
+            return redirect("exit_initiatives_list")
+
+        # Check if already processed
+        if exit_initiative.status != "PENDING":
+            messages.warning(request, f"This exit initiative has already been {exit_initiative.status.lower()}.")
+            return redirect("exit_initiatives_list")
+
+        # Get rejection reason
+        rejection_reason = request.POST.get("rejection_reason", "").strip()
+        if not rejection_reason:
+            messages.error(request, "Please provide a reason for rejection.")
+            return redirect("exit_initiatives_list")
+
+        # Reject the exit initiative
+        exit_initiative.status = "REJECTED"
+        exit_initiative.rejection_reason = rejection_reason
+        exit_initiative.approved_by = user  # Store who rejected it
+        exit_initiative.approved_at = timezone.now()
+        exit_initiative.save()
+
+        # Reset employee status
+        employee.employment_status = "ACTIVE"
+        employee.exit_date = None
+        employee.exit_note = ""
+        employee.is_active = True
+        employee.save()
+
+        # Ensure user is active
+        emp_user = employee.user
+        emp_user.is_active = True
+        emp_user.save()
+
+        # Send email notification to employee
+        try:
+            from django.core.mail import send_mail
+
+            subject = f"Exit Initiative Rejected - {exit_initiative.get_exit_type_display()}"
+            message = f"""
+Dear {employee.user.get_full_name()},
+
+Your {exit_initiative.get_exit_type_display().lower()} request has been rejected.
+
+Submission Date: {exit_initiative.submission_date.strftime('%d %b %Y')}
+Rejected By: {user.get_full_name()}
+
+Reason for Rejection:
+{rejection_reason}
+
+If you have any questions, please contact HR.
+
+Regards,
+{employee.company.name} HR Team
+            """
+
+            send_mail(
+                subject,
+                message,
+                settings.EMAIL_HOST_USER or settings.DEFAULT_FROM_EMAIL,
+                [employee.user.email],
+                fail_silently=True,
+            )
+        except Exception as e:
+            print(f"Error sending rejection email: {e}")
+
+        messages.success(request, f"Exit initiative rejected. {employee.user.get_full_name()} has been notified.")
+        return redirect("exit_initiatives_list")
+
+    except ExitInitiative.DoesNotExist:
+        messages.error(request, "Exit initiative not found.")
+        return redirect("exit_initiatives_list")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        messages.error(request, f"An error occurred: {str(e)}")
+        return redirect("exit_initiatives_list")
+
+
+@login_required
+def exit_initiatives_list(request):
+    """
+    Display all pending exit initiatives for approval
+    Accessible by Admin and Managers (for their team members)
+    """
+    from .models import ExitInitiative
+
+    user = request.user
+    is_admin = user.role in [User.Role.COMPANY_ADMIN, User.Role.SUPERADMIN]
+
+    # Get exit initiatives based on role
+    if is_admin:
+        # Admin can see all exit initiatives in their company
+        exit_initiatives = ExitInitiative.objects.filter(
+            employee__company=user.company
+        ).select_related('employee', 'employee__user', 'approved_by').order_by('-created_at')
+    elif user.role == User.Role.MANAGER:
+        # Managers can only see their team members' exit initiatives
+        try:
+            manager_employee = user.employee_profile
+            exit_initiatives = ExitInitiative.objects.filter(
+                employee__manager=manager_employee
+            ).select_related('employee', 'employee__user', 'approved_by').order_by('-created_at')
+        except:
+            exit_initiatives = ExitInitiative.objects.none()
+    else:
+        # Regular employees cannot access this page
+        messages.error(request, "Permission denied. Only Admin or Managers can access this page.")
+        return redirect("dashboard")
+
+    # Filter by status
+    status_filter = request.GET.get('status', 'pending')
+    if status_filter == 'pending':
+        exit_initiatives = exit_initiatives.filter(status='PENDING')
+    elif status_filter == 'approved':
+        exit_initiatives = exit_initiatives.filter(status='APPROVED')
+    elif status_filter == 'rejected':
+        exit_initiatives = exit_initiatives.filter(status='REJECTED')
+    # 'all' shows everything
+
+    context = {
+        'exit_initiatives': exit_initiatives,
+        'status_filter': status_filter,
+        'pending_count': ExitInitiative.objects.filter(
+            employee__company=user.company, status='PENDING'
+        ).count() if is_admin else ExitInitiative.objects.filter(
+            employee__manager=user.employee_profile, status='PENDING'
+        ).count() if user.role == User.Role.MANAGER else 0,
+    }
+
+    return render(request, 'employees/exit_initiatives_list.html', context)
 
 
 @csrf_exempt

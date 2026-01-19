@@ -67,6 +67,19 @@ urlpatterns = [
     path(
         "<int:pk>/exit-action/", views.employee_exit_action, name="employee_exit_action"
     ),
+    path(
+        "exit-initiatives/", views.exit_initiatives_list, name="exit_initiatives_list"
+    ),
+    path(
+        "exit-initiatives/<int:pk>/approve/",
+        views.approve_exit_initiative,
+        name="approve_exit_initiative",
+    ),
+    path(
+        "exit-initiatives/<int:pk>/reject/",
+        views.reject_exit_initiative,
+        name="reject_exit_initiative",
+    ),
     # ID Proof Management
     path("<int:pk>/id-proofs/", views.employee_id_proofs, name="employee_id_proofs"),
     # Leave Configuration

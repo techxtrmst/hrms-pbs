@@ -1,0 +1,642 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Exit Initiatives - Approval{% endblock %}
+
+{% block extra_css %}
+<style>
+    .exit-initiatives-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+        border-radius: 16px;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .page-header h1 {
+        margin: 0;
+        font-size: 2rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .page-header p {
+        margin: 0.5rem 0 0 0;
+        opacity: 0.95;
+        font-size: 1rem;
+    }
+
+    .filter-tabs {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-tab {
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        background: white;
+        border: 2px solid #e2e8f0;
+        color: #64748b;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .filter-tab:hover {
+        border-color: #667eea;
+        color: #667eea;
+        transform: translateY(-2px);
+    }
+
+    .filter-tab.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .initiatives-grid {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .initiative-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s;
+        border-left: 4px solid #e2e8f0;
+    }
+
+    .initiative-card:hover {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .initiative-card.resignation {
+        border-left-color: #f59e0b;
+    }
+
+    .initiative-card.absconded {
+        border-left-color: #ef4444;
+    }
+
+    .initiative-card.terminated {
+        border-left-color: #dc2626;
+    }
+
+    .initiative-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 1rem;
+    }
+
+    .employee-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .employee-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1.2rem;
+    }
+
+    .employee-details h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        color: #0f172a;
+    }
+
+    .employee-details p {
+        margin: 0.25rem 0 0 0;
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+    }
+
+    .status-badge.pending {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .status-badge.approved {
+        background: #d1fae5;
+        color: #059669;
+    }
+
+    .status-badge.rejected {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .exit-type-badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        display: inline-block;
+        margin-bottom: 0.5rem;
+    }
+
+    .exit-type-badge.resignation {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .exit-type-badge.absconded {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .exit-type-badge.terminated {
+        background: #fecaca;
+        color: #dc2626;
+    }
+
+    .initiative-details {
+        margin: 1rem 0;
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 8px;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .detail-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .detail-label {
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .detail-value {
+        color: #0f172a;
+        font-weight: 600;
+    }
+
+    .exit-note {
+        margin: 1rem 0;
+        padding: 1rem;
+        background: #fffbeb;
+        border-left: 3px solid #f59e0b;
+        border-radius: 6px;
+    }
+
+    .exit-note h4 {
+        margin: 0 0 0.5rem 0;
+        color: #92400e;
+        font-size: 0.9rem;
+    }
+
+    .exit-note p {
+        margin: 0;
+        color: #78350f;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .btn {
+        padding: 0.6rem 1.25rem;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .btn-approve {
+        background: #10b981;
+        color: white;
+        box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-approve:hover {
+        background: #059669;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-reject {
+        background: #ef4444;
+        color: white;
+        box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-reject:hover {
+        background: #dc2626;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: #cbd5e1;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+        color: #475569;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .empty-state p {
+        color: #94a3b8;
+        margin: 0;
+    }
+
+    /* Rejection Modal */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(8px);
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal.show {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 500px;
+        padding: 2rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+        animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .modal-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        color: #0f172a;
+        font-size: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 500;
+        color: #475569;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-group textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-family: inherit;
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .form-group input[type="date"] {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-family: inherit;
+    }
+
+    .form-group input[type="date"]:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+    }
+
+    .btn-cancel {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+
+    .btn-cancel:hover {
+        background: #e2e8f0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="exit-initiatives-container">
+    <div class="page-header">
+        <h1>
+            <i class="fas fa-clipboard-check"></i>
+            Exit Initiatives - Approval
+        </h1>
+        <p>Review and manage employee exit requests (Resignation, Termination, Absconding)</p>
+    </div>
+
+    <div class="filter-tabs">
+        <a href="?status=pending" class="filter-tab {% if status_filter == 'pending' %}active{% endif %}">
+            <i class="fas fa-clock"></i> Pending ({{ pending_count }})
+        </a>
+        <a href="?status=approved" class="filter-tab {% if status_filter == 'approved' %}active{% endif %}">
+            <i class="fas fa-check-circle"></i> Approved
+        </a>
+        <a href="?status=rejected" class="filter-tab {% if status_filter == 'rejected' %}active{% endif %}">
+            <i class="fas fa-times-circle"></i> Rejected
+        </a>
+        <a href="?status=all" class="filter-tab {% if status_filter == 'all' %}active{% endif %}">
+            <i class="fas fa-list"></i> All
+        </a>
+    </div>
+
+    <div class="initiatives-grid">
+        {% for initiative in exit_initiatives %}
+        <div class="initiative-card {{ initiative.exit_type|lower }}">
+            <div class="initiative-header">
+                <div class="employee-info">
+                    <div class="employee-avatar">
+                        {{ initiative.employee.user.first_name|first }}{{ initiative.employee.user.last_name|first }}
+                    </div>
+                    <div class="employee-details">
+                        <h3>{{ initiative.employee.user.get_full_name }}</h3>
+                        <p>{{ initiative.employee.designation }} • {{ initiative.employee.department }}</p>
+                    </div>
+                </div>
+                <span class="status-badge {{ initiative.status|lower }}">
+                    {{ initiative.get_status_display }}
+                </span>
+            </div>
+
+            <span class="exit-type-badge {{ initiative.exit_type|lower }}">
+                <i
+                    class="fas {% if initiative.exit_type == 'RESIGNATION' %}fa-hand-paper{% elif initiative.exit_type == 'ABSCONDED' %}fa-user-slash{% else %}fa-ban{% endif %}"></i>
+                {{ initiative.get_exit_type_display }}
+            </span>
+
+            <div class="initiative-details">
+                <div class="detail-row">
+                    <span class="detail-label">Submission Date:</span>
+                    <span class="detail-value">{{ initiative.submission_date|date:"d M Y" }}</span>
+                </div>
+                {% if initiative.notice_period_days %}
+                <div class="detail-row">
+                    <span class="detail-label">Notice Period:</span>
+                    <span class="detail-value">{{ initiative.notice_period_days }} days</span>
+                </div>
+                {% endif %}
+                {% if initiative.last_working_day %}
+                <div class="detail-row">
+                    <span class="detail-label">Last Working Day:</span>
+                    <span class="detail-value">{{ initiative.last_working_day|date:"d M Y" }}</span>
+                </div>
+                {% endif %}
+                {% if initiative.approved_by %}
+                <div class="detail-row">
+                    <span class="detail-label">Processed By:</span>
+                    <span class="detail-value">{{ initiative.approved_by.get_full_name }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Processed At:</span>
+                    <span class="detail-value">{{ initiative.approved_at|date:"d M Y, h:i A" }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="exit-note">
+                <h4><i class="fas fa-comment-alt"></i> Reason:</h4>
+                <p>{{ initiative.exit_note }}</p>
+            </div>
+
+            {% if initiative.rejection_reason %}
+            <div class="exit-note" style="background: #fef2f2; border-left-color: #ef4444;">
+                <h4 style="color: #991b1b;"><i class="fas fa-exclamation-triangle"></i> Rejection Reason:</h4>
+                <p style="color: #7f1d1d;">{{ initiative.rejection_reason }}</p>
+            </div>
+            {% endif %}
+
+            {% if initiative.status == 'PENDING' %}
+            <div class="action-buttons">
+                <button class="btn btn-approve"
+                    onclick="openApproveModal({{ initiative.pk }}, '{{ initiative.employee.user.get_full_name|escapejs }}', '{{ initiative.get_exit_type_display|escapejs }}', '{{ initiative.submission_date|date:'Y-m-d' }}')">
+                    <i class="fas fa-check"></i> Approve
+                </button>
+                <button class="btn btn-reject"
+                    onclick="openRejectModal({{ initiative.pk }}, '{{ initiative.employee.user.get_full_name|escapejs }}', '{{ initiative.get_exit_type_display|escapejs }}')">
+                    <i class="fas fa-times"></i> Reject
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h3>No Exit Initiatives Found</h3>
+            <p>There are no {{ status_filter }} exit initiatives at the moment.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Approval Modal -->
+<div id="approveModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Approve Exit Initiative</h2>
+        </div>
+        <form id="approveForm" method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Employee: <strong id="approveEmployeeName"></strong></label>
+                <label>Exit Type: <strong id="approveExitType"></strong></label>
+            </div>
+            <div class="form-group">
+                <label for="last_working_day">Last Working Day *</label>
+                <input type="date" name="last_working_day" id="last_working_day" required>
+            </div>
+            <div class="form-group">
+                <p style="color: #64748b; font-size: 0.9rem; margin: 0;">
+                    <i class="fas fa-info-circle"></i>
+                    On this date, the employee account will be changed to "Ex-Employee" type and access will be
+                    disabled.
+                </p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-cancel" onclick="closeApproveModal()">Cancel</button>
+                <button type="submit" class="btn btn-approve">
+                    <i class="fas fa-check"></i> Confirm Approval
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Rejection Modal -->
+<div id="rejectModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Reject Exit Initiative</h2>
+        </div>
+        <form id="rejectForm" method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Employee: <strong id="rejectEmployeeName"></strong></label>
+                <label>Exit Type: <strong id="rejectExitType"></strong></label>
+            </div>
+            <div class="form-group">
+                <label for="rejection_reason">Reason for Rejection *</label>
+                <textarea name="rejection_reason" id="rejection_reason" required
+                    placeholder="Please provide a detailed reason for rejecting this exit initiative..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-cancel" onclick="closeRejectModal()">Cancel</button>
+                <button type="submit" class="btn btn-reject">
+                    <i class="fas fa-times"></i> Confirm Rejection
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let currentInitiativeId = null;
+
+    function openApproveModal(initiativeId, employeeName, exitType, submissionDate) {
+        currentInitiativeId = initiativeId;
+        document.getElementById('approveEmployeeName').textContent = employeeName;
+        document.getElementById('approveExitType').textContent = exitType;
+        document.getElementById('approveForm').action = `/employees/exit-initiatives/${initiativeId}/approve/`;
+
+        // Set minimum date to submission date
+        const lastWorkingDayInput = document.getElementById('last_working_day');
+        lastWorkingDayInput.min = submissionDate;
+
+        // Set default value to today or submission date, whichever is later
+        const today = new Date().toISOString().split('T')[0];
+        const minDate = submissionDate > today ? submissionDate : today;
+        lastWorkingDayInput.value = minDate;
+
+        document.getElementById('approveModal').classList.add('show');
+    }
+
+    function closeApproveModal() {
+        document.getElementById('approveModal').classList.remove('show');
+        document.getElementById('last_working_day').value = '';
+        currentInitiativeId = null;
+    }
+
+    function openRejectModal(initiativeId, employeeName, exitType) {
+        currentInitiativeId = initiativeId;
+        document.getElementById('rejectEmployeeName').textContent = employeeName;
+        document.getElementById('rejectExitType').textContent = exitType;
+        document.getElementById('rejectForm').action = `/employees/exit-initiatives/${initiativeId}/reject/`;
+        document.getElementById('rejectModal').classList.add('show');
+    }
+
+    function closeRejectModal() {
+        document.getElementById('rejectModal').classList.remove('show');
+        document.getElementById('rejection_reason').value = '';
+        currentInitiativeId = null;
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function (event) {
+        const approveModal = document.getElementById('approveModal');
+        const rejectModal = document.getElementById('rejectModal');
+
+        if (event.target == approveModal) {
+            closeApproveModal();
+        }
+        if (event.target == rejectModal) {
+            closeRejectModal();
+        }
+    }
+</script>
+{% endblock %}
