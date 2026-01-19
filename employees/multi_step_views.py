@@ -77,21 +77,64 @@ def add_employee_step1(request):
         initial_data = request.session.get("employee_personal_data", {})
         form = PersonalInfoForm(initial=initial_data, user=request.user)
 
-    # Calculate Company Prefix for ID generation
+    # Calculate Company Prefix and Context
     company_prefix = "EMP"
+    email_placeholder = "e.g. john.doe@gmail.com"
+    next_sequence_placeholder = "001"
+
     if request.user.company:
         c_name = request.user.company.name.lower()
+        company = request.user.company
+
+        # Calculate next sequence based on highest existing badge ID number
+        try:
+            # Get all badge IDs for the company
+            existing_ids = Employee.objects.filter(company=company).values_list('badge_id', flat=True)
+            
+            max_number = 0
+            import re
+            for bid in existing_ids:
+                if bid:
+                    # Extract all matches of digits
+                    numbers = re.findall(r'\d+', bid)
+                    if numbers:
+                        # Take the last group of digits as the ID number (usually at the end)
+                        try:
+                            num = int(numbers[-1])
+                            if num > max_number:
+                                max_number = num
+                        except ValueError:
+                            continue
+            
+            next_sequence_placeholder = f"{max_number + 1:03d}"
+        except Exception:
+            # Fallback to 001 if any error occurs
+            next_sequence_placeholder = "001"
+
         if "petabytz" in c_name or "petabytes" in c_name:
             company_prefix = "PBT"
+            email_placeholder = "e.g. john.doe@petabytz.com"
         elif "softstandard" in c_name:
             company_prefix = "SSS"
+            email_placeholder = "e.g. john.doe@softstandard.com"
+        elif "bluebix" in c_name:
+            company_prefix = request.user.company.name[:3].upper()
+            email_placeholder = "e.g. john.doe@bluebix.com"
         else:
             company_prefix = request.user.company.name[:3].upper()
+            domain = c_name.replace(" ", "") + ".com"
+            email_placeholder = f"e.g. john.doe@{domain}"
 
     return render(
         request,
         "employees/add_employee_step1.html",
-        {"form": form, "step": 1, "company_prefix": company_prefix},
+        {
+            "form": form, 
+            "step": 1, 
+            "company_prefix": company_prefix,
+            "next_sequence": next_sequence_placeholder,
+            "email_placeholder": email_placeholder
+        },
     )
 
 

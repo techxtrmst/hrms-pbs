@@ -126,50 +126,60 @@ class Command(BaseCommand):
                 and emp.dob.month == local_date.month
                 and emp.dob.day == local_date.day
             ):
-                birthday_count += 1
-                self.stdout.write(
-                    self.style.SUCCESS(f"\n🎂 Birthday: {emp.user.get_full_name()}")
-                )
-                self.stdout.write(f"   Company: {emp.company.name}")
-                self.stdout.write(
-                    f"   Location: {emp.location.name if emp.location else 'Not set'}"
-                )
-                self.stdout.write(f"   Timezone: {tz_name}")
-                self.stdout.write(f"   Local time: {local_time.strftime('%I:%M %p')}")
-
-                if not test_mode:
-                    # Send individual birthday email
-                    if send_birthday_email(emp):
-                        birthday_emails_sent += 1
-                        self.stdout.write(
-                            f"   ✅ Birthday email sent to: {emp.user.email}"
-                        )
-
-                    # Send company-wide announcement
-                    company_employees = companies[emp.company.id]["employees"]
-                    announcement_count = send_birthday_announcement(
-                        emp, company_employees
+                if emp.last_birthday_email_year == local_date.year:
+                    self.stdout.write(
+                        f"   ℹ️ Birthday processed for {emp.user.get_full_name()} (Already sent in {local_date.year})"
                     )
-                    if announcement_count > 0:
-                        birthday_announcements_sent += announcement_count
-                        self.stdout.write(
-                            f"   ✅ Announcement sent to {announcement_count} employees"
-                        )
                 else:
+                    birthday_count += 1
                     self.stdout.write(
-                        f"   Would send birthday email to: {emp.user.email}"
+                        self.style.SUCCESS(f"\n🎂 Birthday: {emp.user.get_full_name()}")
                     )
-                    company_employees = companies[emp.company.id]["employees"]
-                    recipient_count = len(
-                        [
-                            e
-                            for e in company_employees
-                            if e.user.email and e.id != emp.id
-                        ]
-                    )
+                    self.stdout.write(f"   Company: {emp.company.name}")
                     self.stdout.write(
-                        f"   Would send announcement to {recipient_count} employees"
+                        f"   Location: {emp.location.name if emp.location else 'Not set'}"
                     )
+                    self.stdout.write(f"   Timezone: {tz_name}")
+                    self.stdout.write(f"   Local time: {local_time.strftime('%I:%M %p')}")
+
+                    if not test_mode:
+                        # Send individual birthday email
+                        if send_birthday_email(emp):
+                            birthday_emails_sent += 1
+                            self.stdout.write(
+                                f"   ✅ Birthday email sent to: {emp.user.email}"
+                            )
+
+                        # Send company-wide announcement
+                        company_employees = companies[emp.company.id]["employees"]
+                        announcement_count = send_birthday_announcement(
+                            emp, company_employees
+                        )
+                        if announcement_count > 0:
+                            birthday_announcements_sent += announcement_count
+                            self.stdout.write(
+                                f"   ✅ Announcement sent to {announcement_count} employees"
+                            )
+                        
+                        # Mark as sent
+                        emp.last_birthday_email_year = local_date.year
+                        emp.save(update_fields=['last_birthday_email_year'])
+                    else:
+                        self.stdout.write(
+                            f"   Would send birthday email to: {emp.user.email}"
+                        )
+                        company_employees = companies[emp.company.id]["employees"]
+                        recipient_count = len(
+                            [
+                                e
+                                for e in company_employees
+                                if e.user.email and e.id != emp.id
+                            ]
+                        )
+                        self.stdout.write(
+                            f"   Would send announcement to {recipient_count} employees"
+                        )
+
 
             # Check for work anniversary
             if (
@@ -184,53 +194,63 @@ class Command(BaseCommand):
                 if years == 0:
                     continue
 
-                anniversary_count += 1
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f"\n🏆 Work Anniversary: {emp.user.get_full_name()}"
+                if emp.last_anniversary_email_year == local_date.year:
+                    self.stdout.write(
+                        f"   ℹ️ Anniversary processed for {emp.user.get_full_name()} (Already sent in {local_date.year})"
                     )
-                )
-                self.stdout.write(f"   Company: {emp.company.name}")
-                self.stdout.write(
-                    f"   Location: {emp.location.name if emp.location else 'Not set'}"
-                )
-                self.stdout.write(f"   Timezone: {tz_name}")
-                self.stdout.write(f"   Local time: {local_time.strftime('%I:%M %p')}")
-                self.stdout.write(f"   Years of service: {years}")
-
-                if not test_mode:
-                    # Send individual anniversary email
-                    if send_anniversary_email(emp, years):
-                        anniversary_emails_sent += 1
-                        self.stdout.write(
-                            f"   ✅ Anniversary email sent to: {emp.user.email}"
-                        )
-
-                    # Send company-wide announcement
-                    company_employees = companies[emp.company.id]["employees"]
-                    announcement_count = send_anniversary_announcement(
-                        emp, years, company_employees
-                    )
-                    if announcement_count > 0:
-                        anniversary_announcements_sent += announcement_count
-                        self.stdout.write(
-                            f"   ✅ Announcement sent to {announcement_count} employees"
-                        )
                 else:
+                    anniversary_count += 1
                     self.stdout.write(
-                        f"   Would send anniversary email to: {emp.user.email}"
+                        self.style.SUCCESS(
+                            f"\n🏆 Work Anniversary: {emp.user.get_full_name()}"
+                        )
                     )
-                    company_employees = companies[emp.company.id]["employees"]
-                    recipient_count = len(
-                        [
-                            e
-                            for e in company_employees
-                            if e.user.email and e.id != emp.id
-                        ]
-                    )
+                    self.stdout.write(f"   Company: {emp.company.name}")
                     self.stdout.write(
-                        f"   Would send announcement to {recipient_count} employees"
+                        f"   Location: {emp.location.name if emp.location else 'Not set'}"
                     )
+                    self.stdout.write(f"   Timezone: {tz_name}")
+                    self.stdout.write(f"   Local time: {local_time.strftime('%I:%M %p')}")
+                    self.stdout.write(f"   Years of service: {years}")
+
+                    if not test_mode:
+                        # Send individual anniversary email
+                        if send_anniversary_email(emp, years):
+                            anniversary_emails_sent += 1
+                            self.stdout.write(
+                                f"   ✅ Anniversary email sent to: {emp.user.email}"
+                            )
+
+                        # Send company-wide announcement
+                        company_employees = companies[emp.company.id]["employees"]
+                        announcement_count = send_anniversary_announcement(
+                            emp, years, company_employees
+                        )
+                        if announcement_count > 0:
+                            anniversary_announcements_sent += announcement_count
+                            self.stdout.write(
+                                f"   ✅ Announcement sent to {announcement_count} employees"
+                            )
+                        
+                        # Mark as sent
+                        emp.last_anniversary_email_year = local_date.year
+                        emp.save(update_fields=['last_anniversary_email_year'])
+                    else:
+                        self.stdout.write(
+                            f"   Would send anniversary email to: {emp.user.email}"
+                        )
+                        company_employees = companies[emp.company.id]["employees"]
+                        recipient_count = len(
+                            [
+                                e
+                                for e in company_employees
+                                if e.user.email and e.id != emp.id
+                            ]
+                        )
+                        self.stdout.write(
+                            f"   Would send announcement to {recipient_count} employees"
+                        )
+
 
             # Check for probation completion (3 months from joining date)
             if emp.date_of_joining:

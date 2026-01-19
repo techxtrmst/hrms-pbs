@@ -1540,9 +1540,94 @@ def employee_org_chart(request):
         return redirect("dashboard")
 
     # Fetch only ACTIVE employees for this company
-    employees = Employee.objects.filter(
+    all_employees = Employee.objects.filter(
         company=request.user.company, employment_status="ACTIVE", is_active=True
     ).select_related("user", "manager")
+
+    # Filter employees based on Role
+    final_employees = []
+
+    # Helper structure for subtree logic
+    emp_map = {e.user.id: e for e in all_employees}
+    subordinates_map = {}
+    for emp in all_employees:
+        if emp.manager_id:
+            if emp.manager_id not in subordinates_map:
+                subordinates_map[emp.manager_id] = []
+            subordinates_map[emp.manager_id].append(emp)
+
+    def get_subtree(user_id):
+        """Recursively get all subordinates"""
+        result = []
+        if user_id in subordinates_map:
+            for sub in subordinates_map[user_id]:
+                result.append(sub)
+                result.extend(get_subtree(sub.user.id))
+        return result
+
+    # Determine context
+    current_emp = getattr(request.user, "employee_profile", None)
+    role = request.user.role if hasattr(request.user, "role") else None
+
+    if current_emp:
+        if role == User.Role.EMPLOYEE:
+            # Employee View: Department + Reporting Manager
+            dept = current_emp.department
+            manager_id = current_emp.manager_id
+
+            added_ids = set()
+
+            # 1. Add Department Colleagues
+            for emp in all_employees:
+                if emp.department == dept:
+                    final_employees.append(emp)
+                    added_ids.add(emp.id)
+
+            # 2. Add Reporting Manager (if not already added)
+            if manager_id and manager_id in emp_map:
+                mgr = emp_map[manager_id]
+                if mgr.id not in added_ids:
+                    final_employees.append(mgr)
+                    added_ids.add(mgr.id)
+
+        elif role in [User.Role.MANAGER, User.Role.COMPANY_ADMIN]:
+            # Manager/Admin View
+            # Rule: "his team and his reporting manager"
+            # Keep "CEO condition" -> If no manager, show all.
+
+            if current_emp.manager_id:
+                # Restricted View
+                added_ids = set()
+
+                # 1. Reporting Manager
+                if current_emp.manager_id in emp_map:
+                    mgr = emp_map[current_emp.manager_id]
+                    final_employees.append(mgr)
+                    added_ids.add(mgr.id)
+
+                # 2. Self
+                if current_emp.id not in added_ids:
+                    final_employees.append(current_emp)
+                    added_ids.add(current_emp.id)
+
+                # 3. Team (Subtree)
+                team = get_subtree(request.user.id)
+                for member in team:
+                    if member.id not in added_ids:
+                        final_employees.append(member)
+                        added_ids.add(member.id)
+            else:
+                # Top Level / CEO -> Show All
+                final_employees = list(all_employees)
+        else:
+            # Unknown role -> Show All
+            final_employees = list(all_employees)
+    else:
+        # No profile (e.g. SuperAdmin or Error) -> Show All
+        final_employees = list(all_employees)
+
+    # Use the filtered list for node building
+    employees = final_employees
 
     # Build dictionary Key=USER_ID (not Employee ID)
     nodes = {}

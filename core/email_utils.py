@@ -180,13 +180,14 @@ def send_anniversary_email(employee, years):
         return False
 
 
-def send_birthday_announcement(employee, company_employees):
+def send_birthday_announcement(employee, company_employees, recipient_list=None):
     """
     Send birthday announcement to all employees in the company using hrms@petabytz.com
 
     Args:
         employee: Employee model instance (birthday person)
-        company_employees: QuerySet of all employees in the company
+        company_employees: QuerySet of all employees in the company (used if recipient_list not provided)
+        recipient_list: Optional list of email addresses to send to
 
     Returns:
         int: Number of emails sent successfully
@@ -215,12 +216,17 @@ def send_birthday_announcement(employee, company_employees):
         # Create email
         subject = f"🎂 {employee.user.first_name}'s Birthday Today!"
 
-        # Get all employee emails (excluding the birthday person and those without email)
-        recipient_list = [
-            emp.user.email
-            for emp in company_employees
-            if emp.user.email and emp.id != employee.id
-        ]
+        # Get recipient list if not provided
+        if recipient_list is None:
+            # Get all employee emails (excluding the birthday person and those without email)
+            recipient_list = [
+                emp.user.email
+                for emp in company_employees
+                if emp.user.email and emp.id != employee.id
+            ]
+
+        # Filter out empty emails just in case
+        recipient_list = [email for email in recipient_list if email]
 
         if not recipient_list:
             logger.warning(
@@ -247,7 +253,7 @@ def send_birthday_announcement(employee, company_employees):
         return 0
 
 
-def send_anniversary_announcement(employee, years, company_employees):
+def send_anniversary_announcement(employee, years, company_employees, recipient_list=None):
     """
     Send work anniversary announcement to all employees in the company using hrms@petabytz.com
 
@@ -255,6 +261,7 @@ def send_anniversary_announcement(employee, years, company_employees):
         employee: Employee model instance (anniversary person)
         years: Number of years of service
         company_employees: QuerySet of all employees in the company
+        recipient_list: Optional list of email addresses to send to
 
     Returns:
         int: Number of emails sent successfully
@@ -284,12 +291,17 @@ def send_anniversary_announcement(employee, years, company_employees):
         # Create email
         subject = f"🏆 {employee.user.first_name}'s {years} Year Work Anniversary!"
 
-        # Get all employee emails (excluding the anniversary person and those without email)
-        recipient_list = [
-            emp.user.email
-            for emp in company_employees
-            if emp.user.email and emp.id != employee.id
-        ]
+        # Get recipient list if not provided
+        if recipient_list is None:
+            # Get all employee emails (excluding the anniversary person and those without email)
+            recipient_list = [
+                emp.user.email
+                for emp in company_employees
+                if emp.user.email and emp.id != employee.id
+            ]
+
+        # Filter out empty emails just in case
+        recipient_list = [email for email in recipient_list if email]
 
         if not recipient_list:
             logger.warning(

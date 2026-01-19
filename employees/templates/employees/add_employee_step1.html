@@ -361,7 +361,8 @@
                     </select>
 
                     <!-- Number -->
-                    <input type="text" class="form-control" id="id_number_input" placeholder="001" maxlength="6">
+                    <input type="text" class="form-control" id="id_number_input" placeholder="{{ next_sequence }}"
+                        maxlength="6">
                 </div>
 
 
@@ -400,7 +401,7 @@
 
             <div class="col-md-6">
                 <label class="form-label">Personal Email <span class="text-danger">*</span></label>
-                {% render_field form.email class="form-control" placeholder="e.g. john.doe@gmail.com" %}
+                {% render_field form.email class="form-control" placeholder=email_placeholder %}
                 {% if form.email.errors %}
                 <div class="text-danger">{{ form.email.errors.0 }}</div>
                 {% endif %}
