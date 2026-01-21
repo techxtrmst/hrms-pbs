@@ -495,6 +495,31 @@
         color: #9a3412;
     }
 
+    .status-holiday {
+        background: #e0f2fe;
+        color: #0369a1;
+    }
+
+    .status-missed {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .status-not-login {
+        background: #fef9c3;
+        color: #a16207;
+    }
+
+    .status-wfh {
+        background: #f5f3ff;
+        color: #7c3aed;
+    }
+
+    .status-leave {
+        background: #fff7ed;
+        color: #c2410c;
+    }
+
     /* Overlay */
     #celebration-overlay {
         position: fixed;
@@ -628,7 +653,8 @@
                             </div>
 
                             {% if attendance.clock_in %}
-                            <div class="text-muted small mt-1">Started at {{ attendance.get_current_session.clock_in|default:attendance.clock_in|time:"h:i A" }}
+                            <div class="text-muted small mt-1">Started at {{
+                                attendance.get_current_session.clock_in|default:attendance.clock_in|time:"h:i A" }}
                             </div>
                             {% endif %}
 
@@ -988,7 +1014,8 @@
                                 </h3>
                                 <div class="opacity-75 fw-medium" style="font-size: 1.1rem; letter-spacing: 0.02em;">
                                     {% if assigned_shift %}
-                                    {{ assigned_shift.start_time|time:"h:i A" }} - {{ assigned_shift.end_time|time:"h:i A" }}
+                                    {{ assigned_shift.start_time|time:"h:i A" }} - {{ assigned_shift.end_time|time:"h:i
+                                    A" }}
                                     {% else %}
                                     09:00 AM - 06:00 PM
                                     {% endif %}
@@ -1102,7 +1129,8 @@
                             {% if assigned_shift.breaks.all %}
                             {% for break_item in assigned_shift.breaks.all %}
                             <div class="fw-bold text-white" style="font-size: 0.85rem;">
-                                {{ break_item.name }}: {{ break_item.start_time|time:"H:i" }} - {{ break_item.end_time|time:"H:i" }}
+                                {{ break_item.name }}: {{ break_item.start_time|time:"H:i" }} - {{
+                                break_item.end_time|time:"H:i" }}
                             </div>
                             {% endfor %}
                             {% else %}
@@ -1227,10 +1255,23 @@
                                             </div>
                                         </td>
                                         <td>
-                                            {% if att.status == 'Absent' %}
-                                            <span class="status-badge status-absent">Absent</span>
-                                            {% else %}
+                                            {% if att.status == 'PRESENT' %}
                                             <span class="status-badge status-present">Present</span>
+                                            {% elif att.status == 'WFH' %}
+                                            <span class="status-badge status-wfh">WFH</span>
+                                            {% elif att.status == 'LEAVE' %}
+                                            <span class="status-badge status-leave">Leave</span>
+                                            {% elif att.status == 'WEEKLY_OFF' %}
+                                            <span class="status-badge status-absent">Week Off</span>
+                                            {% elif att.status == 'HOLIDAY' %}
+                                            <span class="status-badge status-holiday">Holiday</span>
+                                            {% elif att.status == 'MISSED' %}
+                                            <span class="status-badge status-missed">Missed</span>
+                                            {% elif att.status == 'NOT_LOGGED_IN' %}
+                                            <span class="status-badge status-not-login">Not Login</span>
+                                            {% else %}
+                                            <span class="status-badge status-absent">{{
+                                                att.status_display|default:att.status }}</span>
                                             {% endif %}
                                         </td>
                                         <td>
@@ -1596,7 +1637,7 @@
                 // If we have NO position after timeout, offer fallback options
                 btn.innerHTML = origText;
                 btn.disabled = false;
-                
+
                 // Show user-friendly options instead of blocking them
                 const allowWithoutLocation = confirm(
                     "Could not acquire location signal. This may be due to:\n" +
@@ -1606,7 +1647,7 @@
                     "Would you like to proceed without location tracking?\n" +
                     "(Your attendance will still be recorded, but without location data)"
                 );
-                
+
                 if (allowWithoutLocation) {
                     // Proceed without location
                     submitClockRequest(null);
@@ -1667,7 +1708,7 @@
                     stopLocationWatch();
                     btn.innerHTML = origText;
                     btn.disabled = false;
-                    
+
                     const allowWithoutLocation = confirm(
                         "Location access was denied. This may be due to:\n" +
                         "• Browser location permissions denied\n" +
@@ -1675,7 +1716,7 @@
                         "Would you like to proceed without location tracking?\n" +
                         "(Your attendance will still be recorded, but without location data)"
                     );
-                    
+
                     if (allowWithoutLocation) {
                         // Proceed without location
                         submitClockRequest(null);

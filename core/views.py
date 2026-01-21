@@ -652,27 +652,88 @@ def employee_dashboard(request):
     # Today's attendance
     attendance = Attendance.objects.filter(employee=employee, date=today).first()
 
-    # Stats (Last 30 days)
-    last_month = today - timedelta(days=30)
-    recent_attendance = Attendance.objects.filter(employee=employee, date__gte=last_month, date__lte=today)
+    # --- Comprehensive Attendance History (Last 30 Days) ---
+    end_date = today
+    start_date = today - timedelta(days=30)
+    
+    # Fetch existing records
+    attendance_records = {att.date: att for att in Attendance.objects.filter(employee=employee, date__range=[start_date, end_date])}
+    
+    # Fetch leaves
+    leaves = LeaveRequest.objects.filter(employee=employee, status='APPROVED', start_date__lte=end_date, end_date__gte=start_date)
+    leave_dates = {}
+    for l in leaves:
+        curr = max(l.start_date, start_date)
+        while curr <= min(l.end_date, end_date):
+            leave_dates[curr] = "LEAVE"
+            curr += timedelta(days=1)
+            
+    # Fetch Holidays
+    from companies.models import Holiday
+    holiday_q = Q(location__isnull=True)
+    if employee.location:
+        holiday_q |= Q(location=employee.location)
+    holidays = Holiday.objects.filter(company=employee.company, date__range=[start_date, end_date], is_active=True).filter(holiday_q)
+    holiday_dates = {h.date: h.name for h in holidays}
+    
+    history = []
+    curr_date = end_date
+    while curr_date >= start_date:
+        if curr_date in attendance_records:
+            history.append(attendance_records[curr_date])
+        else:
+            if employee.is_week_off(curr_date):
+                status = "WEEKLY_OFF"
+            elif curr_date in holiday_dates:
+                status = "HOLIDAY"
+            elif curr_date in leave_dates:
+                status = "LEAVE"
+            elif curr_date == today:
+                status = "NOT_LOGGED_IN"
+            else:
+                status = "MISSED"
+                
+            history.append({
+                'date': curr_date,
+                'status': status,
+                'status_display': status.replace('_', ' ').title(),
+                'clock_in': None,
+                'clock_out': None,
+                'effective_hours': "-",
+                'id': None
+            })
+        curr_date -= timedelta(days=1)
 
-    # Calculate stats
-    total_days = recent_attendance.count()
-    present_days = recent_attendance.filter(status="PRESENT").count()
-    wfh_days = recent_attendance.filter(status="WFH").count()
-    leave_days = recent_attendance.filter(status="LEAVE").count()
-
-    # Average working hours
+    # Calculate stats from history
+    total_days = len(history)
+    present_days = 0
+    wfh_days = 0
+    leave_days = 0
+    absent_days = 0
     total_seconds = 0
-    count = 0
-    for att in recent_attendance:
-        if att.clock_in and att.clock_out:
-            total_seconds += (att.clock_out - att.clock_in).total_seconds()
-            count += 1
+    sessions_with_time = 0
+
+    for item in history:
+        if isinstance(item, Attendance):
+            status = item.status
+            if item.clock_in and item.clock_out:
+                total_seconds += (item.clock_out - item.clock_in).total_seconds()
+                sessions_with_time += 1
+        else:
+            status = item.get('status')
+
+        if status == 'PRESENT':
+            present_days += 1
+        elif status == 'WFH':
+            wfh_days += 1
+        elif status == 'LEAVE':
+            leave_days += 1
+        elif status in ['ABSENT', 'MISSED']:
+            absent_days += 1
 
     avg_hours = "00:00"
-    if count > 0:
-        avg_sec = total_seconds / count
+    if sessions_with_time > 0:
+        avg_sec = total_seconds / sessions_with_time
         h = int(avg_sec // 3600)
         m = int((avg_sec % 3600) // 60)
         avg_hours = f"{h:02d}:{m:02d}"
@@ -681,39 +742,66 @@ def employee_dashboard(request):
     week_start = today - timedelta(days=today.weekday())  # Monday
     week_end = week_start + timedelta(days=6)  # Sunday
 
-    week_attendance = Attendance.objects.filter(employee=employee, date__gte=week_start, date__lte=week_end)
+    # Filter history for this week
+    week_history = [item for item in history if week_start <= (item.date if isinstance(item, Attendance) else item['date']) <= week_end]
+    
+    week_present = 0
+    week_wfh = 0
+    week_leave = 0
+    week_absent = 0
+    week_total = 0 # Expected work days
 
-    week_present = week_attendance.filter(status="PRESENT").count()
-    week_wfh = week_attendance.filter(status="WFH").count()
-    week_leave = week_attendance.filter(status="LEAVE").count()
-    week_total = week_attendance.exclude(status__in=["WEEKLY_OFF", "HOLIDAY"]).count()
-    week_absent = max(0, week_total - week_present - week_wfh - week_leave)
+    for item in week_history:
+        date = item.date if isinstance(item, Attendance) else item['date']
+        status = item.status if isinstance(item, Attendance) else item['status']
+        
+        if status == 'PRESENT':
+            week_present += 1
+            week_total += 1
+        elif status == 'WFH':
+            week_wfh += 1
+            week_total += 1
+        elif status == 'LEAVE':
+            week_leave += 1
+            week_total += 1
+        elif status in ['ABSENT', 'MISSED']:
+            week_absent += 1
+            week_total += 1
+        elif status in ['WEEKLY_OFF', 'HOLIDAY']:
+            pass # Don't count in total expected work days
 
     week_attendance_rate = 0
     if week_total > 0:
         week_attendance_rate = round(((week_present + week_wfh) / week_total) * 100)
 
-    # Yearly stats (current calendar year)
+    # Yearly stats - Simplified based on existing records + estimate
     year_start = today.replace(month=1, day=1)
     year_attendance = Attendance.objects.filter(employee=employee, date__gte=year_start, date__lte=today)
 
     year_present = year_attendance.filter(status="PRESENT").count()
     year_wfh = year_attendance.filter(status="WFH").count()
     year_leave = year_attendance.filter(status="LEAVE").count()
+    
+    # Estimate total working days so far (excluding weekends)
+    total_days_so_far = (today - year_start).days + 1
+    # Very rough estimate: 5/7 of days are working days
+    # Better: count actual non-week-off days if possible, but for now let's keep it simple or use database
     year_total = year_attendance.exclude(status__in=["WEEKLY_OFF", "HOLIDAY"]).count()
+    
+    # If year_total is less than historical records, it's definitely undercounting missed days
+    # But without full history for year, we can't be precise. 
+    # Let's at least use what we have.
 
     year_attendance_rate = 0
     if year_total > 0:
         year_attendance_rate = round(((year_present + year_wfh) / year_total) * 100)
+
 
     # Leave balance
     leave_balance = getattr(employee, "leave_balance", None)
 
     # Recent leave requests
     recent_leave_requests = LeaveRequest.objects.filter(employee=employee).order_by("-created_at")[:5]
-
-    # Attendance history
-    history = Attendance.objects.filter(employee=employee).order_by("-date")[:30]
 
     # --- Announcements & Celebrations Data ---
 
@@ -868,6 +956,7 @@ def employee_dashboard(request):
 
 @login_required
 def personal_home(request):
+    from companies.models import Announcement
     context = {}
     if hasattr(request.user, "employee_profile"):
         employee = request.user.employee_profile
@@ -877,20 +966,68 @@ def personal_home(request):
         attendance = Attendance.objects.filter(employee=employee, date=today).first()
         context["attendance"] = attendance
 
-        # Stats (Last 7 days)
-        last_week = today - timedelta(days=7)
-        recent_attendance = Attendance.objects.filter(employee=employee, date__gte=last_week)
+        # --- Comprehensive Attendance History (Last 30 Days) ---
+        end_date = today
+        start_date = today - timedelta(days=30)
+        
+        # Fetch existing records
+        attendance_records = {att.date: att for att in Attendance.objects.filter(employee=employee, date__range=[start_date, end_date])}
+        
+        # Fetch leaves
+        leaves = LeaveRequest.objects.filter(employee=employee, status='APPROVED', start_date__lte=end_date, end_date__gte=start_date)
+        leave_dates = {}
+        for l in leaves:
+            curr = max(l.start_date, start_date)
+            while curr <= min(l.end_date, end_date):
+                leave_dates[curr] = "LEAVE"
+                curr += timedelta(days=1)
+                
+        # Fetch Holidays
+        holiday_q = Q(location__isnull=True)
+        if employee.location:
+            holiday_q |= Q(location=employee.location)
+        holidays = Holiday.objects.filter(company=employee.company, date__range=[start_date, end_date], is_active=True).filter(holiday_q)
+        holiday_dates = {h.date: h.name for h in holidays}
+        
+        history = []
+        curr_date = end_date
+        while curr_date >= start_date:
+            if curr_date in attendance_records:
+                history.append(attendance_records[curr_date])
+            else:
+                if employee.is_week_off(curr_date):
+                    status = "WEEKLY_OFF"
+                elif curr_date in holiday_dates:
+                    status = "HOLIDAY"
+                elif curr_date in leave_dates:
+                    status = "LEAVE"
+                elif curr_date == today:
+                    status = "NOT_LOGGED_IN"
+                else:
+                    status = "MISSED"
+                    
+                history.append({
+                    'date': curr_date,
+                    'status': status,
+                    'status_display': status.replace('_', ' ').title(),
+                    'clock_in': None,
+                    'clock_out': None,
+                    'effective_hours': "-",
+                    'id': None
+                })
+            curr_date -= timedelta(days=1)
 
+        # Calculate stats from history
         total_seconds = 0
-        count = 0
-        for att in recent_attendance:
+        sessions_with_time = 0
+        for att in [item for item in history if isinstance(item, Attendance)]:
             if att.clock_in and att.clock_out:
                 total_seconds += (att.clock_out - att.clock_in).total_seconds()
-                count += 1
+                sessions_with_time += 1
 
         avg_hours = "00:00"
-        if count > 0:
-            avg_sec = total_seconds / count
+        if sessions_with_time > 0:
+            avg_sec = total_seconds / sessions_with_time
             h = int(avg_sec // 3600)
             m = int((avg_sec % 3600) // 60)
             avg_hours = f"{h:02d}:{m:02d}"
@@ -898,14 +1035,11 @@ def personal_home(request):
         context["avg_hours"] = avg_hours
         context["on_time_percentage"] = "100%"  # Stub for now
 
-        # Attendance History
-        history = Attendance.objects.filter(employee=employee).order_by("-date")[:30]
         context["attendance_history"] = history
 
-        # Announcements - current month
-        from django.db.models import Q
 
-        from companies.models import Announcement
+        # Announcements - current month
+
 
         announcements = (
             Announcement.objects.filter(company=employee.company, is_active=True)
@@ -944,7 +1078,6 @@ def personal_home(request):
         context["work_anniversaries"] = work_anniversaries
 
         # Holidays - All holidays in current month (past and upcoming)
-        from companies.models import Holiday
 
         upcoming_holidays = (
             Holiday.objects.filter(

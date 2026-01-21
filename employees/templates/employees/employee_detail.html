@@ -207,6 +207,21 @@
         color: #64748b;
     }
 
+    .status-holiday {
+        background: #e0f2fe;
+        color: #0369a1;
+    }
+
+    .status-missed {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .status-not-login {
+        background: #fef9c3;
+        color: #a16207;
+    }
+
     /* Exit Banner */
     .exit-banner {
         background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
@@ -398,18 +413,39 @@
                 <div class="p-3 border-bottom bg-white d-flex justify-content-between align-items-center">
                     <h5 class="m-0 fw-bold text-dark"><i class="fas fa-history me-2 text-primary"></i> Attendance Log
                     </h5>
-                    <!-- Month Filter stub -->
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
-                            data-bs-toggle="dropdown">
-                            {{ current_month }}
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="?month=1&year={{ current_year }}">January</a></li>
-                            <!-- Using simple links for now, could be dynamic -->
-                            <li><a class="dropdown-item" href="?month={{ 12 }}&year={{ current_year }}">December</a>
-                            </li>
-                        </ul>
+                    <div class="d-flex align-items-center">
+                        <div class="btn-group me-2">
+                            <a href="?month=1&year={{ current_year|add:'-1' }}" class="btn btn-sm btn-outline-secondary"
+                                title="Previous Year">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                            <span class="btn btn-sm btn-outline-secondary disabled" style="background: #f8f9fa;">{{
+                                current_year }}</span>
+                            <a href="?month=1&year={{ current_year|add:'1' }}" class="btn btn-sm btn-outline-secondary"
+                                title="Next Year">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                                data-bs-toggle="dropdown">
+                                {{ current_month }}
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="?month=1&year={{ current_year }}">January</a></li>
+                                <li><a class="dropdown-item" href="?month=2&year={{ current_year }}">February</a></li>
+                                <li><a class="dropdown-item" href="?month=3&year={{ current_year }}">March</a></li>
+                                <li><a class="dropdown-item" href="?month=4&year={{ current_year }}">April</a></li>
+                                <li><a class="dropdown-item" href="?month=5&year={{ current_year }}">May</a></li>
+                                <li><a class="dropdown-item" href="?month=6&year={{ current_year }}">June</a></li>
+                                <li><a class="dropdown-item" href="?month=7&year={{ current_year }}">July</a></li>
+                                <li><a class="dropdown-item" href="?month=8&year={{ current_year }}">August</a></li>
+                                <li><a class="dropdown-item" href="?month=9&year={{ current_year }}">September</a></li>
+                                <li><a class="dropdown-item" href="?month=10&year={{ current_year }}">October</a></li>
+                                <li><a class="dropdown-item" href="?month=11&year={{ current_year }}">November</a></li>
+                                <li><a class="dropdown-item" href="?month=12&year={{ current_year }}">December</a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
                 <div class="table-responsive">
@@ -433,14 +469,27 @@
                                     <span class="status-badge status-wfh">WFH</span>
                                     {% elif att.status == 'LEAVE' %}
                                     <span class="status-badge status-leave">Leave</span>
+                                    {% elif att.status == 'WEEKLY_OFF' %}
+                                    <span class="status-badge status-absent">Week Off</span>
+                                    {% elif att.status == 'HOLIDAY' %}
+                                    <span class="status-badge status-holiday"
+                                        title="{{ att.holiday_name }}">Holiday</span>
+                                    {% elif att.status == 'MISSED' %}
+                                    <span class="status-badge status-missed">Missed</span>
+                                    {% elif att.status == 'NOT_LOGGED_IN' %}
+                                    <span class="status-badge status-not-login">Not Login</span>
                                     {% else %}
                                     <span class="status-badge status-absent">{{ att.status }}</span>
                                     {% endif %}
                                 </td>
                                 <td>
+                                    {% if att.id %}
                                     <a href="{% url 'attendance_map' att.id %}" class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-map-marked-alt me-1"></i> View Map
                                     </a>
+                                    {% else %}
+                                    <span class="text-muted small">-</span>
+                                    {% endif %}
                                 </td>
                                 <td>
                                     {{ att.effective_hours|default:"-" }}

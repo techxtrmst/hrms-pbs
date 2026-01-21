@@ -440,28 +440,67 @@ def get_employee_leave_summary(employee):
 
 def get_employee_attendance_stats(employee, months=3):
     """
-    Get attendance statistics for employee
+    Get attendance statistics for employee including missed days
     """
+    from companies.models import Holiday
+    
     end_date = timezone.localtime().date()
     start_date = end_date - timedelta(days=months * 30)
 
-    attendance_records = Attendance.objects.filter(
-        employee=employee, date__gte=start_date
-    )
+    # Fetch data
+    attendance_records = {att.date: att for att in Attendance.objects.filter(employee=employee, date__range=[start_date, end_date])}
+    
+    leaves = LeaveRequest.objects.filter(employee=employee, status='APPROVED', start_date__lte=end_date, end_date__gte=start_date)
+    leave_dates = set()
+    for l in leaves:
+        curr = max(l.start_date, start_date)
+        while curr <= min(l.end_date, end_date):
+            leave_dates.add(curr)
+            curr += timedelta(days=1)
+            
+    holiday_q = Q(location__isnull=True)
+    if employee.location:
+        holiday_q |= Q(location=employee.location)
+    holidays = Holiday.objects.filter(company=employee.company, date__range=[start_date, end_date], is_active=True).filter(holiday_q)
+    holiday_dates = {h.date: h.name for h in holidays}
 
-    total_days = attendance_records.count()
-    present_days = attendance_records.filter(status="PRESENT").count()
-    late_days = attendance_records.filter(is_late=True).count()
-    early_departures = attendance_records.filter(is_early_departure=True).count()
-    absent_days = attendance_records.filter(status="ABSENT").count()
+    total_days = 0
+    present_days = 0
+    late_days = 0
+    early_departures = 0
+    absent_days = 0 # Includes MISSED
 
-    # Calculate missing punches (records with clock_in but no clock_out)
-    missing_punches = attendance_records.filter(
-        clock_in__isnull=False, clock_out__isnull=True, status="PRESENT"
-    ).count()
+    curr_date = start_date
+    while curr_date <= end_date:
+        if curr_date in attendance_records:
+            att = attendance_records[curr_date]
+            if att.status == "PRESENT":
+                present_days += 1
+                if att.is_late: late_days += 1
+                if att.is_early_departure: early_departures += 1
+            elif att.status == "ABSENT":
+                absent_days += 1
+        else:
+            if employee.is_week_off(curr_date):
+                pass
+            elif curr_date in holiday_dates:
+                pass
+            elif curr_date in leave_dates:
+                pass
+            elif curr_date == end_date:
+                pass # Not logged in yet
+            else:
+                absent_days += 1
+        
+        # Count only non-week-off non-holiday days as total working days for percentage?
+        # Actually, let's just count all days for the attendance record base
+        if not employee.is_week_off(curr_date) and curr_date not in holiday_dates:
+            total_days += 1
+            
+        curr_date += timedelta(days=1)
 
     on_time_days = present_days - late_days
-    on_time_percentage = (on_time_days / total_days * 100) if total_days > 0 else 0
+    on_time_percentage = (on_time_days / present_days * 100) if present_days > 0 else 0
     attendance_percentage = (present_days / total_days * 100) if total_days > 0 else 0
 
     return {
@@ -473,20 +512,69 @@ def get_employee_attendance_stats(employee, months=3):
         "on_time_days": on_time_days,
         "on_time_percentage": round(on_time_percentage, 2),
         "attendance_percentage": round(attendance_percentage, 2),
-        "missing_punches": missing_punches,
+        "missing_punches": Attendance.objects.filter(employee=employee, date__range=[start_date, end_date], clock_in__isnull=False, clock_out__isnull=True).count(),
     }
+
 
 
 def get_employee_recent_attendance(employee, days=30):
     """
-    Get recent attendance records
+    Get comprehensive recent attendance records including missed days, week-offs, and holidays
     """
+    from companies.models import Holiday
+    
     end_date = timezone.localtime().date()
     start_date = end_date - timedelta(days=days)
 
-    return Attendance.objects.filter(employee=employee, date__gte=start_date).order_by(
-        "-date"
-    )
+    # Fetch existing records
+    attendance_records = {att.date: att for att in Attendance.objects.filter(employee=employee, date__range=[start_date, end_date])}
+    
+    # Fetch leaves
+    leaves = LeaveRequest.objects.filter(employee=employee, status='APPROVED', start_date__lte=end_date, end_date__gte=start_date)
+    leave_dates = {}
+    for l in leaves:
+        curr = max(l.start_date, start_date)
+        while curr <= min(l.end_date, end_date):
+            leave_dates[curr] = "LEAVE"
+            curr += timedelta(days=1)
+            
+    # Fetch Holidays
+    holiday_q = Q(location__isnull=True)
+    if employee.location:
+        holiday_q |= Q(location=employee.location)
+    holidays = Holiday.objects.filter(company=employee.company, date__range=[start_date, end_date], is_active=True).filter(holiday_q)
+    holiday_dates = {h.date: h.name for h in holidays}
+    
+    history = []
+    curr_date = end_date
+    while curr_date >= start_date:
+        if curr_date in attendance_records:
+            history.append(attendance_records[curr_date])
+        else:
+            if employee.is_week_off(curr_date):
+                status = "WEEKLY_OFF"
+            elif curr_date in holiday_dates:
+                status = "HOLIDAY"
+            elif curr_date in leave_dates:
+                status = "LEAVE"
+            elif curr_date == end_date: # Today
+                status = "NOT_LOGGED_IN"
+            else:
+                status = "MISSED"
+                
+            history.append({
+                'date': curr_date,
+                'status': status,
+                'status_display': status.replace('_', ' ').title(),
+                'clock_in': None,
+                'clock_out': None,
+                'effective_hours': "-",
+                'id': None
+            })
+        curr_date -= timedelta(days=1)
+        
+    return history
+
 
 
 def get_employee_punctuality_analysis(employee, days=30):

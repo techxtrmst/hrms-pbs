@@ -1642,16 +1642,94 @@ def employee_detail(request, pk):
         end_date = timezone.datetime(year, month, num_days).date()
 
         # Fetch Attendance for the period
-        attendance_qs = Attendance.objects.filter(
-            employee=employee, date__range=[start_date, end_date]
-        ).order_by("-date")
+        attendance_records = {att.date: att for att in Attendance.objects.filter(employee=employee, date__range=[start_date, end_date])}
 
-        # Calculate Stats
-        total_days = attendance_qs.count()
-        present = attendance_qs.filter(status="PRESENT").count()
-        wfh = attendance_qs.filter(status="WFH").count()
-        leave = attendance_qs.filter(status="LEAVE").count()
-        absent = attendance_qs.filter(status="ABSENT").count()
+        # Fetch Approved Leaves
+        leaves = LeaveRequest.objects.filter(
+            employee=employee,
+            status='APPROVED',
+            start_date__lte=end_date,
+            end_date__gte=start_date
+        )
+        leave_dates = {}
+        for l in leaves:
+            curr = max(l.start_date, start_date)
+            while curr <= min(l.end_date, end_date):
+                leave_dates[curr] = "LEAVE"
+                curr += timedelta(days=1)
+
+        # Fetch Holidays
+        from companies.models import Holiday
+        from django.db.models import Q
+        
+        holiday_q = Q(location__isnull=True)
+        if employee.location:
+            holiday_q |= Q(location=employee.location)
+            
+        holidays = Holiday.objects.filter(
+            company=employee.company,
+            date__range=[start_date, end_date],
+            is_active=True
+        ).filter(holiday_q)
+        holiday_dates = {h.date: h.name for h in holidays}
+
+        # Build Full Attendance History
+        full_history = []
+        curr_date = end_date
+        while curr_date >= start_date:
+            if curr_date in attendance_records:
+                full_history.append(attendance_records[curr_date])
+            else:
+                # Determine status for missing record
+                if employee.is_week_off(curr_date):
+                    status = "WEEKLY_OFF"
+                elif curr_date in holiday_dates:
+                    status = "HOLIDAY"
+                elif curr_date in leave_dates:
+                    status = "LEAVE"
+                elif curr_date == today:
+                    status = "NOT_LOGGED_IN"
+                elif curr_date > today:
+                    status = "UPCOMING"
+                else:
+                    status = "MISSED"
+
+                # Mock attendance object for template
+                full_history.append({
+                    'date': curr_date,
+                    'status': status,
+                    'id': None,
+                    'effective_hours': "-",
+                    'clock_in': None,
+                    'clock_out': None,
+                    'holiday_name': holiday_dates.get(curr_date)
+                })
+            curr_date -= timedelta(days=1)
+
+        # QuerySet for map logic and stats (original records)
+        attendance_qs = Attendance.objects.filter(employee=employee, date__range=[start_date, end_date]).order_by("-date")
+
+        # Calculate Stats (using the full history)
+        total_days = len(full_history)
+        present = 0
+        wfh = 0
+        leave = 0
+        absent = 0
+        
+        for item in full_history:
+            if isinstance(item, Attendance):
+                status = item.status
+            else:
+                status = item.get('status')
+                
+            if status == 'PRESENT':
+                present += 1
+            elif status == 'WFH':
+                wfh += 1
+            elif status == 'LEAVE':
+                leave += 1
+            elif status in ['ABSENT', 'MISSED']:
+                absent += 1
 
         # Location Data for Map (Today's path or last active day)
         # We try to get today's attendance first
@@ -1723,7 +1801,7 @@ def employee_detail(request, pk):
 
         context = {
             "employee": employee,
-            "attendance_history": attendance_qs,
+            "attendance_history": full_history,
             "current_month": start_date.strftime("%B"),
             "current_year": year,
             "stats": {
