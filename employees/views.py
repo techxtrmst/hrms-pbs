@@ -1,3 +1,7 @@
+import json
+import pytz
+from datetime import timedelta
+
 from django.conf import settings
 from django.shortcuts import render
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, FormView
@@ -1543,6 +1547,29 @@ def attendance_map(request, pk):
         # Prepare Map Data
         map_locations = []
 
+        # Determine timezone
+        target_tz = pytz.timezone("Asia/Kolkata") # Default
+        
+        if attendance.user_timezone:
+             try:
+                 target_tz = pytz.timezone(attendance.user_timezone)
+             except:
+                 pass
+        elif employee.location and hasattr(employee.location, 'timezone') and employee.location.timezone:
+             try:
+                 target_tz = pytz.timezone(employee.location.timezone)
+             except:
+                 pass
+                 
+        # Activate timezone for the template
+        timezone.activate(target_tz)
+
+        # Helper for time formatting
+        def format_time(dt):
+            if not dt: return ""
+            local_dt = timezone.localtime(dt, target_tz)
+            return local_dt.strftime('%I:%M %p')
+
         # 1. Clock In
         if attendance.location_in:
             lat, lng = safe_parse_location(attendance.location_in)
@@ -1551,7 +1578,7 @@ def attendance_map(request, pk):
                     {
                         "lat": lat,
                         "lng": lng,
-                        "title": f"Clock In: {attendance.clock_in.strftime('%I:%M %p')}",
+                        "title": f"Clock In: {format_time(attendance.clock_in)}",
                         "type": "in",
                     }
                 )
@@ -1577,7 +1604,7 @@ def attendance_map(request, pk):
                 {
                     "lat": float(log.latitude),
                     "lng": float(log.longitude),
-                    "title": f"Log: {log.timestamp.strftime('%I:%M %p')}",
+                    "title": f"Log: {format_time(log.timestamp)}",
                     "type": "log",
                 }
             )
@@ -1590,7 +1617,7 @@ def attendance_map(request, pk):
                     {
                         "lat": lat,
                         "lng": lng,
-                        "title": f"Clock Out: {attendance.clock_out.strftime('%I:%M %p')}",
+                        "title": f"Clock Out: {format_time(attendance.clock_out)}",
                         "type": "out",
                     }
                 )
@@ -1675,7 +1702,7 @@ def employee_detail(request, pk):
 
         # Build Full Attendance History
         full_history = []
-        curr_date = end_date
+        curr_date = min(end_date, today)
         while curr_date >= start_date:
             if curr_date in attendance_records:
                 full_history.append(attendance_records[curr_date])

@@ -3253,7 +3253,7 @@ def get_notifications(request):
                 "type": notif.notification_type,
                 "message": notif.message,
                 "is_read": notif.is_read,
-                "created_at": notif.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "created_at": notif.created_at.isoformat(),
                 "url": get_notification_url(notif),
             }
         )
