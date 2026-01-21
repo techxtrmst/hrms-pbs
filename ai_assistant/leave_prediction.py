@@ -3,11 +3,13 @@ AI Leave Prediction & Auto-Suggestions Module
 Predicts leave patterns and provides team planning insights
 """
 
-from datetime import timedelta
-from django.utils import timezone
-from employees.models import LeaveRequest, Employee
-from collections import defaultdict
 import calendar
+from collections import defaultdict
+from datetime import timedelta
+
+from django.utils import timezone
+
+from employees.models import Employee, LeaveRequest
 
 
 class LeavePrediction:
@@ -23,9 +25,7 @@ class LeavePrediction:
         end_date = timezone.now().date()
         start_date = end_date - timedelta(days=months * 30)
 
-        leaves = LeaveRequest.objects.filter(
-            employee=employee, start_date__gte=start_date, status="APPROVED"
-        )
+        leaves = LeaveRequest.objects.filter(employee=employee, start_date__gte=start_date, status="APPROVED")
 
         total_leaves = leaves.count()
         if total_leaves == 0:
@@ -82,7 +82,7 @@ class LeavePrediction:
         predictions = LeavePrediction._predict_upcoming_leaves(employee, day_frequency)
 
         # Calculate average leave duration
-        total_days = sum(leave.total_days() for leave in leaves)
+        total_days = sum(leave.total_days for leave in leaves)
         avg_duration = total_days / total_leaves if total_leaves > 0 else 0
 
         return {
@@ -115,9 +115,7 @@ class LeavePrediction:
                     {
                         "date": future_date,
                         "day": day_name,
-                        "probability": "HIGH"
-                        if day_frequency[day_name] >= 5
-                        else "MEDIUM",
+                        "probability": "HIGH" if day_frequency[day_name] >= 5 else "MEDIUM",
                         "reason": f"Employee frequently takes leave on {day_name}s",
                     }
                 )
@@ -164,26 +162,18 @@ class LeavePrediction:
                 .count()
             )
 
-            shortage_percentage = (
-                (on_leave / total_employees * 100) if total_employees > 0 else 0
-            )
+            shortage_percentage = (on_leave / total_employees * 100) if total_employees > 0 else 0
 
             daily_shortage[check_date.strftime("%Y-%m-%d")] = {
                 "date": check_date,
                 "on_leave": on_leave,
                 "available": total_employees - on_leave,
                 "shortage_percentage": round(shortage_percentage, 1),
-                "risk_level": LeavePrediction._get_shortage_risk_level(
-                    shortage_percentage
-                ),
+                "risk_level": LeavePrediction._get_shortage_risk_level(shortage_percentage),
             }
 
         # Find critical days (>30% shortage)
-        critical_days = [
-            data
-            for date, data in daily_shortage.items()
-            if data["shortage_percentage"] > 30
-        ]
+        critical_days = [data for date, data in daily_shortage.items() if data["shortage_percentage"] > 30]
 
         return {
             "total_employees": total_employees,
@@ -220,34 +210,34 @@ class LeavePrediction:
             balance = employee.leave_balance
 
             # Recommend using expiring leaves
-            if balance.earned_leave_balance() > 15:
+            if hasattr(balance, "earned_leave_balance") and balance.earned_leave_balance > 15:
                 recommendations.append(
                     {
                         "type": "BALANCE_HIGH",
                         "priority": "MEDIUM",
-                        "message": f"You have {balance.earned_leave_balance()} Earned Leaves. Consider planning a vacation.",
+                        "message": f"You have {balance.earned_leave_balance} Earned Leaves. Consider planning a vacation.",
                         "action": "Plan Leave",
                     }
                 )
 
             # Warn about low balance
-            if balance.casual_leave_balance() < 2:
+            if hasattr(balance, "casual_leave_balance") and balance.casual_leave_balance < 2:
                 recommendations.append(
                     {
                         "type": "BALANCE_LOW",
                         "priority": "HIGH",
-                        "message": f"Only {balance.casual_leave_balance()} Casual Leaves remaining. Use wisely.",
+                        "message": f"Only {balance.casual_leave_balance} Casual Leaves remaining. Use wisely.",
                         "action": "Monitor Usage",
                     }
                 )
 
             # Check comp-off expiry (if applicable)
-            if balance.comp_off_balance() > 0:
+            if hasattr(balance, "comp_off_balance") and balance.comp_off_balance > 0:
                 recommendations.append(
                     {
                         "type": "COMP_OFF",
                         "priority": "MEDIUM",
-                        "message": f"You have {balance.comp_off_balance()} Comp-Off(s). Remember to use them before expiry.",
+                        "message": f"You have {balance.comp_off_balance} Comp-Off(s). Remember to use them before expiry.",
                         "action": "Use Comp-Off",
                     }
                 )

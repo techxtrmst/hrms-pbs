@@ -214,6 +214,9 @@ POSTHOG_ENABLED = env("POSTHOG_ENABLED")
 LOG_LEVEL = env("LOG_LEVEL", default="DEBUG" if DEBUG else "INFO")
 LOG_DIR = env("LOG_DIR", default=str(BASE_DIR / "_logs"))
 
+# OpenAI Configuration
+OPENAI_API_KEY = env("OPENAI_API_KEY", default=None)
+
 # Initialize Loguru logging (only once)
 from hrms_core.logging_config import initialize_logging, setup_django_logging
 
