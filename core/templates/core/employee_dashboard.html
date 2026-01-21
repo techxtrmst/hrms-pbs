@@ -800,6 +800,128 @@
         font-size: 1.25rem;
     }
 
+    /* Modal Styles */
+    .ann-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(5px);
+        z-index: 2000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .ann-modal-overlay.active {
+        display: flex;
+        opacity: 1;
+    }
+
+    .ann-modal {
+        background: white;
+        width: 90%;
+        max-width: 650px;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        transform: scale(0.95);
+        transition: transform 0.3s;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        animation: modalSlideIn 0.3s forwards;
+    }
+
+    @keyframes modalSlideIn {
+        from {
+            transform: scale(0.95) translateY(10px);
+        }
+
+        to {
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    .ann-modal-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+        padding: 1.5rem;
+        color: white;
+        position: relative;
+    }
+
+    .ann-modal-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-size: 1rem;
+    }
+
+    .ann-modal-close:hover {
+        background: rgba(255, 255, 255, 0.4);
+    }
+
+    .ann-modal-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-right: 30px;
+        line-height: 1.3;
+    }
+
+    .ann-modal-date {
+        font-size: 0.85rem;
+        opacity: 0.9;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .ann-modal-body {
+        padding: 2rem;
+        overflow-y: auto;
+        color: #4b5563;
+        line-height: 1.7;
+        font-size: 1rem;
+    }
+
+    .ann-modal-image {
+        width: 100%;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        object-fit: cover;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .ann-modal-meta {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.875rem;
+        color: #6b7280;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 1rem;
+    }
+
+    .ann-item {
+        cursor: pointer;
+    }
+
     .ann-content {
         flex: 1;
     }
@@ -1195,7 +1317,20 @@
                 <div class="ann-tab-pane active" id="tab-announcements">
                     {% if announcements %}
                     {% for ann in announcements %}
-                    <div class="ann-item">
+                    <div class="ann-item" onclick="openAnnouncementModal(this)">
+                        <!-- Hidden Data for Modal -->
+                        <div class="d-none ann-full-data">
+                            <span class="data-title">{{ ann.title }}</span>
+                            <span class="data-date">{{ ann.created_at|date:"l, d F Y" }}</span>
+                            <span class="data-time">{{ ann.created_at|date:"h:i A" }}</span>
+                            <div class="data-content">{{ ann.content|linebreaks }}</div>
+                            {% if ann.image %}
+                            <span class="data-image">{{ ann.image.url }}</span>
+                            {% endif %}
+                            <span class="data-location">{% if ann.location %}{{ ann.location }}{% endif %}</span>
+                            <span class="data-department">{% if ann.department %}{{ ann.department }}{% endif %}</span>
+                        </div>
+
                         <div class="ann-icon-box">
                             <i class="fas fa-bullhorn"></i>
                         </div>
@@ -1309,6 +1444,33 @@
 
 </div>
 </div>
+<!-- Announcement Modal -->
+<div class="ann-modal-overlay" id="announcementModal">
+    <div class="ann-modal" onclick="event.stopPropagation()">
+        <div class="ann-modal-header">
+            <div>
+                <div class="ann-modal-title" id="modalTitle">Announcement Title</div>
+                <div class="ann-modal-date">
+                    <i class="far fa-calendar-alt"></i> <span id="modalDate">Jan 21, 2026</span> •
+                    <i class="far fa-clock"></i> <span id="modalTime">10:00 AM</span>
+                </div>
+            </div>
+            <button class="ann-modal-close" onclick="closeAnnouncementModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="ann-modal-body">
+            <img src="" alt="" class="ann-modal-image" id="modalImage" style="display: none;">
+
+            <div class="ann-modal-meta" id="modalMeta">
+                <span id="modalLocation"><i class="fas fa-map-marker-alt"></i> <span></span></span>
+                <span id="modalDepartment"><i class="fas fa-building"></i> <span></span></span>
+            </div>
+
+            <div id="modalContent"></div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -1409,6 +1571,105 @@
                 this.style.transform = 'translateY(0) scale(1)';
             });
         });
+
+        // Close modal when clicking outside
+        const modalOverlay = document.getElementById('announcementModal');
+        modalOverlay.addEventListener('click', function (e) {
+            if (e.target === modalOverlay) {
+                closeAnnouncementModal();
+            }
+        });
+
+        // Escape key to close modal
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
+                closeAnnouncementModal();
+            }
+        });
     });
+
+    // Announcement Modal Functions
+    function openAnnouncementModal(element) {
+        const dataContainer = element.querySelector('.ann-full-data');
+        if (!dataContainer) return;
+
+        const title = dataContainer.querySelector('.data-title').textContent;
+        const date = dataContainer.querySelector('.data-date').textContent;
+        const time = dataContainer.querySelector('.data-time').textContent;
+        const content = dataContainer.querySelector('.data-content').innerHTML;
+        const imageSpan = dataContainer.querySelector('.data-image');
+        const location = dataContainer.querySelector('.data-location').textContent.trim();
+        const department = dataContainer.querySelector('.data-department').textContent.trim();
+
+        // Populate Modal
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalDate').textContent = date;
+        document.getElementById('modalTime').textContent = time;
+        document.getElementById('modalContent').innerHTML = content;
+
+        // Image
+        const imgEl = document.getElementById('modalImage');
+        if (imageSpan && imageSpan.textContent.trim()) {
+            imgEl.src = imageSpan.textContent.trim();
+            imgEl.style.display = 'block';
+        } else {
+            imgEl.style.display = 'none';
+        }
+
+        // Meta (Location/Dept)
+        const locEl = document.getElementById('modalLocation');
+        const deptEl = document.getElementById('modalDepartment');
+        const metaContainer = document.getElementById('modalMeta');
+
+        let hasMeta = false;
+        if (location) {
+            locEl.style.display = 'inline-flex';
+            locEl.querySelector('span').textContent = location;
+            hasMeta = true;
+        } else {
+            locEl.style.display = 'none';
+        }
+
+        if (department) {
+            deptEl.style.display = 'inline-flex';
+            deptEl.querySelector('span').textContent = department;
+            hasMeta = true;
+        } else {
+            deptEl.style.display = 'none';
+        }
+
+        if (!hasMeta) {
+            // Show company wide if no specific meta
+            metaContainer.innerHTML = '<span class="text-warning"><i class="fas fa-globe"></i> Company-wide</span>';
+            metaContainer.style.display = 'flex';
+        } else {
+            // Reset content just in case
+            locEl = document.getElementById('modalLocation'); // Re-fetching/resetting might be needed if I overwrote innerHTML. 
+            // Actually, I just overwrote innerHTML of metaContainer in "Company-wide" case.
+            // Best to just recreate structure or toggle visibility simpler.
+            // Let's keep it simple: if no location/dept, show company wide.
+
+            if (!location && !department) {
+                metaContainer.innerHTML = '<span class="text-warning"><i class="fas fa-globe"></i> Company-wide</span>';
+            } else {
+                let metaHTML = '';
+                if (location) metaHTML += `<span class="mr-3"><i class="fas fa-map-marker-alt"></i> ${location}</span>`;
+                if (department) metaHTML += `<span><i class="fas fa-building"></i> ${department}</span>`;
+                metaContainer.innerHTML = metaHTML;
+            }
+            metaContainer.style.display = 'flex';
+        }
+
+        // Show Modal
+        const modal = document.getElementById('announcementModal');
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Prevent scrolling
+    }
+
+    function closeAnnouncementModal() {
+        const modal = document.getElementById('announcementModal');
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
 </script>
 {% endblock %}

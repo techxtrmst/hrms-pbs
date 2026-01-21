@@ -71,31 +71,33 @@ def announcement_configuration(request):
                     if recipient_emails:
                         try:
                             from django.core.mail import EmailMultiAlternatives
+                            from django.template.loader import render_to_string
 
-                            # Create HTML email content
-                            html_content = f"""
-                            <html>
-                                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                                    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                                        <h2 style="color: #6366f1; border-bottom: 3px solid #6366f1; padding-bottom: 10px;">
-                                            {title}
-                                        </h2>
-                                        <div style="margin: 20px 0;">
-                                            {content.replace(chr(10), "<br>")}
-                                        </div>
-                                        {"<div style='margin: 20px 0;'><img src='cid:announcement_image' style='max-width: 100%; height: auto; border-radius: 8px;' /></div>" if image else ""}
-                                        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-                                        <p style="color: #6b7280; font-size: 14px;">
-                                            Best regards,<br>
-                                            <strong>{company.name} HR Team</strong>
-                                        </p>
-                                    </div>
-                                </body>
-                            </html>
-                            """
+                            # Prepare content
+                            content_html_formatted = content.replace(chr(10), "<br>")
+                            
+                            # Determine Logo URL
+                            company_logo_url = None
+                            if company.logo:
+                                try:
+                                    company_logo_url = request.build_absolute_uri(company.logo.url)
+                                except Exception:
+                                    pass
+
+                            # Context for template
+                            context = {
+                                "title": title,
+                                "content_html": content_html_formatted,
+                                "company_name": company.name,
+                                "has_image": True if image else False,
+                                "company_logo_url": company_logo_url,
+                            }
+
+                            # Render HTML content
+                            html_content = render_to_string("companies/emails/new_announcement.html", context)
 
                             # Create plain text version
-                            text_content = f"{content}\n\n--\n{company.name} HR Team"
+                            text_content = f"{title}\n\n{content}\n\n--\n{company.name} HR Team"
 
                             email_msg = EmailMultiAlternatives(
                                 subject=f"New Announcement: {title}",

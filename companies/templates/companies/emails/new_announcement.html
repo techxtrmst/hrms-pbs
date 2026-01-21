@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body
+    style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f0f0f0;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0f0f0; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="650" cellpadding="0" cellspacing="0"
+                    style="max-width: 650px; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); background-color: #667eea; padding: 35px 40px;">
+                            <table cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td width="60" style="font-size: 50px; vertical-align: middle;">📢</td>
+                                    <td style="vertical-align: middle;">
+                                        <h1 style="color: #ffffff; font-size: 32px; margin: 0; font-weight: 800;">
+                                            Announcement</h1>
+                                        <p style="color: #ffffff; font-size: 16px; margin: 5px 0 0 0;">New update from
+                                            {{ company_name }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px; background-color: #ffffff;">
+
+                            <!-- Title Card -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 25px;">
+                                <tr>
+                                    <td
+                                        style="background: linear-gradient(135deg, #667eea08 0%, #764ba208 100%); background-color: #f0f0ff; border-left: 4px solid #667eea; padding: 25px; border-radius: 12px;">
+                                        <h2 style="color: #2d3748; font-size: 24px; font-weight: 700; margin: 0;">{{ title }}</h2>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Announcement Content -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
+                                <tr>
+                                    <td style="background-color: #ffffff; border-radius: 12px; padding: 10px 0;">
+                                        <div style="color: #4a5568; font-size: 16px; line-height: 1.8; margin: 0;">
+                                            {{ content_html|safe }}
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {% if has_image %}
+                            <!-- Image Section -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 25px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <img src="cid:announcement_image" alt="Announcement Image"
+                                            style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <!-- Action Box (Optional - e.g. View in Portal) -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 30px;">
+                                <tr>
+                                    <td
+                                        style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); background-color: #4facfe; padding: 25px; border-radius: 12px; text-align: center;">
+                                        <p
+                                            style="margin: 0 0 10px 0; font-size: 16px; font-weight: 600; color: #ffffff;">
+                                            ✨ Stay Updated</p>
+                                        <p style="margin: 0; font-size: 14px; color: #ffffff;">Log in to the employee
+                                            portal for more details.</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background-color: #f7fafc; padding: 25px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
+                            <p style="margin: 5px 0; color: #667eea; font-weight: 700; font-size: 16px;">{{ company_name }}</p>
+                            <p style="margin: 5px 0; color: #718096; font-size: 14px;">HR Admin Team</p>
+                            <p style="margin: 15px 0 5px 0; font-size: 12px; color: #a0aec0;">
+                                This is an automated notification. Please do not reply directly to this email.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>
