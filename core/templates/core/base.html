@@ -1,4 +1,4 @@
-{% load static %}
+﻿{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -771,7 +771,7 @@
         {% if user.role == 'COMPANY_ADMIN' or user.role == 'MANAGER' or user.role == 'SUPERADMIN' %}
         <a href="#menuAI" class="sidebar-dropdown-toggle d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse" role="button" aria-expanded="false">
-            <span class="sidebar-section-title ps-0 mt-0 mb-0 py-2">🤖 AI Features</span>
+            <span class="sidebar-section-title ps-0 mt-0 mb-0 py-2">ðŸ¤– AI Features</span>
             <i class="fas fa-chevron-down small text-muted"></i>
         </a>
         <div class="collapse {% if 'ai/' in request.path %}show{% endif %}" id="menuAI">
@@ -913,6 +913,10 @@
                     <div class="notification-header">
                         <h6 class="mb-0">Notifications</h6>
                         <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-sm btn-link text-secondary" id="testSoundBtn" title="Test Sound"
+                                style="font-size: 1rem;">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
                             <button class="btn btn-sm btn-link text-primary" id="markAllRead"
                                 style="font-size: 0.75rem;">Mark all as read</button>
                             <button class="btn btn-link p-0" id="closeNotificationDropdown"
@@ -1100,9 +1104,9 @@
                     <button type="button" class="btn-close position-absolute top-0 end-0"
                         onclick="document.getElementById('celebrationModal').remove()"></button>
                     <div style="font-size: 4rem; margin-bottom: 1rem;">
-                        {% if celebration_type == 'birthday' %}🎂{% endif %}
-                        {% if celebration_type == 'anniversary' %}🏆{% endif %}
-                        {% if celebration_type == 'both' %}🎂🏆{% endif %}
+                        {% if celebration_type == 'birthday' %}ðŸŽ‚{% endif %}
+                        {% if celebration_type == 'anniversary' %}ðŸ†{% endif %}
+                        {% if celebration_type == 'both' %}ðŸŽ‚ðŸ†{% endif %}
                     </div>
                     <h2 class="mb-3 fw-bold text-primary">
                         {% if celebration_type == 'birthday' %}Happy Birthday!{% endif %}
@@ -1419,15 +1423,119 @@
             return date.toLocaleDateString();
         }
 
-        // Poll for new notifications every 30 seconds
+        // Notification Sound System
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        // Initialize/Resume Audio Context on user interaction
+        function unlockAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            // Remove listeners once unlocked
+            ['click', 'keydown', 'touchstart'].forEach(event => {
+                document.removeEventListener(event, unlockAudio);
+            });
+        }
+
+        // Add listeners for the first interaction
+        ['click', 'keydown', 'touchstart'].forEach(event => {
+            document.addEventListener(event, unlockAudio, { once: true });
+        });
+
+        function playNotificationSound(isTest = false) {
+            // Ensure audio context exists and is running
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+
+            if (audioCtx.state === 'suspended') {
+                // Try to resume - if this fails, it's likely due to lack of interaction
+                audioCtx.resume().then(() => {
+                    console.log("Audio Context Resumed successfully.");
+                    generateSound(isTest);
+                }).catch(e => {
+                    console.error("Audio play failed (autoplay policy):", e);
+                    if (isTest) alert("Autoplay blocked! Please interact with the page first (click anywhere).");
+                });
+            } else {
+                generateSound(isTest);
+            }
+        }
+
+        function generateSound(isTest) {
+            try {
+                const now = audioCtx.currentTime;
+
+                // Louder 3-tone chime (C6 - E6 - G6)
+                const tones = [
+                    { freq: 1046.50, start: 0, dur: 0.15 },    // C6
+                    { freq: 1318.51, start: 0.1, dur: 0.15 },  // E6
+                    { freq: 1567.98, start: 0.2, dur: 0.4 }    // G6
+                ];
+
+                tones.forEach(tone => {
+                    const oscillator = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+
+                    oscillator.type = 'sine';
+                    oscillator.frequency.value = tone.freq;
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+
+                    // Louder Envelope (0.15 -> 0.5)
+                    gainNode.gain.setValueAtTime(0, now + tone.start);
+                    gainNode.gain.linearRampToValueAtTime(0.5, now + tone.start + 0.02);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, now + tone.start + tone.dur);
+
+                    oscillator.start(now + tone.start);
+                    oscillator.stop(now + tone.start + tone.dur);
+                });
+                console.log("Notification sound played.");
+                if (isTest) console.log("Test sound executed.");
+            } catch (e) {
+                console.error("Error generating sound:", e);
+            }
+        }
+
+        // Test Sound Button Listener
+        const testSoundBtn = document.getElementById('testSoundBtn');
+        if (testSoundBtn) {
+            testSoundBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                playNotificationSound(true);
+            });
+        }
+
+        // Track previous notification count to detect new notifications
+        let previousNotificationCount = {{ unread_notification_count|default:0 }};
+
+        // Poll for new notifications every 15 seconds (increased frequency)
         setInterval(function () {
+            // Only poll if the page is visible or we want background notifications
+            // For background sound, we MUST poll even if hidden.
             fetch('/api/notifications/')
                 .then(response => response.json())
                 .then(data => {
-                    updateBadge(data.count);
+                    const currentCount = data.count;
+
+                    // Play sound if new notifications arrived (count increased)
+                    if (currentCount > previousNotificationCount) {
+                        playNotificationSound();
+                    }
+
+                    // Update the previous count
+                    previousNotificationCount = currentCount;
+
+                    // Update the badge
+                    updateBadge(currentCount);
                 })
                 .catch(error => console.error('Error polling notifications:', error));
-        }, 30000);
+        }, 15000);
     </script>
     {% endif %}
 
