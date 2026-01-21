@@ -2231,10 +2231,17 @@ def approve_exit_initiative(request, pk):
 
         # Send email notification to employee
         try:
-            from django.core.mail import send_mail
+            from django.core.mail import EmailMultiAlternatives
+
+            # Prepare recipient list (official email + personal email if available)
+            recipients = [employee.user.email]
+            if employee.personal_email:
+                recipients.append(employee.personal_email)
 
             subject = f"Exit Initiative Approved - {exit_initiative.get_exit_type_display()}"
-            message = f"""
+            
+            # Plain text version
+            text_message = f"""
 Dear {employee.user.get_full_name()},
 
 Your {exit_initiative.get_exit_type_display().lower()} request has been approved.
@@ -2253,14 +2260,130 @@ Please complete all exit formalities before your last working day.
 Regards,
 {employee.company.name} HR Team
             """
+            
+            # HTML version
+            html_message = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7fa;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f7fa; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 40px 30px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">✓ Exit Request Approved</h1>
+                            <p style="margin: 10px 0 0 0; color: #dcfce7; font-size: 14px;">{exit_initiative.get_exit_type_display()}</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="margin: 0 0 24px 0; color: #1f2937; font-size: 16px; line-height: 1.6;">
+                                Dear <strong>{employee.user.get_full_name()}</strong>,
+                            </p>
+                            
+                            <p style="margin: 0 0 30px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                Your <strong>{exit_initiative.get_exit_type_display().lower()}</strong> request has been <span style="color: #16a34a; font-weight: 600;">approved</span>.
+                            </p>
+                            
+                            <!-- Details Box -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; border-left: 4px solid #22c55e; margin-bottom: 30px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <table width="100%" cellpadding="8" cellspacing="0">
+                                            <tr>
+                                                <td style="color: #6b7280; font-size: 14px; padding: 8px 0;">📅 Submission Date:</td>
+                                                <td style="color: #1f2937; font-size: 14px; font-weight: 600; text-align: right; padding: 8px 0;">{exit_initiative.submission_date.strftime("%d %b %Y")}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="color: #6b7280; font-size: 14px; padding: 8px 0;">🗓️ Last Working Day:</td>
+                                                <td style="color: #dc2626; font-size: 14px; font-weight: 600; text-align: right; padding: 8px 0;">{last_working_day.strftime("%d %b %Y")}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="color: #6b7280; font-size: 14px; padding: 8px 0;">✅ Approved By:</td>
+                                                <td style="color: #1f2937; font-size: 14px; font-weight: 600; text-align: right; padding: 8px 0;">{user.get_full_name()}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Reason Section -->
+                            <div style="margin-bottom: 30px;">
+                                <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Reason for Exit:</p>
+                                <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 6px;">
+                                    <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.6; font-style: italic;">{exit_initiative.exit_note}</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Important Notice -->
+                            <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+                                <p style="margin: 0 0 8px 0; color: #991b1b; font-size: 14px; font-weight: 600;">⚠️ Important Notice:</p>
+                                <p style="margin: 0; color: #7f1d1d; font-size: 13px; line-height: 1.6;">
+                                    On your last working day, your account will be changed to <strong>Ex-Employee</strong> type and access will be disabled.
+                                </p>
+                            </div>
+                            
+                            <!-- Action Items -->
+                            <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+                                <p style="margin: 0 0 12px 0; color: #1e40af; font-size: 14px; font-weight: 600;">📋 Next Steps:</p>
+                                <ul style="margin: 0; padding-left: 20px; color: #1e3a8a; font-size: 13px; line-height: 1.8;">
+                                    <li>Complete all pending tasks and handover documentation</li>
+                                    <li>Return company assets (laptop, ID card, access cards, etc.)</li>
+                                    <li>Complete exit interview with HR</li>
+                                    <li>Settle any pending dues or reimbursements</li>
+                                    <li>Update your personal contact information for future correspondence</li>
+                                </ul>
+                            </div>
+                            
+                            <p style="margin: 0 0 8px 0; color: #4b5563; font-size: 14px; line-height: 1.6;">
+                                Please complete all exit formalities before your last working day.
+                            </p>
+                            
+                            <p style="margin: 24px 0 0 0; color: #6b7280; font-size: 13px; line-height: 1.6;">
+                                If you have any questions, please contact the HR department.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0 0 8px 0; color: #1f2937; font-size: 14px; font-weight: 600;">
+                                Best Regards,
+                            </p>
+                            <p style="margin: 0; color: #6b7280; font-size: 14px;">
+                                {employee.company.name} HR Team
+                            </p>
+                            <p style="margin: 16px 0 0 0; color: #9ca3af; font-size: 12px;">
+                                This is an automated notification from the HRMS system.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+            """
 
-            send_mail(
+            # Create email with both plain text and HTML
+            email = EmailMultiAlternatives(
                 subject,
-                message,
+                text_message,
                 settings.EMAIL_HOST_USER or settings.DEFAULT_FROM_EMAIL,
-                [employee.user.email],
-                fail_silently=True,
+                recipients,
             )
+            email.attach_alternative(html_message, "text/html")
+            email.send(fail_silently=True)
         except Exception as e:
             print(f"Error sending approval email: {e}")
 
@@ -2338,10 +2461,17 @@ def reject_exit_initiative(request, pk):
 
         # Send email notification to employee
         try:
-            from django.core.mail import send_mail
+            from django.core.mail import EmailMultiAlternatives
+
+            # Prepare recipient list (official email + personal email if available)
+            recipients = [employee.user.email]
+            if employee.personal_email:
+                recipients.append(employee.personal_email)
 
             subject = f"Exit Initiative Rejected - {exit_initiative.get_exit_type_display()}"
-            message = f"""
+            
+            # Plain text version
+            text_message = f"""
 Dear {employee.user.get_full_name()},
 
 Your {exit_initiative.get_exit_type_display().lower()} request has been rejected.
@@ -2357,14 +2487,123 @@ If you have any questions, please contact HR.
 Regards,
 {employee.company.name} HR Team
             """
+            
+            # HTML version
+            html_message = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7fa;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f7fa; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 40px 30px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">✕ Exit Request Rejected</h1>
+                            <p style="margin: 10px 0 0 0; color: #fecaca; font-size: 14px;">{exit_initiative.get_exit_type_display()}</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="margin: 0 0 24px 0; color: #1f2937; font-size: 16px; line-height: 1.6;">
+                                Dear <strong>{employee.user.get_full_name()}</strong>,
+                            </p>
+                            
+                            <p style="margin: 0 0 30px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                Your <strong>{exit_initiative.get_exit_type_display().lower()}</strong> request has been <span style="color: #dc2626; font-weight: 600;">rejected</span>.
+                            </p>
+                            
+                            <!-- Details Box -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; border-left: 4px solid #ef4444; margin-bottom: 30px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <table width="100%" cellpadding="8" cellspacing="0">
+                                            <tr>
+                                                <td style="color: #6b7280; font-size: 14px; padding: 8px 0;">📅 Submission Date:</td>
+                                                <td style="color: #1f2937; font-size: 14px; font-weight: 600; text-align: right; padding: 8px 0;">{exit_initiative.submission_date.strftime("%d %b %Y")}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="color: #6b7280; font-size: 14px; padding: 8px 0;">❌ Rejected By:</td>
+                                                <td style="color: #1f2937; font-size: 14px; font-weight: 600; text-align: right; padding: 8px 0;">{user.get_full_name()}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Rejection Reason Section -->
+                            <div style="margin-bottom: 30px;">
+                                <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Reason for Rejection:</p>
+                                <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; border-radius: 6px;">
+                                    <p style="margin: 0; color: #7f1d1d; font-size: 14px; line-height: 1.6;">{rejection_reason}</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Status Notice -->
+                            <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+                                <p style="margin: 0 0 8px 0; color: #065f46; font-size: 14px; font-weight: 600;">✓ Your Employment Status:</p>
+                                <p style="margin: 0; color: #047857; font-size: 13px; line-height: 1.6;">
+                                    Your employment status remains <strong>Active</strong>. You can continue working as usual.
+                                </p>
+                            </div>
+                            
+                            <!-- Next Steps -->
+                            <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+                                <p style="margin: 0 0 12px 0; color: #1e40af; font-size: 14px; font-weight: 600;">💬 Need to Discuss?</p>
+                                <p style="margin: 0; color: #1e3a8a; font-size: 13px; line-height: 1.6;">
+                                    If you have any questions or concerns regarding this decision, please feel free to:
+                                </p>
+                                <ul style="margin: 12px 0 0 0; padding-left: 20px; color: #1e3a8a; font-size: 13px; line-height: 1.8;">
+                                    <li>Schedule a meeting with your reporting manager</li>
+                                    <li>Contact the HR department for clarification</li>
+                                    <li>Submit a new request if circumstances change</li>
+                                </ul>
+                            </div>
+                            
+                            <p style="margin: 0; color: #6b7280; font-size: 13px; line-height: 1.6;">
+                                We appreciate your understanding and continued contribution to the organization.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0 0 8px 0; color: #1f2937; font-size: 14px; font-weight: 600;">
+                                Best Regards,
+                            </p>
+                            <p style="margin: 0; color: #6b7280; font-size: 14px;">
+                                {employee.company.name} HR Team
+                            </p>
+                            <p style="margin: 16px 0 0 0; color: #9ca3af; font-size: 12px;">
+                                This is an automated notification from the HRMS system.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+            """
 
-            send_mail(
+            # Create email with both plain text and HTML
+            email = EmailMultiAlternatives(
                 subject,
-                message,
+                text_message,
                 settings.EMAIL_HOST_USER or settings.DEFAULT_FROM_EMAIL,
-                [employee.user.email],
-                fail_silently=True,
+                recipients,
             )
+            email.attach_alternative(html_message, "text/html")
+            email.send(fail_silently=True)
         except Exception as e:
             print(f"Error sending rejection email: {e}")
 
