@@ -451,11 +451,15 @@
                 </div>
 
                 <div class="col-md-6">
-                    <label class="form-label">Personal Email <span class="text-danger">*</span></label>
+                    <label class="form-label">Official Email <span class="text-danger">*</span></label>
                     {% render_field form.email class="form-control" placeholder="e.g. john.doe@gmail.com" %}
                     <div class="text-danger">{{ form.email.errors.0 }}</div>
                 </div>
                 <div class="col-md-6">
+                    <label class="form-label">Personal Email</label>
+                    {% render_field form.personal_email class="form-control" placeholder="e.g. john.doe@gmail.com" %}
+                </div>
+                <div class="col-md-4">
                     <label class="form-label">Mobile Number</label>
                     {% render_field form.mobile_number class="form-control" placeholder="+91 9876543210" %}
                 </div>

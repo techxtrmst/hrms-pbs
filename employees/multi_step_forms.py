@@ -12,7 +12,10 @@ User = get_user_model()
 class PersonalInfoForm(forms.ModelForm):
     """Step 1: Personal Information"""
 
-    email = forms.EmailField(required=True, label="Personal Email (Gmail)")
+    email = forms.EmailField(required=True, label="Official Email")
+    personal_email = forms.EmailField(
+        required=False, label="Personal Email", help_text="For information only"
+    )
     first_name = forms.CharField(max_length=30, required=True, label="First Name")
     last_name = forms.CharField(max_length=30, required=True, label="Last Name")
 
@@ -38,6 +41,7 @@ class PersonalInfoForm(forms.ModelForm):
             "first_name",
             "last_name",
             "email",
+            "personal_email",
             "mobile_number",
             "gender",
             "marital_status",

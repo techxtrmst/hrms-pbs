@@ -28,6 +28,12 @@ class Employee(models.Model):
 
     # Personal Details
     mobile_number = models.CharField(max_length=15, blank=True, null=True)
+    personal_email = models.EmailField(
+        blank=True,
+        null=True,
+        verbose_name="Personal Email",
+        help_text="Personal Email Address for information only",
+    )
     GENDER_CHOICES = [("M", "Male"), ("F", "Female"), ("O", "Other")]
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
     MARITAL_STATUS_CHOICES = [
