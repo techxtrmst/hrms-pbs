@@ -282,7 +282,18 @@ class HRChatbot:
             if response:
                 return response
 
-        # 4. AI Intelligence Layer
+        # 4. Role-Specific High-Priority Intent Matchers (Check before AI for precise navigation)
+        if role == "COMPANY_ADMIN" or employee.user.is_superuser:
+            resp = HRChatbot._handle_admin_query(question_lower, employee, user_name, request)
+            if resp:
+                return resp
+
+        if role in ["MANAGER", "COMPANY_ADMIN"] or employee.user.is_superuser:
+            resp = HRChatbot._handle_manager_query(question_lower, employee, user_name, request)
+            if resp:
+                return resp
+
+        # 5. AI Intelligence Layer
         # If OpenAI key is configured, use it for all other queries
         if getattr(settings, "OPENAI_API_KEY", None):
             return HRChatbot._get_llm_response(question, employee, role, request)
