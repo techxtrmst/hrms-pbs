@@ -602,8 +602,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="small text-muted mb-1">Compliance: {{
-                                working_hours_compliance.compliance_percentage }}%</div>
+                            <div class="small text-muted mb-1">Compliance: {{ working_hours_compliance.compliance_percentage }}%</div>
                             <div class="progress-compact" style="height: 10px;">
                                 <div class="progress-bar-compact"
                                     style="--bar-color: var(--success); width: {{ working_hours_compliance.compliance_percentage }}%">
@@ -707,9 +706,7 @@
                                                 {% elif att.status == 'NOT_LOGGED_IN' %}
                                                 <span class="status-badge warning">Not Login</span>
                                                 {% else %}
-                                                <span class="status-badge info">{{
-                                                    att.status_display|default:att.get_status_display|default:att.status
-                                                    }}</span>
+                                                <span class="status-badge info">{{ att.status_display|default:att.get_status_display|default:att.status }}</span>
                                                 {% endif %}
                                             </td>
                                             <td>
@@ -915,8 +912,7 @@
         // Punctuality Chart
         const ctx = document.getElementById('punctualityChart');
         if (ctx) {
-            const data = {{ punctuality_analysis.clock_in_times| safe
-        }};
+            const data = {{ punctuality_analysis.clock_in_times| safe }};
 
         new Chart(ctx, {
             type: 'line',
