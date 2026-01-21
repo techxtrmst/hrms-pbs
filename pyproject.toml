@@ -3,7 +3,7 @@ name = "hrms-pbs"
 version = "1.0.0"
 description = "HRMS PBS - Human Resource Management System"
 readme = "README.md"
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.12"
 dependencies = [
     # Core Django and Web Framework
     "django>=4.2.0,<5.0",
@@ -41,6 +41,7 @@ dependencies = [
     "timezonefinder>=8.2.1",
     "posthog>=7.5.1",
     "loguru>=0.7.3",
+    "openai>=1.0.0",
 ]
 
 [project.optional-dependencies]
