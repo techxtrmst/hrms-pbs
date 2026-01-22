@@ -310,6 +310,163 @@
     .btn-id-proof:active {
         transform: translateY(0) !important;
     }
+
+    /* Profile Info Grid */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .info-item {
+        background: #f8fafc;
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s;
+    }
+
+    .info-item:hover {
+        background: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transform: translateY(-2px);
+    }
+
+    .info-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: #64748b;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        letter-spacing: 0.05em;
+    }
+
+    .info-value {
+        font-size: 0.95rem;
+        color: #1e293b;
+        font-weight: 600;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .section-title i {
+        color: #4f46e5;
+    }
+
+    /* Custom Nav Pills */
+    .nav-pills .nav-link {
+        color: #64748b;
+        background: transparent;
+        transition: all 0.3s;
+    }
+
+    .nav-pills .nav-link.active {
+        background: #4f46e5;
+        color: white;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+
+    .nav-pills .nav-link:hover:not(.active) {
+        background: #f1f5f9;
+        color: #4f46e5;
+    }
+
+    /* Timeline Styles */
+    .timeline-wrapper {
+        position: relative;
+        padding-left: 0.5rem;
+    }
+
+    .timeline-line {
+        position: absolute;
+        top: 0.5rem;
+        bottom: 0;
+        left: 31px;
+        width: 2px;
+        background: #e2e8f0;
+    }
+
+    .timeline-node {
+        position: relative;
+        padding-left: 3.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .timeline-node:last-child {
+        margin-bottom: 0;
+    }
+
+    .timeline-dot {
+        width: 20px;
+        height: 20px;
+        left: 22px;
+        position: absolute;
+        top: 0.25rem;
+        background: white;
+        border: 3px solid #cbd5e1;
+        border-radius: 50%;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .timeline-dot.active {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+    }
+
+    .timeline-dot-inner {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #cbd5e1;
+    }
+
+    .timeline-dot.active .timeline-dot-inner {
+        background: #4f46e5;
+    }
+
+    .timeline-content {
+        padding: 1.25rem;
+        background: #fff;
+        border-radius: 1rem;
+        border: 1px solid #f1f5f9;
+        transition: 0.2s;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .timeline-content:hover {
+        transform: translateX(5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .timeline-date {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+
+    .timeline-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        color: #1e293b;
+    }
 </style>
 
 {% endblock %}
@@ -405,158 +562,396 @@
         {% endif %}
     </div>
 
-    <!-- Stats Row -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-2"> <!-- Adjusted col size for 5 cards -->
-            <div class="stats-card">
-                <div class="stats-icon bg-soft-primary"><i class="fas fa-calendar-alt"></i></div>
-                <div class="stat-title">Total Days</div>
-                <div class="stat-value">{{ stats.total }}</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="stats-card">
-                <div class="stats-icon bg-soft-success"><i class="fas fa-check-circle"></i></div>
-                <div class="stat-title">Present</div>
-                <div class="stat-value">{{ stats.present }}</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card">
-                <div class="stats-icon bg-soft-info"><i class="fas fa-laptop-house"></i></div>
-                <div class="stat-title">Work From Home</div>
-                <div class="stat-value">{{ stats.wfh }}</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="stats-card">
-                <div class="stats-icon bg-soft-warning"><i class="fas fa-umbrella-beach"></i></div>
-                <div class="stat-title">On Leave</div>
-                <div class="stat-value">{{ stats.leave }}</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card">
-                <div class="stats-icon bg-soft-danger"><i class="fas fa-user-slash"></i></div>
-                <div class="stat-title">Absent</div>
-                <div class="stat-value">{{ stats.absent }}</div>
-            </div>
-        </div>
+    <!-- Nav Tabs for Organization -->
+    <div class="mb-4">
+        <ul class="nav nav-pills gap-2 p-1 bg-white rounded-pill shadow-sm d-inline-flex border" id="detailTabs"
+            role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active rounded-pill px-4 fw-bold" id="attendance-tab" data-bs-toggle="tab"
+                    data-bs-target="#attendance-pane" type="button" role="tab" aria-controls="attendance-pane"
+                    aria-selected="true">
+                    <i class="fas fa-calendar-check me-2"></i>Attendance
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4 fw-bold" id="profile-tab" data-bs-toggle="tab"
+                    data-bs-target="#profile-pane" type="button" role="tab" aria-controls="profile-pane"
+                    aria-selected="false">
+                    <i class="fas fa-id-card me-2"></i>Profile Details
+                </button>
+            </li>
+        </ul>
     </div>
 
-    <div class="row g-4">
-        <!-- Attendance Table -->
-        <div class="col-lg-7">
-            <div class="modern-table">
-                <div class="p-3 border-bottom bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="m-0 fw-bold text-dark"><i class="fas fa-history me-2 text-primary"></i> Attendance Log
-                    </h5>
-                    <div class="d-flex align-items-center">
-                        <div class="btn-group me-2">
-                            <a href="?month=1&year={{ current_year|add:'-1' }}" class="btn btn-sm btn-outline-secondary"
-                                title="Previous Year">
-                                <i class="fas fa-chevron-left"></i>
-                            </a>
-                            <span class="btn btn-sm btn-outline-secondary disabled" style="background: #f8f9fa;">{{ current_year }}</span>
-                            <a href="?month=1&year={{ current_year|add:'1' }}" class="btn btn-sm btn-outline-secondary"
-                                title="Next Year">
-                                <i class="fas fa-chevron-right"></i>
-                            </a>
+    <div class="tab-content" id="detailTabsContent">
+        <!-- ATTENDANCE PANE -->
+        <div class="tab-pane fade show active" id="attendance-pane" role="tabpanel" aria-labelledby="attendance-tab">
+            <!-- Stats Row -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-2">
+                    <div class="stats-card">
+                        <div class="stats-icon bg-soft-primary"><i class="fas fa-calendar-alt"></i></div>
+                        <div class="stat-title">Total Days</div>
+                        <div class="stat-value">{{ stats.total }}</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stats-card">
+                        <div class="stats-icon bg-soft-success"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-title">Present</div>
+                        <div class="stat-value">{{ stats.present }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-icon bg-soft-info"><i class="fas fa-laptop-house"></i></div>
+                        <div class="stat-title">Work From Home</div>
+                        <div class="stat-value">{{ stats.wfh }}</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stats-card">
+                        <div class="stats-icon bg-soft-warning"><i class="fas fa-umbrella-beach"></i></div>
+                        <div class="stat-title">On Leave</div>
+                        <div class="stat-value">{{ stats.leave }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-icon bg-soft-danger"><i class="fas fa-user-slash"></i></div>
+                        <div class="stat-title">Absent</div>
+                        <div class="stat-value">{{ stats.absent }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Attendance Table -->
+                <div class="col-lg-7">
+                    <div class="modern-table">
+                        <div class="p-3 border-bottom bg-white d-flex justify-content-between align-items-center">
+                            <h5 class="m-0 fw-bold text-dark"><i class="fas fa-history me-2 text-primary"></i>
+                                Attendance Log</h5>
+                            <div class="d-flex align-items-center">
+                                <div class="btn-group me-2">
+                                    <a href="?month=1&year={{ current_year|add:'-1' }}"
+                                        class="btn btn-sm btn-outline-secondary" title="Previous Year">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                    <span class="btn btn-sm btn-outline-secondary disabled"
+                                        style="background: #f8f9fa;">{{ current_year }}</span>
+                                    <a href="?month=1&year={{ current_year|add:'1' }}"
+                                        class="btn btn-sm btn-outline-secondary" title="Next Year">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                                        data-bs-toggle="dropdown">
+                                        {{ current_month }}
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="?month=1&year={{ current_year }}">January</a>
+                                        </li>
+                                        <li><a class="dropdown-item"
+                                                href="?month=2&year={{ current_year }}">February</a></li>
+                                        <li><a class="dropdown-item" href="?month=3&year={{ current_year }}">March</a>
+                                        </li>
+                                        <li><a class="dropdown-item" href="?month=4&year={{ current_year }}">April</a>
+                                        </li>
+                                        <li><a class="dropdown-item" href="?month=5&year={{ current_year }}">May</a>
+                                        </li>
+                                        <li><a class="dropdown-item" href="?month=6&year={{ current_year }}">June</a>
+                                        </li>
+                                        <li><a class="dropdown-item" href="?month=7&year={{ current_year }}">July</a>
+                                        </li>
+                                        <li><a class="dropdown-item" href="?month=8&year={{ current_year }}">August</a>
+                                        </li>
+                                        <li><a class="dropdown-item"
+                                                href="?month=9&year={{ current_year }}">September</a></li>
+                                        <li><a class="dropdown-item"
+                                                href="?month=10&year={{ current_year }}">October</a></li>
+                                        <li><a class="dropdown-item"
+                                                href="?month=11&year={{ current_year }}">November</a></li>
+                                        <li><a class="dropdown-item"
+                                                href="?month=12&year={{ current_year }}">December</a></li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
-                                data-bs-toggle="dropdown">
-                                {{ current_month }}
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="?month=1&year={{ current_year }}">January</a></li>
-                                <li><a class="dropdown-item" href="?month=2&year={{ current_year }}">February</a></li>
-                                <li><a class="dropdown-item" href="?month=3&year={{ current_year }}">March</a></li>
-                                <li><a class="dropdown-item" href="?month=4&year={{ current_year }}">April</a></li>
-                                <li><a class="dropdown-item" href="?month=5&year={{ current_year }}">May</a></li>
-                                <li><a class="dropdown-item" href="?month=6&year={{ current_year }}">June</a></li>
-                                <li><a class="dropdown-item" href="?month=7&year={{ current_year }}">July</a></li>
-                                <li><a class="dropdown-item" href="?month=8&year={{ current_year }}">August</a></li>
-                                <li><a class="dropdown-item" href="?month=9&year={{ current_year }}">September</a></li>
-                                <li><a class="dropdown-item" href="?month=10&year={{ current_year }}">October</a></li>
-                                <li><a class="dropdown-item" href="?month=11&year={{ current_year }}">November</a></li>
-                                <li><a class="dropdown-item" href="?month=12&year={{ current_year }}">December</a></li>
-                            </ul>
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Logs</th>
+                                        <th>Hours</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for att in attendance_history %}
+                                    <tr>
+                                        <td class="fw-bold">{{ att.date|date:"D, d M" }}</td>
+                                        <td>
+                                            {% if att.status == 'PRESENT' %}
+                                            <span class="status-badge status-present">Present</span>
+                                            {% elif att.status == 'WFH' %}
+                                            <span class="status-badge status-wfh">WFH</span>
+                                            {% elif att.status == 'LEAVE' %}
+                                            <span class="status-badge status-leave">Leave</span>
+                                            {% elif att.status == 'WEEKLY_OFF' %}
+                                            <span class="status-badge status-absent">Week Off</span>
+                                            {% elif att.status == 'HOLIDAY' %}
+                                            <span class="status-badge status-holiday"
+                                                title="{{ att.holiday_name }}">Holiday</span>
+                                            {% elif att.status == 'MISSED' %}
+                                            <span class="status-badge status-missed">Missed</span>
+                                            {% elif att.status == 'NOT_LOGGED_IN' %}
+                                            <span class="status-badge status-not-login">Not Login</span>
+                                            {% else %}
+                                            <span class="status-badge status-absent">{{ att.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if att.id %}
+                                            <a href="{% url 'attendance_map' att.id %}"
+                                                class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-map-marked-alt me-1"></i> View Map
+                                            </a>
+                                            {% else %}
+                                            <span class="text-muted small">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {{ att.effective_hours|default:"-" }}
+                                            {% if not att.clock_out and att.clock_in %}
+                                            <span class="badge bg-success-soft text-success ms-1"
+                                                style="font-size: 0.6em;">Active</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted">No attendance records found
+                                            for this month.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
-                <div class="table-responsive">
-                    <table class="table mb-0">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th>Logs</th>
-                                <th>Hours</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for att in attendance_history %}
-                            <tr>
-                                <td class="fw-bold">{{ att.date|date:"D, d M" }}</td>
-                                <td>
-                                    {% if att.status == 'PRESENT' %}
-                                    <span class="status-badge status-present">Present</span>
-                                    {% elif att.status == 'WFH' %}
-                                    <span class="status-badge status-wfh">WFH</span>
-                                    {% elif att.status == 'LEAVE' %}
-                                    <span class="status-badge status-leave">Leave</span>
-                                    {% elif att.status == 'WEEKLY_OFF' %}
-                                    <span class="status-badge status-absent">Week Off</span>
-                                    {% elif att.status == 'HOLIDAY' %}
-                                    <span class="status-badge status-holiday"
-                                        title="{{ att.holiday_name }}">Holiday</span>
-                                    {% elif att.status == 'MISSED' %}
-                                    <span class="status-badge status-missed">Missed</span>
-                                    {% elif att.status == 'NOT_LOGGED_IN' %}
-                                    <span class="status-badge status-not-login">Not Login</span>
-                                    {% else %}
-                                    <span class="status-badge status-absent">{{ att.status }}</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if att.id %}
-                                    <a href="{% url 'attendance_map' att.id %}" class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-map-marked-alt me-1"></i> View Map
-                                    </a>
-                                    {% else %}
-                                    <span class="text-muted small">-</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {{ att.effective_hours|default:"-" }}
-                                    {% if not att.clock_out and att.clock_in %}
-                                    <span class="badge bg-success-soft text-success ms-1"
-                                        style="font-size: 0.6em;">Active</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">No attendance records found for this
-                                    month.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+
+                <!-- Map Section -->
+                <div class="col-lg-5">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h5 class="mb-0 fw-bold"><i class="fas fa-map-marked-alt me-2 text-info"></i> Movement
+                                Activity</h5>
+                            <small class="text-muted">Tracking for {{ map_date|date:"d M, Y" }}</small>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="activityMap" class="map-container" style="height: 500px; border: none;"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Map Section -->
-        <div class="col-lg-5">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-header bg-white border-bottom py-3">
-                    <h5 class="mb-0 fw-bold"><i class="fas fa-map-marked-alt me-2 text-info"></i> Movement Activity</h5>
-                    <small class="text-muted">Tracking for {{ map_date|date:"d M, Y" }}</small>
-                </div>
-                <div class="card-body p-0">
-                    <div id="activityMap" class="map-container" style="height: 500px; border: none;"></div>
+        <!-- PROFILE PANE -->
+        <div class="tab-pane fade" id="profile-pane" role="tabpanel" aria-labelledby="profile-tab">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <div class="row g-5">
+                        <!-- Left Side: Profile Info -->
+                        <div class="col-lg-8">
+                            <!-- Personal Details Section -->
+                            <div class="mb-5">
+                                <h6 class="section-title"><i class="fas fa-user"></i> Personal Information</h6>
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <div class="info-label">Date of Birth</div>
+                                        <div class="info-value">{{ employee.dob|date:"d M, Y"|default:"-" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Gender</div>
+                                        <div class="info-value">{{ employee.get_gender_display|default:"-" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Marital Status</div>
+                                        <div class="info-value">{{ employee.get_marital_status_display|default:"-" }}
+                                        </div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Mobile Number</div>
+                                        <div class="info-value">{{ employee.mobile_number|default:"-" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Personal Email</div>
+                                        <div class="info-value">{{ employee.personal_email|default:"-" }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Job Details Section -->
+                            <div class="mb-5">
+                                <h6 class="section-title"><i class="fas fa-briefcase"></i> Job & Organizational Details
+                                </h6>
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <div class="info-label">Employee ID</div>
+                                        <div class="info-value">{{ employee.badge_id|default:"-" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Designation</div>
+                                        <div class="info-value">{{ employee.designation|default:"-" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Department</div>
+                                        <div class="info-value">{{ employee.department|default:"-" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Reporting Manager</div>
+                                        <div class="info-value">{{ employee.manager.get_full_name|default:"Directly to Admin" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Work Type</div>
+                                        <div class="info-value">{{ employee.get_work_type_display|default:"Full Time" }}
+                                        </div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Location</div>
+                                        <div class="info-value">{{ employee.location.name|default:"-" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Assigned Shift</div>
+                                        <div class="info-value">
+                                            {% if employee.assigned_shift %}
+                                            {{ employee.assigned_shift.name }} ({{ employee.assigned_shift.start_time|time:"H:i" }} - {{ employee.assigned_shift.end_time|time:"H:i" }})
+                                            {% else %}
+                                            {{ employee.shift_schedule|default:"-" }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Joining Date</div>
+                                        <div class="info-value">{{ employee.date_of_joining|date:"d M, Y"|default:"-" }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Side: Work Timeline -->
+                        <div class="col-lg-4">
+                            <h6 class="section-title"><i class="fas fa-history"></i> Work Timeline</h6>
+                            <div class="timeline-wrapper">
+                                <div class="timeline-line"></div>
+
+                                <!-- Present -->
+                                <div class="timeline-node">
+                                    <div class="timeline-dot active">
+                                        <div class="timeline-dot-inner"></div>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <span class="timeline-date">Today</span>
+                                        <div class="timeline-title text-primary">Current Role</div>
+                                        <div class="badge bg-primary-soft text-primary mt-1">
+                                            {{ employee.designation }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Probation -->
+                                <div class="timeline-node">
+                                    <div class="timeline-dot active">
+                                        <div class="timeline-dot-inner"></div>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <span class="timeline-date">Probation Status</span>
+                                        <div class="timeline-title">Confirmed Employee</div>
+                                        <div class="small text-muted">Permanent Staff</div>
+                                    </div>
+                                </div>
+
+                                <!-- Joining Date -->
+                                <div class="timeline-node">
+                                    <div class="timeline-dot active">
+                                        <div class="timeline-dot-inner"></div>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <span class="timeline-date">{{ employee.date_of_joining|date:"M d, Y"|default:"-" }}</span>
+                                        <div class="timeline-title">Joined Organization</div>
+                                        <div class="small text-muted">{{ employee.department }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Addresses Section -->
+                    <div class="mb-5">
+                        <h6 class="section-title"><i class="fas fa-map-marked-alt"></i> Addresses</h6>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="info-item h-100">
+                                    <div class="info-label">Current Address</div>
+                                    <div class="info-value text-muted" style="font-weight: 400; font-size: 0.9rem;">
+                                        {{ employee.current_address|default:"Not provided"|linebreaksbr }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item h-100">
+                                    <div class="info-label">Permanent Address</div>
+                                    <div class="info-value text-muted" style="font-weight: 400; font-size: 0.9rem;">
+                                        {{ employee.permanent_address|default:"Same as current or not provided"|linebreaksbr }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Financial Details (Visible to Admins only) -->
+                    {% if user.role == 'COMPANY_ADMIN' or user.role == 'SUPERADMIN' %}
+                    <div>
+                        <h6 class="section-title"><i class="fas fa-file-invoice-dollar"></i> Financial & Compliance Info
+                        </h6>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">Bank Name</div>
+                                <div class="info-value">{{ employee.bank_name|default:"-" }}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Account Number</div>
+                                <div class="info-value text-break">{% if employee.account_number %}{{ employee.account_number }}{% else %}-{% endif %}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">IFSC Code</div>
+                                <div class="info-value">{{ employee.ifsc_code|default:"-" }}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">UAN Number</div>
+                                <div class="info-value">{{ employee.uan|default:"-" }}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">PF Enabled</div>
+                                <div class="info-value">
+                                    {% if employee.pf_enabled %}
+                                    <span class="badge bg-success">Enabled</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Disabled</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Annual CTC</div>
+                                <div class="info-value text-success">{% if employee.annual_ctc %}₹{{ employee.annual_ctc }}{% else %}-{% endif %}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

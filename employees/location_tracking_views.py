@@ -189,9 +189,9 @@ def get_location_tracking_status(request):
                     "session_count": attendance.daily_sessions_count,
                     "needs_location": needs_location,
                     "tracking_stopped": tracking_stopped,
-                    "message": "Shift completed"
-                    if tracking_stopped
-                    else "Tracking active",
+                    "clock_in_time": attendance.clock_in.isoformat() if attendance.clock_in else None,
+                    "last_log_time": last_log.timestamp.isoformat() if last_log else None,
+                    "message": "Shift completed" if tracking_stopped else "Tracking active",
                 }
             )
         except Attendance.DoesNotExist:

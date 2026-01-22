@@ -975,30 +975,24 @@
     {% if user.is_authenticated %}
     <script>
         (function () {
-            // Update every 15 minutes (900000 ms) for better tracking resolution
-            // User asked for "every one hour", but 15 mins provides a much better map history without draining battery too fast.
-            const UPDATE_INTERVAL = 900000;
-            const LAST_UPDATE_KEY = 'hrms_last_loc_update';
-            const NOTIFICATION_SHOWN_KEY = 'hrms_shift_notif_shown';
+            /**
+             * Precise Hourly Location Tracking (Keka-style)
+             * Tracks location exactly every hour after clock-in.
+             */
+            let nextPunchTimer = null;
+            let statusCheckInterval = null;
 
-            function sendLocation() {
+            function performPunch() {
                 if (!navigator.geolocation) return;
 
                 navigator.geolocation.getCurrentPosition(position => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-
-                    if (lat === null || lat === undefined || lng === null || lng === undefined) {
-                        console.warn("Invalid coordinates captured.");
-                        return;
-                    }
-
                     const data = {
-                        latitude: lat,
-                        longitude: lng
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy
                     };
 
-                    fetch("{% url 'api_update_location' %}", {
+                    fetch("{% url 'api_submit_hourly_location' %}", {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -1008,46 +1002,104 @@
                     })
                         .then(response => response.json())
                         .then(data => {
-                            if (data.status === 'success' || data.location_tracking_active) {
-                                console.log('Location updated');
-                                localStorage.setItem(LAST_UPDATE_KEY, Date.now());
-
-                                // Handle Shift Completion Notification
-                                if (data.shift_completed && data.notification) {
-                                    // Check if we already showed it this session to avoid spam
-                                    const alreadyShown = sessionStorage.getItem(NOTIFICATION_SHOWN_KEY);
-                                    if (!alreadyShown) {
-                                        alert(data.notification); // Simple alert as requested
-                                        sessionStorage.setItem(NOTIFICATION_SHOWN_KEY, 'true');
-                                    }
-                                }
-                            } else if (data.status === 'tracking_inactive') {
-                                // User not clocked in, that's fine.
-                                // We can increase the interval to check less frequently if not clocked in,
-                                // but for simplicity keeping it constant.
+                            console.log('Hourly location punch result:', data.message);
+                            if (data.status === 'success') {
+                                // Re-sync status to schedule next
+                                checkLocationStatus();
                             }
                         })
-                        .catch(err => console.error('Location update error:', err));
+                        .catch(err => console.error('Hourly punch error:', err));
                 }, error => {
                     console.warn("Location access denied or error:", error.message);
                 }, {
                     enableHighAccuracy: true,
-                    timeout: 30000,
+                    timeout: 20000,
                     maximumAge: 0
                 });
             }
 
-            // Check schedule on load
-            const lastUpdate = localStorage.getItem(LAST_UPDATE_KEY);
-            const now = Date.now();
+            function scheduleNextPunch(clockInTimeStr, lastLogTimeStr) {
+                if (!clockInTimeStr) return;
 
-            // If never updated or older than interval, update now
-            if (!lastUpdate || (now - parseInt(lastUpdate) > UPDATE_INTERVAL)) {
-                sendLocation();
+                const clockInTime = new Date(clockInTimeStr);
+                const now = new Date();
+
+                // Find the next hourly milestone: clockIn + N hours
+                let nextPoint = new Date(clockInTime);
+                while (nextPoint <= now) {
+                    nextPoint.setHours(nextPoint.getHours() + 1);
+                }
+
+                const delay = nextPoint.getTime() - now.getTime();
+
+                // Clear existing timer
+                if (nextPunchTimer) clearTimeout(nextPunchTimer);
+
+                // Schedule the punch
+                console.log(`Next hourly punch scheduled at ${nextPoint.toLocaleTimeString()} (in ${Math.round(delay / 60000)} minutes)`);
+                nextPunchTimer = setTimeout(() => {
+                    performPunch();
+                }, delay);
             }
 
-            // Set interval for future updates
-            setInterval(sendLocation, UPDATE_INTERVAL);
+            function checkLocationStatus() {
+                fetch("{% url 'api_location_tracking_status' %}")
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            if (data.is_clocked_in && !data.tracking_stopped) {
+                                // 1. If we missed a punch (server says needs_location), do it now
+                                if (data.needs_location) {
+                                    console.log("Missed hourly punch detected, punching now...");
+                                    performPunch();
+                                }
+                                // 2. Schedule the next regular punch
+                                scheduleNextPunch(data.clock_in_time, data.last_log_time);
+                            } else {
+                                if (nextPunchTimer) clearTimeout(nextPunchTimer);
+                                console.log("Location tracking inactive (not clocked in or shift complete).");
+                            }
+                        }
+                    })
+                    .catch(err => console.error('Status check error:', err));
+            }
+
+            // Start tracking
+            checkLocationStatus();
+
+            // Periodic sync check every 10 minutes to ensure timer stays alive and synced with server
+            if (statusCheckInterval) clearInterval(statusCheckInterval);
+            statusCheckInterval = setInterval(checkLocationStatus, 600000);
+
+            // Visibility Change: Re-check when user returns to tab
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    console.log("Tab became visible, refreshing tracking status...");
+                    checkLocationStatus();
+                }
+            });
+
+            // Service Worker Registration for better background persistence
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/static/js/sw.js')
+                    .then(reg => {
+                        console.log('Service Worker registered for background tracking');
+                        // Request periodic sync if supported (requires PWA installation typically)
+                        if ('periodicSync' in reg) {
+                            reg.periodicSync.register('hourly-location-punch', {
+                                minInterval: 3600000 // 1 hour
+                            }).catch(err => console.log('Periodic Sync failed (expected if not installed):', err));
+                        }
+                    })
+                    .catch(err => console.warn('SW registration failed:', err));
+
+                navigator.serviceWorker.addEventListener('message', event => {
+                    if (event.data && event.data.type === 'REQUEST_LOCATION_PUNCH') {
+                        console.log('Location punch requested by Service Worker');
+                        performPunch();
+                    }
+                });
+            }
         })();
     </script>
     {% endif %}

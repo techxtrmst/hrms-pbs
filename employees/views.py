@@ -1775,6 +1775,15 @@ def employee_detail(request, pk):
 
         map_data = []
         if map_attendance:
+            # Determine timezone
+            import pytz
+            tz_name = employee.location.timezone if employee.location else "Asia/Kolkata"
+            local_tz = pytz.timezone(tz_name)
+
+            def format_local_time(dt):
+                if not dt: return ""
+                return timezone.localtime(dt, local_tz).strftime('%I:%M %p')
+
             # Clock In Marker
             if map_attendance.location_in:
                 lat, lng = safe_parse_location(map_attendance.location_in)
@@ -1783,35 +1792,30 @@ def employee_detail(request, pk):
                         {
                             "lat": lat,
                             "lng": lng,
-                            "title": f"Clock In ({map_attendance.clock_in.strftime('%H:%M')})",
+                            "title": f"Clock In ({format_local_time(map_attendance.clock_in)})",
                             "type": "start",
+                            "time_display": format_local_time(map_attendance.clock_in)
                         }
                     )
 
-            # Logs (If we had a LocationLog model linked to attendance date/time, we'd query it here)
-            # Query LocationLog for this employee on this date
-            # Assuming LocationLog has a timestamp field
-            if map_attendance.clock_in:
-                day_start = timezone.make_aware(
-                    timezone.datetime.combine(map_date, timezone.datetime.min.time())
-                )
-                day_end = timezone.make_aware(
-                    timezone.datetime.combine(map_date, timezone.datetime.max.time())
-                )
+            # Location Logs (Hourly Tracking)
+            day_start = timezone.make_aware(timezone.datetime.combine(map_date, timezone.datetime.min.time()))
+            day_end = timezone.make_aware(timezone.datetime.combine(map_date, timezone.datetime.max.time()))
 
-                logs = LocationLog.objects.filter(
-                    employee=employee, timestamp__range=[day_start, day_end]
-                ).order_by("timestamp")
+            logs = LocationLog.objects.filter(employee=employee, timestamp__range=[day_start, day_end]).order_by("timestamp")
 
-                for log in logs:
-                    map_data.append(
-                        {
-                            "lat": float(log.latitude),
-                            "lng": float(log.longitude),
-                            "title": f"Log: {log.timestamp.strftime('%H:%M')}",
-                            "type": "log",
-                        }
-                    )
+            for log in logs:
+                title = "Location Punch" if log.log_type == 'HOURLY' else "Movement Log"
+                map_data.append(
+                    {
+                        "lat": float(log.latitude),
+                        "lng": float(log.longitude),
+                        "title": f"{title} ({format_local_time(log.timestamp)})",
+                        "type": "log",
+                        "log_type": log.log_type,
+                        "time_display": format_local_time(log.timestamp)
+                    }
+                )
 
             # Clock Out Marker
             if map_attendance.location_out:
@@ -1821,8 +1825,9 @@ def employee_detail(request, pk):
                         {
                             "lat": lat,
                             "lng": lng,
-                            "title": f"Clock Out ({map_attendance.clock_out.strftime('%H:%M')})",
+                            "title": f"Clock Out ({format_local_time(map_attendance.clock_out)})",
                             "type": "end",
+                            "time_display": format_local_time(map_attendance.clock_out)
                         }
                     )
 
@@ -2757,14 +2762,15 @@ def get_attendance_map_data(request, pk):
             ).order_by("timestamp")
 
             for log in logs:
+                title = "Location Punch" if log.log_type == 'HOURLY' else "Movement Log"
                 map_locations.append(
                     {
                         "lat": float(log.latitude),
                         "lng": float(log.longitude),
-                        "title": f"Log: {log.timestamp.strftime('%I:%M %p')}",
+                        "title": f"{title}: {log.timestamp.strftime('%I:%M %p')}",
                         "time_display": log.timestamp.strftime("%I:%M %p"),
                         "type": "log",
-                        "type_display": "Location Log",
+                        "type_display": title,
                     }
                 )
 
