@@ -1754,6 +1754,26 @@ def employee_detail(request, pk):
                         }
                     )
 
+
+        # Calculate Probation Date (3 months from joining)
+        probation_date = None
+        if employee.date_of_joining:
+            import calendar
+            p_year = employee.date_of_joining.year
+            p_month = employee.date_of_joining.month + 3
+            p_day = employee.date_of_joining.day
+            
+            # Adjust year if month goes beyond 12
+            while p_month > 12:
+                p_year += 1
+                p_month -= 12
+                
+            # Handle end of month (e.g. Nov 30 -> Feb 28)
+            max_day = calendar.monthrange(p_year, p_month)[1]
+            p_day = min(p_day, max_day)
+            
+            probation_date = employee.date_of_joining.replace(year=p_year, month=p_month, day=p_day)
+
         context = {
             "employee": employee,
             "attendance_history": full_history,
@@ -1768,6 +1788,7 @@ def employee_detail(request, pk):
             },
             "map_data": json.dumps(map_data),
             "map_date": map_date,
+            "probation_date": probation_date,
         }
         return render(request, "employees/employee_detail.html", context)
 
