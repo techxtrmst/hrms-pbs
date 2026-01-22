@@ -17,6 +17,18 @@ def fix_file(filepath):
         tag = re.sub(r':\s+', r':', tag)
         return tag
 
+    # 3. Fix comparison operator spacing (e.g. x=='y' -> x == 'y')
+    def fix_operator_spacing(match):
+        tag = match.group(0)
+        # Add space around ==, !=, <=, >=, <, > if not already present
+        # We look for operators that might be stuck to other characters
+        # Note: This is a simple heuristic.
+        for op in ['==', '!=', '<=', '>=']:
+            tag = re.sub(r'(?<=[^\s!=<>])' + re.escape(op) + r'(?=[^\s!=<>])', f' {op} ', tag)
+            tag = re.sub(r'(?<=[^\s!=<>])' + re.escape(op) + r'(?=\s)', f' {op}', tag)
+            tag = re.sub(r'(?<=\s)' + re.escape(op) + r'(?=[^\s!=<>])', f'{op} ', tag)
+        return tag
+
     # 3. Remove Git conflict/stash markers
     def remove_git_markers(text):
         # Remove <<<<<<<, =======, >>>>>>> lines
@@ -33,6 +45,7 @@ def fix_file(filepath):
     new_content = re.sub(r'\{\{.*?\}\}', fix_filter_spacing, new_content, flags=re.DOTALL)
     new_content = re.sub(r'\{%.*?%\}', normalize_tag, new_content, flags=re.DOTALL)
     new_content = re.sub(r'\{%.*?%\}', fix_filter_spacing, new_content, flags=re.DOTALL)
+    new_content = re.sub(r'\{%.*?%\}', fix_operator_spacing, new_content, flags=re.DOTALL)
     
     # Apply Git marker removal
     new_content = remove_git_markers(new_content)

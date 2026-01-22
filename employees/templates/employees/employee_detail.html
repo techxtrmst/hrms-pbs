@@ -768,7 +768,10 @@
                         <div class="col-lg-8">
                             <!-- Personal Details Section -->
                             <div class="mb-5">
-                                <h6 class="section-title"><i class="fas fa-user"></i> Personal Information</h6>
+                                <h6 class="section-title"><i class="fas fa-user"></i> Personal Information <a href="#"
+                                        data-bs-toggle="modal" data-bs-target="#editPersonalModal"
+                                        class="ms-auto btn btn-link text-primary p-0" title="Edit Personal Info"><i
+                                            class="fas fa-edit"></i></a></h6>
                                 <div class="info-grid">
                                     <div class="info-item">
                                         <div class="info-label">Date of Birth</div>
@@ -797,6 +800,9 @@
                             <!-- Job Details Section -->
                             <div class="mb-5">
                                 <h6 class="section-title"><i class="fas fa-briefcase"></i> Job & Organizational Details
+                                    <a href="#" data-bs-toggle="modal" data-bs-target="#editJobModal"
+                                        class="ms-auto btn btn-link text-primary p-0" title="Edit Job Details"><i
+                                            class="fas fa-edit"></i></a>
                                 </h6>
                                 <div class="info-grid">
                                     <div class="info-item">
@@ -845,7 +851,10 @@
 
                         <!-- Right Side: Work Timeline -->
                         <div class="col-lg-4">
-                            <h6 class="section-title"><i class="fas fa-history"></i> Work Timeline</h6>
+                            <h6 class="section-title"><i class="fas fa-history"></i> Work Timeline <a href="#"
+                                    data-bs-toggle="modal" data-bs-target="#editJobModal"
+                                    class="ms-auto btn btn-link text-primary p-0" title="Edit Timeline (Job Details)"><i
+                                        class="fas fa-edit"></i></a></h6>
                             <div class="timeline-wrapper">
                                 <div class="timeline-line"></div>
 
@@ -869,7 +878,7 @@
                                         <div class="timeline-dot-inner"></div>
                                     </div>
                                     <div class="timeline-content">
-                                        <span class="timeline-date">Probation Status</span>
+                                        <span class="timeline-date">{% if probation_date %}{{ probation_date|date:"d M, Y" }}{% else %}Probation Status{% endif %}</span>
                                         <div class="timeline-title">Confirmed Employee</div>
                                         <div class="small text-muted">Permanent Staff</div>
                                     </div>
@@ -892,7 +901,10 @@
 
                     <!-- Addresses Section -->
                     <div class="mb-5">
-                        <h6 class="section-title"><i class="fas fa-map-marked-alt"></i> Addresses</h6>
+                        <h6 class="section-title"><i class="fas fa-map-marked-alt"></i> Addresses <a href="#"
+                                data-bs-toggle="modal" data-bs-target="#editAddressModal"
+                                class="ms-auto btn btn-link text-primary p-0" title="Edit Addresses"><i
+                                    class="fas fa-edit"></i></a></h6>
                         <div class="row g-4">
                             <div class="col-md-6">
                                 <div class="info-item h-100">
@@ -917,6 +929,9 @@
                     {% if user.role == 'COMPANY_ADMIN' or user.role == 'SUPERADMIN' %}
                     <div>
                         <h6 class="section-title"><i class="fas fa-file-invoice-dollar"></i> Financial & Compliance Info
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#editFinancialModal"
+                                class="ms-auto btn btn-link text-primary p-0" title="Edit Financial Info"><i
+                                    class="fas fa-edit"></i></a>
                         </h6>
                         <div class="info-grid">
                             <div class="info-item">
@@ -957,6 +972,197 @@
         </div>
     </div>
 
+</div>
+
+<!-- INLINE EDIT MODALS -->
+
+<!-- 1. Personal Info Edit Modal -->
+<div class="modal fade" id="editPersonalModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Personal Information</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'employee_update_inline' employee.pk %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="section" value="personal">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Date of Birth</label>
+                        <input type="date" class="form-control" name="dob"
+                            value="{{ employee.dob|date:'Y-m-d'|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Gender</label>
+                        <select class="form-select" name="gender">
+                            <option value="">Select</option>
+                            <option value="M" {% if employee.gender == 'M' %}selected{% endif %}>Male</option>
+                            <option value="F" {% if employee.gender == 'F' %}selected{% endif %}>Female</option>
+                            <option value="O" {% if employee.gender == 'O' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Marital Status</label>
+                        <select class="form-select" name="marital_status">
+                            <option value="">Select</option>
+                            <option value="S" {% if employee.marital_status == 'S' %}selected{% endif %}>Single</option>
+                            <option value="M" {% if employee.marital_status == 'M' %}selected{% endif %}>Married</option>
+                            <option value="D" {% if employee.marital_status == 'D' %}selected{% endif %}>Divorced</option>
+                            <option value="W" {% if employee.marital_status == 'W' %}selected{% endif %}>Widowed</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mobile Number</label>
+                        <input type="text" class="form-control" name="mobile_number"
+                            value="{{ employee.mobile_number|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Personal Email</label>
+                        <input type="email" class="form-control" name="personal_email"
+                            value="{{ employee.personal_email|default:'' }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Job Info Edit Modal -->
+<div class="modal fade" id="editJobModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Job Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'employee_update_inline' employee.pk %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="section" value="job">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Employee ID</label>
+                        <input type="text" class="form-control" name="badge_id"
+                            value="{{ employee.badge_id|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Designation</label>
+                        <input type="text" class="form-control" name="designation"
+                            value="{{ employee.designation|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Department</label>
+                        <input type="text" class="form-control" name="department"
+                            value="{{ employee.department|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Work Type</label>
+                        <select class="form-select" name="work_type">
+                            <option value="FT" {% if employee.work_type == 'FT' %}selected{% endif %}>Full Time</option>
+                            <option value="PT" {% if employee.work_type == 'PT' %}selected{% endif %}>Part Time</option>
+                            <option value="CT" {% if employee.work_type == 'CT' %}selected{% endif %}>Contract</option>
+                            <option value="RM" {% if employee.work_type == 'RM' %}selected{% endif %}>Remote</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Joining Date</label>
+                        <input type="date" class="form-control" name="date_of_joining"
+                            value="{{ employee.date_of_joining|date:'Y-m-d'|default:'' }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Address Edit Modal -->
+<div class="modal fade" id="editAddressModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Addresses</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'employee_update_inline' employee.pk %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="section" value="address">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Current Address</label>
+                        <textarea class="form-control" name="current_address"
+                            rows="3">{{ employee.current_address|default:'' }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Permanent Address</label>
+                        <textarea class="form-control" name="permanent_address"
+                            rows="3">{{ employee.permanent_address|default:'' }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Financial Edit Modal -->
+<div class="modal fade" id="editFinancialModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Financial Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'employee_update_inline' employee.pk %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="section" value="financial">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Bank Name</label>
+                        <input type="text" class="form-control" name="bank_name"
+                            value="{{ employee.bank_name|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Account Number</label>
+                        <input type="text" class="form-control" name="account_number"
+                            value="{{ employee.account_number|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">IFSC Code</label>
+                        <input type="text" class="form-control" name="ifsc_code"
+                            value="{{ employee.ifsc_code|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">UAN Number</label>
+                        <input type="text" class="form-control" name="uan" value="{{ employee.uan|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Annual CTC</label>
+                        <input type="number" step="0.01" class="form-control" name="annual_ctc"
+                            value="{{ employee.annual_ctc|default:'' }}">
+                    </div>
+                    <div class="mb-3 form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="pfEnabledSwitch" name="pf_enabled" {% if employee.pf_enabled %}checked{% endif %}>
+                        <label class="form-check-label" for="pfEnabledSwitch">Provident Fund Enabled</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <!-- Exit Action Modal -->

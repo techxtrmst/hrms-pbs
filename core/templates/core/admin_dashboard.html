@@ -1545,10 +1545,11 @@
             {% for att in late_arrivals_list %}
     {
         name: "{{ att.employee.user.get_full_name }}",
-            dept: "{{ att.employee.department|default:'N/A' }}",
-                time: "{{ att.clock_in|time:'h:i A' }}",
-                    id: "{{ att.employee.id }}",
-                        initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
+            designation: "{{ att.employee.designation|default:'N/A' }}",
+                dept: "{{ att.employee.department|default:'N/A' }}",
+                    time: "{{ att.clock_in|time:'h:i A' }}",
+                        id: "{{ att.employee.id }}",
+                            initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
     } {% if not forloop.last %}, {% endif %}
     {% endfor %}
         ],
@@ -1556,10 +1557,11 @@
         {% for att in early_departures_list %}
     {
         name: "{{ att.employee.user.get_full_name }}",
-            dept: "{{ att.employee.department|default:'N/A' }}",
-                time: "{{ att.clock_out|time:'h:i A' }}",
-                    id: "{{ att.employee.id }}",
-                        initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
+            designation: "{{ att.employee.designation|default:'N/A' }}",
+                dept: "{{ att.employee.department|default:'N/A' }}",
+                    time: "{{ att.clock_out|time:'h:i A' }}",
+                        id: "{{ att.employee.id }}",
+                            initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
     } {% if not forloop.last %}, {% endif %}
     {% endfor %}
         ],
@@ -1567,10 +1569,11 @@
         {% for att in on_duty_list %}
     {
         name: "{{ att.employee.user.get_full_name }}",
-            dept: "{{ att.employee.department|default:'N/A' }}",
-                time: "{% if att.clock_in %}{{ att.clock_in|time:'h:i A' }}{% else %}N/A{% endif %}",
-                    id: "{{ att.employee.id }}",
-                        initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
+            designation: "{{ att.employee.designation|default:'N/A' }}",
+                dept: "{{ att.employee.department|default:'N/A' }}",
+                    time: "{% if att.clock_in %}{{ att.clock_in|time:'h:i A' }}{% else %}N/A{% endif %}",
+                        id: "{{ att.employee.id }}",
+                            initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
     } {% if not forloop.last %}, {% endif %}
     {% endfor %}
         ]
@@ -1598,7 +1601,7 @@
                         <div class="insight-employee-avatar">${item.initials.toUpperCase()}</div>
                         <div class="insight-employee-info">
                             <div class="insight-employee-name">${item.name}</div>
-                            <div class="insight-employee-dept">${item.dept}</div>
+                            <div class="insight-employee-dept">${item.designation}</div>
                         </div>
                         <div class="insight-time">${item.time}</div>
                     </div>

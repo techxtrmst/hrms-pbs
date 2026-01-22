@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import inline_views
 from .multi_step_views import add_employee_step1, add_employee_step2, add_employee_step3
 
 urlpatterns = [
@@ -18,6 +19,7 @@ urlpatterns = [
     path("add/step2/", add_employee_step2, name="add_employee_step2"),
     path("add/step3/", add_employee_step3, name="add_employee_step3"),
     path("<int:pk>/detail/", views.employee_detail, name="employee_detail"),
+    path("<int:pk>/update-inline/", inline_views.update_employee_inline, name="employee_update_inline"),
     path("<int:pk>/edit/", views.EmployeeUpdateView.as_view(), name="employee_edit"),
     path(
         "<int:pk>/delete/", views.EmployeeDeleteView.as_view(), name="employee_delete"
