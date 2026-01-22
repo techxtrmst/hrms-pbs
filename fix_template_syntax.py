@@ -44,26 +44,19 @@ def fix_file(filepath):
     return False
 
 def main():
-    search_dirs = [
-        os.path.join('core', 'templates'),
-        os.path.join('employees', 'templates')
-    ]
-    
     fixed_count = 0
-    for templates_dir in search_dirs:
-        if not os.path.exists(templates_dir):
-            print(f"Directory {templates_dir} not found. Skipping.")
+    # Walk the entire project directory
+    for root, dirs, files in os.walk('.'):
+        # Skip certain directories
+        if any(skip in root for skip in ['venv', '.git', '__pycache__', 'node_modules']):
             continue
-
-        for root, dirs, files in os.walk(templates_dir):
-            for file in files:
-                if file.endswith('.html'):
-                    filepath = os.path.join(root, file)
-                    if fix_file(filepath):
-                        print(f"Fixed: {filepath}")
-                        fixed_count += 1
-                    else:
-                        pass # print(f"Checked (no changes): {filepath}")
+            
+        for file in files:
+            if file.endswith('.html'):
+                filepath = os.path.join(root, file)
+                if fix_file(filepath):
+                    print(f"Fixed: {filepath}")
+                    fixed_count += 1
     
     print(f"\nTotal files fixed: {fixed_count}")
 
