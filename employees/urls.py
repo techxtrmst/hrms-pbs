@@ -86,6 +86,8 @@ urlpatterns = [
     path("<int:pk>/id-proofs/", views.employee_id_proofs, name="employee_id_proofs"),
     # Leave Configuration
     path("leave/configuration/", views.leave_configuration, name="leave_configuration"),
+    path("leave/configuration/bulk-upload/", views.bulk_leave_upload, name="bulk_leave_upload"),
+    path("leave/configuration/download-template/", views.download_leave_template, name="download_leave_template"),
     path(
         "leave/configuration/accrue/",
         views.run_monthly_accrual,

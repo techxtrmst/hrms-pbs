@@ -747,7 +747,8 @@ def clock_out(request):
 
                 # Check if shift is complete (unless forced)
                 if not force_clockout and current_session.clock_in:
-                    worked_hours = (timezone.now() - current_session.clock_in).total_seconds() / 3600
+                    # Calculate cumulative working hours from all sessions including current one
+                    worked_hours = attendance.get_cumulative_working_hours_including_current()
                     expected_hours = 9.0  # Default 9 hours shift
 
                     if worked_hours < expected_hours:
@@ -3372,15 +3373,18 @@ def leave_configuration(request):
     else:
         employees = Employee.objects.filter(company=company)
 
-    # Prefetch leave balances
-    employees = employees.select_related("user").order_by("user__first_name")
+    # Prefetch leave balances to avoid N+1 queries and ensure fresh data
+    employees = employees.select_related("user", "leave_balance").order_by("user__first_name")
 
-    # Ensure all employees have leave balance records
+    # Ensure all employees have leave balance records and refresh from DB
     from django.core.exceptions import ObjectDoesNotExist
 
     for employee in employees:
         try:
-            _ = employee.leave_balance
+            # Force refresh from database to get latest data
+            employee.refresh_from_db()
+            leave_balance = employee.leave_balance
+            leave_balance.refresh_from_db()
         except ObjectDoesNotExist:
             # Create with 0 leaves for new employees (probation period)
             LeaveBalance.objects.create(employee=employee, casual_leave_allocated=0.0, sick_leave_allocated=0.0)
@@ -3518,6 +3522,311 @@ def run_monthly_accrual(request):
         messages.error(request, f"Error running accrual: {str(e)}")
 
     return redirect("leave_configuration")
+
+
+@login_required
+def bulk_leave_upload(request):
+    """Handle bulk leave balance upload"""
+    from django.contrib import messages
+    from .forms import BulkLeaveUploadForm, PANDAS_AVAILABLE
+    
+    user = request.user
+    if user.role not in [User.Role.COMPANY_ADMIN]:
+        messages.error(request, "Permission Denied. Only Company Admins can upload bulk leave data.")
+        return redirect("leave_configuration")
+    
+    if not PANDAS_AVAILABLE:
+        messages.error(request, "Bulk upload feature is not available. Please install pandas and openpyxl packages.")
+        return redirect("leave_configuration")
+    
+    if request.method == 'POST':
+        form = BulkLeaveUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                # Validate file content
+                processed_data, errors = form.validate_file_content(user.company)
+                
+                if errors:
+                    for error in errors:
+                        messages.error(request, error)
+                    return render(request, 'employees/bulk_leave_upload.html', {'form': form})
+                
+                if not processed_data:
+                    messages.warning(request, "No valid data found in the uploaded file.")
+                    return render(request, 'employees/bulk_leave_upload.html', {'form': form})
+                
+                # Process the data
+                update_mode = form.cleaned_data['update_mode']
+                success_count = 0
+                error_count = 0
+                
+                with transaction.atomic():
+                    for data in processed_data:
+                        try:
+                            employee = data['employee']
+                            
+                            # Get or create leave balance
+                            leave_balance, created = LeaveBalance.objects.get_or_create(
+                                employee=employee,
+                                defaults={
+                                    'casual_leave_allocated': 0.0,
+                                    'sick_leave_allocated': 0.0,
+                                    'casual_leave_used': 0.0,
+                                    'sick_leave_used': 0.0,
+                                    'carry_forward_leave': 0.0
+                                }
+                            )
+                            
+                            # Log the data being processed for debugging
+                            logger.info(f"Processing bulk upload for {employee.user.get_full_name()}: "
+                                      f"CL_allocated: {data['casual_leave_allocated']}, "
+                                      f"SL_allocated: {data['sick_leave_allocated']}, "
+                                      f"CL_used: {data['casual_leave_used']}, "
+                                      f"SL_used: {data['sick_leave_used']}, "
+                                      f"CF: {data['carry_forward_leave']}")
+                            
+                            # Update based on mode
+                            if update_mode == 'REPLACE':
+                                leave_balance.casual_leave_allocated = data['casual_leave_allocated']
+                                leave_balance.sick_leave_allocated = data['sick_leave_allocated']
+                                leave_balance.casual_leave_used = data['casual_leave_used']
+                                leave_balance.sick_leave_used = data['sick_leave_used']
+                                leave_balance.carry_forward_leave = data['carry_forward_leave']
+                            
+                            elif update_mode == 'ADD':
+                                leave_balance.casual_leave_allocated += data['casual_leave_allocated']
+                                leave_balance.sick_leave_allocated += data['sick_leave_allocated']
+                                leave_balance.casual_leave_used += data['casual_leave_used']
+                                leave_balance.sick_leave_used += data['sick_leave_used']
+                                leave_balance.carry_forward_leave += data['carry_forward_leave']
+                            
+                            elif update_mode == 'UPDATE_ONLY':
+                                # Only update non-zero values
+                                if data['casual_leave_allocated'] > 0:
+                                    leave_balance.casual_leave_allocated = data['casual_leave_allocated']
+                                if data['sick_leave_allocated'] > 0:
+                                    leave_balance.sick_leave_allocated = data['sick_leave_allocated']
+                                if data['casual_leave_used'] > 0:
+                                    leave_balance.casual_leave_used = data['casual_leave_used']
+                                if data['sick_leave_used'] > 0:
+                                    leave_balance.sick_leave_used = data['sick_leave_used']
+                                if data['carry_forward_leave'] > 0:
+                                    leave_balance.carry_forward_leave = data['carry_forward_leave']
+                            
+                            # Log the values before saving
+                            logger.info(f"Before save - {employee.user.get_full_name()}: "
+                                      f"CL: {leave_balance.casual_leave_allocated}/{leave_balance.casual_leave_used}, "
+                                      f"SL: {leave_balance.sick_leave_allocated}/{leave_balance.sick_leave_used}, "
+                                      f"CF: {leave_balance.carry_forward_leave}")
+                            
+                            # Save the updated leave balance with validation
+                            leave_balance.validate_and_save()
+                            
+                            # Force refresh from database to ensure consistency
+                            leave_balance.refresh_from_db()
+                            
+                            # Log the values after saving and refresh
+                            logger.info(f"After save - {employee.user.get_full_name()}: "
+                                      f"CL: {leave_balance.casual_leave_allocated}/{leave_balance.casual_leave_used}, "
+                                      f"SL: {leave_balance.sick_leave_allocated}/{leave_balance.sick_leave_used}, "
+                                      f"CF: {leave_balance.carry_forward_leave}")
+                            
+                            # Clear any cached data related to this employee
+                            from django.core.cache import cache
+                            cache_keys_to_clear = [
+                                f"employee_leave_balance_{employee.id}",
+                                f"employee_dashboard_data_{employee.id}",
+                                f"employee_personal_home_{employee.id}",
+                                f"leave_config_data_{user.company.id}",
+                            ]
+                            for cache_key in cache_keys_to_clear:
+                                cache.delete(cache_key)
+                            
+                            # Trigger any related model updates
+                            # This ensures that any dependent calculations are updated
+                            employee.save(update_fields=['updated_at'])
+                            
+                            # Log the change for audit trail
+                            logger.info(f"Bulk upload: Updated leave balance for {employee.user.get_full_name()} - "
+                                      f"CL: {leave_balance.casual_leave_allocated}/{leave_balance.casual_leave_used}, "
+                                      f"SL: {leave_balance.sick_leave_allocated}/{leave_balance.sick_leave_used}, "
+                                      f"CF: {leave_balance.carry_forward_leave}")
+                            
+                            success_count += 1
+                            
+                        except Exception as e:
+                            error_count += 1
+                            logger.error(f"Error updating leave balance for {data['employee_name']}: {str(e)}")
+                
+                # Show results with detailed feedback
+                if success_count > 0:
+                    messages.success(request, f"Successfully updated leave balances for {success_count} employees. "
+                                            f"All changes are now reflected across the system.")
+                    # Add detailed success message for debugging
+                    messages.info(request, f"Updated employees: {', '.join([data['employee_name'] for data in processed_data[:5]])}"
+                                         f"{'...' if len(processed_data) > 5 else ''}")
+                
+                if error_count > 0:
+                    messages.warning(request, f"Failed to update {error_count} employee records. Check logs for details.")
+                
+                # Clear company-wide cache to ensure immediate reflection
+                from django.core.cache import cache
+                cache.delete(f"leave_config_data_{user.company.id}")
+                cache.delete(f"company_leave_summary_{user.company.id}")
+                
+                # Force clear all employee-related cache for this company
+                company_employees = Employee.objects.filter(company=user.company)
+                for emp in company_employees:
+                    cache.delete(f"employee_leave_balance_{emp.id}")
+                    cache.delete(f"employee_dashboard_data_{emp.id}")
+                    cache.delete(f"employee_profile_data_{emp.id}")
+                    cache.delete(f"employee_personal_home_{emp.id}")
+                
+                # Add a flag to indicate successful bulk upload for frontend handling
+                messages.info(request, "BULK_UPLOAD_SUCCESS")  # Special flag for frontend
+                
+                return redirect('leave_configuration')
+                
+            except Exception as e:
+                messages.error(request, f"Error processing file: {str(e)}")
+                logger.error(f"Bulk leave upload error: {str(e)}")
+        
+        else:
+            messages.error(request, "Please correct the errors below.")
+    
+    else:
+        form = BulkLeaveUploadForm()
+    
+    return render(request, 'employees/bulk_leave_upload.html', {'form': form})
+
+
+@login_required
+def download_leave_template(request):
+    """Download Excel template for bulk leave upload"""
+    from django.contrib import messages
+    from django.http import HttpResponse
+    
+    user = request.user
+    if user.role not in [User.Role.COMPANY_ADMIN]:
+        messages.error(request, "Permission Denied")
+        return redirect("leave_configuration")
+    
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+    except ImportError:
+        messages.error(request, "Excel template generation is not available. Please install openpyxl package.")
+        return redirect("leave_configuration")
+    
+    # Create workbook and worksheet
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Leave Balance Template"
+    
+    # Define headers
+    headers = [
+        'employee_id',
+        'employee_name', 
+        'casual_leave_allocated',
+        'sick_leave_allocated',
+        'casual_leave_used',
+        'sick_leave_used',
+        'carry_forward_leave'
+    ]
+    
+    # Style for headers
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center")
+    
+    # Add headers
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+    
+    # Add sample data with company employees
+    employees = Employee.objects.filter(company=user.company).select_related('user', 'leave_balance')[:5]
+    
+    for row, employee in enumerate(employees, 2):
+        ws.cell(row=row, column=1, value=employee.badge_id or f"EMP{employee.id:03d}")
+        ws.cell(row=row, column=2, value=employee.user.get_full_name())
+        
+        # Get current leave balance or defaults
+        try:
+            balance = employee.leave_balance
+            ws.cell(row=row, column=3, value=balance.casual_leave_allocated)
+            ws.cell(row=row, column=4, value=balance.sick_leave_allocated)
+            ws.cell(row=row, column=5, value=balance.casual_leave_used)
+            ws.cell(row=row, column=6, value=balance.sick_leave_used)
+            ws.cell(row=row, column=7, value=balance.carry_forward_leave)
+        except:
+            # Default values for new employees
+            ws.cell(row=row, column=3, value=12.0)  # Default CL
+            ws.cell(row=row, column=4, value=12.0)  # Default SL
+            ws.cell(row=row, column=5, value=0.0)   # Used CL
+            ws.cell(row=row, column=6, value=0.0)   # Used SL
+            ws.cell(row=row, column=7, value=0.0)   # Carry forward
+    
+    # Add instructions sheet
+    instructions_ws = wb.create_sheet("Instructions")
+    instructions = [
+        "BULK LEAVE UPLOAD INSTRUCTIONS",
+        "",
+        "Required Columns:",
+        "- employee_id: Employee badge ID (e.g., PBTHYD001)",
+        "- employee_name: Full name of employee",
+        "- casual_leave_allocated: Total casual leaves allocated for the year",
+        "- sick_leave_allocated: Total sick leaves allocated for the year",
+        "",
+        "Optional Columns:",
+        "- casual_leave_used: Casual leaves already used (default: 0)",
+        "- sick_leave_used: Sick leaves already used (default: 0)", 
+        "- carry_forward_leave: Leaves carried forward from previous year (default: 0)",
+        "",
+        "Important Notes:",
+        "1. Either employee_id OR employee_name must be provided",
+        "2. All numeric values must be positive numbers",
+        "3. Used leaves cannot exceed allocated leaves",
+        "4. File formats supported: .xlsx, .xls, .csv",
+        "5. Maximum file size: 5MB",
+        "",
+        "Update Modes:",
+        "- REPLACE: Completely replace existing leave balances",
+        "- ADD: Add values to existing balances",
+        "- UPDATE_ONLY: Update only non-zero values in the file"
+    ]
+    
+    for row, instruction in enumerate(instructions, 1):
+        cell = instructions_ws.cell(row=row, column=1, value=instruction)
+        if row == 1:  # Title
+            cell.font = Font(bold=True, size=14)
+        elif instruction.endswith(":"):  # Section headers
+            cell.font = Font(bold=True)
+    
+    # Adjust column widths
+    for ws_sheet in [ws, instructions_ws]:
+        for column in ws_sheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws_sheet.column_dimensions[column_letter].width = adjusted_width
+    
+    # Create response
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="leave_balance_template_{user.company.name.replace(" ", "_")}.xlsx"'
+    
+    wb.save(response)
+    return response
 
 
 # --- ID Proof Management Views ---

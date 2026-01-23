@@ -485,6 +485,20 @@
         gap: 10px;
         white-space: nowrap;
         min-height: 44px;
+        text-decoration: none;
+    }
+
+    .btn-hero.btn-secondary {
+        background: #6b7280;
+        color: white;
+        box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+    }
+
+    .btn-hero.btn-secondary:hover {
+        background: #4b5563;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(75, 85, 99, 0.4);
+        color: white;
     }
 
     .btn-hero:hover {
@@ -1392,6 +1406,10 @@
                     <i class="fas fa-magic"></i>
                     <span class="d-none d-sm-inline">Run Monthly Accrual</span><span class="d-sm-none">Run Accrual</span>
                 </button>
+                <a href="{% url 'bulk_leave_upload' %}" class="btn-hero btn-secondary">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span class="d-none d-sm-inline">Bulk Upload</span><span class="d-sm-none">Upload</span>
+                </a>
             </div>
         </div>
     </div>
@@ -1845,6 +1863,72 @@
                 this.style.transform = '';
             });
         });
+
+        // Check for bulk upload success and refresh data
+        checkBulkUploadSuccess();
     });
+
+    // Function to check for bulk upload success and refresh data
+    function checkBulkUploadSuccess() {
+        // Check if there's a bulk upload success message
+        const messages = document.querySelectorAll('.alert');
+        let bulkUploadSuccess = false;
+        
+        messages.forEach(message => {
+            if (message.textContent.includes('BULK_UPLOAD_SUCCESS')) {
+                bulkUploadSuccess = true;
+                message.style.display = 'none'; // Hide the flag message
+            }
+        });
+        
+        if (bulkUploadSuccess) {
+            // Show immediate feedback
+            showToast('Leave balances updated successfully! Refreshing data...', 'success');
+            
+            // Force refresh the page after a short delay to show updated data
+            setTimeout(() => {
+                // Add cache-busting parameter to force fresh data
+                const url = new URL(window.location.href);
+                url.searchParams.set('refresh', Date.now());
+                window.location.href = url.toString();
+            }, 1500);
+        }
+    }
+
+    // Function to refresh leave balance data without full page reload
+    function refreshLeaveBalances() {
+        fetch(window.location.href, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            // Parse the response and update only the employee cards
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Update desktop layout
+            const newDesktopList = doc.querySelector('.desktop-layout .employee-list');
+            const currentDesktopList = document.querySelector('.desktop-layout .employee-list');
+            if (newDesktopList && currentDesktopList) {
+                currentDesktopList.innerHTML = newDesktopList.innerHTML;
+            }
+            
+            // Update mobile layout
+            const newMobileList = doc.querySelector('.mobile-layout .employee-list');
+            const currentMobileList = document.querySelector('.mobile-layout .employee-list');
+            if (newMobileList && currentMobileList) {
+                currentMobileList.innerHTML = newMobileList.innerHTML;
+            }
+            
+            showToast('Leave balances refreshed successfully!', 'success');
+        })
+        .catch(error => {
+            console.error('Error refreshing leave balances:', error);
+            showToast('Error refreshing data. Please reload the page.', 'error');
+        });
+    }
 </script>
 {% endblock %}

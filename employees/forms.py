@@ -4,9 +4,17 @@ from django.core.exceptions import ValidationError
 
 from companies.models import Company, ShiftSchedule
 
-from .models import EmergencyContact, Employee, LeaveRequest, RegularizationRequest
+from .models import EmergencyContact, Employee, LeaveRequest, RegularizationRequest, LeaveBalance
 
 User = get_user_model()
+
+# Try to import pandas, but make it optional
+try:
+    import pandas as pd
+    import io
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
 
 
 class EmployeeCreationForm(forms.ModelForm):
@@ -225,7 +233,7 @@ class LeaveApplicationForm(forms.ModelForm):
             "start_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "end_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "leave_type": forms.Select(attrs={"class": "form-select"}),
-            "duration": forms.RadioSelect(attrs={"class": "form-check-input"}),
+            "duration": forms.Select(attrs={"class": "form-select"}),
             "reason": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "supporting_document": forms.FileInput(attrs={"class": "form-control"}),
         }
@@ -238,7 +246,18 @@ class LeaveApplicationForm(forms.ModelForm):
         cleaned_data = super().clean()
         leave_type = cleaned_data.get("leave_type")
         duration = cleaned_data.get("duration")
+        start_date = cleaned_data.get("start_date")
+        end_date = cleaned_data.get("end_date")
 
+        # Validate half-day options are only for single-day leaves
+        if duration in ["FIRST_HALF", "SECOND_HALF"]:
+            if start_date and end_date and start_date != end_date:
+                raise forms.ValidationError(
+                    "First Half and Second Half options are only available for single-day leaves. "
+                    "Please select the same date for both start and end date."
+                )
+
+        return cleaned_data
         # Policy: Bluebix & Softstandard employees can only take SL as Half Day (0.5)
         if self.user and self.user.company:
             company_name = self.user.company.name.lower()
@@ -365,3 +384,166 @@ class EmergencyContactForm(forms.ModelForm):
         if phone and len(phone) < 10:
             raise ValidationError("Please enter a valid phone number with at least 10 digits.")
         return phone
+
+
+class BulkLeaveUploadForm(forms.Form):
+    """Form for bulk leave balance upload via Excel/CSV"""
+    
+    upload_file = forms.FileField(
+        label="Upload Leave Balance File",
+        help_text="Upload Excel (.xlsx) or CSV file with employee leave balances",
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': '.xlsx,.xls,.csv'
+        })
+    )
+    
+    update_mode = forms.ChoiceField(
+        choices=[
+            ('REPLACE', 'Replace existing balances'),
+            ('ADD', 'Add to existing balances'),
+            ('UPDATE_ONLY', 'Update only specified fields')
+        ],
+        initial='REPLACE',
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
+        help_text="Choose how to handle existing leave balances",
+        label="Update Mode"
+    )
+    
+    def clean_upload_file(self):
+        file = self.cleaned_data.get('upload_file')
+        if not file:
+            raise ValidationError("Please select a file to upload.")
+        
+        # Check file extension
+        allowed_extensions = ['.xlsx', '.xls', '.csv']
+        file_extension = file.name.lower().split('.')[-1]
+        if f'.{file_extension}' not in allowed_extensions:
+            raise ValidationError("Please upload only Excel (.xlsx, .xls) or CSV files.")
+        
+        # Check file size (max 5MB)
+        if file.size > 5 * 1024 * 1024:
+            raise ValidationError("File size should not exceed 5MB.")
+        
+        return file
+    
+    def validate_file_content(self, company):
+        """Validate the uploaded file content and return processed data"""
+        if not PANDAS_AVAILABLE:
+            return None, ["Pandas library is not installed. Please install pandas to use bulk upload feature."]
+        
+        file = self.cleaned_data.get('upload_file')
+        if not file:
+            return None, ["No file uploaded"]
+        
+        errors = []
+        processed_data = []
+        
+        try:
+            # Read file based on extension
+            file_extension = file.name.lower().split('.')[-1]
+            
+            if file_extension == 'csv':
+                df = pd.read_csv(io.BytesIO(file.read()))
+            else:  # Excel files
+                df = pd.read_excel(io.BytesIO(file.read()))
+            
+            # Reset file pointer
+            file.seek(0)
+            
+            # Validate required columns
+            required_columns = ['employee_id', 'employee_name', 'casual_leave_allocated', 'sick_leave_allocated']
+            optional_columns = ['casual_leave_used', 'sick_leave_used', 'carry_forward_leave']
+            
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                errors.append(f"Missing required columns: {', '.join(missing_columns)}")
+                return None, errors
+            
+            # Process each row
+            for index, row in df.iterrows():
+                row_num = index + 2  # Excel row number (accounting for header)
+                row_errors = []
+                
+                # Validate employee
+                employee_id = str(row.get('employee_id', '')).strip()
+                employee_name = str(row.get('employee_name', '')).strip()
+                
+                if not employee_id and not employee_name:
+                    row_errors.append(f"Row {row_num}: Either employee_id or employee_name is required")
+                    continue
+                
+                # Find employee
+                employee = None
+                if employee_id:
+                    try:
+                        employee = Employee.objects.get(
+                            badge_id=employee_id, 
+                            company=company
+                        )
+                    except Employee.DoesNotExist:
+                        row_errors.append(f"Row {row_num}: Employee with ID '{employee_id}' not found")
+                
+                if not employee and employee_name:
+                    # Try to find by name
+                    name_parts = employee_name.split()
+                    if len(name_parts) >= 2:
+                        try:
+                            employee = Employee.objects.get(
+                                user__first_name__icontains=name_parts[0],
+                                user__last_name__icontains=' '.join(name_parts[1:]),
+                                company=company
+                            )
+                        except (Employee.DoesNotExist, Employee.MultipleObjectsReturned):
+                            row_errors.append(f"Row {row_num}: Employee '{employee_name}' not found or multiple matches")
+                
+                if not employee:
+                    errors.extend(row_errors)
+                    continue
+                
+                # Validate numeric fields
+                try:
+                    casual_allocated = float(row.get('casual_leave_allocated', 0))
+                    sick_allocated = float(row.get('sick_leave_allocated', 0))
+                    casual_used = float(row.get('casual_leave_used', 0))
+                    sick_used = float(row.get('sick_leave_used', 0))
+                    carry_forward = float(row.get('carry_forward_leave', 0))
+                    
+                    # Validate ranges
+                    if casual_allocated < 0 or sick_allocated < 0:
+                        row_errors.append(f"Row {row_num}: Allocated leaves cannot be negative")
+                    
+                    if casual_used < 0 or sick_used < 0:
+                        row_errors.append(f"Row {row_num}: Used leaves cannot be negative")
+                    
+                    if casual_used > casual_allocated + carry_forward:
+                        row_errors.append(f"Row {row_num}: Casual leave used ({casual_used}) exceeds allocated + carry forward ({casual_allocated + carry_forward})")
+                    
+                    if sick_used > sick_allocated:
+                        row_errors.append(f"Row {row_num}: Sick leave used ({sick_used}) exceeds allocated ({sick_allocated})")
+                    
+                except (ValueError, TypeError):
+                    row_errors.append(f"Row {row_num}: Invalid numeric values for leave balances")
+                
+                if row_errors:
+                    errors.extend(row_errors)
+                    continue
+                
+                # Add to processed data
+                processed_data.append({
+                    'employee': employee,
+                    'employee_id': employee_id,
+                    'employee_name': employee_name,
+                    'casual_leave_allocated': casual_allocated,
+                    'sick_leave_allocated': sick_allocated,
+                    'casual_leave_used': casual_used,
+                    'sick_leave_used': sick_used,
+                    'carry_forward_leave': carry_forward,
+                    'row_number': row_num
+                })
+            
+            return processed_data, errors
+            
+        except Exception as e:
+            errors.append(f"Error reading file: {str(e)}")
+            return None, errors

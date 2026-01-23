@@ -244,6 +244,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-shrink: 0;
     }
 
     .stat-ring svg {
@@ -296,6 +297,289 @@
         text-transform: uppercase;
         line-height: 1.1;
         margin-top: 2px;
+    }
+
+    /* Weekly Stats Card - Horizontal Scrollable Solution */
+    .weekly-stats-scroll-container {
+        position: relative;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+    }
+
+    .weekly-stats-scroll-container::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .weekly-stats-scroll-container::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+    }
+
+    .weekly-stats-scroll-container::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+
+    .weekly-stats-scroll-container::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    .weekly-stats-content {
+        display: flex;
+        align-items: center;
+        min-width: 100%;
+        width: max-content;
+        min-height: 140px;
+    }
+
+    .weekly-stats-left {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-right: 1px solid #e2e8f0;
+        padding: 1rem;
+        min-width: 160px;
+        flex-shrink: 0;
+        height: 140px;
+    }
+
+    .weekly-stats-right {
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        gap: 2rem;
+        padding: 1rem 1.5rem;
+        min-width: 200px;
+        flex-shrink: 0;
+        height: 140px;
+        background: rgba(248, 250, 252, 0.5);
+    }
+
+    .weekly-stats-item {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 80px;
+        flex-shrink: 0;
+    }
+
+    .weekly-stats-item .text-value {
+        font-size: 1.5rem !important;
+        font-weight: 800;
+        line-height: 1.1;
+        margin-bottom: 0.25rem;
+        white-space: nowrap;
+    }
+
+    .weekly-stats-item .text-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+        opacity: 0.8;
+        white-space: nowrap;
+    }
+
+    /* Scroll Indicator */
+    .scroll-indicator {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(99, 102, 241, 0.1);
+        color: #6366f1;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        opacity: 0.7;
+        pointer-events: none;
+        animation: pulse-scroll 2s infinite;
+        z-index: 10;
+    }
+
+    @keyframes pulse-scroll {
+        0%, 100% { 
+            opacity: 0.7; 
+            transform: translateY(-50%) scale(1);
+        }
+        50% { 
+            opacity: 1; 
+            transform: translateY(-50%) scale(1.1);
+        }
+    }
+
+    /* Hide scroll indicator after user scrolls */
+    .weekly-stats-scroll-container.scrolled .scroll-indicator {
+        display: none;
+    }
+
+    /* Ensure SVG is properly sized */
+    .stat-ring {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin: 0 auto;
+        max-width: 100%;
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .stat-ring svg {
+        width: 100%;
+        height: 100%;
+        max-width: 120px;
+        max-height: 120px;
+        transform: rotate(-90deg);
+    }
+
+    .stat-ring circle {
+        fill: none;
+        stroke-width: 8;
+        stroke-linecap: round;
+    }
+
+    .stat-ring .bg {
+        stroke: #f1f5f9;
+    }
+
+    .stat-ring .progress {
+        stroke: var(--primary-color);
+        stroke-dasharray: 283;
+        stroke-dashoffset: 200;
+        transition: stroke-dashoffset 1s ease;
+    }
+
+    .stat-ring-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        width: 80%;
+        max-width: 80px;
+    }
+
+    .stat-ring-value {
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: var(--text-main);
+        line-height: 1.2;
+        word-break: break-word;
+    }
+
+    .stat-ring-label {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        line-height: 1.1;
+        margin-top: 2px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .weekly-stats-content {
+            flex-direction: column;
+            width: 100%;
+            min-width: 100%;
+        }
+        
+        .weekly-stats-left {
+            border-right: none;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem 0.5rem 0.75rem;
+            min-width: 100%;
+            height: auto;
+        }
+        
+        .weekly-stats-right {
+            flex-direction: row;
+            justify-content: space-around;
+            padding: 0.75rem 0.5rem;
+            gap: 1rem;
+            min-width: 100%;
+            height: auto;
+            background: transparent;
+        }
+        
+        .weekly-stats-item {
+            flex: 1;
+            min-width: auto;
+        }
+        
+        .weekly-stats-item .text-value {
+            font-size: 1.3rem !important;
+        }
+        
+        .weekly-stats-item .text-label {
+            font-size: 0.65rem;
+        }
+        
+        .stat-ring {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 8px;
+        }
+        
+        .stat-ring svg {
+            max-width: 90px;
+            max-height: 90px;
+        }
+        
+        .stat-ring-value {
+            font-size: 1rem;
+        }
+        
+        .stat-ring-label {
+            font-size: 0.65rem;
+        }
+        
+        .scroll-indicator {
+            display: none !important;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .weekly-stats-right {
+            gap: 0.75rem;
+            padding: 0.5rem;
+        }
+        
+        .weekly-stats-item .text-value {
+            font-size: 1.1rem !important;
+        }
+        
+        .weekly-stats-item .text-label {
+            font-size: 0.6rem;
+        }
+        
+        .stat-ring {
+            width: 75px;
+            height: 75px;
+        }
+        
+        .stat-ring svg {
+            max-width: 75px;
+            max-height: 75px;
+        }
+        
+        .stat-ring-value {
+            font-size: 0.9rem;
+        }
+        
+        .stat-ring-label {
+            font-size: 0.6rem;
+        }
     }
 
     /* --- TIMELINE / SHIFT --- */
@@ -591,6 +875,8 @@
         .card-body-clean {
             padding: 20px;
         }
+        
+        /* Ensure proper alignment in weekly stats for large tablets */
     }
 
     @media (max-width: 992px) {
@@ -610,6 +896,8 @@
         .pro-icon-box i {
             font-size: 1.3rem;
         }
+        
+        /* Weekly stats alignment for tablets */
     }
 
     @media (max-width: 768px) {
@@ -676,6 +964,23 @@
         
         .pro-icon-box i {
             font-size: 1.1rem;
+        }
+        
+        /* Shift card mobile adjustments */
+        .shift-clock-section {
+            flex-direction: column;
+            padding: 1.5rem 1rem;
+            gap: 1.5rem;
+        }
+        
+        .shift-divider {
+            width: 60px;
+            height: 1px;
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .shift-time-display {
+            font-size: 1.8rem;
         }
         
         /* Adjust timeline for mobile */
@@ -803,7 +1108,7 @@
             padding: 6px 12px;
         }
         
-        /* Adjust stats ring for mobile */
+        /* Adjust stat ring for mobile */
         .stat-ring {
             width: 100px;
             height: 100px;
@@ -833,6 +1138,8 @@
             font-size: 0.65rem;
             margin-top: 1px;
         }
+        
+        /* Weekly stats mobile alignment */
         
         /* Week days adjustment */
         .week-days {
@@ -964,6 +1271,8 @@
             margin-top: 1px;
         }
         
+        /* Weekly stats very small screens alignment */
+        
         /* Very compact table */
         .table-custom {
             font-size: 0.8rem;
@@ -1045,6 +1354,20 @@
             padding: 2px 6px;
             font-size: 0.65rem;
             border-radius: 8px;
+        }
+        
+        /* Shift card very small screens */
+        .shift-time-display {
+            font-size: 1.5rem;
+        }
+        
+        .pro-icon-box {
+            width: 40px;
+            height: 40px;
+        }
+        
+        .pro-icon-box i {
+            font-size: 1rem !important;
         }
         
         /* Card header adjustments for mobile */
@@ -1135,14 +1458,7 @@
             margin-top: 0;
         }
         
-        /* Adjust the weekly stats card layout for very small screens */
-        .row.text-center.align-items-center .col-6 {
-            padding: 0.5rem;
-        }
-        
-        .row.text-center.align-items-center .col-6.border-end {
-            border-right: 1px solid #e2e8f0 !important;
-        }
+        /* Ultra compact weekly stats */
     }
 
     /* Landscape phone adjustments */
@@ -1181,6 +1497,8 @@
         .stat-ring-label {
             font-size: 0.6rem;
         }
+        
+        /* Weekly stats landscape alignment */
     }
 
     /* Touch device improvements */
@@ -1265,7 +1583,7 @@
                                 </div>
                                 <div class="text-end">
                                     <div class="text-label" style="font-size: 0.65rem;">Total Today</div>
-                                    <div class="fw-bold text-primary">
+                                    <div class="fw-bold text-primary" id="total-today-display">
                                         {{ attendance.total_working_hours|floatformat:1 }} hr
                                     </div>
                                 </div>
@@ -1328,29 +1646,39 @@
                             Weekly Stats
                         </span>
                     </div>
-                    <div class="card-body-clean pt-0">
-                        <div class="row text-center align-items-center">
-                            <div class="col-6 border-end">
-                                <div class="stat-ring">
-                                    <svg>
-                                        <circle class="bg" cx="60" cy="60" r="45"></circle>
-                                        <circle class="progress" cx="60" cy="60" r="45" id="avg-progress"></circle>
-                                    </svg>
-                                    <div class="stat-ring-content">
-                                        <div class="stat-ring-value">{{ avg_hours|default:"00:00" }}</div>
-                                        <div class="stat-ring-label">Avg Hrs</div>
+                    <div class="card-body-clean pt-0 px-0">
+                        <div class="weekly-stats-scroll-container">
+                            <div class="weekly-stats-content">
+                                <div class="weekly-stats-left">
+                                    <div class="stat-ring">
+                                        <svg viewBox="0 0 120 120">
+                                            <circle class="bg" cx="60" cy="60" r="45"></circle>
+                                            <circle class="progress" cx="60" cy="60" r="45" id="avg-progress"></circle>
+                                        </svg>
+                                        <div class="stat-ring-content">
+                                            <div class="stat-ring-value">{{ avg_hours|default:"00:00" }}</div>
+                                            <div class="stat-ring-label">Avg Hrs</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="weekly-stats-right">
+                                    <div class="weekly-stats-item">
+                                        <div class="text-value text-success">100%</div>
+                                        <div class="text-label">On Time</div>
+                                    </div>
+                                    <div class="weekly-stats-item">
+                                        <div class="text-value text-primary">{{ leave_balance.casual_leave_balance|floatformat:1|default:"0" }}</div>
+                                        <div class="text-label">CL Available</div>
+                                    </div>
+                                    <div class="weekly-stats-item">
+                                        <div class="text-value text-warning">{{ leave_balance.sick_leave_balance|floatformat:1|default:"0" }}</div>
+                                        <div class="text-label">SL Available</div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-6 d-flex flex-column justify-content-center gap-3">
-                                <div>
-                                    <div class="text-value text-success" style="font-size: 1.4rem;">100%</div>
-                                    <div class="text-label">On Time</div>
-                                </div>
-                                <div>
-                                    <div class="text-value text-primary" style="font-size: 1.4rem;">0</div>
-                                    <div class="text-label">Leaves</div>
-                                </div>
+                            <!-- Scroll indicator for desktop -->
+                            <div class="scroll-indicator d-none d-md-block">
+                                <i class="fas fa-chevron-right"></i>
                             </div>
                         </div>
                     </div>
@@ -1672,11 +2000,43 @@
                             inset: -6px;
                             border-color: rgba(255, 255, 255, 0.3);
                         }
+
+                        /* Shift Card Clock Section */
+                        .shift-clock-section {
+                            display: flex;
+                            justify-content: space-around;
+                            align-items: center;
+                            padding: 2rem 1.5rem;
+                            flex-wrap: wrap;
+                            gap: 1rem;
+                        }
+
+                        .shift-time-block {
+                            text-align: center;
+                            flex: 1;
+                            min-width: 120px;
+                        }
+
+                        .shift-time-display {
+                            font-size: 2rem;
+                            font-weight: 800;
+                            color: white;
+                            margin-bottom: 0;
+                            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                            line-height: 1.2;
+                        }
+
+                        .shift-divider {
+                            width: 1px;
+                            height: 60px;
+                            background: rgba(255,255,255,0.2);
+                            flex-shrink: 0;
+                        }
                     </style>
 
-                    <div class="d-flex justify-content-around align-items-center px-4 py-5">
+                    <div class="d-flex justify-content-around align-items-center px-4 py-5 shift-clock-section">
                         <!-- Clock In Block -->
-                        <div class="text-center">
+                        <div class="text-center shift-time-block">
                             <div class="mb-3">
                                 <div class="pro-icon-box">
                                     <div class="icon-ring"></div>
@@ -1685,7 +2045,7 @@
                             </div>
                             <div class="text-white opacity-75 small text-uppercase fw-bold mb-1">Clock In
                             </div>
-                            <div class="fs-2 fw-bold text-white mb-0" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div class="fs-2 fw-bold text-white mb-0 shift-time-display" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 {% if attendance and attendance.clock_in %}
                                 {{ attendance.clock_in|time:"h:i A" }}
                                 {% else %}
@@ -1695,10 +2055,10 @@
                         </div>
 
                         <!-- Divider Line (Vertical) -->
-                        <div style="width: 1px; height: 60px; background: rgba(255,255,255,0.2);"></div>
+                        <div class="shift-divider" style="width: 1px; height: 60px; background: rgba(255,255,255,0.2);"></div>
 
                         <!-- Clock Out Block -->
-                        <div class="text-center">
+                        <div class="text-center shift-time-block">
                             <div class="mb-3">
                                 <div class="pro-icon-box">
                                     <div class="icon-ring"></div>
@@ -1707,7 +2067,7 @@
                             </div>
                             <div class="text-white opacity-75 small text-uppercase fw-bold mb-1">Clock Out
                             </div>
-                            <div class="fs-2 fw-bold text-white mb-0" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div class="fs-2 fw-bold text-white mb-0 shift-time-display" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 {% if attendance and attendance.clock_out and not attendance.is_currently_clocked_in %}
                                 {{ attendance.clock_out|time:"h:i A" }}
                                 {% else %}
@@ -1916,6 +2276,52 @@
                     </div>
                 </div>
 
+                <!-- Leave Balance Cards -->
+                {% if leave_balance %}
+                <div class="keka-card animate-enter delay-125">
+                    <div class="card-header-clean">
+                        <h6 class="card-title-text">
+                            <div class="card-icon-soft primary" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            Leave Balance
+                        </h6>
+                    </div>
+                    <div class="card-body-clean">
+                        <!-- Casual Leave -->
+                        <div class="d-flex justify-content-between align-items-center mb-3 p-3" style="background: rgba(99, 102, 241, 0.05); border-radius: 12px; border-left: 4px solid #6366f1;">
+                            <div>
+                                <div class="text-label mb-1">Casual Leave</div>
+                                <div class="fw-bold text-primary" style="font-size: 1.25rem;">{{ leave_balance.casual_leave_balance|floatformat:1 }}</div>
+                                <small class="text-muted">Days Available</small>
+                            </div>
+                            <div class="text-end">
+                                <i class="fas fa-mug-hot text-primary" style="font-size: 1.5rem; opacity: 0.7;"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Sick Leave -->
+                        <div class="d-flex justify-content-between align-items-center p-3" style="background: rgba(16, 185, 129, 0.05); border-radius: 12px; border-left: 4px solid #10b981;">
+                            <div>
+                                <div class="text-label mb-1">Sick Leave</div>
+                                <div class="fw-bold text-success" style="font-size: 1.25rem;">{{ leave_balance.sick_leave_balance|floatformat:1 }}</div>
+                                <small class="text-muted">Days Available</small>
+                            </div>
+                            <div class="text-end">
+                                <i class="fas fa-user-md text-success" style="font-size: 1.5rem; opacity: 0.7;"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Apply Button -->
+                        <div class="mt-3">
+                            <a href="{% url 'my_leaves' %}" class="btn btn-primary w-100" style="border-radius: 12px; padding: 12px;">
+                                <i class="fas fa-plus me-2"></i>Apply for Leave
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
                 <!-- Today's Celebrations Widget -->
                 <div class="keka-card animate-enter delay-150">
                     <div class="p-3"
@@ -2095,6 +2501,20 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script>
+    // Weekly Stats Scroll Indicator
+    document.addEventListener('DOMContentLoaded', function() {
+        const scrollContainer = document.querySelector('.weekly-stats-scroll-container');
+        if (scrollContainer) {
+            scrollContainer.addEventListener('scroll', function() {
+                if (this.scrollLeft > 10) {
+                    this.classList.add('scrolled');
+                } else {
+                    this.classList.remove('scrolled');
+                }
+            });
+        }
+    });
+
     // Clock
     function updateClock() {
         const now = new Date();
@@ -2222,6 +2642,13 @@
 
         const timerEl = document.getElementById('timer-display');
         if (timerEl) timerEl.innerText = formatted;
+
+        // Update Total Today display with cumulative hours
+        const totalHours = totalMs / (1000 * 60 * 60);
+        const totalTodayEl = document.getElementById('total-today-display');
+        if (totalTodayEl) {
+            totalTodayEl.innerText = totalHours.toFixed(1) + ' hr';
+        }
     }
     setInterval(updateDuration, 1000);
     updateDuration();

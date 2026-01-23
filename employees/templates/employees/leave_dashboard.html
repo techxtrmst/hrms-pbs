@@ -960,6 +960,19 @@
                             </div>
                         </div>
 
+                        <!-- Duration Type Selection (for single day leaves) -->
+                        <div class="col-12" id="durationTypeSection" style="display: none;">
+                            <label class="form-label-custom">Duration Type</label>
+                            <select name="duration" id="durationSelect" class="form-select form-select-lg rounded-3">
+                                <option value="FULL">Full Day</option>
+                                <option value="FIRST_HALF">First Half (Morning)</option>
+                                <option value="SECOND_HALF">Second Half (Afternoon)</option>
+                            </select>
+                            <small class="text-muted mt-1" id="durationTypeHelp">
+                                Select the duration type for your single-day leave.
+                            </small>
+                        </div>
+
                         <!-- Reason -->
                         <div class="col-12">
                             <label class="form-label-custom">Reason for Leave</label>
@@ -1022,6 +1035,9 @@
         const endInput = document.getElementById('end_date');
         const reasonInput = document.getElementById('reasonInput');
         const durationDisplay = document.getElementById('durationCalc');
+        const durationTypeSection = document.getElementById('durationTypeSection');
+        const durationSelect = document.getElementById('durationSelect');
+        const durationTypeHelp = document.getElementById('durationTypeHelp');
 
         function calculateDuration() {
             const startStr = startInput.value;
@@ -1034,16 +1050,33 @@
                 if (end >= start) {
                     const diffTime = Math.abs(end - start);
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                    durationDisplay.innerText = diffDays + (diffDays === 1 ? ' Day' : ' Days');
+                    
+                    // Check if it's a single day
+                    const isSingleDay = diffDays === 1;
+                    
+                    if (isSingleDay) {
+                        // Show duration type selection for single day
+                        durationTypeSection.style.display = 'block';
+                        durationDisplay.innerText = '1 Day';
+                        durationTypeHelp.textContent = 'Select Full Day, First Half (Morning), or Second Half (Afternoon).';
+                    } else {
+                        // Hide duration type selection for multiple days
+                        durationTypeSection.style.display = 'none';
+                        durationSelect.value = 'FULL'; // Reset to full day
+                        durationDisplay.innerText = diffDays + ' Days';
+                    }
+                    
                     durationDisplay.classList.remove('text-danger');
                     durationDisplay.classList.add('text-primary');
                 } else {
                     durationDisplay.innerText = 'Invalid Date Range';
                     durationDisplay.classList.add('text-danger');
                     durationDisplay.classList.remove('text-primary');
+                    durationTypeSection.style.display = 'none';
                 }
             } else {
                 durationDisplay.innerText = '0 Days';
+                durationTypeSection.style.display = 'none';
             }
         }
 

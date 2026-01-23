@@ -832,6 +832,9 @@ def employee_dashboard(request):
 
     # Leave balance
     leave_balance = getattr(employee, "leave_balance", None)
+    if leave_balance:
+        # Force refresh from database to get latest data
+        leave_balance.refresh_from_db()
 
     # Recent leave requests
     recent_leave_requests = LeaveRequest.objects.filter(employee=employee).order_by("-created_at")[:5]
@@ -1278,6 +1281,21 @@ def personal_home(request):
             context["shift_timing"] = shift_timing
             context["timeline_items"] = []  # Empty for default
 
+        # Add leave balance to context
+        try:
+            leave_balance = employee.leave_balance
+            leave_balance.refresh_from_db()  # Force refresh to get latest data
+            context["leave_balance"] = leave_balance
+        except Exception:
+            # Create leave balance if it doesn't exist
+            from employees.models import LeaveBalance
+            leave_balance = LeaveBalance.objects.create(
+                employee=employee,
+                casual_leave_allocated=0.0,
+                sick_leave_allocated=0.0
+            )
+            context["leave_balance"] = leave_balance
+
     return render(request, "core/personal_home.html", context)
 
 
@@ -1293,23 +1311,26 @@ def my_profile(request):
 def my_leaves(request):
     try:
         employee = request.user.employee_profile
+        # Force refresh from database to get latest data
+        employee.refresh_from_db()
 
     except Exception:
         # Graceful fallback or auto-create (reusing logic from profile view might be better)
-
         messages.error(request, "Employee profile not found.")
-
         return redirect("personal_home")
 
     # Get or create balance (accrual handled by command, but ensure existence)
-
     balance, created = LeaveBalance.objects.get_or_create(employee=employee)
+    
+    # Force refresh balance from database to get latest data after bulk upload
+    balance.refresh_from_db()
 
     if request.method == "POST":
         leave_type = request.POST.get("leave_type")
         start_date = request.POST.get("start_date")
         end_date = request.POST.get("end_date")
         reason = request.POST.get("reason")
+        duration = request.POST.get("duration", "FULL")  # Get duration from form, default to FULL
 
         # Basic Validation
         if not (leave_type and start_date and end_date):
@@ -1330,6 +1351,12 @@ def my_leaves(request):
                 messages.error(request, "End date cannot be before start date.")
                 return redirect("my_leaves")
 
+            # Validate duration for single-day leaves
+            is_single_day = s_dt == e_dt
+            if not is_single_day and duration in ["FIRST_HALF", "SECOND_HALF"]:
+                messages.error(request, "Half-day options are only available for single-day leaves.")
+                return redirect("my_leaves")
+
             # Create Leave Request
             leave_request = LeaveRequest.objects.create(
                 employee=employee,
@@ -1337,7 +1364,7 @@ def my_leaves(request):
                 start_date=start_date,
                 end_date=end_date,
                 reason=reason,
-                duration="FULL",
+                duration=duration,  # Use the duration from form
                 status="PENDING",
             )
 

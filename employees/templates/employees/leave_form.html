@@ -290,19 +290,13 @@
                     </div>
                 </div>
 
-                <!-- Duration Section (Hidden by default or dynamic) -->
-                <div class="form-group">
+                <!-- Duration Section -->
+                <div class="form-group" id="durationSection">
                     <label class="form-label">Duration</label>
-                    <div class="d-flex gap-4 mt-2">
-                        {% for radio in form.duration %}
-                        <div class="form-check">
-                            {{ radio.tag }}
-                            <label class="form-check-label" for="{{ radio.id_for_label }}">
-                                {{ radio.choice_label }}
-                            </label>
-                        </div>
-                        {% endfor %}
-                    </div>
+                    {{ form.duration }}
+                    <small class="text-muted mt-1" id="durationHelp">
+                        First Half and Second Half options are only available for single-day leaves.
+                    </small>
                 </div>
 
                 <!-- Reason -->
@@ -340,14 +334,20 @@
         const clBalance = parseFloat("{{ cl_balance|default:0 }}");
         const slBalance = parseFloat("{{ sl_balance|default:0 }}");
 
-        // Form elements
+        // Form elements with null checks
         const leaveTypeSelect = document.querySelector('select[name="leave_type"]');
         const startDateInput = document.querySelector('input[name="start_date"]');
         const endDateInput = document.querySelector('input[name="end_date"]');
-        const durationInputs = document.querySelectorAll('input[name="duration"]');
+        const durationSelect = document.querySelector('select[name="duration"]');
         const balanceInfo = document.getElementById('balanceInfo');
         const balanceInfoText = document.getElementById('balanceInfoText');
         const submitBtn = document.getElementById('submitBtn');
+
+        // Check if required elements exist
+        if (!leaveTypeSelect || !startDateInput || !endDateInput || !balanceInfo || !balanceInfoText || !submitBtn || !durationSelect) {
+            console.error('Required form elements not found');
+            return;
+        }
 
         // Auto-select Unpaid Leave if no balance
         if (clBalance <= 0 && slBalance <= 0) {
@@ -386,21 +386,88 @@
             }
         });
 
-        // Event listeners for real-time validation
-        leaveTypeSelect.addEventListener('change', validateLeaveBalance);
-        startDateInput.addEventListener('change', validateLeaveBalance);
-        endDateInput.addEventListener('change', validateLeaveBalance);
-        durationInputs.forEach(input => {
-            input.addEventListener('change', validateLeaveBalance);
-        });
+        // Event listeners for real-time validation (with null checks)
+        if (leaveTypeSelect) {
+            leaveTypeSelect.addEventListener('change', validateLeaveBalance);
+        }
+        if (startDateInput) {
+            startDateInput.addEventListener('change', function() {
+                updateDurationOptions();
+                validateLeaveBalance();
+            });
+        }
+        if (endDateInput) {
+            endDateInput.addEventListener('change', function() {
+                updateDurationOptions();
+                validateLeaveBalance();
+            });
+        }
+        if (durationSelect) {
+            durationSelect.addEventListener('change', validateLeaveBalance);
+        }
+
+        // Function to update duration options based on date selection
+        function updateDurationOptions() {
+            if (!startDateInput || !endDateInput || !durationSelect) return;
+            
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+            const durationHelp = document.getElementById('durationHelp');
+            
+            if (!durationHelp) return;
+            
+            if (startDate && endDate) {
+                const isSingleDay = startDate === endDate;
+                
+                if (isSingleDay) {
+                    // Enable all options for single-day leaves
+                    Array.from(durationSelect.options).forEach(option => {
+                        option.disabled = false;
+                    });
+                    
+                    durationHelp.textContent = 'Select Full Day, First Half (Morning), or Second Half (Afternoon).';
+                    durationHelp.className = 'text-muted mt-1';
+                } else {
+                    // Disable half-day options for multi-day leaves
+                    Array.from(durationSelect.options).forEach(option => {
+                        if (option.value === 'FIRST_HALF' || option.value === 'SECOND_HALF') {
+                            option.disabled = true;
+                        } else {
+                            option.disabled = false;
+                        }
+                    });
+                    
+                    // Auto-select Full Day for multi-day leaves
+                    durationSelect.value = 'FULL';
+                    
+                    durationHelp.textContent = 'Multi-day leaves are automatically set to Full Day.';
+                    durationHelp.className = 'text-info mt-1';
+                }
+            } else {
+                // Enable all options when dates are not selected
+                Array.from(durationSelect.options).forEach(option => {
+                    option.disabled = false;
+                });
+                
+                durationHelp.textContent = 'First Half and Second Half options are only available for single-day leaves.';
+                durationHelp.className = 'text-muted mt-1';
+            }
+        }
+
+        // Initial duration options update - ensure all options are visible by default
+        setTimeout(() => {
+            updateDurationOptions();
+        }, 100);
 
         function validateLeaveBalance() {
+            if (!leaveTypeSelect || !startDateInput || !endDateInput || !balanceInfo || !balanceInfoText || !submitBtn || !durationSelect) {
+                return;
+            }
+            
             const leaveType = leaveTypeSelect.value;
             const startDate = startDateInput.value;
             const endDate = endDateInput.value;
-            const duration = document.querySelector('input[name="duration"]:checked')?.value || 'FULL';
-
-            console.log('Validating leave:', { leaveType, startDate, endDate, duration });
+            const duration = durationSelect.value || 'FULL';
 
             if (!leaveType || !startDate || !endDate) {
                 balanceInfo.style.display = 'none';
@@ -495,29 +562,35 @@
         const loadingText = document.getElementById('loadingText');
 
         // Prevent form submission if LOP confirmation is required
-        document.getElementById('leaveForm').addEventListener('submit', function(e) {
-            const confirmLopValue = document.getElementById('confirmLopInput').value;
-            
-            if (submitBtn.disabled && confirmLopValue !== 'true') {
-                e.preventDefault();
-                alert('Please confirm the LOP (Loss of Pay) to proceed with your leave application.');
-                return false;
-            }
+        const leaveForm = document.getElementById('leaveForm');
+        if (leaveForm) {
+            leaveForm.addEventListener('submit', function(e) {
+                const confirmLopInput = document.getElementById('confirmLopInput');
+                const confirmLopValue = confirmLopInput ? confirmLopInput.value : 'false';
+                
+                if (submitBtn && submitBtn.disabled && confirmLopValue !== 'true') {
+                    e.preventDefault();
+                    alert('Please confirm the LOP (Loss of Pay) to proceed with your leave application.');
+                    return false;
+                }
 
-            // Prevent double submission
-            if (isSubmitting) {
-                e.preventDefault();
-                return false;
-            }
+                // Prevent double submission
+                if (isSubmitting) {
+                    e.preventDefault();
+                    return false;
+                }
 
-            // Disable button and show loading state
-            isSubmitting = true;
-            submitBtn.disabled = true;
-            submitText.style.display = 'none';
-            loadingText.style.display = 'inline';
-            submitBtn.style.opacity = '0.7';
-            submitBtn.style.cursor = 'not-allowed';
-        });
+                // Disable button and show loading state
+                isSubmitting = true;
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    if (submitText) submitText.style.display = 'none';
+                    if (loadingText) loadingText.style.display = 'inline';
+                    submitBtn.style.opacity = '0.7';
+                    submitBtn.style.cursor = 'not-allowed';
+                }
+            });
+        }
     });
 
     // Functions for confirmation dialog
@@ -527,7 +600,10 @@
 
     function confirmLOPApplication() {
         // Set confirmation value
-        document.getElementById('confirmLopInput').value = 'true';
+        const confirmLopInput = document.getElementById('confirmLopInput');
+        if (confirmLopInput) {
+            confirmLopInput.value = 'true';
+        }
         
         // Enable submit button if it was disabled
         const submitBtn = document.getElementById('submitBtn');
@@ -556,7 +632,10 @@
         }
         
         // Auto-submit the form
-        document.getElementById('leaveForm').submit();
+        const leaveForm = document.getElementById('leaveForm');
+        if (leaveForm) {
+            leaveForm.submit();
+        }
     }
 </script>
 {% endblock %}

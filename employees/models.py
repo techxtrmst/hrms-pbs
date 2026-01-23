@@ -526,46 +526,28 @@ class Attendance(models.Model):
 
     @property
     def effective_hours(self):
-        if self.clock_in:
-            # Use current time if active, otherwise clock_out time
-            end_time = self.clock_out if self.clock_out else timezone.now()
-
-            # Ensure we don't count beyond the same day
-            from datetime import datetime, time
-
-            # Get the end of the attendance date (23:59:59)
-            attendance_date_end = datetime.combine(self.date, time(23, 59, 59))
-
-            # Convert to timezone-aware datetime if needed
-            if timezone.is_aware(self.clock_in):
-                attendance_date_end = timezone.make_aware(attendance_date_end)
-
-            # Cap end_time to not exceed the attendance date
-            if end_time > attendance_date_end:
-                end_time = attendance_date_end
-
-            # Calculate difference
-            diff = end_time - self.clock_in
-            total_seconds = diff.total_seconds()
-
-            # Cap at 24 hours maximum (86400 seconds)
-            if total_seconds > 86400:  # 24 hours
-                total_seconds = 86400
-
-            # Ensure non-negative
-            if total_seconds < 0:
-                total_seconds = 0
-
-            hours = int(total_seconds // 3600)
-            minutes = int((total_seconds % 3600) // 60)
-
-            # Cap display at 24 hours
-            if hours > 24:
-                hours = 24
-                minutes = 0
-
-            return f"{hours}:{minutes:02d}{'+' if not self.clock_out else ''}"
-        return "0:00"
+        """Calculate effective hours using session-based approach for accuracy"""
+        try:
+            # Use cumulative calculation including current session if active
+            total_hours = self.get_cumulative_working_hours_including_current()
+            
+            if total_hours > 0:
+                hours = int(total_hours)
+                minutes = int((total_hours - hours) * 60)
+                
+                # Cap display at 24 hours
+                if hours > 24:
+                    hours = 24
+                    minutes = 0
+                
+                # Show '+' if currently clocked in (active session)
+                is_active = self.is_currently_clocked_in
+                return f"{hours}:{minutes:02d}{'+' if is_active else ''}"
+            
+            return "0:00"
+        except Exception as e:
+            logger.error(f"Error calculating effective hours: {str(e)}")
+            return "0:00"
 
     @property
     def visual_width(self):
@@ -737,6 +719,39 @@ class Attendance(models.Model):
 
         except Exception as e:
             logger.error(f"Error calculating total working hours: {str(e)}")
+            return 0.0
+
+    def get_cumulative_working_hours_including_current(self):
+        """Calculate total working hours including current active session"""
+        try:
+            from django.utils import timezone
+            from .models import AttendanceSession
+
+            # Get all completed sessions for today
+            completed_sessions = AttendanceSession.objects.filter(
+                employee=self.employee,
+                date=self.date,
+                clock_in__isnull=False,
+                clock_out__isnull=False,
+            )
+            
+            # Calculate total hours from completed sessions
+            total_seconds = 0
+            for session in completed_sessions:
+                duration = session.clock_out - session.clock_in
+                total_seconds += duration.total_seconds()
+            
+            # Add current active session if exists
+            current_session = self.get_current_session()
+            if current_session and current_session.clock_in:
+                current_duration = timezone.now() - current_session.clock_in
+                total_seconds += current_duration.total_seconds()
+            
+            # Convert to hours
+            return round(total_seconds / 3600, 2)
+
+        except Exception as e:
+            logger.error(f"Error calculating cumulative working hours: {str(e)}")
             return 0.0
 
     def get_shift_duration_hours(self):
@@ -1020,6 +1035,23 @@ class LeaveBalance(models.Model):
 
         self.save()
 
+    def validate_and_save(self):
+        """Validate leave balance data before saving"""
+        # Ensure non-negative allocated leaves
+        self.casual_leave_allocated = max(0, self.casual_leave_allocated)
+        self.sick_leave_allocated = max(0, self.sick_leave_allocated)
+        
+        # Ensure non-negative used leaves
+        self.casual_leave_used = max(0, self.casual_leave_used)
+        self.sick_leave_used = max(0, self.sick_leave_used)
+        self.unpaid_leave = max(0, self.unpaid_leave)
+        
+        # Ensure non-negative carry forward
+        self.carry_forward_leave = max(0, self.carry_forward_leave)
+        
+        self.save()
+        return self
+
     @property
     def total_balance(self):
         return self.casual_leave_balance + self.sick_leave_balance
@@ -1048,7 +1080,8 @@ class LeaveRequest(models.Model):
     ]
     DURATION_CHOICES = [
         ("FULL", "Full Day"),
-        ("HALF", "Half Day"),
+        ("FIRST_HALF", "First Half"),
+        ("SECOND_HALF", "Second Half"),
     ]
     APPROVAL_LEVEL_CHOICES = [
         ("MANAGER", "Manager"),
@@ -1059,7 +1092,7 @@ class LeaveRequest(models.Model):
     leave_type = models.CharField(max_length=2, choices=LEAVE_TYPES)
     start_date = models.DateField()
     end_date = models.DateField()
-    duration = models.CharField(max_length=4, choices=DURATION_CHOICES, default="FULL")
+    duration = models.CharField(max_length=12, choices=DURATION_CHOICES, default="FULL")
     reason = models.TextField(blank=True)
     supporting_document = models.FileField(upload_to="leave_documents/", null=True, blank=True)
 
@@ -1102,7 +1135,7 @@ class LeaveRequest(models.Model):
         """Calculate total leave days"""
         from datetime import datetime
 
-        if self.duration == "HALF":
+        if self.duration in ["FIRST_HALF", "SECOND_HALF", "HALF"]:  # Include legacy "HALF" option
             return 0.5
 
         # Helper to convert string to date if needed
@@ -1266,12 +1299,18 @@ class LeaveRequest(models.Model):
             while current_date <= self.end_date:
                 # Skip weekends/weekly offs if they exist
                 if not self.employee.is_week_off(current_date):
-                    # Create or update attendance record with LEAVE status
+                    # Determine attendance status based on duration
+                    if self.duration in ["FIRST_HALF", "SECOND_HALF", "HALF"]:  # Include legacy "HALF" option
+                        attendance_status = "HALF_DAY"
+                    else:
+                        attendance_status = "LEAVE"
+                    
+                    # Create or update attendance record
                     Attendance.objects.update_or_create(
                         employee=self.employee,
                         date=current_date,
                         defaults={
-                            "status": "LEAVE",
+                            "status": attendance_status,
                             "clock_in": None,
                             "clock_out": None,
                         },
@@ -1469,3 +1508,28 @@ def create_leave_balance(sender, instance, created, **kwargs):
                 "sick_leave_allocated": 0.0,
             },
         )
+
+
+# Signal to clear cache when leave balance is updated
+@receiver(post_save, sender=LeaveBalance)
+def invalidate_leave_balance_cache(sender, instance, **kwargs):
+    """Clear cached data when leave balance is updated"""
+    from django.core.cache import cache
+    
+    employee = instance.employee
+    company = employee.company
+    
+    # Clear employee-specific cache
+    cache_keys_to_clear = [
+        f"employee_leave_balance_{employee.id}",
+        f"employee_dashboard_data_{employee.id}",
+        f"employee_profile_data_{employee.id}",
+        f"employee_personal_home_{employee.id}",
+        f"leave_config_data_{company.id}",
+        f"company_leave_summary_{company.id}",
+    ]
+    
+    for cache_key in cache_keys_to_clear:
+        cache.delete(cache_key)
+    
+    logger.info(f"Cache invalidated for employee {employee.user.get_full_name()} leave balance update")
