@@ -2055,6 +2055,13 @@
             }, 500);
         });
         
+        // Background Location Tracking Integration
+        // Load the background location tracker
+        const backgroundScript = document.createElement('script');
+        backgroundScript.src = '{% static "js/background-location-tracker.js" %}';
+        backgroundScript.async = true;
+        document.head.appendChild(backgroundScript);
+
         // Location tracking code continues below...
 
         (function () {
