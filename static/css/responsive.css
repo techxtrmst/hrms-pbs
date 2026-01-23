@@ -299,17 +299,45 @@ select {
         overflow-x: hidden;
     }
     
-    /* Adjust topbar for mobile */
+    /* Adjust topbar for mobile - Enhanced */
     .topbar {
         margin-left: 0;
-        padding: 15px 20px;
+        padding: 12px 16px;
         width: 100%;
         position: sticky;
         top: 0;
         z-index: 900;
+        min-height: 64px;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
     
-    /* Mobile menu toggle button */
+    .topbar .d-flex:first-child {
+        gap: 12px;
+        flex-wrap: nowrap;
+        overflow: hidden;
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .topbar .d-flex:last-child {
+        gap: 12px;
+        flex-shrink: 0;
+    }
+    
+    .topbar h4 {
+        font-size: 0.95rem;
+        max-width: 150px;
+        flex-shrink: 1;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    /* Mobile menu toggle button - Enhanced */
     .mobile-menu-toggle {
         display: flex !important;
         background: none;
@@ -328,6 +356,9 @@ select {
         transition: all 0.2s ease;
         position: relative;
         z-index: 1001;
+        order: -1; /* Ensure it appears first */
+        margin-right: 8px;
+        flex-shrink: 0;
     }
     
     .mobile-menu-toggle:hover {
@@ -462,14 +493,37 @@ select {
         border-radius: 12px;
     }
     
+    /* User info and notification adjustments */
+    .topbar .text-end {
+        display: block !important;
+        min-width: 80px;
+        text-align: right;
+    }
+    
+    .topbar .text-end .fw-bold {
+        font-size: 0.8rem;
+        line-height: 1.2;
+    }
+    
+    .topbar .text-end .text-muted {
+        font-size: 0.7rem;
+        line-height: 1.1;
+    }
+    
+    /* Dropdown avatar adjustments */
+    .topbar .dropdown img {
+        width: 36px;
+        height: 36px;
+    }
+    
     /* Notification dropdown adjustments */
     .notification-dropdown {
-        width: calc(100vw - 40px);
-        right: 20px;
-        left: 20px;
+        width: calc(100vw - 30px);
+        right: 15px;
+        left: 15px;
         position: fixed;
-        top: 60px;
-        max-height: calc(100vh - 80px);
+        top: 70px;
+        max-height: calc(100vh - 90px);
         z-index: 1060;
         border-radius: 16px;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
@@ -498,9 +552,40 @@ select {
         background: rgba(99, 102, 241, 0.1);
     }
     
-    /* Employee search adjustments */
+    /* Employee search adjustments - Enhanced */
+    .employee-search-container {
+        order: 2;
+        flex: 1;
+        max-width: 200px;
+        min-width: 120px;
+        position: relative;
+    }
+    
     .employee-search-container input {
-        width: 200px;
+        width: 100%;
+        font-size: 14px;
+        padding: 8px 8px 8px 32px;
+        border-radius: 8px;
+        height: 36px;
+        border: 1.5px solid #e8ecf4;
+        transition: all 0.3s ease;
+    }
+    
+    .employee-search-container input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        outline: none;
+    }
+    
+    .employee-search-container input::placeholder {
+        font-size: 13px;
+        color: #9ca3af;
+    }
+    
+    .employee-search-container .search-icon {
+        left: 10px;
+        font-size: 13px;
+        color: #6c7293;
     }
     
     /* Grid adjustments */
@@ -723,13 +808,30 @@ select {
     }
 
 @media (max-width: 576px) {
-    /* Very small screens */
+    /* Very small screens - Enhanced Topbar */
     .topbar {
-        padding: 10px 15px;
+        padding: 10px 12px;
+        min-height: 56px;
+        gap: 8px;
+    }
+    
+    .topbar .d-flex:first-child {
+        gap: 8px;
+        min-width: 0;
+        flex: 1;
+    }
+    
+    .topbar .d-flex:last-child {
+        gap: 8px;
+        flex-shrink: 0;
     }
     
     .topbar h4 {
-        font-size: 1.1rem;
+        font-size: 0.9rem;
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
     
     .content {
@@ -781,7 +883,34 @@ select {
     
     /* Hide employee search on very small screens */
     .employee-search-container {
-        display: none;
+        max-width: 140px;
+        min-width: 100px;
+    }
+    
+    .employee-search-container input {
+        font-size: 13px;
+        padding: 6px 6px 6px 28px;
+        height: 32px;
+    }
+    
+    .employee-search-container input::placeholder {
+        font-size: 12px;
+    }
+    
+    .employee-search-container .search-icon {
+        left: 8px;
+        font-size: 12px;
+    }
+    
+    /* Hide user info text on very small screens only */
+    .topbar .text-end {
+        display: none !important;
+    }
+    
+    /* Compact dropdown avatar */
+    .topbar .dropdown img {
+        width: 32px;
+        height: 32px;
     }
     
     /* Notification dropdown full width */
@@ -789,6 +918,8 @@ select {
         width: calc(100vw - 20px);
         right: 10px;
         left: 10px;
+        top: 60px;
+        max-height: calc(100vh - 80px);
     }
     
     /* Very compact tables */

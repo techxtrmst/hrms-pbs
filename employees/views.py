@@ -1100,6 +1100,51 @@ def employee_profile(request):
                 messages.error(request, f"Error updating profile: {str(e)}")
                 return redirect("employee_profile")
 
+        elif action == "assign_shift":
+            # Only allow Company Admins to assign shifts
+            if request.user.role != User.Role.COMPANY_ADMIN and not request.user.is_superuser:
+                from django.contrib import messages
+                messages.error(request, "You don't have permission to assign shifts.")
+                return redirect("employee_profile")
+
+            try:
+                from companies.models import ShiftSchedule
+                
+                shift_id = request.POST.get("assigned_shift")
+                if shift_id:
+                    shift = ShiftSchedule.objects.get(id=shift_id, company=request.user.company)
+                    old_shift_name = employee.assigned_shift.name if employee.assigned_shift else "None"
+                    employee.assigned_shift = shift
+                    employee.save(update_fields=["assigned_shift"])
+                    
+                    from django.contrib import messages
+                    messages.success(
+                        request, 
+                        f"Shift assignment updated from '{old_shift_name}' to '{shift.name}' for {employee.user.get_full_name()}."
+                    )
+                else:
+                    # Remove shift assignment
+                    old_shift_name = employee.assigned_shift.name if employee.assigned_shift else "None"
+                    employee.assigned_shift = None
+                    employee.save(update_fields=["assigned_shift"])
+                    
+                    from django.contrib import messages
+                    messages.success(
+                        request, 
+                        f"Shift assignment removed from {employee.user.get_full_name()}. Previous shift: '{old_shift_name}'."
+                    )
+                    
+                return redirect("employee_profile")
+                
+            except ShiftSchedule.DoesNotExist:
+                from django.contrib import messages
+                messages.error(request, "Selected shift not found.")
+                return redirect("employee_profile")
+            except Exception as e:
+                from django.contrib import messages
+                messages.error(request, f"Error assigning shift: {str(e)}")
+                return redirect("employee_profile")
+
         # Handle Profile Picture Upload
         if "profile_picture" in request.FILES:
             employee.profile_picture = request.FILES["profile_picture"]
@@ -1151,6 +1196,15 @@ def employee_profile(request):
     probation_status = employee.get_probation_status() if employee.date_of_joining else 'IN_PROBATION'
     probation_date = employee.get_probation_end_date() if employee.date_of_joining else None
 
+    # Get available shifts for the company (for shift assignment)
+    available_shifts = []
+    if request.user.role == User.Role.COMPANY_ADMIN or request.user.is_superuser:
+        from companies.models import ShiftSchedule
+        available_shifts = ShiftSchedule.objects.filter(
+            company=request.user.company, 
+            is_active=True
+        ).order_by('name')
+
     return render(
         request,
         "employees/employee_profile.html",
@@ -1162,6 +1216,7 @@ def employee_profile(request):
             "emergency_contacts": emergency_contacts,
             "probation_status": probation_status,
             "probation_date": probation_date,
+            "available_shifts": available_shifts,
         },
     )
 
@@ -1628,6 +1683,55 @@ def employee_detail(request, pk):
             messages.error(request, "Permission denied")
             return redirect("employee_list")
 
+        # Handle POST requests for shift assignment
+        if request.method == "POST":
+            action = request.POST.get("action")
+            
+            if action == "assign_shift":
+                # Only allow Company Admins to assign shifts
+                if not is_admin:
+                    from django.contrib import messages
+                    messages.error(request, "You don't have permission to assign shifts.")
+                    return redirect("employee_detail", pk=pk)
+
+                try:
+                    from companies.models import ShiftSchedule
+                    
+                    shift_id = request.POST.get("assigned_shift")
+                    if shift_id:
+                        shift = ShiftSchedule.objects.get(id=shift_id, company=user.company)
+                        old_shift_name = employee.assigned_shift.name if employee.assigned_shift else "None"
+                        employee.assigned_shift = shift
+                        employee.save(update_fields=["assigned_shift"])
+                        
+                        from django.contrib import messages
+                        messages.success(
+                            request, 
+                            f"Shift assignment updated from '{old_shift_name}' to '{shift.name}' for {employee.user.get_full_name()}."
+                        )
+                    else:
+                        # Remove shift assignment
+                        old_shift_name = employee.assigned_shift.name if employee.assigned_shift else "None"
+                        employee.assigned_shift = None
+                        employee.save(update_fields=["assigned_shift"])
+                        
+                        from django.contrib import messages
+                        messages.success(
+                            request, 
+                            f"Shift assignment removed from {employee.user.get_full_name()}. Previous shift: '{old_shift_name}'."
+                        )
+                        
+                    return redirect("employee_detail", pk=pk)
+                    
+                except ShiftSchedule.DoesNotExist:
+                    from django.contrib import messages
+                    messages.error(request, "Selected shift not found.")
+                    return redirect("employee_detail", pk=pk)
+                except Exception as e:
+                    from django.contrib import messages
+                    messages.error(request, f"Error assigning shift: {str(e)}")
+                    return redirect("employee_detail", pk=pk)
+
         today = timezone.localdate()
 
         # Date Filter (Default to current month)
@@ -1810,6 +1914,15 @@ def employee_detail(request, pk):
             probation_date = employee.get_probation_end_date()
             probation_status = employee.get_probation_status()
 
+        # Get available shifts for the company (for shift assignment)
+        available_shifts = []
+        if is_admin:
+            from companies.models import ShiftSchedule
+            available_shifts = ShiftSchedule.objects.filter(
+                company=user.company, 
+                is_active=True
+            ).order_by('name')
+
         context = {
             "employee": employee,
             "attendance_history": full_history,
@@ -1826,6 +1939,8 @@ def employee_detail(request, pk):
             "map_date": map_date,
             "probation_date": probation_date,
             "probation_status": probation_status,
+            "available_shifts": available_shifts,
+            "is_admin": is_admin,
         }
         return render(request, "employees/employee_detail.html", context)
 

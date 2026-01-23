@@ -324,10 +324,10 @@
             transition: margin-left 0.3s ease;
         }
 
-        /* Topbar Redesign */
+        /* Topbar Redesign - Enhanced for Desktop and Mobile */
         .topbar {
             background-color: #fff;
-            padding: 20px 32px;
+            padding: 16px 32px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
             display: flex;
             justify-content: space-between;
@@ -338,9 +338,38 @@
             z-index: 900;
             border-bottom: 1px solid #e2e8f0;
             transition: margin-left 0.3s ease;
+            min-height: 72px;
+            width: calc(100% - var(--sidebar-width));
+            box-sizing: border-box;
         }
 
-        /* Mobile Menu Toggle */
+        .topbar .d-flex:first-child {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            flex: 1;
+            min-width: 0; /* Allow flex items to shrink */
+        }
+
+        .topbar .d-flex:last-child {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+
+        /* Topbar title styling */
+        .topbar h4 {
+            margin: 0;
+            font-weight: 700;
+            color: #4a5568;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 300px;
+        }
+
+        /* Mobile Menu Toggle - Enhanced */
         .mobile-menu-toggle {
             display: none;
             background: none;
@@ -357,6 +386,9 @@
             min-height: 48px;
             align-items: center;
             justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            flex-shrink: 0;
         }
 
         .mobile-menu-toggle:hover {
@@ -366,6 +398,14 @@
         .mobile-menu-toggle:active {
             background: rgba(99, 102, 241, 0.2);
             transform: scale(0.95);
+        }
+
+        .mobile-menu-toggle i {
+            transition: transform 0.3s ease;
+        }
+
+        .mobile-menu-toggle[aria-expanded="true"] i {
+            transform: rotate(90deg);
         }
 
         /* Sidebar Overlay for Mobile */
@@ -388,10 +428,20 @@
             opacity: 1;
         }
 
-        /* Responsive Design */
+        /* Responsive Design - Enhanced Topbar */
         @media (max-width: 1200px) {
             :root {
                 --sidebar-width: 260px;
+            }
+            
+            .topbar {
+                width: calc(100% - var(--sidebar-width));
+                padding: 15px 24px;
+            }
+            
+            .topbar h4 {
+                font-size: 1.1rem;
+                max-width: 250px;
             }
         }
 
@@ -402,10 +452,31 @@
             
             .topbar {
                 padding: 15px 20px;
+                width: calc(100% - var(--sidebar-width));
+            }
+            
+            .topbar h4 {
+                font-size: 1rem;
+                max-width: 200px;
             }
             
             .content {
                 padding: 20px;
+            }
+
+            /* Adjust search bar for tablets */
+            #employeeSearchInput {
+                width: 240px;
+                font-size: 13px;
+            }
+
+            .search-result-meta {
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .search-result-meta span {
+                font-size: 12px;
             }
         }
 
@@ -435,17 +506,146 @@
                 overflow-x: hidden;
             }
             
+            /* Mobile Topbar Adjustments */
             .topbar {
                 margin-left: 0;
-                padding: 12px 15px;
+                padding: 12px 16px;
                 width: 100%;
                 position: sticky;
                 top: 0;
                 z-index: 900;
+                min-height: 64px;
+                box-sizing: border-box;
+            }
+            
+            .topbar .d-flex:first-child {
+                gap: 12px;
+                flex-wrap: nowrap;
+                overflow: hidden;
+            }
+            
+            .topbar .d-flex:last-child {
+                gap: 12px;
+                flex-shrink: 0;
+            }
+            
+            .topbar h4 {
+                font-size: 0.95rem;
+                max-width: 150px;
+                flex-shrink: 1;
             }
             
             .mobile-menu-toggle {
                 display: flex !important;
+                order: -1; /* Ensure it appears first */
+                margin-right: 8px;
+            }
+
+            /* Mobile search bar adjustments */
+            .employee-search-container {
+                order: 2;
+                flex: 1;
+                max-width: 200px;
+                min-width: 120px;
+            }
+
+            #employeeSearchInput {
+                width: 100%;
+                font-size: 14px;
+                padding: 8px 8px 8px 32px;
+                border-radius: 8px;
+                height: 36px;
+            }
+
+            #employeeSearchInput::placeholder {
+                font-size: 13px;
+            }
+
+            .search-icon {
+                left: 10px;
+                font-size: 13px;
+            }
+
+            .search-results {
+                position: fixed;
+                top: auto;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                max-height: 60vh;
+                border-radius: 16px 16px 0 0;
+                box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.2);
+                z-index: 1060;
+            }
+
+            .search-result-item {
+                padding: 16px 20px;
+                min-height: 60px;
+                touch-action: manipulation;
+            }
+
+            .search-result-avatar {
+                width: 48px;
+                height: 48px;
+                font-size: 16px;
+            }
+
+            .search-result-name {
+                font-size: 16px;
+                margin-bottom: 8px;
+            }
+
+            .search-result-meta {
+                flex-direction: column;
+                gap: 6px;
+                font-size: 13px;
+            }
+
+            .search-result-meta span {
+                font-size: 13px;
+            }
+            
+            /* User info section adjustments */
+            .topbar .text-end {
+                display: block !important;
+                min-width: 80px;
+                text-align: right;
+            }
+            
+            .topbar .text-end .fw-bold {
+                font-size: 0.8rem;
+                line-height: 1.2;
+            }
+            
+            .topbar .text-end .text-muted {
+                font-size: 0.7rem;
+                line-height: 1.1;
+            }
+            
+            /* Dropdown avatar adjustments */
+            .topbar .dropdown img {
+                width: 36px;
+                height: 36px;
+            }
+            
+            /* Notification adjustments */
+            .notification-dropdown {
+                width: calc(100vw - 30px);
+                right: 15px;
+                left: 15px;
+                position: fixed;
+                top: 70px;
+                max-height: calc(100vh - 90px);
+                z-index: 1060;
+                border-radius: 16px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            }
+            
+            /* Prevent body scroll when sidebar is open */
+            body.sidebar-open {
+                overflow: hidden;
+                position: fixed;
+                width: 100%;
             }
             
             /* Aggressive spacing reset for mobile */
@@ -540,12 +740,6 @@
                 font-size: 0.65rem;
             }
             
-            /* Employee search adjustments */
-            .employee-search-container input {
-                width: 200px;
-                font-size: 14px;
-            }
-            
             /* Notification dropdown adjustments */
             .notification-dropdown {
                 width: calc(100vw - 30px);
@@ -569,63 +763,183 @@
         }
 
         @media (max-width: 576px) {
+            /* Very Small Screens - Optimized Topbar */
             .topbar {
                 padding: 10px 12px;
+                min-height: 56px;
+                gap: 8px;
+            }
+            
+            .topbar .d-flex:first-child {
+                gap: 8px;
+                min-width: 0;
+                flex: 1;
+            }
+            
+            .topbar .d-flex:last-child {
+                gap: 8px;
+                flex-shrink: 0;
             }
             
             .topbar h4 {
-                font-size: 1rem;
+                font-size: 0.9rem;
+                max-width: 100px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            
+            .mobile-menu-toggle {
+                min-width: 40px;
+                min-height: 40px;
+                padding: 8px;
+                font-size: 1.3rem;
+            }
+
+            /* Compact search on very small screens */
+            .employee-search-container {
+                max-width: 140px;
+                min-width: 100px;
+            }
+
+            #employeeSearchInput {
+                font-size: 13px;
+                padding: 6px 6px 6px 28px;
+                height: 32px;
+            }
+
+            #employeeSearchInput::placeholder {
+                font-size: 12px;
+            }
+
+            .search-icon {
+                left: 8px;
+                font-size: 12px;
+            }
+
+            .search-result-item {
+                padding: 12px 16px;
+                min-height: 52px;
+            }
+
+            .search-result-avatar {
+                width: 40px;
+                height: 40px;
+                font-size: 14px;
+            }
+
+            .search-result-name {
+                font-size: 14px;
+            }
+
+            .search-result-meta span {
+                font-size: 12px;
             }
             
             /* Hide user info text on very small screens only */
             .topbar .text-end {
-                display: none;
+                display: none !important;
             }
-                margin: 0;
+            
+            /* Compact dropdown avatar */
+            .topbar .dropdown img {
+                width: 32px;
+                height: 32px;
             }
             
             .content {
                 padding: 10px;
             }
             
-            .employee-search-container {
-                display: none;
-            }
-            
+            /* Notification dropdown adjustments */
             .notification-dropdown {
                 width: calc(100vw - 20px);
                 right: 10px;
                 left: 10px;
+                top: 60px;
+                max-height: calc(100vh - 80px);
             }
         }
 
-        /* Employee Search Bar Styles */
+        /* Employee Search Bar Styles - Fully Responsive */
         .employee-search-container {
             position: relative;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c7293;
+            font-size: 14px;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        #employeeSearchInput {
+            padding: 10px 12px 10px 35px;
+            border: 1.5px solid #e8ecf4;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: #fff;
+            color: #333;
+            width: 280px;
+            height: 40px;
+        }
+
+        #employeeSearchInput:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            outline: none;
+        }
+
+        #employeeSearchInput::placeholder {
+            color: #9ca3af;
+            font-size: 14px;
         }
 
         .search-results {
             position: absolute;
             top: calc(100% + 8px);
-            left: 0;
-            right: 0;
+            left: -100px;
+            right: -100px;
+            min-width: 400px;
             background: white;
             border: 1px solid #e8ecf4;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            max-height: 300px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            z-index: 1050;
+            max-height: 350px;
             overflow-y: auto;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            visibility: hidden;
+            display: none;
+        }
+
+        .search-results.show {
+            opacity: 1;
+            transform: translateY(0);
+            visibility: visible;
+            display: block !important;
         }
 
         .search-result-item {
-            padding: 14px 18px;
-            border-bottom: 1px solid #e8ecf4;
+            padding: 16px 20px;
+            border-bottom: 1px solid #f1f5f9;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
             transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .search-result-item:last-child {
@@ -633,13 +947,18 @@
         }
 
         .search-result-item:hover {
-            background: linear-gradient(90deg, rgba(91, 71, 251, 0.05) 0%, rgba(91, 71, 251, 0.02) 100%);
-            padding-left: 22px;
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0.02) 100%);
+            transform: translateX(4px);
+        }
+
+        .search-result-item:active {
+            background: rgba(99, 102, 241, 0.12);
+            transform: translateX(2px);
         }
 
         .search-result-avatar {
-            width: 42px;
-            height: 42px;
+            width: 44px;
+            height: 44px;
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
             color: white;
             border-radius: 50%;
@@ -647,7 +966,9 @@
             align-items: center;
             justify-content: center;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 15px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
         }
 
         .search-result-details {
@@ -659,51 +980,54 @@
             font-weight: 600;
             font-size: 15px;
             color: #1e2139;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
+            line-height: 1.2;
         }
 
         .search-result-meta {
             font-size: 13px;
             color: #6c7293;
             display: flex;
+            flex-wrap: wrap;
             gap: 12px;
+            line-height: 1.3;
         }
 
         .search-result-meta span {
             display: inline-flex;
             align-items: center;
             gap: 4px;
+            white-space: nowrap;
         }
 
         .search-result-meta i {
             font-size: 11px;
             opacity: 0.7;
+            flex-shrink: 0;
         }
 
-        .search-loading {
-            padding: 20px;
+        .search-loading, .search-no-results {
+            padding: 24px 20px;
             text-align: center;
             color: #6c7293;
+            font-size: 14px;
         }
 
         .search-loading i {
             animation: spin 1s linear infinite;
+            margin-right: 8px;
         }
 
-        .search-no-results {
-            padding: 20px;
-            text-align: center;
-            color: #6c7293;
+        .search-no-results i {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            opacity: 0.5;
+            display: block;
         }
 
         @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         /* Scrollbar Styling for Search Results */
@@ -712,17 +1036,17 @@
         }
 
         .search-results::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: #f8fafc;
             border-radius: 10px;
         }
 
         .search-results::-webkit-scrollbar-thumb {
-            background: #6366f1;
+            background: #cbd5e0;
             border-radius: 10px;
         }
 
         .search-results::-webkit-scrollbar-thumb:hover {
-            background: #4f46e5;
+            background: #a0aec0;
         }
 
         /* Notification Bell Styles */
@@ -898,8 +1222,6 @@
             font-size: 0.75rem;
             color: #94a3b8;
             font-weight: 500;
-        }
-            overflow-y: auto;
         }
 
         .notification-item {
@@ -1549,15 +1871,11 @@
             </h4>
             <!-- Employee Search Bar (for Company Admins on all pages) -->
             {% if user.role == 'COMPANY_ADMIN' %}
-            <div class="employee-search-container" style="position: relative;">
-                <i class="fas fa-search search-icon"
-                    style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #6c7293; font-size: 14px;"></i>
+            <div class="employee-search-container">
+                <i class="fas fa-search search-icon"></i>
                 <input type="text" id="employeeSearchInput" class="form-control"
-                    style="padding-left: 35px; width: 300px; border: 1.5px solid #e8ecf4; border-radius: 8px; font-size: 14px;"
-                    placeholder="Search employees by name or ID..." autocomplete="off">
-                <div id="searchResults" class="search-results"
-                    style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #e8ecf4; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1000; max-height: 300px; overflow-y: auto;">
-                </div>
+                    placeholder="Search employees..." autocomplete="off">
+                <div id="searchResults" class="search-results"></div>
             </div>
             {% endif %}
         </div>
@@ -1963,62 +2281,191 @@
     <!-- Employee Search Functionality (for Company Admins on all pages) -->
     {% if user.role == 'COMPANY_ADMIN' %}
     <script>
-        // Employee Search Functionality
+        // Employee Search Functionality - Enhanced Responsive Version
         let searchTimeout;
         const searchInput = document.getElementById('employeeSearchInput');
         const searchResults = document.getElementById('searchResults');
+        let isSearchOpen = false;
 
         if (searchInput) {
+            console.log('Search input found:', searchInput);
+            console.log('Search results div found:', searchResults);
+            
             // Search on input with debouncing
             searchInput.addEventListener('input', function () {
                 const query = this.value.trim();
+                console.log('🔍 Input event triggered, query:', query);
+                
+                // Visual feedback - change border color when typing
+                this.style.borderColor = query.length > 0 ? '#6366f1' : '#e8ecf4';
 
                 // Clear previous timeout
                 clearTimeout(searchTimeout);
 
-                if (query.length < 2) {
-                    searchResults.style.display = 'none';
+                if (query.length < 1) {
+                    console.log('❌ Query empty, hiding results');
+                    hideSearchResults();
                     return;
                 }
 
                 // Show loading state
+                console.log('⏳ Showing loading state');
+                showSearchResults();
                 searchResults.innerHTML = '<div class="search-loading"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
-                searchResults.style.display = 'block';
 
-                // Debounce search (wait 300ms after user stops typing)
+                // Debounce search (wait 200ms after user stops typing for faster response)
                 searchTimeout = setTimeout(() => {
+                    console.log('🚀 Performing search after debounce');
                     performSearch(query);
-                }, 300);
+                }, 200);
             });
 
             // Close search results when clicking outside
             document.addEventListener('click', function (e) {
                 if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-                    searchResults.style.display = 'none';
+                    hideSearchResults();
                 }
             });
 
             // Reopen results when clicking on input if there's content
             searchInput.addEventListener('focus', function () {
-                if (this.value.trim().length >= 2 && searchResults.innerHTML) {
-                    searchResults.style.display = 'block';
+                if (this.value.trim().length >= 1 && searchResults.innerHTML && !searchResults.innerHTML.includes('Searching...')) {
+                    showSearchResults();
+                }
+            });
+
+            // Handle escape key to close search
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    hideSearchResults();
+                    this.blur();
+                }
+            });
+
+            // Prevent form submission on enter
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
                 }
             });
         }
 
+        function showSearchResults() {
+            console.log('showSearchResults called, isSearchOpen:', isSearchOpen);
+            if (!isSearchOpen) {
+                console.log('Showing search results');
+                searchResults.style.display = 'block';
+                // Force reflow before adding show class for smooth animation
+                searchResults.offsetHeight;
+                searchResults.classList.add('show');
+                isSearchOpen = true;
+
+                // Add backdrop for mobile
+                if (window.innerWidth <= 768) {
+                    createSearchBackdrop();
+                }
+            }
+        }
+
+        function hideSearchResults() {
+            if (isSearchOpen) {
+                searchResults.classList.remove('show');
+                
+                // Wait for animation to complete before hiding
+                setTimeout(() => {
+                    searchResults.style.display = 'none';
+                }, 300);
+                
+                isSearchOpen = false;
+                
+                // Remove backdrop
+                removeSearchBackdrop();
+            }
+        }
+
+        function createSearchBackdrop() {
+            // Remove existing backdrop
+            removeSearchBackdrop();
+            
+            // Create new backdrop
+            const backdrop = document.createElement('div');
+            backdrop.id = 'searchBackdrop';
+            backdrop.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.3);
+                z-index: 1055;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                pointer-events: auto;
+            `;
+            
+            document.body.appendChild(backdrop);
+            
+            // Trigger animation
+            setTimeout(() => {
+                backdrop.style.opacity = '1';
+            }, 10);
+            
+            // Close on backdrop click
+            backdrop.addEventListener('click', hideSearchResults);
+        }
+
+        function removeSearchBackdrop() {
+            const backdrop = document.getElementById('searchBackdrop');
+            if (backdrop) {
+                backdrop.style.opacity = '0';
+                setTimeout(() => {
+                    backdrop.remove();
+                }, 300);
+            }
+        }
+
         function performSearch(query) {
-            fetch(`/api/search-employees/?q=${encodeURIComponent(query)}`)
-                .then(response => response.json())
+            console.log('Performing search for:', query);
+            console.log('Fetch URL:', `/api/search-employees/?q=${encodeURIComponent(query)}`);
+            
+            fetch(`/api/search-employees/?q=${encodeURIComponent(query)}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin'
+            })
+                .then(response => {
+                    console.log('Search response status:', response.status);
+                    console.log('Search response headers:', response.headers);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Search data received:', data);
+                    
+                    if (data.error) {
+                        console.error('API returned error:', data.error);
+                        searchResults.innerHTML = `<div class="search-no-results"><i class="fas fa-exclamation-circle"></i><div>Error: ${data.error}</div></div>`;
+                        return;
+                    }
+                    
                     displaySearchResults(data.employees);
                 })
                 .catch(error => {
                     console.error('Search error:', error);
-                    searchResults.innerHTML = '<div class="search-no-results"><i class="fas fa-exclamation-circle"></i><div>Error performing search</div></div>';
+                    searchResults.innerHTML = `<div class="search-no-results"><i class="fas fa-exclamation-circle"></i><div>Network Error: ${error.message}</div></div>`;
                 });
         }
 
         function displaySearchResults(employees) {
+            console.log('Displaying results for employees:', employees);
+            
             if (employees.length === 0) {
                 searchResults.innerHTML = `
                     <div class="search-no-results">
@@ -2031,6 +2478,7 @@
 
             let html = '';
             employees.forEach(emp => {
+                console.log('Processing employee:', emp);
                 // Get initials for avatar
                 const nameParts = emp.name.split(' ');
                 const initials = nameParts.length > 1
@@ -2053,12 +2501,29 @@
                 `;
             });
 
+            console.log('Generated HTML:', html);
             searchResults.innerHTML = html;
         }
 
         function navigateToEmployee(url) {
+            hideSearchResults();
             window.location.href = url;
         }
+
+        // Handle window resize to adjust search behavior
+        window.addEventListener('resize', function() {
+            if (isSearchOpen) {
+                // Adjust search results position on resize
+                if (window.innerWidth <= 768) {
+                    createSearchBackdrop();
+                } else {
+                    removeSearchBackdrop();
+                }
+            }
+        });
+
+        // Search functionality complete
+        
     </script>
     {% endif %}
 
@@ -2485,6 +2950,127 @@
     {% endif %}
 
     {% block extra_js %}{% endblock %}
+    
+    <!-- Employee Search Functionality -->
+    <script>
+        // Simple typing test with actual search
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 DOM loaded, setting up search...');
+            
+            const searchInput = document.getElementById('employeeSearchInput');
+            const searchResults = document.getElementById('searchResults');
+            let searchTimeout;
+            
+            if (searchInput && searchResults) {
+                console.log('✅ Search input and results found, adding event listener');
+                
+                searchInput.addEventListener('input', function() {
+                    const query = this.value.trim();
+                    console.log('⌨️ Typing detected:', query);
+                    
+                    // Change border color to show it's working
+                    this.style.borderColor = query.length > 0 ? '#28a745' : '#e8ecf4';
+                    
+                    // Clear previous timeout
+                    clearTimeout(searchTimeout);
+                    
+                    if (query.length >= 1) {
+                        console.log('🔍 Query long enough, searching for:', query);
+                        
+                        // Show loading
+                        searchResults.style.display = 'block';
+                        searchResults.classList.add('show');
+                        searchResults.innerHTML = '<div class="search-loading"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+                        
+                        // Debounce search
+                        searchTimeout = setTimeout(() => {
+                            performLiveSearch(query);
+                        }, 300);
+                    } else {
+                        // Hide results if query is empty
+                        searchResults.style.display = 'none';
+                        searchResults.classList.remove('show');
+                    }
+                });
+                
+                console.log('✅ Event listener added successfully');
+            } else {
+                console.error('❌ Search elements not found');
+            }
+            
+            // Live search function
+            function performLiveSearch(query) {
+                console.log('🌐 Performing live search for:', query);
+                
+                fetch(`/api/search-employees/?q=${encodeURIComponent(query)}`)
+                    .then(response => {
+                        console.log('📡 Live search response status:', response.status);
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('📊 Live search data:', data);
+                        
+                        if (data.employees && data.employees.length > 0) {
+                            console.log('✅ Found employees:', data.employees.length);
+                            displayLiveResults(data.employees);
+                        } else {
+                            console.log('❌ No employees found');
+                            searchResults.innerHTML = '<div class="search-no-results"><i class="fas fa-user-slash"></i><div>No employees found</div></div>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Live search error:', error);
+                        searchResults.innerHTML = `<div class="search-no-results"><i class="fas fa-exclamation-circle"></i><div>Error: ${error.message}</div></div>`;
+                    });
+            }
+            
+            // Display live results
+            function displayLiveResults(employees) {
+                console.log('📋 Displaying live results for', employees.length, 'employees');
+                
+                let html = '';
+                employees.forEach(emp => {
+                    const nameParts = emp.name.split(' ');
+                    const initials = nameParts.length > 1
+                        ? nameParts[0][0] + nameParts[nameParts.length - 1][0]
+                        : nameParts[0][0];
+
+                    html += `
+                        <div class="search-result-item" onclick="navigateToEmployee('${emp.profile_url}')">
+                            <div class="search-result-avatar">${initials.toUpperCase()}</div>
+                            <div class="search-result-details">
+                                <div class="search-result-name">${emp.name}</div>
+                                <div class="search-result-meta">
+                                    <span><i class="fas fa-id-badge"></i> ${emp.employee_id}</span>
+                                    <span><i class="fas fa-briefcase"></i> ${emp.designation}</span>
+                                    <span><i class="fas fa-building"></i> ${emp.department}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                searchResults.innerHTML = html;
+                console.log('✅ Live results displayed successfully');
+            }
+            
+            // Navigation function
+            window.navigateToEmployee = function(url) {
+                console.log('🔗 Navigating to:', url);
+                searchResults.style.display = 'none';
+                searchResults.classList.remove('show');
+                window.location.href = url;
+            };
+            
+            // Close results when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                    searchResults.style.display = 'none';
+                    searchResults.classList.remove('show');
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>

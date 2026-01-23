@@ -616,30 +616,43 @@ def admin_dashboard(request):
 def search_employees_api(request):
     """API endpoint for searching employees by name"""
     from django.http import JsonResponse
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        query = request.GET.get("q", "").strip()
+        logger.info(f"Search query received: '{query}' from user: {request.user.email}")
 
-    query = request.GET.get("q", "").strip()
+        # Search with just 1 character (like autocomplete)
+        if not query or len(query) < 1:
+            logger.info("Query too short, returning empty results")
+            return JsonResponse({"employees": [], "debug": "Query too short"})
 
-    if not query or len(query) < 2:
-        return JsonResponse({"employees": []})
+        # Get company
+        company = request.user.company
+        logger.info(f"Searching in company: {company.name if company else 'None'}")
 
-    # Get company
-    company = request.user.company
+        if not company:
+            logger.error("User has no company assigned")
+            return JsonResponse({"employees": [], "error": "No company assigned"})
 
-    # Search employees by name (first name or last name)
-    employees = (
-        Employee.objects.filter(company=company)
-        .filter(
-            Q(user__first_name__icontains=query) | Q(user__last_name__icontains=query) | Q(badge_id__icontains=query)
+        # Search employees by name (first name or last name)
+        employees = (
+            Employee.objects.filter(company=company)
+            .filter(
+                Q(user__first_name__icontains=query) | Q(user__last_name__icontains=query) | Q(badge_id__icontains=query)
+            )
+            .select_related("user", "location", "manager")[:10]
         )
-        .select_related("user", "location", "manager")[:10]
-    )
 
-    results = []
-    for emp in employees:
-        results.append(
-            {
+        logger.info(f"Found {employees.count()} employees matching query")
+
+        results = []
+        for emp in employees:
+            result = {
                 "id": emp.id,
-                "name": emp.user.get_full_name(),
+                "name": emp.user.get_full_name() or "No Name",
                 "employee_id": emp.badge_id or f"EMP-{emp.id}",
                 "department": emp.department or "N/A",
                 "location": emp.location.name if emp.location else "N/A",
@@ -648,9 +661,15 @@ def search_employees_api(request):
                 "phone": emp.mobile_number or "N/A",
                 "profile_url": f"/employees/{emp.id}/detail/",
             }
-        )
+            results.append(result)
+            logger.info(f"Added employee: {result['name']}")
 
-    return JsonResponse({"employees": results})
+        logger.info(f"Returning {len(results)} results")
+        return JsonResponse({"employees": results, "count": len(results)})
+        
+    except Exception as e:
+        logger.error(f"Error in search_employees_api: {str(e)}")
+        return JsonResponse({"employees": [], "error": str(e)}, status=500)
 
 
 @login_required
