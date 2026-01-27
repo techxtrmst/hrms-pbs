@@ -654,21 +654,22 @@
         background: white;
         border-radius: 12px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        /* Softer shadow */
         overflow: hidden;
         height: 100%;
         display: flex;
         flex-direction: column;
+        min-height: 400px;
+        max-height: 600px;
     }
 
     .announcements-header {
         background: linear-gradient(135deg, var(--keka-primary), #4338ca);
-        /* Gradient header */
         padding: 20px;
         color: white;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-shrink: 0;
     }
 
     .announcements-title {
@@ -683,6 +684,7 @@
     .announcements-tabs {
         display: flex;
         gap: 10px;
+        flex-wrap: wrap;
     }
 
     .tab-btn {
@@ -695,6 +697,10 @@
         cursor: pointer;
         transition: all 0.2s;
         backdrop-filter: blur(5px);
+        white-space: nowrap;
+        min-height: 32px;
+        display: flex;
+        align-items: center;
     }
 
     .tab-btn.active,
@@ -706,19 +712,104 @@
 
     .announcements-body {
         padding: 0;
-        /* Remove padding to let items flush */
         flex: 1;
-        overflow-y: auto;
+        overflow: hidden;
         min-height: 300px;
         position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Scrollable Announcement Content */
+    .announcement-carousel {
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .announcement-slide {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .announcement-slide:not(.d-none) {
+        opacity: 1;
+        transform: translateX(0);
+        position: relative;
+    }
+
+    .announcement-content-wrapper {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 20px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+    }
+
+    .announcement-content-wrapper::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .announcement-content-wrapper::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .announcement-content-wrapper::-webkit-scrollbar-thumb {
+        background-color: #cbd5e1;
+        border-radius: 20px;
+    }
+
+    .announcement-content-wrapper::-webkit-scrollbar-thumb:hover {
+        background-color: #94a3b8;
+    }
+
+    /* Tab Content Scrolling */
+    .tab-content {
+        height: 100%;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+    }
+
+    .tab-content::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .tab-content::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .tab-content::-webkit-scrollbar-thumb {
+        background-color: #cbd5e1;
+        border-radius: 20px;
+    }
+
+    .tab-content::-webkit-scrollbar-thumb:hover {
+        background-color: #94a3b8;
     }
 
     .announcement-item {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         padding: 16px 20px;
         border-bottom: 1px solid var(--keka-border);
         transition: background 0.2s;
+        min-height: 80px;
     }
 
     .announcement-item:last-child {
@@ -743,6 +834,7 @@
 
     .announcement-details {
         flex: 1;
+        min-width: 0;
     }
 
     .announcement-text {
@@ -750,11 +842,15 @@
         font-weight: 600;
         color: var(--keka-text-primary);
         margin-bottom: 2px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
 
     .announcement-subtext {
         font-size: 12px;
         color: var(--keka-text-secondary);
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
 
     .announcement-date {
@@ -764,6 +860,23 @@
         background: rgba(91, 71, 251, 0.08);
         padding: 4px 10px;
         border-radius: 8px;
+        white-space: nowrap;
+        flex-shrink: 0;
+        margin-left: 12px;
+        align-self: flex-start;
+    }
+
+    /* Horizontal Scrolling for Tabs on Mobile */
+    .announcements-tabs-wrapper {
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .announcements-tabs-wrapper::-webkit-scrollbar {
+        display: none;
     }
 
     /* Empty State */
@@ -956,6 +1069,551 @@
         background-color: #d1d5db;
         border-radius: 20px;
     }
+
+    .carousel-controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 16px;
+        margin-top: auto;
+        border-top: 1px solid var(--keka-border);
+    }
+
+    .carousel-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 1px solid var(--keka-border);
+        background: white;
+        color: var(--keka-text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .carousel-btn:hover {
+        background: var(--keka-primary);
+        color: white;
+        border-color: var(--keka-primary);
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(91, 71, 251, 0.2);
+    }
+
+    .carousel-btn:active {
+        transform: scale(0.95);
+    }
+
+    .carousel-indicators {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .indicator {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #cbd5e1;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .indicator:hover {
+        background: var(--keka-purple);
+    }
+
+    .indicator.active {
+        background: var(--keka-primary);
+        width: 24px;
+        border-radius: 12px;
+    }
+
+    /* === RESPONSIVE ANNOUNCEMENTS === */
+    @media (max-width: 1200px) {
+        .announcements-card {
+            min-height: 350px;
+            max-height: 500px;
+        }
+        
+        .announcements-header {
+            padding: 18px;
+        }
+        
+        .announcements-title {
+            font-size: 16px;
+        }
+        
+        .tab-btn {
+            padding: 5px 10px;
+            font-size: 11px;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .announcements-card {
+            min-height: 320px;
+            max-height: 450px;
+        }
+        
+        .announcements-header {
+            padding: 16px;
+            flex-direction: column;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        
+        .announcements-title {
+            font-size: 15px;
+        }
+        
+        .announcements-tabs {
+            width: 100%;
+            justify-content: flex-start;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .announcements-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .announcement-content-wrapper {
+            padding: 16px;
+        }
+        
+        .announcement-item {
+            padding: 14px 16px;
+            min-height: 70px;
+        }
+        
+        .announcement-icon {
+            width: 38px;
+            height: 38px;
+            font-size: 16px;
+            margin-right: 14px;
+        }
+        
+        .announcement-text {
+            font-size: 13px;
+        }
+        
+        .announcement-subtext {
+            font-size: 11px;
+        }
+        
+        .announcement-date {
+            font-size: 11px;
+            padding: 3px 8px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .announcements-card {
+            min-height: 280px;
+            max-height: 400px;
+        }
+        
+        .announcements-header {
+            padding: 14px;
+        }
+        
+        .announcements-title {
+            font-size: 14px;
+            gap: 8px;
+        }
+        
+        .announcements-tabs {
+            gap: 8px;
+        }
+        
+        .tab-btn {
+            padding: 4px 8px;
+            font-size: 10px;
+            min-height: 28px;
+        }
+        
+        .announcement-content-wrapper {
+            padding: 14px;
+        }
+        
+        .announcement-item {
+            padding: 12px 14px;
+            min-height: 60px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        
+        .announcement-item-header {
+            display: flex;
+            align-items: flex-start;
+            width: 100%;
+            gap: 12px;
+        }
+        
+        .announcement-icon {
+            width: 34px;
+            height: 34px;
+            font-size: 14px;
+            margin-right: 0;
+        }
+        
+        .announcement-details {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .announcement-text {
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .announcement-subtext {
+            font-size: 10px;
+            line-height: 1.3;
+        }
+        
+        .announcement-date {
+            font-size: 10px;
+            padding: 2px 6px;
+            margin-left: 0;
+            align-self: flex-end;
+        }
+        
+        .announcement-title-large {
+            font-size: 16px;
+        }
+        
+        .announcement-meta-row {
+            font-size: 11px;
+            gap: 8px;
+        }
+        
+        .announcement-hero-image {
+            max-height: 200px;
+            margin-bottom: 16px;
+        }
+        
+        .carousel-controls {
+            padding: 12px 14px;
+        }
+        
+        .carousel-btn {
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            min-height: 28px;
+        }
+        
+        .carousel-indicators {
+            max-width: 150px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .announcements-card {
+            min-height: 250px;
+            max-height: 350px;
+        }
+        
+        .announcements-header {
+            padding: 12px;
+        }
+        
+        .announcements-title {
+            font-size: 13px;
+        }
+        
+        .announcements-tabs {
+            gap: 6px;
+        }
+        
+        .tab-btn {
+            padding: 3px 6px;
+            font-size: 9px;
+            min-height: 24px;
+        }
+        
+        .announcement-content-wrapper {
+            padding: 12px;
+        }
+        
+        .announcement-item {
+            padding: 10px 12px;
+            min-height: 50px;
+        }
+        
+        .announcement-icon {
+            width: 30px;
+            height: 30px;
+            font-size: 12px;
+        }
+        
+        .announcement-text {
+            font-size: 11px;
+        }
+        
+        .announcement-subtext {
+            font-size: 9px;
+        }
+        
+        .announcement-date {
+            font-size: 9px;
+            padding: 2px 4px;
+        }
+        
+        .announcement-title-large {
+            font-size: 14px;
+        }
+        
+        .announcement-meta-row {
+            font-size: 10px;
+            gap: 6px;
+        }
+        
+        .announcement-hero-image {
+            max-height: 150px;
+            margin-bottom: 12px;
+        }
+        
+        .carousel-controls {
+            padding: 10px 12px;
+        }
+        
+        .carousel-btn {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            min-height: 24px;
+            font-size: 10px;
+        }
+        
+        .carousel-indicators {
+            max-width: 100px;
+        }
+        
+        .indicator {
+            width: 4px;
+            height: 4px;
+        }
+        
+        .indicator.active {
+            width: 16px;
+        }
+    }
+
+    @media (max-width: 400px) {
+        .announcements-card {
+            min-height: 220px;
+            max-height: 300px;
+        }
+        
+        .announcements-header {
+            padding: 10px;
+        }
+        
+        .announcements-title {
+            font-size: 12px;
+        }
+        
+        .tab-btn {
+            padding: 2px 4px;
+            font-size: 8px;
+            min-height: 20px;
+        }
+        
+        .announcement-content-wrapper {
+            padding: 10px;
+        }
+        
+        .announcement-item {
+            padding: 8px 10px;
+            min-height: 45px;
+        }
+        
+        .announcement-icon {
+            width: 26px;
+            height: 26px;
+            font-size: 11px;
+        }
+        
+        .announcement-text {
+            font-size: 10px;
+        }
+        
+        .announcement-subtext {
+            font-size: 8px;
+        }
+        
+        .announcement-date {
+            font-size: 8px;
+        }
+        
+        .announcement-title-large {
+            font-size: 12px;
+        }
+        
+        .carousel-controls {
+            padding: 8px 10px;
+        }
+    }
+
+    /* Landscape orientation adjustments */
+    @media (max-width: 896px) and (orientation: landscape) {
+        .announcements-card {
+            min-height: 200px;
+            max-height: 280px;
+        }
+        
+        .announcements-header {
+            padding: 12px;
+            flex-direction: row;
+            gap: 8px;
+        }
+        
+        .announcement-item {
+            min-height: 50px;
+            flex-direction: row;
+            align-items: center;
+        }
+        
+        .announcement-date {
+            margin-left: 8px;
+            align-self: center;
+        }
+    }
+
+    /* Touch device optimizations */
+    @media (hover: none) and (pointer: coarse) {
+        .announcement-item:hover {
+            background: #fdfdfd;
+        }
+        
+        .tab-btn {
+            min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        .carousel-btn {
+            min-width: 44px;
+            min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        .indicator {
+            min-width: 20px;
+            min-height: 20px;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        /* Improve scrolling on touch devices */
+        .announcement-content-wrapper,
+        .tab-content {
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+        }
+        
+        .announcements-tabs {
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+        }
+    }
+
+    /* Insight Cards Hover */
+    .insight-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .insight-card:hover {
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .insight-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.1);
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .insight-card:hover::after {
+        opacity: 1;
+    }
+
+    /* Insight Modal Styles */
+    .insight-modal-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .insight-modal-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--keka-border);
+        transition: background 0.2s;
+        cursor: pointer;
+    }
+
+    .insight-modal-item:last-child {
+        border-bottom: none;
+    }
+
+    .insight-modal-item:hover {
+        background: #f8fafc;
+    }
+
+    .insight-employee-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--keka-primary), var(--keka-purple));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        margin-right: 12px;
+    }
+
+    .insight-employee-info {
+        flex: 1;
+    }
+
+    .insight-employee-name {
+        font-weight: 600;
+        color: var(--keka-text-primary);
+        font-size: 14px;
+    }
+
+    .insight-employee-dept {
+        font-size: 12px;
+        color: var(--keka-text-secondary);
+    }
+
+    .insight-time {
+        font-size: 12px;
+        color: var(--keka-primary);
+        font-weight: 600;
+        background: rgba(91, 71, 251, 0.05);
+        padding: 4px 8px;
+        border-radius: 6px;
+    }
 </style>
 {% endblock %}
 
@@ -971,8 +1629,9 @@
                 </div>
                 <div class="vstack gap-3">
                     <!-- Late Arrivals -->
-                    <div class="p-3 rounded-3 d-flex justify-content-between align-items-center"
-                        style="background: #fffbeb; border: 1px solid #fef3c7;">
+                    <div class="p-3 rounded-3 d-flex justify-content-between align-items-center insight-card"
+                        onclick="showInsightDetails('Late Arrivals', 'late')"
+                        style="background: #fffbeb; border: 1px solid #fef3c7; cursor: pointer;">
                         <div>
                             <div class="h3 fw-bold mb-1 text-warning">{{ late_arrivals }}</div>
                             <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.7rem;">Late
@@ -985,8 +1644,9 @@
                     </div>
 
                     <!-- Early Departures -->
-                    <div class="p-3 rounded-3 d-flex justify-content-between align-items-center"
-                        style="background: #eff6ff; border: 1px solid #dbeafe;">
+                    <div class="p-3 rounded-3 d-flex justify-content-between align-items-center insight-card"
+                        onclick="showInsightDetails('Early Departures', 'early')"
+                        style="background: #eff6ff; border: 1px solid #dbeafe; cursor: pointer;">
                         <div>
                             <div class="h3 fw-bold mb-1 text-primary">{{ early_departures }}</div>
                             <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.7rem;">Early
@@ -999,8 +1659,9 @@
                     </div>
 
                     <!-- On Duty -->
-                    <div class="p-3 rounded-3 d-flex justify-content-between align-items-center"
-                        style="background: #ecfeff; border: 1px solid #cffafe;">
+                    <div class="p-3 rounded-3 d-flex justify-content-between align-items-center insight-card"
+                        onclick="showInsightDetails('On Duty', 'onduty')"
+                        style="background: #ecfeff; border: 1px solid #cffafe; cursor: pointer;">
                         <div>
                             <div class="h3 fw-bold mb-1 text-info">{{ on_duty_count }}</div>
                             <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.7rem;">On Duty
@@ -1020,11 +1681,13 @@
             <div class="announcements-card">
                 <div class="announcements-header">
                     <h3 class="announcements-title"><i class="fas fa-bullhorn"></i> Announcements</h3>
-                    <div class="announcements-tabs">
-                        <button class="tab-btn active" onclick="switchTab('announcements')">Announcements</button>
-                        <button class="tab-btn" onclick="switchTab('birthdays')">Birthdays</button>
-                        <button class="tab-btn" onclick="switchTab('anniv')">Work Anniv.</button>
-                        <button class="tab-btn" onclick="switchTab('holidays')">Holidays</button>
+                    <div class="announcements-tabs-wrapper">
+                        <div class="announcements-tabs">
+                            <button class="tab-btn active" onclick="switchTab('announcements')">Announcements</button>
+                            <button class="tab-btn" onclick="switchTab('birthdays')">Birthdays</button>
+                            <button class="tab-btn" onclick="switchTab('anniv')">Work Anniv.</button>
+                            <button class="tab-btn" onclick="switchTab('holidays')">Holidays</button>
+                        </div>
                     </div>
                 </div>
 
@@ -1102,22 +1765,24 @@
                         {% if upcoming_birthdays %}
                         {% for birthday in upcoming_birthdays %}
                         <div class="announcement-item">
-                            <div class="announcement-icon" style="background: #fef3c7; color: #f59e0b;">
-                                <i class="fas fa-birthday-cake"></i>
-                            </div>
-                            <div class="announcement-details">
-                                <div class="announcement-text">{{ birthday.employee.user.get_full_name }}</div>
-                                <div class="announcement-subtext">
-                                    {{ birthday.employee.designation|default:"N/A" }} • {{ birthday.employee.department|default:"N/A" }}
+                            <div class="announcement-item-header">
+                                <div class="announcement-icon" style="background: #fef3c7; color: #f59e0b;">
+                                    <i class="fas fa-birthday-cake"></i>
+                                </div>
+                                <div class="announcement-details">
+                                    <div class="announcement-text">{{ birthday.employee.user.get_full_name }}</div>
+                                    <div class="announcement-subtext">
+                                        {{ birthday.employee.designation|default:"N/A" }} • {{ birthday.employee.department|default:"N/A" }}
+                                    </div>
                                 </div>
                             </div>
                             <div class="announcement-date">
                                 {% if birthday.is_today %}
-                                    Today!
+                                Today!
                                 {% elif birthday.days_left == 1 %}
-                                    Tomorrow
+                                Tomorrow
                                 {% else %}
-                                    in {{ birthday.days_left }} days
+                                in {{ birthday.days_left }} days
                                 {% endif %}
                             </div>
                         </div>
@@ -1135,22 +1800,24 @@
                         {% if upcoming_anniversaries %}
                         {% for anniversary in upcoming_anniversaries %}
                         <div class="announcement-item">
-                            <div class="announcement-icon" style="background: #e0e7ff; color: #6366f1;">
-                                <i class="fas fa-award"></i>
-                            </div>
-                            <div class="announcement-details">
-                                <div class="announcement-text">{{ anniversary.employee.user.get_full_name }}</div>
-                                <div class="announcement-subtext">
-                                    {{ anniversary.employee.designation|default:"N/A" }} • {{ anniversary.employee.department|default:"N/A" }} • {{ anniversary.years }} year{{ anniversary.years|pluralize }}
+                            <div class="announcement-item-header">
+                                <div class="announcement-icon" style="background: #e0e7ff; color: #6366f1;">
+                                    <i class="fas fa-award"></i>
+                                </div>
+                                <div class="announcement-details">
+                                    <div class="announcement-text">{{ anniversary.employee.user.get_full_name }}</div>
+                                    <div class="announcement-subtext">
+                                        {{ anniversary.employee.designation|default:"N/A" }} • {{ anniversary.employee.department|default:"N/A" }} • {{ anniversary.years }} year{{ anniversary.years|pluralize }}
+                                    </div>
                                 </div>
                             </div>
                             <div class="announcement-date">
                                 {% if anniversary.is_today %}
-                                    Today!
+                                Today!
                                 {% elif anniversary.days_left == 1 %}
-                                    Tomorrow
+                                Tomorrow
                                 {% else %}
-                                    in {{ anniversary.days_left }} days
+                                in {{ anniversary.days_left }} days
                                 {% endif %}
                             </div>
                         </div>
@@ -1168,13 +1835,15 @@
                         {% if upcoming_holidays %}
                         {% for holiday in upcoming_holidays %}
                         <div class="announcement-item">
-                            <div class="announcement-icon" style="background: #d1fae5; color: #059669;">
-                                <i class="fas fa-umbrella-beach"></i>
-                            </div>
-                            <div class="announcement-details">
-                                <div class="announcement-text">{{ holiday.name }}</div>
-                                <div class="announcement-subtext">
-                                    {{ holiday.get_location_display }} • {{ holiday.get_holiday_type_display }}
+                            <div class="announcement-item-header">
+                                <div class="announcement-icon" style="background: #d1fae5; color: #059669;">
+                                    <i class="fas fa-umbrella-beach"></i>
+                                </div>
+                                <div class="announcement-details">
+                                    <div class="announcement-text">{{ holiday.name }}</div>
+                                    <div class="announcement-subtext">
+                                        {{ holiday.get_location_display }} • {{ holiday.get_holiday_type_display }}
+                                    </div>
                                 </div>
                             </div>
                             <div class="announcement-date">
@@ -1203,8 +1872,8 @@
                     <i class="fas fa-building me-2 text-primary"></i> Department Performance (Present %)
                 </div>
 
-                <div class="table-responsive">
-                    <table class="table table-borderless align-middle">
+                <div class="department-performance-container">
+                    <table class="table table-borderless align-middle department-performance-table">
                         <thead class="text-muted small text-uppercase fw-bold"
                             style="border-bottom: 1px solid #f3f4f6;">
                             <tr>
@@ -1221,15 +1890,16 @@
                                 <td class="text-center text-muted">{{ dept.present }}</td>
                                 <td class="text-center text-muted">{{ dept.total }}</td>
                                 <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div class="progress flex-grow-1"
-                                            style="height: 6px; background-color: #f3f4f6;">
-                                            <div class="progress-bar rounded-pill" role="progressbar"
-                                                style="width: {{ dept.percentage }}%; background-color: var(--keka-primary);"
-                                                aria-valuenow="{{ dept.percentage }}" aria-valuemin="0"
+                                    <div class="department-progress-container">
+                                        <div class="department-progress-bar">
+                                            <div class="department-progress-fill" 
+                                                style="width: {{ dept.percentage }}%;"
+                                                role="progressbar"
+                                                aria-valuenow="{{ dept.percentage }}" 
+                                                aria-valuemin="0"
                                                 aria-valuemax="100"></div>
                                         </div>
-                                        <span class="small fw-bold text-dark">{{ dept.percentage }}%</span>
+                                        <span class="department-percentage">{{ dept.percentage }}%</span>
                                     </div>
                                 </td>
                             </tr>
@@ -1367,9 +2037,101 @@
             </div>
         </div>
     </div>
+
+    <!-- Insight Details Modal -->
+    <div class="modal fade" id="insightModal" tabindex="-1" aria-labelledby="insightModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark" id="insightModalLabel">Insight Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-3">
+                    <div id="insightModalContent">
+                        <!-- Content will be populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
+    // Insight Modal Logic
+    const insightData = {
+        late: [
+            {% for att in late_arrivals_list %}
+    {
+        name: "{{ att.employee.user.get_full_name }}",
+            designation: "{{ att.employee.designation|default:'N/A' }}",
+                dept: "{{ att.employee.department|default:'N/A' }}",
+                    time: "{{ att.clock_in|time:'h:i A' }}",
+                        id: "{{ att.employee.id }}",
+                            initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
+    } {% if not forloop.last %}, {% endif %}
+    {% endfor %}
+        ],
+    early: [
+        {% for att in early_departures_list %}
+    {
+        name: "{{ att.employee.user.get_full_name }}",
+            designation: "{{ att.employee.designation|default:'N/A' }}",
+                dept: "{{ att.employee.department|default:'N/A' }}",
+                    time: "{{ att.clock_out|time:'h:i A' }}",
+                        id: "{{ att.employee.id }}",
+                            initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
+    } {% if not forloop.last %}, {% endif %}
+    {% endfor %}
+        ],
+    onduty: [
+        {% for att in on_duty_list %}
+    {
+        name: "{{ att.employee.user.get_full_name }}",
+            designation: "{{ att.employee.designation|default:'N/A' }}",
+                dept: "{{ att.employee.department|default:'N/A' }}",
+                    time: "{% if att.clock_in %}{{ att.clock_in|time:'h:i A' }}{% else %}N/A{% endif %}",
+                        id: "{{ att.employee.id }}",
+                            initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
+    } {% if not forloop.last %}, {% endif %}
+    {% endfor %}
+        ]
+    };
+
+    function showInsightDetails(title, type) {
+        const modal = new bootstrap.Modal(document.getElementById('insightModal'));
+        document.getElementById('insightModalLabel').innerText = title;
+
+        const container = document.getElementById('insightModalContent');
+        const data = insightData[type];
+
+        if (!data || data.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-user-slash mb-3" style="font-size: 3rem; opacity: 0.2;"></i>
+                    <p>No employees found for this category</p>
+                </div>
+            `;
+        } else {
+            let html = '<div class="insight-modal-list">';
+            data.forEach(item => {
+                html += `
+                    <div class="insight-modal-item" onclick="window.location.href='/employees/${item.id}/detail/'">
+                        <div class="insight-employee-avatar">${item.initials.toUpperCase()}</div>
+                        <div class="insight-employee-info">
+                            <div class="insight-employee-name">${item.name}</div>
+                            <div class="insight-employee-dept">${item.designation}</div>
+                        </div>
+                        <div class="insight-time">${item.time}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        modal.show();
+    }
+
     // Real-time auto-refresh
     let refreshInterval;
 
@@ -1577,21 +2339,201 @@
     // Auto-rotate tabs occasionally if user is idle? Maybe too distracting.
     // Let's keep it manual for now as requested "advance css js" implies sleekness not necessarily chaos.
 
-    // Announcement Carousel Logic for Admin Dashboard
-    let currentAdminAnnouncementIndex = 0;
-    function rotateAdminAnnouncement() {
-        const container = document.getElementById('tab-announcements');
-        const slides = container.querySelectorAll('.announcement-slide');
-        if (slides.length < 2) return;
+    // Announcement Carousel Logic
+    let currentAnnouncementIndex = 0;
 
-        // Hide current
-        slides[currentAdminAnnouncementIndex].classList.add('d-none');
+    function updateCarousel() {
+        const slides = document.querySelectorAll('.announcement-slide');
+        if (!slides.length) return;
 
-        // Next index
-        currentAdminAnnouncementIndex = (currentAdminAnnouncementIndex + 1) % slides.length;
+        slides.forEach((slide, index) => {
+            if (index === currentAnnouncementIndex) {
+                slide.classList.remove('d-none');
 
-        // Show next
-        slides[currentAdminAnnouncementIndex].classList.remove('d-none');
+                // Update indicators for this slide's control bar
+                const indicators = slide.querySelectorAll('.indicator');
+                indicators.forEach((ind, i) => {
+                    if (i === currentAnnouncementIndex) {
+                        ind.classList.add('active');
+                    } else {
+                        ind.classList.remove('active');
+                    }
+                });
+            } else {
+                slide.classList.add('d-none');
+            }
+        });
     }
+
+    function nextAnnouncement() {
+        const slides = document.querySelectorAll('.announcement-slide');
+        if (!slides.length) return;
+
+        currentAnnouncementIndex = (currentAnnouncementIndex + 1) % slides.length;
+        updateCarousel();
+    }
+
+    function previousAnnouncement() {
+        const slides = document.querySelectorAll('.announcement-slide');
+        if (!slides.length) return;
+
+        currentAnnouncementIndex = (currentAnnouncementIndex - 1 + slides.length) % slides.length;
+        updateCarousel();
+    }
+
+    // Optional: Auto-rotate specific logic if needed, but manual control is often preferred for announcements
+    // function autoRotateAnnouncements() {
+    //     setInterval(() => {
+    //         nextAnnouncement();
+    //     }, 5000);
+    // }
+
+    // Enhanced scrolling behavior for announcements
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add smooth scrolling behavior to tab content
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabContents.forEach(content => {
+            content.style.scrollBehavior = 'smooth';
+        });
+
+        // Add touch scroll indicators for mobile
+        const announcementWrapper = document.querySelector('.announcement-content-wrapper');
+        if (announcementWrapper) {
+            let isScrolling = false;
+            
+            announcementWrapper.addEventListener('scroll', function() {
+                if (!isScrolling) {
+                    isScrolling = true;
+                    this.classList.add('scrolling');
+                    
+                    // Remove scrolling class after scroll ends
+                    clearTimeout(this.scrollTimeout);
+                    this.scrollTimeout = setTimeout(() => {
+                        this.classList.remove('scrolling');
+                        isScrolling = false;
+                    }, 150);
+                }
+            });
+        }
+
+        // Enhanced tab scrolling for mobile
+        const tabsWrapper = document.querySelector('.announcements-tabs-wrapper');
+        if (tabsWrapper) {
+            let scrollIndicatorTimeout;
+            
+            // Add scroll indicator on mobile
+            if (window.innerWidth <= 768) {
+                const tabs = tabsWrapper.querySelector('.announcements-tabs');
+                if (tabs.scrollWidth > tabs.clientWidth) {
+                    tabs.classList.add('has-scroll');
+                    
+                    // Add scroll event listener
+                    tabs.addEventListener('scroll', function() {
+                        clearTimeout(scrollIndicatorTimeout);
+                        this.classList.add('scrolling');
+                        
+                        scrollIndicatorTimeout = setTimeout(() => {
+                            this.classList.remove('scrolling');
+                        }, 1000);
+                    });
+                }
+            }
+        }
+
+        // Optimize carousel controls for touch devices
+        const carouselBtns = document.querySelectorAll('.carousel-btn');
+        carouselBtns.forEach(btn => {
+            btn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                this.classList.add('touch-active');
+            });
+            
+            btn.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                this.classList.remove('touch-active');
+                this.click();
+            });
+        });
+
+        // Add keyboard navigation for accessibility
+        document.addEventListener('keydown', function(e) {
+            if (e.target.closest('.announcements-card')) {
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    previousAnnouncement();
+                } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    nextAnnouncement();
+                }
+            }
+        });
+
+        // Auto-adjust announcement height based on content
+        function adjustAnnouncementHeight() {
+            const announcementCards = document.querySelectorAll('.announcements-card');
+            announcementCards.forEach(card => {
+                const header = card.querySelector('.announcements-header');
+                const body = card.querySelector('.announcements-body');
+                
+                if (header && body) {
+                    const headerHeight = header.offsetHeight;
+                    const availableHeight = card.offsetHeight - headerHeight;
+                    body.style.height = `${availableHeight}px`;
+                }
+            });
+        }
+
+        // Adjust on load and resize
+        adjustAnnouncementHeight();
+        window.addEventListener('resize', adjustAnnouncementHeight);
+
+        // Department Performance Table Scroll Handling
+        const deptContainer = document.querySelector('.department-performance-container');
+        if (deptContainer) {
+            let scrollTimeout;
+            
+            deptContainer.addEventListener('scroll', function() {
+                // Add scrolled class to hide scroll indicator
+                this.classList.add('scrolled');
+                
+                // Remove scrolled class after scroll ends
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(() => {
+                    this.classList.remove('scrolled');
+                }, 2000);
+            });
+            
+            // Add touch feedback for mobile
+            if (window.innerWidth <= 768) {
+                deptContainer.addEventListener('touchstart', function() {
+                    this.style.boxShadow = '0 4px 25px rgba(91, 71, 251, 0.15)';
+                });
+                
+                deptContainer.addEventListener('touchend', function() {
+                    setTimeout(() => {
+                        this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                    }, 200);
+                });
+            }
+        }
+
+        // Animate progress bars on load
+        function animateProgressBars() {
+            const progressBars = document.querySelectorAll('.department-progress-fill');
+            progressBars.forEach((bar, index) => {
+                const width = bar.style.width;
+                bar.style.width = '0%';
+                
+                setTimeout(() => {
+                    bar.style.transition = 'width 1s ease-out';
+                    bar.style.width = width;
+                }, index * 200);
+            });
+        }
+        
+        // Animate progress bars after a short delay
+        setTimeout(animateProgressBars, 500);
+    });
+
 </script>
 {% endblock %}

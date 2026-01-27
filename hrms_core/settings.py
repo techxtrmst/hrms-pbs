@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+
 import environ
 
 # Initialize environment variables
@@ -39,7 +40,7 @@ SECRET_KEY = env("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DEBUG")
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "testserver"])
 
 # CSRF Configuration
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
@@ -103,6 +104,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "core.context_processors.notification_count",  # Notification count for admins/managers
             ],
         },
     },
@@ -170,9 +172,7 @@ MEDIA_ROOT = env("MEDIA_ROOT", default=BASE_DIR / "media")
 AUTH_USER_MODEL = "accounts.User"
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
 }
 
@@ -195,9 +195,7 @@ LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "login"
 
 # Email Configuration for Birthday/Anniversary Notifications
-EMAIL_BACKEND = env(
-    "EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend"
-)
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = env("EMAIL_HOST", default="smtp.office365.com")
 EMAIL_PORT = env.int("EMAIL_PORT", default=587)
 EMAIL_USE_TLS = env("EMAIL_USE_TLS")
@@ -215,6 +213,9 @@ POSTHOG_ENABLED = env("POSTHOG_ENABLED")
 # Logging Configuration
 LOG_LEVEL = env("LOG_LEVEL", default="DEBUG" if DEBUG else "INFO")
 LOG_DIR = env("LOG_DIR", default=str(BASE_DIR / "_logs"))
+
+# OpenAI Configuration
+OPENAI_API_KEY = env("OPENAI_API_KEY", default=None)
 
 # Initialize Loguru logging (only once)
 from hrms_core.logging_config import initialize_logging, setup_django_logging

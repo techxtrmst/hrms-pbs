@@ -1,17 +1,20 @@
-from django.shortcuts import render, redirect
+import json
+
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
-from django.contrib import messages
-from .models import AttritionRisk, ResumeParsingJob, ChatMessage
+from loguru import logger
+
+from core.error_handling import safe_get_employee_profile
+from employees.models import Employee
+
 from .ai_utils import AttritionPredictor, HRChatbot
 from .attendance_intelligence import AttendanceIntelligence
 from .leave_prediction import LeavePrediction
+from .models import AttritionRisk, ChatMessage, ResumeParsingJob
 from .smart_notifications import SmartNotifications
-from employees.models import Employee
-from loguru import logger
-from core.error_handling import safe_get_employee_profile, capture_exception
-import json
 
 
 @login_required
@@ -19,7 +22,11 @@ def ai_features_hub(request):
     """
     AI Features Hub - Shows all available AI features
     """
-    is_manager = request.user.is_staff or request.user.is_superuser
+    is_manager = (
+        request.user.is_staff
+        or request.user.is_superuser
+        or getattr(request.user, "role", "") in ["MANAGER", "COMPANY_ADMIN"]
+    )
 
     context = {"is_manager": is_manager}
 
@@ -31,7 +38,11 @@ def attrition_dashboard(request):
     """
     Display attrition risk dashboard for managers/admins
     """
-    if not (request.user.is_staff or request.user.is_superuser):
+    if not (
+        request.user.is_staff
+        or request.user.is_superuser
+        or getattr(request.user, "role", "") in ["MANAGER", "COMPANY_ADMIN"]
+    ):
         messages.error(request, "You don't have permission to access this page.")
         return redirect("dashboard")
 
@@ -47,10 +58,11 @@ def attrition_dashboard(request):
         risk_obj, created = AttritionRisk.objects.get_or_create(employee=emp)
 
         # Recalculate if older than 7 days or newly created
-        from django.utils import timezone
         from datetime import timedelta
 
-        if created or (timezone.now() - risk_obj.last_updated) > timedelta(days=7):
+        from django.utils import timezone
+
+        if created or (timezone.now() - risk_obj.last_updated) > timedelta(hours=1):
             risk_result = AttritionPredictor.calculate_risk_score(emp)
             risk_obj.risk_score = risk_result["score"]
             risk_obj.risk_level = risk_result["risk_level"]
@@ -117,9 +129,7 @@ def chatbot_query(request):
             role = "MANAGER"
 
         # Get response from chatbot
-        bot_response = HRChatbot.get_response(
-            question, employee, role=role, request=request
-        )
+        bot_response = HRChatbot.get_response(question, employee, role=role, request=request)
 
         # Extract answer from response
         if isinstance(bot_response, dict):
@@ -133,9 +143,7 @@ def chatbot_query(request):
 
         # Save chat history
         try:
-            ChatMessage.objects.create(
-                user=request.user, user_message=question, bot_response=response_text
-            )
+            ChatMessage.objects.create(user=request.user, user_message=question, bot_response=response_text)
         except Exception as e:
             print(f"Error saving chat history: {e}")
 
@@ -161,7 +169,7 @@ def resume_parser_view(request):
     """
     Enhanced resume parser interface with comprehensive data extraction
     """
-    if not (request.user.is_staff or request.user.is_superuser):
+    if not (request.user.is_staff or request.user.is_superuser or getattr(request.user, "role", "") == "COMPANY_ADMIN"):
         messages.error(request, "You don't have permission to access this page.")
         return redirect("dashboard")
 
@@ -223,9 +231,7 @@ def resume_parser_view(request):
 
             # Check for duplicates
             duplicate = (
-                ResumeParsingJob.objects.filter(
-                    duplicate_check_hash=job.duplicate_check_hash, status="PROCESSED"
-                )
+                ResumeParsingJob.objects.filter(duplicate_check_hash=job.duplicate_check_hash, status="PROCESSED")
                 .exclude(id=job.id)
                 .first()
             )
@@ -237,9 +243,7 @@ def resume_parser_view(request):
             # Also check by email/phone
             if job.parsed_email or job.parsed_phone:
                 email_duplicate = (
-                    ResumeParsingJob.objects.filter(
-                        parsed_email=job.parsed_email, status="PROCESSED"
-                    )
+                    ResumeParsingJob.objects.filter(parsed_email=job.parsed_email, status="PROCESSED")
                     .exclude(id=job.id)
                     .first()
                     if job.parsed_email
@@ -247,9 +251,7 @@ def resume_parser_view(request):
                 )
 
                 phone_duplicate = (
-                    ResumeParsingJob.objects.filter(
-                        parsed_phone=job.parsed_phone, status="PROCESSED"
-                    )
+                    ResumeParsingJob.objects.filter(parsed_phone=job.parsed_phone, status="PROCESSED")
                     .exclude(id=job.id)
                     .first()
                     if job.parsed_phone
@@ -279,7 +281,7 @@ def resume_parser_result(request, job_id):
     """
     Display parsed resume results
     """
-    if not (request.user.is_staff or request.user.is_superuser):
+    if not (request.user.is_staff or request.user.is_superuser or getattr(request.user, "role", "") == "COMPANY_ADMIN"):
         messages.error(request, "You don't have permission to access this page.")
         return redirect("dashboard")
 
@@ -299,7 +301,11 @@ def employee_risk_detail(request, employee_id):
     """
     Show detailed risk analysis for a specific employee
     """
-    if not (request.user.is_staff or request.user.is_superuser):
+    if not (
+        request.user.is_staff
+        or request.user.is_superuser
+        or getattr(request.user, "role", "") in ["MANAGER", "COMPANY_ADMIN"]
+    ):
         messages.error(request, "You don't have permission to access this page.")
         return redirect("dashboard")
 
@@ -320,7 +326,11 @@ def attendance_intelligence_dashboard(request):
     """
     AI Attendance Intelligence Dashboard
     """
-    if not (request.user.is_staff or request.user.is_superuser):
+    if not (
+        request.user.is_staff
+        or request.user.is_superuser
+        or getattr(request.user, "role", "") in ["MANAGER", "COMPANY_ADMIN"]
+    ):
         messages.error(request, "You don't have permission to access this page.")
         return redirect("dashboard")
 
@@ -342,7 +352,11 @@ def employee_attendance_detail(request, employee_id):
     """
     Detailed attendance analysis for a specific employee
     """
-    if not (request.user.is_staff or request.user.is_superuser):
+    if not (
+        request.user.is_staff
+        or request.user.is_superuser
+        or getattr(request.user, "role", "") in ["MANAGER", "COMPANY_ADMIN"]
+    ):
         messages.error(request, "You don't have permission to access this page.")
         return redirect("dashboard")
 
@@ -365,7 +379,11 @@ def leave_prediction_dashboard(request):
     """
     AI Leave Prediction Dashboard
     """
-    if not (request.user.is_staff or request.user.is_superuser):
+    if not (
+        request.user.is_staff
+        or request.user.is_superuser
+        or getattr(request.user, "role", "") in ["MANAGER", "COMPANY_ADMIN"]
+    ):
         messages.error(request, "You don't have permission to access this page.")
         return redirect("dashboard")
 
@@ -428,7 +446,11 @@ def smart_notifications_dashboard(request):
 
     # Get manager alerts if user is a manager
     manager_alerts = []
-    if request.user.is_staff or request.user.is_superuser:
+    if (
+        request.user.is_staff
+        or request.user.is_superuser
+        or getattr(request.user, "role", "") in ["MANAGER", "COMPANY_ADMIN"]
+    ):
         manager_alerts = SmartNotifications.get_all_alerts_for_manager(request.user)
 
     # Get daily digest
@@ -459,7 +481,11 @@ def get_notifications_api(request):
 
     # Get manager alerts if applicable
     manager_alerts = []
-    if request.user.is_staff or request.user.is_superuser:
+    if (
+        request.user.is_staff
+        or request.user.is_superuser
+        or getattr(request.user, "role", "") in ["MANAGER", "COMPANY_ADMIN"]
+    ):
         manager_alerts = SmartNotifications.get_all_alerts_for_manager(request.user)
 
     return JsonResponse(
@@ -477,7 +503,11 @@ def performance_insights_dashboard(request):
     """
     AI Performance Insights Dashboard for Managers
     """
-    if not (request.user.is_staff or request.user.is_superuser):
+    if not (
+        request.user.is_staff
+        or request.user.is_superuser
+        or getattr(request.user, "role", "") in ["MANAGER", "COMPANY_ADMIN"]
+    ):
         messages.error(request, "You don't have permission to access this page.")
         return redirect("dashboard")
 
@@ -490,9 +520,7 @@ def performance_insights_dashboard(request):
 
     for emp in employees:
         # Get attendance analysis
-        attendance_analysis = AttendanceIntelligence.analyze_employee_patterns(
-            emp, days=30
-        )
+        attendance_analysis = AttendanceIntelligence.analyze_employee_patterns(emp, days=30)
 
         # Get leave patterns
         leave_patterns = LeavePrediction.analyze_leave_patterns(emp, months=3)
@@ -567,9 +595,7 @@ def chatbot_query_floating(request):
             )
 
         # Get response from centralized HRChatbot
-        bot_response = HRChatbot.get_response(
-            query, employee, role=role, request=request
-        )
+        bot_response = HRChatbot.get_response(query, employee, role=role, request=request)
 
         # Extract plain text answer for the floating widget
         if isinstance(bot_response, dict):
@@ -581,9 +607,7 @@ def chatbot_query_floating(request):
 
         # Save chat history
         try:
-            ChatMessage.objects.create(
-                user=request.user, user_message=query, bot_response=response_text
-            )
+            ChatMessage.objects.create(user=request.user, user_message=query, bot_response=response_text)
         except Exception as e:
             logger.warning("Error saving chat history", error=str(e))
 

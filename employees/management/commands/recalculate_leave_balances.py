@@ -138,10 +138,5 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(f'\nSuccessfully fixed {fixed_count} employee leave balances.'))
 
     def is_probation_employee(self, employee):
-        """Check if employee is still in probation period (first 90 days)"""
-        if not employee.date_of_joining:
-            return False
-            
-        from datetime import timedelta
-        probation_end = employee.date_of_joining + timedelta(days=90)
-        return date.today() <= probation_end
+        """Check if employee is still in probation period (3 months from joining)"""
+        return not employee.is_probation_completed()

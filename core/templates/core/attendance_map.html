@@ -61,6 +61,7 @@
         z-index: 20;
         box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
         flex-shrink: 0;
+        transition: transform 0.3s ease;
     }
 
     .map-header {
@@ -77,6 +78,8 @@
         margin: 0;
         letter-spacing: 0.5px;
         line-height: 1.4;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
 
     .timeline-container {
@@ -117,16 +120,19 @@
         display: flex;
         justify-content: flex-start;
         padding-top: 2px;
+        flex-shrink: 0;
     }
 
     .timeline-info-col {
         flex: 1;
         padding-left: 4px;
+        min-width: 0;
     }
 
     .timeline-badge-col {
         margin-left: auto;
         padding-left: 12px;
+        flex-shrink: 0;
     }
 
     .timeline-time {
@@ -141,6 +147,8 @@
         color: #94a3b8;
         margin-top: 4px;
         font-family: monospace;
+        word-break: break-all;
+        overflow-wrap: break-word;
     }
 
     /* Badges (A, R, 1) */
@@ -155,6 +163,7 @@
         align-items: center;
         justify-content: center;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        flex-shrink: 0;
     }
 
     .bg-indigo {
@@ -226,13 +235,558 @@
         transform: translateY(-1px);
         box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
     }
+
+    /* Mobile Toggle Button */
+    .mobile-sidebar-toggle {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 1001;
+        background: white;
+        border: 1px solid #e2e8f0;
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #64748b;
+        font-size: 18px;
+        transition: all 0.2s;
+    }
+
+    .mobile-sidebar-toggle:hover {
+        background: #f8fafc;
+        color: var(--keka-blue);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Mobile Overlay */
+    .mobile-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 15;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .mobile-overlay.show {
+        opacity: 1;
+    }
+
+    /* === RESPONSIVE DESIGN === */
+
+    /* Large Desktop (1400px+) */
+    @media (min-width: 1400px) {
+        :root {
+            --keka-sidebar-width: 380px;
+        }
+        
+        .map-header {
+            padding: 28px;
+        }
+        
+        .map-header h5 {
+            font-size: 14px;
+        }
+        
+        .timeline-container {
+            padding: 28px 0;
+        }
+        
+        .timeline-item {
+            padding: 14px 28px;
+        }
+        
+        .timeline-section-title {
+            padding: 0 28px 14px;
+            font-size: 12px;
+        }
+        
+        .timeline-time {
+            font-size: 15px;
+        }
+        
+        .timeline-coords {
+            font-size: 12px;
+        }
+        
+        .badge-circle {
+            width: 32px;
+            height: 32px;
+            font-size: 13px;
+        }
+    }
+
+    /* Desktop (1200px - 1399px) */
+    @media (max-width: 1399px) and (min-width: 1200px) {
+        :root {
+            --keka-sidebar-width: 350px;
+        }
+    }
+
+    /* Laptop (992px - 1199px) */
+    @media (max-width: 1199px) and (min-width: 992px) {
+        :root {
+            --keka-sidebar-width: 320px;
+        }
+        
+        .map-header {
+            padding: 20px;
+        }
+        
+        .map-header h5 {
+            font-size: 12px;
+        }
+        
+        .timeline-container {
+            padding: 20px 0;
+        }
+        
+        .timeline-item {
+            padding: 10px 20px;
+        }
+        
+        .timeline-section-title {
+            padding: 0 20px 10px;
+        }
+    }
+
+    /* Tablet (768px - 991px) */
+    @media (max-width: 991px) and (min-width: 768px) {
+        :root {
+            --keka-sidebar-width: 280px;
+        }
+        
+        .map-header {
+            padding: 16px;
+        }
+        
+        .map-header h5 {
+            font-size: 11px;
+            line-height: 1.3;
+        }
+        
+        .timeline-container {
+            padding: 16px 0;
+        }
+        
+        .timeline-item {
+            padding: 8px 16px;
+        }
+        
+        .timeline-section-title {
+            padding: 0 16px 8px;
+            font-size: 10px;
+        }
+        
+        .timeline-time {
+            font-size: 13px;
+        }
+        
+        .timeline-coords {
+            font-size: 10px;
+        }
+        
+        .badge-circle {
+            width: 24px;
+            height: 24px;
+            font-size: 11px;
+        }
+        
+        .btn-close-view {
+            width: 36px;
+            height: 36px;
+            font-size: 14px;
+        }
+    }
+
+    /* Mobile Large (576px - 767px) */
+    @media (max-width: 767px) {
+        .map-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 280px;
+            transform: translateX(-100%);
+            z-index: 25;
+        }
+        
+        .map-sidebar.show {
+            transform: translateX(0);
+        }
+        
+        .map-wrapper {
+            width: 100%;
+        }
+        
+        .mobile-sidebar-toggle {
+            display: flex;
+        }
+        
+        .mobile-overlay.show {
+            display: block;
+        }
+        
+        .map-header {
+            padding: 16px;
+        }
+        
+        .map-header h5 {
+            font-size: 11px;
+            line-height: 1.3;
+        }
+        
+        .timeline-container {
+            padding: 16px 0;
+        }
+        
+        .timeline-item {
+            padding: 10px 16px;
+        }
+        
+        .timeline-section-title {
+            padding: 0 16px 10px;
+            font-size: 10px;
+        }
+        
+        .timeline-time {
+            font-size: 13px;
+        }
+        
+        .timeline-coords {
+            font-size: 9px;
+        }
+        
+        .badge-circle {
+            width: 26px;
+            height: 26px;
+            font-size: 11px;
+        }
+        
+        .btn-close-view {
+            top: 16px;
+            right: 16px;
+            width: 40px;
+            height: 40px;
+        }
+    }
+
+    /* Mobile Medium (400px - 575px) */
+    @media (max-width: 575px) {
+        .map-sidebar {
+            width: 260px;
+        }
+        
+        .mobile-sidebar-toggle {
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+        }
+        
+        .map-header {
+            padding: 14px;
+        }
+        
+        .map-header h5 {
+            font-size: 10px;
+            line-height: 1.2;
+        }
+        
+        .timeline-container {
+            padding: 14px 0;
+        }
+        
+        .timeline-item {
+            padding: 8px 14px;
+        }
+        
+        .timeline-section-title {
+            padding: 0 14px 8px;
+            font-size: 9px;
+        }
+        
+        .timeline-time {
+            font-size: 12px;
+        }
+        
+        .timeline-coords {
+            font-size: 8px;
+            margin-top: 2px;
+        }
+        
+        .badge-circle {
+            width: 24px;
+            height: 24px;
+            font-size: 10px;
+        }
+        
+        .btn-close-view {
+            width: 36px;
+            height: 36px;
+            font-size: 14px;
+        }
+    }
+
+    /* Mobile Small (320px - 399px) */
+    @media (max-width: 399px) {
+        .map-sidebar {
+            width: 240px;
+        }
+        
+        .mobile-sidebar-toggle {
+            top: 12px;
+            left: 12px;
+            width: 36px;
+            height: 36px;
+            font-size: 14px;
+        }
+        
+        .map-header {
+            padding: 12px;
+        }
+        
+        .map-header h5 {
+            font-size: 9px;
+            line-height: 1.2;
+            word-break: break-word;
+        }
+        
+        .timeline-container {
+            padding: 12px 0;
+        }
+        
+        .timeline-item {
+            padding: 6px 12px;
+        }
+        
+        .timeline-section-title {
+            padding: 0 12px 6px;
+            font-size: 8px;
+        }
+        
+        .timeline-time {
+            font-size: 11px;
+        }
+        
+        .timeline-coords {
+            font-size: 7px;
+            margin-top: 1px;
+        }
+        
+        .badge-circle {
+            width: 22px;
+            height: 22px;
+            font-size: 9px;
+        }
+        
+        .timeline-icon-col {
+            width: 20px;
+        }
+        
+        .icon-check,
+        .icon-up,
+        .icon-down {
+            font-size: 12px;
+        }
+        
+        .btn-close-view {
+            top: 12px;
+            right: 12px;
+            width: 32px;
+            height: 32px;
+            font-size: 12px;
+        }
+    }
+
+    /* Ultra Small (240px - 319px) */
+    @media (max-width: 319px) {
+        .map-sidebar {
+            width: 220px;
+        }
+        
+        .mobile-sidebar-toggle {
+            top: 10px;
+            left: 10px;
+            width: 32px;
+            height: 32px;
+            font-size: 12px;
+        }
+        
+        .map-header {
+            padding: 10px;
+        }
+        
+        .map-header h5 {
+            font-size: 8px;
+            line-height: 1.1;
+            word-break: break-all;
+        }
+        
+        .timeline-container {
+            padding: 10px 0;
+        }
+        
+        .timeline-item {
+            padding: 5px 10px;
+        }
+        
+        .timeline-section-title {
+            padding: 0 10px 5px;
+            font-size: 7px;
+        }
+        
+        .timeline-time {
+            font-size: 10px;
+        }
+        
+        .timeline-coords {
+            font-size: 6px;
+            margin-top: 1px;
+        }
+        
+        .badge-circle {
+            width: 20px;
+            height: 20px;
+            font-size: 8px;
+        }
+        
+        .timeline-icon-col {
+            width: 18px;
+        }
+        
+        .icon-check,
+        .icon-up,
+        .icon-down {
+            font-size: 10px;
+        }
+        
+        .btn-close-view {
+            top: 10px;
+            right: 10px;
+            width: 28px;
+            height: 28px;
+            font-size: 10px;
+        }
+    }
+
+    /* Touch device optimizations */
+    @media (hover: none) and (pointer: coarse) {
+        .timeline-item {
+            min-height: 44px;
+            align-items: center;
+        }
+        
+        .mobile-sidebar-toggle,
+        .btn-close-view {
+            min-width: 44px;
+            min-height: 44px;
+        }
+        
+        .badge-circle {
+            min-width: 28px;
+            min-height: 28px;
+        }
+    }
+
+    /* High contrast mode */
+    @media (prefers-contrast: high) {
+        .map-sidebar,
+        .mobile-sidebar-toggle,
+        .btn-close-view {
+            border: 2px solid #000;
+        }
+        
+        .timeline-item:hover,
+        .timeline-item.active {
+            border: 1px solid #000;
+        }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+        .map-sidebar,
+        .mobile-overlay,
+        .mobile-sidebar-toggle,
+        .btn-close-view,
+        .timeline-item {
+            transition: none;
+        }
+    }
+
+    /* Landscape phone adjustments */
+    @media (max-width: 896px) and (orientation: landscape) and (max-height: 500px) {
+        .map-sidebar {
+            width: 240px;
+        }
+        
+        .map-header {
+            padding: 12px;
+        }
+        
+        .map-header h5 {
+            font-size: 10px;
+        }
+        
+        .timeline-container {
+            padding: 12px 0;
+        }
+        
+        .timeline-item {
+            padding: 6px 12px;
+        }
+        
+        .timeline-time {
+            font-size: 11px;
+        }
+        
+        .timeline-coords {
+            font-size: 8px;
+        }
+    }
+
+    /* Print styles */
+    @media print {
+        .mobile-sidebar-toggle,
+        .btn-close-view,
+        .mobile-overlay {
+            display: none;
+        }
+        
+        .map-sidebar {
+            position: static;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .map-view-wrapper {
+            position: static;
+            height: auto;
+        }
+        
+        #map {
+            height: 400px;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="map-view-wrapper">
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+    
     <!-- Sidebar -->
-    <div class="map-sidebar">
+    <div class="map-sidebar" id="mapSidebar">
         <!-- Header -->
         <div class="map-header">
             <h5>MAP VIEW - {{ attendance.date|date:"d M Y"|upper }} - {{ attendance.employee.user.get_full_name|upper }}
@@ -304,6 +858,13 @@
     <!-- Map -->
     <div class="map-wrapper">
         <div id="map"></div>
+        
+        <!-- Mobile Sidebar Toggle -->
+        <button class="mobile-sidebar-toggle" id="mobileSidebarToggle" title="Toggle Timeline">
+            <i class="fas fa-bars"></i>
+        </button>
+        
+        <!-- Close Button -->
         <a href="javascript:history.back()" class="btn-close-view" title="Close Map View">
             <i class="fas fa-times"></i>
         </a>
@@ -321,6 +882,9 @@
     let map;
 
     document.addEventListener('DOMContentLoaded', function () {
+        // Initialize mobile sidebar functionality
+        initializeMobileSidebar();
+        
         const locations = JSON.parse(document.getElementById('map-data').textContent);
 
         // Handle Empty State
@@ -436,7 +1000,101 @@
 
             map.fitBounds(polyline.getBounds(), { padding: [100, 100] });
         }
+
+        // Handle window resize for map
+        window.addEventListener('resize', function() {
+            if (map) {
+                setTimeout(function() {
+                    map.invalidateSize();
+                }, 100);
+            }
+        });
     });
+
+    // Mobile Sidebar Functionality
+    function initializeMobileSidebar() {
+        const sidebar = document.getElementById('mapSidebar');
+        const overlay = document.getElementById('mobileOverlay');
+        const toggle = document.getElementById('mobileSidebarToggle');
+
+        if (!sidebar || !overlay || !toggle) return;
+
+        // Toggle sidebar
+        toggle.addEventListener('click', function() {
+            const isOpen = sidebar.classList.contains('show');
+            
+            if (isOpen) {
+                closeMobileSidebar();
+            } else {
+                openMobileSidebar();
+            }
+        });
+
+        // Close on overlay click
+        overlay.addEventListener('click', function() {
+            closeMobileSidebar();
+        });
+
+        // Close on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeMobileSidebar();
+            }
+        });
+
+        // Handle timeline item clicks on mobile
+        const timelineItems = document.querySelectorAll('.timeline-item');
+        timelineItems.forEach(item => {
+            item.addEventListener('click', function() {
+                // Close sidebar on mobile after clicking timeline item
+                if (window.innerWidth <= 767) {
+                    setTimeout(() => {
+                        closeMobileSidebar();
+                    }, 500); // Small delay to allow map animation
+                }
+            });
+        });
+    }
+
+    function openMobileSidebar() {
+        const sidebar = document.getElementById('mapSidebar');
+        const overlay = document.getElementById('mobileOverlay');
+        const toggle = document.getElementById('mobileSidebarToggle');
+
+        sidebar.classList.add('show');
+        overlay.classList.add('show');
+        overlay.style.display = 'block';
+        
+        // Change toggle icon
+        const icon = toggle.querySelector('i');
+        icon.className = 'fas fa-times';
+        
+        // Prevent body scroll
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeMobileSidebar() {
+        const sidebar = document.getElementById('mapSidebar');
+        const overlay = document.getElementById('mobileOverlay');
+        const toggle = document.getElementById('mobileSidebarToggle');
+
+        sidebar.classList.remove('show');
+        overlay.classList.remove('show');
+        
+        // Change toggle icon back
+        const icon = toggle.querySelector('i');
+        icon.className = 'fas fa-bars';
+        
+        // Restore body scroll
+        document.body.style.overflow = '';
+        
+        // Hide overlay after transition
+        setTimeout(() => {
+            if (!overlay.classList.contains('show')) {
+                overlay.style.display = 'none';
+            }
+        }, 300);
+    }
 
     // Sidebar Interactions
     window.panToLocation = function (locStr) {
@@ -458,5 +1116,33 @@
             });
         }
     };
+
+    // Handle orientation change on mobile
+    window.addEventListener('orientationchange', function() {
+        setTimeout(function() {
+            if (map) {
+                map.invalidateSize();
+            }
+        }, 500);
+    });
+
+    // Touch event optimizations for mobile
+    if ('ontouchstart' in window) {
+        document.body.classList.add('touch-device');
+        
+        // Improve touch interactions for timeline items
+        const timelineItems = document.querySelectorAll('.timeline-item');
+        timelineItems.forEach(item => {
+            item.addEventListener('touchstart', function() {
+                this.style.backgroundColor = '#f1f5f9';
+            });
+            
+            item.addEventListener('touchend', function() {
+                setTimeout(() => {
+                    this.style.backgroundColor = '';
+                }, 150);
+            });
+        });
+    }
 </script>
 {% endblock %}

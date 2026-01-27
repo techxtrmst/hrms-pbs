@@ -3,193 +3,993 @@
 
 {% block title %}Regularization Requests | HRMS{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Regularization Requests Responsive Styles */
+    
+    /* Base styles */
+    .regularization-container {
+        padding: 1rem;
+    }
+    
+    .page-header {
+        margin-bottom: 1.5rem;
+    }
+    
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+    
+    .page-subtitle {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+    
+    /* Table container */
+    .requests-table-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        position: relative;
+    }
+    
+    /* Desktop table styles */
+    .requests-table {
+        margin: 0;
+        width: 100%;
+    }
+    
+    .requests-table thead th {
+        background: #f8fafc;
+        border: none;
+        padding: 1rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        white-space: nowrap;
+    }
+    
+    .requests-table tbody td {
+        padding: 1rem;
+        border-top: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+    
+    .requests-table tbody tr:hover {
+        background: #f8fafc;
+    }
+    
+    /* Employee info */
+    .employee-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .employee-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #e2e8f0;
+        flex-shrink: 0;
+    }
+    
+    .employee-avatar-placeholder {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+    
+    .employee-details h6 {
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+    
+    .employee-details .designation {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin: 0;
+    }
+    
+    /* Date info */
+    .date-info {
+        font-weight: 600;
+        color: #1e293b;
+    }
+    
+    .date-day {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-top: 0.125rem;
+    }
+    
+    /* Timing info */
+    .timing-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .timing-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+    }
+    
+    .timing-icon {
+        width: 16px;
+        text-align: center;
+    }
+    
+    /* Reason column */
+    .reason-text {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.85rem;
+        color: #374151;
+    }
+    
+    /* Status badges */
+    .status-badge {
+        padding: 0.375rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border: 1px solid;
+    }
+    
+    .status-approved {
+        background: #dcfce7;
+        color: #166534;
+        border-color: #bbf7d0;
+    }
+    
+    .status-rejected {
+        background: #fef2f2;
+        color: #dc2626;
+        border-color: #fecaca;
+    }
+    
+    .status-pending {
+        background: #fef3c7;
+        color: #d97706;
+        border-color: #fde68a;
+    }
+    
+    .status-cancelled {
+        background: #f3f4f6;
+        color: #6b7280;
+        border-color: #d1d5db;
+    }
+    
+    /* Action buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .btn-action {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8rem;
+        border-radius: 6px;
+        border: 1px solid;
+        background: white;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .btn-approve {
+        color: #059669;
+        border-color: #059669;
+    }
+    
+    .btn-approve:hover {
+        background: #059669;
+        color: white;
+    }
+    
+    .btn-reject {
+        color: #dc2626;
+        border-color: #dc2626;
+    }
+    
+    .btn-reject:hover {
+        background: #dc2626;
+        color: white;
+    }
+    
+    /* Mobile card layout */
+    .mobile-card-layout {
+        display: none;
+    }
+    
+    .request-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .request-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .request-card-body {
+        display: grid;
+        gap: 0.75rem;
+    }
+    
+    .card-field {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+    
+    .card-field-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        flex-shrink: 0;
+        width: 100px;
+    }
+    
+    .card-field-value {
+        flex: 1;
+        text-align: right;
+        font-size: 0.85rem;
+        color: #374151;
+    }
+    
+    .request-card-actions {
+        margin-top: 1rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #f3f4f6;
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+    }
+    
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #6b7280;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        opacity: 0.3;
+        margin-bottom: 1rem;
+        display: block;
+    }
+    
+    /* Modal responsive */
+    .modal-content {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    .modal-header {
+        border-bottom: 1px solid #f3f4f6;
+        padding: 1.25rem;
+    }
+    
+    .modal-body {
+        padding: 1.25rem;
+    }
+    
+    .modal-footer {
+        border-top: 1px solid #f3f4f6;
+        padding: 1rem 1.25rem;
+    }
+    
+    /* Responsive breakpoints */
+    
+    /* Large desktop */
+    @media (min-width: 1400px) {
+        .regularization-container {
+            padding: 2rem;
+        }
+        
+        .page-title {
+            font-size: 1.75rem;
+        }
+        
+        .requests-table thead th,
+        .requests-table tbody td {
+            padding: 1.25rem;
+        }
+    }
+    
+    /* Desktop */
+    @media (max-width: 1199px) {
+        .reason-text {
+            max-width: 150px;
+        }
+        
+        .requests-table thead th,
+        .requests-table tbody td {
+            padding: 0.875rem;
+        }
+    }
+    
+    /* Tablet */
+    @media (max-width: 991px) {
+        .regularization-container {
+            padding: 1rem;
+        }
+        
+        .reason-text {
+            max-width: 120px;
+        }
+        
+        .requests-table thead th,
+        .requests-table tbody td {
+            padding: 0.75rem;
+            font-size: 0.85rem;
+        }
+        
+        .employee-avatar,
+        .employee-avatar-placeholder {
+            width: 32px;
+            height: 32px;
+        }
+        
+        .employee-details h6 {
+            font-size: 0.85rem;
+        }
+        
+        .employee-details .designation {
+            font-size: 0.7rem;
+        }
+    }
+    
+    /* Mobile landscape and small tablets */
+    @media (max-width: 768px) {
+        .regularization-container {
+            padding: 0.75rem;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        
+        .page-title {
+            font-size: 1.25rem;
+        }
+        
+        .page-subtitle {
+            font-size: 0.85rem;
+        }
+        
+        /* Hide desktop table, show mobile cards */
+        .desktop-table-layout {
+            display: none;
+        }
+        
+        .mobile-card-layout {
+            display: block;
+        }
+        
+        .request-card {
+            margin-bottom: 0.75rem;
+            padding: 0.875rem;
+        }
+        
+        .employee-info {
+            gap: 0.5rem;
+        }
+        
+        .employee-avatar,
+        .employee-avatar-placeholder {
+            width: 40px;
+            height: 40px;
+        }
+        
+        .employee-details h6 {
+            font-size: 0.9rem;
+        }
+        
+        .card-field {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .card-field-label {
+            width: auto;
+        }
+        
+        .card-field-value {
+            text-align: left;
+        }
+        
+        .request-card-actions {
+            flex-direction: column;
+        }
+        
+        .btn-action {
+            justify-content: center;
+            padding: 0.75rem;
+        }
+    }
+    
+    /* Mobile portrait */
+    @media (max-width: 575px) {
+        .regularization-container {
+            padding: 0.5rem;
+        }
+        
+        .page-title {
+            font-size: 1.1rem;
+        }
+        
+        .page-subtitle {
+            font-size: 0.8rem;
+        }
+        
+        .request-card {
+            padding: 0.75rem;
+            border-radius: 8px;
+        }
+        
+        .employee-details h6 {
+            font-size: 0.85rem;
+        }
+        
+        .employee-details .designation {
+            font-size: 0.7rem;
+        }
+        
+        .card-field-label {
+            font-size: 0.7rem;
+        }
+        
+        .card-field-value {
+            font-size: 0.8rem;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
+        }
+        
+        .btn-action {
+            font-size: 0.75rem;
+            padding: 0.625rem;
+        }
+    }
+    
+    /* Very small screens */
+    @media (max-width: 400px) {
+        .regularization-container {
+            padding: 0.25rem;
+        }
+        
+        .request-card {
+            margin-bottom: 0.5rem;
+            padding: 0.625rem;
+        }
+        
+        .employee-avatar,
+        .employee-avatar-placeholder {
+            width: 36px;
+            height: 36px;
+        }
+        
+        .request-card-actions {
+            gap: 0.375rem;
+        }
+        
+        .btn-action {
+            font-size: 0.7rem;
+            padding: 0.5rem;
+        }
+    }
+    
+    /* Modal responsive */
+    @media (max-width: 767px) {
+        .modal-dialog {
+            margin: 1rem;
+            max-width: calc(100% - 2rem);
+        }
+        
+        .modal-header,
+        .modal-body,
+        .modal-footer {
+            padding: 1rem;
+        }
+        
+        .modal-footer {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .modal-footer .btn {
+            width: 100%;
+        }
+    }
+    
+    @media (max-width: 575px) {
+        .modal-dialog {
+            margin: 0.5rem;
+            max-width: calc(100% - 1rem);
+        }
+        
+        .modal-header,
+        .modal-body {
+            padding: 0.875rem;
+        }
+        
+        .modal-footer {
+            padding: 0.75rem;
+        }
+    }
+    
+    /* Touch device optimizations */
+    @media (hover: none) and (pointer: coarse) {
+        .btn-action {
+            min-height: 44px;
+            min-width: 44px;
+        }
+        
+        .request-card {
+            transition: transform 0.1s ease;
+        }
+        
+        .request-card:active {
+            transform: scale(0.98);
+        }
+    }
+    
+    /* High contrast mode */
+    @media (prefers-contrast: high) {
+        .request-card,
+        .requests-table-container {
+            border: 2px solid #000;
+        }
+        
+        .btn-action {
+            border-width: 2px;
+        }
+    }
+    
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+        .request-card,
+        .btn-action {
+            transition: none;
+        }
+    }
+    
+    /* Print styles */
+    @media print {
+        .mobile-card-layout {
+            display: none;
+        }
+        
+        .desktop-table-layout {
+            display: block;
+        }
+        
+        .btn-action,
+        .request-card-actions {
+            display: none;
+        }
+        
+        .request-card {
+            break-inside: avoid;
+            box-shadow: none;
+            border: 1px solid #000;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid py-4">
+<div class="regularization-container">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h4 class="fw-bold mb-1 text-dark">Regularization Requests</h4>
-            <p class="text-muted small mb-0">Manage attendance correction requests from your team.</p>
-        </div>
-        <div>
-            <!-- Filters could go here -->
-        </div>
+    <div class="page-header">
+        <h4 class="page-title">Regularization Requests</h4>
+        <p class="page-subtitle">Manage attendance correction requests from your team.</p>
     </div>
 
-    <!-- Requests Table -->
-    <div class="card border-0 shadow-sm">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th class="ps-4 text-muted small fw-bold text-uppercase border-top-0 py-3">Employee</th>
-                        <th class="text-muted small fw-bold text-uppercase border-top-0 py-3">Date To Regularize</th>
-                        <th class="text-muted small fw-bold text-uppercase border-top-0 py-3">Proposed Timings</th>
-                        <th class="text-muted small fw-bold text-uppercase border-top-0 py-3">Reason</th>
-                        <th class="text-muted small fw-bold text-uppercase border-top-0 py-3">Status</th>
-                        <th class="pe-4 text-end text-muted small fw-bold text-uppercase border-top-0 py-3">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for req in requests %}
-                    <tr>
-                        <td class="ps-4">
-                            <div class="d-flex align-items-center">
-                                {% if req.employee.profile_picture %}
-                                <img src="{{ req.employee.profile_picture.url }}" class="rounded-circle me-3 border"
-                                    width="36" height="36" style="object-fit: cover;">
-                                {% else %}
-                                <div class="rounded-circle me-3 bg-light d-flex align-items-center justify-content-center fw-bold text-secondary border"
-                                    style="width: 36px; height: 36px;">
-                                    {{ req.employee.user.first_name|first }}
-                                </div>
-                                {% endif %}
-                                <div>
-                                    <div class="fw-semibold text-dark">{{ req.employee.user.get_full_name }}</div>
-                                    <div class="small text-muted" style="font-size: 0.75rem;">{{ req.employee.designation }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="fw-medium text-dark">
-                            {{ req.date|date:"d M, Y" }}
-                            <div class="small text-muted">{{ req.date|date:"l" }}</div>
-                        </td>
-                        <td>
-                            <div class="d-flex flex-column small">
-                                {% if req.check_in %}
-                                <span class="mb-1"><i class="fas fa-sign-in-alt text-success me-2"
-                                        style="width: 16px;"></i>{{ req.check_in|time:"H:i" }}</span>
-                                {% endif %}
-                                {% if req.check_out %}
-                                <span><i class="fas fa-sign-out-alt text-danger me-2" style="width: 16px;"></i>{{ req.check_out|time:"H:i" }}</span>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td style="max-width: 250px;">
-                            <div class="text-truncate" title="{{ req.reason }}">{{ req.reason }}</div>
-                        </td>
-                        <td>
-                            {% if req.status == 'APPROVED' %}
-                            <span
-                                class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill">Approved</span>
-                            {% elif req.status == 'REJECTED' %}
-                            <span
-                                class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill">Rejected</span>
-                            {% elif req.status == 'CANCELLED' %}
-                            <span
-                                class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 rounded-pill">Cancelled</span>
-                            {% else %}
-                            <span
-                                class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 rounded-pill">Pending</span>
-                            {% endif %}
-                        </td>
-                        <td class="pe-4 text-end">
-                            {% if req.status == 'PENDING' %}
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal"
-                                    data-bs-target="#approveModal{{ req.pk }}">
-                                    <i class="fas fa-check me-1"></i> Approve
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
-                                    data-bs-target="#rejectModal{{ req.pk }}">
-                                    <i class="fas fa-times me-1"></i> Reject
-                                </button>
-                            </div>
-
-                            <!-- Approve Modal -->
-                            <div class="modal fade text-start" id="approveModal{{ req.pk }}" tabindex="-1"
-                                aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content border-0 shadow">
-                                        <form action="{% url 'regularization_approve' req.pk %}" method="POST">
-                                            {% csrf_token %}
-                                            <div class="modal-header border-0 pb-0">
-                                                <h5 class="modal-title fw-bold">Approve Request</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                    aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <p class="text-muted">Are you sure you want to approve this
-                                                    regularization request for <strong>{{ req.employee.user.get_full_name }}</strong>?</p>
-
-                                                <div class="alert alert-info border-0 bg-info-subtle small">
-                                                    <i class="fas fa-info-circle me-1"></i> This will update the
-                                                    attendance record for {{ req.date|date:"d M, Y" }}.
-                                                </div>
-
-                                                <div class="mb-3">
-                                                    <label class="form-label small fw-semibold text-muted">Comment
-                                                        (Optional)</label>
-                                                    <textarea name="manager_comment" class="form-control" rows="2"
-                                                        placeholder="Add a note..."></textarea>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer border-0 pt-0">
-                                                <button type="button" class="btn btn-light btn-sm"
-                                                    data-bs-dismiss="modal">Cancel</button>
-                                                <button type="submit"
-                                                    class="btn btn-success btn-sm px-4">Approve</button>
-                                            </div>
-                                        </form>
+    <!-- Desktop Table Layout -->
+    <div class="desktop-table-layout">
+        <div class="requests-table-container">
+            <div class="table-responsive">
+                <table class="table requests-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Date To Regularize</th>
+                            <th>Proposed Timings</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in requests %}
+                        <tr>
+                            <td>
+                                <div class="employee-info">
+                                    {% if req.employee.profile_picture %}
+                                    <img src="{{ req.employee.profile_picture.url }}" class="employee-avatar" alt="Profile">
+                                    {% else %}
+                                    <div class="employee-avatar-placeholder">
+                                        {{ req.employee.user.first_name|first }}
+                                    </div>
+                                    {% endif %}
+                                    <div class="employee-details">
+                                        <h6>{{ req.employee.user.get_full_name }}</h6>
+                                        <p class="designation">{{ req.employee.designation }}</p>
                                     </div>
                                 </div>
-                            </div>
-
-                            <!-- Reject Modal -->
-                            <div class="modal fade text-start" id="rejectModal{{ req.pk }}" tabindex="-1"
-                                aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content border-0 shadow">
-                                        <form action="{% url 'regularization_reject' req.pk %}" method="POST">
-                                            {% csrf_token %}
-                                            <div class="modal-header border-0 pb-0">
-                                                <h5 class="modal-title fw-bold text-danger">Reject Request</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                    aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <p class="text-muted">Are you sure you want to reject this request?</p>
-                                                <div class="mb-3">
-                                                    <label
-                                                        class="form-label small fw-semibold text-muted required">Rejection
-                                                        Reason</label>
-                                                    <textarea name="rejection_reason" class="form-control" rows="3"
-                                                        placeholder="Why is this being rejected?" required></textarea>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer border-0 pt-0">
-                                                <button type="button" class="btn btn-light btn-sm"
-                                                    data-bs-dismiss="modal">Cancel</button>
-                                                <button type="submit" class="btn btn-danger btn-sm px-4">Reject</button>
-                                            </div>
-                                        </form>
+                            </td>
+                            <td>
+                                <div class="date-info">{{ req.date|date:"d M, Y" }}</div>
+                                <div class="date-day">{{ req.date|date:"l" }}</div>
+                            </td>
+                            <td>
+                                <div class="timing-info">
+                                    {% if req.check_in %}
+                                    <div class="timing-item">
+                                        <i class="fas fa-sign-in-alt text-success timing-icon"></i>
+                                        <span>{{ req.check_in|time:"H:i" }}</span>
                                     </div>
+                                    {% endif %}
+                                    {% if req.check_out %}
+                                    <div class="timing-item">
+                                        <i class="fas fa-sign-out-alt text-danger timing-icon"></i>
+                                        <span>{{ req.check_out|time:"H:i" }}</span>
+                                    </div>
+                                    {% endif %}
                                 </div>
-                            </div>
-                            {% else %}
-                            <span class="text-muted small fst-italic">
-                                {% if req.approved_by %}
-                                Approved by {{ req.approved_by.first_name }}
+                            </td>
+                            <td>
+                                <div class="reason-text" title="{{ req.reason }}">{{ req.reason }}</div>
+                            </td>
+                            <td>
+                                {% if req.status == 'APPROVED' %}
+                                <span class="status-badge status-approved">Approved</span>
                                 {% elif req.status == 'REJECTED' %}
-                                Rejected
+                                <span class="status-badge status-rejected">Rejected</span>
+                                {% elif req.status == 'CANCELLED' %}
+                                <span class="status-badge status-cancelled">Cancelled</span>
+                                {% else %}
+                                <span class="status-badge status-pending">Pending</span>
                                 {% endif %}
-                            </span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center py-5">
-                            <div class="text-muted">
-                                <i class="fas fa-clipboard-check fa-3x mb-3 opacity-25"></i>
-                                <p class="mb-0 fw-medium">No pending regularization requests.</p>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+                            <td class="text-end">
+                                {% if req.status == 'PENDING' %}
+                                <div class="action-buttons">
+                                    <button type="button" class="btn-action btn-approve" data-bs-toggle="modal"
+                                        data-bs-target="#approveModal{{ req.pk }}">
+                                        <i class="fas fa-check"></i> Approve
+                                    </button>
+                                    <button type="button" class="btn-action btn-reject" data-bs-toggle="modal"
+                                        data-bs-target="#rejectModal{{ req.pk }}">
+                                        <i class="fas fa-times"></i> Reject
+                                    </button>
+                                </div>
+                                {% else %}
+                                <span class="text-muted small fst-italic">
+                                    {% if req.approved_by %}
+                                    Approved by {{ req.approved_by.first_name }}
+                                    {% elif req.status == 'REJECTED' %}
+                                    Rejected
+                                    {% endif %}
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <i class="fas fa-clipboard-check"></i>
+                                    <p class="mb-0 fw-medium">No pending regularization requests.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+
+    <!-- Mobile Card Layout -->
+    <div class="mobile-card-layout">
+        {% for req in requests %}
+        <div class="request-card">
+            <div class="request-card-header">
+                <div class="employee-info">
+                    {% if req.employee.profile_picture %}
+                    <img src="{{ req.employee.profile_picture.url }}" class="employee-avatar" alt="Profile">
+                    {% else %}
+                    <div class="employee-avatar-placeholder">
+                        {{ req.employee.user.first_name|first }}
+                    </div>
+                    {% endif %}
+                    <div class="employee-details">
+                        <h6>{{ req.employee.user.get_full_name }}</h6>
+                        <p class="designation">{{ req.employee.designation }}</p>
+                    </div>
+                </div>
+                {% if req.status == 'APPROVED' %}
+                <span class="status-badge status-approved">Approved</span>
+                {% elif req.status == 'REJECTED' %}
+                <span class="status-badge status-rejected">Rejected</span>
+                {% elif req.status == 'CANCELLED' %}
+                <span class="status-badge status-cancelled">Cancelled</span>
+                {% else %}
+                <span class="status-badge status-pending">Pending</span>
+                {% endif %}
+            </div>
+            
+            <div class="request-card-body">
+                <div class="card-field">
+                    <span class="card-field-label">Date</span>
+                    <div class="card-field-value">
+                        <div class="date-info">{{ req.date|date:"d M, Y" }}</div>
+                        <div class="date-day">{{ req.date|date:"l" }}</div>
+                    </div>
+                </div>
+                
+                <div class="card-field">
+                    <span class="card-field-label">Timings</span>
+                    <div class="card-field-value">
+                        <div class="timing-info">
+                            {% if req.check_in %}
+                            <div class="timing-item">
+                                <i class="fas fa-sign-in-alt text-success timing-icon"></i>
+                                <span>{{ req.check_in|time:"H:i" }}</span>
+                            </div>
+                            {% endif %}
+                            {% if req.check_out %}
+                            <div class="timing-item">
+                                <i class="fas fa-sign-out-alt text-danger timing-icon"></i>
+                                <span>{{ req.check_out|time:"H:i" }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-field">
+                    <span class="card-field-label">Reason</span>
+                    <div class="card-field-value">{{ req.reason }}</div>
+                </div>
+            </div>
+            
+            {% if req.status == 'PENDING' %}
+            <div class="request-card-actions">
+                <button type="button" class="btn-action btn-approve" data-bs-toggle="modal"
+                    data-bs-target="#approveModal{{ req.pk }}">
+                    <i class="fas fa-check"></i> Approve
+                </button>
+                <button type="button" class="btn-action btn-reject" data-bs-toggle="modal"
+                    data-bs-target="#rejectModal{{ req.pk }}">
+                    <i class="fas fa-times"></i> Reject
+                </button>
+            </div>
+            {% else %}
+            <div class="request-card-actions">
+                <span class="text-muted small fst-italic">
+                    {% if req.approved_by %}
+                    Approved by {{ req.approved_by.first_name }}
+                    {% elif req.status == 'REJECTED' %}
+                    Rejected
+                    {% endif %}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <i class="fas fa-clipboard-check"></i>
+            <p class="mb-0 fw-medium">No pending regularization requests.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Modals -->
+    {% for req in requests %}
+    {% if req.status == 'PENDING' %}
+    <!-- Approve Modal -->
+    <div class="modal fade" id="approveModal{{ req.pk }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form action="{% url 'regularization_approve' req.pk %}" method="POST">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Approve Request</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted">Are you sure you want to approve this regularization request for <strong>{{ req.employee.user.get_full_name }}</strong>?</p>
+
+                        <div class="alert alert-info border-0 bg-info-subtle small">
+                            <i class="fas fa-info-circle me-1"></i> This will update the attendance record for {{ req.date|date:"d M, Y" }}.
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-muted">Comment (Optional)</label>
+                            <textarea name="manager_comment" class="form-control" rows="2" placeholder="Add a note..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success btn-sm px-4">Approve</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div class="modal fade" id="rejectModal{{ req.pk }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form action="{% url 'regularization_reject' req.pk %}" method="POST">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold text-danger">Reject Request</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted">Are you sure you want to reject this request?</p>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-muted required">Rejection Reason</label>
+                            <textarea name="rejection_reason" class="form-control" rows="3" placeholder="Why is this being rejected?" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger btn-sm px-4">Reject</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
 </div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle responsive behavior
+        function handleResponsiveLayout() {
+            const isMobile = window.innerWidth <= 768;
+            const desktopLayout = document.querySelector('.desktop-table-layout');
+            const mobileLayout = document.querySelector('.mobile-card-layout');
+            
+            if (isMobile) {
+                if (desktopLayout) desktopLayout.style.display = 'none';
+                if (mobileLayout) mobileLayout.style.display = 'block';
+            } else {
+                if (desktopLayout) desktopLayout.style.display = 'block';
+                if (mobileLayout) mobileLayout.style.display = 'none';
+            }
+        }
+        
+        // Initial check
+        handleResponsiveLayout();
+        
+        // Handle window resize
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(handleResponsiveLayout, 100);
+        });
+        
+        // Handle orientation change
+        window.addEventListener('orientationchange', function() {
+            setTimeout(handleResponsiveLayout, 100);
+        });
+        
+        // Add touch feedback for mobile
+        if ('ontouchstart' in window) {
+            const touchElements = document.querySelectorAll('.btn-action, .request-card');
+            touchElements.forEach(element => {
+                element.addEventListener('touchstart', function() {
+                    this.style.transform = 'scale(0.98)';
+                });
+                
+                element.addEventListener('touchend', function() {
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                });
+            });
+        }
+        
+        // Handle modal responsive behavior
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            modal.addEventListener('shown.bs.modal', function() {
+                // Ensure modal is properly positioned on mobile
+                if (window.innerWidth <= 767) {
+                    this.style.paddingRight = '0';
+                }
+            });
+        });
+        
+        // Handle form validation
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const requiredFields = form.querySelectorAll('[required]');
+                let isValid = true;
+                
+                requiredFields.forEach(field => {
+                    if (!field.value.trim()) {
+                        isValid = false;
+                        field.classList.add('is-invalid');
+                        
+                        // Scroll to first invalid field on mobile
+                        if (window.innerWidth <= 767 && isValid === false) {
+                            field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    } else {
+                        field.classList.remove('is-invalid');
+                    }
+                });
+                
+                if (!isValid) {
+                    e.preventDefault();
+                }
+            });
+        });
+        
+        // Add loading states for better UX
+        const actionButtons = document.querySelectorAll('.btn-action');
+        actionButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Add loading state if needed
+                const icon = this.querySelector('i');
+                if (icon) {
+                    icon.className = 'fas fa-spinner fa-spin';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
 {% endblock %}

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desktop Notification Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .notification-test-area {
+            position: relative;
+            display: inline-block;
+            margin: 20px;
+        }
+        
+        /* Copy the notification styles from base.html */
+        .notification-dropdown {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            width: 380px;
+            max-height: 500px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            z-index: 1050;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            visibility: hidden;
+        }
+        
+        .notification-dropdown.show {
+            opacity: 1;
+            transform: translateY(0);
+            visibility: visible;
+        }
+        
+        @media (min-width: 769px) {
+            .notification-dropdown {
+                position: fixed;
+                width: 400px;
+                max-height: 600px;
+                z-index: 1060;
+                transform-origin: top right;
+                box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+            }
+        }
+        
+        .notification-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e8ecf4;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        }
+        
+        .notification-list {
+            max-height: 420px;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+        
+        .notification-item {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .notification-item:hover {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        }
+        
+        .notification-item.unread {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-left: 4px solid #3b82f6;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Desktop Notification Test</h1>
+        <p>This page tests the notification dropdown display on desktop/laptop screens.</p>
+        
+        <div class="notification-test-area">
+            <button class="btn btn-primary position-relative" id="testNotificationBtn">
+                <i class="fas fa-bell"></i>
+                Test Notification
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    3
+                </span>
+            </button>
+            
+            <div class="notification-dropdown" id="testDropdown" style="display: none;">
+                <div class="notification-header">
+                    <h6 class="mb-0">Notifications</h6>
+                    <button class="btn btn-link p-0" id="closeBtn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="notification-list">
+                    <div class="notification-item unread">
+                        <div class="notification-item-content">New leave request from John Doe</div>
+                        <div class="notification-item-time">2 minutes ago</div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-item-content">Attendance report is ready for review</div>
+                        <div class="notification-item-time">1 hour ago</div>
+                    </div>
+                    <div class="notification-item unread">
+                        <div class="notification-item-content">System maintenance scheduled for tonight</div>
+                        <div class="notification-item-time">3 hours ago</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <h3>Test Instructions:</h3>
+            <ol>
+                <li>Click the notification bell button above</li>
+                <li>Verify the dropdown appears completely visible</li>
+                <li>Check that the dropdown is not cut off by the viewport</li>
+                <li>Resize the browser window and test again</li>
+                <li>Click outside to close the dropdown</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const testBtn = document.getElementById('testNotificationBtn');
+        const dropdown = document.getElementById('testDropdown');
+        const closeBtn = document.getElementById('closeBtn');
+        let isOpen = false;
+
+        function adjustPosition() {
+            const btnRect = testBtn.getBoundingClientRect();
+            const dropdownWidth = 400;
+            
+            if (window.innerWidth > 768) {
+                dropdown.style.position = 'fixed';
+                dropdown.style.top = (btnRect.bottom + 10) + 'px';
+                
+                if (btnRect.right - dropdownWidth < 20) {
+                    dropdown.style.left = btnRect.left + 'px';
+                    dropdown.style.right = 'auto';
+                } else {
+                    dropdown.style.right = (window.innerWidth - btnRect.right) + 'px';
+                    dropdown.style.left = 'auto';
+                }
+            }
+        }
+
+        testBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            isOpen = !isOpen;
+            
+            if (isOpen) {
+                adjustPosition();
+                dropdown.style.display = 'block';
+                setTimeout(() => dropdown.classList.add('show'), 10);
+            } else {
+                closeDropdown();
+            }
+        });
+
+        function closeDropdown() {
+            dropdown.classList.remove('show');
+            setTimeout(() => {
+                dropdown.style.display = 'none';
+                dropdown.style.position = '';
+                dropdown.style.top = '';
+                dropdown.style.right = '';
+                dropdown.style.left = '';
+            }, 300);
+            isOpen = false;
+        }
+
+        closeBtn.addEventListener('click', closeDropdown);
+        
+        document.addEventListener('click', function(e) {
+            if (!testBtn.contains(e.target) && !dropdown.contains(e.target)) {
+                closeDropdown();
+            }
+        });
+
+        window.addEventListener('resize', function() {
+            if (isOpen) {
+                adjustPosition();
+            }
+        });
+    </script>
+</body>
+</html>

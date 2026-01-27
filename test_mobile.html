@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Test - HRMS</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Responsive CSS -->
+    <link href="static/css/global-responsive.css" rel="stylesheet">
+    <link href="static/css/responsive.css" rel="stylesheet">
+    
+    <style>
+        /* Base template styles for testing */
+        :root {
+            --sidebar-width: 280px;
+            --primary-color: #6366f1;
+            --primary-hover: #4f46e5;
+            --sidebar-bg-start: #0f172a;
+            --sidebar-bg-end: #1e293b;
+            --text-color: #94a3b8;
+            --text-hover: #f1f5f9;
+            --active-bg: rgba(99, 102, 241, 0.1);
+            --active-border: #6366f1;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f3f4f6;
+            overflow-x: hidden;
+        }
+
+        /* Premium Sidebar */
+        .sidebar {
+            height: 100vh;
+            width: var(--sidebar-width);
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: linear-gradient(180deg, var(--sidebar-bg-start) 0%, var(--sidebar-bg-end) 100%);
+            color: var(--text-color);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            overflow-y: auto;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Brand Section */
+        .brand-section {
+            padding: 24px 28px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 10px;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .brand-section h3 {
+            color: #fff;
+            font-size: 1.35rem;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        /* Navigation Links */
+        .sidebar a {
+            padding: 12px 28px;
+            text-decoration: none;
+            font-size: 0.95rem;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 3px solid transparent;
+            position: relative;
+            margin: 2px 0;
+        }
+
+        .sidebar a:hover {
+            color: var(--text-hover);
+            background-color: rgba(255, 255, 255, 0.03);
+            padding-left: 32px;
+        }
+
+        .sidebar a i {
+            width: 24px;
+            font-size: 1.1em;
+            margin-right: 12px;
+            opacity: 0.7;
+            transition: transform 0.2s ease;
+        }
+
+        /* Main Content Adjustment */
+        .content {
+            margin-left: var(--sidebar-width);
+            padding: 30px;
+            min-height: 100vh;
+            background-color: #f8fafc;
+            transition: margin-left 0.3s ease;
+        }
+
+        /* Topbar Redesign */
+        .topbar {
+            background-color: #fff;
+            padding: 20px 32px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-left: var(--sidebar-width);
+            position: sticky;
+            top: 0;
+            z-index: 900;
+            border-bottom: 1px solid #e2e8f0;
+            transition: margin-left 0.3s ease;
+        }
+
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            cursor: pointer;
+            padding: 12px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            z-index: 1001;
+            position: relative;
+            min-width: 48px;
+            min-height: 48px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-menu-toggle:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .mobile-menu-toggle:active {
+            background: rgba(99, 102, 241, 0.2);
+            transform: scale(0.95);
+        }
+
+        /* Sidebar Overlay for Mobile */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="brand-section">
+            <h3>HRMS Test</h3>
+        </div>
+
+        <a href="#"><i class="fas fa-home"></i> <span>Dashboard</span></a>
+        <a href="#"><i class="fas fa-user-circle"></i> <span>Home</span></a>
+        <a href="#"><i class="fas fa-users"></i> <span>Employees</span></a>
+        <a href="#"><i class="fas fa-calendar-check"></i> <span>Leave</span></a>
+        <a href="#"><i class="fas fa-clock"></i> <span>Attendance</span></a>
+        <a href="#"><i class="fas fa-chart-line"></i> <span>Reports</span></a>
+        <a href="#"><i class="fas fa-cog"></i> <span>Settings</span></a>
+    </div>
+
+    <!-- Topbar -->
+    <div class="topbar">
+        <div class="d-flex align-items-center gap-3">
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <h4 class="m-0 fw-bold" style="color: #4a5568">HRMS Portal</h4>
+        </div>
+        
+        <div class="d-flex align-items-center gap-3">
+            <div class="text-end me-3">
+                <div class="fw-bold text-dark">Test User</div>
+                <div class="text-muted small">Employee</div>
+            </div>
+            <img src="https://ui-avatars.com/api/?name=Test+User&background=6366f1&color=fff"
+                class="rounded-circle shadow-sm" width="40" height="40" alt="User">
+        </div>
+    </div>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Main Content -->
+    <div class="content">
+        <div class="container-fluid">
+            <h1>Mobile Responsive Test</h1>
+            <p>This page tests the mobile responsive functionality of the HRMS system.</p>
+            
+            <div class="row g-4">
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Test Card 1</h5>
+                            <p class="card-text">This card should stack on mobile devices.</p>
+                            <button class="btn btn-primary">Test Button</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Test Card 2</h5>
+                            <p class="card-text">This card should also stack on mobile devices.</p>
+                            <button class="btn btn-success">Another Button</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Test Card 3</h5>
+                            <p class="card-text">All cards should be touch-friendly on mobile.</p>
+                            <button class="btn btn-warning">Third Button</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Test Table</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Department</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>John Doe</td>
+                                            <td>john@example.com</td>
+                                            <td>Engineering</td>
+                                            <td><span class="badge bg-success">Active</span></td>
+                                            <td><button class="btn btn-sm btn-primary">View</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Jane Smith</td>
+                                            <td>jane@example.com</td>
+                                            <td>Marketing</td>
+                                            <td><span class="badge bg-success">Active</span></td>
+                                            <td><button class="btn btn-sm btn-primary">View</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Test Form</h5>
+                        </div>
+                        <div class="card-body">
+                            <form>
+                                <div class="row">
+                                    <div class="col-12 col-md-6 mb-3">
+                                        <label class="form-label">Name</label>
+                                        <input type="text" class="form-control" placeholder="Enter name">
+                                    </div>
+                                    <div class="col-12 col-md-6 mb-3">
+                                        <label class="form-label">Email</label>
+                                        <input type="email" class="form-control" placeholder="Enter email">
+                                    </div>
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label">Department</label>
+                                        <select class="form-select">
+                                            <option>Select Department</option>
+                                            <option>Engineering</option>
+                                            <option>Marketing</option>
+                                            <option>Sales</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-primary">Submit</button>
+                                        <button type="button" class="btn btn-secondary ms-2">Cancel</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Responsive JavaScript -->
+    <script src="static/js/responsive.js"></script>
+</body>
+</html>

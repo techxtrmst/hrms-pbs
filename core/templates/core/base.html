@@ -1,4 +1,4 @@
-{% load static %}
+﻿{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -10,6 +10,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Global Responsive CSS -->
+    <link href="{% static 'css/global-responsive.css' %}" rel="stylesheet">
+    <!-- Component Responsive CSS -->
+    <link href="{% static 'css/responsive.css' %}" rel="stylesheet">
     <style>
         :root {
             --sidebar-width: 280px;
@@ -91,7 +95,7 @@
             letter-spacing: 1.5px;
             color: #64748b;
             /* Slate 500 */
-            padding: 24px 28px 12px;
+            padding: 16px 28px 8px;
             font-weight: 700;
         }
 
@@ -105,7 +109,7 @@
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             border-left: 3px solid transparent;
             position: relative;
-            margin: 2px 0;
+            margin: 1px 0;
         }
 
         .sidebar a:hover {
@@ -144,10 +148,11 @@
         /* Dropdown/Collapse Styling */
         .sidebar-dropdown-toggle {
             cursor: pointer;
-            padding: 5px 28px 5px 0;
+            padding: 8px 28px 8px 0;
             /* Align with title padding */
             text-decoration: none !important;
             transition: all 0.2s;
+            margin: 1px 0;
         }
 
         .sidebar-dropdown-toggle:hover .sidebar-section-title {
@@ -164,9 +169,45 @@
             /* Align icon right */
         }
 
+        /* Ensure collapsed sections take no space */
+        .sidebar .collapse:not(.show) {
+            display: none !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden;
+            border: none !important;
+            min-height: 0 !important;
+            max-height: 0 !important;
+        }
+
+        .sidebar .collapse.show {
+            display: block !important;
+        }
+
+        .sidebar .collapse {
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+        }
+
+        /* Ensure dropdown toggles for collapsed sections don't add extra space */
+        .sidebar .sidebar-dropdown-toggle + .collapse:not(.show) {
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+        }
+
+        /* Remove any Bootstrap default spacing */
+        .sidebar .collapse.collapsing {
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+        }
+
         .sub-menu {
             background: rgba(0, 0, 0, 0.2);
-            /* padding: 5px 0; */
+            margin: 0;
+            padding: 0;
         }
 
         .sub-menu a {
@@ -175,6 +216,7 @@
             font-size: 0.90rem;
             border-left: none;
             /* No active border for sub items, or thinner */
+            margin: 1px 0;
         }
 
         .sub-menu a::before {
@@ -279,12 +321,13 @@
             min-height: 100vh;
             background-color: #f8fafc;
             /* Slate 50 */
+            transition: margin-left 0.3s ease;
         }
 
-        /* Topbar Redesign */
+        /* Topbar Redesign - Enhanced for Desktop and Mobile */
         .topbar {
             background-color: #fff;
-            padding: 20px 32px;
+            padding: 16px 32px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
             display: flex;
             justify-content: space-between;
@@ -294,35 +337,609 @@
             top: 0;
             z-index: 900;
             border-bottom: 1px solid #e2e8f0;
+            transition: margin-left 0.3s ease;
+            min-height: 72px;
+            width: calc(100% - var(--sidebar-width));
+            box-sizing: border-box;
         }
 
-        /* Employee Search Bar Styles */
+        .topbar .d-flex:first-child {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            flex: 1;
+            min-width: 0; /* Allow flex items to shrink */
+        }
+
+        .topbar .d-flex:last-child {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+
+        /* Topbar title styling */
+        .topbar h4 {
+            margin: 0;
+            font-weight: 700;
+            color: #4a5568;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 300px;
+        }
+
+        /* Mobile Menu Toggle - Enhanced */
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            cursor: pointer;
+            padding: 12px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            z-index: 1001;
+            position: relative;
+            min-width: 48px;
+            min-height: 48px;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            flex-shrink: 0;
+        }
+
+        .mobile-menu-toggle:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .mobile-menu-toggle:active {
+            background: rgba(99, 102, 241, 0.2);
+            transform: scale(0.95);
+        }
+
+        .mobile-menu-toggle i {
+            transition: transform 0.3s ease;
+        }
+
+        .mobile-menu-toggle[aria-expanded="true"] i {
+            transform: rotate(90deg);
+        }
+
+        /* Sidebar Overlay for Mobile */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Responsive Design - Enhanced Topbar */
+        @media (max-width: 1200px) {
+            :root {
+                --sidebar-width: 260px;
+            }
+            
+            .topbar {
+                width: calc(100% - var(--sidebar-width));
+                padding: 15px 24px;
+            }
+            
+            .topbar h4 {
+                font-size: 1.1rem;
+                max-width: 250px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            :root {
+                --sidebar-width: 240px;
+            }
+            
+            .topbar {
+                padding: 15px 20px;
+                width: calc(100% - var(--sidebar-width));
+            }
+            
+            .topbar h4 {
+                font-size: 1rem;
+                max-width: 200px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+
+            /* Adjust search bar for tablets */
+            #employeeSearchInput {
+                width: 240px;
+                font-size: 13px;
+            }
+
+            .search-result-meta {
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .search-result-meta span {
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 1000;
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                width: var(--sidebar-width);
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .content {
+                margin-left: 0;
+                padding: 15px;
+                width: 100%;
+                min-height: 100vh;
+                overflow-x: hidden;
+            }
+            
+            /* Mobile Topbar Adjustments */
+            .topbar {
+                margin-left: 0;
+                padding: 12px 16px;
+                width: 100%;
+                position: sticky;
+                top: 0;
+                z-index: 900;
+                min-height: 64px;
+                box-sizing: border-box;
+            }
+            
+            .topbar .d-flex:first-child {
+                gap: 12px;
+                flex-wrap: nowrap;
+                overflow: hidden;
+            }
+            
+            .topbar .d-flex:last-child {
+                gap: 12px;
+                flex-shrink: 0;
+            }
+            
+            .topbar h4 {
+                font-size: 0.95rem;
+                max-width: 150px;
+                flex-shrink: 1;
+            }
+            
+            .mobile-menu-toggle {
+                display: flex !important;
+                order: -1; /* Ensure it appears first */
+                margin-right: 8px;
+            }
+
+            /* Mobile search bar adjustments */
+            .employee-search-container {
+                order: 2;
+                flex: 1;
+                max-width: 200px;
+                min-width: 120px;
+            }
+
+            #employeeSearchInput {
+                width: 100%;
+                font-size: 14px;
+                padding: 8px 8px 8px 32px;
+                border-radius: 8px;
+                height: 36px;
+            }
+
+            #employeeSearchInput::placeholder {
+                font-size: 13px;
+            }
+
+            .search-icon {
+                left: 10px;
+                font-size: 13px;
+            }
+
+            .search-results {
+                position: fixed;
+                top: auto;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                max-height: 60vh;
+                border-radius: 16px 16px 0 0;
+                box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.2);
+                z-index: 1060;
+            }
+
+            .search-result-item {
+                padding: 16px 20px;
+                min-height: 60px;
+                touch-action: manipulation;
+            }
+
+            .search-result-avatar {
+                width: 48px;
+                height: 48px;
+                font-size: 16px;
+            }
+
+            .search-result-name {
+                font-size: 16px;
+                margin-bottom: 8px;
+            }
+
+            .search-result-meta {
+                flex-direction: column;
+                gap: 6px;
+                font-size: 13px;
+            }
+
+            .search-result-meta span {
+                font-size: 13px;
+            }
+            
+            /* User info section adjustments */
+            .topbar .text-end {
+                display: block !important;
+                min-width: 80px;
+                text-align: right;
+            }
+            
+            .topbar .text-end .fw-bold {
+                font-size: 0.8rem;
+                line-height: 1.2;
+            }
+            
+            .topbar .text-end .text-muted {
+                font-size: 0.7rem;
+                line-height: 1.1;
+            }
+            
+            /* Dropdown avatar adjustments */
+            .topbar .dropdown img {
+                width: 36px;
+                height: 36px;
+            }
+            
+            /* Notification adjustments */
+            .notification-dropdown {
+                width: calc(100vw - 30px);
+                right: 15px;
+                left: 15px;
+                position: fixed;
+                top: 70px;
+                max-height: calc(100vh - 90px);
+                z-index: 1060;
+                border-radius: 16px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            }
+            
+            /* Prevent body scroll when sidebar is open */
+            body.sidebar-open {
+                overflow: hidden;
+                position: fixed;
+                width: 100%;
+            }
+            
+            /* Aggressive spacing reset for mobile */
+            .sidebar * {
+                margin-top: 0 !important;
+                margin-bottom: 0 !important;
+            }
+            
+            .sidebar > a,
+            .sidebar > .sidebar-dropdown-toggle {
+                margin: 0 !important;
+                padding: 10px 24px !important;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            }
+            
+            .sidebar .sub-menu a {
+                margin: 0 !important;
+                padding: 8px 24px 8px 48px !important;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            }
+            
+            /* Completely hide collapsed sections */
+            .sidebar .collapse:not(.show) {
+                display: none !important;
+                visibility: hidden !important;
+                height: 0 !important;
+                min-height: 0 !important;
+                max-height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+                overflow: hidden !important;
+                opacity: 0 !important;
+                position: absolute !important;
+                left: -9999px !important;
+            }
+            
+            .sidebar .collapse:not(.show) * {
+                display: none !important;
+                height: 0 !important;
+                min-height: 0 !important;
+                max-height: 0 !important;
+            }
+            
+            /* Force any element with excessive height to be limited */
+            .sidebar * {
+                max-height: 50px !important;
+            }
+            
+            .sidebar .collapse.show {
+                max-height: none !important;
+            }
+            
+            .sidebar .collapse.show * {
+                max-height: none !important;
+            }
+            
+            /* Specific fix for any 250px height elements */
+            .sidebar [style*="height: 250px"],
+            .sidebar [style*="height:250px"] {
+                height: 20px !important;
+                max-height: 20px !important;
+            }
+        }
+            
+            /* Hide desktop-only elements */
+            .d-none.d-md-block {
+                display: none !important;
+            }
+            
+            /* Adjust brand section for mobile */
+            .brand-section {
+                padding: 20px 24px;
+            }
+            
+            .brand-section h3 {
+                font-size: 1.2rem;
+            }
+            
+            /* Adjust sidebar links for mobile */
+            .sidebar a {
+                padding: 12px 24px;
+                font-size: 0.9rem;
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+                margin: 1px 0;
+            }
+            
+            .sidebar-section-title {
+                padding: 16px 24px 8px;
+                font-size: 0.65rem;
+            }
+            
+            /* Notification dropdown adjustments */
+            .notification-dropdown {
+                width: calc(100vw - 30px);
+                right: 15px;
+                left: 15px;
+            }
+            
+            /* Topbar user info adjustments - only hide on very small screens */
+            
+            .topbar .dropdown img {
+                width: 35px;
+                height: 35px;
+            }
+            
+            /* Prevent body scroll when sidebar is open */
+            body.sidebar-open {
+                overflow: hidden;
+                position: fixed;
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 576px) {
+            /* Very Small Screens - Optimized Topbar */
+            .topbar {
+                padding: 10px 12px;
+                min-height: 56px;
+                gap: 8px;
+            }
+            
+            .topbar .d-flex:first-child {
+                gap: 8px;
+                min-width: 0;
+                flex: 1;
+            }
+            
+            .topbar .d-flex:last-child {
+                gap: 8px;
+                flex-shrink: 0;
+            }
+            
+            .topbar h4 {
+                font-size: 0.9rem;
+                max-width: 100px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            
+            .mobile-menu-toggle {
+                min-width: 40px;
+                min-height: 40px;
+                padding: 8px;
+                font-size: 1.3rem;
+            }
+
+            /* Compact search on very small screens */
+            .employee-search-container {
+                max-width: 140px;
+                min-width: 100px;
+            }
+
+            #employeeSearchInput {
+                font-size: 13px;
+                padding: 6px 6px 6px 28px;
+                height: 32px;
+            }
+
+            #employeeSearchInput::placeholder {
+                font-size: 12px;
+            }
+
+            .search-icon {
+                left: 8px;
+                font-size: 12px;
+            }
+
+            .search-result-item {
+                padding: 12px 16px;
+                min-height: 52px;
+            }
+
+            .search-result-avatar {
+                width: 40px;
+                height: 40px;
+                font-size: 14px;
+            }
+
+            .search-result-name {
+                font-size: 14px;
+            }
+
+            .search-result-meta span {
+                font-size: 12px;
+            }
+            
+            /* Hide user info text on very small screens only */
+            .topbar .text-end {
+                display: none !important;
+            }
+            
+            /* Compact dropdown avatar */
+            .topbar .dropdown img {
+                width: 32px;
+                height: 32px;
+            }
+            
+            .content {
+                padding: 10px;
+            }
+            
+            /* Notification dropdown adjustments */
+            .notification-dropdown {
+                width: calc(100vw - 20px);
+                right: 10px;
+                left: 10px;
+                top: 60px;
+                max-height: calc(100vh - 80px);
+            }
+        }
+
+        /* Employee Search Bar Styles - Fully Responsive */
         .employee-search-container {
             position: relative;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c7293;
+            font-size: 14px;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        #employeeSearchInput {
+            padding: 10px 12px 10px 35px;
+            border: 1.5px solid #e8ecf4;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: #fff;
+            color: #333;
+            width: 280px;
+            height: 40px;
+        }
+
+        #employeeSearchInput:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            outline: none;
+        }
+
+        #employeeSearchInput::placeholder {
+            color: #9ca3af;
+            font-size: 14px;
         }
 
         .search-results {
             position: absolute;
             top: calc(100% + 8px);
-            left: 0;
-            right: 0;
+            left: -100px;
+            right: -100px;
+            min-width: 400px;
             background: white;
             border: 1px solid #e8ecf4;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            max-height: 300px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            z-index: 1050;
+            max-height: 350px;
             overflow-y: auto;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            visibility: hidden;
+            display: none;
+        }
+
+        .search-results.show {
+            opacity: 1;
+            transform: translateY(0);
+            visibility: visible;
+            display: block !important;
         }
 
         .search-result-item {
-            padding: 14px 18px;
-            border-bottom: 1px solid #e8ecf4;
+            padding: 16px 20px;
+            border-bottom: 1px solid #f1f5f9;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
             transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .search-result-item:last-child {
@@ -330,13 +947,18 @@
         }
 
         .search-result-item:hover {
-            background: linear-gradient(90deg, rgba(91, 71, 251, 0.05) 0%, rgba(91, 71, 251, 0.02) 100%);
-            padding-left: 22px;
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0.02) 100%);
+            transform: translateX(4px);
+        }
+
+        .search-result-item:active {
+            background: rgba(99, 102, 241, 0.12);
+            transform: translateX(2px);
         }
 
         .search-result-avatar {
-            width: 42px;
-            height: 42px;
+            width: 44px;
+            height: 44px;
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
             color: white;
             border-radius: 50%;
@@ -344,7 +966,9 @@
             align-items: center;
             justify-content: center;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 15px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
         }
 
         .search-result-details {
@@ -356,51 +980,54 @@
             font-weight: 600;
             font-size: 15px;
             color: #1e2139;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
+            line-height: 1.2;
         }
 
         .search-result-meta {
             font-size: 13px;
             color: #6c7293;
             display: flex;
+            flex-wrap: wrap;
             gap: 12px;
+            line-height: 1.3;
         }
 
         .search-result-meta span {
             display: inline-flex;
             align-items: center;
             gap: 4px;
+            white-space: nowrap;
         }
 
         .search-result-meta i {
             font-size: 11px;
             opacity: 0.7;
+            flex-shrink: 0;
         }
 
-        .search-loading {
-            padding: 20px;
+        .search-loading, .search-no-results {
+            padding: 24px 20px;
             text-align: center;
             color: #6c7293;
+            font-size: 14px;
         }
 
         .search-loading i {
             animation: spin 1s linear infinite;
+            margin-right: 8px;
         }
 
-        .search-no-results {
-            padding: 20px;
-            text-align: center;
-            color: #6c7293;
+        .search-no-results i {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            opacity: 0.5;
+            display: block;
         }
 
         @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         /* Scrollbar Styling for Search Results */
@@ -409,17 +1036,506 @@
         }
 
         .search-results::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: #f8fafc;
             border-radius: 10px;
         }
 
         .search-results::-webkit-scrollbar-thumb {
-            background: #6366f1;
+            background: #cbd5e0;
             border-radius: 10px;
         }
 
         .search-results::-webkit-scrollbar-thumb:hover {
-            background: #4f46e5;
+            background: #a0aec0;
+        }
+
+        /* Notification Bell Styles */
+        #notificationBell {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #notificationBell:hover i {
+            color: #6366f1;
+            transform: scale(1.1);
+        }
+
+        #notificationBadge {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+        }
+
+        .notification-dropdown {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            width: 380px;
+            max-height: 500px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            z-index: 1050;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+        }
+
+        /* Desktop/Laptop specific notification styles */
+        @media (min-width: 769px) {
+            .notification-dropdown {
+                position: absolute;
+                top: calc(100% + 10px);
+                right: 0;
+                width: 400px;
+                max-height: 600px;
+                z-index: 1060;
+                transform-origin: top right;
+                box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+                border: 1px solid #e5e7eb;
+                /* Ensure dropdown is not cut off by parent containers */
+                position: fixed;
+            }
+            
+            .notification-header {
+                padding: 18px 24px;
+                background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+                position: sticky;
+                top: 0;
+                z-index: 10;
+            }
+            
+            .notification-list {
+                max-height: 520px;
+                padding: 8px 0;
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+            
+            /* Ensure proper positioning relative to parent */
+            #notificationContainer {
+                position: relative;
+            }
+            
+            /* Better scrollbar for desktop */
+            .notification-list::-webkit-scrollbar {
+                width: 6px;
+            }
+            
+            .notification-list::-webkit-scrollbar-track {
+                background: #f8fafc;
+            }
+            
+            .notification-list::-webkit-scrollbar-thumb {
+                background: #cbd5e0;
+                border-radius: 3px;
+            }
+            
+            .notification-list::-webkit-scrollbar-thumb:hover {
+                background: #a0aec0;
+            }
+            
+            /* Ensure user info is visible on desktop/laptop */
+            .topbar .text-end {
+                display: block !important;
+            }
+        }
+
+        .notification-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e8ecf4;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        }
+
+        .notification-header h6 {
+            font-weight: 700;
+            color: #1e2139;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        #closeNotificationDropdown {
+            transition: all 0.2s ease;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        #closeNotificationDropdown:hover {
+            color: #ef4444 !important;
+            transform: scale(1.1);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .notification-list {
+            max-height: 420px;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .notification-item {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .notification-item:hover {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        }
+
+        .notification-item.unread {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-left: 4px solid #3b82f6;
+        }
+
+        .notification-item-content {
+            font-size: 0.9rem;
+            color: #334155;
+            line-height: 1.5;
+            margin-bottom: 4px;
+            white-space: pre-wrap;
+        }
+
+        .notification-item-time {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .notification-item {
+            padding: 14px 20px;
+            border-bottom: 1px solid #f1f3f5;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .notification-item:hover {
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.05) 0%, transparent 100%);
+        }
+
+        .notification-item.unread {
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0.02) 100%);
+        }
+
+        .notification-item.unread::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #6366f1;
+        }
+
+        .notification-item-content {
+            font-size: 0.9rem;
+            color: #4a5568;
+            line-height: 1.5;
+            margin-bottom: 4px;
+        }
+
+        .notification-item-time {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .notification-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .notification-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .notification-list::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 10px;
+        }
+
+        .notification-list::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
+        }
+
+        .notification-empty {
+            padding: 40px 20px;
+            text-align: center;
+            color: #94a3b8;
+        }
+
+        .notification-empty i {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        /* Mobile Responsive Notifications */
+        @media (max-width: 768px) {
+            .notification-dropdown {
+                position: fixed;
+                top: 60px;
+                left: 10px;
+                right: 10px;
+                width: auto;
+                max-width: none;
+                border-radius: 16px;
+                max-height: calc(100vh - 80px);
+                z-index: 1060;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            }
+            
+            .notification-header {
+                padding: 12px 16px;
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                background: white;
+                border-radius: 16px 16px 0 0;
+            }
+            
+            .notification-header h6 {
+                font-size: 0.9rem;
+            }
+            
+            .notification-list {
+                max-height: calc(100vh - 140px);
+                padding-bottom: 10px;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .notification-item {
+                padding: 12px 16px;
+                border-bottom: 1px solid #f1f3f5;
+                min-height: 44px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
+            }
+            
+            .notification-item:active {
+                background: rgba(99, 102, 241, 0.1);
+            }
+            
+            .notification-item-content {
+                font-size: 0.85rem;
+                line-height: 1.4;
+            }
+            
+            .notification-item-time {
+                font-size: 0.7rem;
+            }
+            
+            .notification-empty {
+                padding: 30px 16px;
+            }
+            
+            .notification-empty i {
+                font-size: 2.5rem;
+            }
+            
+            /* Sound button adjustments */
+            #testSoundBtn {
+                padding: 6px;
+                font-size: 0.8rem;
+                min-height: 32px;
+                min-width: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            #markAllRead {
+                font-size: 0.7rem;
+                padding: 4px 8px;
+                min-height: 32px;
+                display: flex;
+                align-items: center;
+            }
+            
+            #closeNotificationDropdown {
+                min-height: 32px;
+                min-width: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .notification-dropdown {
+                top: 50px;
+                left: 5px;
+                right: 5px;
+                border-radius: 12px;
+                max-height: calc(100vh - 60px);
+            }
+            
+            .notification-header {
+                padding: 10px 12px;
+                border-radius: 12px 12px 0 0;
+            }
+            
+            .notification-header h6 {
+                font-size: 0.85rem;
+            }
+            
+            .notification-list {
+                max-height: calc(100vh - 120px);
+            }
+            
+            .notification-item {
+                padding: 10px 12px;
+            }
+            
+            .notification-item-content {
+                font-size: 0.8rem;
+            }
+            
+            .notification-item-time {
+                font-size: 0.65rem;
+            }
+            
+            .notification-empty {
+                padding: 20px 12px;
+            }
+            
+            #closeNotificationDropdown {
+                font-size: 1rem;
+            }
+            
+            #testSoundBtn {
+                display: none; /* Hide sound button on very small screens */
+            }
+            
+            #markAllRead {
+                font-size: 0.65rem;
+                padding: 3px 6px;
+            }
+        }
+
+        /* Notification dropdown animation */
+        .notification-dropdown {
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            visibility: hidden;
+        }
+        
+        .notification-dropdown.show {
+            opacity: 1;
+            transform: translateY(0);
+            visibility: visible;
+        }
+
+        /* Ensure notification container positioning */
+        #notificationContainer {
+            position: relative;
+        }
+
+        /* Desktop notification improvements */
+        @media (min-width: 1024px) {
+            .notification-dropdown {
+                width: 420px;
+                max-height: 650px;
+            }
+            
+            .notification-list {
+                max-height: 570px;
+            }
+        }
+
+        /* Tablet and larger screens - ensure user info is visible */
+        @media (min-width: 577px) {
+            .topbar .text-end {
+                display: block !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+            }
+            
+            .topbar .text-end .fw-bold {
+                font-size: 0.95rem;
+                color: #1e2139 !important;
+            }
+            
+            .topbar .text-end .text-muted {
+                font-size: 0.8rem !important;
+                color: #6c7293 !important;
+            }
+        }
+
+        /* Ensure user info section has proper styling */
+        #userInfoSection {
+            min-width: 120px;
+            text-align: right;
+        }
+
+        #userInfoSection .fw-bold {
+            font-weight: 600;
+            line-height: 1.2;
+            margin-bottom: 2px;
+        }
+
+        #userInfoSection .text-muted {
+            line-height: 1.1;
+        }
+
+        /* Prevent notification from being cut off by viewport */
+        @media (min-width: 769px) {
+            .notification-dropdown {
+                /* Ensure dropdown stays within viewport */
+                max-width: calc(100vw - 40px);
+            }
+            
+            /* If dropdown would go off-screen, adjust position */
+            .notification-dropdown.adjust-position {
+                right: auto;
+                left: 0;
+                transform-origin: top left;
+            }
+        }
+
+        /* Mobile notification backdrop */
+        .notification-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 1055;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: auto;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        .notification-backdrop.show {
+            opacity: 1;
         }
     </style>
     {% block extra_css %}{% endblock %}
@@ -461,7 +1577,7 @@
 
         {% if user.role == 'SUPERADMIN' %}
         <!-- Super Admin Menu -->
-        <div class="sidebar-section-title ps-0 mt-0 mb-0 py-2">Global Admin</div>
+        <div class="sidebar-section-title ps-0 mt-0 mb-0 py-1">Global Admin</div>
         <a href="{% url 'superadmin:dashboard' %}" class="{% if 'superadmin' in request.path %}active{% endif %}">
             <i class="fas fa-globe"></i> <span>Global View</span>
         </a>
@@ -502,7 +1618,7 @@
         {% if user.role == 'COMPANY_ADMIN' or user.role == 'MANAGER' %}
         <a href="#menuEmployees" class="sidebar-dropdown-toggle d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse" role="button" aria-expanded="false">
-            <span class="sidebar-section-title ps-0 mt-0 mb-0 py-2">
+            <span class="sidebar-section-title ps-0 mt-0 mb-0 py-1">
                 {% if user.role == 'MANAGER' %}
                 Team
                 {% else %}
@@ -549,7 +1665,7 @@
         {% if user.role == 'COMPANY_ADMIN' or user.role == 'MANAGER' %}
         <a href="#menuLeaves" class="sidebar-dropdown-toggle d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse" role="button" aria-expanded="false">
-            <span class="sidebar-section-title ps-0 mt-0 mb-0 py-2">Leaves</span>
+            <span class="sidebar-section-title ps-0 mt-0 mb-0 py-1">Leaves</span>
             <i class="fas fa-chevron-down small text-muted"></i>
         </a>
         <div class="collapse {% if 'leaves/requests' in request.path or 'leaves/history' in request.path or 'exit-initiatives' in request.path %}show{% endif %}"
@@ -563,10 +1679,7 @@
                     class="{% if 'regularization/requests' in request.path %}active{% endif %}">
                     <i class="fas fa-check-double"></i> Regularization Requests
                 </a>
-                <a href="{% url 'exit_initiatives_list' %}"
-                    class="{% if 'exit-initiatives' in request.path %}active{% endif %}">
-                    <i class="fas fa-door-open"></i> Exit Initiatives
-                </a>
+
                 <a href="{% url 'leave_history' %}" class="{% if 'history' in request.path %}active{% endif %}">
                     <i class="fas fa-history"></i> Leave History
                 </a>
@@ -574,11 +1687,19 @@
         </div>
         {% endif %}
 
+        <!-- Exit Initiatives -->
+        {% if user.role == 'COMPANY_ADMIN' or user.role == 'MANAGER' %}
+        <a href="{% url 'exit_initiatives_list' %}"
+            class="{% if 'exit-initiatives' in request.path %}active{% endif %}">
+            <i class="fas fa-door-open"></i> <span>Exit Initiatives</span>
+        </a>
+        {% endif %}
+
         {% if user.role == 'COMPANY_ADMIN' %}
         <!-- Payroll (Collapsible) -->
         <a href="#menuPayroll" class="sidebar-dropdown-toggle d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse" role="button" aria-expanded="false">
-            <span class="sidebar-section-title ps-0 mt-0 mb-0 py-2">Payroll</span>
+            <span class="sidebar-section-title ps-0 mt-0 mb-0 py-1">Payroll</span>
             <i class="fas fa-chevron-down small text-muted"></i>
         </a>
         <div class="collapse {% if 'payroll' in request.path %}show{% endif %}" id="menuPayroll">
@@ -592,7 +1713,7 @@
         <!-- Configuration (Collapsible) -->
         <a href="#menuConfig" class="sidebar-dropdown-toggle d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse" role="button" aria-expanded="false">
-            <span class="sidebar-section-title ps-0 mt-0 mb-0 py-2">Configuration</span>
+            <span class="sidebar-section-title ps-0 mt-0 mb-0 py-1">Configuration</span>
             <i class="fas fa-chevron-down small text-muted"></i>
         </a>
         <div class="collapse {% if 'config' in request.path %}show{% endif %}" id="menuConfig">
@@ -635,7 +1756,7 @@
         {% if user.role == 'COMPANY_ADMIN' or user.role == 'MANAGER' or user.role == 'SUPERADMIN' %}
         <a href="#menuAI" class="sidebar-dropdown-toggle d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse" role="button" aria-expanded="false">
-            <span class="sidebar-section-title ps-0 mt-0 mb-0 py-2">🤖 AI Features</span>
+            <span class="sidebar-section-title ps-0 mt-0 mb-0 py-1">🤖 AI Features</span>
             <i class="fas fa-chevron-down small text-muted"></i>
         </a>
         <div class="collapse {% if 'ai/' in request.path %}show{% endif %}" id="menuAI">
@@ -706,10 +1827,10 @@
                     class="user-mini-img" alt="User">
                 {% endif %}
                 <div class="user-mini-info">
-                    <div>{{ user.first_name|truncatechars:15 }}</div>
+                    <div>{{ user.get_full_name|truncatechars:20 }}</div>
                     <div>
-                        {% if user.employee_profile %}
-                        {{ user.employee_profile.designation|default:user.role|title|truncatechars:20 }}
+                        {% if user.employee_profile and user.employee_profile.designation %}
+                        {{ user.employee_profile.designation|truncatechars:20 }}
                         {% else %}
                         {{ user.role|title|truncatechars:20 }}
                         {% endif %}
@@ -732,6 +1853,11 @@
     <!-- Topbar -->
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+            
             <h4 class="m-0 fw-bold" style="color: #4a5568">
                 {% if request.user.company %}
                 {% if request.user.company.slug == 'petabytz' %}
@@ -745,40 +1871,107 @@
             </h4>
             <!-- Employee Search Bar (for Company Admins on all pages) -->
             {% if user.role == 'COMPANY_ADMIN' %}
-            <div class="employee-search-container" style="position: relative;">
-                <i class="fas fa-search search-icon"
-                    style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #6c7293; font-size: 14px;"></i>
+            <div class="employee-search-container">
+                <i class="fas fa-search search-icon"></i>
                 <input type="text" id="employeeSearchInput" class="form-control"
-                    style="padding-left: 35px; width: 300px; border: 1.5px solid #e8ecf4; border-radius: 8px; font-size: 14px;"
-                    placeholder="Search employees by name or ID..." autocomplete="off">
-                <div id="searchResults" class="search-results"
-                    style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #e8ecf4; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1000; max-height: 300px; overflow-y: auto;">
-                </div>
+                    placeholder="Search employees..." autocomplete="off">
+                <div id="searchResults" class="search-results"></div>
             </div>
             {% endif %}
         </div>
         {% if request.user.is_authenticated %}
-        <div class="d-flex align-items-center">
-            <div class="text-end me-3">
-                <div class="fw-bold text-dark">{{ request.user.first_name|default:request.user.username }}</div>
-                <div class="text-muted small" style="font-size: 0.8rem;">
-                    {% if request.user.employee_profile %}
-                    {{ request.user.employee_profile.designation|default:request.user.role|title }}
-                    {% else %}
-                    {{ request.user.role|title }}
+        <div class="d-flex align-items-center gap-3">
+            {% if user.role == 'COMPANY_ADMIN' or user.role == 'MANAGER' %}
+            <!-- Notification Bell -->
+            <div class="position-relative" id="notificationContainer">
+                <button class="btn btn-link position-relative p-0" id="notificationBell" style="text-decoration: none;">
+                    <i class="fas fa-bell" style="font-size: 1.5rem; color: #6c7293;"></i>
+                    {% if unread_notification_count > 0 %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                        id="notificationBadge" style="font-size: 0.65rem;">
+                        {{ unread_notification_count }}
+                    </span>
                     {% endif %}
+                </button>
+
+                <!-- Notification Dropdown -->
+                <div class="notification-dropdown" id="notificationDropdown" style="display: none;">
+                    <div class="notification-header">
+                        <h6 class="mb-0">Notifications</h6>
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-sm btn-link text-secondary" id="testSoundBtn" title="Test Sound"
+                                style="font-size: 1rem;">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                            <button class="btn btn-sm btn-link text-primary" id="markAllRead"
+                                style="font-size: 0.75rem;">Mark all as read</button>
+                            <button class="btn btn-link p-0" id="closeNotificationDropdown"
+                                style="font-size: 1.2rem; color: #94a3b8; line-height: 1;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="notification-list" id="notificationList">
+                        <div class="text-center py-3 text-muted">
+                            <i class="fas fa-spinner fa-spin"></i> Loading...
+                        </div>
+                    </div>
                 </div>
             </div>
-            {% if request.user.employee_profile and request.user.employee_profile.profile_picture %}
-            <img src="{{ request.user.employee_profile.profile_picture.url }}"
-                class="rounded-circle shadow-sm object-fit-cover" width="40" height="40" alt="User">
-            {% else %}
-            <img src="https://ui-avatars.com/api/?name={{ request.user.first_name|default:request.user.email }}&background=667eea&color=fff"
-                class="rounded-circle shadow-sm" width="40" height="40" alt="User">
             {% endif %}
+
+            <div class="text-end me-3" id="userInfoSection">
+                <div class="fw-bold text-dark">
+                    {{ request.user.get_full_name|default:request.user.username|default:"No Name" }}
+                </div>
+                <div class="text-muted small" style="font-size: 0.8rem;">
+                    {% if request.user.employee_profile and request.user.employee_profile.designation %}
+                    {{ request.user.employee_profile.designation }}
+                    {% else %}
+                    {{ request.user.role|title|default:"No Role" }}
+                    {% endif %}
+                </div>
+                <!-- Debug info - remove after testing -->
+                <div class="text-danger small" style="font-size: 0.7rem; display: none;" id="debugInfo">
+                    User: {{ request.user.username }}<br>
+                    Profile: {% if request.user.employee_profile %}Yes{% else %}No{% endif %}<br>
+                    Role: {{ request.user.role }}
+                </div>
+            </div>
+            <div class="dropdown">
+                <a href="#" class="d-flex align-items-center link-dark text-decoration-none dropdown-toggle"
+                    id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                    {% if request.user.employee_profile and request.user.employee_profile.profile_picture %}
+                    <img src="{{ request.user.employee_profile.profile_picture.url }}"
+                        class="rounded-circle shadow-sm object-fit-cover" width="40" height="40" alt="User">
+                    {% else %}
+                    <img src="https://ui-avatars.com/api/?name={{ request.user.first_name|default:request.user.email }}&background=667eea&color=fff"
+                        class="rounded-circle shadow-sm" width="40" height="40" alt="User">
+                    {% endif %}
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end text-small shadow" aria-labelledby="dropdownUser1">
+                    <li><a class="dropdown-item" href="{% url 'employee_profile' %}"><i class="fas fa-user me-2"></i>My
+                            Profile</a></li>
+                    <li><a class="dropdown-item" href="{% url 'id_card' %}"><i class="fas fa-id-badge me-2"></i>ID
+                            Card</a></li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li>
+                        <form action="{% url 'logout' %}" method="post" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item text-danger"><i
+                                    class="fas fa-sign-out-alt me-2"></i>Sign out</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
         </div>
         {% endif %}
     </div>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <!-- Main Content -->
     <div class="content">
@@ -796,34 +1989,100 @@
 
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Responsive JavaScript -->
+    <script src="{% static 'js/responsive.js' %}"></script>
 
     {% if user.is_authenticated %}
     <script>
-        (function () {
-            // Update every 15 minutes (900000 ms) for better tracking resolution
-            // User asked for "every one hour", but 15 mins provides a much better map history without draining battery too fast.
-            const UPDATE_INTERVAL = 900000;
-            const LAST_UPDATE_KEY = 'hrms_last_loc_update';
-            const NOTIFICATION_SHOWN_KEY = 'hrms_shift_notif_shown';
+        // Mobile Navigation is handled by responsive.js
+        // Fallback mobile navigation in case responsive.js fails to load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait a bit to see if responsive.js loaded
+            setTimeout(function() {
+                const mobileToggle = document.getElementById('mobileMenuToggle');
+                const sidebar = document.querySelector('.sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                
+                if (mobileToggle && sidebar && overlay) {
+                    // Check if responsive.js already handled this
+                    if (!mobileToggle.hasAttribute('data-responsive-handled')) {
+                        console.log('Responsive.js not detected, using fallback mobile navigation');
+                        
+                        // Simple fallback mobile navigation
+                        mobileToggle.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            console.log('Fallback: Mobile toggle clicked');
+                            
+                            const isOpen = sidebar.classList.contains('show');
+                            
+                            if (isOpen) {
+                                sidebar.classList.remove('show');
+                                overlay.classList.remove('show');
+                                document.body.classList.remove('sidebar-open');
+                                this.querySelector('i').className = 'fas fa-bars';
+                                this.setAttribute('aria-expanded', 'false');
+                            } else {
+                                sidebar.classList.add('show');
+                                overlay.classList.add('show');
+                                document.body.classList.add('sidebar-open');
+                                this.querySelector('i').className = 'fas fa-times';
+                                this.setAttribute('aria-expanded', 'true');
+                            }
+                        });
+                        
+                        overlay.addEventListener('click', function() {
+                            sidebar.classList.remove('show');
+                            overlay.classList.remove('show');
+                            document.body.classList.remove('sidebar-open');
+                            mobileToggle.querySelector('i').className = 'fas fa-bars';
+                            mobileToggle.setAttribute('aria-expanded', 'false');
+                        });
+                        
+                        // Prevent dropdown toggles from closing sidebar
+                        const dropdownToggles = sidebar.querySelectorAll('[data-bs-toggle="collapse"]');
+                        dropdownToggles.forEach(toggle => {
+                            toggle.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                console.log('Dropdown toggle clicked, preventing sidebar close');
+                            });
+                        });
+                        
+                        mobileToggle.setAttribute('data-responsive-handled', 'fallback');
+                    }
+                }
+            }, 500);
+        });
+        
+        // Background Location Tracking Integration
+        // Load the background location tracker
+        const backgroundScript = document.createElement('script');
+        backgroundScript.src = '{% static "js/background-location-tracker.js" %}';
+        backgroundScript.async = true;
+        document.head.appendChild(backgroundScript);
 
-            function sendLocation() {
+        // Location tracking code continues below...
+
+        (function () {
+            /**
+             * Precise Hourly Location Tracking (Keka-style)
+             * Tracks location exactly every hour after clock-in.
+             */
+            let nextPunchTimer = null;
+            let statusCheckInterval = null;
+
+            function performPunch() {
                 if (!navigator.geolocation) return;
 
                 navigator.geolocation.getCurrentPosition(position => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-
-                    if (lat === null || lat === undefined || lng === null || lng === undefined) {
-                        console.warn("Invalid coordinates captured.");
-                        return;
-                    }
-
                     const data = {
-                        latitude: lat,
-                        longitude: lng
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy
                     };
 
-                    fetch("{% url 'api_update_location' %}", {
+                    fetch("{% url 'api_submit_hourly_location' %}", {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -833,46 +2092,104 @@
                     })
                         .then(response => response.json())
                         .then(data => {
-                            if (data.status === 'success' || data.location_tracking_active) {
-                                console.log('Location updated');
-                                localStorage.setItem(LAST_UPDATE_KEY, Date.now());
-
-                                // Handle Shift Completion Notification
-                                if (data.shift_completed && data.notification) {
-                                    // Check if we already showed it this session to avoid spam
-                                    const alreadyShown = sessionStorage.getItem(NOTIFICATION_SHOWN_KEY);
-                                    if (!alreadyShown) {
-                                        alert(data.notification); // Simple alert as requested
-                                        sessionStorage.setItem(NOTIFICATION_SHOWN_KEY, 'true');
-                                    }
-                                }
-                            } else if (data.status === 'tracking_inactive') {
-                                // User not clocked in, that's fine.
-                                // We can increase the interval to check less frequently if not clocked in, 
-                                // but for simplicity keeping it constant.
+                            console.log('Hourly location punch result:', data.message);
+                            if (data.status === 'success') {
+                                // Re-sync status to schedule next
+                                checkLocationStatus();
                             }
                         })
-                        .catch(err => console.error('Location update error:', err));
+                        .catch(err => console.error('Hourly punch error:', err));
                 }, error => {
                     console.warn("Location access denied or error:", error.message);
                 }, {
                     enableHighAccuracy: true,
-                    timeout: 30000,
+                    timeout: 20000,
                     maximumAge: 0
                 });
             }
 
-            // Check schedule on load
-            const lastUpdate = localStorage.getItem(LAST_UPDATE_KEY);
-            const now = Date.now();
+            function scheduleNextPunch(clockInTimeStr, lastLogTimeStr) {
+                if (!clockInTimeStr) return;
 
-            // If never updated or older than interval, update now
-            if (!lastUpdate || (now - parseInt(lastUpdate) > UPDATE_INTERVAL)) {
-                sendLocation();
+                const clockInTime = new Date(clockInTimeStr);
+                const now = new Date();
+
+                // Find the next hourly milestone: clockIn + N hours
+                let nextPoint = new Date(clockInTime);
+                while (nextPoint <= now) {
+                    nextPoint.setHours(nextPoint.getHours() + 1);
+                }
+
+                const delay = nextPoint.getTime() - now.getTime();
+
+                // Clear existing timer
+                if (nextPunchTimer) clearTimeout(nextPunchTimer);
+
+                // Schedule the punch
+                console.log(`Next hourly punch scheduled at ${nextPoint.toLocaleTimeString()} (in ${Math.round(delay / 60000)} minutes)`);
+                nextPunchTimer = setTimeout(() => {
+                    performPunch();
+                }, delay);
             }
 
-            // Set interval for future updates
-            setInterval(sendLocation, UPDATE_INTERVAL);
+            function checkLocationStatus() {
+                fetch("{% url 'api_location_tracking_status' %}")
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            if (data.is_clocked_in && !data.tracking_stopped) {
+                                // 1. If we missed a punch (server says needs_location), do it now
+                                if (data.needs_location) {
+                                    console.log("Missed hourly punch detected, punching now...");
+                                    performPunch();
+                                }
+                                // 2. Schedule the next regular punch
+                                scheduleNextPunch(data.clock_in_time, data.last_log_time);
+                            } else {
+                                if (nextPunchTimer) clearTimeout(nextPunchTimer);
+                                console.log("Location tracking inactive (not clocked in or shift complete).");
+                            }
+                        }
+                    })
+                    .catch(err => console.error('Status check error:', err));
+            }
+
+            // Start tracking
+            checkLocationStatus();
+
+            // Periodic sync check every 10 minutes to ensure timer stays alive and synced with server
+            if (statusCheckInterval) clearInterval(statusCheckInterval);
+            statusCheckInterval = setInterval(checkLocationStatus, 600000);
+
+            // Visibility Change: Re-check when user returns to tab
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    console.log("Tab became visible, refreshing tracking status...");
+                    checkLocationStatus();
+                }
+            });
+
+            // Service Worker Registration for better background persistence
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/static/js/sw.js')
+                    .then(reg => {
+                        console.log('Service Worker registered for background tracking');
+                        // Request periodic sync if supported (requires PWA installation typically)
+                        if ('periodicSync' in reg) {
+                            reg.periodicSync.register('hourly-location-punch', {
+                                minInterval: 3600000 // 1 hour
+                            }).catch(err => console.log('Periodic Sync failed (expected if not installed):', err));
+                        }
+                    })
+                    .catch(err => console.warn('SW registration failed:', err));
+
+                navigator.serviceWorker.addEventListener('message', event => {
+                    if (event.data && event.data.type === 'REQUEST_LOCATION_PUNCH') {
+                        console.log('Location punch requested by Service Worker');
+                        performPunch();
+                    }
+                });
+            }
         })();
     </script>
     {% endif %}
@@ -929,9 +2246,9 @@
                     <button type="button" class="btn-close position-absolute top-0 end-0"
                         onclick="document.getElementById('celebrationModal').remove()"></button>
                     <div style="font-size: 4rem; margin-bottom: 1rem;">
-                        {% if celebration_type == 'birthday' %}🎂{% endif %}
-                        {% if celebration_type == 'anniversary' %}🏆{% endif %}
-                        {% if celebration_type == 'both' %}🎂🏆{% endif %}
+                        {% if celebration_type == 'birthday' %}&#127874;{% endif %}
+                        {% if celebration_type == 'anniversary' %}&#127942;{% endif %}
+                        {% if celebration_type == 'both' %}&#127874;&#127942;{% endif %}
                     </div>
                     <h2 class="mb-3 fw-bold text-primary">
                         {% if celebration_type == 'birthday' %}Happy Birthday!{% endif %}
@@ -971,62 +2288,191 @@
     <!-- Employee Search Functionality (for Company Admins on all pages) -->
     {% if user.role == 'COMPANY_ADMIN' %}
     <script>
-        // Employee Search Functionality
+        // Employee Search Functionality - Enhanced Responsive Version
         let searchTimeout;
         const searchInput = document.getElementById('employeeSearchInput');
         const searchResults = document.getElementById('searchResults');
+        let isSearchOpen = false;
 
         if (searchInput) {
+            console.log('Search input found:', searchInput);
+            console.log('Search results div found:', searchResults);
+            
             // Search on input with debouncing
             searchInput.addEventListener('input', function () {
                 const query = this.value.trim();
+                console.log('🔍 Input event triggered, query:', query);
+                
+                // Visual feedback - change border color when typing
+                this.style.borderColor = query.length > 0 ? '#6366f1' : '#e8ecf4';
 
                 // Clear previous timeout
                 clearTimeout(searchTimeout);
 
-                if (query.length < 2) {
-                    searchResults.style.display = 'none';
+                if (query.length < 1) {
+                    console.log('❌ Query empty, hiding results');
+                    hideSearchResults();
                     return;
                 }
 
                 // Show loading state
+                console.log('⏳ Showing loading state');
+                showSearchResults();
                 searchResults.innerHTML = '<div class="search-loading"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
-                searchResults.style.display = 'block';
 
-                // Debounce search (wait 300ms after user stops typing)
+                // Debounce search (wait 200ms after user stops typing for faster response)
                 searchTimeout = setTimeout(() => {
+                    console.log('🚀 Performing search after debounce');
                     performSearch(query);
-                }, 300);
+                }, 200);
             });
 
             // Close search results when clicking outside
             document.addEventListener('click', function (e) {
                 if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-                    searchResults.style.display = 'none';
+                    hideSearchResults();
                 }
             });
 
             // Reopen results when clicking on input if there's content
             searchInput.addEventListener('focus', function () {
-                if (this.value.trim().length >= 2 && searchResults.innerHTML) {
-                    searchResults.style.display = 'block';
+                if (this.value.trim().length >= 1 && searchResults.innerHTML && !searchResults.innerHTML.includes('Searching...')) {
+                    showSearchResults();
+                }
+            });
+
+            // Handle escape key to close search
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    hideSearchResults();
+                    this.blur();
+                }
+            });
+
+            // Prevent form submission on enter
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
                 }
             });
         }
 
+        function showSearchResults() {
+            console.log('showSearchResults called, isSearchOpen:', isSearchOpen);
+            if (!isSearchOpen) {
+                console.log('Showing search results');
+                searchResults.style.display = 'block';
+                // Force reflow before adding show class for smooth animation
+                searchResults.offsetHeight;
+                searchResults.classList.add('show');
+                isSearchOpen = true;
+
+                // Add backdrop for mobile
+                if (window.innerWidth <= 768) {
+                    createSearchBackdrop();
+                }
+            }
+        }
+
+        function hideSearchResults() {
+            if (isSearchOpen) {
+                searchResults.classList.remove('show');
+                
+                // Wait for animation to complete before hiding
+                setTimeout(() => {
+                    searchResults.style.display = 'none';
+                }, 300);
+                
+                isSearchOpen = false;
+                
+                // Remove backdrop
+                removeSearchBackdrop();
+            }
+        }
+
+        function createSearchBackdrop() {
+            // Remove existing backdrop
+            removeSearchBackdrop();
+            
+            // Create new backdrop
+            const backdrop = document.createElement('div');
+            backdrop.id = 'searchBackdrop';
+            backdrop.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.3);
+                z-index: 1055;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                pointer-events: auto;
+            `;
+            
+            document.body.appendChild(backdrop);
+            
+            // Trigger animation
+            setTimeout(() => {
+                backdrop.style.opacity = '1';
+            }, 10);
+            
+            // Close on backdrop click
+            backdrop.addEventListener('click', hideSearchResults);
+        }
+
+        function removeSearchBackdrop() {
+            const backdrop = document.getElementById('searchBackdrop');
+            if (backdrop) {
+                backdrop.style.opacity = '0';
+                setTimeout(() => {
+                    backdrop.remove();
+                }, 300);
+            }
+        }
+
         function performSearch(query) {
-            fetch(`/api/search-employees/?q=${encodeURIComponent(query)}`)
-                .then(response => response.json())
+            console.log('Performing search for:', query);
+            console.log('Fetch URL:', `/api/search-employees/?q=${encodeURIComponent(query)}`);
+            
+            fetch(`/api/search-employees/?q=${encodeURIComponent(query)}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin'
+            })
+                .then(response => {
+                    console.log('Search response status:', response.status);
+                    console.log('Search response headers:', response.headers);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Search data received:', data);
+                    
+                    if (data.error) {
+                        console.error('API returned error:', data.error);
+                        searchResults.innerHTML = `<div class="search-no-results"><i class="fas fa-exclamation-circle"></i><div>Error: ${data.error}</div></div>`;
+                        return;
+                    }
+                    
                     displaySearchResults(data.employees);
                 })
                 .catch(error => {
                     console.error('Search error:', error);
-                    searchResults.innerHTML = '<div class="search-no-results"><i class="fas fa-exclamation-circle"></i><div>Error performing search</div></div>';
+                    searchResults.innerHTML = `<div class="search-no-results"><i class="fas fa-exclamation-circle"></i><div>Network Error: ${error.message}</div></div>`;
                 });
         }
 
         function displaySearchResults(employees) {
+            console.log('Displaying results for employees:', employees);
+            
             if (employees.length === 0) {
                 searchResults.innerHTML = `
                     <div class="search-no-results">
@@ -1039,6 +2485,7 @@
 
             let html = '';
             employees.forEach(emp => {
+                console.log('Processing employee:', emp);
                 // Get initials for avatar
                 const nameParts = emp.name.split(' ');
                 const initials = nameParts.length > 1
@@ -1061,16 +2508,576 @@
                 `;
             });
 
+            console.log('Generated HTML:', html);
             searchResults.innerHTML = html;
         }
 
         function navigateToEmployee(url) {
+            hideSearchResults();
             window.location.href = url;
         }
+
+        // Handle window resize to adjust search behavior
+        window.addEventListener('resize', function() {
+            if (isSearchOpen) {
+                // Adjust search results position on resize
+                if (window.innerWidth <= 768) {
+                    createSearchBackdrop();
+                } else {
+                    removeSearchBackdrop();
+                }
+            }
+        });
+
+        // Search functionality complete
+        
+    </script>
+    {% endif %}
+
+    <!-- Notification System JavaScript -->
+    {% if user.role == 'COMPANY_ADMIN' or user.role == 'MANAGER' %}
+    <script>
+        const notificationBell = document.getElementById('notificationBell');
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        const notificationList = document.getElementById('notificationList');
+        const notificationBadge = document.getElementById('notificationBadge');
+        const markAllReadBtn = document.getElementById('markAllRead');
+
+        let isDropdownOpen = false;
+
+        // Toggle dropdown
+        notificationBell.addEventListener('click', function (e) {
+            e.stopPropagation();
+            isDropdownOpen = !isDropdownOpen;
+
+            if (isDropdownOpen) {
+                // Check if dropdown would go off-screen on desktop
+                if (window.innerWidth > 768) {
+                    adjustNotificationPosition();
+                }
+                
+                notificationDropdown.style.display = 'block';
+                // Force reflow before adding show class for smooth animation
+                notificationDropdown.offsetHeight;
+                notificationDropdown.classList.add('show');
+                
+                // Add backdrop for mobile
+                if (window.innerWidth <= 768) {
+                    createNotificationBackdrop();
+                }
+                
+                loadNotifications();
+            } else {
+                closeNotificationDropdown();
+            }
+        });
+
+        function adjustNotificationPosition() {
+            const container = document.getElementById('notificationContainer');
+            const dropdown = notificationDropdown;
+            const containerRect = container.getBoundingClientRect();
+            const dropdownWidth = 420; // Max width from CSS
+            
+            // For desktop, use fixed positioning and calculate position relative to viewport
+            if (window.innerWidth > 768) {
+                dropdown.style.position = 'fixed';
+                dropdown.style.top = (containerRect.bottom + 10) + 'px';
+                
+                // Check if dropdown would go off the right edge
+                if (containerRect.right - dropdownWidth < 20) {
+                    // Position from left edge of container
+                    dropdown.style.left = (containerRect.left) + 'px';
+                    dropdown.style.right = 'auto';
+                    dropdown.classList.add('adjust-position');
+                } else {
+                    // Position from right edge of container
+                    dropdown.style.right = (window.innerWidth - containerRect.right) + 'px';
+                    dropdown.style.left = 'auto';
+                    dropdown.classList.remove('adjust-position');
+                }
+            }
+        }
+
+        function createNotificationBackdrop() {
+            // Remove existing backdrop
+            const existingBackdrop = document.getElementById('notificationBackdrop');
+            if (existingBackdrop) {
+                existingBackdrop.remove();
+            }
+            
+            // Create new backdrop
+            const backdrop = document.createElement('div');
+            backdrop.id = 'notificationBackdrop';
+            backdrop.className = 'notification-backdrop';
+            backdrop.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.3);
+                z-index: 1055;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                pointer-events: auto;
+            `;
+            
+            document.body.appendChild(backdrop);
+            
+            // Trigger animation
+            setTimeout(() => {
+                backdrop.style.opacity = '1';
+            }, 10);
+            
+            // Close on backdrop click
+            backdrop.addEventListener('click', closeNotificationDropdown);
+        }
+
+        function closeNotificationDropdown() {
+            notificationDropdown.classList.remove('show');
+            
+            // Wait for animation to complete before hiding
+            setTimeout(() => {
+                notificationDropdown.style.display = 'none';
+                // Reset position classes and styles
+                notificationDropdown.classList.remove('adjust-position');
+                notificationDropdown.style.position = '';
+                notificationDropdown.style.top = '';
+                notificationDropdown.style.right = '';
+                notificationDropdown.style.left = '';
+            }, 300);
+            
+            isDropdownOpen = false;
+            
+            // Remove backdrop
+            const backdrop = document.getElementById('notificationBackdrop');
+            if (backdrop) {
+                backdrop.style.opacity = '0';
+                setTimeout(() => {
+                    backdrop.remove();
+                }, 300);
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!document.getElementById('notificationContainer').contains(e.target)) {
+                closeNotificationDropdown();
+            }
+        });
+
+        // Prevent dropdown from closing when clicking inside
+        notificationDropdown.addEventListener('click', function (e) {
+            e.stopPropagation();
+        });
+
+        // Close button handler
+        const closeNotificationBtn = document.getElementById('closeNotificationDropdown');
+        closeNotificationBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            closeNotificationDropdown();
+        });
+
+        // Handle window resize to adjust notification position
+        window.addEventListener('resize', function() {
+            if (isDropdownOpen && window.innerWidth > 768) {
+                adjustNotificationPosition();
+            }
+        });
+
+        // Debug user info visibility - remove after testing
+        document.addEventListener('DOMContentLoaded', function() {
+            const userInfoSection = document.getElementById('userInfoSection');
+            const debugInfo = document.getElementById('debugInfo');
+            
+            if (userInfoSection) {
+                console.log('User info section found:', userInfoSection);
+                console.log('Computed style:', window.getComputedStyle(userInfoSection));
+                console.log('Display:', window.getComputedStyle(userInfoSection).display);
+                console.log('Visibility:', window.getComputedStyle(userInfoSection).visibility);
+                
+                // Show debug info on double-click
+                userInfoSection.addEventListener('dblclick', function() {
+                    if (debugInfo) {
+                        debugInfo.style.display = debugInfo.style.display === 'none' ? 'block' : 'none';
+                    }
+                });
+            } else {
+                console.error('User info section not found!');
+            }
+        });
+
+        // Load notifications
+        function loadNotifications() {
+            fetch('/api/notifications/')
+                .then(response => response.json())
+                .then(data => {
+                    displayNotifications(data.notifications);
+                    updateBadge(data.count);
+                })
+                .catch(error => {
+                    console.error('Error loading notifications:', error);
+                    notificationList.innerHTML = `
+                        <div class="notification-empty">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <div>Error loading notifications</div>
+                        </div>
+                    `;
+                });
+        }
+
+        // Display notifications
+        function displayNotifications(notifications) {
+            if (notifications.length === 0) {
+                notificationList.innerHTML = `
+                    <div class="notification-empty">
+                        <i class="fas fa-bell-slash"></i>
+                        <div>No notifications</div>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            notifications.forEach(notif => {
+                const unreadClass = notif.is_read ? '' : 'unread';
+                const timeAgo = getTimeAgo(notif.created_at);
+
+                html += `
+                    <div class="notification-item ${unreadClass}" data-id="${notif.id}" data-url="${notif.url}">
+                        <div class="notification-item-content">${notif.message}</div>
+                        <div class="notification-item-time">${timeAgo}</div>
+                    </div>
+                `;
+            });
+
+            notificationList.innerHTML = html;
+
+            // Add click handlers to notification items
+            document.querySelectorAll('.notification-item').forEach(item => {
+                item.addEventListener('click', function () {
+                    const notifId = this.dataset.id;
+                    const url = this.dataset.url;
+
+                    markAsRead(notifId, () => {
+                        window.location.href = url;
+                    });
+                });
+            });
+        }
+
+        // Mark notification as read
+        function markAsRead(notificationId, callback) {
+            fetch(`/api/notifications/${notificationId}/read/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateBadge(data.unread_count);
+                        if (callback) callback();
+                    }
+                })
+                .catch(error => console.error('Error marking notification as read:', error));
+        }
+
+        // Mark all as read
+        markAllReadBtn.addEventListener('click', function () {
+            fetch('/api/notifications/mark-all-read/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateBadge(0);
+                        loadNotifications();
+                    }
+                })
+                .catch(error => console.error('Error marking all as read:', error));
+        });
+
+        // Update badge
+        function updateBadge(count) {
+            if (count > 0) {
+                if (notificationBadge) {
+                    notificationBadge.textContent = count;
+                    notificationBadge.style.display = 'inline-block';
+                } else {
+                    // Create badge if it doesn't exist
+                    const badge = document.createElement('span');
+                    badge.id = 'notificationBadge';
+                    badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+                    badge.style.fontSize = '0.65rem';
+                    badge.textContent = count;
+                    notificationBell.appendChild(badge);
+                }
+            } else {
+                if (notificationBadge) {
+                    notificationBadge.remove();
+                }
+            }
+        }
+
+        // Get time ago string
+        function getTimeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return Math.floor(seconds / 60) + ' minutes ago';
+            if (seconds < 86400) return Math.floor(seconds / 3600) + ' hours ago';
+            if (seconds < 604800) return Math.floor(seconds / 86400) + ' days ago';
+
+            return date.toLocaleDateString();
+        }
+
+        // Notification Sound System
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        // Initialize/Resume Audio Context on user interaction
+        function unlockAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            // Remove listeners once unlocked
+            ['click', 'keydown', 'touchstart'].forEach(event => {
+                document.removeEventListener(event, unlockAudio);
+            });
+        }
+
+        // Add listeners for the first interaction
+        ['click', 'keydown', 'touchstart'].forEach(event => {
+            document.addEventListener(event, unlockAudio, { once: true });
+        });
+
+        function playNotificationSound(isTest = false) {
+            // Ensure audio context exists and is running
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+
+            if (audioCtx.state === 'suspended') {
+                // Try to resume - if this fails, it's likely due to lack of interaction
+                audioCtx.resume().then(() => {
+                    console.log("Audio Context Resumed successfully.");
+                    generateSound(isTest);
+                }).catch(e => {
+                    console.error("Audio play failed (autoplay policy):", e);
+                    if (isTest) alert("Autoplay blocked! Please interact with the page first (click anywhere).");
+                });
+            } else {
+                generateSound(isTest);
+            }
+        }
+
+        function generateSound(isTest) {
+            try {
+                const now = audioCtx.currentTime;
+
+                // Louder 3-tone chime (C6 - E6 - G6)
+                const tones = [
+                    { freq: 1046.50, start: 0, dur: 0.15 },    // C6
+                    { freq: 1318.51, start: 0.1, dur: 0.15 },  // E6
+                    { freq: 1567.98, start: 0.2, dur: 0.4 }    // G6
+                ];
+
+                tones.forEach(tone => {
+                    const oscillator = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+
+                    oscillator.type = 'sine';
+                    oscillator.frequency.value = tone.freq;
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+
+                    // Louder Envelope (0.15 -> 0.5)
+                    gainNode.gain.setValueAtTime(0, now + tone.start);
+                    gainNode.gain.linearRampToValueAtTime(0.5, now + tone.start + 0.02);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, now + tone.start + tone.dur);
+
+                    oscillator.start(now + tone.start);
+                    oscillator.stop(now + tone.start + tone.dur);
+                });
+                console.log("Notification sound played.");
+                if (isTest) console.log("Test sound executed.");
+            } catch (e) {
+                console.error("Error generating sound:", e);
+            }
+        }
+
+        // Test Sound Button Listener
+        const testSoundBtn = document.getElementById('testSoundBtn');
+        if (testSoundBtn) {
+            testSoundBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                playNotificationSound(true);
+            });
+        }
+
+        // Track previous notification count to detect new notifications
+        let previousNotificationCount = parseInt('{{ unread_notification_count|default:0 }}') || 0;
+
+        // Poll for new notifications every 15 seconds (increased frequency)
+        setInterval(function () {
+            // Only poll if the page is visible or we want background notifications
+            // For background sound, we MUST poll even if hidden.
+            fetch('/api/notifications/')
+                .then(response => response.json())
+                .then(data => {
+                    const currentCount = data.count;
+
+                    // Play sound if new notifications arrived (count increased)
+                    if (currentCount > previousNotificationCount) {
+                        playNotificationSound();
+                    }
+
+                    // Update the previous count
+                    previousNotificationCount = currentCount;
+
+                    // Update the badge
+                    updateBadge(currentCount);
+                })
+                .catch(error => console.error('Error polling notifications:', error));
+        }, 15000);
     </script>
     {% endif %}
 
     {% block extra_js %}{% endblock %}
+    
+    <!-- Employee Search Functionality -->
+    <script>
+        // Simple typing test with actual search
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 DOM loaded, setting up search...');
+            
+            const searchInput = document.getElementById('employeeSearchInput');
+            const searchResults = document.getElementById('searchResults');
+            let searchTimeout;
+            
+            if (searchInput && searchResults) {
+                console.log('✅ Search input and results found, adding event listener');
+                
+                searchInput.addEventListener('input', function() {
+                    const query = this.value.trim();
+                    console.log('⌨️ Typing detected:', query);
+                    
+                    // Change border color to show it's working
+                    this.style.borderColor = query.length > 0 ? '#28a745' : '#e8ecf4';
+                    
+                    // Clear previous timeout
+                    clearTimeout(searchTimeout);
+                    
+                    if (query.length >= 1) {
+                        console.log('🔍 Query long enough, searching for:', query);
+                        
+                        // Show loading
+                        searchResults.style.display = 'block';
+                        searchResults.classList.add('show');
+                        searchResults.innerHTML = '<div class="search-loading"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+                        
+                        // Debounce search
+                        searchTimeout = setTimeout(() => {
+                            performLiveSearch(query);
+                        }, 300);
+                    } else {
+                        // Hide results if query is empty
+                        searchResults.style.display = 'none';
+                        searchResults.classList.remove('show');
+                    }
+                });
+                
+                console.log('✅ Event listener added successfully');
+            } else {
+                console.error('❌ Search elements not found');
+            }
+            
+            // Live search function
+            function performLiveSearch(query) {
+                console.log('🌐 Performing live search for:', query);
+                
+                fetch(`/api/search-employees/?q=${encodeURIComponent(query)}`)
+                    .then(response => {
+                        console.log('📡 Live search response status:', response.status);
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('📊 Live search data:', data);
+                        
+                        if (data.employees && data.employees.length > 0) {
+                            console.log('✅ Found employees:', data.employees.length);
+                            displayLiveResults(data.employees);
+                        } else {
+                            console.log('❌ No employees found');
+                            searchResults.innerHTML = '<div class="search-no-results"><i class="fas fa-user-slash"></i><div>No employees found</div></div>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Live search error:', error);
+                        searchResults.innerHTML = `<div class="search-no-results"><i class="fas fa-exclamation-circle"></i><div>Error: ${error.message}</div></div>`;
+                    });
+            }
+            
+            // Display live results
+            function displayLiveResults(employees) {
+                console.log('📋 Displaying live results for', employees.length, 'employees');
+                
+                let html = '';
+                employees.forEach(emp => {
+                    const nameParts = emp.name.split(' ');
+                    const initials = nameParts.length > 1
+                        ? nameParts[0][0] + nameParts[nameParts.length - 1][0]
+                        : nameParts[0][0];
+
+                    html += `
+                        <div class="search-result-item" onclick="navigateToEmployee('${emp.profile_url}')">
+                            <div class="search-result-avatar">${initials.toUpperCase()}</div>
+                            <div class="search-result-details">
+                                <div class="search-result-name">${emp.name}</div>
+                                <div class="search-result-meta">
+                                    <span><i class="fas fa-id-badge"></i> ${emp.employee_id}</span>
+                                    <span><i class="fas fa-briefcase"></i> ${emp.designation}</span>
+                                    <span><i class="fas fa-building"></i> ${emp.department}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                searchResults.innerHTML = html;
+                console.log('✅ Live results displayed successfully');
+            }
+            
+            // Navigation function
+            window.navigateToEmployee = function(url) {
+                console.log('🔗 Navigating to:', url);
+                searchResults.style.display = 'none';
+                searchResults.classList.remove('show');
+                window.location.href = url;
+            };
+            
+            // Close results when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                    searchResults.style.display = 'none';
+                    searchResults.classList.remove('show');
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>

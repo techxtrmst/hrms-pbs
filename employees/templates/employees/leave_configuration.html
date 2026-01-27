@@ -34,6 +34,9 @@
         padding: 2rem;
         max-width: 1400px;
         margin: 0 auto;
+        width: 100%;
+        box-sizing: border-box;
+        overflow-x: hidden; /* Prevent horizontal overflow */
     }
 
     /* Header Section */
@@ -46,6 +49,8 @@
         margin-bottom: 2rem;
         position: relative;
         overflow: hidden;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .header-card::before {
@@ -59,6 +64,68 @@
         transform: translate(30%, -30%);
     }
 
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+
+    .header-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .header-info h2 {
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+    }
+
+    /* Ultra-small screen title fixes */
+    @media (max-width: 320px) {
+        .header-info h2 {
+            word-break: normal !important;
+            overflow-wrap: normal !important;
+            hyphens: none !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+
+    @media (max-width: 304px) {
+        .header-info h2 {
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: unset !important;
+            word-break: break-all !important;
+            line-height: 1.0 !important;
+        }
+    }
+
+    .header-info p {
+        color: var(--text-muted);
+        margin-bottom: 1rem;
+        max-width: 500px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+    }
+
+    .header-stats {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .header-actions {
+        flex-shrink: 0;
+    }
+
     .stat-badge {
         display: inline-flex;
         align-items: center;
@@ -70,6 +137,14 @@
         font-weight: 600;
         color: var(--text-muted);
         border: 1px solid #e2e8f0;
+        white-space: nowrap;
+        min-height: 44px;
+        text-decoration: none;
+    }
+
+    .stat-badge:hover {
+        color: var(--text-muted);
+        text-decoration: none;
     }
 
     .stat-badge i {
@@ -83,12 +158,17 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
     }
 
     /* Search Input */
     .premium-search {
         position: relative;
         width: 350px;
+        max-width: 100%;
+        flex: 1;
+        min-width: 200px;
     }
 
     .premium-search input {
@@ -100,6 +180,8 @@
         font-size: 0.95rem;
         transition: all 0.2s;
         box-shadow: var(--shadow-soft);
+        box-sizing: border-box;
+        min-height: 44px;
     }
 
     .premium-search input:focus {
@@ -116,6 +198,64 @@
         color: var(--text-muted);
     }
 
+    /* Desktop Grid Layout */
+    .desktop-layout {
+        display: block;
+        width: 100%;
+        overflow-x: auto; /* Allow horizontal scrolling if needed */
+    }
+
+    /* Wrapper for desktop table to handle overflow */
+    .desktop-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 #f1f5f9;
+        position: relative;
+    }
+
+    .desktop-table-wrapper::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .desktop-table-wrapper::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+    }
+
+    .desktop-table-wrapper::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+
+    .desktop-table-wrapper::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    /* Scroll indicator for when content overflows */
+    .desktop-table-wrapper::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 20px;
+        height: 100%;
+        background: linear-gradient(to left, rgba(241, 245, 249, 0.8) 0%, transparent 100%);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .desktop-table-wrapper.has-scroll::after {
+        opacity: 1;
+    }
+
+    /* Mobile Card Layout */
+    .mobile-layout {
+        display: none;
+    }
+
     /* Floating List */
     .employee-list {
         display: flex;
@@ -128,7 +268,7 @@
         border-radius: var(--radius-md);
         padding: 1rem 1.5rem;
         display: grid;
-        grid-template-columns: 2fr 1.2fr 2.5fr 2.5fr 0.8fr;
+        grid-template-columns: minmax(180px, 1.5fr) minmax(80px, 0.7fr) minmax(200px, 2.5fr) minmax(200px, 2.5fr) minmax(60px, 0.8fr);
         align-items: center;
         gap: 1rem;
         box-shadow: var(--shadow-soft);
@@ -136,6 +276,9 @@
         transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         animation: slideUp 0.4s ease-out forwards;
         opacity: 0;
+        width: 100%;
+        min-width: 800px; /* Minimum width to prevent cramping */
+        box-sizing: border-box;
     }
 
     .employee-card:hover {
@@ -147,7 +290,7 @@
     /* Column Styles */
     .col-header {
         display: grid;
-        grid-template-columns: 2fr 1.2fr 2.5fr 2.5fr 0.8fr;
+        grid-template-columns: minmax(180px, 1.5fr) minmax(80px, 0.7fr) minmax(200px, 2.5fr) minmax(200px, 2.5fr) minmax(60px, 0.8fr);
         padding: 0 1.5rem 1rem;
         gap: 1rem;
         font-size: 0.75rem;
@@ -155,6 +298,101 @@
         letter-spacing: 0.05em;
         color: var(--text-muted);
         font-weight: 700;
+        min-width: 800px; /* Match employee card minimum width */
+    }
+
+    /* Mobile Employee Card */
+    .mobile-employee-card {
+        background: white;
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-soft);
+        border: 1px solid transparent;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-bottom: 1rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .mobile-employee-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-hover);
+        border-color: rgba(79, 70, 229, 0.2);
+    }
+
+    .mobile-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .mobile-card-user {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .mobile-card-actions {
+        flex-shrink: 0;
+    }
+
+    .mobile-card-body {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+    }
+
+    /* Single column on very small screens */
+    @media (max-width: 480px) {
+        .mobile-card-body {
+            grid-template-columns: 1fr;
+        }
+        
+        .mobile-card-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+        
+        .mobile-card-actions {
+            align-self: center;
+        }
+    }
+
+    .mobile-leave-section {
+        background: #f8fafc;
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .mobile-leave-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .mobile-leave-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .mobile-leave-control {
+        display: flex;
+        justify-content: center;
     }
 
     /* Leave Stats Box */
@@ -194,6 +432,98 @@
         display: flex;
         align-items: center;
         gap: 1rem;
+        min-width: 0; /* Allow flex items to shrink */
+        overflow: hidden; /* Prevent overflow */
+    }
+
+    .user-profile > div {
+        min-width: 0; /* Allow text container to shrink */
+        flex: 1;
+    }
+
+    .user-profile h6 {
+        margin-bottom: 0;
+        font-weight: bold;
+        color: var(--text-main);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        cursor: help;
+        position: relative;
+    }
+
+    .user-profile small {
+        color: var(--text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+        max-width: 100%;
+        cursor: help;
+        position: relative;
+    }
+
+    /* Tooltip styles for user profile */
+    .user-profile h6:hover::after,
+    .user-profile small:hover::after {
+        content: attr(title);
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: normal;
+        white-space: nowrap;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        animation: tooltipFadeIn 0.2s ease-out;
+        pointer-events: none;
+        max-width: 300px;
+        word-break: break-all;
+        white-space: normal;
+        line-height: 1.3;
+        margin-bottom: 5px;
+    }
+
+    .user-profile h6:hover::before,
+    .user-profile small:hover::before {
+        content: '';
+        position: absolute;
+        bottom: 94%;
+        left: 12px;
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 5px solid rgba(0, 0, 0, 0.9);
+        z-index: 1001;
+        animation: tooltipFadeIn 0.2s ease-out;
+    }
+
+    /* Ensure tooltips don't show if text isn't truncated */
+    .user-profile h6:not([title*="..."]):hover::after,
+    .user-profile small:not([title*="..."]):hover::after,
+    .badge-dept:not([title*="..."]):hover::after {
+        display: none;
+    }
+
+    /* Mobile tooltip adjustments */
+    @media (max-width: 991px) {
+        .user-profile h6:hover::after,
+        .user-profile small:hover::after,
+        .badge-dept:hover::after {
+            display: none; /* Hide tooltips on mobile to avoid issues */
+        }
+        
+        .user-profile h6:hover::before,
+        .user-profile small:hover::before,
+        .badge-dept:hover::before {
+            display: none;
+        }
     }
 
     .user-avatar {
@@ -202,6 +532,7 @@
         border-radius: 12px;
         object-fit: cover;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        flex-shrink: 0;
     }
 
     .user-initials {
@@ -215,9 +546,8 @@
         justify-content: center;
         font-weight: 700;
         font-size: 1.1rem;
+        flex-shrink: 0;
     }
-
-    /* Input Controls */
     .control-wrapper {
         display: flex;
         align-items: center;
@@ -241,6 +571,8 @@
         cursor: pointer;
         transition: all 0.2s;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        min-width: 28px;
+        min-height: 28px;
     }
 
     .control-btn:hover {
@@ -257,6 +589,7 @@
         color: var(--text-main);
         outline: none;
         font-family: 'Plus Jakarta Sans', monospace;
+        font-size: 16px; /* Prevents zoom on iOS */
     }
 
     /* Buttons */
@@ -271,6 +604,8 @@
         align-items: center;
         justify-content: center;
         transition: all 0.2s;
+        min-width: 36px;
+        min-height: 36px;
     }
 
     .btn-save-row:hover {
@@ -291,18 +626,47 @@
         display: flex;
         align-items: center;
         gap: 10px;
+        white-space: nowrap;
+        min-height: 44px;
+        text-decoration: none;
+    }
+
+    .btn-hero.btn-secondary {
+        background: #6b7280;
+        color: white;
+        box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+    }
+
+    .btn-hero.btn-secondary:hover {
+        background: #4b5563;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(75, 85, 99, 0.4);
+        color: white;
     }
 
     .btn-hero:hover {
         background: var(--primary-dark);
         transform: translateY(-2px);
         box-shadow: 0 8px 16px rgba(79, 70, 229, 0.4);
+        color: white;
     }
 
     @keyframes slideUp {
         from {
             opacity: 0;
             transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes tooltipFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(5px);
         }
 
         to {
@@ -320,6 +684,49 @@
         font-size: 0.75rem;
         font-weight: 600;
         letter-spacing: 0.02em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        display: inline-block;
+        cursor: help;
+        position: relative;
+    }
+
+    /* Tooltip styles for role badge */
+    .badge-dept:hover::after {
+        content: attr(title);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: normal;
+        white-space: nowrap;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        animation: tooltipFadeIn 0.2s ease-out;
+        pointer-events: none;
+        margin-bottom: 5px;
+    }
+
+    .badge-dept:hover::before {
+        content: '';
+        position: absolute;
+        bottom: 94%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 5px solid rgba(0, 0, 0, 0.9);
+        z-index: 1001;
+        animation: tooltipFadeIn 0.2s ease-out;
     }
 
     /* Toast */
@@ -345,6 +752,861 @@
         transform: translateY(0);
         opacity: 1;
     }
+
+    /* === COMPREHENSIVE RESPONSIVE DESIGN === */
+
+    /* Global mobile layout activation for all screens below 992px */
+    @media (max-width: 991px) {
+        .desktop-layout {
+            display: none !important;
+        }
+
+        .mobile-layout {
+            display: block !important;
+        }
+
+        /* Hide desktop-specific elements */
+        .col-header {
+            display: none !important;
+        }
+
+        /* Ensure mobile search input is visible */
+        .d-sm-none {
+            display: inline !important;
+        }
+
+        .d-none.d-sm-inline,
+        .d-none.d-sm-block {
+            display: none !important;
+        }
+    }
+
+    /* Additional breakpoint for medium screens that still need desktop layout */
+    @media (max-width: 1024px) and (min-width: 992px) {
+        .employee-card {
+            min-width: 680px;
+            grid-template-columns: minmax(140px, 1.2fr) minmax(60px, 0.5fr) minmax(160px, 1.8fr) minmax(160px, 1.8fr) minmax(50px, 0.6fr);
+        }
+
+        .col-header {
+            min-width: 680px;
+            grid-template-columns: minmax(140px, 1.2fr) minmax(60px, 0.5fr) minmax(160px, 1.8fr) minmax(160px, 1.8fr) minmax(50px, 0.6fr);
+        }
+
+        .control-wrapper {
+            padding: 2px;
+        }
+
+        .control-btn {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            min-height: 24px;
+        }
+
+        .control-input {
+            width: 40px;
+        }
+
+        .btn-save-row {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            min-height: 32px;
+        }
+    }
+
+    /* Global text handling for ultra-small screens */
+    @media (max-width: 320px) {
+        * {
+            word-break: break-word !important;
+            overflow-wrap: anywhere !important;
+            hyphens: none !important;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            line-height: 1.1 !important;
+        }
+
+        p, span, div {
+            line-height: 1.2 !important;
+        }
+    }
+
+    /* Large Desktop (1400px+) */
+    @media (min-width: 1400px) {
+        .config-container {
+            padding: 2.5rem;
+        }
+
+        .header-card {
+            padding: 2.5rem;
+        }
+
+        .employee-card {
+            padding: 1.25rem 2rem;
+        }
+
+        .col-header {
+            padding: 0 2rem 1rem;
+        }
+    }
+
+    /* Desktop (1200px - 1399px) */
+    @media (max-width: 1399px) and (min-width: 1200px) {
+        .config-container {
+            padding: 2rem;
+        }
+
+        .premium-search {
+            width: 320px;
+        }
+    }
+
+    /* Laptop (992px - 1199px) */
+    @media (max-width: 1199px) and (min-width: 992px) {
+        .config-container {
+            padding: 1.75rem;
+        }
+
+        .header-card {
+            padding: 1.75rem;
+        }
+
+        .premium-search {
+            width: 300px;
+        }
+
+        .employee-card {
+            padding: 1rem 1.25rem;
+            grid-template-columns: minmax(160px, 1.3fr) minmax(70px, 0.6fr) minmax(180px, 2fr) minmax(180px, 2fr) minmax(60px, 0.8fr);
+            min-width: 720px;
+        }
+
+        .col-header {
+            padding: 0 1.25rem 1rem;
+            grid-template-columns: minmax(160px, 1.3fr) minmax(70px, 0.6fr) minmax(180px, 2fr) minmax(180px, 2fr) minmax(60px, 0.8fr);
+            min-width: 720px;
+        }
+    }
+
+    /* Tablet (768px - 991px) */
+    @media (max-width: 991px) and (min-width: 768px) {
+        .config-container {
+            padding: 1.5rem;
+        }
+
+        .header-card {
+            padding: 1.5rem;
+        }
+
+        .header-content {
+            flex-direction: column;
+            align-items: stretch;
+            text-align: center;
+            gap: 1.5rem;
+        }
+
+        .header-info h2 {
+            font-size: 1.6rem;
+        }
+
+        .header-stats {
+            justify-content: center;
+        }
+
+        .header-actions {
+            align-self: center;
+        }
+
+        .action-bar {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+
+        .premium-search {
+            width: 100%;
+            max-width: none;
+        }
+
+        /* Switch to mobile layout */
+        .desktop-layout {
+            display: none;
+        }
+
+        .mobile-layout {
+            display: block;
+        }
+
+        .mobile-card-body {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+    }
+
+    /* Mobile Large (576px - 767px) */
+    @media (max-width: 767px) and (min-width: 576px) {
+        .config-container {
+            padding: 1.25rem;
+        }
+
+        .header-card {
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .header-info h2 {
+            font-size: 1.4rem;
+        }
+
+        .header-info p {
+            font-size: 0.9rem;
+        }
+
+        .stat-badge {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        .btn-hero {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        /* Ensure mobile layout is active */
+        .desktop-layout {
+            display: none !important;
+        }
+
+        .mobile-layout {
+            display: block !important;
+        }
+
+        .mobile-employee-card {
+            padding: 1.25rem;
+        }
+
+        .mobile-leave-section {
+            padding: 0.875rem;
+        }
+
+        .mobile-leave-title {
+            font-size: 0.8rem;
+        }
+
+        .control-wrapper {
+            padding: 3px;
+        }
+
+        .control-btn {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            min-height: 32px;
+        }
+
+        .btn-save-row {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            min-height: 40px;
+        }
+    }
+
+    /* Mobile Medium (400px - 575px) */
+    @media (max-width: 575px) and (min-width: 400px) {
+        .config-container {
+            padding: 1rem;
+        }
+
+        .header-card {
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .header-info h2 {
+            font-size: 1.25rem;
+        }
+
+        .header-info p {
+            font-size: 0.85rem;
+        }
+
+        .header-stats {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .stat-badge {
+            font-size: 0.75rem;
+            padding: 0.375rem 0.75rem;
+            justify-content: center;
+        }
+
+        .btn-hero {
+            padding: 0.625rem 1.25rem;
+            font-size: 0.85rem;
+        }
+
+        .premium-search input {
+            padding: 10px 16px 10px 40px;
+            font-size: 16px; /* Prevents zoom on iOS */
+        }
+
+        .premium-search i {
+            left: 14px;
+        }
+
+        /* Ensure mobile layout is active */
+        .desktop-layout {
+            display: none !important;
+        }
+
+        .mobile-layout {
+            display: block !important;
+        }
+
+        .mobile-employee-card {
+            padding: 1rem;
+        }
+
+        .mobile-card-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+
+        .mobile-card-actions {
+            align-self: center;
+        }
+
+        .mobile-leave-section {
+            padding: 0.75rem;
+        }
+
+        .mobile-leave-title {
+            font-size: 0.75rem;
+        }
+
+        .control-wrapper {
+            padding: 2px;
+        }
+
+        .control-btn {
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            min-height: 36px;
+        }
+
+        .btn-save-row {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            min-height: 44px;
+        }
+
+        .toast-premium {
+            bottom: 20px;
+            right: 20px;
+            left: 20px;
+            padding: 12px 16px;
+        }
+    }
+
+    /* Mobile Small (320px - 399px) */
+    @media (max-width: 399px) and (min-width: 320px) {
+        .config-container {
+            padding: 0.75rem;
+        }
+
+        .header-card {
+            padding: 0.875rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .header-info h2 {
+            font-size: 1.1rem;
+        }
+
+        .header-info p {
+            font-size: 0.8rem;
+        }
+
+        .stat-badge {
+            font-size: 0.7rem;
+            padding: 0.3rem 0.6rem;
+        }
+
+        .btn-hero {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        /* Force mobile layout */
+        .desktop-layout {
+            display: none !important;
+        }
+
+        .mobile-layout {
+            display: block !important;
+        }
+
+        .mobile-employee-card {
+            padding: 0.875rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .mobile-leave-section {
+            padding: 0.625rem;
+        }
+
+        .mobile-leave-title {
+            font-size: 0.7rem;
+        }
+
+        .control-btn {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            min-height: 40px;
+        }
+
+        .btn-save-row {
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            min-height: 48px;
+        }
+
+        .toast-premium {
+            bottom: 15px;
+            right: 15px;
+            left: 15px;
+            padding: 10px 12px;
+            font-size: 0.85rem;
+        }
+    }
+
+    /* Ultra Small (240px - 319px) */
+    @media (max-width: 319px) {
+        .config-container {
+            padding: 0.25rem;
+        }
+
+        .header-card {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+        }
+
+        .header-info h2 {
+            font-size: 0.9rem;
+            line-height: 1.2;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            hyphens: none;
+        }
+
+        .header-info p {
+            font-size: 0.7rem;
+            line-height: 1.3;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            hyphens: none;
+        }
+
+        .header-stats {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .stat-badge {
+            font-size: 0.6rem;
+            padding: 0.2rem 0.4rem;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            hyphens: none;
+            text-align: center;
+        }
+
+        .btn-hero {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.7rem;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            hyphens: none;
+        }
+
+        .mobile-employee-card {
+            padding: 0.5rem;
+            margin-bottom: 0.25rem;
+            border-radius: 6px;
+        }
+
+        .mobile-leave-section {
+            padding: 0.375rem;
+        }
+
+        .mobile-leave-title {
+            font-size: 0.6rem;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            hyphens: none;
+        }
+
+        .control-btn {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            min-height: 44px;
+        }
+
+        .btn-save-row {
+            width: 52px;
+            height: 52px;
+            min-width: 52px;
+            min-height: 52px;
+        }
+
+        .toast-premium {
+            bottom: 5px;
+            right: 5px;
+            left: 5px;
+            padding: 6px 8px;
+            font-size: 0.75rem;
+        }
+
+        .user-profile {
+            gap: 0.5rem;
+        }
+
+        .user-avatar,
+        .user-initials {
+            width: 32px;
+            height: 32px;
+            font-size: 0.8rem;
+        }
+
+        .user-profile h6 {
+            font-size: 0.8rem;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            hyphens: none;
+        }
+
+        .user-profile small {
+            font-size: 0.65rem;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            hyphens: none;
+        }
+
+        .badge-dept {
+            font-size: 0.6rem;
+            padding: 0.2rem 0.4rem;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            hyphens: none;
+        }
+
+        .leave-stat-label {
+            font-size: 0.6rem;
+        }
+
+        .leave-stat-value {
+            font-size: 0.7rem;
+        }
+
+        .premium-search input {
+            padding: 8px 12px 8px 32px;
+            font-size: 16px;
+        }
+
+        .premium-search i {
+            left: 10px;
+        }
+    }
+
+    /* Emergency Ultra Small (240px - 304px) */
+    @media (max-width: 304px) {
+        .config-container {
+            padding: 0.125rem;
+        }
+
+        .header-card {
+            padding: 0.375rem;
+            margin-bottom: 0.375rem;
+            border-radius: 6px;
+        }
+
+        .header-content {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.5rem;
+        }
+
+        .header-info {
+            text-align: center;
+        }
+
+        .header-info h2 {
+            font-size: 0.85rem;
+            line-height: 1.0;
+            margin-bottom: 0.25rem;
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: unset !important;
+            word-break: normal !important;
+        }
+
+        .header-info p {
+            font-size: 0.65rem;
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            hyphens: none;
+        }
+
+        .header-stats {
+            justify-content: center;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .stat-badge {
+            font-size: 0.55rem;
+            padding: 0.15rem 0.3rem;
+            justify-content: center;
+            word-break: normal;
+            overflow-wrap: normal;
+            hyphens: none;
+        }
+
+        .btn-hero {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.65rem;
+            align-self: center;
+            word-break: normal;
+            overflow-wrap: normal;
+            hyphens: none;
+        }
+
+        .action-bar {
+            margin-bottom: 0.75rem;
+        }
+
+        .premium-search input {
+            padding: 6px 10px 6px 28px;
+            font-size: 16px;
+            border-radius: 20px;
+        }
+
+        .premium-search i {
+            left: 8px;
+        }
+
+        .mobile-employee-card {
+            padding: 0.375rem;
+            margin-bottom: 0.25rem;
+            border-radius: 4px;
+        }
+
+        .mobile-card-header {
+            margin-bottom: 0.5rem;
+            gap: 0.5rem;
+        }
+
+        .mobile-card-body {
+            gap: 0.5rem;
+            grid-template-columns: 1fr;
+        }
+
+        .mobile-leave-section {
+            padding: 0.25rem;
+        }
+
+        .mobile-leave-title {
+            font-size: 0.55rem;
+            margin-bottom: 0.375rem;
+            word-break: normal;
+            overflow-wrap: normal;
+            hyphens: none;
+        }
+
+        .mobile-leave-stats {
+            gap: 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .user-profile {
+            gap: 0.375rem;
+            flex-wrap: wrap;
+        }
+
+        .user-avatar,
+        .user-initials {
+            width: 28px;
+            height: 28px;
+            font-size: 0.7rem;
+            border-radius: 8px;
+        }
+
+        .user-profile h6 {
+            font-size: 0.75rem;
+            line-height: 1.1;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            hyphens: none;
+        }
+
+        .user-profile small {
+            font-size: 0.6rem;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            hyphens: none;
+        }
+
+        .badge-dept {
+            font-size: 0.55rem;
+            padding: 0.15rem 0.3rem;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            hyphens: none;
+        }
+
+        .leave-stat-row {
+            font-size: 0.7rem;
+        }
+
+        .leave-stat-label {
+            font-size: 0.55rem;
+        }
+
+        .leave-stat-value {
+            font-size: 0.65rem;
+        }
+
+        .control-wrapper {
+            padding: 1px;
+        }
+
+        .control-btn {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            min-height: 40px;
+            font-size: 0.8rem;
+        }
+
+        .control-input {
+            width: 40px;
+            font-size: 16px;
+        }
+
+        .btn-save-row {
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            min-height: 48px;
+        }
+
+        .toast-premium {
+            bottom: 3px;
+            right: 3px;
+            left: 3px;
+            padding: 4px 6px;
+            font-size: 0.7rem;
+            border-radius: 6px;
+        }
+
+        /* Hide desktop responsive classes on ultra-small screens */
+        .d-sm-none {
+            display: inline !important;
+        }
+
+        .d-none.d-sm-inline,
+        .d-none.d-sm-block {
+            display: none !important;
+        }
+    }
+
+    /* Touch device optimizations */
+    @media (hover: none) and (pointer: coarse) {
+        .control-btn {
+            min-width: 44px;
+            min-height: 44px;
+        }
+
+        .btn-save-row {
+            min-width: 44px;
+            min-height: 44px;
+        }
+
+        .btn-hero {
+            min-height: 48px;
+        }
+
+        .stat-badge {
+            min-height: 44px;
+        }
+    }
+
+    /* High contrast mode */
+    @media (prefers-contrast: high) {
+        .header-card,
+        .employee-card,
+        .mobile-employee-card,
+        .mobile-leave-section {
+            border: 2px solid #000;
+        }
+
+        .btn-hero,
+        .btn-save-row,
+        .control-btn {
+            border: 2px solid;
+        }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+        .employee-card,
+        .mobile-employee-card,
+        .btn-hero,
+        .btn-save-row,
+        .control-btn,
+        .toast-premium {
+            transition: none;
+            animation: none;
+        }
+    }
+
+    /* Print styles */
+    @media print {
+        .btn-hero,
+        .btn-save-row,
+        .control-btn,
+        .toast-premium {
+            display: none;
+        }
+
+        .header-card,
+        .employee-card,
+        .mobile-employee-card {
+            box-shadow: none;
+            border: 1px solid #000;
+        }
+
+        .mobile-layout {
+            display: none;
+        }
+
+        .desktop-layout {
+            display: block !important;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -353,28 +1615,37 @@
 
     <!-- Header -->
     <div class="header-card">
-        <div class="d-flex justify-content-between align-items-end">
-            <div>
-                <h2 class="fw-bold mb-2">Leave Configuration</h2>
-                <p class="text-muted mb-4" style="max-width: 500px;">
+        <div class="header-content">
+            <div class="header-info">
+                <h2><span class="d-none d-sm-inline">Leave Configuration</span><span class="d-sm-none">Leave Config</span></h2>
+                <p class="d-none d-sm-block">
                     Manage leave allocations for all employees. Automated monthly accruals run on the 1st of every
                     month.
                 </p>
-                <div class="d-flex gap-3">
+                <p class="d-sm-none">
+                    Manage employee leave allocations.
+                </p>
+                <div class="header-stats">
                     <div class="stat-badge">
-                        <i class="fas fa-users"></i> {{ employees|length }} Active
+                        <i class="fas fa-users"></i> <span class="d-none d-sm-inline">{{ employees|length }} Active</span><span class="d-sm-none">{{ employees|length }}</span>
                     </div>
-                    <a href="#" class="stat-badge text-decoration-none text-dark" data-bs-toggle="modal"
+                    <a href="#" class="stat-badge" data-bs-toggle="modal"
                         data-bs-target="#accrualModal" title="Click to select month">
-                        <i class="fas fa-calendar-alt"></i> Select Period
+                        <i class="fas fa-calendar-alt"></i> <span class="d-none d-sm-inline">Select Period</span><span class="d-sm-none">Period</span>
                     </a>
                 </div>
             </div>
-            <div>
-                <button class="btn-hero" data-bs-toggle="modal" data-bs-target="#accrualModal">
-                    <i class="fas fa-magic"></i>
-                    Run Monthly Accrual
-                </button>
+            <div class="header-actions">
+                <div class="d-flex flex-column flex-sm-row gap-3">
+                    <button class="btn-hero" data-bs-toggle="modal" data-bs-target="#accrualModal">
+                        <i class="fas fa-magic"></i>
+                        <span class="d-none d-sm-inline">Run Monthly Accrual</span><span class="d-sm-none">Run Accrual</span>
+                    </button>
+                    <a href="{% url 'bulk_leave_upload' %}" class="btn-hero btn-secondary">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span class="d-none d-sm-inline">Bulk Upload</span><span class="d-sm-none">Upload</span>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -383,96 +1654,189 @@
     <div class="action-bar">
         <div class="premium-search">
             <i class="fas fa-search"></i>
-            <input type="text" id="searchInput" placeholder="Search by name, role or ID...">
+            <input type="text" id="searchInput" placeholder="Search employees..." class="d-none d-sm-block">
+            <input type="text" id="searchInputMobile" placeholder="Search..." class="d-sm-none">
         </div>
         <div class="d-flex gap-2">
             <!-- Filter Dropdowns could go here -->
         </div>
     </div>
 
-    <!-- List Header -->
-    <div class="col-header">
-        <div>Employee</div>
-        <div>Role</div>
-        <div>Sick Leave</div>
-        <div>Casual Leave</div>
-        <div class="text-center">Save</div>
-    </div>
+    <!-- Desktop Layout -->
+    <div class="desktop-layout">
+        <div class="desktop-table-wrapper">
+            <!-- List Header -->
+            <div class="col-header">
+                <div>Employee</div>
+                <div>Role</div>
+                <div>Sick Leave</div>
+                <div>Casual Leave</div>
+                <div class="text-center">Save</div>
+            </div>
 
-    <!-- Employee List -->
-    <div class="employee-list" id="employeeList">
-        {% for employee in employees %}
-        <div class="employee-card" style="animation-delay: {{ forloop.counter0|add:'1'|stringformat:'d' }}00ms;">
-            <!-- User -->
-            <div class="user-profile">
-                {% if employee.profile_picture %}
-                <img src="{{ employee.profile_picture.url }}" class="user-avatar" alt="pic">
-                {% else %}
-                <div class="user-initials">
-                    {{ employee.user.first_name|first }}{{ employee.user.last_name|first }}
+            <!-- Employee List -->
+            <div class="employee-list" id="employeeList">
+            {% for employee in employees %}
+            <div class="employee-card" style="animation-delay: {{ forloop.counter0|add:'1'|stringformat:'d' }}00ms;">
+                <!-- User -->
+                <div class="user-profile">
+                    {% if employee.profile_picture %}
+                    <img src="{{ employee.profile_picture.url }}" class="user-avatar" alt="pic">
+                    {% else %}
+                    <div class="user-initials">
+                        {{ employee.user.first_name|first }}{{ employee.user.last_name|first }}
+                    </div>
+                    {% endif %}
+                    <div>
+                        <h6 class="mb-0 fw-bold text-dark" title="{{ employee.user.get_full_name }}">{{ employee.user.get_full_name }}</h6>
+                        <small class="text-muted" title="{{ employee.user.email }}">{{ employee.user.email }}</small>
+                    </div>
                 </div>
-                {% endif %}
+
+                <!-- Role -->
                 <div>
-                    <h6 class="mb-0 fw-bold text-dark">{{ employee.user.get_full_name }}</h6>
-                    <small class="text-muted">{{ employee.user.email }}</small>
+                    <span class="badge-dept" title="{{ employee.designation|default:'No designation assigned' }}">{{ employee.designation|default:"--" }}</span>
                 </div>
-            </div>
 
-            <!-- Role -->
-            <div>
-                <span class="badge-dept">{{ employee.designation|default:"--" }}</span>
-            </div>
-
-            <!-- Sick Leave Stats & Control -->
-            <div class="leave-stats-box">
-                <div class="leave-stat-row">
-                    <span class="leave-stat-label">Allocated:</span>
-                    <div class="control-wrapper">
-                        <button class="control-btn" onclick="modifyVal('sick_val_{{ employee.id }}', -0.5)">-</button>
-                        <input type="number" id="sick_val_{{ employee.id }}" class="control-input"
-                            value="{{ employee.leave_balance.sick_leave_balance }}" step="0.5">
-                        <button class="control-btn" onclick="modifyVal('sick_val_{{ employee.id }}', 0.5)">+</button>
+                <!-- Sick Leave Stats & Control -->
+                <div class="leave-stats-box">
+                    <div class="leave-stat-row">
+                        <span class="leave-stat-label">Allocated:</span>
+                        <div class="control-wrapper">
+                            <button class="control-btn" onclick="modifyVal('sick_val_{{ employee.id }}', -0.5)">-</button>
+                            <input type="number" id="sick_val_{{ employee.id }}" class="control-input"
+                                value="{{ employee.leave_balance.sick_leave_balance }}" step="0.5">
+                            <button class="control-btn" onclick="modifyVal('sick_val_{{ employee.id }}', 0.5)">+</button>
+                        </div>
+                    </div>
+                    <div class="leave-stat-row">
+                        <span class="leave-stat-label">Used:</span>
+                        <span class="leave-stat-value used">{{ employee.leave_balance.sick_leave_used|floatformat:1 }}</span>
+                    </div>
+                    <div class="leave-stat-row">
+                        <span class="leave-stat-label">Balance:</span>
+                        <span class="leave-stat-value balance">{{ employee.leave_balance.sick_leave_balance|floatformat:1 }}</span>
                     </div>
                 </div>
-                <div class="leave-stat-row">
-                    <span class="leave-stat-label">Used:</span>
-                    <span class="leave-stat-value used">{{ employee.leave_balance.sick_leave_used|floatformat:1 }}</span>
-                </div>
-                <div class="leave-stat-row">
-                    <span class="leave-stat-label">Balance:</span>
-                    <span class="leave-stat-value balance">{{ employee.leave_balance.sick_leave_balance|floatformat:1 }}</span>
-                </div>
-            </div>
 
-            <!-- Casual Leave Stats & Control -->
-            <div class="leave-stats-box">
-                <div class="leave-stat-row">
-                    <span class="leave-stat-label">Allocated:</span>
-                    <div class="control-wrapper">
-                        <button class="control-btn" onclick="modifyVal('casual_val_{{ employee.id }}', -0.5)">-</button>
-                        <input type="number" id="casual_val_{{ employee.id }}" class="control-input"
-                            value="{{ employee.leave_balance.casual_leave_balance }}" step="0.5">
-                        <button class="control-btn" onclick="modifyVal('casual_val_{{ employee.id }}', 0.5)">+</button>
+                <!-- Casual Leave Stats & Control -->
+                <div class="leave-stats-box">
+                    <div class="leave-stat-row">
+                        <span class="leave-stat-label">Allocated:</span>
+                        <div class="control-wrapper">
+                            <button class="control-btn" onclick="modifyVal('casual_val_{{ employee.id }}', -0.5)">-</button>
+                            <input type="number" id="casual_val_{{ employee.id }}" class="control-input"
+                                value="{{ employee.leave_balance.casual_leave_balance }}" step="0.5">
+                            <button class="control-btn" onclick="modifyVal('casual_val_{{ employee.id }}', 0.5)">+</button>
+                        </div>
+                    </div>
+                    <div class="leave-stat-row">
+                        <span class="leave-stat-label">Used:</span>
+                        <span class="leave-stat-value used">{{ employee.leave_balance.casual_leave_used|floatformat:1 }}</span>
+                    </div>
+                    <div class="leave-stat-row">
+                        <span class="leave-stat-label">Balance:</span>
+                        <span class="leave-stat-value balance">{{ employee.leave_balance.casual_leave_balance|floatformat:1 }}</span>
                     </div>
                 </div>
-                <div class="leave-stat-row">
-                    <span class="leave-stat-label">Used:</span>
-                    <span class="leave-stat-value used">{{ employee.leave_balance.casual_leave_used|floatformat:1 }}</span>
-                </div>
-                <div class="leave-stat-row">
-                    <span class="leave-stat-label">Balance:</span>
-                    <span class="leave-stat-value balance">{{ employee.leave_balance.casual_leave_balance|floatformat:1 }}</span>
+
+                <!-- Actions -->
+                <div class="d-flex justify-content-center">
+                    <button class="btn-save-row" onclick="saveRow({{ employee.id }}, this)" title="Save Changes">
+                        <i class="fas fa-check"></i>
+                    </button>
                 </div>
             </div>
-
-            <!-- Actions -->
-            <div class="d-flex justify-content-center">
-                <button class="btn-save-row" onclick="saveRow({{ employee.id }}, this)" title="Save Changes">
-                    <i class="fas fa-check"></i>
-                </button>
+            {% endfor %}
             </div>
         </div>
-        {% endfor %}
+    </div>
+
+    <!-- Mobile Layout -->
+    <div class="mobile-layout">
+        <div class="employee-list" id="mobileEmployeeList">
+            {% for employee in employees %}
+            <div class="mobile-employee-card">
+                <div class="mobile-card-header">
+                    <div class="mobile-card-user">
+                        <div class="user-profile">
+                            {% if employee.profile_picture %}
+                            <img src="{{ employee.profile_picture.url }}" class="user-avatar" alt="pic">
+                            {% else %}
+                            <div class="user-initials">
+                                {{ employee.user.first_name|first }}{{ employee.user.last_name|first }}
+                            </div>
+                            {% endif %}
+                            <div>
+                                <h6 class="mb-0 fw-bold text-dark" title="{{ employee.user.get_full_name }}">{{ employee.user.get_full_name }}</h6>
+                                <small class="text-muted" title="{{ employee.user.email }}">{{ employee.user.email }}</small>
+                                <div class="mt-1">
+                                    <span class="badge-dept" title="{{ employee.designation|default:'No designation assigned' }}">{{ employee.designation|default:"--" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mobile-card-actions">
+                        <button class="btn-save-row" onclick="saveRow({{ employee.id }}, this)" title="Save Changes">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mobile-card-body">
+                    <!-- Sick Leave Section -->
+                    <div class="mobile-leave-section">
+                        <div class="mobile-leave-title">
+                            <i class="fas fa-thermometer-half me-2"></i>Sick Leave
+                        </div>
+                        <div class="mobile-leave-stats">
+                            <div class="leave-stat-row">
+                                <span class="leave-stat-label">Used:</span>
+                                <span class="leave-stat-value used">{{ employee.leave_balance.sick_leave_used|floatformat:1 }}</span>
+                            </div>
+                            <div class="leave-stat-row">
+                                <span class="leave-stat-label">Balance:</span>
+                                <span class="leave-stat-value balance">{{ employee.leave_balance.sick_leave_balance|floatformat:1 }}</span>
+                            </div>
+                        </div>
+                        <div class="mobile-leave-control">
+                            <div class="control-wrapper">
+                                <button class="control-btn" onclick="modifyVal('mobile_sick_val_{{ employee.id }}', -0.5)">-</button>
+                                <input type="number" id="mobile_sick_val_{{ employee.id }}" class="control-input"
+                                    value="{{ employee.leave_balance.sick_leave_balance }}" step="0.5">
+                                <button class="control-btn" onclick="modifyVal('mobile_sick_val_{{ employee.id }}', 0.5)">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Casual Leave Section -->
+                    <div class="mobile-leave-section">
+                        <div class="mobile-leave-title">
+                            <i class="fas fa-calendar-day me-2"></i>Casual Leave
+                        </div>
+                        <div class="mobile-leave-stats">
+                            <div class="leave-stat-row">
+                                <span class="leave-stat-label">Used:</span>
+                                <span class="leave-stat-value used">{{ employee.leave_balance.casual_leave_used|floatformat:1 }}</span>
+                            </div>
+                            <div class="leave-stat-row">
+                                <span class="leave-stat-label">Balance:</span>
+                                <span class="leave-stat-value balance">{{ employee.leave_balance.casual_leave_balance|floatformat:1 }}</span>
+                            </div>
+                        </div>
+                        <div class="mobile-leave-control">
+                            <div class="control-wrapper">
+                                <button class="control-btn" onclick="modifyVal('mobile_casual_val_{{ employee.id }}', -0.5)">-</button>
+                                <input type="number" id="mobile_casual_val_{{ employee.id }}" class="control-input"
+                                    value="{{ employee.leave_balance.casual_leave_balance }}" step="0.5">
+                                <button class="control-btn" onclick="modifyVal('mobile_casual_val_{{ employee.id }}', 0.5)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
 
 </div>
@@ -551,20 +1915,71 @@
         el.value = val.toFixed(1);
     }
 
-    // Search Filter
-    document.getElementById('searchInput').addEventListener('keyup', function (e) {
-        const val = e.target.value.toLowerCase();
-        const cards = document.querySelectorAll('.employee-card');
+    // Search Filter - Updated to handle both layouts and inputs
+    function setupSearch() {
+        const searchInputs = ['searchInput', 'searchInputMobile'];
+        
+        searchInputs.forEach(inputId => {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.addEventListener('keyup', function (e) {
+                    const val = e.target.value.toLowerCase();
+                    
+                    // Sync the other input
+                    searchInputs.forEach(otherId => {
+                        if (otherId !== inputId) {
+                            const otherInput = document.getElementById(otherId);
+                            if (otherInput) {
+                                otherInput.value = e.target.value;
+                            }
+                        }
+                    });
+                    
+                    // Filter desktop cards
+                    const desktopCards = document.querySelectorAll('.desktop-layout .employee-card');
+                    desktopCards.forEach(card => {
+                        const text = card.innerText.toLowerCase();
+                        if (text.includes(val)) {
+                            card.style.display = 'grid';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
 
-        cards.forEach(card => {
-            const text = card.innerText.toLowerCase();
-            if (text.includes(val)) {
-                card.style.display = 'grid';
-            } else {
-                card.style.display = 'none';
+                    // Filter mobile cards
+                    const mobileCards = document.querySelectorAll('.mobile-layout .mobile-employee-card');
+                    mobileCards.forEach(card => {
+                        const text = card.innerText.toLowerCase();
+                        if (text.includes(val)) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
             }
         });
+    }
+
+    // Initialize search on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        setupSearch();
+        setupScrollIndicator();
     });
+
+    // Setup scroll indicator for desktop table
+    function setupScrollIndicator() {
+        const wrapper = document.querySelector('.desktop-table-wrapper');
+        if (wrapper) {
+            function checkScroll() {
+                const hasScroll = wrapper.scrollWidth > wrapper.clientWidth;
+                wrapper.classList.toggle('has-scroll', hasScroll);
+            }
+            
+            checkScroll();
+            window.addEventListener('resize', checkScroll);
+        }
+    }
 
     // Toast Logic
     function showToast(msg, type = 'success') {
@@ -584,10 +1999,17 @@
         }, 3000);
     }
 
-    // Save Row
+    // Save Row - Updated to handle both layouts
     function saveRow(id, btn) {
-        const sick = document.getElementById(`sick_val_${id}`).value;
-        const casual = document.getElementById(`casual_val_${id}`).value;
+        // Get values from both desktop and mobile inputs
+        const desktopSick = document.getElementById(`sick_val_${id}`);
+        const desktopCasual = document.getElementById(`casual_val_${id}`);
+        const mobileSick = document.getElementById(`mobile_sick_val_${id}`);
+        const mobileCasual = document.getElementById(`mobile_casual_val_${id}`);
+
+        // Use whichever layout is currently visible
+        const sick = desktopSick ? desktopSick.value : (mobileSick ? mobileSick.value : 0);
+        const casual = desktopCasual ? desktopCasual.value : (mobileCasual ? mobileCasual.value : 0);
 
         // Visual Loading
         const icon = btn.querySelector('i');
@@ -612,11 +2034,23 @@
                 if (data.status === 'success') {
                     icon.className = 'fas fa-check';
                     showToast('Allocations updated!');
+                    
+                    // Sync values between desktop and mobile inputs
+                    if (desktopSick && mobileSick) {
+                        desktopSick.value = sick;
+                        mobileSick.value = sick;
+                    }
+                    if (desktopCasual && mobileCasual) {
+                        desktopCasual.value = casual;
+                        mobileCasual.value = casual;
+                    }
+                    
                     // Reset icon after delay
                     setTimeout(() => icon.className = oldClass, 2000);
                 } else {
                     icon.className = 'fas fa-times text-danger';
                     showToast(data.message, 'error');
+                    setTimeout(() => icon.className = oldClass, 2000);
                 }
             })
             .catch(err => {
@@ -624,6 +2058,135 @@
                 icon.className = oldClass;
                 showToast('Network error occurred', 'error');
             });
+    }
+
+    // Responsive behavior enhancements
+    document.addEventListener('DOMContentLoaded', function() {
+        setupSearch();
+        setupScrollIndicator();
+        
+        // Handle window resize to maintain consistency
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                // Sync input values between layouts if both exist
+                const employees = document.querySelectorAll('[id^="sick_val_"]');
+                employees.forEach(input => {
+                    const id = input.id.replace('sick_val_', '');
+                    const mobileInput = document.getElementById(`mobile_sick_val_${id}`);
+                    if (mobileInput && input.value !== mobileInput.value) {
+                        mobileInput.value = input.value;
+                    }
+                });
+
+                const casualEmployees = document.querySelectorAll('[id^="casual_val_"]');
+                casualEmployees.forEach(input => {
+                    const id = input.id.replace('casual_val_', '');
+                    const mobileInput = document.getElementById(`mobile_casual_val_${id}`);
+                    if (mobileInput && input.value !== mobileInput.value) {
+                        mobileInput.value = input.value;
+                    }
+                });
+
+                // Recheck scroll indicator
+                setupScrollIndicator();
+            }, 250);
+        });
+
+        // Touch device optimizations
+        if ('ontouchstart' in window) {
+            document.body.classList.add('touch-device');
+        }
+
+        // Accessibility improvements
+        const controlBtns = document.querySelectorAll('.control-btn');
+        controlBtns.forEach(btn => {
+            btn.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    btn.click();
+                }
+            });
+        });
+
+        // Enhanced mobile interactions
+        const mobileCards = document.querySelectorAll('.mobile-employee-card');
+        mobileCards.forEach(card => {
+            card.addEventListener('touchstart', function() {
+                this.style.transform = 'scale(0.98)';
+            });
+            
+            card.addEventListener('touchend', function() {
+                this.style.transform = '';
+            });
+        });
+
+        // Check for bulk upload success and refresh data
+        checkBulkUploadSuccess();
+    });
+
+    // Function to check for bulk upload success and refresh data
+    function checkBulkUploadSuccess() {
+        // Check if there's a bulk upload success message
+        const messages = document.querySelectorAll('.alert');
+        let bulkUploadSuccess = false;
+        
+        messages.forEach(message => {
+            if (message.textContent.includes('BULK_UPLOAD_SUCCESS')) {
+                bulkUploadSuccess = true;
+                message.style.display = 'none'; // Hide the flag message
+            }
+        });
+        
+        if (bulkUploadSuccess) {
+            // Show immediate feedback
+            showToast('Leave balances updated successfully! Refreshing data...', 'success');
+            
+            // Force refresh the page after a short delay to show updated data
+            setTimeout(() => {
+                // Add cache-busting parameter to force fresh data
+                const url = new URL(window.location.href);
+                url.searchParams.set('refresh', Date.now());
+                window.location.href = url.toString();
+            }, 1500);
+        }
+    }
+
+    // Function to refresh leave balance data without full page reload
+    function refreshLeaveBalances() {
+        fetch(window.location.href, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            // Parse the response and update only the employee cards
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Update desktop layout
+            const newDesktopList = doc.querySelector('.desktop-layout .employee-list');
+            const currentDesktopList = document.querySelector('.desktop-layout .employee-list');
+            if (newDesktopList && currentDesktopList) {
+                currentDesktopList.innerHTML = newDesktopList.innerHTML;
+            }
+            
+            // Update mobile layout
+            const newMobileList = doc.querySelector('.mobile-layout .employee-list');
+            const currentMobileList = document.querySelector('.mobile-layout .employee-list');
+            if (newMobileList && currentMobileList) {
+                currentMobileList.innerHTML = newMobileList.innerHTML;
+            }
+            
+            showToast('Leave balances refreshed successfully!', 'success');
+        })
+        .catch(error => {
+            console.error('Error refreshing leave balances:', error);
+            showToast('Error refreshing data. Please reload the page.', 'error');
+        });
     }
 </script>
 {% endblock %}

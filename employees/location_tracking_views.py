@@ -1,11 +1,14 @@
+import json
+
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.utils import timezone
-from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
-from .models import Employee, Attendance, LocationLog
-from accounts.models import User
-import json
 from loguru import logger
+
+from accounts.models import User
+
+from .models import Attendance, Employee, LocationLog
 
 
 @csrf_exempt
@@ -16,18 +19,14 @@ def submit_hourly_location(request):
     Called automatically by frontend every hour when employee is clocked in.
     """
     if request.method != "POST":
-        return JsonResponse(
-            {"status": "error", "message": "Invalid method"}, status=405
-        )
+        return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
 
     try:
         data = json.loads(request.body)
 
         # Ensure employee profile exists
         if not hasattr(request.user, "employee_profile"):
-            return JsonResponse(
-                {"status": "error", "message": "No employee profile found"}, status=400
-            )
+            return JsonResponse({"status": "error", "message": "No employee profile found"}, status=400)
 
         employee = request.user.employee_profile
         lat = data.get("latitude")
@@ -66,9 +65,9 @@ def submit_hourly_location(request):
                 )
 
             # Prevent Duplicate Hourly Logs (Rate Limit)
-            last_hourly_log = LocationLog.objects.filter(
-                employee=employee, log_type="HOURLY"
-            ).order_by("-timestamp").first()
+            last_hourly_log = (
+                LocationLog.objects.filter(employee=employee, log_type="HOURLY").order_by("-timestamp").first()
+            )
 
             if last_hourly_log:
                 time_diff = timezone.now() - last_hourly_log.timestamp
@@ -133,9 +132,7 @@ def get_location_tracking_status(request):
     """
     try:
         if not hasattr(request.user, "employee_profile"):
-            return JsonResponse(
-                {"status": "error", "message": "No employee profile found"}, status=400
-            )
+            return JsonResponse({"status": "error", "message": "No employee profile found"}, status=400)
 
         employee = request.user.employee_profile
         today = timezone.localdate()
@@ -145,9 +142,7 @@ def get_location_tracking_status(request):
 
             # Check if tracking should stop (shift complete or clocked out)
             tracking_stopped = False
-            if not attendance.is_currently_clocked_in:
-                tracking_stopped = True
-            elif attendance.should_stop_location_tracking():
+            if not attendance.is_currently_clocked_in or attendance.should_stop_location_tracking():
                 tracking_stopped = True
 
             # Determine if we need a location update (every hour)
@@ -155,14 +150,12 @@ def get_location_tracking_status(request):
             if attendance.is_currently_clocked_in and not tracking_stopped:
                 # Check last location log time or clock-in time
                 last_log = (
-                    LocationLog.objects.filter(employee=employee, log_type="HOURLY")
-                    .order_by("-timestamp")
-                    .first()
+                    LocationLog.objects.filter(employee=employee, log_type="HOURLY").order_by("-timestamp").first()
                 )
 
                 # Determine reference time (latest of clock-in or last log)
                 reference_time = attendance.clock_in
-                
+
                 # If we have a current session, use its clock-in as baseline if it's later
                 current_session = attendance.get_current_session()
                 if current_session and current_session.clock_in:
@@ -171,7 +164,7 @@ def get_location_tracking_status(request):
 
                 if last_log and last_log.timestamp > reference_time:
                     reference_time = last_log.timestamp
-                
+
                 if reference_time:
                     # STRICT 1 Hour Interval (3600 seconds)
                     time_since_last = timezone.now() - reference_time
@@ -189,9 +182,9 @@ def get_location_tracking_status(request):
                     "session_count": attendance.daily_sessions_count,
                     "needs_location": needs_location,
                     "tracking_stopped": tracking_stopped,
-                    "message": "Shift completed"
-                    if tracking_stopped
-                    else "Tracking active",
+                    "clock_in_time": attendance.clock_in.isoformat() if attendance.clock_in else None,
+                    "last_log_time": last_log.timestamp.isoformat() if last_log else None,
+                    "message": "Shift completed" if tracking_stopped else "Tracking active",
                 }
             )
         except Attendance.DoesNotExist:
@@ -218,26 +211,20 @@ def get_employee_location_history(request, employee_id):
     """
     try:
         # Permission check
-        is_admin = (
-            request.user.role == User.Role.COMPANY_ADMIN or request.user.is_superuser
-        )
+        is_admin = request.user.role == User.Role.COMPANY_ADMIN or request.user.is_superuser
 
         employee = Employee.objects.get(pk=employee_id)
 
         # Check if user has permission to view this employee's data
         is_manager = False
-        if request.user.role == User.Role.MANAGER and hasattr(
-            request.user, "employee_profile"
-        ):
+        if request.user.role == User.Role.MANAGER and hasattr(request.user, "employee_profile"):
             if employee.manager:
-                is_manager = employee.manager.user == request.user
+                is_manager = employee.manager == request.user
 
         is_self = employee.user == request.user
 
         if not (is_admin or is_manager or is_self):
-            return JsonResponse(
-                {"status": "error", "message": "Permission denied"}, status=403
-            )
+            return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
 
         # Get date range from query params
         from_date = request.GET.get("from_date")
@@ -280,9 +267,7 @@ def get_employee_location_history(request, employee_id):
         )
 
     except Employee.DoesNotExist:
-        return JsonResponse(
-            {"status": "error", "message": "Employee not found"}, status=404
-        )
+        return JsonResponse({"status": "error", "message": "Employee not found"}, status=404)
     except Exception as e:
         logger.error(f"Location history error: {str(e)}", exc_info=True)
         return JsonResponse({"status": "error", "message": str(e)}, status=500)

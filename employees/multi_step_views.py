@@ -49,6 +49,7 @@ def add_employee_step1(request):
                 "first_name": form.cleaned_data["first_name"],
                 "last_name": form.cleaned_data["last_name"],
                 "email": form.cleaned_data["email"],
+                "personal_email": form.cleaned_data.get("personal_email", ""),
                 "mobile_number": form.cleaned_data.get("mobile_number", ""),
                 "gender": form.cleaned_data.get("gender", ""),
                 "marital_status": form.cleaned_data.get("marital_status", ""),
@@ -264,6 +265,7 @@ def add_employee_step3(request):
                 company=company,
                 # Personal
                 mobile_number=personal_data.get("mobile_number"),
+                personal_email=personal_data.get("personal_email"),
                 gender=personal_data.get("gender"),
                 marital_status=personal_data.get("marital_status"),
                 dob=datetime.strptime(personal_data["dob"], "%Y-%m-%d").date()

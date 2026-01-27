@@ -231,7 +231,7 @@
 
                     <!-- Date Selection -->
                     <div class="form-group-modern">
-                        <label class="form-label-modern">Misssing Date</label>
+                        <label class="form-label-modern">Missing Date <span class="text-danger">*</span></label>
                         {{ form.date }}
                         {% if form.date.errors %}
                         <div class="text-danger small mt-1 ms-2"><i class="fas fa-exclamation-circle me-1"></i>{{ form.date.errors.0 }}</div>
@@ -249,7 +249,7 @@
                     <div class="row g-3">
                         <div class="col-6">
                             <div class="form-group-modern">
-                                <label class="form-label-modern">Check In</label>
+                                <label class="form-label-modern">Check In <span class="text-danger">*</span></label>
                                 {{ form.check_in }}
                                 {% if form.check_in.errors %}
                                 <div class="text-danger small mt-1 ms-2">{{ form.check_in.errors.0 }}</div>
@@ -258,7 +258,7 @@
                         </div>
                         <div class="col-6">
                             <div class="form-group-modern">
-                                <label class="form-label-modern">Check Out</label>
+                                <label class="form-label-modern">Check Out <span class="text-danger">*</span></label>
                                 {{ form.check_out }}
                                 {% if form.check_out.errors %}
                                 <div class="text-danger small mt-1 ms-2">{{ form.check_out.errors.0 }}</div>
@@ -269,7 +269,7 @@
 
                     <!-- Reason -->
                     <div class="form-group-modern mt-2">
-                        <label class="form-label-modern">Reason for Correction</label>
+                        <label class="form-label-modern">Reason for Correction <span class="text-danger">*</span></label>
                         {{ form.reason }}
                         {% if form.reason.errors %}
                         <div class="text-danger small mt-1 ms-2">{{ form.reason.errors.0 }}</div>

@@ -1,0 +1,589 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Bulk Leave Upload | HRMS{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --primary-color: #6366f1;
+        --primary-light: #e0e7ff;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --bg-color: #f8fafc;
+        --card-bg: #ffffff;
+        --text-main: #1e293b;
+        --text-muted: #64748b;
+        --border-radius: 16px;
+        --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    body {
+        font-family: 'Outfit', sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-main);
+    }
+
+    .upload-card {
+        background: var(--card-bg);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-md);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        overflow: hidden;
+    }
+
+    .upload-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #8b5cf6 100%);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .upload-header h2 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 1.5rem;
+    }
+
+    .upload-header p {
+        margin: 0.5rem 0 0;
+        opacity: 0.9;
+        font-size: 0.95rem;
+    }
+
+    .upload-body {
+        padding: 2rem;
+    }
+
+    .dependency-warning {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border: 2px solid #f59e0b;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .dependency-warning h3 {
+        color: #92400e;
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+
+    .dependency-warning p {
+        color: #78350f;
+        margin-bottom: 1.5rem;
+    }
+
+    .install-commands {
+        background: #1f2937;
+        color: #f9fafb;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        text-align: left;
+        margin: 1rem 0;
+    }
+
+    .install-commands code {
+        color: #10b981;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: var(--text-main);
+        font-size: 0.9rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        background: white;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .file-upload-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        background: #f8fafc;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .file-upload-area:hover {
+        border-color: var(--primary-color);
+        background: var(--primary-light);
+    }
+
+    .file-upload-area.dragover {
+        border-color: var(--primary-color);
+        background: var(--primary-light);
+        transform: scale(1.02);
+    }
+
+    .upload-icon {
+        font-size: 3rem;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+
+    .upload-text {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 0.5rem;
+    }
+
+    .upload-subtext {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .radio-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .radio-option {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: white;
+    }
+
+    .radio-option:hover {
+        border-color: var(--primary-color);
+        background: var(--primary-light);
+    }
+
+    .radio-option input[type="radio"] {
+        margin-right: 0.75rem;
+        transform: scale(1.2);
+    }
+
+    .radio-option.selected {
+        border-color: var(--primary-color);
+        background: var(--primary-light);
+    }
+
+    .radio-label {
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    .radio-description {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+    }
+
+    .btn-primary {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #5856eb;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-secondary {
+        background: #6b7280;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #4b5563;
+        transform: translateY(-2px);
+    }
+
+    .btn-outline {
+        background: transparent;
+        color: var(--primary-color);
+        border: 2px solid var(--primary-color);
+    }
+
+    .btn-outline:hover {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .btn-warning {
+        background: var(--warning-color);
+        color: white;
+    }
+
+    .btn-warning:hover {
+        background: #d97706;
+        transform: translateY(-2px);
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+        margin-top: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .help-text {
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+        color: #0369a1;
+    }
+
+    .help-text strong {
+        color: #0c4a6e;
+    }
+
+    .instructions-card {
+        background: #fffbeb;
+        border: 1px solid #fed7aa;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .instructions-title {
+        font-weight: 700;
+        color: #92400e;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .instructions-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .instructions-list li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #fed7aa;
+        color: #92400e;
+    }
+
+    .instructions-list li:last-child {
+        border-bottom: none;
+    }
+
+    .instructions-list li strong {
+        color: #78350f;
+    }
+
+    @media (max-width: 768px) {
+        .upload-body {
+            padding: 1.5rem;
+        }
+        
+        .upload-header {
+            padding: 1.5rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .btn {
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="upload-card">
+                <div class="upload-header">
+                    <h2><i class="fas fa-cloud-upload-alt me-2"></i>Bulk Leave Upload</h2>
+                    <p>Upload employee leave balances in bulk using Excel or CSV files</p>
+                </div>
+                
+                <div class="upload-body">
+                    <!-- Check if pandas is available -->
+                    {% if not form.fields.upload_file %}
+                    <div class="dependency-warning">
+                        <h3><i class="fas fa-exclamation-triangle me-2"></i>Dependencies Required</h3>
+                        <p>The bulk upload feature requires additional Python packages to be installed.</p>
+                        
+                        <div class="install-commands">
+                            <strong>Install using pip:</strong><br>
+                            <code>pip install pandas openpyxl</code><br><br>
+                            
+                            <strong>Or install all requirements:</strong><br>
+                            <code>pip install -r requirements.txt</code><br><br>
+                            
+                            <strong>Using the installation script:</strong><br>
+                            <code>python install_bulk_upload_dependencies.py</code>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <a href="{% url 'leave_configuration' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i>
+                                Back to Configuration
+                            </a>
+                            <button onclick="location.reload()" class="btn btn-warning">
+                                <i class="fas fa-sync-alt"></i>
+                                Retry After Installation
+                            </button>
+                        </div>
+                    </div>
+                    {% else %}
+                    <form method="post" enctype="multipart/form-data" id="uploadForm">
+                        {% csrf_token %}
+                        
+                        <!-- File Upload Section -->
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.upload_file.id_for_label }}">
+                                <i class="fas fa-file-excel me-2"></i>{{ form.upload_file.label }}
+                            </label>
+                            <div class="file-upload-area" onclick="document.getElementById('{{ form.upload_file.id_for_label }}').click()">
+                                <div class="upload-icon">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </div>
+                                <div class="upload-text">Click to select file or drag and drop</div>
+                                <div class="upload-subtext">Supports .xlsx, .xls, and .csv files (max 5MB)</div>
+                                <input type="file" id="{{ form.upload_file.id_for_label }}" name="{{ form.upload_file.name }}" 
+                                       accept=".xlsx,.xls,.csv" style="display: none;" onchange="updateFileName(this)">
+                            </div>
+                            <div id="fileName" class="help-text" style="display: none;">
+                                <strong>Selected file:</strong> <span id="fileNameText"></span>
+                            </div>
+                            {% if form.upload_file.errors %}
+                                <div class="text-danger mt-2">
+                                    {% for error in form.upload_file.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Update Mode Selection -->
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-cogs me-2"></i>Update Mode
+                            </label>
+                            <div class="radio-group">
+                                <div class="radio-option" onclick="selectRadio('id_update_mode_0')">
+                                    <input type="radio" name="update_mode" value="REPLACE" id="id_update_mode_0" {% if form.update_mode.value == 'REPLACE' or not form.update_mode.value %}checked{% endif %}>
+                                    <div>
+                                        <div class="radio-label">Replace Existing Balances</div>
+                                        <div class="radio-description">Completely replace all existing leave balances with uploaded values</div>
+                                    </div>
+                                </div>
+                                <div class="radio-option" onclick="selectRadio('id_update_mode_1')">
+                                    <input type="radio" name="update_mode" value="ADD" id="id_update_mode_1" {% if form.update_mode.value == 'ADD' %}checked{% endif %}>
+                                    <div>
+                                        <div class="radio-label">Add to Existing Balances</div>
+                                        <div class="radio-description">Add uploaded values to current balances (useful for bonus leaves)</div>
+                                    </div>
+                                </div>
+                                <div class="radio-option" onclick="selectRadio('id_update_mode_2')">
+                                    <input type="radio" name="update_mode" value="UPDATE_ONLY" id="id_update_mode_2" {% if form.update_mode.value == 'UPDATE_ONLY' %}checked{% endif %}>
+                                    <div>
+                                        <div class="radio-label">Update Only Specified Fields</div>
+                                        <div class="radio-description">Only update fields that have non-zero values in the upload file</div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% if form.update_mode.errors %}
+                                <div class="text-danger mt-2">
+                                    {% for error in form.update_mode.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="action-buttons">
+                            <div>
+                                <a href="{% url 'download_leave_template' %}" class="btn btn-outline">
+                                    <i class="fas fa-download"></i>
+                                    Download Template
+                                </a>
+                            </div>
+                            <div>
+                                <a href="{% url 'leave_configuration' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i>
+                                    Back to Configuration
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-upload"></i>
+                                    Upload Leave Data
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Instructions -->
+                    <div class="instructions-card">
+                        <div class="instructions-title">
+                            <i class="fas fa-info-circle"></i>
+                            Upload Instructions
+                        </div>
+                        <ul class="instructions-list">
+                            <li><strong>Required Columns:</strong> employee_id, employee_name, casual_leave_allocated, sick_leave_allocated</li>
+                            <li><strong>Optional Columns:</strong> casual_leave_used, sick_leave_used, carry_forward_leave</li>
+                            <li><strong>Employee Identification:</strong> Provide either employee_id (badge ID) or employee_name</li>
+                            <li><strong>File Formats:</strong> Excel (.xlsx, .xls) or CSV files supported</li>
+                            <li><strong>File Size:</strong> Maximum 5MB file size allowed</li>
+                            <li><strong>Data Validation:</strong> All numeric values must be positive, used leaves cannot exceed allocated</li>
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function updateFileName(input) {
+        const fileName = document.getElementById('fileName');
+        const fileNameText = document.getElementById('fileNameText');
+        
+        if (input.files && input.files[0]) {
+            fileNameText.textContent = input.files[0].name;
+            fileName.style.display = 'block';
+        } else {
+            fileName.style.display = 'none';
+        }
+    }
+
+    function selectRadio(radioId) {
+        // Remove selected class from all options
+        document.querySelectorAll('.radio-option').forEach(option => {
+            option.classList.remove('selected');
+        });
+        
+        // Select the radio button
+        const radio = document.getElementById(radioId);
+        radio.checked = true;
+        
+        // Add selected class to parent
+        radio.closest('.radio-option').classList.add('selected');
+    }
+
+    // Drag and drop functionality
+    const uploadArea = document.querySelector('.file-upload-area');
+    const fileInput = document.getElementById('{{ form.upload_file.id_for_label }}');
+
+    if (uploadArea && fileInput) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        uploadArea.addEventListener('drop', handleDrop, false);
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function highlight(e) {
+            uploadArea.classList.add('dragover');
+        }
+
+        function unhighlight(e) {
+            uploadArea.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            if (files.length > 0) {
+                fileInput.files = files;
+                updateFileName(fileInput);
+            }
+        }
+    }
+
+    // Initialize selected radio option
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkedRadio = document.querySelector('input[name="{{ form.update_mode.name }}"]:checked');
+        if (checkedRadio) {
+            checkedRadio.closest('.radio-option').classList.add('selected');
+        }
+    });
+
+    // Form submission with loading state
+    const uploadForm = document.getElementById('uploadForm');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
+            // Re-enable button after 30 seconds as fallback
+            setTimeout(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }, 30000);
+        });
+    }
+</script>
+{% endblock %}

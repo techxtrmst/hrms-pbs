@@ -1,0 +1,424 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}ID Card - {{ employee.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5 col-lg-4">
+            <!-- ID Card Container -->
+            <div id="idCard" class="id-card-container">
+
+                <!-- Background Decoration -->
+                <div class="card-bg-decoration"></div>
+
+                <!-- Header Section -->
+                <div class="id-card-header">
+                    <div class="company-logo-wrapper">
+                        {% if company.slug == 'softstandard' %}
+                        <img src="https://softstandard.com/wp-content/uploads/2016/05/logo.jpg" alt="Softstandard"
+                            class="company-logo">
+                        {% elif company.slug == 'petabytz' %}
+                        <img src="https://petabytz.com/images/logo/logo.png" alt="Petabytz" class="company-logo"
+                            style="height: 38px;">
+                        {% elif company.slug == 'bluebix' %}
+                        <img src="https://media.licdn.com/dms/image/v2/C510BAQF_jSPngDmYig/company-logo_200_200/company-logo_200_200/0/1630611564837?e=2147483647&v=beta&t=K0Ip6YC5bjvQcpJwIyTAbBV_01rzUJhP4bwlIDO8hPw"
+                            alt="Bluebix" class="company-logo">
+                        {% elif company.logo %}
+                        <img src="{{ company.logo.url }}" alt="{{ company.name }}" class="company-logo">
+                        {% else %}
+                        <h3 class="company-name-text">{{ company.name }}</h3>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Profile Section -->
+                <div class="profile-section">
+                    <div class="profile-image-wrapper">
+                        {% if employee.profile_picture %}
+                        <img src="{{ employee.profile_picture.url }}" alt="Profile" class="profile-image">
+                        {% else %}
+                        <img src="https://ui-avatars.com/api/?name={{ employee.user.get_full_name }}&background=4f46e5&color=fff&size=150"
+                            alt="Profile" class="profile-image">
+                        {% endif %}
+                        <div class="status-indicator"></div>
+                    </div>
+                    <div class="employee-identity">
+                        <h2 class="employee-name">{{ employee.user.get_full_name }}</h2>
+                        <div class="designation-badge">{{ employee.designation }}</div>
+                    </div>
+                </div>
+
+                <!-- Details Grid -->
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">ID No.</span>
+                        <span class="detail-value highlight">{{ employee.badge_id|default:'N/A' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Joined</span>
+                        <span class="detail-value">{{ employee.date_of_joining|date:"M d, Y"|default:'N/A' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Department</span>
+                        <span class="detail-value">{{ employee.department }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Location</span>
+                        <span class="detail-value">{{ employee.location.name|default:'Headquarters' }}</span>
+                    </div>
+                    <div class="detail-item full-width">
+                        <span class="detail-label">Designation</span>
+                        <span class="detail-value">{{ employee.designation }}</span>
+                    </div>
+                    <div class="detail-item full-width">
+                        <span class="detail-label">Reporting Manager</span>
+                        <span class="detail-value small-text">{{ employee.manager.get_full_name|default:'N/A' }}</span>
+                    </div>
+                    <div class="detail-item full-width">
+                        <span class="detail-label">Email</span>
+                        <span class="detail-value email-value">{{ employee.user.email }}</span>
+                    </div>
+                    <div class="detail-item full-width">
+                        <span class="detail-label">Contact</span>
+                        <span class="detail-value">{{ employee.mobile_number|default:'N/A' }}</span>
+                    </div>
+                </div>
+
+                <!-- Footer / Validation -->
+                <div class="card-footer-section">
+                    <div class="qr-placeholder">
+                        <!-- CSS Barcode simulation -->
+                        <div class="barcode"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-center gap-3 mt-5 print-hide action-buttons">
+                <button onclick="downloadIdCard()" class="btn-action download">
+                    <i class="fas fa-arrow-down"></i> Download
+                </button>
+                <button onclick="window.print()" class="btn-action print">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Premium ID Card CSS */
+    :root {
+        --card-bg: #ffffff;
+        --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        --text-dark: #1e293b;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+    }
+
+    .id-card-container {
+        width: 100%;
+        max-width: 380px;
+        background: var(--card-bg);
+        border-radius: 24px;
+        box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.1), 0 10px 20px -5px rgba(0, 0, 0, 0.04);
+        position: relative;
+        overflow: hidden;
+        margin: 0 auto;
+        font-family: 'Inter', sans-serif;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    /* Decorative Background Element - Removed as per request */
+    .card-bg-decoration {
+        display: none;
+    }
+
+    .id-card-header {
+        position: relative;
+        height: 80px;
+        /* Background removed for cleaner look */
+        background: transparent;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1;
+    }
+
+    .company-logo-wrapper {
+        background: white;
+        padding: 10px 20px;
+        border-radius: 12px;
+        /* Removed negative margin to center it properly without header bg */
+        margin-top: 0;
+    }
+
+    .company-logo {
+        height: 32px;
+        display: block;
+    }
+
+    .company-name-text {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 800;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .profile-section {
+        text-align: center;
+        margin-top: 20px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .profile-image-wrapper {
+        position: relative;
+        width: 130px;
+        height: 130px;
+        margin: 0 auto 15px;
+        padding: 4px;
+        background: white;
+        border-radius: 50%;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .profile-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 2px solid #e0e7ff;
+    }
+
+    .status-indicator {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        width: 16px;
+        height: 16px;
+        background: #22c55e;
+        border: 2px solid white;
+        border-radius: 50%;
+    }
+
+    .employee-identity {
+        margin-bottom: 24px;
+    }
+
+    .employee-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin: 0 0 4px;
+        letter-spacing: -0.025em;
+        text-transform: none !important;
+    }
+
+    .designation-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        background: #f1f5f9;
+        color: var(--text-muted);
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-transform: none !important;
+    }
+
+    .details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        padding: 0 32px 24px;
+        text-align: left;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .detail-item.full-width {
+        grid-column: span 2;
+    }
+
+    .detail-item.border-top {
+        border-top: 1px dashed var(--border-color);
+    }
+
+    .detail-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #94a3b8;
+        margin-bottom: 2px;
+        font-weight: 600;
+    }
+
+    .detail-value {
+        font-size: 0.9rem;
+        color: var(--text-dark);
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-transform: none !important;
+    }
+
+    .detail-value.highlight {
+        color: #4f46e5;
+        font-family: 'Courier New', monospace;
+        letter-spacing: -0.5px;
+    }
+
+    .detail-value.email-value {
+        font-size: 0.85rem;
+    }
+
+    .detail-value.small-text {
+        font-size: 0.85rem;
+        color: #475569;
+    }
+
+    .card-footer-section {
+        background: #f8fafc;
+        padding: 16px 32px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .barcode {
+        height: 24px;
+        width: 100px;
+        background: repeating-linear-gradient(90deg,
+                #334155,
+                #334155 2px,
+                transparent 2px,
+                transparent 4px);
+    }
+
+    .company-tagline {
+        font-size: 0.65rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* Buttons */
+    .btn-action {
+        border: none;
+        padding: 10px 24px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-action.download {
+        background: var(--text-dark);
+        color: white;
+        box-shadow: 0 4px 12px rgba(30, 41, 59, 0.2);
+    }
+
+    .btn-action.download:hover {
+        background: #0f172a;
+        transform: translateY(-2px);
+    }
+
+    .btn-action.print {
+        background: white;
+        color: var(--text-dark);
+        border: 1px solid var(--border-color);
+    }
+
+    .btn-action.print:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
+
+    /* Print Styles */
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+
+        .id-card-container,
+        .id-card-container * {
+            visibility: visible;
+        }
+
+        .id-card-container {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: none !important;
+            border: 1px solid #ccc !important;
+            page-break-inside: avoid;
+        }
+
+        .print-hide {
+            display: none !important;
+        }
+
+        @page {
+            margin: 0;
+            size: auto;
+        }
+
+        .sidebar,
+        .topbar {
+            display: none !important;
+        }
+
+        .content {
+            margin: 0 !important;
+            background: white !important;
+        }
+    }
+</style>
+
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script>
+    function downloadIdCard() {
+        const idCard = document.querySelector('.id-card-container');
+        const btn = document.querySelector('.btn-action.download');
+        const originalHTML = btn.innerHTML;
+
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+        btn.disabled = true;
+
+        html2canvas(idCard, {
+            scale: 3, // High resolution
+            useCORS: true,
+            backgroundColor: null,
+            logging: false
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = '{{ employee.user.first_name }}_ID_Card.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        }).catch(err => {
+            console.error('Error:', err);
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+            alert('Could not generate image. Please try "Print" instead.');
+        });
+    }
+</script>
+{% endblock %}

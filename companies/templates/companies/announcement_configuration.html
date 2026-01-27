@@ -19,6 +19,8 @@
         max-width: 1400px;
         margin: 0 auto;
         padding: 2rem;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .page-header {
@@ -28,6 +30,8 @@
         border-radius: 16px;
         margin-bottom: 2rem;
         box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .page-header h1 {
@@ -37,11 +41,19 @@
         display: flex;
         align-items: center;
         gap: 1rem;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+        flex-wrap: wrap;
     }
 
     .page-header p {
         margin: 0.5rem 0 0 0;
         opacity: 0.9;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+        line-height: 1.5;
     }
 
     .card-modern {
@@ -50,6 +62,8 @@
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         padding: 2rem;
         margin-bottom: 2rem;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .card-header-modern {
@@ -59,6 +73,8 @@
         margin-bottom: 1.5rem;
         padding-bottom: 1rem;
         border-bottom: 2px solid var(--border-color);
+        flex-wrap: wrap;
+        gap: 1rem;
     }
 
     .card-title-modern {
@@ -68,6 +84,10 @@
         display: flex;
         align-items: center;
         gap: 0.75rem;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+        flex-wrap: wrap;
     }
 
     .form-group-modern {
@@ -80,6 +100,9 @@
         color: #374151;
         margin-bottom: 0.5rem;
         font-size: 0.95rem;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
     }
 
     .form-control-modern {
@@ -89,6 +112,8 @@
         border-radius: 10px;
         font-size: 1rem;
         transition: all 0.3s;
+        box-sizing: border-box;
+        font-size: 16px; /* Prevents zoom on iOS */
     }
 
     .form-control-modern:focus {
@@ -114,6 +139,9 @@
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
+        min-height: 44px;
+        justify-content: center;
+        white-space: nowrap;
     }
 
     .btn-primary-modern {
@@ -169,6 +197,8 @@
         border-radius: 12px;
         padding: 1.5rem;
         transition: all 0.3s;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .announcement-item:hover {
@@ -182,6 +212,8 @@
         justify-content: space-between;
         align-items: start;
         margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 1rem;
     }
 
     .announcement-title {
@@ -189,6 +221,11 @@
         font-weight: 700;
         color: #1f2937;
         margin: 0;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+        flex: 1;
+        min-width: 0;
     }
 
     .announcement-meta {
@@ -206,6 +243,7 @@
         border-radius: 8px;
         font-size: 0.875rem;
         font-weight: 600;
+        white-space: nowrap;
     }
 
     .meta-badge.location {
@@ -235,6 +273,9 @@
         padding: 1rem;
         background: var(--bg-light);
         border-radius: 8px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
     }
 
     .announcement-footer {
@@ -243,21 +284,26 @@
         align-items: center;
         padding-top: 1rem;
         border-top: 1px solid var(--border-color);
+        flex-wrap: wrap;
+        gap: 1rem;
     }
 
     .announcement-date {
         font-size: 0.875rem;
         color: #6b7280;
+        white-space: nowrap;
     }
 
     .announcement-actions {
         display: flex;
         gap: 0.75rem;
+        flex-wrap: wrap;
     }
 
     .btn-sm-modern {
         padding: 0.5rem 1rem;
         font-size: 0.875rem;
+        min-height: 40px;
     }
 
     .empty-state {
@@ -282,12 +328,14 @@
         display: flex;
         align-items: center;
         gap: 0.75rem;
+        flex-wrap: wrap;
     }
 
     .checkbox-modern input[type="checkbox"] {
         width: 20px;
         height: 20px;
         cursor: pointer;
+        flex-shrink: 0;
     }
 
     .modal-overlay {
@@ -301,6 +349,8 @@
         z-index: 1000;
         align-items: center;
         justify-content: center;
+        padding: 1rem;
+        box-sizing: border-box;
     }
 
     .modal-overlay.active {
@@ -312,9 +362,10 @@
         border-radius: 16px;
         padding: 2rem;
         max-width: 600px;
-        width: 90%;
+        width: 100%;
         max-height: 90vh;
         overflow-y: auto;
+        box-sizing: border-box;
     }
 
     .modal-header {
@@ -322,12 +373,17 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
     }
 
     .modal-title {
         font-size: 1.5rem;
         font-weight: 700;
         color: #1f2937;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
     }
 
     .btn-close {
@@ -336,10 +392,556 @@
         font-size: 1.5rem;
         cursor: pointer;
         color: #6b7280;
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
     }
 
     .btn-close:hover {
         color: #1f2937;
+    }
+
+    /* === COMPREHENSIVE RESPONSIVE DESIGN === */
+
+    /* Large Desktop (1400px+) */
+    @media (min-width: 1400px) {
+        .config-container {
+            padding: 2.5rem;
+        }
+
+        .page-header {
+            padding: 2.5rem;
+        }
+
+        .card-modern {
+            padding: 2.5rem;
+        }
+    }
+
+    /* Desktop (1200px - 1399px) */
+    @media (max-width: 1399px) and (min-width: 1200px) {
+        .config-container {
+            padding: 2rem;
+        }
+    }
+
+    /* Laptop (992px - 1199px) */
+    @media (max-width: 1199px) and (min-width: 992px) {
+        .config-container {
+            padding: 1.75rem;
+        }
+
+        .page-header {
+            padding: 1.75rem;
+        }
+
+        .card-modern {
+            padding: 1.75rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.8rem;
+        }
+
+        .card-title-modern {
+            font-size: 1.4rem;
+        }
+    }
+
+    /* Tablet (768px - 991px) */
+    @media (max-width: 991px) and (min-width: 768px) {
+        .config-container {
+            padding: 1.5rem;
+        }
+
+        .page-header {
+            padding: 1.5rem;
+        }
+
+        .card-modern {
+            padding: 1.5rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.6rem;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .card-title-modern {
+            font-size: 1.3rem;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .card-header-modern {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .announcement-footer {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+
+        .announcement-actions {
+            justify-content: center;
+        }
+    }
+
+    /* Mobile Large (576px - 767px) */
+    @media (max-width: 767px) and (min-width: 576px) {
+        .config-container {
+            padding: 1.25rem;
+        }
+
+        .page-header {
+            padding: 1.25rem;
+            border-radius: 12px;
+        }
+
+        .card-modern {
+            padding: 1.25rem;
+            border-radius: 12px;
+        }
+
+        .page-header h1 {
+            font-size: 1.4rem;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+            text-align: center;
+        }
+
+        .page-header p {
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .card-title-modern {
+            font-size: 1.2rem;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .card-header-modern {
+            flex-direction: column;
+            align-items: stretch;
+            text-align: center;
+        }
+
+        .announcement-item {
+            padding: 1.25rem;
+        }
+
+        .announcement-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .announcement-footer {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+
+        .announcement-actions {
+            justify-content: center;
+        }
+
+        .modal-content {
+            padding: 1.5rem;
+        }
+
+        .btn-modern {
+            padding: 0.875rem 1.75rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-sm-modern {
+            padding: 0.625rem 1.25rem;
+            font-size: 0.8rem;
+        }
+    }
+
+    /* Mobile Medium (400px - 575px) */
+    @media (max-width: 575px) and (min-width: 400px) {
+        .config-container {
+            padding: 1rem;
+        }
+
+        .page-header {
+            padding: 1rem;
+            border-radius: 10px;
+        }
+
+        .card-modern {
+            padding: 1rem;
+            border-radius: 10px;
+        }
+
+        .page-header h1 {
+            font-size: 1.25rem;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            text-align: center;
+        }
+
+        .page-header p {
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .card-title-modern {
+            font-size: 1.1rem;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            text-align: center;
+        }
+
+        .card-header-modern {
+            flex-direction: column;
+            align-items: stretch;
+            text-align: center;
+        }
+
+        .announcement-item {
+            padding: 1rem;
+        }
+
+        .announcement-title {
+            font-size: 1.1rem;
+        }
+
+        .announcement-meta {
+            justify-content: center;
+        }
+
+        .meta-badge {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        .announcement-footer {
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .announcement-actions {
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .modal-content {
+            padding: 1.25rem;
+        }
+
+        .btn-modern {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.85rem;
+        }
+
+        .btn-sm-modern {
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+        }
+
+        .form-control-modern {
+            padding: 0.625rem 0.875rem;
+        }
+
+        .checkbox-modern {
+            justify-content: center;
+        }
+    }
+
+    /* Mobile Small (320px - 399px) */
+    @media (max-width: 399px) and (min-width: 320px) {
+        .config-container {
+            padding: 0.75rem;
+        }
+
+        .page-header {
+            padding: 0.875rem;
+            border-radius: 8px;
+        }
+
+        .card-modern {
+            padding: 0.875rem;
+            border-radius: 8px;
+        }
+
+        .page-header h1 {
+            font-size: 1.1rem;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.375rem;
+            text-align: center;
+        }
+
+        .page-header p {
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        .card-title-modern {
+            font-size: 1rem;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.375rem;
+            text-align: center;
+        }
+
+        .announcement-item {
+            padding: 0.875rem;
+        }
+
+        .announcement-title {
+            font-size: 1rem;
+        }
+
+        .meta-badge {
+            font-size: 0.75rem;
+            padding: 0.3rem 0.6rem;
+        }
+
+        .announcement-content {
+            padding: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .modal-content {
+            padding: 1rem;
+        }
+
+        .btn-modern {
+            padding: 0.625rem 1.25rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-sm-modern {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.7rem;
+        }
+
+        .form-control-modern {
+            padding: 0.5rem 0.75rem;
+            font-size: 16px;
+        }
+
+        .form-label-modern {
+            font-size: 0.85rem;
+        }
+
+        .empty-state {
+            padding: 2rem 1rem;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.2rem;
+        }
+    }
+
+    /* Ultra Small (240px - 319px) */
+    @media (max-width: 319px) {
+        .config-container {
+            padding: 0.5rem;
+        }
+
+        .page-header {
+            padding: 0.75rem;
+            border-radius: 6px;
+        }
+
+        .card-modern {
+            padding: 0.75rem;
+            border-radius: 6px;
+        }
+
+        .page-header h1 {
+            font-size: 1rem;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            text-align: center;
+        }
+
+        .page-header p {
+            font-size: 0.75rem;
+            text-align: center;
+        }
+
+        .card-title-modern {
+            font-size: 0.9rem;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            text-align: center;
+        }
+
+        .announcement-item {
+            padding: 0.75rem;
+        }
+
+        .announcement-title {
+            font-size: 0.9rem;
+        }
+
+        .meta-badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .announcement-content {
+            padding: 0.625rem;
+            font-size: 0.85rem;
+        }
+
+        .modal-content {
+            padding: 0.875rem;
+        }
+
+        .btn-modern {
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+        }
+
+        .btn-sm-modern {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.65rem;
+        }
+
+        .form-control-modern {
+            padding: 0.4rem 0.6rem;
+            font-size: 16px;
+        }
+
+        .form-label-modern {
+            font-size: 0.8rem;
+        }
+
+        .empty-state {
+            padding: 1.5rem 0.75rem;
+        }
+
+        .empty-state i {
+            font-size: 2.5rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1rem;
+        }
+
+        .empty-state p {
+            font-size: 0.8rem;
+        }
+    }
+
+    /* Emergency Ultra Small (240px - 347px) */
+    @media (max-width: 347px) {
+        .page-header h1 {
+            font-size: 0.95rem;
+            line-height: 1.2;
+        }
+
+        .page-header p {
+            font-size: 0.7rem;
+            line-height: 1.3;
+        }
+
+        .card-title-modern {
+            font-size: 0.85rem;
+        }
+
+        .announcement-title {
+            font-size: 0.85rem;
+        }
+
+        .btn-modern {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.7rem;
+        }
+
+        .btn-sm-modern {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.6rem;
+        }
+    }
+
+    /* Touch device optimizations */
+    @media (hover: none) and (pointer: coarse) {
+        .btn-modern {
+            min-height: 48px;
+        }
+
+        .btn-sm-modern {
+            min-height: 44px;
+        }
+
+        .btn-close {
+            min-width: 48px;
+            min-height: 48px;
+        }
+
+        .form-control-modern {
+            min-height: 48px;
+        }
+    }
+
+    /* High contrast mode */
+    @media (prefers-contrast: high) {
+        .card-modern,
+        .announcement-item,
+        .modal-content {
+            border: 2px solid #000;
+        }
+
+        .btn-modern {
+            border: 2px solid;
+        }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+        .btn-modern,
+        .announcement-item {
+            transition: none;
+        }
+    }
+
+    /* Print styles */
+    @media print {
+        .btn-modern,
+        .btn-close,
+        .announcement-actions {
+            display: none;
+        }
+
+        .card-modern,
+        .announcement-item {
+            box-shadow: none;
+            border: 1px solid #000;
+        }
+
+        .page-header {
+            background: #f0f0f0 !important;
+            color: #000 !important;
+        }
     }
 </style>
 {% endblock %}
@@ -350,9 +952,11 @@
     <div class="page-header">
         <h1>
             <i class="fas fa-bullhorn"></i>
-            Announcement Configuration
+            <span class="d-none d-sm-inline">Announcement Configuration</span>
+            <span class="d-sm-none">Announcement Config</span>
         </h1>
-        <p>Create and manage company-wide or location-specific announcements for employees</p>
+        <p class="d-none d-sm-block">Create and manage company-wide or location-specific announcements for employees</p>
+        <p class="d-sm-none">Create and manage announcements for employees</p>
     </div>
 
     <!-- Create New Announcement Card -->
@@ -360,7 +964,8 @@
         <div class="card-header-modern">
             <h2 class="card-title-modern">
                 <i class="fas fa-plus-circle"></i>
-                Create New Announcement
+                <span class="d-none d-sm-inline">Create New Announcement</span>
+                <span class="d-sm-none">Create Announcement</span>
             </h2>
         </div>
 
@@ -370,7 +975,7 @@
 
             <div class="form-group-modern">
                 <label class="form-label-modern" for="title">
-                    <i class="fas fa-heading"></i> Announcement Title *
+                    <i class="fas fa-heading"></i> <span class="d-none d-sm-inline">Announcement Title</span><span class="d-sm-none">Title</span> *
                 </label>
                 <input type="text" id="title" name="title" class="form-control-modern"
                     placeholder="Enter announcement title" required>
@@ -386,37 +991,48 @@
 
             <div class="form-group-modern">
                 <label class="form-label-modern" for="image">
-                    <i class="fas fa-image"></i> Image (Optional)
+                    <i class="fas fa-image"></i> <span class="d-none d-sm-inline">Image (Optional)</span><span class="d-sm-none">Image</span>
                 </label>
                 <input type="file" id="image" name="image" class="form-control-modern" accept="image/*">
-                <small class="text-muted">Upload an image to display with the announcement</small>
+                <small class="text-muted d-none d-sm-block">Upload an image to display with the announcement</small>
             </div>
 
             <div class="form-group-modern">
                 <label class="form-label-modern" for="location">
-                    <i class="fas fa-map-marker-alt"></i> Target Location (Optional)
+                    <i class="fas fa-map-marker-alt"></i> <span class="d-none d-sm-inline">Target Location (Optional)</span><span class="d-sm-none">Location</span>
                 </label>
                 <select id="location" name="location" class="form-control-modern">
-                    <option value="">All Locations (Company-wide)</option>
+                    <option value=""><span class="d-none d-sm-inline">All Locations (Company-wide)</span><span class="d-sm-none">All Locations</span></option>
                     {% for loc in locations %}
                     <option value="{{ loc.id }}">{{ loc.name }}</option>
                     {% endfor %}
                 </select>
-                <small class="text-muted">Leave empty to show announcement to all employees</small>
+                <small class="text-muted d-none d-sm-block">Leave empty to show announcement to all employees</small>
             </div>
 
             <div class="form-group-modern">
                 <div class="checkbox-modern">
                     <input type="checkbox" id="is_active" name="is_active" checked>
                     <label for="is_active" class="form-label-modern mb-0">
-                        <i class="fas fa-toggle-on"></i> Active (Visible to employees)
+                        <i class="fas fa-toggle-on"></i> <span class="d-none d-sm-inline">Active (Visible to employees)</span><span class="d-sm-none">Active</span>
                     </label>
                 </div>
             </div>
 
+            <div class="form-group-modern">
+                <div class="checkbox-modern">
+                    <input type="checkbox" id="send_email" name="send_email">
+                    <label for="send_email" class="form-label-modern mb-0">
+                        <i class="fas fa-envelope"></i> <span class="d-none d-sm-inline">Send Email Notification</span><span class="d-sm-none">Send Email</span>
+                    </label>
+                </div>
+                <small class="text-muted d-none d-sm-block" style="margin-left: 2rem;">If checked, this announcement will be emailed to
+                    all eligible employees from hrms@petabytz.com</small>
+            </div>
+
             <button type="submit" class="btn-modern btn-primary-modern">
                 <i class="fas fa-paper-plane"></i>
-                Publish Announcement
+                <span class="d-none d-sm-inline">Publish Announcement</span><span class="d-sm-none">Publish</span>
             </button>
         </form>
     </div>
@@ -426,7 +1042,7 @@
         <div class="card-header-modern">
             <h2 class="card-title-modern">
                 <i class="fas fa-list"></i>
-                Existing Announcements
+                <span class="d-none d-sm-inline">Existing Announcements</span><span class="d-sm-none">Announcements</span>
             </h2>
         </div>
 
@@ -468,7 +1084,7 @@
                     {% if announcement.image %}
                     <div class="mb-3">
                         <img src="{{ announcement.image.url }}" alt="{{ announcement.title }}" class="img-fluid rounded"
-                            style="max-height: 200px; width: auto;">
+                            style="aspect-ratio: 1/1; object-fit: cover; width: 100%; max-width: 200px; height: auto;">
                     </div>
                     {% endif %}
                     {{ announcement.content|linebreaks }}
@@ -516,7 +1132,7 @@
 <div class="modal-overlay" id="editModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 class="modal-title">Edit Announcement</h3>
+            <h3 class="modal-title"><span class="d-none d-sm-inline">Edit Announcement</span><span class="d-sm-none">Edit</span></h3>
             <button class="btn-close" onclick="closeEditModal()">&times;</button>
         </div>
 
@@ -527,7 +1143,7 @@
 
             <div class="form-group-modern">
                 <label class="form-label-modern" for="edit_title">
-                    <i class="fas fa-heading"></i> Announcement Title *
+                    <i class="fas fa-heading"></i> <span class="d-none d-sm-inline">Announcement Title</span><span class="d-sm-none">Title</span> *
                 </label>
                 <input type="text" id="edit_title" name="title" class="form-control-modern" required>
             </div>
@@ -541,17 +1157,17 @@
 
             <div class="form-group-modern">
                 <label class="form-label-modern" for="edit_image">
-                    <i class="fas fa-image"></i> Update Image (Optional)
+                    <i class="fas fa-image"></i> <span class="d-none d-sm-inline">Update Image (Optional)</span><span class="d-sm-none">Image</span>
                 </label>
                 <input type="file" id="edit_image" name="image" class="form-control-modern" accept="image/*">
             </div>
 
             <div class="form-group-modern">
                 <label class="form-label-modern" for="edit_location">
-                    <i class="fas fa-map-marker-alt"></i> Target Location
+                    <i class="fas fa-map-marker-alt"></i> <span class="d-none d-sm-inline">Target Location</span><span class="d-sm-none">Location</span>
                 </label>
                 <select id="edit_location" name="location" class="form-control-modern">
-                    <option value="">All Locations (Company-wide)</option>
+                    <option value=""><span class="d-none d-sm-inline">All Locations (Company-wide)</span><span class="d-sm-none">All Locations</span></option>
                     {% for loc in locations %}
                     <option value="{{ loc.id }}">{{ loc.name }}</option>
                     {% endfor %}
@@ -567,13 +1183,13 @@
                 </div>
             </div>
 
-            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; flex-wrap: wrap;">
                 <button type="button" class="btn-modern btn-secondary-modern" onclick="closeEditModal()">
                     Cancel
                 </button>
                 <button type="submit" class="btn-modern btn-success-modern">
                     <i class="fas fa-save"></i>
-                    Update Announcement
+                    <span class="d-none d-sm-inline">Update Announcement</span><span class="d-sm-none">Update</span>
                 </button>
             </div>
         </form>

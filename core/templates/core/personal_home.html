@@ -1,4 +1,4 @@
-﻿{% extends 'core/base.html' %} {# valid #}
+{% extends 'core/base.html' %}
 {% load static %}
 {% block title %}My Home | HRMS{% endblock %}
 {% block extra_css %}
@@ -239,12 +239,20 @@
         width: 120px;
         height: 120px;
         margin: 0 auto 15px;
+        max-width: 100%;
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
     }
 
     .stat-ring svg {
         width: 100%;
         height: 100%;
         transform: rotate(-90deg);
+        max-width: 120px;
+        max-height: 120px;
     }
 
     .stat-ring circle {
@@ -271,18 +279,307 @@
         left: 50%;
         transform: translate(-50%, -50%);
         text-align: center;
+        width: 80%;
+        max-width: 80px;
     }
 
     .stat-ring-value {
         font-weight: 700;
         font-size: 1.2rem;
         color: var(--text-main);
+        line-height: 1.2;
+        word-break: break-word;
     }
 
     .stat-ring-label {
         font-size: 0.7rem;
         color: var(--text-muted);
         text-transform: uppercase;
+        line-height: 1.1;
+        margin-top: 2px;
+    }
+
+    /* Weekly Stats Card - Horizontal Scrollable Solution */
+    .weekly-stats-scroll-container {
+        position: relative;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+    }
+
+    .weekly-stats-scroll-container::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .weekly-stats-scroll-container::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+    }
+
+    .weekly-stats-scroll-container::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+
+    .weekly-stats-scroll-container::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    .weekly-stats-content {
+        display: flex;
+        align-items: center;
+        min-width: 100%;
+        width: max-content;
+        min-height: 140px;
+    }
+
+    .weekly-stats-left {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-right: 1px solid #e2e8f0;
+        padding: 1rem;
+        min-width: 160px;
+        flex-shrink: 0;
+        height: 140px;
+    }
+
+    .weekly-stats-right {
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        gap: 2rem;
+        padding: 1rem 1.5rem;
+        min-width: 200px;
+        flex-shrink: 0;
+        height: 140px;
+        background: rgba(248, 250, 252, 0.5);
+    }
+
+    .weekly-stats-item {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 80px;
+        flex-shrink: 0;
+    }
+
+    .weekly-stats-item .text-value {
+        font-size: 1.5rem !important;
+        font-weight: 800;
+        line-height: 1.1;
+        margin-bottom: 0.25rem;
+        white-space: nowrap;
+    }
+
+    .weekly-stats-item .text-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+        opacity: 0.8;
+        white-space: nowrap;
+    }
+
+    /* Scroll Indicator */
+    .scroll-indicator {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(99, 102, 241, 0.1);
+        color: #6366f1;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        opacity: 0.7;
+        pointer-events: none;
+        animation: pulse-scroll 2s infinite;
+        z-index: 10;
+    }
+
+    @keyframes pulse-scroll {
+        0%, 100% { 
+            opacity: 0.7; 
+            transform: translateY(-50%) scale(1);
+        }
+        50% { 
+            opacity: 1; 
+            transform: translateY(-50%) scale(1.1);
+        }
+    }
+
+    /* Hide scroll indicator after user scrolls */
+    .weekly-stats-scroll-container.scrolled .scroll-indicator {
+        display: none;
+    }
+
+    /* Ensure SVG is properly sized */
+    .stat-ring {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin: 0 auto;
+        max-width: 100%;
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .stat-ring svg {
+        width: 100%;
+        height: 100%;
+        max-width: 120px;
+        max-height: 120px;
+        transform: rotate(-90deg);
+    }
+
+    .stat-ring circle {
+        fill: none;
+        stroke-width: 8;
+        stroke-linecap: round;
+    }
+
+    .stat-ring .bg {
+        stroke: #f1f5f9;
+    }
+
+    .stat-ring .progress {
+        stroke: var(--primary-color);
+        stroke-dasharray: 283;
+        stroke-dashoffset: 200;
+        transition: stroke-dashoffset 1s ease;
+    }
+
+    .stat-ring-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        width: 80%;
+        max-width: 80px;
+    }
+
+    .stat-ring-value {
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: var(--text-main);
+        line-height: 1.2;
+        word-break: break-word;
+    }
+
+    .stat-ring-label {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        line-height: 1.1;
+        margin-top: 2px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .weekly-stats-content {
+            flex-direction: column;
+            width: 100%;
+            min-width: 100%;
+        }
+        
+        .weekly-stats-left {
+            border-right: none;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem 0.5rem 0.75rem;
+            min-width: 100%;
+            height: auto;
+        }
+        
+        .weekly-stats-right {
+            flex-direction: row;
+            justify-content: space-around;
+            padding: 0.75rem 0.5rem;
+            gap: 1rem;
+            min-width: 100%;
+            height: auto;
+            background: transparent;
+        }
+        
+        .weekly-stats-item {
+            flex: 1;
+            min-width: auto;
+        }
+        
+        .weekly-stats-item .text-value {
+            font-size: 1.3rem !important;
+        }
+        
+        .weekly-stats-item .text-label {
+            font-size: 0.65rem;
+        }
+        
+        .stat-ring {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 8px;
+        }
+        
+        .stat-ring svg {
+            max-width: 90px;
+            max-height: 90px;
+        }
+        
+        .stat-ring-value {
+            font-size: 1rem;
+        }
+        
+        .stat-ring-label {
+            font-size: 0.65rem;
+        }
+        
+        .scroll-indicator {
+            display: none !important;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .weekly-stats-right {
+            gap: 0.75rem;
+            padding: 0.5rem;
+        }
+        
+        .weekly-stats-item .text-value {
+            font-size: 1.1rem !important;
+        }
+        
+        .weekly-stats-item .text-label {
+            font-size: 0.6rem;
+        }
+        
+        .stat-ring {
+            width: 75px;
+            height: 75px;
+        }
+        
+        .stat-ring svg {
+            max-width: 75px;
+            max-height: 75px;
+        }
+        
+        .stat-ring-value {
+            font-size: 0.9rem;
+        }
+        
+        .stat-ring-label {
+            font-size: 0.6rem;
+        }
     }
 
     /* --- TIMELINE / SHIFT --- */
@@ -421,6 +718,7 @@
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
+        min-width: 600px; /* Ensure minimum width for horizontal scroll */
     }
 
     .table-custom th {
@@ -433,6 +731,7 @@
         border-top: 1px solid #e2e8f0;
         border-bottom: 1px solid #e2e8f0;
         letter-spacing: 0.05em;
+        white-space: nowrap;
     }
 
     .table-custom th:first-child {
@@ -452,6 +751,7 @@
         vertical-align: middle;
         background: white;
         transition: background 0.2s;
+        white-space: nowrap;
     }
 
     .table-custom tr:last-child td {
@@ -493,6 +793,31 @@
     .status-half {
         background: #ffedd5;
         color: #9a3412;
+    }
+
+    .status-holiday {
+        background: #e0f2fe;
+        color: #0369a1;
+    }
+
+    .status-missed {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .status-not-login {
+        background: #fef9c3;
+        color: #a16207;
+    }
+
+    .status-wfh {
+        background: #f5f3ff;
+        color: #7c3aed;
+    }
+
+    .status-leave {
+        background: #fff7ed;
+        color: #c2410c;
     }
 
     /* Overlay */
@@ -541,41 +866,658 @@
         animation-delay: 0.3s;
     }
 
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-        background: #f1f5f9;
-    }
-
-    ::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-    }
-
-    /* Active Day Pulse */
-    .day-badge.active {
-        animation: pulse-soft 2s infinite;
-    }
-
-    @keyframes pulse-soft {
-        0% {
-            box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+    /* --- RESPONSIVE DESIGN --- */
+    @media (max-width: 1200px) {
+        .digital-clock {
+            font-size: 3rem;
         }
-
-        70% {
-            box-shadow: 0 0 0 6px rgba(99, 102, 241, 0);
+        
+        .card-body-clean {
+            padding: 20px;
         }
+        
+        /* Ensure proper alignment in weekly stats for large tablets */
+    }
 
-        100% {
-            box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+    @media (max-width: 992px) {
+        .digital-clock {
+            font-size: 2.8rem;
+        }
+        
+        .shift-card {
+            margin-bottom: 20px;
+        }
+        
+        .pro-icon-box {
+            width: 56px;
+            height: 56px;
+        }
+        
+        .pro-icon-box i {
+            font-size: 1.3rem;
+        }
+        
+        /* Weekly stats alignment for tablets */
+    }
+
+    @media (max-width: 768px) {
+        .container-fluid {
+            padding: 15px 10px;
+        }
+        
+        /* Stack columns vertically on mobile */
+        .col-lg-3, .col-lg-6 {
+            margin-bottom: 20px;
+        }
+        
+        /* Adjust clock widget for mobile */
+        .digital-clock {
+            font-size: 2.5rem;
+            letter-spacing: -1px;
+        }
+        
+        .current-date {
+            font-size: 0.85rem;
+            padding: 5px 12px;
+        }
+        
+        /* Mobile-friendly buttons */
+        .btn-clock {
+            padding: 18px 20px;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+        }
+        
+        .btn-icon-wrapper {
+            width: 28px;
+            height: 28px;
+            font-size: 1rem;
+        }
+        
+        /* Adjust shift card for mobile */
+        .shift-header {
+            padding: 20px 20px 10px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .shift-icon-box {
+            width: 48px;
+            height: 48px;
+            margin-right: 15px;
+        }
+        
+        .shift-icon-box i {
+            font-size: 1.2rem;
+        }
+        
+        .shift-badge {
+            padding: 8px 20px;
+            font-size: 0.75rem;
+        }
+        
+        .pro-icon-box {
+            width: 48px;
+            height: 48px;
+        }
+        
+        .pro-icon-box i {
+            font-size: 1.1rem;
+        }
+        
+        /* Shift card mobile adjustments */
+        .shift-clock-section {
+            flex-direction: column;
+            padding: 1.5rem 1rem;
+            gap: 1.5rem;
+        }
+        
+        .shift-divider {
+            width: 60px;
+            height: 1px;
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .shift-time-display {
+            font-size: 1.8rem;
+        }
+        
+        /* Adjust timeline for mobile */
+        .timeline-container {
+            padding: 60px 30px 50px;
+        }
+        
+        .timeline-track {
+            left: 30px;
+            right: 30px;
+        }
+        
+        .timeline-nodes {
+            left: 30px;
+            right: 30px;
+        }
+        
+        /* Mobile table improvements */
+        .table-custom {
+            font-size: 0.85rem;
+            min-width: 700px; /* Force horizontal scroll on mobile */
+        }
+        
+        .table-custom th,
+        .table-custom td {
+            padding: 12px 15px;
+        }
+        
+        /* Mobile-specific table layout */
+        .table-responsive {
+            -webkit-overflow-scrolling: touch;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        /* Add swipe indicator for mobile tables */
+        .table-responsive::after {
+            content: "← Swipe to see more →";
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(99, 102, 241, 0.1);
+            color: #6366f1;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            z-index: 10;
+            pointer-events: none;
+            opacity: 0.8;
+            animation: fadeInOut 3s ease-in-out infinite;
+        }
+        
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 0.4; }
+        }
+        
+        /* Hide swipe indicator after user scrolls */
+        .table-responsive.scrolled::after {
+            display: none;
+        }
+        
+        /* Responsive table columns for mobile - hide less important columns */
+        .table-custom th:nth-child(4), /* Hours column */
+        .table-custom td:nth-child(4) {
+            display: none;
+        }
+        
+        /* Keep Map column visible but make it more compact */
+        .table-custom th:nth-child(6), /* Map column */
+        .table-custom td:nth-child(6) {
+            min-width: 50px;
+            padding: 8px 4px;
+            text-align: center;
+        }
+        
+        .table-custom td:nth-child(6) .btn {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            font-size: 0.8rem;
+        }
+        
+        /* Make status badges smaller on mobile */
+        .status-badge {
+            padding: 4px 8px;
+            font-size: 0.7rem;
+        }
+        
+        /* Compact date display */
+        .table-custom td:first-child {
+            min-width: 70px;
+        }
+        
+        .table-custom td:first-child .fw-bold {
+            font-size: 0.9rem;
+        }
+        
+        .table-custom td:first-child .small {
+            font-size: 0.7rem;
+        }
+        
+        /* Time columns more compact */
+        .table-custom td:nth-child(2),
+        .table-custom td:nth-child(3) {
+            min-width: 80px;
+            font-size: 0.8rem;
+        }
+        
+        /* Attendance log card header mobile optimization */
+        .keka-card .card-header-clean {
+            padding: 15px 20px 10px;
+        }
+        
+        .keka-card .card-title-text {
+            font-size: 0.95rem;
+        }
+        
+        .keka-card .btn-sm {
+            font-size: 0.75rem;
+            padding: 6px 12px;
+        }
+        
+        /* Adjust stat ring for mobile */
+        .stat-ring {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 12px;
+        }
+        
+        .stat-ring svg {
+            max-width: 100px;
+            max-height: 100px;
+        }
+        
+        .stat-ring circle {
+            stroke-width: 6;
+        }
+        
+        .stat-ring-content {
+            width: 75%;
+            max-width: 70px;
+        }
+        
+        .stat-ring-value {
+            font-size: 1rem;
+            line-height: 1.1;
+        }
+        
+        .stat-ring-label {
+            font-size: 0.65rem;
+            margin-top: 1px;
+        }
+        
+        /* Weekly stats mobile alignment */
+        
+        /* Week days adjustment */
+        .week-days {
+            gap: 3px;
+            padding: 8px;
+        }
+        
+        .day-badge {
+            width: 28px;
+            height: 28px;
+            font-size: 0.75rem;
+        }
+        
+        /* Celebration items */
+        .celebration-item {
+            padding: 10px;
+            margin-bottom: 8px;
+        }
+        
+        .celebration-avatar {
+            width: 36px;
+            height: 36px;
+            font-size: 0.9rem;
+        }
+        
+        /* Modal adjustments */
+        .modal-dialog {
+            margin: 15px;
+        }
+        
+        .modal-content {
+            border-radius: 16px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .container-fluid {
+            padding: 10px 8px;
+        }
+        
+        /* Header adjustments */
+        .d-flex.justify-content-between.align-items-end {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .d-flex.justify-content-between.align-items-end h4 {
+            font-size: 1.3rem;
+        }
+        
+        /* Further reduce clock size */
+        .digital-clock {
+            font-size: 2rem;
+        }
+        
+        .current-date {
+            font-size: 0.8rem;
+        }
+        
+        /* Compact buttons */
+        .btn-clock {
+            padding: 15px 18px;
+            font-size: 0.9rem;
+        }
+        
+        /* Shift card adjustments */
+        .shift-header {
+            padding: 15px 15px 8px;
+        }
+        
+        .shift-header h3 {
+            font-size: 1.1rem;
+        }
+        
+        .shift-header .opacity-75 {
+            font-size: 1rem;
+        }
+        
+        .timeline-container {
+            padding: 50px 20px 40px;
+        }
+        
+        .timeline-track {
+            left: 20px;
+            right: 20px;
+        }
+        
+        .timeline-nodes {
+            left: 20px;
+            right: 20px;
+        }
+        
+        .shift-footer {
+            padding: 15px 20px;
+            flex-direction: column;
+            gap: 15px;
+            text-align: center;
+        }
+        
+        /* Very compact stats ring for small screens */
+        .stat-ring {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 10px;
+        }
+        
+        .stat-ring svg {
+            max-width: 80px;
+            max-height: 80px;
+        }
+        
+        .stat-ring circle {
+            stroke-width: 5;
+        }
+        
+        .stat-ring-content {
+            width: 70%;
+            max-width: 56px;
+        }
+        
+        .stat-ring-value {
+            font-size: 0.9rem;
+            line-height: 1;
+        }
+        
+        .stat-ring-label {
+            font-size: 0.6rem;
+            margin-top: 1px;
+        }
+        
+        /* Weekly stats very small screens alignment */
+        
+        /* Very compact table */
+        .table-custom {
+            font-size: 0.8rem;
+            min-width: 600px; /* Reduce minimum width for very small screens */
+        }
+        
+        .table-custom th,
+        .table-custom td {
+            padding: 10px 8px;
+        }
+        
+        /* Hide more columns on very small screens but keep Map visible */
+        .table-custom th:nth-child(4),
+        .table-custom td:nth-child(4) {
+            display: none;
+        }
+        
+        /* Make Map column even more compact on very small screens */
+        .table-custom th:nth-child(6), /* Map column */
+        .table-custom td:nth-child(6) {
+            min-width: 40px;
+            padding: 6px 2px;
+            text-align: center;
+        }
+        
+        .table-custom td:nth-child(6) .btn {
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        /* Ensure map buttons are touch-friendly */
+        .table-custom td:nth-child(6) a {
+            min-width: 32px;
+            min-height: 32px;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        /* Make the table more compact */
+        .table-custom th {
+            font-size: 0.7rem;
+            padding: 8px 6px;
+        }
+        
+        .table-custom td {
+            padding: 8px 6px;
+            font-size: 0.75rem;
+        }
+        
+        /* Ultra-compact date display */
+        .table-custom td:first-child {
+            min-width: 50px;
+        }
+        
+        .table-custom td:first-child .fw-bold {
+            font-size: 0.8rem;
+            line-height: 1.2;
+        }
+        
+        .table-custom td:first-child .small {
+            font-size: 0.65rem;
+        }
+        
+        /* Ultra-compact time columns */
+        .table-custom td:nth-child(2),
+        .table-custom td:nth-child(3) {
+            min-width: 60px;
+            font-size: 0.7rem;
+        }
+        
+        /* Ultra-compact status badges */
+        .status-badge {
+            padding: 2px 6px;
+            font-size: 0.65rem;
+            border-radius: 8px;
+        }
+        
+        /* Shift card very small screens */
+        .shift-time-display {
+            font-size: 1.5rem;
+        }
+        
+        .pro-icon-box {
+            width: 40px;
+            height: 40px;
+        }
+        
+        .pro-icon-box i {
+            font-size: 1rem !important;
+        }
+        
+        /* Card header adjustments for mobile */
+        .card-header-clean {
+            padding: 15px 15px 10px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .card-title-text {
+            font-size: 0.95rem;
+        }
+        
+        .btn-sm {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+        }
+        
+        /* Improve table scrolling experience */
+        .table-responsive {
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        /* Adjust swipe indicator for very small screens */
+        .table-responsive::after {
+            font-size: 0.65rem;
+            padding: 3px 8px;
+            bottom: 8px;
+        }
+        
+        /* Compact week days */
+        .day-badge {
+            width: 24px;
+            height: 24px;
+            font-size: 0.7rem;
+        }
+        
+        /* Compact celebration items */
+        .celebration-avatar {
+            width: 32px;
+            height: 32px;
+            font-size: 0.8rem;
+            margin-right: 10px;
+        }
+        
+        .celebration-item-content {
+            font-size: 0.85rem;
+        }
+        
+        /* Modal full width on very small screens */
+        .modal-dialog {
+            margin: 10px;
+            width: calc(100% - 20px);
+        }
+    }
+
+    /* Extra small screens (phones in portrait) */
+    @media (max-width: 400px) {
+        .stat-ring {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 8px;
+        }
+        
+        .stat-ring svg {
+            max-width: 70px;
+            max-height: 70px;
+        }
+        
+        .stat-ring circle {
+            stroke-width: 4;
+        }
+        
+        .stat-ring-content {
+            width: 65%;
+            max-width: 45px;
+        }
+        
+        .stat-ring-value {
+            font-size: 0.8rem;
+            line-height: 0.9;
+        }
+        
+        .stat-ring-label {
+            font-size: 0.55rem;
+            margin-top: 0;
+        }
+        
+        /* Ultra compact weekly stats */
+    }
+
+    /* Landscape phone adjustments */
+    @media (max-width: 896px) and (orientation: landscape) {
+        .digital-clock {
+            font-size: 2.2rem;
+        }
+        
+        .shift-card {
+            margin-bottom: 15px;
+        }
+        
+        .timeline-container {
+            padding: 40px 25px 35px;
+        }
+        
+        /* Adjust stat ring for landscape */
+        .stat-ring {
+            width: 90px;
+            height: 90px;
+        }
+        
+        .stat-ring svg {
+            max-width: 90px;
+            max-height: 90px;
+        }
+        
+        .stat-ring-content {
+            max-width: 65px;
+        }
+        
+        .stat-ring-value {
+            font-size: 0.95rem;
+        }
+        
+        .stat-ring-label {
+            font-size: 0.6rem;
+        }
+        
+        /* Weekly stats landscape alignment */
+    }
+
+    /* Touch device improvements */
+    @media (hover: none) and (pointer: coarse) {
+        .btn-clock {
+            min-height: 48px;
+        }
+        
+        .keka-card:hover {
+            transform: none;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .celebration-item:hover {
+            transform: none;
+        }
+        
+        .table-responsive {
+            -webkit-overflow-scrolling: touch;
         }
     }
 </style>
@@ -604,7 +1546,7 @@
     <div class="row g-4">
 
         <!-- Left Column: Primary Actions & Stats -->
-        <div class="col-lg-3">
+        <div class="col-12 col-lg-3 order-1 order-lg-1">
             <div class="vstack gap-4">
 
                 <!-- Clock In/Out Card -->
@@ -641,7 +1583,7 @@
                                 </div>
                                 <div class="text-end">
                                     <div class="text-label" style="font-size: 0.65rem;">Total Today</div>
-                                    <div class="fw-bold text-primary">
+                                    <div class="fw-bold text-primary" id="total-today-display">
                                         {{ attendance.total_working_hours|floatformat:1 }} hr
                                     </div>
                                 </div>
@@ -704,29 +1646,39 @@
                             Weekly Stats
                         </span>
                     </div>
-                    <div class="card-body-clean pt-0">
-                        <div class="row text-center align-items-center">
-                            <div class="col-6 border-end">
-                                <div class="stat-ring">
-                                    <svg>
-                                        <circle class="bg" cx="60" cy="60" r="45"></circle>
-                                        <circle class="progress" cx="60" cy="60" r="45" id="avg-progress"></circle>
-                                    </svg>
-                                    <div class="stat-ring-content">
-                                        <div class="stat-ring-value">{{ avg_hours|default:"00:00" }}</div>
-                                        <div class="stat-ring-label">Avg Hrs</div>
+                    <div class="card-body-clean pt-0 px-0">
+                        <div class="weekly-stats-scroll-container">
+                            <div class="weekly-stats-content">
+                                <div class="weekly-stats-left">
+                                    <div class="stat-ring">
+                                        <svg viewBox="0 0 120 120">
+                                            <circle class="bg" cx="60" cy="60" r="45"></circle>
+                                            <circle class="progress" cx="60" cy="60" r="45" id="avg-progress"></circle>
+                                        </svg>
+                                        <div class="stat-ring-content">
+                                            <div class="stat-ring-value">{{ avg_hours|default:"00:00" }}</div>
+                                            <div class="stat-ring-label">Avg Hrs</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="weekly-stats-right">
+                                    <div class="weekly-stats-item">
+                                        <div class="text-value text-success">100%</div>
+                                        <div class="text-label">On Time</div>
+                                    </div>
+                                    <div class="weekly-stats-item">
+                                        <div class="text-value text-primary">{{ leave_balance.casual_leave_balance|floatformat:1|default:"0" }}</div>
+                                        <div class="text-label">CL Available</div>
+                                    </div>
+                                    <div class="weekly-stats-item">
+                                        <div class="text-value text-warning">{{ leave_balance.sick_leave_balance|floatformat:1|default:"0" }}</div>
+                                        <div class="text-label">SL Available</div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-6 d-flex flex-column justify-content-center gap-3">
-                                <div>
-                                    <div class="text-value text-success" style="font-size: 1.4rem;">100%</div>
-                                    <div class="text-label">On Time</div>
-                                </div>
-                                <div>
-                                    <div class="text-value text-primary" style="font-size: 1.4rem;">0</div>
-                                    <div class="text-label">Leaves</div>
-                                </div>
+                            <!-- Scroll indicator for desktop -->
+                            <div class="scroll-indicator d-none d-md-block">
+                                <i class="fas fa-chevron-right"></i>
                             </div>
                         </div>
                     </div>
@@ -736,7 +1688,7 @@
         </div>
 
         <!-- Middle Column: Shift & Activity -->
-        <div class="col-lg-6">
+        <div class="col-12 col-lg-6 order-3 order-lg-2">
             <div class="vstack gap-4">
 
                 <style>
@@ -1048,11 +2000,43 @@
                             inset: -6px;
                             border-color: rgba(255, 255, 255, 0.3);
                         }
+
+                        /* Shift Card Clock Section */
+                        .shift-clock-section {
+                            display: flex;
+                            justify-content: space-around;
+                            align-items: center;
+                            padding: 2rem 1.5rem;
+                            flex-wrap: wrap;
+                            gap: 1rem;
+                        }
+
+                        .shift-time-block {
+                            text-align: center;
+                            flex: 1;
+                            min-width: 120px;
+                        }
+
+                        .shift-time-display {
+                            font-size: 2rem;
+                            font-weight: 800;
+                            color: white;
+                            margin-bottom: 0;
+                            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                            line-height: 1.2;
+                        }
+
+                        .shift-divider {
+                            width: 1px;
+                            height: 60px;
+                            background: rgba(255,255,255,0.2);
+                            flex-shrink: 0;
+                        }
                     </style>
 
-                    <div class="d-flex justify-content-around align-items-center px-4 py-5">
+                    <div class="d-flex justify-content-around align-items-center px-4 py-5 shift-clock-section">
                         <!-- Clock In Block -->
-                        <div class="text-center">
+                        <div class="text-center shift-time-block">
                             <div class="mb-3">
                                 <div class="pro-icon-box">
                                     <div class="icon-ring"></div>
@@ -1061,7 +2045,7 @@
                             </div>
                             <div class="text-white opacity-75 small text-uppercase fw-bold mb-1">Clock In
                             </div>
-                            <div class="fs-2 fw-bold text-white mb-0" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div class="fs-2 fw-bold text-white mb-0 shift-time-display" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 {% if attendance and attendance.clock_in %}
                                 {{ attendance.clock_in|time:"h:i A" }}
                                 {% else %}
@@ -1071,10 +2055,10 @@
                         </div>
 
                         <!-- Divider Line (Vertical) -->
-                        <div style="width: 1px; height: 60px; background: rgba(255,255,255,0.2);"></div>
+                        <div class="shift-divider" style="width: 1px; height: 60px; background: rgba(255,255,255,0.2);"></div>
 
                         <!-- Clock Out Block -->
-                        <div class="text-center">
+                        <div class="text-center shift-time-block">
                             <div class="mb-3">
                                 <div class="pro-icon-box">
                                     <div class="icon-ring"></div>
@@ -1083,7 +2067,7 @@
                             </div>
                             <div class="text-white opacity-75 small text-uppercase fw-bold mb-1">Clock Out
                             </div>
-                            <div class="fs-2 fw-bold text-white mb-0" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div class="fs-2 fw-bold text-white mb-0 shift-time-display" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 {% if attendance and attendance.clock_out and not attendance.is_currently_clocked_in %}
                                 {{ attendance.clock_out|time:"h:i A" }}
                                 {% else %}
@@ -1200,7 +2184,10 @@
                                         <th>Check Out</th>
                                         <th>Hours</th>
                                         <th>Status</th>
-                                        <th>Map</th>
+                                        <th class="text-center">
+                                            <span class="d-none d-md-inline">Map</span>
+                                            <span class="d-md-none"><i class="fas fa-map-marker-alt"></i></span>
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1227,10 +2214,22 @@
                                             </div>
                                         </td>
                                         <td>
-                                            {% if att.status == 'Absent' %}
-                                            <span class="status-badge status-absent">Absent</span>
-                                            {% else %}
+                                            {% if att.status == 'PRESENT' %}
                                             <span class="status-badge status-present">Present</span>
+                                            {% elif att.status == 'WFH' %}
+                                            <span class="status-badge status-wfh">WFH</span>
+                                            {% elif att.status == 'LEAVE' %}
+                                            <span class="status-badge status-leave">Leave</span>
+                                            {% elif att.status == 'WEEKLY_OFF' %}
+                                            <span class="status-badge status-absent">Week Off</span>
+                                            {% elif att.status == 'HOLIDAY' %}
+                                            <span class="status-badge status-holiday">Holiday</span>
+                                            {% elif att.status == 'MISSED' %}
+                                            <span class="status-badge status-missed">Missed</span>
+                                            {% elif att.status == 'NOT_LOGGED_IN' %}
+                                            <span class="status-badge status-not-login">Not Login</span>
+                                            {% else %}
+                                            <span class="status-badge status-absent">{{ att.status_display|default:att.status }}</span>
                                             {% endif %}
                                         </td>
                                         <td>
@@ -1258,7 +2257,7 @@
         </div>
 
         <!-- Right Column: Info & Widgets -->
-        <div class="col-lg-3">
+        <div class="col-12 col-lg-3 order-2 order-lg-3">
             <div class="vstack gap-4">
 
                 <!-- Working Days (Calendar visual) -->
@@ -1350,6 +2349,52 @@
                     </div>
                 </div>
 
+                <!-- Leave Balance Cards -->
+                {% if leave_balance %}
+                <div class="keka-card animate-enter delay-125">
+                    <div class="card-header-clean">
+                        <h6 class="card-title-text">
+                            <div class="card-icon-soft primary" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            Leave Balance
+                        </h6>
+                    </div>
+                    <div class="card-body-clean">
+                        <!-- Casual Leave -->
+                        <div class="d-flex justify-content-between align-items-center mb-3 p-3" style="background: rgba(99, 102, 241, 0.05); border-radius: 12px; border-left: 4px solid #6366f1;">
+                            <div>
+                                <div class="text-label mb-1">Casual Leave</div>
+                                <div class="fw-bold text-primary" style="font-size: 1.25rem;">{{ leave_balance.casual_leave_balance|floatformat:1 }}</div>
+                                <small class="text-muted">Days Available</small>
+                            </div>
+                            <div class="text-end">
+                                <i class="fas fa-mug-hot text-primary" style="font-size: 1.5rem; opacity: 0.7;"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Sick Leave -->
+                        <div class="d-flex justify-content-between align-items-center p-3" style="background: rgba(16, 185, 129, 0.05); border-radius: 12px; border-left: 4px solid #10b981;">
+                            <div>
+                                <div class="text-label mb-1">Sick Leave</div>
+                                <div class="fw-bold text-success" style="font-size: 1.25rem;">{{ leave_balance.sick_leave_balance|floatformat:1 }}</div>
+                                <small class="text-muted">Days Available</small>
+                            </div>
+                            <div class="text-end">
+                                <i class="fas fa-user-md text-success" style="font-size: 1.5rem; opacity: 0.7;"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Apply Button -->
+                        <div class="mt-3">
+                            <a href="{% url 'my_leaves' %}" class="btn btn-primary w-100" style="border-radius: 12px; padding: 12px;">
+                                <i class="fas fa-plus me-2"></i>Apply for Leave
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
                 {% if is_birthday or is_work_anniversary %}
                 <!-- Overlay -->
                 <div id="celebration-overlay">
@@ -1411,6 +2456,43 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Late Clock-In Warning Modal -->
+                <div class="modal fade" id="lateWarningModal" tabindex="-1" aria-hidden="true"
+                    data-bs-backdrop="static">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                            <div class="modal-header border-0 pt-4 px-4 pb-0" id="late-modal-header">
+                                <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="late-modal-title">
+                                    <i class="fas fa-clock" id="late-modal-icon"></i> Late Arrival Warning
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body p-4">
+                                <div class="text-center mb-4">
+                                    <div class="mb-3">
+                                        <div class="display-1 mb-2" id="late-count-icon">⏰</div>
+                                        <h4 class="fw-bold text-dark mb-2" id="late-warning-message">
+                                            You have been late 0 times in the last 7 days.
+                                        </h4>
+                                    </div>
+                                    <div class="alert mb-0" role="alert" id="late-action-alert">
+                                        <strong>Action:</strong>
+                                        <p class="mb-0 mt-2" id="late-action-text">Please ensure timely attendance to
+                                            avoid LOP.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer border-0 justify-content-center pb-4 bg-light">
+                                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"
+                                    data-bs-dismiss="modal">
+                                    I Understand
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1419,6 +2501,20 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script>
+    // Weekly Stats Scroll Indicator
+    document.addEventListener('DOMContentLoaded', function() {
+        const scrollContainer = document.querySelector('.weekly-stats-scroll-container');
+        if (scrollContainer) {
+            scrollContainer.addEventListener('scroll', function() {
+                if (this.scrollLeft > 10) {
+                    this.classList.add('scrolled');
+                } else {
+                    this.classList.remove('scrolled');
+                }
+            });
+        }
+    });
+
     // Clock
     function updateClock() {
         const now = new Date();
@@ -1546,6 +2642,13 @@
 
         const timerEl = document.getElementById('timer-display');
         if (timerEl) timerEl.innerText = formatted;
+
+        // Update Total Today display with cumulative hours
+        const totalHours = totalMs / (1000 * 60 * 60);
+        const totalTodayEl = document.getElementById('total-today-display');
+        if (totalTodayEl) {
+            totalTodayEl.innerText = totalHours.toFixed(1) + ' hr';
+        }
     }
     setInterval(updateDuration, 1000);
     updateDuration();
@@ -1596,7 +2699,7 @@
                 // If we have NO position after timeout, offer fallback options
                 btn.innerHTML = origText;
                 btn.disabled = false;
-                
+
                 // Show user-friendly options instead of blocking them
                 const allowWithoutLocation = confirm(
                     "Could not acquire location signal. This may be due to:\n" +
@@ -1606,7 +2709,7 @@
                     "Would you like to proceed without location tracking?\n" +
                     "(Your attendance will still be recorded, but without location data)"
                 );
-                
+
                 if (allowWithoutLocation) {
                     // Proceed without location
                     submitClockRequest(null);
@@ -1667,7 +2770,7 @@
                     stopLocationWatch();
                     btn.innerHTML = origText;
                     btn.disabled = false;
-                    
+
                     const allowWithoutLocation = confirm(
                         "Location access was denied. This may be due to:\n" +
                         "• Browser location permissions denied\n" +
@@ -1675,7 +2778,7 @@
                         "Would you like to proceed without location tracking?\n" +
                         "(Your attendance will still be recorded, but without location data)"
                     );
-                    
+
                     if (allowWithoutLocation) {
                         // Proceed without location
                         submitClockRequest(null);
@@ -1727,16 +2830,45 @@
                 })
                 .then(data => {
                     if (data.status === 'success') {
-                        // Success Animation
-                        if (typeof confetti === 'function') {
-                            confetti({
-                                particleCount: 150,
-                                spread: 70,
-                                origin: { y: 0.6 },
-                                colors: ['#6366f1', '#10b981', '#f59e0b']
-                            });
+                        // Start or stop background location tracking based on action
+                        if (action === 'in') {
+                            // Starting work - enable background tracking
+                            if (window.backgroundLocationTracker) {
+                                const employeeId = '{{ request.user.employee_profile.id|default:"" }}';
+                                const clockInTime = new Date().toISOString();
+                                window.backgroundLocationTracker.startTracking(employeeId, clockInTime)
+                                    .then(started => {
+                                        if (started) {
+                                            console.log('Background location tracking started successfully');
+                                        } else {
+                                            console.warn('Background location tracking could not be started');
+                                        }
+                                    });
+                            }
+                        } else if (action === 'out') {
+                            // Clocking out - stop background tracking
+                            if (window.backgroundLocationTracker) {
+                                window.backgroundLocationTracker.stopTracking();
+                                console.log('Background location tracking stopped');
+                            }
                         }
-                        location.reload();
+
+                        // Check if there's a late warning to display
+                        if (data.late_warning && data.late_warning.show_warning) {
+                            // Show late warning modal
+                            showLateWarningModal(data.late_warning);
+                        } else {
+                            // Success Animation
+                            if (typeof confetti === 'function') {
+                                confetti({
+                                    particleCount: 150,
+                                    spread: 70,
+                                    origin: { y: 0.6 },
+                                    colors: ['#6366f1', '#10b981', '#f59e0b']
+                                });
+                            }
+                            location.reload();
+                        }
                     }
                     else if (data.status === 'confirmation_required' || data.requires_confirmation) {
                         handleConfirmationModal(data, pos, csrfToken, btn, origText);
@@ -1874,6 +3006,54 @@
                         btn.disabled = false;
                     });
             }
+        }
+    }
+
+    // Function to show late warning modal
+    function showLateWarningModal(lateWarning) {
+        const modal = document.getElementById('lateWarningModal');
+        const modalHeader = document.getElementById('late-modal-header');
+        const modalTitle = document.getElementById('late-modal-title');
+        const modalIcon = document.getElementById('late-modal-icon');
+        const messageEl = document.getElementById('late-warning-message');
+        const actionAlert = document.getElementById('late-action-alert');
+        const actionText = document.getElementById('late-action-text');
+        const countIcon = document.getElementById('late-count-icon');
+
+        // Update modal content
+        messageEl.textContent = lateWarning.message;
+        actionText.textContent = lateWarning.action;
+
+        // Style based on severity
+        if (lateWarning.severity === 'critical') {
+            // Critical styling (5+ late arrivals)
+            modalHeader.className = 'modal-header bg-danger bg-opacity-10 border-0 pt-4 px-4 pb-0';
+            modalTitle.className = 'modal-title fw-bold text-danger d-flex align-items-center gap-2';
+            modalIcon.className = 'fas fa-exclamation-triangle';
+            actionAlert.className = 'alert alert-danger mb-0';
+            countIcon.textContent = '🚨';
+        } else {
+            // Warning styling (1-4 late arrivals)
+            modalHeader.className = 'modal-header bg-warning bg-opacity-10 border-0 pt-4 px-4 pb-0';
+            modalTitle.className = 'modal-title fw-bold text-warning d-flex align-items-center gap-2';
+            modalIcon.className = 'fas fa-clock';
+            actionAlert.className = 'alert alert-warning mb-0';
+            countIcon.textContent = '⏰';
+        }
+
+        // Show modal
+        if (typeof bootstrap !== 'undefined') {
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+
+            // Reload page when modal is closed
+            modal.addEventListener('hidden.bs.modal', function () {
+                location.reload();
+            }, { once: true });
+        } else {
+            // Fallback if Bootstrap is not available
+            alert(lateWarning.message + '\n\n' + lateWarning.action);
+            location.reload();
         }
     }
 
@@ -2050,6 +3230,47 @@
     window.addEventListener('beforeunload', function () {
         if (locationTrackingInterval) {
             clearInterval(locationTrackingInterval);
+        }
+    });
+
+    // Enhanced Mobile Table Experience
+    document.addEventListener('DOMContentLoaded', function() {
+        const tableResponsive = document.querySelector('.table-responsive');
+        
+        if (tableResponsive && window.innerWidth <= 768) {
+            let scrollTimeout;
+            
+            // Hide swipe indicator after user scrolls
+            tableResponsive.addEventListener('scroll', function() {
+                this.classList.add('scrolled');
+                
+                // Clear existing timeout
+                clearTimeout(scrollTimeout);
+                
+                // Show indicator again after 3 seconds of no scrolling
+                scrollTimeout = setTimeout(() => {
+                    this.classList.remove('scrolled');
+                }, 3000);
+            });
+            
+            // Add touch feedback for better mobile experience
+            const tableRows = tableResponsive.querySelectorAll('tr');
+            tableRows.forEach(row => {
+                row.addEventListener('touchstart', function() {
+                    this.style.backgroundColor = 'rgba(99, 102, 241, 0.05)';
+                }, { passive: true });
+                
+                row.addEventListener('touchend', function() {
+                    setTimeout(() => {
+                        this.style.backgroundColor = '';
+                    }, 150);
+                }, { passive: true });
+            });
+            
+            // Auto-hide swipe indicator after 5 seconds
+            setTimeout(() => {
+                tableResponsive.classList.add('scrolled');
+            }, 5000);
         }
     });
 

@@ -10,7 +10,7 @@ from accounts.models import User
 @login_required
 def shift_list(request):
     """List all shifts for the company"""
-    if request.user.role != User.Role.COMPANY_ADMIN:
+    if not (request.user.role == User.Role.COMPANY_ADMIN or request.user.is_superuser):
         messages.error(request, "Only admins can manage shifts.")
         return redirect("dashboard")
 
@@ -25,7 +25,7 @@ def shift_list(request):
 @login_required
 def shift_create(request):
     """Create a new shift with breaks"""
-    if request.user.role != User.Role.COMPANY_ADMIN:
+    if not (request.user.role == User.Role.COMPANY_ADMIN or request.user.is_superuser):
         messages.error(request, "Only admins can create shifts.")
         return redirect("dashboard")
 
@@ -64,7 +64,7 @@ def shift_create(request):
 @login_required
 def shift_edit(request, pk):
     """Edit an existing shift and its breaks"""
-    if request.user.role != User.Role.COMPANY_ADMIN:
+    if not (request.user.role == User.Role.COMPANY_ADMIN or request.user.is_superuser):
         messages.error(request, "Only admins can edit shifts.")
         return redirect("dashboard")
 
@@ -100,7 +100,7 @@ def shift_edit(request, pk):
 @login_required
 def shift_delete(request, pk):
     """Delete a shift"""
-    if request.user.role != User.Role.COMPANY_ADMIN:
+    if not (request.user.role == User.Role.COMPANY_ADMIN or request.user.is_superuser):
         messages.error(request, "Only admins can delete shifts.")
         return redirect("dashboard")
 

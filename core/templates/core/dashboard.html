@@ -1,38 +1,159 @@
 {% extends 'core/base.html' %}
 
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        margin-bottom: 2rem;
+    }
+    
+    .dashboard-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+    }
+    
+    .dashboard-subtitle {
+        color: #64748b;
+        font-size: 1rem;
+    }
+    
+    .metric-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    .metric-card .card-header {
+        border: none;
+        padding: 1.25rem 1.5rem 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .metric-card .card-body {
+        padding: 0.5rem 1.5rem 1.5rem;
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        line-height: 1;
+        margin: 0;
+    }
+    
+    .metric-label {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .dashboard-header {
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        
+        .dashboard-title {
+            font-size: 1.5rem;
+        }
+        
+        .dashboard-subtitle {
+            font-size: 0.9rem;
+        }
+        
+        .metric-card {
+            margin-bottom: 1rem;
+        }
+        
+        .metric-card .card-header {
+            padding: 1rem 1.25rem 0.25rem;
+            font-size: 0.8rem;
+        }
+        
+        .metric-card .card-body {
+            padding: 0.25rem 1.25rem 1.25rem;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .dashboard-title {
+            font-size: 1.25rem;
+        }
+        
+        .metric-card .card-header {
+            padding: 0.75rem 1rem 0.25rem;
+        }
+        
+        .metric-card .card-body {
+            padding: 0.25rem 1rem 1rem;
+        }
+        
+        .metric-value {
+            font-size: 1.75rem;
+        }
+        
+        .metric-label {
+            font-size: 0.85rem;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
-    <div class="col-md-12 mb-4">
-        <h2>Dashboard</h2>
-        <p class="text-muted">Welcome to the HRMS System</p>
+    <div class="col-12">
+        <div class="dashboard-header">
+            <h2 class="dashboard-title">Dashboard</h2>
+            <p class="dashboard-subtitle">Welcome to the HRMS System</p>
+        </div>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-md-4">
-        <div class="card text-white bg-primary mb-3">
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card metric-card text-white bg-primary">
             <div class="card-header">Employees</div>
             <div class="card-body">
-                <h5 class="card-title">Total Employees</h5>
-                <p class="card-text display-4">150</p>
+                <h5 class="metric-label">Total Employees</h5>
+                <p class="metric-value">150</p>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card text-white bg-success mb-3">
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card metric-card text-white bg-success">
             <div class="card-header">Present Today</div>
             <div class="card-body">
-                <h5 class="card-title">Attendance</h5>
-                <p class="card-text display-4">142</p>
+                <h5 class="metric-label">Attendance</h5>
+                <p class="metric-value">142</p>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card text-white bg-warning mb-3">
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card metric-card text-white bg-warning">
             <div class="card-header">On Leave</div>
             <div class="card-body">
-                <h5 class="card-title">Leave Request</h5>
-                <p class="card-text display-4">8</p>
+                <h5 class="metric-label">Leave Request</h5>
+                <p class="metric-value">8</p>
             </div>
         </div>
     </div>

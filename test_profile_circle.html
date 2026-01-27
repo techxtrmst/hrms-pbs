@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Avatar Responsive Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="static/css/responsive.css">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+        
+        body {
+            background: #f8fafc;
+            padding: 20px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .device-info {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #e0e7ff;
+            border-radius: 12px;
+            font-size: 0.9rem;
+        }
+        
+        .test-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+        }
+        
+        .test-section h6 {
+            color: #6366f1;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        /* Profile avatar test styles */
+        .profile-hero {
+            height: 120px;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .profile-card-test {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: -40px;
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .avatar-test-wrapper {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin: -50px auto 20px;
+        }
+        
+        .avatar-test {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            object-fit: cover;
+        }
+        
+        .avatar-placeholder {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+        
+        .camera-btn-test {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 24px;
+            height: 24px;
+            background: #1e293b;
+            color: white;
+            border-radius: 50%;
+            border: 2px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+        
+        .employee-list-test {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="device-info">
+            <strong>Screen Width:</strong> <span id="screen-width"></span>px<br>
+            <strong>Device Type:</strong> <span id="device-type"></span><br>
+            <strong>Orientation:</strong> <span id="orientation"></span>
+        </div>
+        
+        <h4 class="text-center mb-4 text-primary">Profile Avatar Responsive Test</h4>
+        
+        <!-- Profile Circle Test -->
+        <div class="test-section">
+            <h6><i class="fas fa-chart-pie me-2"></i>Profile Circles (Stat Rings)</h6>
+            <div class="row text-center align-items-center">
+                <div class="col-6 border-end">
+                    <div class="stat-ring">
+                        <svg>
+                            <circle class="bg" cx="60" cy="60" r="45" fill="none" stroke="#f1f5f9" stroke-width="8"></circle>
+                            <circle class="progress" cx="60" cy="60" r="45" fill="none" stroke="#6366f1" stroke-width="8" stroke-dasharray="283" stroke-dashoffset="70" stroke-linecap="round"></circle>
+                        </svg>
+                        <div class="stat-ring-content">
+                            <div class="stat-ring-value">7.5h</div>
+                            <div class="stat-ring-label">Avg Hrs</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="stat-ring">
+                        <svg>
+                            <circle class="bg" cx="60" cy="60" r="45" fill="none" stroke="#f1f5f9" stroke-width="8"></circle>
+                            <circle class="progress" cx="60" cy="60" r="45" fill="none" stroke="#10b981" stroke-width="8" stroke-dasharray="283" stroke-dashoffset="0" stroke-linecap="round"></circle>
+                        </svg>
+                        <div class="stat-ring-content">
+                            <div class="stat-ring-value">100%</div>
+                            <div class="stat-ring-label">On Time</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Profile Avatar Test -->
+        <div class="test-section">
+            <h6><i class="fas fa-user-circle me-2"></i>Profile Avatar</h6>
+            <div class="profile-hero"></div>
+            <div class="profile-card-test">
+                <div class="avatar-test-wrapper profile-avatar-wrapper">
+                    <div class="avatar-test avatar-placeholder profile-avatar placeholder">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="camera-btn-test">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <h5 class="mb-1">John Doe</h5>
+                    <p class="text-muted mb-0">Software Engineer</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Employee List Test -->
+        <div class="test-section">
+            <h6><i class="fas fa-users me-2"></i>Employee List Avatars</h6>
+            <div class="employee-list-test">
+                <div class="employee-avatar">JD</div>
+                <div>
+                    <div class="fw-bold">John Doe</div>
+                    <div class="text-muted small">Software Engineer</div>
+                </div>
+            </div>
+            <div class="employee-list-test">
+                <div class="employee-avatar">AS</div>
+                <div>
+                    <div class="fw-bold">Alice Smith</div>
+                    <div class="text-muted small">Product Manager</div>
+                </div>
+            </div>
+            <div class="employee-list-test">
+                <div class="employee-avatar">MJ</div>
+                <div>
+                    <div class="fw-bold">Mike Johnson</div>
+                    <div class="text-muted small">UI/UX Designer</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <p class="text-muted small">
+                <i class="fas fa-info-circle me-1"></i>
+                Resize your browser window or test on different devices to see the responsive behavior.
+                All avatars maintain their round shape and scale appropriately.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function updateDeviceInfo() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            document.getElementById('screen-width').textContent = width;
+            
+            let deviceType = 'Desktop';
+            if (width <= 320) deviceType = 'Extra Small Phone';
+            else if (width <= 400) deviceType = 'Small Phone';
+            else if (width <= 576) deviceType = 'Phone';
+            else if (width <= 768) deviceType = 'Mobile/Tablet';
+            else if (width <= 992) deviceType = 'Tablet';
+            else if (width <= 1200) deviceType = 'Small Desktop';
+            
+            document.getElementById('device-type').textContent = deviceType;
+            
+            const orientation = width > height ? 'Landscape' : 'Portrait';
+            document.getElementById('orientation').textContent = orientation;
+        }
+        
+        updateDeviceInfo();
+        window.addEventListener('resize', updateDeviceInfo);
+    </script>
+</body>
+</html>

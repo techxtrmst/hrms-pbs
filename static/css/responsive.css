@@ -1,0 +1,1990 @@
+/* Mobile Responsive Fixes for HRMS - Complete Project */
+
+/* ===== GLOBAL RESPONSIVE STYLES ===== */
+
+/* Fix for mobile touch and scroll issues */
+html {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    touch-action: manipulation;
+}
+
+body {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
+}
+
+/* Profile Circle / Stat Ring Global Responsive Fixes */
+.stat-ring {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 15px;
+    max-width: 100%;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-ring svg {
+    width: 100%;
+    height: 100%;
+    max-width: 120px;
+    max-height: 120px;
+}
+
+.stat-ring-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    width: 80%;
+    max-width: 80px;
+}
+
+.stat-ring-value {
+    font-weight: 700;
+    font-size: 1.2rem;
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+.stat-ring-label {
+    font-size: 0.7rem;
+    line-height: 1.1;
+    margin-top: 2px;
+}
+
+/* Profile Avatar Global Responsive Fixes */
+.profile-avatar-wrapper {
+    position: relative;
+    max-width: 100%;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    min-width: 60px;
+    min-height: 60px;
+}
+
+.profile-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    background-color: #cbd5e1;
+}
+
+/* Ensure round shape is maintained */
+.profile-avatar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    pointer-events: none;
+}
+
+/* For placeholder avatar (no image) */
+.profile-avatar.placeholder {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+}
+
+/* Circular images in lists and cards */
+.rounded-circle {
+    aspect-ratio: 1;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+/* Employee avatar in lists */
+.employee-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+/* Profile Avatar Global Responsive Fixes */
+.profile-avatar-wrapper {
+    position: relative;
+    width: 130px;
+    height: 130px;
+    max-width: 100%;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 4px solid white;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    background-color: #cbd5e1;
+}
+
+/* Prevent zoom on form inputs (iOS) */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="search"],
+textarea,
+select {
+    font-size: 16px !important;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* Base responsive adjustments */
+@media (max-width: 1200px) {
+    .container-fluid {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+}
+
+@media (max-width: 992px) {
+    .container-fluid {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    /* Adjust card padding */
+    .card-body {
+        padding: 1.25rem;
+    }
+    
+    /* Responsive tables */
+    .table-responsive {
+        font-size: 0.9rem;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Global mobile adjustments */
+    .container-fluid {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    
+    /* Profile Circle / Stat Ring Mobile Adjustments */
+    .stat-ring {
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 12px;
+    }
+    
+    .stat-ring svg {
+        max-width: 100px;
+        max-height: 100px;
+    }
+    
+    .stat-ring circle {
+        stroke-width: 6;
+    }
+    
+    .stat-ring-content {
+        width: 75%;
+        max-width: 70px;
+    }
+    
+    .stat-ring-value {
+        font-size: 1rem;
+        line-height: 1.1;
+    }
+    
+    .stat-ring-label {
+        font-size: 0.65rem;
+        margin-top: 1px;
+    }
+    
+    /* Profile Avatar Mobile Adjustments */
+    .profile-avatar-wrapper {
+        min-width: 50px;
+        min-height: 50px;
+    }
+    
+    .employee-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 0.8rem;
+    }
+    
+    /* Ensure proper mobile layout */
+    body {
+        position: relative;
+        overflow-x: hidden;
+    }
+    
+    body.sidebar-open {
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+        height: 100%;
+    }
+    
+    /* Hide sidebar by default on mobile */
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1050;
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 280px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        will-change: transform; /* Optimize for animations */
+    }
+    
+    /* Show sidebar when active */
+    .sidebar.show {
+        transform: translateX(0);
+    }
+    
+    /* Ensure dropdown menus work properly in mobile sidebar */
+    .sidebar .collapse {
+        transition: height 0.35s ease;
+    }
+    
+    .sidebar .collapse.show {
+        display: block !important;
+    }
+    
+    .sidebar .sidebar-dropdown-toggle {
+        pointer-events: auto;
+        cursor: pointer;
+    }
+    
+    .sidebar .sidebar-dropdown-toggle:focus {
+        outline: none;
+        background: rgba(255, 255, 255, 0.05);
+    }
+    
+    /* Remove left margin from content on mobile */
+    .content {
+        margin-left: 0;
+        padding: 15px;
+        width: 100%;
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+    
+    /* Adjust topbar for mobile - Enhanced */
+    .topbar {
+        margin-left: 0;
+        padding: 12px 16px;
+        width: 100%;
+        position: sticky;
+        top: 0;
+        z-index: 900;
+        min-height: 64px;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .topbar .d-flex:first-child {
+        gap: 12px;
+        flex-wrap: nowrap;
+        overflow: hidden;
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .topbar .d-flex:last-child {
+        gap: 12px;
+        flex-shrink: 0;
+    }
+    
+    .topbar h4 {
+        font-size: 0.95rem;
+        max-width: 150px;
+        flex-shrink: 1;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    /* Mobile menu toggle button - Enhanced */
+    .mobile-menu-toggle {
+        display: flex !important;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #6366f1;
+        cursor: pointer;
+        padding: 12px;
+        border-radius: 8px;
+        min-width: 48px;
+        min-height: 48px;
+        align-items: center;
+        justify-content: center;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        transition: all 0.2s ease;
+        position: relative;
+        z-index: 1001;
+        order: -1; /* Ensure it appears first */
+        margin-right: 8px;
+        flex-shrink: 0;
+    }
+    
+    .mobile-menu-toggle:hover {
+        background: rgba(99, 102, 241, 0.1);
+    }
+    
+    .mobile-menu-toggle:active {
+        background: rgba(99, 102, 241, 0.2);
+        transform: scale(0.95);
+    }
+    
+    .mobile-menu-toggle i {
+        transition: transform 0.3s ease;
+    }
+    
+    .mobile-menu-toggle[aria-expanded="true"] i {
+        transform: rotate(90deg);
+    }
+    
+    /* Hide desktop elements */
+    .d-none.d-md-block {
+        display: none !important;
+    }
+    
+    /* Stack cards vertically */
+    .row.g-4 > .col-lg-3,
+    .row.g-4 > .col-lg-6,
+    .row.g-4 > .col-lg-4,
+    .row.g-4 > .col-lg-8 {
+        flex: 0 0 100%;
+        max-width: 100%;
+        margin-bottom: 15px;
+    }
+    
+    /* Card adjustments */
+    .card {
+        margin-bottom: 15px;
+        border-radius: 12px;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    /* Button improvements */
+    .btn {
+        min-height: 44px;
+        padding: 12px 20px;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    .btn-sm {
+        min-height: 36px;
+        padding: 8px 16px;
+    }
+    
+    /* Form improvements */
+    .form-control {
+        min-height: 44px;
+        font-size: 16px; /* Prevents zoom on iOS */
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        border-radius: 8px;
+    }
+    
+    .form-select {
+        min-height: 44px;
+        font-size: 16px;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        border-radius: 8px;
+    }
+    
+    /* Table improvements */
+    .table-responsive {
+        font-size: 0.9rem;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 8px;
+        position: relative;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    
+    .table th,
+    .table td {
+        padding: 0.5rem;
+        white-space: nowrap;
+        font-size: 0.85rem;
+    }
+    
+    /* Add scroll indicator for tables */
+    .table-responsive::before {
+        content: "← Scroll for more →";
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(99, 102, 241, 0.1);
+        color: #6366f1;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        z-index: 10;
+        pointer-events: none;
+        opacity: 0.8;
+        transition: opacity 0.3s ease;
+    }
+    
+    .table-responsive.scrolled::before {
+        opacity: 0;
+    }
+    
+    /* Improve table row touch feedback */
+    .table tbody tr {
+        transition: background-color 0.2s ease;
+    }
+    
+    .table tbody tr:active {
+        background-color: rgba(99, 102, 241, 0.05) !important;
+    }
+    
+    /* Modal adjustments */
+    .modal-dialog {
+        margin: 15px;
+        max-width: calc(100% - 30px);
+    }
+    
+    .modal-content {
+        border-radius: 12px;
+    }
+    
+    /* User info and notification adjustments */
+    .topbar .text-end {
+        display: block !important;
+        min-width: 80px;
+        text-align: right;
+    }
+    
+    .topbar .text-end .fw-bold {
+        font-size: 0.8rem;
+        line-height: 1.2;
+    }
+    
+    .topbar .text-end .text-muted {
+        font-size: 0.7rem;
+        line-height: 1.1;
+    }
+    
+    /* Dropdown avatar adjustments */
+    .topbar .dropdown img {
+        width: 36px;
+        height: 36px;
+    }
+    
+    /* Notification dropdown adjustments */
+    .notification-dropdown {
+        width: calc(100vw - 30px);
+        right: 15px;
+        left: 15px;
+        position: fixed;
+        top: 70px;
+        max-height: calc(100vh - 90px);
+        z-index: 1060;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    
+    .notification-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: white;
+        border-radius: 16px 16px 0 0;
+    }
+    
+    .notification-list {
+        -webkit-overflow-scrolling: touch;
+        max-height: calc(100vh - 140px);
+    }
+    
+    .notification-item {
+        min-height: 44px;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+    
+    .notification-item:active {
+        background: rgba(99, 102, 241, 0.1);
+    }
+    
+    /* Employee search adjustments - Enhanced */
+    .employee-search-container {
+        order: 2;
+        flex: 1;
+        max-width: 200px;
+        min-width: 120px;
+        position: relative;
+    }
+    
+    .employee-search-container input {
+        width: 100%;
+        font-size: 14px;
+        padding: 8px 8px 8px 32px;
+        border-radius: 8px;
+        height: 36px;
+        border: 1.5px solid #e8ecf4;
+        transition: all 0.3s ease;
+    }
+    
+    .employee-search-container input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        outline: none;
+    }
+    
+    .employee-search-container input::placeholder {
+        font-size: 13px;
+        color: #9ca3af;
+    }
+    
+    .employee-search-container .search-icon {
+        left: 10px;
+        font-size: 13px;
+        color: #6c7293;
+    }
+    
+    /* Grid adjustments */
+    .col-md-6,
+    .col-md-4,
+    .col-md-3 {
+        margin-bottom: 15px;
+    }
+    
+    /* Stats and metrics */
+    .stats-grid,
+    .features-grid {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+    }
+    
+    /* Page headers */
+    .page-header-section {
+        padding: 1rem;
+        text-align: center;
+    }
+    
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    /* Breadcrumb */
+    .breadcrumb {
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+        background: transparent;
+    }
+    
+    /* Sidebar overlay */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        will-change: opacity; /* Optimize for animations */
+    }
+    
+    .sidebar-overlay.show {
+        display: block;
+        opacity: 1;
+    }
+    
+    /* Mobile sidebar dropdown improvements */
+    .sidebar .sidebar-dropdown-toggle {
+        min-height: 44px !important;
+        padding: 8px 24px !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        cursor: pointer;
+        text-decoration: none !important;
+        width: 100%;
+        border: none;
+        background: transparent;
+        margin: 1px 0;
+    }
+    
+    .sidebar .sidebar-dropdown-toggle:active {
+        background: rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    .sidebar .sidebar-dropdown-toggle .fa-chevron-down {
+        transition: transform 0.3s ease;
+        font-size: 0.8rem;
+        opacity: 0.7;
+        margin-right: 0 !important;
+    }
+    
+    .sidebar .sidebar-dropdown-toggle[aria-expanded="true"] .fa-chevron-down {
+        transform: rotate(180deg);
+    }
+    
+    .sidebar .sidebar-dropdown-toggle .sidebar-section-title {
+        margin: 0 !important;
+        padding: 0 !important;
+        flex: 1;
+        text-align: left;
+    }
+    
+    /* Sub-menu improvements for mobile */
+    .sidebar .sub-menu {
+        background: rgba(0, 0, 0, 0.2);
+        margin: 0;
+        padding: 0;
+    }
+    
+    .sidebar .sub-menu a {
+        padding: 10px 24px 10px 48px !important;
+        font-size: 0.85rem;
+        min-height: 40px;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        margin: 1px 0;
+    }
+    
+    .sidebar .sub-menu a:active {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Ensure collapse animations work properly */
+    .sidebar .collapse {
+        transition: height 0.35s ease;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .sidebar .collapse.show {
+        display: block !important;
+    }
+    
+    .sidebar .collapse:not(.show) {
+        display: none !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden;
+    }
+    
+    /* Remove any default Bootstrap spacing */
+    .sidebar .collapse.collapsing {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* Hide dropdown toggles when their content is not relevant */
+    .sidebar .sidebar-dropdown-toggle[aria-expanded="false"] + .collapse:not(.show) + .sidebar-dropdown-toggle {
+        margin-top: 0 !important;
+    }
+    
+    /* Ensure no extra spacing around collapsed sections */
+    .sidebar > a + .collapse:not(.show) + a,
+    .sidebar > .sidebar-dropdown-toggle + .collapse:not(.show) + a,
+    .sidebar > .sidebar-dropdown-toggle + .collapse:not(.show) + .sidebar-dropdown-toggle {
+        margin-top: 1px !important;
+    }
+    
+    /* Force remove any inherited spacing */
+    .sidebar * {
+        box-sizing: border-box;
+    }
+    
+    .sidebar .collapse:not(.show) * {
+        display: none !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* Aggressive spacing reset for mobile sidebar */
+    @media (max-width: 768px) {
+        .sidebar > * {
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+        }
+        
+        .sidebar a {
+            margin: 0 !important;
+            padding: 10px 24px !important;
+        }
+        
+        .sidebar .sidebar-dropdown-toggle {
+            margin: 0 !important;
+            padding: 8px 24px !important;
+        }
+        
+        .sidebar .sub-menu a {
+            margin: 0 !important;
+            padding: 8px 24px 8px 48px !important;
+        }
+        
+        /* Force collapsed sections to be completely hidden */
+        .sidebar .collapse:not(.show) {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            max-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            overflow: hidden !important;
+            opacity: 0 !important;
+        }
+        
+        /* Limit maximum height of sidebar elements */
+        .sidebar > * {
+            max-height: 50px !important;
+        }
+        
+        .sidebar .collapse.show {
+            max-height: none !important;
+        }
+        
+        .sidebar .collapse.show * {
+            max-height: none !important;
+        }
+        
+        /* Specific fix for 250px height elements - set to 20px */
+        .sidebar [style*="height: 250px"],
+        .sidebar [style*="height:250px"] {
+            height: 20px !important;
+            max-height: 20px !important;
+        }
+    }
+
+@media (max-width: 576px) {
+    /* Very small screens - Enhanced Topbar */
+    .topbar {
+        padding: 10px 12px;
+        min-height: 56px;
+        gap: 8px;
+    }
+    
+    .topbar .d-flex:first-child {
+        gap: 8px;
+        min-width: 0;
+        flex: 1;
+    }
+    
+    .topbar .d-flex:last-child {
+        gap: 8px;
+        flex-shrink: 0;
+    }
+    
+    .topbar h4 {
+        font-size: 0.9rem;
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .content {
+        padding: 10px;
+    }
+    
+    /* Profile Circle / Stat Ring for Small Screens */
+    .stat-ring {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 10px;
+    }
+    
+    .stat-ring svg {
+        max-width: 80px;
+        max-height: 80px;
+    }
+    
+    .stat-ring circle {
+        stroke-width: 5;
+    }
+    
+    .stat-ring-content {
+        width: 70%;
+        max-width: 56px;
+    }
+    
+    .stat-ring-value {
+        font-size: 0.9rem;
+        line-height: 1;
+    }
+    
+    .stat-ring-label {
+        font-size: 0.6rem;
+        margin-top: 1px;
+    }
+    
+    /* Profile Avatar Small Screen Adjustments */
+    .profile-avatar-wrapper {
+        min-width: 40px;
+        min-height: 40px;
+    }
+    
+    .employee-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 0.75rem;
+    }
+    
+    /* Hide employee search on very small screens */
+    .employee-search-container {
+        max-width: 140px;
+        min-width: 100px;
+    }
+    
+    .employee-search-container input {
+        font-size: 13px;
+        padding: 6px 6px 6px 28px;
+        height: 32px;
+    }
+    
+    .employee-search-container input::placeholder {
+        font-size: 12px;
+    }
+    
+    .employee-search-container .search-icon {
+        left: 8px;
+        font-size: 12px;
+    }
+    
+    /* Hide user info text on very small screens only */
+    .topbar .text-end {
+        display: none !important;
+    }
+    
+    /* Compact dropdown avatar */
+    .topbar .dropdown img {
+        width: 32px;
+        height: 32px;
+    }
+    
+    /* Notification dropdown full width */
+    .notification-dropdown {
+        width: calc(100vw - 20px);
+        right: 10px;
+        left: 10px;
+        top: 60px;
+        max-height: calc(100vh - 80px);
+    }
+    
+    /* Very compact tables */
+    .table-responsive {
+        font-size: 0.8rem;
+    }
+    
+    .table th,
+    .table td {
+        padding: 0.4rem 0.3rem;
+    }
+    
+    /* Hide less important table columns */
+    .table th:nth-last-child(-n+2),
+    .table td:nth-last-child(-n+2) {
+        display: none;
+    }
+    
+    /* Compact cards */
+    .card-body {
+        padding: 0.75rem;
+    }
+    
+    /* Smaller buttons */
+    .btn {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+    }
+    
+    /* Form adjustments */
+    .form-control,
+    .form-select {
+        font-size: 16px;
+        padding: 10px 12px;
+    }
+    
+    /* Modal full width */
+    .modal-dialog {
+        margin: 10px;
+        width: calc(100% - 20px);
+    }
+    
+    /* Page title adjustments */
+    .page-title {
+        font-size: 1.3rem;
+    }
+    
+    /* Compact stats */
+    .metric-card,
+    .stat-card {
+        padding: 1rem;
+    }
+    
+    .metric-value {
+        font-size: 1.5rem;
+    }
+}
+
+/* ===== SPECIFIC TEMPLATE RESPONSIVE STYLES ===== */
+
+/* Employee List Template */
+@media (max-width: 768px) {
+    .employees-table {
+        min-width: 700px;
+    }
+    
+    .employee-card {
+        margin-bottom: 15px;
+    }
+    
+    .employee-avatar {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .employees-table-container::after {
+        content: "← Swipe to see more →";
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(99, 102, 241, 0.1);
+        color: #6366f1;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        z-index: 10;
+        pointer-events: none;
+    }
+}
+
+/* Dashboard Templates */
+@media (max-width: 768px) {
+    .dashboard-stats {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 15px !important;
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+    
+    .metric-cards {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .dashboard-stats {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .chart-container {
+        height: 200px;
+    }
+}
+
+/* Form Templates */
+@media (max-width: 768px) {
+    .form-grid {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+    }
+    
+    .multi-step-form .step-content {
+        padding: 1rem;
+    }
+    
+    .form-section {
+        margin-bottom: 1.5rem;
+    }
+}
+
+/* AI Assistant Templates */
+@media (max-width: 768px) {
+    .ai-chatbot-panel {
+        right: 0;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: 70vh;
+        border-radius: 20px 20px 0 0;
+    }
+    
+    .chatbot-messages {
+        height: calc(70vh - 120px);
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Policy and Handbook Templates */
+@media (max-width: 768px) {
+    .policy-grid,
+    .handbook-grid {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+    }
+    
+    .policy-content-card,
+    .handbook-content-card {
+        padding: 1.5rem;
+    }
+}
+
+/* Attendance Templates */
+@media (max-width: 768px) {
+    .attendance-calendar {
+        font-size: 0.8rem;
+    }
+    
+    .calendar-day {
+        min-height: 30px;
+        font-size: 0.75rem;
+    }
+    
+    .attendance-summary {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Leave Templates */
+@media (max-width: 768px) {
+    .leave-balance-cards {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    .leave-calendar {
+        font-size: 0.85rem;
+    }
+    
+    /* Leave dashboard specific */
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    .stat-card {
+        min-height: 120px !important;
+        padding: 1rem !important;
+    }
+    
+    .stat-value {
+        font-size: 1.75rem !important;
+    }
+    
+    .stat-icon-wrapper {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 1rem !important;
+    }
+    
+    /* Leave form mobile */
+    .leave-card {
+        margin: 20px 10px !important;
+        border-radius: 12px !important;
+    }
+    
+    .leave-header {
+        padding: 20px !important;
+    }
+    
+    .leave-body {
+        padding: 20px !important;
+    }
+    
+    .leave-title {
+        font-size: 1.1rem !important;
+    }
+    
+    /* Leave type selection mobile */
+    .leave-type-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+    }
+    
+    .leave-type-option {
+        padding: 1rem !important;
+        text-align: center !important;
+    }
+    
+    /* Leave balance display */
+    .leave-balance-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    .leave-balance-card {
+        padding: 1rem !important;
+        text-align: center !important;
+    }
+    
+    .leave-balance-value {
+        font-size: 1.5rem !important;
+    }
+    
+    .leave-balance-label {
+        font-size: 0.8rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .leave-balance-cards {
+        grid-template-columns: 1fr !important;
+    }
+    
+    /* Leave dashboard very small screens */
+    .stat-card {
+        min-height: 100px !important;
+        padding: 0.875rem !important;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem !important;
+    }
+    
+    .stat-icon-wrapper {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 0.9rem !important;
+    }
+    
+    .stat-label {
+        font-size: 0.8rem !important;
+    }
+    
+    /* Leave form very small */
+    .leave-card {
+        margin: 15px 5px !important;
+    }
+    
+    .leave-header,
+    .leave-body {
+        padding: 15px !important;
+    }
+    
+    .leave-title {
+        font-size: 1rem !important;
+    }
+    
+    /* Form controls compact */
+    .form-control,
+    .form-select {
+        padding: 0.75rem !important;
+        font-size: 0.9rem !important;
+    }
+    
+    /* Leave balance very compact */
+    .leave-balance-value {
+        font-size: 1.3rem !important;
+    }
+    
+    .leave-balance-label {
+        font-size: 0.75rem !important;
+    }
+    
+    /* Button adjustments */
+    .btn-apply-float {
+        padding: 8px 20px !important;
+        font-size: 0.85rem !important;
+    }
+}
+
+/* Superadmin Templates */
+@media (max-width: 768px) {
+    .sa-metric-cards {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+    }
+    
+    .sa-header {
+        padding: 24px;
+        text-align: center;
+    }
+    
+    .sa-table {
+        min-width: 700px;
+    }
+    
+    .table-responsive {
+        padding-bottom: 220px;
+        padding-right: 24px;
+    }
+}
+
+/* ===== TOUCH DEVICE OPTIMIZATIONS ===== */
+@media (hover: none) and (pointer: coarse) {
+    /* Remove hover effects on touch devices */
+    .card:hover,
+    .btn:hover,
+    .nav-link:hover {
+        transform: none;
+        box-shadow: inherit;
+    }
+    
+    /* Improve touch targets */
+    .btn,
+    .nav-link,
+    .dropdown-item {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+    
+    /* Better scrolling */
+    .table-responsive,
+    .overflow-auto {
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Remove complex animations on touch devices */
+    * {
+        animation-duration: 0.1s !important;
+        transition-duration: 0.1s !important;
+    }
+}
+
+/* ===== LANDSCAPE PHONE ADJUSTMENTS ===== */
+@media (max-width: 896px) and (orientation: landscape) and (max-height: 500px) {
+    .sidebar {
+        width: 200px;
+    }
+    
+    .modal-dialog {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    /* Profile Circle / Stat Ring for Landscape */
+    .stat-ring {
+        width: 90px;
+        height: 90px;
+    }
+    
+    .stat-ring svg {
+        max-width: 90px;
+        max-height: 90px;
+    }
+    
+    .stat-ring-content {
+        max-width: 65px;
+    }
+    
+    .stat-ring-value {
+        font-size: 0.95rem;
+    }
+    
+    .stat-ring-label {
+        font-size: 0.6rem;
+    }
+}
+
+/* ===== EXTRA SMALL SCREENS ===== */
+@media (max-width: 400px) {
+    /* Profile Circle / Stat Ring for Extra Small Screens */
+    .stat-ring {
+        width: 70px;
+        height: 70px;
+        margin: 0 auto 8px;
+    }
+    
+    .stat-ring svg {
+        max-width: 70px;
+        max-height: 70px;
+    }
+    
+    .stat-ring circle {
+        stroke-width: 4;
+    }
+    
+    .stat-ring-content {
+        width: 65%;
+        max-width: 45px;
+    }
+    
+    .stat-ring-value {
+        font-size: 0.8rem;
+        line-height: 0.9;
+    }
+    
+    .stat-ring-label {
+        font-size: 0.55rem;
+        margin-top: 0;
+    }
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+    .sidebar,
+    .topbar,
+    .btn,
+    .modal,
+    .dropdown,
+    .notification-dropdown,
+    .mobile-menu-toggle,
+    .sidebar-overlay {
+        display: none !important;
+    }
+    
+    .content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+    }
+    
+    .table {
+        font-size: 12px;
+    }
+}
+
+/* ===== ACCESSIBILITY IMPROVEMENTS ===== */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .card {
+        border: 2px solid #000;
+    }
+    
+    .btn {
+        border: 2px solid;
+    }
+    
+    .table th,
+    .table td {
+        border: 1px solid #000;
+    }
+}
+
+/* ===== CUSTOM SCROLLBARS FOR MOBILE ===== */
+@media (max-width: 768px) {
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+}
+
+/* ===== FIX FOR MOBILE VIEWPORT ISSUES ===== */
+@media (max-width: 768px) {
+    /* Use CSS custom properties for viewport height */
+    :root {
+        --vh: 1vh;
+    }
+    
+    .sidebar {
+        height: calc(var(--vh, 1vh) * 100);
+    }
+    
+    .content {
+        min-height: calc(var(--vh, 1vh) * 100);
+    }
+}
+
+/* ===== ADDITIONAL MOBILE FIXES ===== */
+@media (max-width: 768px) {
+    /* Fix for iOS Safari bottom bar */
+    .content {
+        padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+    
+    /* Fix for notch devices */
+    .topbar {
+        padding-top: max(12px, env(safe-area-inset-top));
+        padding-left: max(15px, env(safe-area-inset-left));
+        padding-right: max(15px, env(safe-area-inset-right));
+    }
+    
+    /* Prevent horizontal scroll */
+    .container-fluid,
+    .row {
+        overflow-x: hidden;
+    }
+    
+    /* Fix for mobile keyboard issues */
+    .modal.show {
+        padding-right: 0 !important;
+    }
+}
+
+/* ===== ENHANCED ANNOUNCEMENTS SCROLLING STYLES ===== */
+
+/* Scrolling indicators and feedback */
+.announcement-content-wrapper.scrolling {
+    scrollbar-color: #6366f1 transparent;
+}
+
+.announcement-content-wrapper.scrolling::-webkit-scrollbar-thumb {
+    background-color: #6366f1;
+}
+
+/* Tab scrolling enhancements */
+.announcements-tabs.has-scroll {
+    position: relative;
+}
+
+.announcements-tabs.has-scroll::after {
+    content: "→";
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: linear-gradient(90deg, transparent 0%, rgba(91, 71, 251, 0.1) 50%, rgba(91, 71, 251, 0.2) 100%);
+    color: #6366f1;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    pointer-events: none;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.announcements-tabs.scrolling::after {
+    opacity: 0;
+}
+
+/* Touch feedback for carousel controls */
+.carousel-btn.touch-active {
+    transform: scale(0.95);
+    background: var(--keka-primary);
+    color: white;
+}
+
+/* Enhanced mobile scrolling */
+@media (max-width: 768px) {
+    .announcements-tabs-wrapper {
+        position: relative;
+        padding-right: 20px;
+    }
+    
+    .announcements-tabs {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        scroll-behavior: smooth;
+        padding-bottom: 2px;
+    }
+    
+    .announcements-tabs::-webkit-scrollbar {
+        display: none;
+    }
+    
+    /* Ensure tabs don't shrink */
+    .announcements-tabs .tab-btn {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+    
+    /* Add momentum scrolling for iOS */
+    .announcement-content-wrapper,
+    .tab-content {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+    
+    /* Visual feedback for scrollable areas */
+    .announcement-content-wrapper {
+        position: relative;
+    }
+    
+    .announcement-content-wrapper::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 20px;
+        height: 100%;
+        background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.8) 100%);
+        pointer-events: none;
+        z-index: 1;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .announcement-content-wrapper:hover::before,
+    .announcement-content-wrapper.scrolling::before {
+        opacity: 1;
+    }
+}
+
+/* Very small screens - optimize for minimal space */
+@media (max-width: 576px) {
+    .announcements-tabs-wrapper {
+        padding-right: 15px;
+    }
+    
+    .announcements-tabs {
+        gap: 6px;
+    }
+    
+    /* Compact scroll indicators */
+    .announcements-tabs.has-scroll::after {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+}
+
+/* Landscape orientation - optimize horizontal space */
+@media (max-width: 896px) and (orientation: landscape) {
+    .announcements-header {
+        flex-direction: row;
+        align-items: center;
+        gap: 16px;
+    }
+    
+    .announcements-tabs-wrapper {
+        flex: 1;
+        max-width: 60%;
+    }
+    
+    .announcements-title {
+        flex-shrink: 0;
+    }
+}
+
+/* High contrast mode support for announcements */
+@media (prefers-contrast: high) {
+    .announcement-item {
+        border: 2px solid #000;
+    }
+    
+    .tab-btn {
+        border: 2px solid;
+    }
+    
+    .carousel-btn {
+        border: 2px solid #000;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .announcement-slide,
+    .carousel-btn,
+    .tab-btn {
+        transition: none !important;
+    }
+    
+    .announcements-tabs,
+    .announcement-content-wrapper {
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Dark mode support (if implemented) */
+@media (prefers-color-scheme: dark) {
+    .announcements-card {
+        background: #1f2937;
+        color: #f9fafb;
+    }
+    
+    .announcement-item {
+        border-bottom-color: #374151;
+    }
+    
+    .announcement-item:hover {
+        background: #374151;
+    }
+    
+    .tab-btn {
+        background: rgba(255, 255, 255, 0.1);
+        color: #f9fafb;
+    }
+    
+    .tab-btn.active,
+    .tab-btn:hover {
+        background: #6366f1;
+        color: white;
+    }
+}
+
+/* Print styles for announcements */
+@media print {
+    .announcements-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    
+    .carousel-controls,
+    .announcements-tabs {
+        display: none !important;
+    }
+    
+    .announcement-slide {
+        position: static !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+    
+    .announcement-slide.d-none {
+        display: block !important;
+    }
+}
+/* ===== DEPARTMENT PERFORMANCE TABLE RESPONSIVE FIXES ===== */
+
+/* Desktop and tablet - full table layout */
+@media (min-width: 769px) {
+    .department-performance-table {
+        display: table;
+        width: 100%;
+    }
+    
+    .department-performance-table thead,
+    .department-performance-table tbody,
+    .department-performance-table tr,
+    .department-performance-table th,
+    .department-performance-table td {
+        display: table-cell;
+    }
+}
+
+/* Mobile responsive department performance */
+@media (max-width: 768px) {
+    /* Make the table container scrollable horizontally */
+    .department-performance-container {
+        position: relative;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    
+    /* Ensure table maintains minimum width */
+    .department-performance-table {
+        min-width: 600px;
+        width: 100%;
+        white-space: nowrap;
+    }
+    
+    /* Sticky first column (Department name) */
+    .department-performance-table th:first-child,
+    .department-performance-table td:first-child {
+        position: sticky;
+        left: 0;
+        background: white;
+        z-index: 10;
+        box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+        min-width: 120px;
+    }
+    
+    /* Header styling */
+    .department-performance-table thead th {
+        background: #f8f9fa;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 12px 8px;
+        border-bottom: 2px solid #e9ecef;
+        position: sticky;
+        top: 0;
+        z-index: 15;
+    }
+    
+    /* First header cell (corner) */
+    .department-performance-table thead th:first-child {
+        z-index: 20;
+        background: #f8f9fa;
+    }
+    
+    /* Body cells */
+    .department-performance-table tbody td {
+        padding: 12px 8px;
+        font-size: 0.85rem;
+        vertical-align: middle;
+    }
+    
+    /* Department name column */
+    .department-performance-table tbody td:first-child {
+        font-weight: 600;
+        color: #1e2139;
+        min-width: 120px;
+        max-width: 120px;
+        word-wrap: break-word;
+    }
+    
+    /* Present and Total columns */
+    .department-performance-table tbody td:nth-child(2),
+    .department-performance-table tbody td:nth-child(3) {
+        text-align: center;
+        font-weight: 600;
+        color: #6c7293;
+        min-width: 60px;
+    }
+    
+    /* Progress column */
+    .department-performance-table tbody td:nth-child(4) {
+        min-width: 200px;
+        padding-right: 16px;
+    }
+    
+    /* Progress bar container */
+    .department-progress-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+    }
+    
+    /* Progress bar */
+    .department-progress-bar {
+        flex: 1;
+        height: 8px;
+        background-color: #f3f4f6;
+        border-radius: 4px;
+        overflow: hidden;
+        min-width: 120px;
+    }
+    
+    .department-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #5b47fb 0%, #7c3aed 100%);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+    
+    /* Percentage text */
+    .department-percentage {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #1e2139;
+        min-width: 35px;
+        text-align: right;
+    }
+    
+    /* Add scroll indicator */
+    .department-performance-container::after {
+        content: "← Scroll to see more →";
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(91, 71, 251, 0.1);
+        color: #5b47fb;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        z-index: 25;
+        pointer-events: none;
+        opacity: 0.8;
+        transition: opacity 0.3s ease;
+    }
+    
+    /* Hide scroll indicator when scrolled */
+    .department-performance-container.scrolled::after {
+        opacity: 0;
+    }
+    
+    /* Card adjustments for mobile */
+    .keka-card {
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        border: none;
+        overflow: hidden;
+    }
+    
+    .card-title-keka {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e2139;
+        margin-bottom: 1rem;
+        padding: 0 4px;
+    }
+}
+
+/* Very small screens - compact layout */
+@media (max-width: 576px) {
+    .department-performance-container {
+        margin: 0 -10px;
+        border-radius: 0;
+    }
+    
+    .department-performance-table {
+        min-width: 500px;
+    }
+    
+    .department-performance-table th:first-child,
+    .department-performance-table td:first-child {
+        min-width: 100px;
+        max-width: 100px;
+        font-size: 0.8rem;
+    }
+    
+    .department-performance-table thead th {
+        font-size: 0.7rem;
+        padding: 10px 6px;
+    }
+    
+    .department-performance-table tbody td {
+        padding: 10px 6px;
+        font-size: 0.8rem;
+    }
+    
+    .department-progress-bar {
+        min-width: 100px;
+    }
+    
+    .department-percentage {
+        font-size: 0.75rem;
+        min-width: 30px;
+    }
+    
+    .card-title-keka {
+        font-size: 1rem;
+        margin-bottom: 0.75rem;
+    }
+}
+
+/* Landscape orientation adjustments */
+@media (max-width: 896px) and (orientation: landscape) {
+    .department-performance-table {
+        min-width: 550px;
+    }
+    
+    .department-performance-table thead th,
+    .department-performance-table tbody td {
+        padding: 8px 6px;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .department-performance-table th:first-child,
+    .department-performance-table td:first-child {
+        background: #1f2937;
+    }
+    
+    .department-performance-table thead th {
+        background: #374151;
+        color: #f9fafb;
+    }
+    
+    .department-performance-table thead th:first-child {
+        background: #374151;
+    }
+    
+    .department-progress-bar {
+        background-color: #374151;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .department-performance-table {
+        border: 2px solid #000;
+    }
+    
+    .department-performance-table th,
+    .department-performance-table td {
+        border: 1px solid #000;
+    }
+    
+    .department-progress-fill {
+        background: #000;
+    }
+}
+
+/* Print styles */
+@media print {
+    .department-performance-container {
+        overflow: visible;
+        box-shadow: none;
+    }
+    
+    .department-performance-table {
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .department-performance-container::after {
+        display: none;
+    }
+}

@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Interface Responsive Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/css/responsive.css">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            --secondary-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.2);
+            --card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+            --hover-transform: translateY(-5px);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            padding: 20px;
+        }
+
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .device-info {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .test-section {
+            margin-bottom: 40px;
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .test-section h5 {
+            color: #6366f1;
+            font-weight: 600;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Dashboard Hero */
+        .dashboard-hero {
+            background: white;
+            padding: 2rem;
+            border-radius: 24px;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dashboard-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle at center, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+            transform: translate(30%, -30%);
+        }
+
+        .hero-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .hero-subtitle {
+            color: #64748b;
+            font-size: 1rem;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .stat-card:hover {
+            transform: var(--hover-transform);
+            box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.1);
+            border-color: transparent;
+        }
+
+        .stat-icon-wrapper {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            transition: transform 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .stat-card:hover .stat-icon-wrapper {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            background: -webkit-linear-gradient(45deg, #1e293b, #475569);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            word-break: break-word;
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-weight: 500;
+            font-size: 0.95rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .progress-track {
+            height: 6px;
+            background: #f1f5f9;
+            border-radius: 10px;
+            margin-top: 1rem;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .progress-bar-custom {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 1s ease-out;
+        }
+
+        /* Casual Leave Styling */
+        .cl-card .stat-icon-wrapper {
+            background: rgba(99, 102, 241, 0.1);
+            color: #6366f1;
+        }
+
+        .cl-card:hover {
+            border-bottom: 4px solid #6366f1;
+        }
+
+        .cl-bar {
+            background: var(--primary-gradient);
+        }
+
+        /* Sick Leave Styling */
+        .sl-card .stat-icon-wrapper {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .sl-card:hover {
+            border-bottom: 4px solid #10b981;
+        }
+
+        .sl-bar {
+            background: var(--success-gradient);
+        }
+
+        /* Apply Button */
+        .btn-apply-float {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            z-index: 10;
+            cursor: pointer;
+        }
+
+        .btn-apply-float:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -5px rgba(79, 70, 229, 0.5);
+            color: white;
+        }
+
+        /* Leave Form */
+        .leave-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            max-width: 600px;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+
+        .leave-header {
+            padding: 24px 32px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .leave-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        .leave-body {
+            padding: 32px;
+        }
+
+        .leave-type-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .leave-type-option {
+            padding: 1.5rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .leave-type-option:hover {
+            border-color: #6366f1;
+            background: #f8fafc;
+        }
+
+        .leave-type-option.active {
+            border-color: #6366f1;
+            background: #eff6ff;
+        }
+
+        .leave-type-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .leave-type-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* Form controls */
+        .form-control,
+        .form-select {
+            border-radius: 8px;
+            border: 2px solid #e5e7eb;
+            padding: 12px 16px;
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        /* Include all responsive styles from the leave dashboard */
+        @media (max-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 1.25rem;
+            }
+            
+            .stat-value {
+                font-size: 2.2rem;
+            }
+            
+            .dashboard-hero {
+                padding: 1.75rem;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 1rem;
+            }
+            
+            .stat-card {
+                padding: 1.25rem;
+                min-height: 140px;
+            }
+            
+            .stat-icon-wrapper {
+                width: 42px;
+                height: 42px;
+                font-size: 1.1rem;
+            }
+            
+            .stat-value {
+                font-size: 2rem;
+            }
+            
+            .stat-label {
+                font-size: 0.9rem;
+            }
+            
+            .dashboard-hero {
+                padding: 1.5rem;
+            }
+            
+            .hero-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .test-container {
+                padding: 0 10px;
+            }
+            
+            .test-section {
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+            
+            /* Stack stats cards on mobile */
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                margin-bottom: 2rem;
+            }
+            
+            .stat-card {
+                padding: 1rem;
+                min-height: 120px;
+                border-radius: 16px;
+            }
+            
+            .stat-icon-wrapper {
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            .stat-value {
+                font-size: 1.75rem;
+            }
+            
+            .stat-label {
+                font-size: 0.85rem;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
+            
+            /* Hero section mobile */
+            .dashboard-hero {
+                padding: 1.25rem;
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+            
+            .hero-title {
+                font-size: 1.4rem;
+                margin-bottom: 0.25rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 0.9rem;
+            }
+            
+            .btn-apply-float {
+                padding: 10px 24px;
+                font-size: 0.9rem;
+            }
+            
+            /* Leave form mobile */
+            .leave-card {
+                margin: 20px 0;
+                border-radius: 12px;
+            }
+            
+            .leave-header {
+                padding: 20px;
+            }
+            
+            .leave-body {
+                padding: 20px;
+            }
+            
+            .leave-title {
+                font-size: 1.1rem;
+            }
+            
+            .leave-type-grid {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            
+            .leave-type-option {
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            /* Very compact stats cards */
+            .stat-card {
+                padding: 0.875rem;
+                min-height: 100px;
+            }
+            
+            .stat-icon-wrapper {
+                width: 32px;
+                height: 32px;
+                font-size: 0.9rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .stat-value {
+                font-size: 1.5rem;
+            }
+            
+            .stat-label {
+                font-size: 0.8rem;
+            }
+            
+            .progress-track {
+                height: 4px;
+                margin-top: 0.75rem;
+            }
+            
+            /* Hero section very small */
+            .dashboard-hero {
+                padding: 1rem;
+            }
+            
+            .hero-title {
+                font-size: 1.2rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 0.85rem;
+            }
+            
+            .btn-apply-float {
+                padding: 8px 20px;
+                font-size: 0.85rem;
+            }
+            
+            /* Leave form very small */
+            .leave-header,
+            .leave-body {
+                padding: 15px;
+            }
+            
+            .leave-title {
+                font-size: 1rem;
+            }
+            
+            .form-control,
+            .form-select {
+                padding: 0.75rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            /* Ultra small screens */
+            .stat-card {
+                padding: 0.75rem;
+                min-height: 90px;
+            }
+            
+            .stat-value {
+                font-size: 1.3rem;
+            }
+            
+            .stat-label {
+                font-size: 0.75rem;
+            }
+            
+            .hero-title {
+                font-size: 1.1rem;
+            }
+            
+            .btn-apply-float {
+                padding: 6px 16px;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Landscape orientation adjustments */
+        @media (max-width: 896px) and (orientation: landscape) {
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.75rem;
+            }
+            
+            .stat-card {
+                min-height: 110px;
+                padding: 1rem;
+            }
+            
+            .dashboard-hero {
+                padding: 1rem;
+                flex-direction: row;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="device-info">
+            <h4 class="mb-3 text-primary">Leave Interface Responsive Test</h4>
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <strong>Screen Width:</strong><br>
+                    <span id="screen-width" class="text-primary"></span>px
+                </div>
+                <div class="col-md-3">
+                    <strong>Device Type:</strong><br>
+                    <span id="device-type" class="text-primary"></span>
+                </div>
+                <div class="col-md-3">
+                    <strong>Orientation:</strong><br>
+                    <span id="orientation" class="text-primary"></span>
+                </div>
+                <div class="col-md-3">
+                    <strong>Viewport:</strong><br>
+                    <span id="viewport" class="text-primary"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Hero Test -->
+        <div class="test-section">
+            <h5><i class="fas fa-home"></i>Dashboard Hero</h5>
+            <div class="dashboard-hero">
+                <div>
+                    <h1 class="hero-title">Welcome back, Uday! 👋</h1>
+                    <p class="hero-subtitle mb-0">Here's an overview of your leave balance and activity.</p>
+                </div>
+                <div>
+                    <button class="btn-apply-float">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>New Request</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards Test -->
+        <div class="test-section">
+            <h5><i class="fas fa-chart-bar"></i>Leave Balance Cards</h5>
+            <div class="stats-grid">
+                <!-- Casual Leave -->
+                <div class="stat-card cl-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="stat-icon-wrapper">
+                                <i class="fas fa-mug-hot"></i>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="stat-value">8.5</div>
+                        </div>
+                    </div>
+                    <div class="stat-label">
+                        <span>Casual Leave</span>
+                        <span>Days Available</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-bar-custom cl-bar" style="width: 70%"></div>
+                    </div>
+                </div>
+
+                <!-- Sick Leave -->
+                <div class="stat-card sl-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="stat-icon-wrapper">
+                                <i class="fas fa-first-aid"></i>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="stat-value">12.0</div>
+                        </div>
+                    </div>
+                    <div class="stat-label">
+                        <span>Sick Leave</span>
+                        <span>Days Available</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-bar-custom sl-bar" style="width: 100%"></div>
+                    </div>
+                </div>
+
+                <!-- Unpaid Leave -->
+                <div class="stat-card" style="border-left: 4px solid #94a3b8;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="stat-icon-wrapper" style="background: #f1f5f9; color: #64748b;">
+                                <i class="fas fa-user-clock"></i>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="stat-value" style="-webkit-text-fill-color: #64748b;">0.0</div>
+                        </div>
+                    </div>
+                    <div class="stat-label">
+                        <span>Unpaid Leaves</span>
+                        <span>Taken this year</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-bar-custom" style="width: 0%; background: #cbd5e1;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leave Form Test -->
+        <div class="test-section">
+            <h5><i class="fas fa-file-alt"></i>Leave Application Form</h5>
+            <div class="leave-card">
+                <div class="leave-header">
+                    <h3 class="leave-title">Apply for Leave</h3>
+                    <button class="btn-close" aria-label="Close"></button>
+                </div>
+                <div class="leave-body">
+                    <div class="leave-type-grid">
+                        <div class="leave-type-option active">
+                            <i class="fas fa-mug-hot leave-type-icon text-primary"></i>
+                            <div class="leave-type-label">Casual Leave</div>
+                        </div>
+                        <div class="leave-type-option">
+                            <i class="fas fa-first-aid leave-type-icon text-success"></i>
+                            <div class="leave-type-label">Sick Leave</div>
+                        </div>
+                        <div class="leave-type-option">
+                            <i class="fas fa-ban leave-type-icon text-secondary"></i>
+                            <div class="leave-type-label">Unpaid Leave</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" class="form-control" value="2024-01-15">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">End Date</label>
+                            <input type="date" class="form-control" value="2024-01-17">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Reason</label>
+                            <textarea class="form-control" rows="3" placeholder="Please describe your reason for leave..."></textarea>
+                        </div>
+                        <div class="col-12">
+                            <button class="btn btn-primary w-100">Submit Leave Request</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <p class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                Resize your browser window or test on different devices to see the responsive behavior.
+                All leave interface elements adapt to different screen sizes while maintaining usability.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function updateDeviceInfo() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            
+            document.getElementById('screen-width').textContent = width;
+            document.getElementById('viewport').textContent = `${width}×${height}`;
+            
+            let deviceType = 'Desktop';
+            if (width <= 400) deviceType = 'Extra Small Phone';
+            else if (width <= 576) deviceType = 'Small Phone';
+            else if (width <= 768) deviceType = 'Mobile/Tablet';
+            else if (width <= 992) deviceType = 'Tablet';
+            else if (width <= 1200) deviceType = 'Small Desktop';
+            
+            document.getElementById('device-type').textContent = deviceType;
+            
+            const orientation = width > height ? 'Landscape' : 'Portrait';
+            document.getElementById('orientation').textContent = orientation;
+        }
+        
+        // Leave type selection
+        document.querySelectorAll('.leave-type-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.leave-type-option').forEach(opt => opt.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        updateDeviceInfo();
+        window.addEventListener('resize', updateDeviceInfo);
+    </script>
+</body>
+</html>

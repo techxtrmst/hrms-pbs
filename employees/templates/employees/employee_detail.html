@@ -18,7 +18,7 @@
         box-shadow: 0 10px 25px rgba(79, 70, 229, 0.2);
         margin-bottom: 2rem;
         position: relative;
-        overflow: hidden;
+        /* overflow: hidden; Removed to allow dropdown to show */
     }
 
     .profile-header-card::before {
@@ -207,6 +207,21 @@
         color: #64748b;
     }
 
+    .status-holiday {
+        background: #e0f2fe;
+        color: #0369a1;
+    }
+
+    .status-missed {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .status-not-login {
+        background: #fef9c3;
+        color: #a16207;
+    }
+
     /* Exit Banner */
     .exit-banner {
         background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
@@ -295,6 +310,306 @@
     .btn-id-proof:active {
         transform: translateY(0) !important;
     }
+
+    /* Profile Info Grid */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .info-item {
+        background: #f8fafc;
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s;
+    }
+
+    .info-item:hover {
+        background: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transform: translateY(-2px);
+    }
+
+    .info-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: #64748b;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        letter-spacing: 0.05em;
+    }
+
+    .info-value {
+        font-size: 0.95rem;
+        color: #1e293b;
+        font-weight: 600;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .section-title i {
+        color: #4f46e5;
+    }
+
+    /* Custom Nav Pills */
+    .nav-pills .nav-link {
+        color: #64748b;
+        background: transparent;
+        transition: all 0.3s;
+    }
+
+    .nav-pills .nav-link.active {
+        background: #4f46e5;
+        color: white;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+
+    .nav-pills .nav-link:hover:not(.active) {
+        background: #f1f5f9;
+        color: #4f46e5;
+    }
+
+    /* Timeline Styles */
+    .timeline-wrapper {
+        position: relative;
+        padding-left: 0.5rem;
+    }
+
+    .timeline-line {
+        position: absolute;
+        top: 0.5rem;
+        bottom: 0;
+        left: 31px;
+        width: 2px;
+        background: #e2e8f0;
+    }
+
+    .timeline-node {
+        position: relative;
+        padding-left: 3.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .timeline-node:last-child {
+        margin-bottom: 0;
+    }
+
+    .timeline-dot {
+        width: 20px;
+        height: 20px;
+        left: 22px;
+        position: absolute;
+        top: 0.25rem;
+        background: white;
+        border: 3px solid #cbd5e1;
+        border-radius: 50%;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .timeline-dot.active {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+    }
+
+    .timeline-dot-inner {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #cbd5e1;
+    }
+
+    .timeline-dot.active .timeline-dot-inner {
+        background: #4f46e5;
+    }
+
+    .timeline-content {
+        padding: 1.25rem;
+        background: #fff;
+        border-radius: 1rem;
+        border: 1px solid #f1f5f9;
+        transition: 0.2s;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .timeline-content:hover {
+        transform: translateX(5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .timeline-date {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+
+    .timeline-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        color: #1e293b;
+    }
+    
+    /* === SHIFT CONFIGURATION STYLES === */
+    
+    .working-days-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+    
+    .working-days-badges .badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+    }
+    
+    /* Shift Preview Card */
+    .shift-preview-card {
+        margin-top: 1rem;
+        animation: fadeInUp 0.3s ease;
+    }
+    
+    .preview-item {
+        background: #f8fafc;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .preview-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 0.25rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .preview-value {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #1e293b;
+    }
+    
+    /* Modal Enhancements */
+    .modal-header {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        border-bottom: none;
+    }
+    
+    .modal-header .btn-close {
+        filter: invert(1);
+    }
+    
+    .modal-body {
+        padding: 2rem;
+    }
+    
+    .modal-footer {
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        padding: 1rem 2rem;
+    }
+    
+    /* Form Enhancements */
+    .form-select:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+    }
+    
+    .form-text {
+        color: #64748b;
+        font-size: 0.8rem;
+    }
+    
+    /* Color variations */
+    .text-orange {
+        color: #ea580c !important;
+    }
+    
+    /* Animation for shift preview */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Responsive Adjustments for Shift Configuration */
+    @media (max-width: 767px) {
+        .working-days-badges .badge {
+            font-size: 0.65rem;
+            padding: 0.2rem 0.4rem;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            padding: 1rem 1.5rem;
+        }
+        
+        .preview-item {
+            padding: 0.625rem;
+        }
+        
+        .preview-label {
+            font-size: 0.7rem;
+        }
+        
+        .preview-value {
+            font-size: 0.85rem;
+        }
+    }
+    
+    @media (max-width: 575px) {
+        .working-days-badges {
+            gap: 0.125rem;
+        }
+        
+        .working-days-badges .badge {
+            font-size: 0.6rem;
+            padding: 0.15rem 0.3rem;
+        }
+        
+        .modal-body {
+            padding: 1rem;
+        }
+        
+        .modal-footer {
+            padding: 0.75rem 1rem;
+        }
+        
+        .modal-footer .btn {
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
+        }
+    }
 </style>
 
 {% endblock %}
@@ -337,6 +652,16 @@
                 <span><i class="fas fa-building"></i> {{ employee.department|default:"Dept N/A" }}</span>
                 <span><i class="fas fa-envelope"></i> {{ employee.user.email }}</span>
                 <span><i class="fas fa-id-badge"></i> {{ employee.badge_id|default:"-" }}</span>
+
+                {% if employee.date_of_joining %}
+                <span><i class="fas fa-calendar-check"></i> Joined: {{ employee.date_of_joining|date:"d M, Y" }}</span>
+                {% endif %}
+
+                {% if not employee.is_active and employee.exit_date %}
+                <span class="bg-danger bg-opacity-25" style="background: rgba(239, 68, 68, 0.3) !important;">
+                    <i class="fas fa-sign-out-alt"></i> Left: {{ employee.exit_date|date:"d M, Y" }}
+                </span>
+                {% endif %}
             </div>
         </div>
         <div class="ms-auto me-4 text-end">
@@ -344,138 +669,742 @@
             <div class="h5 mb-0">{{ current_month }} {{ current_year }}</div>
         </div>
 
-        <!-- ID Proof Button (Admin Only) -->
         {% if user.role == 'COMPANY_ADMIN' or user.role == 'SUPERADMIN' %}
         <a href="{% url 'employee_id_proofs' employee.pk %}" class="btn-id-proof">
             <i class="fas fa-id-card"></i> ID Proofs
         </a>
+
+        <!-- Exit Actions Menu -->
+        <div class="ms-3 dropdown d-inline-block">
+            <button class="btn btn-link text-white p-0 text-decoration-none" type="button" data-bs-toggle="dropdown"
+                aria-expanded="false" style="font-size: 1.5rem; line-height: 1;">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+
+            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 mt-2">
+                <li>
+                    <h6 class="dropdown-header text-uppercase small text-muted fw-bold px-3 py-2">Exit Actions</h6>
+                </li>
+                <li>
+                    <a class="dropdown-item px-3 py-2 text-warning" href="#" onclick="openExitModal('RESIGNATION')">
+                        <i class="fas fa-sign-out-alt me-2 fa-fw"></i> Initiate Resignation
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item px-3 py-2 text-primary" href="#" onclick="openExitModal('TERMINATED')">
+                        <i class="fas fa-ban me-2 fa-fw"></i> Terminate Employee
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item px-3 py-2 text-dark" href="#" onclick="openExitModal('ABSCONDED')">
+                        <i class="fas fa-user-slash me-2 fa-fw"></i> Mark Absconded
+                    </a>
+                </li>
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li>
+                    <a class="dropdown-item px-3 py-2 text-danger fw-bold"
+                        href="{% url 'employee_delete' employee.pk %}"
+                        onclick="return confirm('Are you sure you want to PERMANENTLY DELETE this employee? This action cannot be undone.');">
+                        <i class="fas fa-trash-alt me-2 fa-fw"></i> Delete Employee
+                    </a>
+                </li>
+            </ul>
+        </div>
         {% endif %}
     </div>
 
-    <!-- Stats Row -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-2"> <!-- Adjusted col size for 5 cards -->
-            <div class="stats-card">
-                <div class="stats-icon bg-soft-primary"><i class="fas fa-calendar-alt"></i></div>
-                <div class="stat-title">Total Days</div>
-                <div class="stat-value">{{ stats.total }}</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="stats-card">
-                <div class="stats-icon bg-soft-success"><i class="fas fa-check-circle"></i></div>
-                <div class="stat-title">Present</div>
-                <div class="stat-value">{{ stats.present }}</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card">
-                <div class="stats-icon bg-soft-info"><i class="fas fa-laptop-house"></i></div>
-                <div class="stat-title">Work From Home</div>
-                <div class="stat-value">{{ stats.wfh }}</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="stats-card">
-                <div class="stats-icon bg-soft-warning"><i class="fas fa-umbrella-beach"></i></div>
-                <div class="stat-title">On Leave</div>
-                <div class="stat-value">{{ stats.leave }}</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card">
-                <div class="stats-icon bg-soft-danger"><i class="fas fa-user-slash"></i></div>
-                <div class="stat-title">Absent</div>
-                <div class="stat-value">{{ stats.absent }}</div>
-            </div>
-        </div>
+    <!-- Nav Tabs for Organization -->
+    <div class="mb-4">
+        <ul class="nav nav-pills gap-2 p-1 bg-white rounded-pill shadow-sm d-inline-flex border" id="detailTabs"
+            role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active rounded-pill px-4 fw-bold" id="attendance-tab" data-bs-toggle="tab"
+                    data-bs-target="#attendance-pane" type="button" role="tab" aria-controls="attendance-pane"
+                    aria-selected="true">
+                    <i class="fas fa-calendar-check me-2"></i>Attendance
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4 fw-bold" id="profile-tab" data-bs-toggle="tab"
+                    data-bs-target="#profile-pane" type="button" role="tab" aria-controls="profile-pane"
+                    aria-selected="false">
+                    <i class="fas fa-id-card me-2"></i>Profile Details
+                </button>
+            </li>
+        </ul>
     </div>
 
-    <div class="row g-4">
-        <!-- Attendance Table -->
-        <div class="col-lg-7">
-            <div class="modern-table">
-                <div class="p-3 border-bottom bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="m-0 fw-bold text-dark"><i class="fas fa-history me-2 text-primary"></i> Attendance Log
-                    </h5>
-                    <!-- Month Filter stub -->
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
-                            data-bs-toggle="dropdown">
-                            {{ current_month }}
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="?month=1&year={{ current_year }}">January</a></li>
-                            <!-- Using simple links for now, could be dynamic -->
-                            <li><a class="dropdown-item" href="?month={{ 12 }}&year={{ current_year }}">December</a>
-                            </li>
-                        </ul>
+    <div class="tab-content" id="detailTabsContent">
+        <!-- ATTENDANCE PANE -->
+        <div class="tab-pane fade show active" id="attendance-pane" role="tabpanel" aria-labelledby="attendance-tab">
+            <!-- Stats Row -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-2">
+                    <div class="stats-card">
+                        <div class="stats-icon bg-soft-primary"><i class="fas fa-calendar-alt"></i></div>
+                        <div class="stat-title">Total Days</div>
+                        <div class="stat-value">{{ stats.total }}</div>
                     </div>
                 </div>
-                <div class="table-responsive">
-                    <table class="table mb-0">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th>Logs</th>
-                                <th>Hours</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for att in attendance_history %}
-                            <tr>
-                                <td class="fw-bold">{{ att.date|date:"D, d M" }}</td>
-                                <td>
-                                    {% if att.status == 'PRESENT' %}
-                                    <span class="status-badge status-present">Present</span>
-                                    {% elif att.status == 'WFH' %}
-                                    <span class="status-badge status-wfh">WFH</span>
-                                    {% elif att.status == 'LEAVE' %}
-                                    <span class="status-badge status-leave">Leave</span>
-                                    {% else %}
-                                    <span class="status-badge status-absent">{{ att.status }}</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <a href="{% url 'attendance_map' att.id %}" class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-map-marked-alt me-1"></i> View Map
+                <div class="col-md-2">
+                    <div class="stats-card">
+                        <div class="stats-icon bg-soft-success"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-title">Present</div>
+                        <div class="stat-value">{{ stats.present }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-icon bg-soft-info"><i class="fas fa-laptop-house"></i></div>
+                        <div class="stat-title">Work From Home</div>
+                        <div class="stat-value">{{ stats.wfh }}</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stats-card">
+                        <div class="stats-icon bg-soft-warning"><i class="fas fa-umbrella-beach"></i></div>
+                        <div class="stat-title">On Leave</div>
+                        <div class="stat-value">{{ stats.leave }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-icon bg-soft-danger"><i class="fas fa-user-slash"></i></div>
+                        <div class="stat-title">Absent</div>
+                        <div class="stat-value">{{ stats.absent }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Attendance Table -->
+                <div class="col-lg-7">
+                    <div class="modern-table">
+                        <div class="p-3 border-bottom bg-white d-flex justify-content-between align-items-center">
+                            <h5 class="m-0 fw-bold text-dark"><i class="fas fa-history me-2 text-primary"></i>
+                                Attendance Log</h5>
+                            <div class="d-flex align-items-center">
+                                <div class="btn-group me-2">
+                                    <a href="?month=1&year={{ current_year|add:'-1' }}"
+                                        class="btn btn-sm btn-outline-secondary" title="Previous Year">
+                                        <i class="fas fa-chevron-left"></i>
                                     </a>
-                                </td>
-                                <td>
-                                    {{ att.effective_hours|default:"-" }}
-                                    {% if not att.clock_out and att.clock_in %}
-                                    <span class="badge bg-success-soft text-success ms-1"
-                                        style="font-size: 0.6em;">Active</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">No attendance records found for this
-                                    month.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                    <span class="btn btn-sm btn-outline-secondary disabled"
+                                        style="background: #f8f9fa;">{{ current_year }}</span>
+                                    <a href="?month=1&year={{ current_year|add:'1' }}"
+                                        class="btn btn-sm btn-outline-secondary" title="Next Year">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                                        data-bs-toggle="dropdown">
+                                        {{ current_month }}
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="?month=1&year={{ current_year }}">January</a>
+                                        </li>
+                                        <li><a class="dropdown-item"
+                                                href="?month=2&year={{ current_year }}">February</a></li>
+                                        <li><a class="dropdown-item" href="?month=3&year={{ current_year }}">March</a>
+                                        </li>
+                                        <li><a class="dropdown-item" href="?month=4&year={{ current_year }}">April</a>
+                                        </li>
+                                        <li><a class="dropdown-item" href="?month=5&year={{ current_year }}">May</a>
+                                        </li>
+                                        <li><a class="dropdown-item" href="?month=6&year={{ current_year }}">June</a>
+                                        </li>
+                                        <li><a class="dropdown-item" href="?month=7&year={{ current_year }}">July</a>
+                                        </li>
+                                        <li><a class="dropdown-item" href="?month=8&year={{ current_year }}">August</a>
+                                        </li>
+                                        <li><a class="dropdown-item"
+                                                href="?month=9&year={{ current_year }}">September</a></li>
+                                        <li><a class="dropdown-item"
+                                                href="?month=10&year={{ current_year }}">October</a></li>
+                                        <li><a class="dropdown-item"
+                                                href="?month=11&year={{ current_year }}">November</a></li>
+                                        <li><a class="dropdown-item"
+                                                href="?month=12&year={{ current_year }}">December</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Logs</th>
+                                        <th>Hours</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for att in attendance_history %}
+                                    <tr>
+                                        <td class="fw-bold">{{ att.date|date:"D, d M" }}</td>
+                                        <td>
+                                            {% if att.status == 'PRESENT' %}
+                                            <span class="status-badge status-present">Present</span>
+                                            {% elif att.status == 'WFH' %}
+                                            <span class="status-badge status-wfh">WFH</span>
+                                            {% elif att.status == 'LEAVE' %}
+                                            <span class="status-badge status-leave">Leave</span>
+                                            {% elif att.status == 'WEEKLY_OFF' %}
+                                            <span class="status-badge status-absent">Week Off</span>
+                                            {% elif att.status == 'HOLIDAY' %}
+                                            <span class="status-badge status-holiday"
+                                                title="{{ att.holiday_name }}">Holiday</span>
+                                            {% elif att.status == 'MISSED' %}
+                                            <span class="status-badge status-missed">Missed</span>
+                                            {% elif att.status == 'NOT_LOGGED_IN' %}
+                                            <span class="status-badge status-not-login">Not Login</span>
+                                            {% else %}
+                                            <span class="status-badge status-absent">{{ att.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if att.id %}
+                                            <a href="{% url 'attendance_map' att.id %}"
+                                                class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-map-marked-alt me-1"></i> View Map
+                                            </a>
+                                            {% else %}
+                                            <span class="text-muted small">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {{ att.effective_hours|default:"-" }}
+                                            {% if not att.clock_out and att.clock_in %}
+                                            <span class="badge bg-success-soft text-success ms-1"
+                                                style="font-size: 0.6em;">Active</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted">No attendance records found
+                                            for this month.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Map Section -->
+                <div class="col-lg-5">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h5 class="mb-0 fw-bold"><i class="fas fa-map-marked-alt me-2 text-info"></i> Movement
+                                Activity</h5>
+                            <small class="text-muted">Tracking for {{ map_date|date:"d M, Y" }}</small>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="activityMap" class="map-container" style="height: 500px; border: none;"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Map Section -->
-        <div class="col-lg-5">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-header bg-white border-bottom py-3">
-                    <h5 class="mb-0 fw-bold"><i class="fas fa-map-marked-alt me-2 text-info"></i> Movement Activity</h5>
-                    <small class="text-muted">Tracking for {{ map_date|date:"d M, Y" }}</small>
-                </div>
-                <div class="card-body p-0">
-                    <div id="activityMap" class="map-container" style="height: 500px; border: none;"></div>
+        <!-- PROFILE PANE -->
+        <div class="tab-pane fade" id="profile-pane" role="tabpanel" aria-labelledby="profile-tab">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <div class="row g-5">
+                        <!-- Left Side: Profile Info -->
+                        <div class="col-lg-8">
+                            <!-- Personal Details Section -->
+                            <div class="mb-5">
+                                <h6 class="section-title"><i class="fas fa-user"></i> Personal Information <a href="#"
+                                        data-bs-toggle="modal" data-bs-target="#editPersonalModal"
+                                        class="ms-auto btn btn-link text-primary p-0" title="Edit Personal Info"><i
+                                            class="fas fa-edit"></i></a></h6>
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <div class="info-label">Date of Birth</div>
+                                        <div class="info-value">{{ employee.dob|date:"d M, Y"|default:"-" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Gender</div>
+                                        <div class="info-value">{{ employee.get_gender_display|default:"-" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Marital Status</div>
+                                        <div class="info-value">{{ employee.get_marital_status_display|default:"-" }}
+                                        </div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Mobile Number</div>
+                                        <div class="info-value">{{ employee.mobile_number|default:"-" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Personal Email</div>
+                                        <div class="info-value">{{ employee.personal_email|default:"-" }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Job Details Section -->
+                            <div class="mb-5">
+                                <h6 class="section-title"><i class="fas fa-briefcase"></i> Job & Organizational Details
+                                    <a href="#" data-bs-toggle="modal" data-bs-target="#editJobModal"
+                                        class="ms-auto btn btn-link text-primary p-0" title="Edit Job Details"><i
+                                            class="fas fa-edit"></i></a>
+                                </h6>
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <div class="info-label">Employee ID</div>
+                                        <div class="info-value">{{ employee.badge_id|default:"-" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Designation</div>
+                                        <div class="info-value">{{ employee.designation|default:"-" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Department</div>
+                                        <div class="info-value">{{ employee.department|default:"-" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Reporting Manager</div>
+                                        <div class="info-value">{{ employee.manager.get_full_name|default:"Directly to Admin" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Work Type</div>
+                                        <div class="info-value">{{ employee.get_work_type_display|default:"Full Time" }}
+                                        </div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Location</div>
+                                        <div class="info-value">{{ employee.location.name|default:"-" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Assigned Shift</div>
+                                        <div class="info-value">
+                                            {% if employee.assigned_shift %}
+                                            {{ employee.assigned_shift.name }} ({{ employee.assigned_shift.start_time|time:"H:i" }} - {{ employee.assigned_shift.end_time|time:"H:i" }})
+                                            {% else %}
+                                            {{ employee.shift_schedule|default:"-" }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Joining Date</div>
+                                        <div class="info-value">{{ employee.date_of_joining|date:"d M, Y"|default:"-" }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Side: Work Timeline -->
+                        <div class="col-lg-4">
+                            <h6 class="section-title"><i class="fas fa-history"></i> Work Timeline <a href="#"
+                                    data-bs-toggle="modal" data-bs-target="#editJobModal"
+                                    class="ms-auto btn btn-link text-primary p-0" title="Edit Timeline (Job Details)"><i
+                                        class="fas fa-edit"></i></a></h6>
+                            <div class="timeline-wrapper">
+                                <div class="timeline-line"></div>
+
+                                <!-- Present -->
+                                <div class="timeline-node">
+                                    <div class="timeline-dot pulsing">
+                                        <div class="timeline-dot-inner"></div>
+                                    </div>
+                                    <div class="timeline-content active-node">
+                                        <span class="timeline-date">Today</span>
+                                        <div class="timeline-title text-primary">Current Role</div>
+                                        <div class="badge bg-primary-soft text-primary mt-1">
+                                            {{ employee.designation }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Probation Status (only show if completed) -->
+                                {% if probation_status == 'COMPLETED' or probation_status == 'COMPLETED_TODAY' %}
+                                <div class="timeline-node">
+                                    <div class="timeline-dot active">
+                                        <div class="timeline-dot-inner"></div>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <span class="timeline-date">{{ probation_date|date:"d M, Y" }}</span>
+                                        <div class="timeline-title">
+                                            {% if probation_status == 'COMPLETED_TODAY' %}
+                                                <span class="text-success">🎉 Probation Completed</span>
+                                            {% else %}
+                                                Probation Completed
+                                            {% endif %}
+                                        </div>
+                                        <div class="small text-muted">Confirmed Employee</div>
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- Joining Date -->
+                                <div class="timeline-node">
+                                    <div class="timeline-dot active">
+                                        <div class="timeline-dot-inner"></div>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <span class="timeline-date">{{ employee.date_of_joining|date:"d M, Y"|default:"-" }}</span>
+                                        <div class="timeline-title">Joined Organization</div>
+                                        <div class="small text-muted">{{ employee.designation }} • {{ employee.department }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Shift Configuration Section (Visible to Admins only) -->
+                    {% if is_admin %}
+                    <div class="mb-5">
+                        <h6 class="section-title">
+                            <i class="fas fa-clock"></i> Shift Configuration 
+                            <button type="button" class="ms-auto btn btn-link text-primary p-0" 
+                                    data-bs-toggle="modal" data-bs-target="#shiftConfigModal" 
+                                    title="Configure Shift">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </h6>
+                        
+                        {% if employee.assigned_shift %}
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">
+                                        <i class="fas fa-tag text-primary me-2"></i>Shift Name
+                                    </div>
+                                    <div class="info-value">{{ employee.assigned_shift.name }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">
+                                        <i class="fas fa-clock text-success me-2"></i>Working Hours
+                                    </div>
+                                    <div class="info-value">
+                                        {{ employee.assigned_shift.start_time|time:"H:i" }} - {{ employee.assigned_shift.end_time|time:"H:i" }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">
+                                        <i class="fas fa-hourglass-half text-warning me-2"></i>Grace Period
+                                    </div>
+                                    <div class="info-value">{{ employee.assigned_shift.grace_period_minutes }} minutes</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">
+                                        <i class="fas fa-calendar-week text-info me-2"></i>Working Days
+                                    </div>
+                                    <div class="info-value">
+                                        <div class="working-days-badges">
+                                            {% if employee.assigned_shift.monday %}<span class="badge bg-primary me-1">Mon</span>{% endif %}
+                                            {% if employee.assigned_shift.tuesday %}<span class="badge bg-primary me-1">Tue</span>{% endif %}
+                                            {% if employee.assigned_shift.wednesday %}<span class="badge bg-primary me-1">Wed</span>{% endif %}
+                                            {% if employee.assigned_shift.thursday %}<span class="badge bg-primary me-1">Thu</span>{% endif %}
+                                            {% if employee.assigned_shift.friday %}<span class="badge bg-primary me-1">Fri</span>{% endif %}
+                                            {% if employee.assigned_shift.saturday %}<span class="badge bg-secondary me-1">Sat</span>{% endif %}
+                                            {% if employee.assigned_shift.sunday %}<span class="badge bg-secondary me-1">Sun</span>{% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% if employee.assigned_shift.lunch_break_start and employee.assigned_shift.lunch_break_end %}
+                            <div class="col-md-12">
+                                <div class="info-item">
+                                    <div class="info-label">
+                                        <i class="fas fa-utensils text-orange me-2"></i>Lunch Break
+                                    </div>
+                                    <div class="info-value">
+                                        {{ employee.assigned_shift.lunch_break_start|time:"H:i" }} - {{ employee.assigned_shift.lunch_break_end|time:"H:i" }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-clock fa-3x mb-3 opacity-25"></i>
+                            <p class="mb-2">No shift assigned</p>
+                            <p class="small">Click the edit button to assign a shift to this employee</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Addresses Section -->
+                    <div class="mb-5">
+                        <h6 class="section-title"><i class="fas fa-map-marked-alt"></i> Addresses <a href="#"
+                                data-bs-toggle="modal" data-bs-target="#editAddressModal"
+                                class="ms-auto btn btn-link text-primary p-0" title="Edit Addresses"><i
+                                    class="fas fa-edit"></i></a></h6>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="info-item h-100">
+                                    <div class="info-label">Current Address</div>
+                                    <div class="info-value text-muted" style="font-weight: 400; font-size: 0.9rem;">
+                                        {{ employee.current_address|default:"Not provided"|linebreaksbr }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item h-100">
+                                    <div class="info-label">Permanent Address</div>
+                                    <div class="info-value text-muted" style="font-weight: 400; font-size: 0.9rem;">
+                                        {{ employee.permanent_address|default:"Same as current or not provided"|linebreaksbr }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Financial Details (Visible to Admins only) -->
+                    {% if user.role == 'COMPANY_ADMIN' or user.role == 'SUPERADMIN' %}
+                    <div>
+                        <h6 class="section-title"><i class="fas fa-file-invoice-dollar"></i> Financial & Compliance Info
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#editFinancialModal"
+                                class="ms-auto btn btn-link text-primary p-0" title="Edit Financial Info"><i
+                                    class="fas fa-edit"></i></a>
+                        </h6>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">Bank Name</div>
+                                <div class="info-value">{{ employee.bank_name|default:"-" }}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Account Number</div>
+                                <div class="info-value text-break">{% if employee.account_number %}{{ employee.account_number }}{% else %}-{% endif %}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">IFSC Code</div>
+                                <div class="info-value">{{ employee.ifsc_code|default:"-" }}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">UAN Number</div>
+                                <div class="info-value">{{ employee.uan|default:"-" }}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">PF Enabled</div>
+                                <div class="info-value">
+                                    {% if employee.pf_enabled %}
+                                    <span class="badge bg-success">Enabled</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Disabled</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Annual CTC</div>
+                                <div class="info-value text-success">{% if employee.annual_ctc %}₹{{ employee.annual_ctc }}{% else %}-{% endif %}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
+</div>
+
+<!-- INLINE EDIT MODALS -->
+
+<!-- 1. Personal Info Edit Modal -->
+<div class="modal fade" id="editPersonalModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Personal Information</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'employee_update_inline' employee.pk %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="section" value="personal">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Date of Birth</label>
+                        <input type="date" class="form-control" name="dob"
+                            value="{{ employee.dob|date:'Y-m-d'|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Gender</label>
+                        <select class="form-select" name="gender">
+                            <option value="">Select</option>
+                            <option value="M" {% if employee.gender == 'M' %}selected{% endif %}>Male</option>
+                            <option value="F" {% if employee.gender == 'F' %}selected{% endif %}>Female</option>
+                            <option value="O" {% if employee.gender == 'O' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Marital Status</label>
+                        <select class="form-select" name="marital_status">
+                            <option value="">Select</option>
+                            <option value="S" {% if employee.marital_status == 'S' %}selected{% endif %}>Single</option>
+                            <option value="M" {% if employee.marital_status == 'M' %}selected{% endif %}>Married</option>
+                            <option value="D" {% if employee.marital_status == 'D' %}selected{% endif %}>Divorced</option>
+                            <option value="W" {% if employee.marital_status == 'W' %}selected{% endif %}>Widowed</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mobile Number</label>
+                        <input type="text" class="form-control" name="mobile_number"
+                            value="{{ employee.mobile_number|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Personal Email</label>
+                        <input type="email" class="form-control" name="personal_email"
+                            value="{{ employee.personal_email|default:'' }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Job Info Edit Modal -->
+<div class="modal fade" id="editJobModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Job Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'employee_update_inline' employee.pk %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="section" value="job">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Employee ID</label>
+                        <input type="text" class="form-control" name="badge_id"
+                            value="{{ employee.badge_id|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Designation</label>
+                        <input type="text" class="form-control" name="designation"
+                            value="{{ employee.designation|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Department</label>
+                        <input type="text" class="form-control" name="department"
+                            value="{{ employee.department|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Work Type</label>
+                        <select class="form-select" name="work_type">
+                            <option value="FT" {% if employee.work_type == 'FT' %}selected{% endif %}>Full Time</option>
+                            <option value="PT" {% if employee.work_type == 'PT' %}selected{% endif %}>Part Time</option>
+                            <option value="CT" {% if employee.work_type == 'CT' %}selected{% endif %}>Contract</option>
+                            <option value="RM" {% if employee.work_type == 'RM' %}selected{% endif %}>Remote</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Joining Date</label>
+                        <input type="date" class="form-control" name="date_of_joining"
+                            value="{{ employee.date_of_joining|date:'Y-m-d'|default:'' }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Address Edit Modal -->
+<div class="modal fade" id="editAddressModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Addresses</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'employee_update_inline' employee.pk %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="section" value="address">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Current Address</label>
+                        <textarea class="form-control" name="current_address"
+                            rows="3">{{ employee.current_address|default:'' }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Permanent Address</label>
+                        <textarea class="form-control" name="permanent_address"
+                            rows="3">{{ employee.permanent_address|default:'' }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Financial Edit Modal -->
+<div class="modal fade" id="editFinancialModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Financial Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'employee_update_inline' employee.pk %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="section" value="financial">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Bank Name</label>
+                        <input type="text" class="form-control" name="bank_name"
+                            value="{{ employee.bank_name|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Account Number</label>
+                        <input type="text" class="form-control" name="account_number"
+                            value="{{ employee.account_number|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">IFSC Code</label>
+                        <input type="text" class="form-control" name="ifsc_code"
+                            value="{{ employee.ifsc_code|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">UAN Number</label>
+                        <input type="text" class="form-control" name="uan" value="{{ employee.uan|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Annual CTC</label>
+                        <input type="number" step="0.01" class="form-control" name="annual_ctc"
+                            value="{{ employee.annual_ctc|default:'' }}">
+                    </div>
+                    <div class="mb-3 form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="pfEnabledSwitch" name="pf_enabled" {% if employee.pf_enabled %}checked{% endif %}>
+                        <label class="form-check-label" for="pfEnabledSwitch">Provident Fund Enabled</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <!-- Exit Action Modal -->
@@ -492,14 +1421,22 @@
                 <div class="modal-body">
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>Warning:</strong> This action will mark the employee as exited and disable their login
-                        access.
+                        <strong>Warning:</strong> This action will initiate the exit process.
                     </div>
 
                     <div class="mb-3">
-                        <label for="exitDate" class="form-label">Last Working Date <span
+                        <label for="exitDate" class="form-label" id="dateLabel">Submission/Action Date <span
                                 class="text-danger">*</span></label>
-                        <input type="date" class="form-control" id="exitDate" name="exit_date" required>
+                        <input type="date" class="form-control" id="exitDate" name="submission_date" required>
+                        <div class="form-text">Date when this action is recorded/submitted.</div>
+                    </div>
+
+                    <div class="mb-3" id="noticePeriodGroup" style="display: none;">
+                        <label for="noticePeriod" class="form-label">Notice Period (Days) <span
+                                class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="noticePeriod" name="notice_period_days" min="0"
+                            placeholder="e.g. 30">
+                        <div class="form-text">Used to calculate the Last Working Day.</div>
                     </div>
 
                     <div class="mb-3">
@@ -511,12 +1448,115 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Submit Exit</button>
+                    <button type="submit" class="btn btn-danger">Submit Action</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<!-- Shift Configuration Modal -->
+{% if is_admin %}
+<div class="modal fade" id="shiftConfigModal" tabindex="-1" aria-labelledby="shiftConfigModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="shiftConfigModalLabel">
+                    <i class="fas fa-clock me-2"></i>Configure Shift for {{ employee.user.get_full_name }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'employee_detail' employee.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="assign_shift">
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <label for="shiftSelect" class="form-label fw-bold">
+                            <i class="fas fa-list me-2 text-primary"></i>Select Shift
+                        </label>
+                        <select class="form-select" id="shiftSelect" name="assigned_shift" required>
+                            <option value="">Choose a shift...</option>
+                            {% for shift in available_shifts %}
+                            <option value="{{ shift.id }}" 
+                                    {% if employee.assigned_shift.id == shift.id %}selected{% endif %}
+                                    data-start="{{ shift.start_time|time:'H:i' }}"
+                                    data-end="{{ shift.end_time|time:'H:i' }}"
+                                    data-grace="{{ shift.grace_period_minutes }}"
+                                    data-working-days="{{ shift.working_days_list|join:', ' }}">
+                                {{ shift.name }} ({{ shift.start_time|time:"H:i" }} - {{ shift.end_time|time:"H:i" }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Select the appropriate shift schedule for this employee
+                        </div>
+                    </div>
+
+                    <!-- Shift Preview -->
+                    <div id="shiftPreview" class="shift-preview-card" style="display: none;">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="fas fa-eye me-2"></i>Shift Preview</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="preview-item">
+                                            <div class="preview-label">
+                                                <i class="fas fa-clock text-success me-2"></i>Working Hours
+                                            </div>
+                                            <div class="preview-value" id="previewTiming">-</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="preview-item">
+                                            <div class="preview-label">
+                                                <i class="fas fa-hourglass-half text-warning me-2"></i>Grace Period
+                                            </div>
+                                            <div class="preview-value" id="previewGrace">-</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="preview-item">
+                                            <div class="preview-label">
+                                                <i class="fas fa-calendar-week text-info me-2"></i>Working Days
+                                            </div>
+                                            <div class="preview-value" id="previewWorkingDays">-</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current Assignment Info -->
+                    {% if employee.assigned_shift %}
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Current Assignment:</strong> {{ employee.assigned_shift.name }} 
+                        ({{ employee.assigned_shift.start_time|time:"H:i" }} - {{ employee.assigned_shift.end_time|time:"H:i" }})
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>No Shift Assigned:</strong> This employee currently has no shift assignment.
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Assign Shift
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
@@ -589,7 +1629,7 @@
     });
 
     function drawMap(mapData) {
-        console.log('=== drawMap called ===');
+        console.log(' === drawMap called === ');
         console.log('mapData:', mapData);
         console.log('mapData type:', typeof mapData);
         console.log('mapData length:', mapData ? mapData.length : 'null/undefined');
@@ -741,9 +1781,28 @@
         currentExitType = exitType;
         document.getElementById('exitType').value = exitType;
 
-        // Update modal title based on type
+        // Reset form
+        document.getElementById('exitForm').reset();
+        document.getElementById('exitType').value = exitType; // Re-set after reset
+
+        // Update modal title and UI based on type
         const modalTitle = document.getElementById('exitModalLabel');
-        modalTitle.textContent = `Mark Employee as ${exitType.charAt(0) + exitType.slice(1).toLowerCase()}`;
+        const dateLabel = document.getElementById('dateLabel');
+        const noticeGroup = document.getElementById('noticePeriodGroup');
+        const noticeInput = document.getElementById('noticePeriod');
+
+        if (exitType === 'RESIGNATION') {
+            modalTitle.textContent = "Initiate Resignation";
+            dateLabel.innerHTML = 'Resignation Submission Date <span class="text-danger">*</span>';
+            noticeGroup.style.display = 'none';
+            noticeInput.removeAttribute('required');
+        } else {
+            // TERMINATED or ABSCONDED
+            modalTitle.textContent = `Mark as ${exitType.charAt(0) + exitType.slice(1).toLowerCase()}`;
+            dateLabel.innerHTML = 'Action Date <span class="text-danger">*</span>';
+            noticeGroup.style.display = 'block';
+            noticeInput.setAttribute('required', 'required');
+        }
 
         // Show modal
         const modal = new bootstrap.Modal(document.getElementById('exitModal'));
@@ -800,5 +1859,74 @@
                     });
             });
         }
-    });</script>
+        
+        // Initialize shift configuration functionality
+        initShiftConfiguration();
+    });
+    
+    // Shift configuration functionality
+    function initShiftConfiguration() {
+        const shiftSelect = document.getElementById('shiftSelect');
+        const shiftPreview = document.getElementById('shiftPreview');
+        const previewTiming = document.getElementById('previewTiming');
+        const previewGrace = document.getElementById('previewGrace');
+        const previewWorkingDays = document.getElementById('previewWorkingDays');
+        
+        if (shiftSelect && shiftPreview) {
+            shiftSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                
+                if (selectedOption.value) {
+                    // Show preview
+                    shiftPreview.style.display = 'block';
+                    
+                    // Update preview content
+                    const startTime = selectedOption.getAttribute('data-start');
+                    const endTime = selectedOption.getAttribute('data-end');
+                    const gracePeriod = selectedOption.getAttribute('data-grace');
+                    const workingDays = selectedOption.getAttribute('data-working-days');
+                    
+                    previewTiming.textContent = `${startTime} - ${endTime}`;
+                    previewGrace.textContent = `${gracePeriod} minutes`;
+                    previewWorkingDays.textContent = workingDays || 'Not specified';
+                    
+                    // Add animation
+                    shiftPreview.style.opacity = '0';
+                    shiftPreview.style.transform = 'translateY(10px)';
+                    
+                    setTimeout(() => {
+                        shiftPreview.style.transition = 'all 0.3s ease';
+                        shiftPreview.style.opacity = '1';
+                        shiftPreview.style.transform = 'translateY(0)';
+                    }, 10);
+                } else {
+                    // Hide preview
+                    shiftPreview.style.display = 'none';
+                }
+            });
+            
+            // Initialize preview if there's a selected value
+            if (shiftSelect.value) {
+                shiftSelect.dispatchEvent(new Event('change'));
+            }
+        }
+        
+        // Handle modal events
+        const shiftModal = document.getElementById('shiftConfigModal');
+        if (shiftModal) {
+            shiftModal.addEventListener('hidden.bs.modal', function() {
+                // Reset form when modal is closed
+                if (shiftPreview) {
+                    shiftPreview.style.display = 'none';
+                }
+            });
+            
+            shiftModal.addEventListener('shown.bs.modal', function() {
+                // Focus on select when modal opens
+                if (shiftSelect) {
+                    shiftSelect.focus();
+                }
+            });
+        }
+    }</script>
 {% endblock %}

@@ -1,9 +1,14 @@
-from django.shortcuts import render, redirect, get_object_or_404
+import json
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .models import Location, LocationWeekOff, Company, Announcement
-from employees.models import Employee
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+
 from core.decorators import admin_required
+from employees.models import Employee
+
+from .models import Announcement, Company, Location, LocationWeekOff
 
 
 @login_required
@@ -34,15 +39,18 @@ def announcement_configuration(request):
             title = request.POST.get("title")
             content = request.POST.get("content")
             location_id = request.POST.get("location")
+
             is_active = request.POST.get("is_active") == "on"
+            send_email = request.POST.get("send_email") == "on"
             image = request.FILES.get("image")
+
+            if image:
+                pass  # Allow any ratio, display handled in template
 
             if title and content:
                 location = None
                 if location_id:
-                    location = Location.objects.filter(
-                        id=location_id, company=company
-                    ).first()
+                    location = Location.objects.filter(id=location_id, company=company).first()
 
                 Announcement.objects.create(
                     company=company,
@@ -52,25 +60,104 @@ def announcement_configuration(request):
                     image=image,
                     is_active=is_active,
                 )
-                messages.success(
-                    request, f"Announcement '{title}' created successfully!"
-                )
+
+                if send_email:
+                    recipients = Employee.objects.filter(company=company, is_active=True)
+                    if location:
+                        recipients = recipients.filter(location=location)
+
+                    recipient_emails = [emp.user.email for emp in recipients if emp.user.email]
+
+                    if recipient_emails:
+                        try:
+                            from django.core.mail import EmailMultiAlternatives
+                            from django.template.loader import render_to_string
+
+                            # Prepare content
+                            content_html_formatted = content.replace(chr(10), "<br>")
+                            
+                            # Determine Logo URL
+                            company_logo_url = None
+                            if company.logo:
+                                try:
+                                    company_logo_url = request.build_absolute_uri(company.logo.url)
+                                except Exception:
+                                    pass
+
+                            # Context for template
+                            context = {
+                                "title": title,
+                                "content_html": content_html_formatted,
+                                "company_name": company.name,
+                                "has_image": True if image else False,
+                                "company_logo_url": company_logo_url,
+                            }
+
+                            # Render HTML content
+                            html_content = render_to_string("companies/emails/new_announcement.html", context)
+
+                            # Create plain text version
+                            text_content = f"{title}\n\n{content}\n\n--\n{company.name} HR Team"
+
+                            email_msg = EmailMultiAlternatives(
+                                subject=f"New Announcement: {title}",
+                                body=text_content,
+                                from_email="hrms@petabytz.com",
+                                to=[],
+                                bcc=recipient_emails,
+                            )
+                            email_msg.attach_alternative(html_content, "text/html")
+
+                            # Attach image if present
+                            if image:
+                                import mimetypes
+
+                                # Get the image content
+                                image.seek(0)
+                                img_data = image.read()
+
+                                # Determine MIME type
+                                mime_type = mimetypes.guess_type(image.name)[0] or "image/jpeg"
+
+                                # Attach as inline image
+                                email_msg.attach(image.name, img_data, mime_type)
+
+                                # Also add as inline for HTML display
+                                from email.mime.image import MIMEImage
+
+                                img = MIMEImage(img_data)
+                                img.add_header("Content-ID", "<announcement_image>")
+                                img.add_header("Content-Disposition", "inline", filename=image.name)
+                                email_msg.attach(img)
+
+                                # Reset file pointer
+                                image.seek(0)
+
+                            email_msg.send(fail_silently=True)
+                            messages.success(
+                                request,
+                                f"Announcement '{title}' created and emailed to {len(recipient_emails)} employees.",
+                            )
+                        except Exception as e:
+                            messages.warning(request, f"Announcement created but email sending failed: {str(e)}")
+                    else:
+                        messages.success(
+                            request, f"Announcement '{title}' created successfully! (No employees found to email)"
+                        )
+                else:
+                    messages.success(request, f"Announcement '{title}' created successfully!")
             else:
                 messages.error(request, "Title and content are required.")
 
         elif action == "update":
             announcement_id = request.POST.get("announcement_id")
-            announcement = get_object_or_404(
-                Announcement, id=announcement_id, company=company
-            )
+            announcement = get_object_or_404(Announcement, id=announcement_id, company=company)
 
             announcement.title = request.POST.get("title")
             announcement.content = request.POST.get("content")
             location_id = request.POST.get("location")
             announcement.location = (
-                Location.objects.filter(id=location_id, company=company).first()
-                if location_id
-                else None
+                Location.objects.filter(id=location_id, company=company).first() if location_id else None
             )
             announcement.is_active = request.POST.get("is_active") == "on"
 
@@ -79,15 +166,11 @@ def announcement_configuration(request):
 
             announcement.save()
 
-            messages.success(
-                request, f"Announcement '{announcement.title}' updated successfully!"
-            )
+            messages.success(request, f"Announcement '{announcement.title}' updated successfully!")
 
         elif action == "delete":
             announcement_id = request.POST.get("announcement_id")
-            announcement = get_object_or_404(
-                Announcement, id=announcement_id, company=company
-            )
+            announcement = get_object_or_404(Announcement, id=announcement_id, company=company)
             title = announcement.title
             announcement.delete()
             messages.success(request, f"Announcement '{title}' deleted successfully!")
@@ -112,10 +195,7 @@ def announcement_configuration(request):
 def week_off_config(request):
     # Ensure admin/HR access
     # Assuming 'role' attribute exists on User model or we check checking group/permission
-    if not (
-        request.user.role in ["COMPANY_ADMIN", "SUPERADMIN", "HR", "MANAGER"]
-        or request.user.is_superuser
-    ):
+    if not (request.user.role in ["COMPANY_ADMIN", "SUPERADMIN", "HR", "MANAGER"] or request.user.is_superuser):
         messages.error(request, "Access denied.")
         return redirect("dashboard")
 
@@ -142,9 +222,7 @@ def week_off_config(request):
     config = None
 
     if selected_location_id:
-        selected_location = get_object_or_404(
-            Location, id=selected_location_id, company=company
-        )
+        selected_location = get_object_or_404(Location, id=selected_location_id, company=company)
         config, created = LocationWeekOff.objects.get_or_create(
             location=selected_location, defaults={"company": company}
         )
@@ -201,10 +279,7 @@ def week_off_config(request):
 @login_required
 def role_configuration(request):
     # Access Check
-    if not (
-        request.user.role in ["COMPANY_ADMIN", "SUPERADMIN", "HR"]
-        or request.user.is_superuser
-    ):
+    if not (request.user.role in ["COMPANY_ADMIN", "SUPERADMIN", "HR"] or request.user.is_superuser):
         messages.error(request, "Access denied.")
         return redirect("dashboard")
 
@@ -242,12 +317,8 @@ def role_configuration(request):
             if name:
                 dept = None
                 if dept_id:
-                    dept = Department.objects.filter(
-                        id=dept_id, company=company
-                    ).first()
-                Designation.objects.get_or_create(
-                    company=company, name=name, defaults={"department": dept}
-                )
+                    dept = Department.objects.filter(id=dept_id, company=company).first()
+                Designation.objects.get_or_create(company=company, name=name, defaults={"department": dept})
                 messages.success(request, f"Designation '{name}' added.")
 
         elif action == "delete_designation":
@@ -258,19 +329,13 @@ def role_configuration(request):
         return redirect("role_configuration")
 
     departments = Department.objects.filter(company=company)
-    designations = Designation.objects.filter(company=company).select_related(
-        "department"
-    )
+    designations = Designation.objects.filter(company=company).select_related("department")
 
     return render(
         request,
         "companies/role_configuration.html",
         {"departments": departments, "designations": designations},
     )
-
-
-from django.http import JsonResponse
-import json
 
 
 @login_required
@@ -291,16 +356,10 @@ def quick_add_department(request):
                 try:
                     # Allow if superuser or if ID matches user's company
                     target_company = Company.objects.get(id=company_id)
-                    if request.user.is_superuser:
-                        company = target_company
-                    elif (
-                        hasattr(request.user, "company")
-                        and request.user.company == target_company
-                    ):
-                        company = target_company
-                    elif (
-                        request.user.employee_profile
-                        and request.user.employee_profile.company == target_company
+                    if (
+                        request.user.is_superuser
+                        or (hasattr(request.user, "company") and request.user.company == target_company)
+                        or (request.user.employee_profile and request.user.employee_profile.company == target_company)
                     ):
                         company = target_company
                 except Company.DoesNotExist:
@@ -310,16 +369,11 @@ def quick_add_department(request):
             if not company:
                 if hasattr(request.user, "company") and request.user.company:
                     company = request.user.company
-                elif (
-                    request.user.employee_profile
-                    and request.user.employee_profile.company
-                ):
+                elif request.user.employee_profile and request.user.employee_profile.company:
                     company = request.user.employee_profile.company
 
             if not company:
-                return JsonResponse(
-                    {"status": "error", "message": "Company not found"}, status=400
-                )
+                return JsonResponse({"status": "error", "message": "Company not found"}, status=400)
 
             # Check for duplicates
             from .models import Department
@@ -343,9 +397,7 @@ def quick_add_department(request):
 
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
-    return JsonResponse(
-        {"status": "error", "message": "Invalid request method"}, status=405
-    )
+    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
 
 
 @login_required
@@ -365,16 +417,10 @@ def quick_add_designation(request):
 
                 try:
                     target_company = Company.objects.get(id=company_id)
-                    if request.user.is_superuser:
-                        company = target_company
-                    elif (
-                        hasattr(request.user, "company")
-                        and request.user.company == target_company
-                    ):
-                        company = target_company
-                    elif (
-                        request.user.employee_profile
-                        and request.user.employee_profile.company == target_company
+                    if (
+                        request.user.is_superuser
+                        or (hasattr(request.user, "company") and request.user.company == target_company)
+                        or (request.user.employee_profile and request.user.employee_profile.company == target_company)
                     ):
                         company = target_company
                 except Company.DoesNotExist:
@@ -383,16 +429,11 @@ def quick_add_designation(request):
             if not company:
                 if hasattr(request.user, "company") and request.user.company:
                     company = request.user.company
-                elif (
-                    request.user.employee_profile
-                    and request.user.employee_profile.company
-                ):
+                elif request.user.employee_profile and request.user.employee_profile.company:
                     company = request.user.employee_profile.company
 
             if not company:
-                return JsonResponse(
-                    {"status": "error", "message": "Company not found"}, status=400
-                )
+                return JsonResponse({"status": "error", "message": "Company not found"}, status=400)
 
             # Check for duplicates
             from .models import Designation
@@ -411,15 +452,11 @@ def quick_add_designation(request):
                     }
                 )
 
-            return JsonResponse(
-                {"status": "success", "name": desig.name, "id": desig.id}
-            )
+            return JsonResponse({"status": "success", "name": desig.name, "id": desig.id})
 
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
-    return JsonResponse(
-        {"status": "error", "message": "Invalid request method"}, status=405
-    )
+    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
 
 
 @login_required
@@ -448,16 +485,10 @@ def quick_add_shift(request):
 
                 try:
                     target_company = Company.objects.get(id=company_id)
-                    if request.user.is_superuser:
-                        company = target_company
-                    elif (
-                        hasattr(request.user, "company")
-                        and request.user.company == target_company
-                    ):
-                        company = target_company
-                    elif (
-                        request.user.employee_profile
-                        and request.user.employee_profile.company == target_company
+                    if (
+                        request.user.is_superuser
+                        or (hasattr(request.user, "company") and request.user.company == target_company)
+                        or (request.user.employee_profile and request.user.employee_profile.company == target_company)
                     ):
                         company = target_company
                 except Company.DoesNotExist:
@@ -466,23 +497,16 @@ def quick_add_shift(request):
             if not company:
                 if hasattr(request.user, "company") and request.user.company:
                     company = request.user.company
-                elif (
-                    request.user.employee_profile
-                    and request.user.employee_profile.company
-                ):
+                elif request.user.employee_profile and request.user.employee_profile.company:
                     company = request.user.employee_profile.company
 
             if not company:
-                return JsonResponse(
-                    {"status": "error", "message": "Company not found"}, status=400
-                )
+                return JsonResponse({"status": "error", "message": "Company not found"}, status=400)
 
             from .models import ShiftSchedule
 
             # Check for existing shift with same name (case-insensitive)
-            existing_shift = ShiftSchedule.objects.filter(
-                company=company, name__iexact=name
-            ).first()
+            existing_shift = ShiftSchedule.objects.filter(company=company, name__iexact=name).first()
 
             if existing_shift:
                 return JsonResponse(
@@ -515,6 +539,4 @@ def quick_add_shift(request):
 
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
-    return JsonResponse(
-        {"status": "error", "message": "Invalid request method"}, status=405
-    )
+    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)

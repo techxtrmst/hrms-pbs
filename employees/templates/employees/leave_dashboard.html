@@ -76,6 +76,10 @@
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         border: 1px solid #e2e8f0;
         overflow: hidden;
+        min-height: 160px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
 
     .stat-card:hover {
@@ -94,6 +98,7 @@
         font-size: 1.25rem;
         margin-bottom: 1rem;
         transition: transform 0.3s ease;
+        flex-shrink: 0;
     }
 
     .stat-card:hover .stat-icon-wrapper {
@@ -108,6 +113,7 @@
         background: -webkit-linear-gradient(45deg, #1e293b, #475569);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        word-break: break-word;
     }
 
     .stat-label {
@@ -117,6 +123,8 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
     }
 
     .progress-track {
@@ -125,6 +133,7 @@
         border-radius: 10px;
         margin-top: 1rem;
         overflow: hidden;
+        flex-shrink: 0;
     }
 
     .progress-bar-custom {
@@ -333,6 +342,362 @@
         display: flex;
         gap: 12px;
     }
+
+    /* === RESPONSIVE DESIGN === */
+    @media (max-width: 1200px) {
+        .stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.25rem;
+        }
+        
+        .stat-value {
+            font-size: 2.2rem;
+        }
+        
+        .dashboard-hero {
+            padding: 1.75rem;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+        
+        .stat-card {
+            padding: 1.25rem;
+            min-height: 140px;
+        }
+        
+        .stat-icon-wrapper {
+            width: 42px;
+            height: 42px;
+            font-size: 1.1rem;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+        }
+        
+        .dashboard-hero {
+            padding: 1.5rem;
+        }
+        
+        .hero-title {
+            font-size: 1.5rem;
+        }
+        
+        .table-container {
+            padding: 1.5rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .container-fluid {
+            padding: 15px 10px;
+        }
+        
+        /* Stack stats cards on mobile */
+        .stats-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            padding: 1rem;
+            min-height: 120px;
+            border-radius: 16px;
+        }
+        
+        .stat-icon-wrapper {
+            width: 36px;
+            height: 36px;
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .stat-value {
+            font-size: 1.75rem;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.25rem;
+        }
+        
+        /* Hero section mobile */
+        .dashboard-hero {
+            padding: 1.25rem;
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+        }
+        
+        .hero-title {
+            font-size: 1.4rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .hero-subtitle {
+            font-size: 0.9rem;
+        }
+        
+        .btn-apply-float {
+            padding: 10px 24px;
+            font-size: 0.9rem;
+        }
+        
+        /* Table mobile */
+        .table-container {
+            padding: 1.25rem;
+            border-radius: 16px;
+        }
+        
+        .section-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .section-title {
+            font-size: 1.1rem;
+        }
+        
+        .custom-table {
+            font-size: 0.85rem;
+            border-spacing: 0 0.5rem;
+        }
+        
+        .custom-table th {
+            padding: 0.75rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        
+        .custom-table td {
+            padding: 1rem 0.5rem;
+        }
+        
+        /* Hide less important columns on mobile */
+        .custom-table th:nth-child(3),
+        .custom-table td:nth-child(3) {
+            display: none;
+        }
+        
+        /* Make status badges smaller */
+        .status-badge {
+            padding: 4px 12px;
+            font-size: 0.75rem;
+        }
+        
+        /* Modal mobile adjustments */
+        .modal-dialog {
+            margin: 15px;
+            max-width: calc(100% - 30px);
+        }
+        
+        .modal-content-premium {
+            border-radius: 16px;
+        }
+        
+        .modal-header-premium,
+        .modal-body-premium {
+            padding: 1.5rem;
+        }
+        
+        .notice-box {
+            padding: 0.75rem;
+            font-size: 0.85rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .container-fluid {
+            padding: 10px 8px;
+        }
+        
+        /* Very compact stats cards */
+        .stat-card {
+            padding: 0.875rem;
+            min-height: 100px;
+        }
+        
+        .stat-icon-wrapper {
+            width: 32px;
+            height: 32px;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+        }
+        
+        .progress-track {
+            height: 4px;
+            margin-top: 0.75rem;
+        }
+        
+        /* Hero section very small */
+        .dashboard-hero {
+            padding: 1rem;
+        }
+        
+        .hero-title {
+            font-size: 1.2rem;
+        }
+        
+        .hero-subtitle {
+            font-size: 0.85rem;
+        }
+        
+        .btn-apply-float {
+            padding: 8px 20px;
+            font-size: 0.85rem;
+        }
+        
+        /* Table very compact */
+        .table-container {
+            padding: 1rem;
+        }
+        
+        .custom-table {
+            font-size: 0.8rem;
+        }
+        
+        .custom-table th {
+            padding: 0.5rem 0.25rem;
+        }
+        
+        .custom-table td {
+            padding: 0.75rem 0.25rem;
+        }
+        
+        /* Hide duration column on very small screens */
+        .custom-table th:nth-child(3),
+        .custom-table td:nth-child(3) {
+            display: none;
+        }
+        
+        /* Stack leave type selection vertically */
+        .modal-body-premium .row.g-3 .col-md-4 {
+            flex: 0 0 100%;
+            max-width: 100%;
+            margin-bottom: 0.75rem;
+        }
+        
+        .modal-body-premium .btn {
+            padding: 1rem;
+        }
+        
+        /* Compact form inputs */
+        .form-control,
+        .form-select {
+            padding: 0.75rem;
+            font-size: 0.9rem;
+        }
+        
+        .modal-footer {
+            padding: 1rem 1.5rem;
+        }
+    }
+
+    @media (max-width: 400px) {
+        /* Ultra small screens */
+        .stat-card {
+            padding: 0.75rem;
+            min-height: 90px;
+        }
+        
+        .stat-value {
+            font-size: 1.3rem;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+        }
+        
+        .hero-title {
+            font-size: 1.1rem;
+        }
+        
+        .btn-apply-float {
+            padding: 6px 16px;
+            font-size: 0.8rem;
+        }
+        
+        /* Ultra compact table */
+        .custom-table th,
+        .custom-table td {
+            padding: 0.5rem 0.125rem;
+        }
+        
+        .status-badge {
+            padding: 2px 8px;
+            font-size: 0.7rem;
+        }
+    }
+
+    /* Landscape orientation adjustments */
+    @media (max-width: 896px) and (orientation: landscape) {
+        .stats-grid {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+        
+        .stat-card {
+            min-height: 110px;
+            padding: 1rem;
+        }
+        
+        .dashboard-hero {
+            padding: 1rem;
+            flex-direction: row;
+        }
+        
+        .modal-dialog {
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+    }
+
+    /* Touch device optimizations */
+    @media (hover: none) and (pointer: coarse) {
+        .stat-card:hover {
+            transform: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        
+        .btn-apply-float {
+            min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        .custom-table tr:hover td {
+            background: #f8fafc;
+            transform: none;
+        }
+        
+        /* Improve touch targets */
+        .btn,
+        .form-control,
+        .form-select {
+            min-height: 44px;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -348,7 +713,7 @@
         <div>
             <button class="btn-apply-float" data-bs-toggle="modal" data-bs-target="#applyLeaveModal">
                 <i class="fas fa-plus-circle text-lg"></i>
-                <span>New Request</span>
+                <span>Leave Request</span>
             </button>
         </div>
     </div>
@@ -541,7 +906,7 @@
                     <div class="row g-4">
                         <!-- Leave Type -->
                         <div class="col-12">
-                            <label class="form-label-custom">Select Leave Type</label>
+                            <label class="form-label-custom">Select Leave Type <span class="text-danger">*</span></label>
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <input type="radio" class="btn-check" name="leave_type" id="type_cl" value="CL"
@@ -577,14 +942,14 @@
 
                         <!-- Dates -->
                         <div class="col-md-6">
-                            <label class="form-label-custom">Start Date</label>
+                            <label class="form-label-custom">Start Date <span class="text-danger">*</span></label>
                             <input type="date" name="start_date" id="start_date"
-                                class="form-control form-control-lg rounded-3 fs-6">
+                                class="form-control form-control-lg rounded-3 fs-6" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label-custom">End Date</label>
+                            <label class="form-label-custom">End Date <span class="text-danger">*</span></label>
                             <input type="date" name="end_date" id="end_date"
-                                class="form-control form-control-lg rounded-3 fs-6">
+                                class="form-control form-control-lg rounded-3 fs-6" required>
                         </div>
 
                         <!-- Duration Preview -->
@@ -595,12 +960,25 @@
                             </div>
                         </div>
 
+                        <!-- Duration Type Selection (for single day leaves) -->
+                        <div class="col-12" id="durationTypeSection" style="display: none;">
+                            <label class="form-label-custom">Duration Type</label>
+                            <select name="duration" id="durationSelect" class="form-select form-select-lg rounded-3">
+                                <option value="FULL">Full Day</option>
+                                <option value="FIRST_HALF">First Half (Morning)</option>
+                                <option value="SECOND_HALF">Second Half (Afternoon)</option>
+                            </select>
+                            <small class="text-muted mt-1" id="durationTypeHelp">
+                                Select the duration type for your single-day leave.
+                            </small>
+                        </div>
+
                         <!-- Reason -->
                         <div class="col-12">
-                            <label class="form-label-custom">Reason for Leave</label>
+                            <label class="form-label-custom">Reason for Leave <span class="text-danger">*</span></label>
                             <textarea name="reason" id="reasonInput" class="form-control rounded-3" rows="3"
                                 placeholder="Please describe why you are requesting this leave..."
-                                style="resize: none;"></textarea>
+                                style="resize: none;" required></textarea>
                         </div>
                     </div>
                 </div>
@@ -608,9 +986,13 @@
                 <div class="modal-footer border-top-0 px-4 pb-4">
                     <button type="button" class="btn btn-light rounded-pill px-4 fw-bold"
                         data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit"
-                        class="btn btn-primary rounded-pill px-5 fw-bold btn-apply-float shadow-none">Submit
-                        Request</button>
+                    <button type="submit" id="leaveSubmitBtn"
+                        class="btn btn-primary rounded-pill px-5 fw-bold btn-apply-float shadow-none">
+                        <span id="leaveSubmitText">Submit Request</span>
+                        <span id="leaveLoadingText" style="display: none;">
+                            <i class="fas fa-spinner fa-spin me-2"></i>Submitting...
+                        </span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -657,6 +1039,9 @@
         const endInput = document.getElementById('end_date');
         const reasonInput = document.getElementById('reasonInput');
         const durationDisplay = document.getElementById('durationCalc');
+        const durationTypeSection = document.getElementById('durationTypeSection');
+        const durationSelect = document.getElementById('durationSelect');
+        const durationTypeHelp = document.getElementById('durationTypeHelp');
 
         function calculateDuration() {
             const startStr = startInput.value;
@@ -669,16 +1054,33 @@
                 if (end >= start) {
                     const diffTime = Math.abs(end - start);
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                    durationDisplay.innerText = diffDays + (diffDays === 1 ? ' Day' : ' Days');
+                    
+                    // Check if it's a single day
+                    const isSingleDay = diffDays === 1;
+                    
+                    if (isSingleDay) {
+                        // Show duration type selection for single day
+                        durationTypeSection.style.display = 'block';
+                        durationDisplay.innerText = '1 Day';
+                        durationTypeHelp.textContent = 'Select Full Day, First Half (Morning), or Second Half (Afternoon).';
+                    } else {
+                        // Hide duration type selection for multiple days
+                        durationTypeSection.style.display = 'none';
+                        durationSelect.value = 'FULL'; // Reset to full day
+                        durationDisplay.innerText = diffDays + ' Days';
+                    }
+                    
                     durationDisplay.classList.remove('text-danger');
                     durationDisplay.classList.add('text-primary');
                 } else {
                     durationDisplay.innerText = 'Invalid Date Range';
                     durationDisplay.classList.add('text-danger');
                     durationDisplay.classList.remove('text-primary');
+                    durationTypeSection.style.display = 'none';
                 }
             } else {
                 durationDisplay.innerText = '0 Days';
+                durationTypeSection.style.display = 'none';
             }
         }
 
@@ -686,7 +1088,19 @@
         endInput.addEventListener('change', calculateDuration);
 
         // Form Validation on Submit
-        document.getElementById('leaveForm').addEventListener('submit', function (e) {
+        const leaveForm = document.getElementById('leaveForm');
+        const leaveSubmitBtn = document.getElementById('leaveSubmitBtn');
+        const leaveSubmitText = document.getElementById('leaveSubmitText');
+        const leaveLoadingText = document.getElementById('leaveLoadingText');
+        let isSubmittingLeave = false;
+
+        leaveForm.addEventListener('submit', function (e) {
+            // Prevent double submission
+            if (isSubmittingLeave) {
+                e.preventDefault();
+                return false;
+            }
+
             const startStr = startInput.value;
             const endStr = endInput.value;
             const reason = reasonInput.value.trim();
@@ -709,7 +1123,16 @@
             if (end < start) {
                 e.preventDefault();
                 alert('End date cannot be before start date.');
+                return;
             }
+
+            // If validation passes, disable button and show loading state
+            isSubmittingLeave = true;
+            leaveSubmitBtn.disabled = true;
+            leaveSubmitText.style.display = 'none';
+            leaveLoadingText.style.display = 'inline';
+            leaveSubmitBtn.style.opacity = '0.7';
+            leaveSubmitBtn.style.cursor = 'not-allowed';
         });
     });
 </script>
