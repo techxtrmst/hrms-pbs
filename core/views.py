@@ -355,8 +355,8 @@ def admin_dashboard(request):
     month_start = date(current_year, current_month, 1)
     month_end = date(current_year, current_month, num_days)
 
-    # Get sample employees for calendar view (top 5 for performance)
-    calendar_employees = employees[:20]
+    # Get employees for calendar view (show all active employees)
+    calendar_employees = employees
 
     # Build calendar data for each employee
     employee_calendar_data = []
