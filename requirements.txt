@@ -180,3 +180,5 @@ whitenoise==6.11.0
     # via hrms-pbs
 win32-setctime==1.2.0 ; sys_platform == 'win32'
     # via loguru
+xhtml2pdf==0.2.16
+reportlab==4.3.1

@@ -260,7 +260,9 @@
 
         <div class="row g-3">
             <div class="col-md-6">
-                <label class="form-label">Annual CTC (₹)</label>
+                <label class="form-label">Annual CTC
+                    ({% if employee_location and employee_location.currency %}{{ employee_location.currency }}{% elif employee_company %}{{ employee_company.currency }}{% else %}₹{% endif %})
+                </label>
                 {% render_field form.annual_ctc class="form-control" placeholder="e.g. 1200000" %}
             </div>
             <div class="col-md-6 d-flex align-items-end">

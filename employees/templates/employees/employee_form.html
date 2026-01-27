@@ -693,6 +693,10 @@
                     <label class="form-label">UAN</label>
                     {% render_field form.uan class="form-control" %}
                 </div>
+                <div class="col-md-4">
+                    <label class="form-label">Annual CTC</label>
+                    {% render_field form.annual_ctc class="form-control" placeholder="e.g. 1200000" %}
+                </div>
                 <div class="col-md-4 d-flex align-items-end">
                     <div class="form-check form-switch">
                         {% render_field form.pf_enabled class="form-check-input" role="switch" %}

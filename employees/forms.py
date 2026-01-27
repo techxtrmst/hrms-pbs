@@ -71,6 +71,7 @@ class EmployeeCreationForm(forms.ModelForm):
             "ifsc_code",
             "uan",
             "pf_enabled",
+            "annual_ctc",
         ]
         widgets = {
             "dob": forms.DateInput(attrs={"type": "date"}),

@@ -1,5 +1,6 @@
 import calendar
 import random
+import json
 from datetime import date, datetime, timedelta
 
 import openpyxl
@@ -7,8 +8,9 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from loguru import logger
 from openpyxl.styles import Alignment, Font, PatternFill
@@ -31,6 +33,8 @@ from .error_handling import (
 )
 from .forms import ForgotPasswordForm, OTPVerificationForm, ResetPasswordForm
 from .models import PasswordResetOTP
+from .utils import save_pdf_to_model
+from employees.payroll_utils import calculate_payslip_breakdown, num2words_indian, num2words_flexible
 
 
 @login_required
@@ -2803,7 +2807,402 @@ def leave_history(request):
 @login_required
 @admin_required
 def payroll_dashboard(request):
-    return render(request, "core/stub.html", {"title": "Payroll Dashboard"})
+    """Admin Payroll Dashboard - Manage employee payslips"""
+    if not hasattr(request.user, "company") or not request.user.company:
+        messages.error(request, "Restricted access.")
+        return redirect("dashboard")
+
+    company = request.user.company
+    today = timezone.localtime().date()
+    
+    # Month/Year selection
+    selected_month = int(request.GET.get("month", today.month))
+    selected_year = int(request.GET.get("year", today.year))
+    
+    # Get all active employees
+    employees = Employee.objects.filter(company=company, is_active=True).select_related("user")
+    
+    # Get payslips for the selected month/year
+    # month_date is used for filtering. We use the first of the month.
+    month_filter = date(selected_year, selected_month, 1)
+    
+    existing_payslips = Payslip.objects.filter(
+        employee__company=company,
+        month__month=selected_month,
+        month__year=selected_year
+    )
+    
+    # Create a map for easy lookup
+    payslip_map = {slip.employee_id: slip for slip in existing_payslips}
+    
+    # Enhance employee list with payslip info
+    employee_data = []
+    for emp in employees:
+        employee_data.append({
+            "employee": emp,
+            "payslip": payslip_map.get(emp.id)
+        })
+    
+    months = []
+    for i in range(1, 13):
+        months.append({"value": i, "name": calendar.month_name[i]})
+        
+    years = range(today.year - 2, today.year + 2)
+
+    # Add days in month to context for default worked days
+    days_in_month = calendar.monthrange(selected_year, selected_month)[1]
+    
+    context = {
+        "title": "Payroll Dashboard",
+        "employee_data": employee_data,
+        "selected_month": selected_month,
+        "selected_year": selected_year,
+        "months": months,
+        "years": years,
+        "days_in_month": days_in_month,
+    }
+    
+    return render(request, "core/payroll_dashboard.html", context)
+
+@login_required
+@admin_required
+def upload_payslip(request):
+    """API or View to upload/generate a payslip for an employee"""
+    if request.method == "POST":
+        employee_id = request.POST.get("employee_id")
+        month = int(request.POST.get("month"))
+        year = int(request.POST.get("year"))
+        net_salary = request.POST.get("net_salary") or 0
+        annual_ctc = request.POST.get("annual_ctc")
+        uan = request.POST.get("uan")
+        pdf_file = request.FILES.get("pdf_file")
+        
+        try:
+            employee = Employee.objects.get(id=employee_id, company=request.user.company)
+            
+            # Reflect changes to employee finance profile
+            if annual_ctc:
+                employee.annual_ctc = float(annual_ctc)
+            if uan is not None:
+                employee.uan = uan
+            employee.save()
+            
+            month_date = date(year, month, 1)
+            
+            payslip, created = Payslip.objects.get_or_create(
+                employee=employee,
+                month=month_date,
+                defaults={"net_salary": net_salary}
+            )
+            
+            if not created:
+                payslip.net_salary = net_salary
+            
+            if pdf_file:
+                payslip.pdf_file = pdf_file
+            
+            payslip.save()
+            
+            messages.success(request, f"Payslip for {employee.user.get_full_name()} saved successfully.")
+        except Exception as e:
+            messages.error(request, f"Error saving payslip: {str(e)}")
+            
+    return redirect(f"{reverse('payroll_dashboard')}?month={request.POST.get('month')}&year={request.POST.get('year')}")
+
+@login_required
+@admin_required
+def calculate_generated_payslip(request):
+    """API to calculate payslip breakdown without saving"""
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            employee_id = data.get("employee_id")
+            annual_ctc = data.get("annual_ctc")
+            worked_days = data.get("worked_days")
+            month = int(data.get("month"))
+            year = int(data.get("year"))
+            
+            # Prioritize the pf_enabled flag from request if provided
+            pf_enabled = data.get("pf_enabled")
+            if pf_enabled is None:
+                if employee_id:
+                    employee = Employee.objects.get(id=employee_id, company=request.user.company)
+                    pf_enabled = employee.pf_enabled
+                else:
+                    pf_enabled = True
+            
+            # Days in month
+            total_days = calendar.monthrange(year, month)[1]
+            
+            # Get employee's location if available
+            location = None
+            if employee_id:
+                try:
+                    employee = Employee.objects.get(id=employee_id, company=request.user.company)
+                    location = employee.location
+                except Employee.DoesNotExist:
+                    pass
+
+            breakdown = calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled, location=location)
+            return JsonResponse({"status": "success", "breakdown": breakdown})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=400)
+    return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
+
+@login_required
+@admin_required
+def process_payslip_generation(request):
+    """View to calculate, save and generate PDF payslip"""
+    if request.method == "POST":
+        employee_id = request.POST.get("employee_id")
+        annual_ctc = request.POST.get("annual_ctc")
+        worked_days = float(request.POST.get("worked_days") or 0)
+        month = int(request.POST.get("month"))
+        year = int(request.POST.get("year"))
+        
+        try:
+            employee = Employee.objects.get(id=employee_id, company=request.user.company)
+            
+            # Update employee's annual CTC if changed in the calculator
+            if annual_ctc:
+                new_ctc = float(str(annual_ctc).replace(",", ""))
+                if float(employee.annual_ctc or 0) != new_ctc:
+                    employee.annual_ctc = new_ctc
+                    employee.save()
+            
+            total_days = calendar.monthrange(year, month)[1]
+            month_date = date(year, month, 1)
+            
+            # Pass employee's PF status and location
+            breakdown = calculate_payslip_breakdown(annual_ctc, worked_days, total_days, employee.pf_enabled, location=employee.location)
+            
+            payslip, created = Payslip.objects.get_or_create(
+                employee=employee,
+                month=month_date
+            )
+            
+            # Update fields
+            payslip.basic = breakdown['basic']
+            payslip.hra = breakdown['hra']
+            payslip.lta = breakdown['lta']
+            payslip.other_allowance = breakdown['other_allowance']
+            # Map location specific allowances
+            payslip.conveyance_allowance = breakdown.get('conveyance', 0.0)
+            payslip.special_allowance = breakdown.get('medical', 0.0)
+            payslip.monthly_gross = breakdown['full_monthly_gross']
+            payslip.gross_salary = breakdown['gross_monthly']
+            payslip.employee_pf = breakdown['employee_pf']
+            payslip.employer_pf = breakdown['employer_pf']
+            payslip.professional_tax = breakdown['professional_tax']
+            payslip.net_salary = breakdown['net_salary']
+            payslip.worked_days = worked_days
+            payslip.total_days = total_days
+            payslip.save()
+            
+            # Generate PDF
+            # Determine currency name for words
+            currency_name = "Rupees"
+            if employee.location and employee.location.country_code == 'BD':
+                currency_name = "Taka"
+            elif employee.location and employee.location.currency:
+                # If it's USD, maybe we want "Dollars" - but for now handle BDT specially
+                if employee.location.currency == 'BDT':
+                    currency_name = "Taka"
+                elif employee.location.currency == 'USD':
+                    currency_name = "Dollars"
+
+            # Prepare branding info
+            cname_upper = employee.company.name.upper()
+            branding = {
+                'name': 'PETABYTZ TECHNOLOGY SERVICES PVT LTD',
+                'address': 'PLOT NO 201 & 202, 1ST FLOOR, DMR CORPORATE, KAVURI HILLS RD, HYDERABAD, TELANGANA 500081.'
+            }
+            if "SOFTSTANDARD" in cname_upper or "RMINDS" in cname_upper:
+                branding['name'] = 'SOFTSTANDARD SOLUTIONS'
+            
+            # Use location address if available
+            if employee.location and employee.location.address_line1:
+                loc = employee.location
+                addr = f"{loc.address_line1}"
+                if loc.address_line2:
+                    addr += f", {loc.address_line2}"
+                addr += f", {loc.city}"
+                if loc.state:
+                    addr += f", {loc.state}"
+                if loc.postal_code:
+                    addr += f" {loc.postal_code}"
+                branding['address'] = addr
+
+            context = {
+                'payslip': payslip,
+                'company': employee.company,
+                'branding': branding,
+                'net_salary_words': num2words_flexible(payslip.net_salary, currency_name)
+            }
+            filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
+            save_pdf_to_model(payslip, 'employees/payslip_pdf.html', context, filename)
+            
+            messages.success(request, f"Payslip for {employee.user.get_full_name()} generated successfully.")
+        except Exception as e:
+            messages.error(request, f"Error generating payslip: {str(e)}")
+            
+    return redirect(f"{reverse('payroll_dashboard')}?month={request.POST.get('month')}&year={request.POST.get('year')}")
+
+
+@login_required
+@admin_required
+def download_payslip_template(request):
+    """Download Excel template for bulk payslip upload"""
+    import openpyxl
+    from django.http import HttpResponse
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Payslip Template"
+    
+    headers = ["Employee ID", "Name", "Department", "Designation", "Monthly Gross", "Net Pay", "Payable Days"]
+    for col_num, header in enumerate(headers, 1):
+        ws.cell(row=1, column=col_num, value=header)
+        
+    # Add some sample data from active employees
+    employees = Employee.objects.filter(company=request.user.company, is_active=True).select_related('user')[:5]
+    for row_num, emp in enumerate(employees, 2):
+        ws.cell(row=row_num, column=1, value=emp.badge_id)
+        ws.cell(row=row_num, column=2, value=emp.user.get_full_name())
+        ws.cell(row=row_num, column=3, value=emp.department or "N/A")
+        ws.cell(row=row_num, column=4, value=emp.designation or "N/A")
+        ws.cell(row=row_num, column=5, value=float(emp.annual_ctc or 0) / 12)
+        # Net pay is not easily pre-calculated without knowing worked days
+        ws.cell(row=row_num, column=7, value=30) 
+        
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response["Content-Disposition"] = 'attachment; filename="Bulk_Payslip_Template.xlsx"'
+    wb.save(response)
+    return response
+
+
+@login_required
+@admin_required
+def bulk_upload_payslips(request):
+    """Refined bulk upload from Excel"""
+    if request.method == "POST" and request.FILES.get("excel_file"):
+        import openpyxl
+        from datetime import date
+        
+        excel_file = request.FILES["excel_file"]
+        month = int(request.POST.get("month"))
+        year = int(request.POST.get("year"))
+        month_date = date(year, month, 1)
+        
+        try:
+            wb = openpyxl.load_workbook(excel_file)
+            ws = wb.active
+            
+            # Map headers to column indices
+            header_map = {}
+            for cell in ws[1]:
+                if cell.value:
+                    header_map[cell.value.strip().lower()] = cell.column - 1
+            
+            # Required columns
+            needed = ['employee id', 'monthly gross', 'payable days']
+            for col in needed:
+                if col not in header_map:
+                    messages.error(request, f"Required column missing: {col}")
+                    return redirect(f"{reverse('payroll_dashboard')}?month={month}&year={year}")
+            
+            success_count = 0
+            error_count = 0
+            
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                badge_id = str(row[header_map['employee id']]) if row[header_map['employee id']] else None
+                monthly_gross = row[header_map['monthly gross']]
+                payable_days = row[header_map['payable days']]
+                
+                if not badge_id or monthly_gross is None or payable_days is None:
+                    continue
+                
+                try:
+                    employee = Employee.objects.get(badge_id=badge_id, company=request.user.company)
+                    annual_ctc = float(monthly_gross) * 12
+                    worked_days = float(payable_days)
+                    total_days = calendar.monthrange(year, month)[1]
+                    
+                    # Calculate breakdown
+                    breakdown = calculate_payslip_breakdown(
+                        annual_ctc, worked_days, total_days, 
+                        employee.pf_enabled, location=employee.location
+                    )
+                    
+                    payslip, created = Payslip.objects.get_or_create(
+                        employee=employee,
+                        month=month_date
+                    )
+                    
+                    # Update fields
+                    payslip.basic = breakdown['basic']
+                    payslip.hra = breakdown['hra']
+                    payslip.lta = breakdown['lta']
+                    payslip.other_allowance = breakdown['other_allowance']
+                    payslip.conveyance_allowance = breakdown.get('conveyance', 0.0)
+                    payslip.special_allowance = breakdown.get('medical', 0.0)
+                    payslip.monthly_gross = breakdown['full_monthly_gross']
+                    payslip.gross_salary = breakdown['gross_monthly']
+                    payslip.employee_pf = breakdown['employee_pf']
+                    payslip.employer_pf = breakdown['employer_pf']
+                    payslip.professional_tax = breakdown['professional_tax']
+                    payslip.net_salary = breakdown['net_salary']
+                    payslip.worked_days = worked_days
+                    payslip.total_days = total_days
+                    payslip.save()
+                    
+                    # Generate PDF
+                    currency_name = "Rupees"
+                    if employee.location and employee.location.country_code == 'BD':
+                        currency_name = "Taka"
+                    elif employee.location and employee.location.currency:
+                        if employee.location.currency == 'BDT': currency_name = "Taka"
+                        elif employee.location.currency == 'USD': currency_name = "Dollars"
+
+                    cname_upper = employee.company.name.upper()
+                    branding = {
+                        'name': 'PETABYTZ TECHNOLOGY SERVICES PVT LTD',
+                        'address': 'PLOT NO 201 & 202, 1ST FLOOR, DMR CORPORATE, KAVURI HILLS RD, HYDERABAD, TELANGANA 500081.'
+                    }
+                    if "SOFTSTANDARD" in cname_upper or "RMINDS" in cname_upper:
+                        branding['name'] = 'SOFTSTANDARD SOLUTIONS'
+                    
+                    if employee.location and employee.location.address_line1:
+                        loc = employee.location
+                        addr = f"{loc.address_line1}"
+                        if loc.address_line2: addr += f", {loc.address_line2}"
+                        addr += f", {loc.city}"
+                        if loc.state: addr += f", {loc.state}"
+                        if loc.postal_code: addr += f" {loc.postal_code}"
+                        branding['address'] = addr
+
+                    context = {
+                        'payslip': payslip,
+                        'company': employee.company,
+                        'branding': branding,
+                        'net_salary_words': num2words_flexible(payslip.net_salary, currency_name)
+                    }
+                    filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
+                    save_pdf_to_model(payslip, 'employees/payslip_pdf.html', context, filename)
+                    
+                    success_count += 1
+                except Employee.DoesNotExist:
+                    error_count += 1
+                except Exception as e:
+                    error_count += 1
+                    
+            messages.success(request, f"Successfully processed {success_count} payslips. {error_count} errors.")
+        except Exception as e:
+            messages.error(request, f"Error processing file: {str(e)}")
+            
+    return redirect(f"{reverse('payroll_dashboard')}?month={request.POST.get('month', date.today().month)}&year={request.POST.get('year', date.today().year)}")
+
+
 
 
 # --- Configuration Section ---

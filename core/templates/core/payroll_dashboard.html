@@ -1,0 +1,971 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Payroll Dashboard | Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --keka-primary: #5b47fb;
+        --keka-success: #00c48c;
+        --keka-danger: #ff647c;
+        --keka-warning: #ffa26b;
+        --keka-info: #4da6ff;
+        --keka-bg: #f7f8fc;
+        --keka-border: #e8ecf4;
+        --keka-text-primary: #1e2139;
+        --keka-text-secondary: #6c7293;
+    }
+
+    .payroll-container {
+        padding: 2rem;
+        background: var(--keka-bg);
+        min-height: calc(100vh - 60px);
+    }
+
+    .bg-primary-soft {
+        background: rgba(91, 71, 251, 0.1);
+    }
+
+    .bg-success-soft {
+        background: rgba(0, 196, 140, 0.1);
+    }
+
+    .bg-warning-soft {
+        background: rgba(255, 162, 107, 0.1);
+    }
+
+    .bg-danger-soft {
+        background: rgba(255, 100, 124, 0.1);
+    }
+
+    .border-dashed {
+        border: 2px dashed var(--keka-border);
+    }
+
+    .payroll-header {
+        background: white;
+        padding: 24px 32px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--keka-text-primary);
+        margin: 0;
+    }
+
+    .filter-section {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .filter-select {
+        padding: 10px 16px;
+        border: 1.5px solid var(--keka-border);
+        border-radius: 8px;
+        font-size: 14px;
+        background: white;
+        min-width: 150px;
+        color: var(--keka-text-primary);
+    }
+
+    .payroll-table-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        padding: 24px;
+        position: relative;
+        overflow: visible !important;
+    }
+
+    .table-payroll {
+        width: 100%;
+        margin-top: 10px;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-payroll th {
+        background: #f8fafc;
+        color: var(--keka-text-secondary);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+        padding: 16px;
+        border-bottom: 1px solid var(--keka-border);
+    }
+
+    .table-payroll td {
+        padding: 16px;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--keka-border);
+    }
+
+    .emp-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .emp-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--keka-primary), #4338ca);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .emp-name {
+        font-weight: 600;
+        color: var(--keka-text-primary);
+        margin: 0;
+        font-size: 14px;
+    }
+
+    .emp-id {
+        font-size: 12px;
+        color: var(--keka-text-secondary);
+        display: block;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-generated {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-pending {
+        background: #fff1f2;
+        color: #9f1239;
+    }
+
+    .pf-enabled {
+        background: #f0fdf4;
+        color: #166534;
+        border: 1px solid #dcfce7;
+    }
+
+    .pf-disabled {
+        background: #f8fafc;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+    }
+
+    .btn-action {
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+
+    .btn-upload {
+        background: var(--keka-primary);
+        color: white;
+    }
+
+    .btn-upload:hover {
+        background: #4338ca;
+        transform: translateY(-1px);
+        color: white;
+    }
+
+    .btn-view {
+        background: white;
+        color: var(--keka-primary);
+        border: 1.5px solid var(--keka-primary);
+    }
+
+    .btn-view:hover {
+        background: var(--keka-primary);
+        color: white;
+    }
+
+    .btn-process {
+        background: var(--keka-success);
+        color: white;
+    }
+
+    .btn-process:hover {
+        background: #00a878;
+        transform: translateY(-1px);
+        color: white;
+    }
+
+    /* Modal Styling */
+    .modal-content {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header {
+        border-bottom: 1px solid var(--keka-border);
+        padding: 20px 24px;
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--keka-text-primary);
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .form-control {
+        border-radius: 8px;
+        padding: 10px 14px;
+        border: 1.5px solid var(--keka-border);
+        font-size: 14px;
+    }
+
+    .form-control:focus {
+        border-color: var(--keka-primary);
+        box-shadow: 0 0 0 4px rgba(91, 71, 251, 0.1);
+    }
+
+    .search-icon-inside {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--keka-text-secondary);
+        font-size: 14px;
+        z-index: 5;
+        pointer-events: none;
+    }
+
+    #payrollEmployeeSearch {
+        padding-left: 40px !important;
+    }
+
+    /* Searchable Select - Premium Style */
+    .searchable-select {
+        position: relative;
+    }
+
+    .search-results {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        right: 0;
+        background: #ffffff !important;
+        border: 1px solid var(--keka-border);
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        z-index: 1060;
+        max-height: 350px;
+        overflow-y: auto;
+        display: none;
+        margin-top: 4px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--keka-primary) #f1f5f9;
+        color: var(--keka-text-primary) !important;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        visibility: hidden;
+    }
+
+    .search-results[style*="display: block"] {
+        display: block !important;
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+        visibility: visible !important;
+    }
+
+    .search-results::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .search-results::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 10px;
+    }
+
+    .search-results::-webkit-scrollbar-thumb {
+        background: var(--keka-primary);
+        border-radius: 10px;
+    }
+
+    .search-item {
+        padding: 14px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        transition: all 0.2s ease;
+        color: inherit !important;
+        text-decoration: none !important;
+    }
+
+    .search-item:last-child {
+        border-bottom: none;
+    }
+
+    .search-item:hover {
+        background: linear-gradient(90deg, rgba(91, 71, 251, 0.08) 0%, rgba(91, 71, 251, 0.02) 100%);
+        transform: translateX(4px);
+    }
+
+    .search-item-avatar {
+        width: 44px;
+        height: 44px;
+        background: linear-gradient(135deg, var(--keka-primary), #8b5cf6);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 15px;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(91, 71, 251, 0.3);
+    }
+
+    .search-item-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .search-item-name {
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--keka-text-primary);
+        margin-bottom: 4px;
+        line-height: 1.2;
+    }
+
+    .search-item-meta {
+        font-size: 12px;
+        color: var(--keka-text-secondary);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        line-height: 1.3;
+    }
+
+    .search-item-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="payroll-container">
+    <div class="payroll-header">
+        <div>
+            <h1 class="page-title">Payroll Management</h1>
+            <p class="text-muted mb-0">Generate and manage employee monthly payslips</p>
+        </div>
+
+        <form method="GET" class="filter-section">
+            <select name="month" class="filter-select" onchange="this.form.submit()">
+                {% for month in months %}
+                <option value="{{ month.value }}" {% if month.value == selected_month %}selected{% endif %}>
+                    {{ month.name }}
+                </option>
+                {% endfor %}
+            </select>
+            <select name="year" class="filter-select" onchange="this.form.submit()">
+                {% for year in years %}
+                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>
+                    {{ year }}
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Payslip Calculator -->
+        <div class="col-lg-4">
+            <div class="payroll-table-card h-100">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-primary-soft p-2 rounded-3 me-3">
+                        <i class="fas fa-calculator text-primary"></i>
+                    </div>
+                    <h5 class="mb-0">Payslip Calculator</h5>
+                </div>
+
+                <form id="calculatorForm" action="{% url 'process_payslip_generation' %}" method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="month" value="{{ selected_month }}">
+                    <input type="hidden" name="year" value="{{ selected_year }}">
+
+                    <div class="mb-3">
+                        <label class="form-label">Select Employee</label>
+                        <div class="searchable-select">
+                            <i class="fas fa-search search-icon-inside"></i>
+                            <input type="text" id="payrollEmployeeSearch" class="form-control" autocomplete="off"
+                                placeholder="Type name or ID to search...">
+                            <div id="payrollSearchResults" class="search-results">
+                                {% for data in employee_data %}
+                                <div class="search-item" data-id="{{ data.employee.id }}"
+                                    data-name="{{ data.employee.user.get_full_name|default:data.employee.user.username }}"
+                                    data-username="{{ data.employee.user.username }}"
+                                    data-badge="{{ data.employee.badge_id }}"
+                                    data-ctc="{{ data.employee.annual_ctc|default:0 }}"
+                                    data-pf="{{ data.employee.pf_enabled|yesno:'true,false' }}"
+                                    data-currency="{{ data.employee.location.currency|default:data.employee.company.currency|default:'INR' }}"
+                                    data-country="{{ data.employee.location.country_code|default:'IN' }}">
+                                    <div class="search-item-avatar">
+                                        {{ data.employee.user.first_name|first }}{{ data.employee.user.last_name|first }}
+                                    </div>
+                                    <div class="search-item-details">
+                                        <div class="search-item-name">{{ data.employee.user.get_full_name|default:data.employee.user.username }}
+                                        </div>
+                                        <div class="search-item-meta">
+                                            <span><i class="fas fa-id-badge"></i> {{ data.employee.badge_id|default:"No ID" }}</span>
+                                            <span><i class="fas fa-briefcase"></i> {{ data.employee.designation|default:"N/A" }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                <div id="payrollNoResults" class="p-4 text-center text-muted small"
+                                    style="display: none;">
+                                    <i class="fas fa-user-slash d-block mb-2"
+                                        style="font-size: 24px; opacity: 0.5;"></i>
+                                    No employees found matching "<span id="payrollSearchTerm"></span>"
+                                </div>
+                            </div>
+                            <select name="employee_id" id="calc_employee_id" style="display: none;" required>
+                                <option value="">Select...</option>
+                                {% for data in employee_data %}
+                                <option value="{{ data.employee.id }}"
+                                    data-ctc="{{ data.employee.annual_ctc|default:0 }}">
+                                    {{ data.employee.user.get_full_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Annual CTC</label>
+                        <input type="number" name="annual_ctc" id="calc_annual_ctc" class="form-control"
+                            placeholder="e.g. 12,00,000" step="0.01" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Working Days</label>
+                        <input type="number" name="worked_days" id="calc_worked_days" class="form-control"
+                            placeholder="e.g. 22" step="0.5" required value="{{ days_in_month }}">
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check form-switch py-1">
+                            <input class="form-check-input" type="checkbox" id="calc_pf_enabled" name="pf_enabled"
+                                checked>
+                            <label class="form-check-label fw-600" for="calc_pf_enabled"
+                                style="font-size: 14px;">Calculate with PF Deductions</label>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-view flex-grow-1" onclick="calculatePayslip()">
+                            <i class="fas fa-calculator me-2"></i>Calculate
+                        </button>
+                        <button type="submit" class="btn btn-process flex-grow-1">
+                            <i class="fas fa-cog me-2"></i>Process
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="col-lg-4">
+            <div class="payroll-table-card h-100">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-success-soft p-2 rounded-3 me-3">
+                        <i class="fas fa-file-invoice-dollar text-success"></i>
+                    </div>
+                    <h5 class="mb-0">Quick Summary</h5>
+                </div>
+
+                <div id="summaryContent" class="text-center py-4 text-muted">
+                    <i class="far fa-chart-bar fa-3x mb-3 opacity-25"></i>
+                    <p>Select an employee and enter CTC to see the calculation summary</p>
+                </div>
+
+                <div id="calcResults" style="display: none;">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-secondary">Gross Salary:</span>
+                        <span id="res_gross" class="fw-bold"></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-secondary">Basic:</span>
+                        <span id="res_basic"></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span id="label_hra" class="text-secondary">HRA:</span>
+                        <span id="res_hra"></span>
+                    </div>
+                    <div id="row_medical" class="justify-content-between mb-2" style="display: none;">
+                        <span class="text-secondary">Medical:</span>
+                        <span id="res_medical"></span>
+                    </div>
+                    <div id="row_conveyance" class="justify-content-between mb-2" style="display: none;">
+                        <span class="text-secondary">Conveyance:</span>
+                        <span id="res_conveyance"></span>
+                    </div>
+                    <div id="row_other" class="justify-content-between mb-2">
+                        <span id="label_other" class="text-secondary">Other Allowance:</span>
+                        <span id="res_other"></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-secondary">Deductions:</span>
+                        <span id="res_deductions" class="text-danger"></span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <span class="fw-bold">Net Salary:</span>
+                        <span id="res_net" class="fw-bold text-success fs-5"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Export/Import or Other Info -->
+        <div class="col-lg-4">
+            <div class="payroll-table-card h-100">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-warning-soft p-2 rounded-3 me-3">
+                        <i class="fas fa-cloud-upload-alt text-warning"></i>
+                    </div>
+                    <h5 class="mb-0">Bulk Payslip Upload</h5>
+                </div>
+                <div class="text-center py-3">
+                    <form action="{% url 'bulk_payroll_upload' %}" method="POST" enctype="multipart/form-data"
+                        id="bulkUploadForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="month" value="{{ selected_month }}">
+                        <input type="hidden" name="year" value="{{ selected_year }}">
+
+                        <a href="{% url 'bulk_payroll_template' %}" class="btn btn-view w-100 mb-2">
+                            <i class="fas fa-download me-2"></i>Download Excel template
+                        </a>
+                        <p class="small text-muted mb-3">Template: Employee ID, Name, Department, Designation, Monthly
+                            Gross, Net Pay, Payable Days</p>
+
+                        <div class="border-dashed p-4 rounded-3 text-muted position-relative" style="cursor: pointer;"
+                            onclick="document.getElementById('xlsx_file').click()">
+                            <i class="fas fa-cloud-upload-alt fa-2x mb-2 text-primary"></i>
+                            <p class="mb-0 fw-600">Drop Excel file or click</p>
+                            <input type="file" name="excel_file" id="xlsx_file" class="position-absolute"
+                                style="opacity: 0; inset: 0; cursor: pointer;" onchange="this.form.submit()">
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="payroll-table-card">
+        <div class="table-responsive">
+            <table class="table table-payroll">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Status</th>
+                        <th>PF Status</th>
+                        <th>Annual CTC</th>
+                        <th>Currency</th>
+                        <th>Net Salary</th>
+                        <th>Last Generated</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in employee_data %}
+                    <tr>
+                        <td>
+                            <div class="emp-info">
+                                <div class="emp-avatar">
+                                    {{ data.employee.user.first_name|first }}{{ data.employee.user.last_name|first }}
+                                </div>
+                                <div>
+                                    <p class="emp-name">{{ data.employee.user.get_full_name }}</p>
+                                    <span class="emp-id">{{ data.employee.badge_id|default:"N/A" }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if data.payslip %}
+                            <span class="status-badge status-generated">Generated</span>
+                            {% else %}
+                            <span class="status-badge status-pending">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if data.employee.pf_enabled %}
+                            <span class="status-badge pf-enabled">Enabled</span>
+                            {% else %}
+                            <span class="status-badge pf-disabled">Disabled</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if data.employee.location and data.employee.location.currency %}
+                            {{ data.employee.location.currency }}{{ data.employee.annual_ctc|default:"0" }}
+                            {% else %}
+                            {{ data.employee.company.currency|default:"INR" }}{{ data.employee.annual_ctc|default:"0" }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark">
+                                {{ data.employee.location.currency|default:data.employee.company.currency|default:"INR" }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if data.payslip %}
+                            {{ data.employee.location.currency|default:data.employee.company.currency|default:"INR" }}
+                            {{ data.payslip.net_salary|default:"0" }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if data.payslip %}
+                            {{ data.payslip.generated_at|date:"M d, Y" }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="d-flex justify-content-end gap-2">
+                                {% if data.payslip and data.payslip.pdf_file %}
+                                <a href="{{ data.payslip.pdf_file.url }}" target="_blank" class="btn-action btn-view">
+                                    <i class="fas fa-eye"></i> View PDF
+                                </a>
+                                {% endif %}
+                                <button type="button" class="btn-action btn-upload" data-bs-toggle="modal"
+                                    data-bs-target="#uploadModal" data-employee-id="{{ data.employee.id }}"
+                                    data-employee-name="{{ data.employee.user.get_full_name }}"
+                                    data-salary="{{ data.payslip.net_salary|default:'' }}"
+                                    data-ctc="{{ data.employee.annual_ctc|default:'' }}"
+                                    data-uan="{{ data.employee.uan|default:'' }}">
+                                    <i class="fas fa-upload"></i> {% if data.payslip %}Update{% else %}Upload{% endif %}
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Upload Payslip</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'upload_payslip' %}" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="employee_id" id="modal_employee_id">
+                <input type="hidden" name="month" value="{{ selected_month }}">
+                <input type="hidden" name="year" value="{{ selected_year }}">
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Employee</label>
+                        <input type="text" id="modal_employee_name" class="form-control" readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Month/Year</label>
+                        <input type="text" class="form-control" value="{{ selected_month }}/{{ selected_year }}"
+                            readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" id="salaryLabel">Net Salary</label>
+                        <input type="number" step="0.01" name="net_salary" id="modal_salary" class="form-control"
+                            placeholder="0.00">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Annual CTC</label>
+                            <input type="number" step="0.01" name="annual_ctc" id="modal_ctc" class="form-control"
+                                placeholder="Annual CTC">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">UAN Number</label>
+                            <input type="text" name="uan" id="modal_uan" class="form-control" placeholder="UAN Number">
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label">Payslip PDF</label>
+                        <input type="file" name="pdf_file" class="form-control" accept=".pdf">
+                        <small class="text-muted">Select the PDF file for this month's payslip</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">Save Payslip</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function handleEmployeeSelect(select) {
+        const option = select.options[select.selectedIndex];
+        if (option) {
+            const ctc = option.getAttribute('data-ctc');
+            document.getElementById('calc_annual_ctc').value = ctc;
+        }
+    }
+
+    function calculatePayslip() {
+        const employeeId = document.getElementById('calc_employee_id').value;
+        const annualCTC = document.getElementById('calc_annual_ctc').value;
+        const workedDays = document.getElementById('calc_worked_days').value;
+        const pfEnabled = document.getElementById('calc_pf_enabled').checked;
+        const month = "{{ selected_month }}";
+        const year = "{{ selected_year }}";
+
+        if (!employeeId || !annualCTC || !workedDays) {
+            alert("Please search and select an employee first");
+            return;
+        }
+
+        fetch("{% url 'calculate_payslip' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                employee_id: employeeId,
+                annual_ctc: annualCTC,
+                worked_days: workedDays,
+                pf_enabled: pfEnabled,
+                month: month,
+                year: year
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const res = data.breakdown;
+                    const selectedItem = document.querySelector('.search-item.active') ||
+                        document.querySelector(`.search-item[data-id="${employeeId}"]`);
+                    const currency = selectedItem ? selectedItem.getAttribute('data-currency') : '₹';
+                    const country = selectedItem ? selectedItem.getAttribute('data-country') : 'IN';
+
+                    const symbol = currency === 'INR' ? '₹' : (currency === 'BDT' ? '৳' : currency + ' ');
+
+                    document.getElementById('summaryContent').style.display = 'none';
+                    document.getElementById('calcResults').style.display = 'block';
+
+                    document.getElementById('res_gross').innerText = symbol + res.gross_monthly.toLocaleString();
+                    document.getElementById('res_basic').innerText = symbol + res.basic.toLocaleString();
+
+                    // Handle Label changes
+                    const hraLabel = document.getElementById('label_hra');
+                    if (country === 'BD') {
+                        hraLabel.innerText = 'House Rent:';
+                        document.getElementById('row_medical').style.display = 'flex';
+                        document.getElementById('row_conveyance').style.display = 'flex';
+                        document.getElementById('res_medical').innerText = symbol + res.medical.toLocaleString();
+                        document.getElementById('res_conveyance').innerText = symbol + res.conveyance.toLocaleString();
+                        document.getElementById('label_other').innerText = 'LTA/Other:';
+                    } else {
+                        hraLabel.innerText = 'HRA:';
+                        document.getElementById('row_medical').style.display = 'none';
+                        document.getElementById('row_conveyance').style.display = 'none';
+                        document.getElementById('label_other').innerText = 'Other Allowance:';
+                    }
+
+                    document.getElementById('res_hra').innerText = symbol + res.hra.toLocaleString();
+                    document.getElementById('res_other').innerText = symbol + (res.other_allowance + res.lta).toLocaleString();
+                    document.getElementById('res_deductions').innerText = symbol + (res.employee_pf + res.professional_tax).toLocaleString();
+                    document.getElementById('res_net').innerText = symbol + res.net_salary.toLocaleString();
+                } else {
+                    alert("Error: " + data.message);
+                }
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('payrollEmployeeSearch');
+        const resultsBox = document.getElementById('payrollSearchResults');
+        const noResults = document.getElementById('payrollNoResults');
+        const searchTermSpan = document.getElementById('payrollSearchTerm');
+        const selectBox = document.getElementById('calc_employee_id');
+        const calcAnnualCtc = document.getElementById('calc_annual_ctc');
+
+        function filterItems(term) {
+            if (!resultsBox) return;
+            const items = resultsBox.querySelectorAll('.search-item');
+            let visibleCount = 0;
+            const searchTerm = term.toLowerCase().trim();
+
+            items.forEach(item => {
+                const name = (item.getAttribute('data-name') || "").toLowerCase();
+                const username = (item.getAttribute('data-username') || "").toLowerCase();
+                const badge = (item.getAttribute('data-badge') || "").toLowerCase();
+
+                if (searchTerm === '' || name.includes(searchTerm) || username.includes(searchTerm) || badge.includes(searchTerm)) {
+                    item.style.setProperty('display', 'flex', 'important');
+                    visibleCount++;
+                } else {
+                    item.style.setProperty('display', 'none', 'important');
+                }
+            });
+
+            if (visibleCount === 0 && searchTerm !== '') {
+                noResults.style.setProperty('display', 'block', 'important');
+                searchTermSpan.innerText = searchTerm;
+            } else {
+                noResults.style.setProperty('display', 'none', 'important');
+            }
+
+            // Show box if there's a search term or focus
+            if (searchTerm !== '' || document.activeElement === searchInput) {
+                resultsBox.style.setProperty('display', 'block', 'important');
+            } else {
+                resultsBox.style.setProperty('display', 'none', 'important');
+            }
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                filterItems(this.value);
+            });
+
+            searchInput.addEventListener('focus', function () {
+                filterItems(this.value);
+            });
+
+            // Handle escape key
+            searchInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    resultsBox.style.setProperty('display', 'none', 'important');
+                    this.blur();
+                }
+            });
+        }
+
+        // Close results when clicking outside
+        document.addEventListener('click', function (e) {
+            if (searchInput && !searchInput.contains(e.target) && resultsBox && !resultsBox.contains(e.target)) {
+                resultsBox.style.setProperty('display', 'none', 'important');
+            }
+        });
+
+        // Add click events to items (using delegation for better reliability)
+        if (resultsBox) {
+            resultsBox.addEventListener('click', function (e) {
+                const item = e.target.closest('.search-item');
+                if (item) {
+                    const id = item.getAttribute('data-id');
+                    const name = item.getAttribute('data-name');
+                    const badge = item.getAttribute('data-badge');
+                    const ctc = item.getAttribute('data-ctc');
+                    const pf = item.getAttribute('data-pf') === 'true';
+
+                    if (searchInput) {
+                        searchInput.value = `${name} (${badge})`;
+                        searchInput.style.borderColor = '#5b47fb';
+                    }
+                    if (selectBox) selectBox.value = id;
+                    if (calcAnnualCtc) calcAnnualCtc.value = ctc;
+
+                    const calcPfEnabled = document.getElementById('calc_pf_enabled');
+                    if (calcPfEnabled) calcPfEnabled.checked = pf;
+
+                    resultsBox.style.setProperty('display', 'none', 'important');
+
+                    // If we have a CTC, trigger the calculation
+                    if (ctc && typeof calculatePayslip === 'function') {
+                        calculatePayslip();
+                    }
+                }
+            });
+        }
+
+        // Modal handling
+        const uploadModal = document.getElementById('uploadModal');
+        if (uploadModal) {
+            uploadModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                if (!button) return;
+
+                const empId = button.getAttribute('data-employee-id');
+                const empName = button.getAttribute('data-employee-name');
+                const salary = button.getAttribute('data-salary');
+                const ctc = button.getAttribute('data-ctc');
+                const uan = button.getAttribute('data-uan');
+
+                const modalEmployeeId = uploadModal.querySelector('#modal_employee_id');
+                const modalEmployeeName = uploadModal.querySelector('#modal_employee_name');
+                const modalSalary = uploadModal.querySelector('#modal_salary');
+                const modalCtc = uploadModal.querySelector('#modal_ctc');
+                const modalUan = uploadModal.querySelector('#modal_uan');
+                const salaryLabel = uploadModal.querySelector('#salaryLabel');
+
+                if (modalEmployeeId) modalEmployeeId.value = empId;
+                if (modalEmployeeName) modalEmployeeName.value = empName;
+                if (modalSalary) modalSalary.value = salary;
+                if (modalCtc) modalCtc.value = ctc;
+                if (modalUan) modalUan.value = uan;
+
+                const row = button.closest('tr');
+                if (row) {
+                    const currencyBadge = row.querySelector('.badge.bg-light');
+                    if (currencyBadge && salaryLabel) {
+                        const currency = currencyBadge.innerText.trim();
+                        salaryLabel.innerText = 'Net Salary (' + currency + ')';
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
