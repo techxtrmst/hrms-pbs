@@ -25,6 +25,11 @@ jobs:
       - name: Install uv for fast dependency installation
         uses: astral-sh/setup-uv@v5
 
+      - name: Install system dependencies for pycairo
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcairo2-dev pkg-config
+
       - name: Install dependencies
         run: |
           uv pip install --system -e . --no-cache
