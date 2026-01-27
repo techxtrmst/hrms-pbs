@@ -95,6 +95,7 @@ class Employee(models.Model):
     account_number = models.CharField(max_length=50, blank=True, null=True)
     ifsc_code = models.CharField(max_length=20, blank=True, null=True, verbose_name="IFSC Code")
     uan = models.CharField(max_length=20, blank=True, null=True, verbose_name="UAN")
+    pan_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="PAN Number")
     pf_enabled = models.BooleanField(default=False, verbose_name="Provident Fund")
     annual_ctc = models.DecimalField(
         max_digits=12,
@@ -1333,7 +1334,27 @@ class Payslip(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="payslips")
     month = models.DateField(help_text="Select any date in the month")
     pdf_file = models.FileField(upload_to="payslips/", null=True, blank=True)
-    net_salary = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
+    # Financial Breakdown
+    basic = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    hra = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    lta = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    other_allowance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    conveyance_allowance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    special_allowance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    monthly_gross = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    gross_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    
+    # Deductions
+    employee_pf = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    employer_pf = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    professional_tax = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    
+    # Meta info
+    worked_days = models.FloatField(default=0)
+    total_days = models.IntegerField(default=30)
+    
+    net_salary = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     generated_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

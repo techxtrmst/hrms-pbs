@@ -293,6 +293,7 @@ def add_employee_step3(request):
                 ifsc_code=finance_data.get("ifsc_code"),
                 uan=finance_data.get("uan"),
                 pf_enabled=finance_data.get("pf_enabled", False),
+                annual_ctc=finance_data.get("annual_ctc"),
             )
 
             # Create Emergency Contacts
@@ -348,6 +349,30 @@ def add_employee_step3(request):
         initial_data = request.session.get("employee_finance_data", {})
         form = FinanceDetailsForm(initial=initial_data)
 
+    # Get location for currency display
+    location = None
+    company = None
+    personal_data = request.session.get("employee_personal_data", {})
+    if personal_data.get("location_id"):
+        from companies.models import Location
+        try:
+            location = Location.objects.get(id=personal_data["location_id"])
+        except Location.DoesNotExist:
+            pass
+    if personal_data.get("company_id"):
+        from companies.models import Company
+        try:
+            company = Company.objects.get(id=personal_data["company_id"])
+        except Company.DoesNotExist:
+            pass
+
     return render(
-        request, "employees/add_employee_step3.html", {"form": form, "step": 3}
+        request, 
+        "employees/add_employee_step3.html", 
+        {
+            "form": form, 
+            "step": 3, 
+            "employee_location": location,
+            "employee_company": company
+        }
     )
