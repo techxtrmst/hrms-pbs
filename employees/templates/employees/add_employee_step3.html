@@ -261,7 +261,7 @@
         <div class="row g-3">
             <div class="col-md-6">
                 <label class="form-label">Annual CTC
-                    ({% if employee_location and employee_location.currency %}{{ employee_location.currency }}{% elif employee_company %}{{ employee_company.currency }}{% else %}₹{% endif %})
+                    ({% if employee_location.country_code == 'US' %}USD{% elif employee_location.country_code == 'BD' %}BDT{% else %}{{ employee_location.currency|default:employee_company.currency|default:"INR" }}{% endif %})
                 </label>
                 {% render_field form.annual_ctc class="form-control" placeholder="e.g. 1200000" %}
             </div>
@@ -269,7 +269,7 @@
                 <div class="form-check form-switch mb-2">
                     {% render_field form.pf_enabled class="form-check-input" role="switch" %}
                     <label class="form-check-label fw-600 ms-2" for="{{ form.pf_enabled.id_for_label }}">
-                        PF Enabled
+                        {% if employee_location.country_code == 'US' %}Enable Social Security/FICA{% else %}PF Enabled{% endif %}
                     </label>
                 </div>
             </div>
@@ -287,12 +287,16 @@
                 {% render_field form.account_number class="form-control" placeholder="e.g. 1234567890" %}
             </div>
             <div class="col-md-6">
-                <label class="form-label">IFSC Code</label>
+                <label class="form-label">
+                    {% if employee_location.country_code == 'US' or employee_location.country_code == 'BD' %}Routing Number{% else %}IFSC Code{% endif %}
+                </label>
                 {% render_field form.ifsc_code class="form-control" placeholder="e.g. HDFC0001234" %}
             </div>
             <div class="col-md-6">
-                <label class="form-label">UAN</label>
-                {% render_field form.uan class="form-control" placeholder="Universal Account Number" %}
+                <label class="form-label">
+                    {% if employee_location.country_code == 'US' %}SSN{% elif employee_location.country_code == 'BD' %}TIN{% else %}UAN{% endif %}
+                </label>
+                {% render_field form.uan class="form-control" placeholder="Identification Number" %}
             </div>
         </div>
 

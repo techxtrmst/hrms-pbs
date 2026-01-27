@@ -433,7 +433,11 @@
                 </div>
                 <div class="fin-item">
                     <span class="fin-label">Annual CTC</span>
-                    <span class="fin-value">{{ employee.annual_ctc|default:"Not Set" }}</span>
+                    <span class="fin-value">
+                        {% with curr=employee.location.currency|default:employee.company.currency|default:"INR" %}
+                        {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{ employee.annual_ctc|default:"0" }}
+                        {% endwith %}
+                    </span>
                 </div>
                 <div class="fin-item">
                     <span class="fin-label">Work Location</span>
@@ -488,8 +492,9 @@
                                 <td>
                                     <div class="salary-badge">
                                         <i class="fas fa-check-circle"></i>
-                                        {{ slip.employee.location.currency|default:slip.employee.company.currency|default:"INR" }}
-                                        {{ slip.net_salary }}
+                                        {% with curr=slip.employee.location.currency|default:slip.employee.company.currency|default:"INR" %}
+                                        {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{ slip.net_salary }}
+                                        {% endwith %}
                                     </div>
                                 </td>
                                 <td class="text-end">
@@ -531,8 +536,9 @@
                     <div class="payslip-info-item">
                         <span class="info-label">Net Salary</span>
                         <span class="info-value">
-                            {{ slip.employee.location.currency|default:slip.employee.company.currency|default:"INR" }}
-                            {{ slip.net_salary }}
+                            {% with curr=slip.employee.location.currency|default:slip.employee.company.currency|default:"INR" %}
+                            {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{ slip.net_salary }}
+                            {% endwith %}
                         </span>
                     </div>
                 </div>

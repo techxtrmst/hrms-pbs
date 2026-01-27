@@ -444,7 +444,7 @@
                                     data-ctc="{{ data.employee.annual_ctc|default:0 }}"
                                     data-pf="{{ data.employee.pf_enabled|yesno:'true,false' }}"
                                     data-currency="{{ data.employee.location.currency|default:data.employee.company.currency|default:'INR' }}"
-                                    data-country="{{ data.employee.location.country_code|default:'IN' }}">
+                                    data-country="{{ data.employee.location.country_code|upper|default:'IN' }}">
                                     <div class="search-item-avatar">
                                         {{ data.employee.user.first_name|first }}{{ data.employee.user.last_name|first }}
                                     </div>
@@ -642,11 +642,9 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if data.employee.location and data.employee.location.currency %}
-                            {{ data.employee.location.currency }}{{ data.employee.annual_ctc|default:"0" }}
-                            {% else %}
-                            {{ data.employee.company.currency|default:"INR" }}{{ data.employee.annual_ctc|default:"0" }}
-                            {% endif %}
+                            {% with curr=data.employee.location.currency|default:data.employee.company.currency|default:"INR" %}
+                            {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{ data.employee.annual_ctc|default:"0" }}
+                            {% endwith %}
                         </td>
                         <td>
                             <span class="badge bg-light text-dark">
@@ -655,8 +653,9 @@
                         </td>
                         <td>
                             {% if data.payslip %}
-                            {{ data.employee.location.currency|default:data.employee.company.currency|default:"INR" }}
-                            {{ data.payslip.net_salary|default:"0" }}
+                            {% with curr=data.employee.location.currency|default:data.employee.company.currency|default:"INR" %}
+                            {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{ data.payslip.net_salary|default:"0" }}
+                            {% endwith %}
                             {% else %}
                             -
                             {% endif %}
@@ -798,7 +797,11 @@
                     const currency = selectedItem ? selectedItem.getAttribute('data-currency') : '₹';
                     const country = selectedItem ? selectedItem.getAttribute('data-country') : 'IN';
 
-                    const symbol = currency === 'INR' ? '₹' : (currency === 'BDT' ? '৳' : currency + ' ');
+                    let symbol = '₹';
+                    if (currency === 'USD') symbol = '$';
+                    else if (currency === 'BDT') symbol = '৳';
+                    else if (currency === 'INR') symbol = '₹';
+                    else symbol = currency + ' ';
 
                     document.getElementById('summaryContent').style.display = 'none';
                     document.getElementById('calcResults').style.display = 'block';
@@ -815,6 +818,12 @@
                         document.getElementById('res_medical').innerText = symbol + res.medical.toLocaleString();
                         document.getElementById('res_conveyance').innerText = symbol + res.conveyance.toLocaleString();
                         document.getElementById('label_other').innerText = 'LTA/Other:';
+                    } else if (country === 'US') {
+                        hraLabel.innerText = 'HRA:';
+                        document.getElementById('row_medical').style.display = 'flex';
+                        document.getElementById('row_conveyance').style.display = 'none';
+                        document.getElementById('res_medical').innerText = symbol + res.medical.toLocaleString();
+                        document.getElementById('label_other').innerText = 'Other Allowance:';
                     } else {
                         hraLabel.innerText = 'HRA:';
                         document.getElementById('row_medical').style.display = 'none';

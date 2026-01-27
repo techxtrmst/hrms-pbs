@@ -1360,6 +1360,11 @@ class Payslip(models.Model):
     class Meta:
         ordering = ["-month"]
 
+    @property
+    def total_deductions(self):
+        """Calculate total deductions (Employee PF + Professional Tax)"""
+        return self.employee_pf + self.professional_tax
+
     def __str__(self):
         return f"Payslip - {self.employee.user.get_full_name()} - {self.month.strftime('%b %Y')}"
 

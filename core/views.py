@@ -3002,14 +3002,13 @@ def process_payslip_generation(request):
             # Generate PDF
             # Determine currency name for words
             currency_name = "Rupees"
-            if employee.location and employee.location.country_code == 'BD':
-                currency_name = "Taka"
-            elif employee.location and employee.location.currency:
-                # If it's USD, maybe we want "Dollars" - but for now handle BDT specially
-                if employee.location.currency == 'BDT':
+            if employee.location:
+                if employee.location.country_code == 'BD' or employee.location.currency == 'BDT':
                     currency_name = "Taka"
-                elif employee.location.currency == 'USD':
+                elif employee.location.country_code == 'US' or employee.location.currency == 'USD':
                     currency_name = "Dollars"
+                elif employee.location.currency:
+                    currency_name = employee.location.currency
 
             # Prepare branding info
             cname_upper = employee.company.name.upper()
@@ -3158,11 +3157,13 @@ def bulk_upload_payslips(request):
                     
                     # Generate PDF
                     currency_name = "Rupees"
-                    if employee.location and employee.location.country_code == 'BD':
-                        currency_name = "Taka"
-                    elif employee.location and employee.location.currency:
-                        if employee.location.currency == 'BDT': currency_name = "Taka"
-                        elif employee.location.currency == 'USD': currency_name = "Dollars"
+                    if employee.location:
+                        if employee.location.country_code == 'BD' or employee.location.currency == 'BDT':
+                            currency_name = "Taka"
+                        elif employee.location.country_code == 'US' or employee.location.currency == 'USD':
+                            currency_name = "Dollars"
+                        elif employee.location.currency:
+                            currency_name = employee.location.currency
 
                     cname_upper = employee.company.name.upper()
                     branding = {

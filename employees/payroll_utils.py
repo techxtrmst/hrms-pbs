@@ -17,12 +17,35 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
 
     # Determine location-specific logic
     country_code = "IN"
+    currency_symbol = "₹"
     if location:
-        if hasattr(location, 'country_code'):
-            country_code = location.country_code
-        elif isinstance(location, str):
-            if location.upper() in ["BD", "BANGLADESH", "DHAKA"]:
+        if hasattr(location, 'country_code') and location.country_code:
+            status_code = str(location.country_code).strip().upper()
+            if status_code in ["BD", "BANGLADESH", "DHAKA"]:
                 country_code = "BD"
+            elif status_code in ["US", "USA", "UNITED STATES"]:
+                country_code = "US"
+            else:
+                country_code = status_code
+        elif isinstance(location, str):
+            loc_str = location.strip().upper()
+            if loc_str in ["BD", "BANGLADESH", "DHAKA"]:
+                country_code = "BD"
+            elif loc_str in ["US", "USA", "UNITED STATES"]:
+                country_code = "US"
+            else:
+                country_code = loc_str
+        
+        # Determine currency symbol from location
+        if hasattr(location, 'currency'):
+            if location.currency == "USD":
+                currency_symbol = "$"
+            elif location.currency == "BDT":
+                currency_symbol = "৳"
+            elif location.currency == "INR":
+                currency_symbol = "₹"
+            else:
+                currency_symbol = location.currency + " "
 
     def get_breakdown_logic(ctc_to_use, is_pf_enabled, country="IN"):
         """Helper to apply the specific calculation logic to a given CTC amount"""
@@ -35,12 +58,9 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
             medical = round(gross_monthly * 0.15, 2)
             conveyance = round(gross_monthly * 0.10, 2)
             
-            # For Bangladesh, we might not have LTA/Other Allowance in the same way, 
-            # but we can map them for compatibility with the existing Payslip model
             lta = 0.00
             other_allowance = 0.00
             
-            # Handle PF if enabled (custom logic for BD if needed)
             if is_pf_enabled:
                 employee_pf = round(basic * 0.10, 2) # Typical BD PF is 10%
                 employer_pf = employee_pf
@@ -49,7 +69,6 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
                 employer_pf = 0.00
                 
             professional_tax = 0.00 # No PT in BD
-            
             net_salary = round(gross_monthly - employee_pf, 2)
             
             return {
@@ -63,6 +82,40 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
                 "employee_pf": employee_pf,
                 "employer_pf": employer_pf,
                 "professional_tax": professional_tax,
+                "net_salary": net_salary
+            }
+        elif country == "US":
+            # -------- US Logic (Simplified) --------
+            # Typical US breakdown might vary, but we'll use a standard percentage
+            gross_monthly = round(ctc_to_use, 2)
+            basic = round(gross_monthly * 0.70, 2)
+            hra = 0.00
+            medical = round(gross_monthly * 0.15, 2)
+            conveyance = 0.00
+            lta = 0.00
+            other_allowance = round(gross_monthly * 0.15, 2)
+            
+            # Simplified US Tax/Social Security (placeholder, usually handles via withholdings)
+            # 7.65% for FICA (Social Security + Medicare)
+            employee_pf = round(gross_monthly * 0.0765, 2)
+            employer_pf = employee_pf
+            professional_tax = 0.00
+            
+            # Total withholdings (Federal/State Tax placeholder - e.g. 20%)
+            income_tax = round(gross_monthly * 0.15, 2)
+            net_salary = round(gross_monthly - employee_pf - income_tax, 2)
+            
+            return {
+                "gross": gross_monthly,
+                "basic": basic,
+                "hra": hra,
+                "medical": medical,
+                "conveyance": conveyance,
+                "lta": lta,
+                "other_allowance": other_allowance,
+                "employee_pf": employee_pf,
+                "employer_pf": employer_pf,
+                "professional_tax": income_tax, # Mapping Federal/State Tax to Professional Tax field
                 "net_salary": net_salary
             }
         else:
@@ -100,8 +153,11 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
             # -------- Net Salary --------
             net_before_pt = round(gross_monthly - employee_pf, 2)
 
-            # Professional Tax
-            professional_tax = 150 if net_before_pt < 20000 else 200
+            # Professional Tax (Only for India)
+            if country == "IN":
+                professional_tax = 150 if net_before_pt < 20000 else 200
+            else:
+                professional_tax = 0.00
 
             # Net Take Home Salary
             net_salary = round(net_before_pt - professional_tax, 2)
@@ -150,8 +206,10 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
         "worked_days": worked_days,
         "total_days": total_days,
         "pf_enabled": pf_enabled,
-        "country_code": country_code
+        "country_code": country_code,
+        "currency_symbol": currency_symbol
     }
+
 
 
 def num2words_flexible(number, currency="Rupees"):
@@ -183,20 +241,39 @@ def num2words_flexible(number, currency="Rupees"):
 
     res = ""
     temp_num = number
-    # Crores
-    if temp_num >= 10000000:
-        res += convert_below_1000(temp_num // 10000000) + "Crore "
-        temp_num %= 10000000
-    # Lakhs
-    if temp_num >= 100000:
-        res += convert_below_1000(temp_num // 100000) + "Lakh "
-        temp_num %= 100000
-    # Thousands
-    if temp_num >= 1000:
-        res += convert_below_1000(temp_num // 1000) + "Thousand "
-        temp_num %= 1000
-    # Remaining
-    res += convert_below_1000(temp_num)
+    
+    if currency == "Dollars":
+        # International System (Millions/Billions)
+        # Billions
+        if temp_num >= 1000000000:
+            res += convert_below_1000(temp_num // 1000000000) + "Billion "
+            temp_num %= 1000000000
+        # Millions
+        if temp_num >= 1000000:
+            res += convert_below_1000(temp_num // 1000000) + "Million "
+            temp_num %= 1000000
+        # Thousands
+        if temp_num >= 1000:
+            res += convert_below_1000(temp_num // 1000) + "Thousand "
+            temp_num %= 1000
+        # Remaining
+        res += convert_below_1000(temp_num)
+    else:
+        # Indian System (Lakhs/Crores)
+        # Crores
+        if temp_num >= 10000000:
+            res += convert_below_1000(temp_num // 10000000) + "Crore "
+            temp_num %= 10000000
+        # Lakhs
+        if temp_num >= 100000:
+            res += convert_below_1000(temp_num // 100000) + "Lakh "
+            temp_num %= 100000
+        # Thousands
+        if temp_num >= 1000:
+            res += convert_below_1000(temp_num // 1000) + "Thousand "
+            temp_num %= 1000
+        # Remaining
+        res += convert_below_1000(temp_num)
     
     return res.strip() + f" {currency} only"
 
