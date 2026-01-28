@@ -33,7 +33,7 @@ from .error_handling import (
 )
 from .forms import ForgotPasswordForm, OTPVerificationForm, ResetPasswordForm
 from .models import PasswordResetOTP
-from .utils import save_pdf_to_model
+from .utils import save_pdf_to_model, generate_payslip_pdf_with_generator
 from employees.payroll_utils import calculate_payslip_breakdown, num2words_indian, num2words_flexible
 
 
@@ -3084,10 +3084,16 @@ def process_payslip_generation(request):
                 'branding': branding,
                 'net_salary_words': num2words_flexible(payslip.net_salary, currency_name)
             }
-            filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
-            save_pdf_to_model(payslip, 'employees/payslip_pdf.html', context, filename)
             
-            messages.success(request, f"Payslip for {employee.user.get_full_name()} generated successfully.")
+            # Use new PayslipGenerator instead of template-based approach
+            success = generate_payslip_pdf_with_generator(payslip)
+            if success:
+                messages.success(request, f"Payslip for {employee.user.get_full_name()} generated successfully with WeasyPrint.")
+            else:
+                # Fallback to old method if new generator fails
+                filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
+                save_pdf_to_model(payslip, 'employees/payslip_pdf.html', context, filename)
+                messages.success(request, f"Payslip for {employee.user.get_full_name()} generated successfully (fallback).")
         except Exception as e:
             messages.error(request, f"Error generating payslip: {str(e)}")
             
@@ -3234,8 +3240,13 @@ def bulk_upload_payslips(request):
                         'branding': branding,
                         'net_salary_words': num2words_flexible(payslip.net_salary, currency_name)
                     }
-                    filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
-                    save_pdf_to_model(payslip, 'employees/payslip_pdf.html', context, filename)
+                    
+                    # Use new PayslipGenerator instead of template-based approach
+                    success = generate_payslip_pdf_with_generator(payslip)
+                    if not success:
+                        # Fallback to old method if new generator fails
+                        filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
+                        save_pdf_to_model(payslip, 'employees/payslip_pdf.html', context, filename)
                     
                     success_count += 1
                 except Employee.DoesNotExist:

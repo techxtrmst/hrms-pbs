@@ -538,17 +538,21 @@
                         <span id="label_hra" class="text-secondary">HRA:</span>
                         <span id="res_hra"></span>
                     </div>
-                    <div id="row_medical" class="justify-content-between mb-2" style="display: none;">
-                        <span class="text-secondary">Medical:</span>
-                        <span id="res_medical"></span>
+                    <div id="row_lta" class="d-flex justify-content-between mb-2" style="display: none;">
+                        <span id="label_lta" class="text-secondary">LTA:</span>
+                        <span id="res_lta"></span>
                     </div>
-                    <div id="row_conveyance" class="justify-content-between mb-2" style="display: none;">
+                    <div id="row_other" class="d-flex justify-content-between mb-2" style="display: none;">
+                        <span id="label_other" class="text-secondary">Other Allowance:</span>
+                        <span id="res_other"></span>
+                    </div>
+                    <div id="row_conveyance" class="d-flex justify-content-between mb-2" style="display: none;">
                         <span class="text-secondary">Conveyance:</span>
                         <span id="res_conveyance"></span>
                     </div>
-                    <div id="row_other" class="justify-content-between mb-2">
-                        <span id="label_other" class="text-secondary">Other Allowance:</span>
-                        <span id="res_other"></span>
+                    <div id="row_special" class="d-flex justify-content-between mb-2" style="display: none;">
+                        <span id="label_special" class="text-secondary">Special Allowance:</span>
+                        <span id="res_special"></span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-secondary">Deductions:</span>
@@ -809,30 +813,51 @@
                     document.getElementById('res_gross').innerText = symbol + res.gross_monthly.toLocaleString();
                     document.getElementById('res_basic').innerText = symbol + res.basic.toLocaleString();
 
-                    // Handle Label changes
+                    // Handle Label changes and show individual allowances
                     const hraLabel = document.getElementById('label_hra');
                     if (country === 'BD') {
                         hraLabel.innerText = 'House Rent:';
-                        document.getElementById('row_medical').style.display = 'flex';
-                        document.getElementById('row_conveyance').style.display = 'flex';
-                        document.getElementById('res_medical').innerText = symbol + res.medical.toLocaleString();
-                        document.getElementById('res_conveyance').innerText = symbol + res.conveyance.toLocaleString();
-                        document.getElementById('label_other').innerText = 'LTA/Other:';
+                        document.getElementById('label_special').innerText = 'Medical:';
                     } else if (country === 'US') {
                         hraLabel.innerText = 'HRA:';
-                        document.getElementById('row_medical').style.display = 'flex';
-                        document.getElementById('row_conveyance').style.display = 'none';
-                        document.getElementById('res_medical').innerText = symbol + res.medical.toLocaleString();
-                        document.getElementById('label_other').innerText = 'Other Allowance:';
+                        document.getElementById('label_special').innerText = 'Special Allowance:';
                     } else {
+                        // India - show Conveyance Allowance instead of LTA
                         hraLabel.innerText = 'HRA:';
-                        document.getElementById('row_medical').style.display = 'none';
-                        document.getElementById('row_conveyance').style.display = 'none';
-                        document.getElementById('label_other').innerText = 'Other Allowance:';
+                        document.getElementById('label_lta').innerText = 'Conveyance Allowance:';
+                        document.getElementById('label_special').innerText = 'Special Allowance:';
                     }
 
                     document.getElementById('res_hra').innerText = symbol + res.hra.toLocaleString();
-                    document.getElementById('res_other').innerText = symbol + (res.other_allowance + res.lta).toLocaleString();
+                    
+                    // Show individual allowances only if they have values > 0
+                    if (res.lta > 0) {
+                        document.getElementById('row_lta').style.display = 'flex';
+                        document.getElementById('res_lta').innerText = symbol + res.lta.toLocaleString();
+                    } else {
+                        document.getElementById('row_lta').style.display = 'none';
+                    }
+                    
+                    if (res.other_allowance > 0) {
+                        document.getElementById('row_other').style.display = 'flex';
+                        document.getElementById('res_other').innerText = symbol + res.other_allowance.toLocaleString();
+                    } else {
+                        document.getElementById('row_other').style.display = 'none';
+                    }
+                    
+                    if (res.conveyance > 0) {
+                        document.getElementById('row_conveyance').style.display = 'flex';
+                        document.getElementById('res_conveyance').innerText = symbol + res.conveyance.toLocaleString();
+                    } else {
+                        document.getElementById('row_conveyance').style.display = 'none';
+                    }
+                    
+                    if (res.special_allowance > 0) {
+                        document.getElementById('row_special').style.display = 'flex';
+                        document.getElementById('res_special').innerText = symbol + res.special_allowance.toLocaleString();
+                    } else {
+                        document.getElementById('row_special').style.display = 'none';
+                    }
                     document.getElementById('res_deductions').innerText = symbol + (res.employee_pf + res.professional_tax).toLocaleString();
                     document.getElementById('res_net').innerText = symbol + res.net_salary.toLocaleString();
                 } else {
