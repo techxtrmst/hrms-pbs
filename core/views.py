@@ -2203,6 +2203,23 @@ def attendance_report(request):
             att_map[att.employee_id] = {}
         att_map[att.employee_id][att.date] = att
 
+    # Fetch all approved leaves for the period to determine leave types (SL, PL, LOP)
+    leaves = LeaveRequest.objects.filter(
+        employee__in=employees,
+        status="APPROVED",
+        start_date__lte=end_date,
+        end_date__gte=start_date
+    ).values('employee_id', 'start_date', 'end_date', 'leave_type')
+    
+    leave_type_detail_map = {}
+    for l in leaves:
+        curr = max(l['start_date'], start_date)
+        while curr <= min(l['end_date'], end_date):
+            if l['employee_id'] not in leave_type_detail_map:
+                leave_type_detail_map[l['employee_id']] = {}
+            leave_type_detail_map[l['employee_id']][curr] = l['leave_type']
+            curr += timedelta(days=1)
+
     reports = []
     total_stats = {
         "present": 0,
@@ -2288,7 +2305,15 @@ def attendance_report(request):
                 emp_data["stats"]["absent"] += 1
                 total_stats["absent"] += 1
             elif status_code == "LEAVE":
-                display_val = "L"
+                leave_type = leave_type_detail_map.get(emp.id, {}).get(dt)
+                if leave_type == "SL":
+                    display_val = "SL"
+                elif leave_type == "CL":
+                    display_val = "PL"
+                elif leave_type == "UL":
+                    display_val = "LOP"
+                else:
+                    display_val = "L"
                 emp_data["stats"]["leave"] += 1
                 total_stats["leave"] += 1
             elif status_code == "HALF_DAY":
@@ -2454,6 +2479,23 @@ def download_attendance(request):
             att_map[att.employee_id] = {}
         att_map[att.employee_id][att.date] = att
 
+    # Fetch all approved leaves for the period to determine leave types (SL, PL, LOP)
+    leaves = LeaveRequest.objects.filter(
+        employee__in=employees,
+        status="APPROVED",
+        start_date__lte=end_date,
+        end_date__gte=start_date
+    ).values('employee_id', 'start_date', 'end_date', 'leave_type')
+    
+    leave_type_detail_map = {}
+    for l in leaves:
+        curr = max(l['start_date'], start_date)
+        while curr <= min(l['end_date'], end_date):
+            if l['employee_id'] not in leave_type_detail_map:
+                leave_type_detail_map[l['employee_id']] = {}
+            leave_type_detail_map[l['employee_id']][curr] = l['leave_type']
+            curr += timedelta(days=1)
+
     # 3. Write Rows
     row_num = 2
 
@@ -2540,7 +2582,15 @@ def download_attendance(request):
                 display_val = "A"
                 stats["absent"] += 1
             elif status_code == "LEAVE":
-                display_val = "L"
+                leave_type = leave_type_detail_map.get(emp.id, {}).get(dt)
+                if leave_type == "SL":
+                    display_val = "SL"
+                elif leave_type == "CL":
+                    display_val = "PL"
+                elif leave_type == "UL":
+                    display_val = "LOP"
+                else:
+                    display_val = "L"
                 stats["leave"] += 1
             elif status_code == "HALF_DAY":
                 display_val = "HD"

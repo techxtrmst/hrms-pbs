@@ -18,14 +18,14 @@ class CompanyAdmin(admin.ModelAdmin):
 
 @admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
-    list_display = ("name", "company", "country_code", "timezone", "is_active")
-    list_filter = ("company", "country_code", "is_active")
+    list_display = ("name", "company", "country_code", "currency", "timezone", "is_active")
+    list_filter = ("company", "country_code", "currency", "is_active")
     search_fields = ("name", "company__name")
     readonly_fields = ("created_at", "updated_at")
     fieldsets = (
         (
             "Basic Information",
-            {"fields": ("company", "name", "country_code", "timezone", "is_active")},
+            {"fields": ("company", "name", "country_code", "currency", "timezone", "is_active")},
         ),
         (
             "Metadata",

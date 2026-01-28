@@ -447,6 +447,18 @@ def clock_in(request):
                 today = timezone.localdate()
                 user_timezone = "Asia/Kolkata"
 
+            # Check if employee is already clocked in for ANY date (Night Shift Support)
+            active_attendance = Attendance.objects.filter(employee=employee, is_currently_clocked_in=True).first()
+            if active_attendance:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "You are already clocked in. Please clock out first.",
+                        "already_clocked_in": True,
+                        "clock_in_date": active_attendance.date.strftime("%Y-%m-%d"),
+                    }
+                )
+
             # Get or create attendance record for today
             attendance, created = Attendance.objects.get_or_create(
                 employee=employee,
@@ -610,47 +622,6 @@ def clock_in(request):
                     },
                     status=500,
                 )
-                if len(session_types) > 1:
-                    attendance.status = "HYBRID"
-                else:
-                    attendance.status = "WFH" if session_type == "REMOTE" else "PRESENT"
-
-            # Start location tracking
-            attendance.location_tracking_active = True
-
-            # Calculate location tracking end time based on shift duration
-            shift = employee.assigned_shift
-            attendance.location_tracking_end_time = None
-
-            if shift and shift.start_time and shift.end_time:
-                try:
-                    if hasattr(shift, "get_shift_duration_timedelta"):
-                        shift_duration = shift.get_shift_duration_timedelta()
-                    else:
-                        from datetime import datetime, timedelta
-
-                        today_date = timezone.localdate()
-                        s_start = datetime.combine(today_date, shift.start_time)
-                        s_end = datetime.combine(today_date, shift.end_time)
-                        if s_end < s_start:
-                            s_end += timedelta(days=1)
-                        shift_duration = s_end - s_start
-
-                    attendance.location_tracking_end_time = session.clock_in + shift_duration
-                except Exception as e:
-                    logger.warning(f"Error calculating shift duration for {employee}: {e}.Using default 9h.")
-
-            # Removed 9-hour default tracking limit
-            # if not attendance.location_tracking_end_time:
-            #     # Default to 9 hours if no shift assigned or error occurred
-            #     from datetime import timedelta
-            #     attendance.location_tracking_end_time = session.clock_in + timedelta(hours=9)
-
-            # Calculate late arrival for first session only
-            if session_number == 1:
-                attendance.calculate_late_arrival()
-
-            attendance.save()
 
             # Check for late clock-ins in the last 7 days
             late_warning = None
@@ -747,7 +718,20 @@ def clock_out(request):
                 today = timezone.localdate()
 
             try:
-                attendance = Attendance.objects.get(employee=employee, date=today)
+                # Keka-style Night Shift Logic: Find active attendance regardless of current date
+                attendance = Attendance.objects.filter(employee=employee, is_currently_clocked_in=True).first()
+
+                # Fallback to today's record if no active session found (to show appropriate error)
+                if not attendance:
+                    attendance = Attendance.objects.filter(employee=employee, date=today).first()
+
+                if not attendance:
+                    return JsonResponse(
+                        {
+                            "status": "error",
+                            "message": "No attendance record found for today",
+                        }
+                    )
 
                 # Check if currently clocked in
                 if not attendance.is_currently_clocked_in:
@@ -776,7 +760,7 @@ def clock_out(request):
                 if not force_clockout and current_session.clock_in:
                     # Calculate cumulative working hours from all sessions including current one
                     worked_hours = attendance.get_cumulative_working_hours_including_current()
-                    expected_hours = 9.0  # Default 9 hours shift
+                    expected_hours = attendance.get_shift_duration_hours()
 
                     if worked_hours < expected_hours:
                         completion_percentage = (worked_hours / expected_hours) * 100
@@ -786,7 +770,7 @@ def clock_out(request):
                             {
                                 "status": "confirmation_required",
                                 "requires_confirmation": True,
-                                "message": f"Your {int(expected_hours)}-hour shift is not completed yet. Do you want to clock out?",
+                                "message": f"Your {expected_hours:.1f}-hour shift is not completed yet. Do you want to clock out?",
                                 "worked_hours": round(worked_hours, 1),
                                 "expected_hours": round(expected_hours, 1),
                                 "completion_percentage": round(completion_percentage, 1),
