@@ -783,16 +783,36 @@
         <!-- Actions or Approval Info -->
         {% if leave.status == 'PENDING' %}
         <div class="action-section">
-            <button class="btn-keka btn-success-keka"
-                onclick='approveLeave({{ leave.id }}, "{{ leave.employee.user.get_full_name|escapejs }}", {{ leave.is_negative_balance|yesno:"true,false" }})'>
-                <i class="fas fa-check-circle"></i>
-                Approve Leave
-            </button>
-            <button class="btn-keka btn-danger-keka"
-                onclick='rejectLeave({{ leave.id }}, "{{ leave.employee.user.get_full_name|escapejs }}")'>
-                <i class="fas fa-times-circle"></i>
-                Reject Leave
-            </button>
+            {% if leave.is_negative_balance %}
+                <!-- Show all three buttons when insufficient balance -->
+                <button class="btn-keka btn-danger-keka"
+                    onclick="rejectLeave({{ leave.id }}, '{{ leave.employee.user.get_full_name|escapejs }}')">
+                    <i class="fas fa-times-circle"></i>
+                    Reject
+                </button>
+                <button class="btn-keka" style="background-color: #f59e0b; color: white;"
+                    onclick="approveWithDirectType({{ leave.id }}, '{{ leave.employee.user.get_full_name|escapejs }}', 'ONLY_AVAILABLE')">
+                    <i class="fas fa-check-circle"></i>
+                    Approve Available
+                </button>
+                <button class="btn-keka btn-success-keka"
+                    onclick="approveWithDirectType({{ leave.id }}, '{{ leave.employee.user.get_full_name|escapejs }}', 'WITH_LOP')">
+                    <i class="fas fa-check-double"></i>
+                    Approve with LOP
+                </button>
+            {% else %}
+                <!-- Show only approve and reject when sufficient balance -->
+                <button class="btn-keka btn-success-keka"
+                    onclick="approveWithDirectType({{ leave.id }}, '{{ leave.employee.user.get_full_name|escapejs }}', 'FULL')">
+                    <i class="fas fa-check-circle"></i>
+                    Approve
+                </button>
+                <button class="btn-keka btn-danger-keka"
+                    onclick="rejectLeave({{ leave.id }}, '{{ leave.employee.user.get_full_name|escapejs }}')">
+                    <i class="fas fa-times-circle"></i>
+                    Reject
+                </button>
+            {% endif %}
         </div>
         {% else %}
         <div class="approval-info">
@@ -935,6 +955,31 @@
 <script>
     let currentLeaveId = null;
     let currentEmployeeName = null;
+    
+    function approveWithDirectType(leaveId, employeeName, approvalType) {
+        // For direct approval without modal (when balance is sufficient or specific action chosen)
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/employees/leave/${leaveId}/approve/`;
+        
+        // Add CSRF token - get from existing form
+        const existingCsrfToken = document.querySelector('#approveForm [name=csrfmiddlewaretoken]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = existingCsrfToken;
+        form.appendChild(csrfInput);
+        
+        // Add approval type
+        const approvalTypeInput = document.createElement('input');
+        approvalTypeInput.type = 'hidden';
+        approvalTypeInput.name = 'approval_type';
+        approvalTypeInput.value = approvalType;
+        form.appendChild(approvalTypeInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
     
     function approveLeave(leaveId, employeeName, hasInsufficientBalance) {
         currentLeaveId = leaveId;

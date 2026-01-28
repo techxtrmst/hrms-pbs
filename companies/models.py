@@ -170,6 +170,35 @@ class Location(models.Model):
     def __str__(self):
         return f"{self.name} ({self.company.name})"
 
+    def save(self, *args, **kwargs):
+        # Auto-populate currency and country code based on location name if not already set or if default
+        name_upper = self.name.upper()
+        
+        # India Cities - Force correct values if specific cities are detected
+        india_cities = ["HYDERABAD", "HYD", "INDORE", "BHOPAL", "VADODARA", "VADORA", "MUMBAI", "PUNE", "BANGALORE", "CHENNAI", "DELHI", "HYDERBAD"]
+        if any(city in name_upper for city in india_cities):
+            self.country_code = "IN"
+            self.currency = "INR"
+            if self.timezone == "Asia/Kolkata" or not self.timezone:
+                self.timezone = "Asia/Kolkata"
+        
+        # Dhaka / Bangladesh
+        elif "DHAKA" in name_upper or "BANGLADESH" in name_upper or "BD" == name_upper:
+            self.country_code = "BD"
+            self.currency = "BDT"
+            if self.timezone == "Asia/Kolkata" or not self.timezone or self.timezone == "Asia/Dhaka":
+                self.timezone = "Asia/Dhaka"
+
+        # US - Only if it's strictly US/USA or contains USA/United States
+        elif name_upper in ["US", "USA"] or "UNITED STATES" in name_upper or "USA" in name_upper:
+            self.country_code = "US"
+            self.currency = "USD"
+            # Timezone varies for US, but we can set a default if it's currently Kolkata
+            if self.timezone == "Asia/Kolkata" or not self.timezone:
+                self.timezone = "America/New_York"
+
+        super().save(*args, **kwargs)
+
     class Meta:
         unique_together = ["company", "name"]
 

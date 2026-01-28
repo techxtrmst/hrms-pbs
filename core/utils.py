@@ -3,7 +3,14 @@ import io
 import os
 from django.template.loader import get_template
 from django.core.files.base import ContentFile
-from payslip_generator import PayslipGenerator
+
+# Conditional import for PayslipGenerator to handle CI/CD environments
+try:
+    from payslip_generator import PayslipGenerator
+    PAYSLIP_GENERATOR_AVAILABLE = True
+except ImportError:
+    PAYSLIP_GENERATOR_AVAILABLE = False
+    PayslipGenerator = None
 
 
 def render_to_pdf_weasyprint(template_src, context_dict={}):
@@ -63,6 +70,11 @@ def generate_payslip_pdf_with_generator(payslip_instance, output_dir="media/pays
     Generate payslip PDF using the new PayslipGenerator class
     Returns the file path of the generated PDF
     """
+    
+    # Check if PayslipGenerator is available
+    if not PAYSLIP_GENERATOR_AVAILABLE:
+        raise ImportError("PayslipGenerator is not available due to missing dependencies (weasyprint). Falling back to alternative PDF generation.")
+    
     try:
         # Create PayslipGenerator instance
         generator = PayslipGenerator(output_dir=output_dir)

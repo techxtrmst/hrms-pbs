@@ -8,7 +8,15 @@ import os
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any
-from weasyprint import HTML
+
+# Conditional import for weasyprint to handle CI/CD environments
+try:
+    from weasyprint import HTML
+    WEASYPRINT_AVAILABLE = True
+except ImportError:
+    WEASYPRINT_AVAILABLE = False
+    HTML = None
+
 from jinja2 import Template
 
 
@@ -52,6 +60,10 @@ class PayslipGenerator:
         Generate payslip PDF using WeasyPrint with exact template format
         """
         
+        # Check if WeasyPrint is available
+        if not WEASYPRINT_AVAILABLE:
+            raise ImportError("WeasyPrint is not available. Please install it with: pip install weasyprint")
+        
         # Get logo (if provided in employee_data)
         logo_base64 = None
         logo_path = employee_data.get('logo_path')
@@ -68,7 +80,7 @@ class PayslipGenerator:
         
         # Use WeasyPrint with optimized settings for exact formatting
         try:
-            from weasyprint import HTML, CSS
+            from weasyprint import CSS
             
             # Create CSS for better PDF rendering - optimized for exact format
             pdf_css = CSS(string="""

@@ -380,7 +380,7 @@ def export_data_view(request, report_type):
                 [
                     leave.employee.user.get_full_name(),
                     leave.employee.company.name,
-                    leave.get_leave_type_display(),
+                    "SL" if leave.leave_type == "SL" else ("PL" if leave.leave_type == "CL" else ("LOP" if leave.leave_type == "UL" else leave.get_leave_type_display())),
                     leave.start_date.strftime("%Y-%m-%d"),
                     leave.end_date.strftime("%Y-%m-%d"),
                     leave.total_days,
