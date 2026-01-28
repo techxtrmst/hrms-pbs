@@ -1637,13 +1637,13 @@
 
 {% block content %}
 <div class="container-fluid px-4 pb-4">
-    
+
     <!-- Employee Search Bar -->
     <div class="employee-search-container">
         <div class="search-wrapper">
             <i class="fas fa-search search-icon"></i>
-            <input type="text" id="employeeSearchInput" class="employee-search-input" 
-                   placeholder="Search employees by name, ID, department..." autocomplete="off">
+            <input type="text" id="employeeSearchInput" class="employee-search-input"
+                placeholder="Search employees by name, ID, department..." autocomplete="off">
             <div id="searchResults" class="search-results" style="display: none;"></div>
         </div>
     </div>
@@ -2091,9 +2091,10 @@
         name: "{{ att.employee.user.get_full_name }}",
             designation: "{{ att.employee.designation|default:'N/A' }}",
                 dept: "{{ att.employee.department|default:'N/A' }}",
-                    time: "{{ att.clock_in|time:'h:i A' }}",
-                        id: "{{ att.employee.id }}",
-                            initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
+                    location: "{{ att.employee.location.name|default:'N/A' }}",
+                        time: "{{ att.local_clock_in_time|time:'h:i A' }}",
+                            id: "{{ att.employee.id }}",
+                                initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
     } {% if not forloop.last %}, {% endif %}
     {% endfor %}
         ],
@@ -2103,9 +2104,10 @@
         name: "{{ att.employee.user.get_full_name }}",
             designation: "{{ att.employee.designation|default:'N/A' }}",
                 dept: "{{ att.employee.department|default:'N/A' }}",
-                    time: "{{ att.clock_out|time:'h:i A' }}",
-                        id: "{{ att.employee.id }}",
-                            initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
+                    location: "{{ att.employee.location.name|default:'N/A' }}",
+                        time: "{{ att.local_clock_out_time|time:'h:i A' }}",
+                            id: "{{ att.employee.id }}",
+                                initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
     } {% if not forloop.last %}, {% endif %}
     {% endfor %}
         ],
@@ -2115,9 +2117,10 @@
         name: "{{ att.employee.user.get_full_name }}",
             designation: "{{ att.employee.designation|default:'N/A' }}",
                 dept: "{{ att.employee.department|default:'N/A' }}",
-                    time: "{% if att.clock_in %}{{ att.clock_in|time:'h:i A' }}{% else %}N/A{% endif %}",
-                        id: "{{ att.employee.id }}",
-                            initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
+                    location: "{{ att.employee.location.name|default:'N/A' }}",
+                        time: "{% if att.local_clock_in_time %}{{ att.local_clock_in_time|time:'h:i A' }}{% else %}N/A{% endif %}",
+                            id: "{{ att.employee.id }}",
+                                initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
     } {% if not forloop.last %}, {% endif %}
     {% endfor %}
         ]
@@ -2145,9 +2148,17 @@
                         <div class="insight-employee-avatar">${item.initials.toUpperCase()}</div>
                         <div class="insight-employee-info">
                             <div class="insight-employee-name">${item.name}</div>
-                            <div class="insight-employee-dept">${item.designation}</div>
+                            <div class="insight-employee-dept">
+                                ${item.designation} 
+                                <span style="font-size: 0.85em; color: var(--keka-text-secondary); margin-left: 6px;">
+                                    <i class="fas fa-map-marker-alt" style="font-size: 0.9em;"></i> ${item.location}
+                                </span>
+                            </div>
                         </div>
-                        <div class="insight-time">${item.time}</div>
+                        <div class="insight-time" style="text-align: right;">
+                            <div>${item.time}</div>
+                            <div style="font-size: 0.7em; color: var(--keka-text-secondary);">Local Time</div>
+                        </div>
                     </div>
                 `;
             });

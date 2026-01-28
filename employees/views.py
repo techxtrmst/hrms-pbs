@@ -415,7 +415,31 @@ def clock_in(request):
                     )
 
             employee = request.user.employee_profile
-            today = timezone.localdate()
+
+            # Get timezone from request data or detect from coordinates
+            user_timezone = data.get("timezone")
+
+            if not user_timezone:
+                # Try to detect timezone from coordinates
+                user_timezone = detect_timezone_from_coordinates(lat, lng)
+
+            if not user_timezone:
+                # Fallback to employee location timezone
+                if employee.location and hasattr(employee.location, "timezone"):
+                    user_timezone = employee.location.timezone
+                else:
+                    user_timezone = "Asia/Kolkata"
+
+            # Calculate today based on user's timezone
+            import pytz
+            
+            try:
+                tz = pytz.timezone(user_timezone)
+                today = timezone.now().astimezone(tz).date()
+            except Exception:
+                # Fallback to server date if timezone is invalid
+                today = timezone.localdate()
+                user_timezone = "Asia/Kolkata"
 
             # Get or create attendance record for today
             attendance, created = Attendance.objects.get_or_create(
@@ -425,8 +449,14 @@ def clock_in(request):
                     "status": "ABSENT",
                     "daily_sessions_count": 0,
                     "is_currently_clocked_in": False,
+                    "user_timezone": user_timezone,
                 },
             )
+
+            # Update timezone if it was created/fetched without it or if it changed
+            if attendance.user_timezone != user_timezone:
+                attendance.user_timezone = user_timezone
+                attendance.save(update_fields=["user_timezone"])
 
             # Check if employee can clock in
             # FORCE OVERRIDE: Allow up to 3 sessions/day regardless of model setting (user request)
@@ -454,19 +484,7 @@ def clock_in(request):
             if attendance.max_daily_sessions < MAX_ALLOWED_SESSIONS:
                 attendance.max_daily_sessions = MAX_ALLOWED_SESSIONS
 
-            # Get timezone from request data or detect from coordinates
-            user_timezone = data.get("timezone")
 
-            if not user_timezone:
-                # Try to detect timezone from coordinates
-                user_timezone = detect_timezone_from_coordinates(lat, lng)
-
-            if not user_timezone:
-                # Fallback to employee location timezone
-                if employee.location and hasattr(employee.location, "timezone"):
-                    user_timezone = employee.location.timezone
-                else:
-                    user_timezone = "Asia/Kolkata"
 
             # Determine session type and status
             session_type = "WEB" if clock_in_type == "office" else "REMOTE"
@@ -709,7 +727,19 @@ def clock_out(request):
                 )
 
             employee = request.user.employee_profile
-            today = timezone.localdate()
+            
+            # Determine today based on employee's location timezone
+            import pytz
+            
+            user_timezone = "Asia/Kolkata"
+            if employee.location and hasattr(employee.location, "timezone"):
+                user_timezone = employee.location.timezone
+                
+            try:
+                tz = pytz.timezone(user_timezone)
+                today = timezone.now().astimezone(tz).date()
+            except Exception:
+                today = timezone.localdate()
 
             try:
                 attendance = Attendance.objects.get(employee=employee, date=today)
@@ -3253,14 +3283,25 @@ def approve_regularization(request, pk):
         # We need to find or create the attendance record for that date
         attendance, created = Attendance.objects.get_or_create(employee=reg_request.employee, date=reg_request.date)
 
+        # Get employee location timezone
+        import pytz
+        tz_name = "Asia/Kolkata"
+        if reg_request.employee.location and hasattr(reg_request.employee.location, "timezone"):
+             tz_name = reg_request.employee.location.timezone
+        
+        local_tz = pytz.timezone(tz_name)
+
         if reg_request.check_in:
-            # We need to combine date with time
-            attendance.clock_in = timezone.make_aware(timezone.datetime.combine(reg_request.date, reg_request.check_in))
+            # Combine date and time, then localize to employee's timezone
+            local_dt = timezone.datetime.combine(reg_request.date, reg_request.check_in)
+            attendance.clock_in = local_tz.localize(local_dt)
 
         if reg_request.check_out:
-            attendance.clock_out = timezone.make_aware(
-                timezone.datetime.combine(reg_request.date, reg_request.check_out)
-            )
+            local_dt = timezone.datetime.combine(reg_request.date, reg_request.check_out)
+            # Handle possible overnight shift if check_out < check_in (though form currently validates against this)
+            if reg_request.check_in and reg_request.check_out < reg_request.check_in:
+                 local_dt += timedelta(days=1)
+            attendance.clock_out = local_tz.localize(local_dt)
 
         # Update status to Present if not already (or whatever logic user wants, implicitly if regulating, they were present)
         attendance.status = "PRESENT"
