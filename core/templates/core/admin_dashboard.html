@@ -1738,12 +1738,10 @@
                                         <div>
                                             <h4 class="announcement-title-large">{{ announcement.title }}</h4>
                                             <div class="announcement-meta-row">
-                                                <span><i class="far fa-calendar-alt me-1"></i> {{
-                                                    announcement.created_at|date:"d M Y" }}</span>
+                                                <span><i class="far fa-calendar-alt me-1"></i> {{ announcement.created_at|date:"d M Y" }}</span>
                                                 {% if announcement.location %}
                                                 <span class="text-primary bg-soft-primary px-2 py-1 rounded small"><i
-                                                        class="fas fa-map-marker-alt me-1"></i> {{
-                                                    announcement.location.name }}</span>
+                                                        class="fas fa-map-marker-alt me-1"></i> {{ announcement.location.name }}</span>
                                                 {% else %}
                                                 <span class="text-warning bg-soft-warning px-2 py-1 rounded small"><i
                                                         class="fas fa-globe me-1"></i> Global</span>
@@ -1803,8 +1801,7 @@
                                 <div class="announcement-details">
                                     <div class="announcement-text">{{ birthday.employee.user.get_full_name }}</div>
                                     <div class="announcement-subtext">
-                                        {{ birthday.employee.designation|default:"N/A" }} • {{
-                                        birthday.employee.department|default:"N/A" }}
+                                        {{ birthday.employee.designation|default:"N/A" }} • {{ birthday.employee.department|default:"N/A" }}
                                     </div>
                                 </div>
                             </div>
@@ -1839,9 +1836,7 @@
                                 <div class="announcement-details">
                                     <div class="announcement-text">{{ anniversary.employee.user.get_full_name }}</div>
                                     <div class="announcement-subtext">
-                                        {{ anniversary.employee.designation|default:"N/A" }} • {{
-                                        anniversary.employee.department|default:"N/A" }} • {{ anniversary.years }}
-                                        year{{ anniversary.years|pluralize }}
+                                        {{ anniversary.employee.designation|default:"N/A" }} • {{ anniversary.employee.department|default:"N/A" }} • {{ anniversary.years }} year{{ anniversary.years|pluralize }}
                                     </div>
                                 </div>
                             </div>
