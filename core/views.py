@@ -33,7 +33,7 @@ from .error_handling import (
 )
 from .forms import ForgotPasswordForm, OTPVerificationForm, ResetPasswordForm
 from .models import PasswordResetOTP
-from .utils import save_pdf_to_model
+from .utils import save_pdf_to_model, generate_payslip_pdf_with_generator
 from employees.payroll_utils import calculate_payslip_breakdown, num2words_indian, num2words_flexible
 
 
@@ -243,13 +243,12 @@ def admin_dashboard(request):
     
     import pytz
 
+    from core.utils import get_user_timezone
     for att in today_attendance:
-        # Determine employee timezone
-        tz_name = "Asia/Kolkata"
-        if att.employee.location and att.employee.location.timezone:
-            tz_name = att.employee.location.timezone
-        
+        # Determine employee timezone using central utility
+        tz_name = get_user_timezone(att.employee.user, company)
         emp_tz = pytz.timezone(tz_name)
+
 
         if att.clock_in:
             # Attach local times to the object for template display
@@ -700,17 +699,22 @@ def employee_dashboard(request):
         messages.error(request, "Employee profile not found.")
         return redirect("personal_home")
 
-    today = timezone.localtime().date()
+    today = timezone.localdate()
     
-    # Adjust today based on employee location timezone
-    if employee.location and hasattr(employee.location, "timezone"):
-        try:
-            import pytz
-            tz = pytz.timezone(employee.location.timezone)
-            # Use now() to get accurate current moment, then convert to user timezone
-            today = timezone.now().astimezone(tz).date()
-        except Exception:
-            pass
+    # Resolve correct timezone using central utility
+    from core.utils import get_user_timezone
+    user_timezone = get_user_timezone(request.user, getattr(request, "company", None))
+    
+    try:
+        import pytz
+        tz = pytz.timezone(user_timezone)
+        # Use now() to get accurate current moment, then convert to user timezone
+        today = timezone.now().astimezone(tz).date()
+        # Ensure the view uses the correct active timezone for rendering
+        timezone.activate(tz)
+    except Exception:
+        pass
+
 
     # Today's attendance
     attendance = Attendance.objects.filter(employee=employee, date=today).first()
@@ -1028,18 +1032,21 @@ def personal_home(request):
         employee = request.user.employee_profile
         today = timezone.localdate()
 
-        # Adjust today based on employee location timezone
-        user_timezone = "Asia/Kolkata"
-        if employee.location and hasattr(employee.location, "timezone"):
-            try:
-                import pytz
-                user_timezone = employee.location.timezone
-                tz = pytz.timezone(user_timezone)
-                today = timezone.now().astimezone(tz).date()
-            except Exception:
-                pass
+        # Resolve correct timezone using central utility
+        from core.utils import get_user_timezone
+        user_timezone = get_user_timezone(request.user, getattr(request, "company", None))
+        
+        try:
+            import pytz
+            tz = pytz.timezone(user_timezone)
+            today = timezone.now().astimezone(tz).date()
+            # Ensure the view uses the correct active timezone for rendering
+            timezone.activate(tz)
+        except Exception:
+            pass
         
         context["user_timezone"] = user_timezone
+
 
         # Today's attendance
         attendance = Attendance.objects.filter(employee=employee, date=today).first()
@@ -3077,10 +3084,16 @@ def process_payslip_generation(request):
                 'branding': branding,
                 'net_salary_words': num2words_flexible(payslip.net_salary, currency_name)
             }
-            filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
-            save_pdf_to_model(payslip, 'employees/payslip_pdf.html', context, filename)
             
-            messages.success(request, f"Payslip for {employee.user.get_full_name()} generated successfully.")
+            # Use new PayslipGenerator instead of template-based approach
+            success = generate_payslip_pdf_with_generator(payslip)
+            if success:
+                messages.success(request, f"Payslip for {employee.user.get_full_name()} generated successfully with WeasyPrint.")
+            else:
+                # Fallback to old method if new generator fails
+                filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
+                save_pdf_to_model(payslip, 'employees/payslip_pdf.html', context, filename)
+                messages.success(request, f"Payslip for {employee.user.get_full_name()} generated successfully (fallback).")
         except Exception as e:
             messages.error(request, f"Error generating payslip: {str(e)}")
             
@@ -3227,8 +3240,13 @@ def bulk_upload_payslips(request):
                         'branding': branding,
                         'net_salary_words': num2words_flexible(payslip.net_salary, currency_name)
                     }
-                    filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
-                    save_pdf_to_model(payslip, 'employees/payslip_pdf.html', context, filename)
+                    
+                    # Use new PayslipGenerator instead of template-based approach
+                    success = generate_payslip_pdf_with_generator(payslip)
+                    if not success:
+                        # Fallback to old method if new generator fails
+                        filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
+                        save_pdf_to_model(payslip, 'employees/payslip_pdf.html', context, filename)
                     
                     success_count += 1
                 except Employee.DoesNotExist:

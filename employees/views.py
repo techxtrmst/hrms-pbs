@@ -424,11 +424,10 @@ def clock_in(request):
                 user_timezone = detect_timezone_from_coordinates(lat, lng)
 
             if not user_timezone:
-                # Fallback to employee location timezone
-                if employee.location and hasattr(employee.location, "timezone"):
-                    user_timezone = employee.location.timezone
-                else:
-                    user_timezone = "Asia/Kolkata"
+                # Use central utility for consistent resolution (handles company fallback)
+                from core.utils import get_user_timezone
+                user_timezone = get_user_timezone(request.user, getattr(request, "company", None))
+
 
             # Calculate today based on user's timezone
             import pytz
@@ -729,11 +728,9 @@ def clock_out(request):
             employee = request.user.employee_profile
             
             # Determine today based on employee's location timezone
-            import pytz
-            
-            user_timezone = "Asia/Kolkata"
-            if employee.location and hasattr(employee.location, "timezone"):
-                user_timezone = employee.location.timezone
+            from core.utils import get_user_timezone
+            user_timezone = get_user_timezone(request.user, getattr(request, "company", None))
+
                 
             try:
                 tz = pytz.timezone(user_timezone)

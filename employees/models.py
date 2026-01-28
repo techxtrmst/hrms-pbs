@@ -396,8 +396,10 @@ class Attendance(models.Model):
             return
 
         # Get location timezone
-        tz_name = self.employee.location.timezone if self.employee.location else "Asia/Kolkata"
+        from core.utils import get_user_timezone
+        tz_name = get_user_timezone(self.employee.user, self.employee.company)
         local_tz = pytz.timezone(tz_name)
+
 
         # Convert clock_in to local timezone
         local_clock_in = self.clock_in.astimezone(local_tz)
@@ -487,8 +489,10 @@ class Attendance(models.Model):
             return
 
         # Get location timezone
-        tz_name = self.employee.location.timezone if self.employee.location else "Asia/Kolkata"
+        from core.utils import get_user_timezone
+        tz_name = get_user_timezone(self.employee.user, self.employee.company)
         local_tz = pytz.timezone(tz_name)
+
 
         # Convert clock_out to local timezone
         local_clock_out = self.clock_out.astimezone(local_tz)
