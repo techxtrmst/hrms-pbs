@@ -217,46 +217,88 @@ def week_off_config(request):
 
     locations = Location.objects.filter(company=company)
     selected_location_id = request.GET.get("location")
+    selected_employee_id = request.GET.get("employee")
     selected_location = None
+    selected_employee = None
     employees = []
     config = None
 
     if selected_location_id:
         selected_location = get_object_or_404(Location, id=selected_location_id, company=company)
-        config, created = LocationWeekOff.objects.get_or_create(
-            location=selected_location, defaults={"company": company}
-        )
         employees = Employee.objects.filter(company=company, location=selected_location)
+
+        if selected_employee_id:
+            selected_employee = get_object_or_404(Employee, id=selected_employee_id, company=company, location=selected_location)
+            # Use employee's week-off fields
+            config = {
+                "monday": selected_employee.week_off_monday,
+                "tuesday": selected_employee.week_off_tuesday,
+                "wednesday": selected_employee.week_off_wednesday,
+                "thursday": selected_employee.week_off_thursday,
+                "friday": selected_employee.week_off_friday,
+                "saturday": selected_employee.week_off_saturday,
+                "sunday": selected_employee.week_off_sunday,
+            }
+        else:
+            config, created = LocationWeekOff.objects.get_or_create(
+                location=selected_location, defaults={"company": company}
+            )
 
         if request.method == "POST":
             # Update Config
-            config.monday = "monday" in request.POST
-            config.tuesday = "tuesday" in request.POST
-            config.wednesday = "wednesday" in request.POST
-            config.thursday = "thursday" in request.POST
-            config.friday = "friday" in request.POST
-            config.saturday = "saturday" in request.POST
-            config.sunday = "sunday" in request.POST
-            config.save()
+            monday = "monday" in request.POST
+            tuesday = "tuesday" in request.POST
+            wednesday = "wednesday" in request.POST
+            thursday = "thursday" in request.POST
+            friday = "friday" in request.POST
+            saturday = "saturday" in request.POST
+            sunday = "sunday" in request.POST
 
-            # Apply week-offs directly to employees
-            count = 0
-            for emp in employees:
-                emp.week_off_monday = config.monday
-                emp.week_off_tuesday = config.tuesday
-                emp.week_off_wednesday = config.wednesday
-                emp.week_off_thursday = config.thursday
-                emp.week_off_friday = config.friday
-                emp.week_off_saturday = config.saturday
-                emp.week_off_sunday = config.sunday
-                emp.save()
-                count += 1
+            if selected_employee:
+                selected_employee.week_off_monday = monday
+                selected_employee.week_off_tuesday = tuesday
+                selected_employee.week_off_wednesday = wednesday
+                selected_employee.week_off_thursday = thursday
+                selected_employee.week_off_friday = friday
+                selected_employee.week_off_saturday = saturday
+                selected_employee.week_off_sunday = sunday
+                selected_employee.save()
+                messages.success(
+                    request,
+                    f"Week-off configuration updated specifically for {selected_employee.user.get_full_name()}.",
+                )
+            else:
+                config.monday = monday
+                config.tuesday = tuesday
+                config.wednesday = wednesday
+                config.thursday = thursday
+                config.friday = friday
+                config.saturday = saturday
+                config.sunday = sunday
+                config.save()
 
-            messages.success(
-                request,
-                f"Week-off configuration updated for {selected_location.name} and applied to {count} employees.",
-            )
-            return redirect(f"{request.path}?location={selected_location.id}")
+                # Apply week-offs directly to employees in this location
+                count = 0
+                for emp in employees:
+                    emp.week_off_monday = config.monday
+                    emp.week_off_tuesday = config.tuesday
+                    emp.week_off_wednesday = config.wednesday
+                    emp.week_off_thursday = config.thursday
+                    emp.week_off_friday = config.friday
+                    emp.week_off_saturday = config.saturday
+                    emp.week_off_sunday = config.sunday
+                    emp.save()
+                    count += 1
+
+                messages.success(
+                    request,
+                    f"Week-off configuration updated for {selected_location.name} and applied to {count} employees.",
+                )
+            
+            redirect_url = f"{request.path}?location={selected_location.id}"
+            if selected_employee:
+                redirect_url += f"&employee={selected_employee.id}"
+            return redirect(redirect_url)
 
     # Prepare locations list with selection state to avoid template logic issues
     locations_list = []
@@ -270,6 +312,7 @@ def week_off_config(request):
         {
             "locations": locations_list,
             "selected_location": selected_location,
+            "selected_employee": selected_employee,
             "employees": employees,
             "config": config,
         },

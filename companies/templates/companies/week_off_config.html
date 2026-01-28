@@ -36,9 +36,20 @@
 
         <!-- Configuration Card -->
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
-            <div class="card-header bg-white border-0 py-3 px-4">
-                <h5 class="mb-0 fw-bold" style="color: #4f46e5;"><i class="fas fa-calendar-alt me-2"></i> Configure
-                    Week-Offs for {{ selected_location.name }}</h5>
+            <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold" style="color: #4f46e5;">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    {% if selected_employee %}
+                    Configure Week-Offs for <span class="text-dark">{{ selected_employee.user.get_full_name }}</span>
+                    {% else %}
+                    Configure Week-Offs for {{ selected_location.name }}
+                    {% endif %}
+                </h5>
+                {% if selected_employee %}
+                <a href="?location={{ selected_location.id }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                    <i class="fas fa-undo me-1"></i> Back to Location Config
+                </a>
+                {% endif %}
             </div>
             <div class="card-body p-4">
                 <div class="d-flex flex-wrap gap-3 justify-content-center py-3">
@@ -112,7 +123,8 @@
                         </thead>
                         <tbody>
                             {% for emp in employees %}
-                            <tr>
+                            <tr {% if selected_employee.id == emp.id %}style="background-color: rgba(79, 70, 229, 0.05);"
+                                {% endif %}>
                                 <td class="ps-4">
                                     <div class="d-flex align-items-center">
                                         {% if emp.profile_picture %}
@@ -125,7 +137,12 @@
                                         </div>
                                         {% endif %}
                                         <div>
-                                            <div class="fw-bold">{{ emp.user.get_full_name }}</div>
+                                            <div class="fw-bold">
+                                                <a href="?location={{ selected_location.id }}&employee={{ emp.id }}"
+                                                    class="text-decoration-none text-dark employee-link">
+                                                    {{ emp.user.get_full_name }}
+                                                </a>
+                                            </div>
                                             <div class="small text-muted">{{ emp.badge_id }}</div>
                                         </div>
                                     </div>
@@ -195,6 +212,11 @@
 
     .bg-soft-primary {
         background-color: rgba(79, 70, 229, 0.1);
+    }
+
+    .employee-link:hover {
+        color: #4f46e5 !important;
+        text-decoration: underline !important;
     }
 </style>
 {% endblock %}
