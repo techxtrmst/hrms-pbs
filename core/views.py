@@ -3095,7 +3095,7 @@ def process_payslip_generation(request):
                     filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
                     save_pdf_to_model(payslip, 'employees/payslip_pdf.html', context, filename)
                     messages.success(request, f"Payslip for {employee.user.get_full_name()} generated successfully (fallback).")
-            except ImportError:
+            except ImportError as e:
                 # WeasyPrint not available, use fallback method
                 filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
                 save_pdf_to_model(payslip, 'employees/payslip_pdf.html', context, filename)
