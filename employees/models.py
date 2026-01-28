@@ -425,9 +425,10 @@ class Attendance(models.Model):
         grace_minutes = shift.grace_period_minutes
 
         # Convert to datetime for calculation
-        shift_start_dt = datetime.combine(self.date, shift_start)
+        # Use timezone-aware comparison for accurate late calculation (Night Shift Support)
+        shift_start_dt = local_tz.localize(datetime.combine(self.date, shift_start))
         grace_end_dt = shift_start_dt + timedelta(minutes=grace_minutes)
-        clock_in_dt = datetime.combine(self.date, clock_in_time)
+        clock_in_dt = local_clock_in  # Already aware and in local_tz
 
         # Reset flags first
         self.is_late = False
@@ -514,13 +515,17 @@ class Attendance(models.Model):
             return
 
         # Calculate expected end time
-        shift_end = shift.end_time
-        threshold_minutes = shift.early_departure_threshold_minutes
+        # Use timezone-aware comparison and handle overnight shifts (Night Shift Support)
+        shift_start = shift.start_time
+        shift_start_dt = local_tz.localize(datetime.combine(self.date, shift_start))
+        shift_end_dt = local_tz.localize(datetime.combine(self.date, shift.end_time))
 
-        # Convert to datetime for calculation
-        shift_end_dt = datetime.combine(self.date, shift_end)
+        # If end time is before or equal to start time, it's an overnight shift
+        if shift_end_dt <= shift_start_dt:
+            shift_end_dt += timedelta(days=1)
+
         threshold_dt = shift_end_dt - timedelta(minutes=threshold_minutes)
-        clock_out_dt = datetime.combine(self.date, clock_out_time)
+        clock_out_dt = local_clock_out  # Already aware and in local_tz
 
         if clock_out_dt < threshold_dt:
             self.is_early_departure = True
@@ -617,24 +622,10 @@ class Attendance(models.Model):
         )
 
         total_seconds = 0
-        attendance_date_end = datetime.combine(self.date, time(23, 59, 59))
-
-        # Convert to timezone-aware datetime if needed
-        if sessions.exists() and timezone.is_aware(sessions.first().clock_in):
-            attendance_date_end = timezone.make_aware(attendance_date_end)
-
         for session in sessions:
             if session.clock_in:
-                # Determine end time for this session
-                if session.clock_out:
-                    session_end = session.clock_out
-                else:
-                    # For active sessions, use current time but cap at end of day
-                    session_end = min(timezone.now(), attendance_date_end)
-
-                # Ensure session doesn't extend beyond the attendance date
-                if session_end > attendance_date_end:
-                    session_end = attendance_date_end
+                # Determine end time for this session (Night Shift Support: Remove midnight cap)
+                session_end = session.clock_out or timezone.now()
 
                 # Calculate session duration
                 if session_end > session.clock_in:
