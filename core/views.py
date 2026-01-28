@@ -243,13 +243,12 @@ def admin_dashboard(request):
     
     import pytz
 
+    from core.utils import get_user_timezone
     for att in today_attendance:
-        # Determine employee timezone
-        tz_name = "Asia/Kolkata"
-        if att.employee.location and att.employee.location.timezone:
-            tz_name = att.employee.location.timezone
-        
+        # Determine employee timezone using central utility
+        tz_name = get_user_timezone(att.employee.user, company)
         emp_tz = pytz.timezone(tz_name)
+
 
         if att.clock_in:
             # Attach local times to the object for template display
@@ -700,17 +699,22 @@ def employee_dashboard(request):
         messages.error(request, "Employee profile not found.")
         return redirect("personal_home")
 
-    today = timezone.localtime().date()
+    today = timezone.localdate()
     
-    # Adjust today based on employee location timezone
-    if employee.location and hasattr(employee.location, "timezone"):
-        try:
-            import pytz
-            tz = pytz.timezone(employee.location.timezone)
-            # Use now() to get accurate current moment, then convert to user timezone
-            today = timezone.now().astimezone(tz).date()
-        except Exception:
-            pass
+    # Resolve correct timezone using central utility
+    from core.utils import get_user_timezone
+    user_timezone = get_user_timezone(request.user, getattr(request, "company", None))
+    
+    try:
+        import pytz
+        tz = pytz.timezone(user_timezone)
+        # Use now() to get accurate current moment, then convert to user timezone
+        today = timezone.now().astimezone(tz).date()
+        # Ensure the view uses the correct active timezone for rendering
+        timezone.activate(tz)
+    except Exception:
+        pass
+
 
     # Today's attendance
     attendance = Attendance.objects.filter(employee=employee, date=today).first()
@@ -1028,18 +1032,21 @@ def personal_home(request):
         employee = request.user.employee_profile
         today = timezone.localdate()
 
-        # Adjust today based on employee location timezone
-        user_timezone = "Asia/Kolkata"
-        if employee.location and hasattr(employee.location, "timezone"):
-            try:
-                import pytz
-                user_timezone = employee.location.timezone
-                tz = pytz.timezone(user_timezone)
-                today = timezone.now().astimezone(tz).date()
-            except Exception:
-                pass
+        # Resolve correct timezone using central utility
+        from core.utils import get_user_timezone
+        user_timezone = get_user_timezone(request.user, getattr(request, "company", None))
+        
+        try:
+            import pytz
+            tz = pytz.timezone(user_timezone)
+            today = timezone.now().astimezone(tz).date()
+            # Ensure the view uses the correct active timezone for rendering
+            timezone.activate(tz)
+        except Exception:
+            pass
         
         context["user_timezone"] = user_timezone
+
 
         # Today's attendance
         attendance = Attendance.objects.filter(employee=employee, date=today).first()
