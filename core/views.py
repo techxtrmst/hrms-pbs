@@ -3086,14 +3086,20 @@ def process_payslip_generation(request):
             }
             
             # Use new PayslipGenerator instead of template-based approach
-            success = generate_payslip_pdf_with_generator(payslip)
-            if success:
-                messages.success(request, f"Payslip for {employee.user.get_full_name()} generated successfully with WeasyPrint.")
-            else:
-                # Fallback to old method if new generator fails
+            try:
+                success = generate_payslip_pdf_with_generator(payslip)
+                if success:
+                    messages.success(request, f"Payslip for {employee.user.get_full_name()} generated successfully with WeasyPrint.")
+                else:
+                    # Fallback to old method if new generator fails
+                    filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
+                    save_pdf_to_model(payslip, 'employees/payslip_pdf.html', context, filename)
+                    messages.success(request, f"Payslip for {employee.user.get_full_name()} generated successfully (fallback).")
+            except ImportError:
+                # WeasyPrint not available, use fallback method
                 filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
                 save_pdf_to_model(payslip, 'employees/payslip_pdf.html', context, filename)
-                messages.success(request, f"Payslip for {employee.user.get_full_name()} generated successfully (fallback).")
+                messages.success(request, f"Payslip for {employee.user.get_full_name()} generated successfully (fallback method).")
         except Exception as e:
             messages.error(request, f"Error generating payslip: {str(e)}")
             
@@ -3242,9 +3248,14 @@ def bulk_upload_payslips(request):
                     }
                     
                     # Use new PayslipGenerator instead of template-based approach
-                    success = generate_payslip_pdf_with_generator(payslip)
-                    if not success:
-                        # Fallback to old method if new generator fails
+                    try:
+                        success = generate_payslip_pdf_with_generator(payslip)
+                        if not success:
+                            # Fallback to old method if new generator fails
+                            filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
+                            save_pdf_to_model(payslip, 'employees/payslip_pdf.html', context, filename)
+                    except ImportError:
+                        # WeasyPrint not available, use fallback method
                         filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
                         save_pdf_to_model(payslip, 'employees/payslip_pdf.html', context, filename)
                     
