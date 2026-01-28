@@ -86,11 +86,10 @@ class Command(BaseCommand):
         processed_locations = set()
 
         for emp in all_employees:
-            # Get employee's timezone
-            if emp.location and emp.location.timezone:
-                tz_name = emp.location.timezone
-            else:
-                tz_name = "Asia/Kolkata"  # Default timezone
+            # Get employee's timezone using central utility
+            from core.utils import get_user_timezone
+            tz_name = get_user_timezone(emp.user, emp.company)
+
 
             try:
                 local_tz = pytz.timezone(tz_name)

@@ -154,26 +154,14 @@ class CompanyIsolationMiddleware:
             _thread_locals.company = domain_company
 
         # Activate User Timezone
-        tz_name = "UTC"
-        if request.user.is_authenticated:
-            # Try employee profile first
-            if (
-                hasattr(request.user, "employee_profile")
-                and request.user.employee_profile.location
-                and request.user.employee_profile.location.timezone
-            ):
-                tz_name = request.user.employee_profile.location.timezone
-            # Fallback to Company settings
-            elif request.company:
-                if request.company.location == "INDIA":
-                    tz_name = "Asia/Kolkata"
-                elif request.company.location == "US":
-                    tz_name = "America/New_York"
+        from core.utils import get_user_timezone
+        tz_name = get_user_timezone(request.user, request.company)
 
         try:
             timezone.activate(pytz.timezone(tz_name))
         except pytz.UnknownTimeZoneError:
             logger.warning("Unknown timezone", timezone=tz_name)
+            timezone.activate(pytz.timezone("Asia/Kolkata"))
 
         response = self.get_response(request)
         return response

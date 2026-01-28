@@ -46,12 +46,10 @@ class Command(BaseCommand):
             while current_date <= end_date:
                 # Check if this date is a week-off for this employee
                 if employee.is_week_off(current_date):
-                    # Get user timezone from employee's location
-                    tz_name = (
-                        employee.location.timezone
-                        if employee.location
-                        else "Asia/Kolkata"
-                    )
+                    # Get user timezone using central utility
+                    from core.utils import get_user_timezone
+                    tz_name = get_user_timezone(employee.user, employee.company)
+
 
                     # Get or create attendance record
                     attendance, created = Attendance.objects.get_or_create(
