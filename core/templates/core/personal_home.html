@@ -406,12 +406,15 @@
     }
 
     @keyframes pulse-scroll {
-        0%, 100% { 
-            opacity: 0.7; 
+
+        0%,
+        100% {
+            opacity: 0.7;
             transform: translateY(-50%) scale(1);
         }
-        50% { 
-            opacity: 1; 
+
+        50% {
+            opacity: 1;
             transform: translateY(-50%) scale(1.1);
         }
     }
@@ -493,7 +496,7 @@
             width: 100%;
             min-width: 100%;
         }
-        
+
         .weekly-stats-left {
             border-right: none;
             border-bottom: 1px solid #e2e8f0;
@@ -501,7 +504,7 @@
             min-width: 100%;
             height: auto;
         }
-        
+
         .weekly-stats-right {
             flex-direction: row;
             justify-content: space-around;
@@ -511,39 +514,39 @@
             height: auto;
             background: transparent;
         }
-        
+
         .weekly-stats-item {
             flex: 1;
             min-width: auto;
         }
-        
+
         .weekly-stats-item .text-value {
             font-size: 1.3rem !important;
         }
-        
+
         .weekly-stats-item .text-label {
             font-size: 0.65rem;
         }
-        
+
         .stat-ring {
             width: 90px;
             height: 90px;
             margin: 0 auto 8px;
         }
-        
+
         .stat-ring svg {
             max-width: 90px;
             max-height: 90px;
         }
-        
+
         .stat-ring-value {
             font-size: 1rem;
         }
-        
+
         .stat-ring-label {
             font-size: 0.65rem;
         }
-        
+
         .scroll-indicator {
             display: none !important;
         }
@@ -554,29 +557,29 @@
             gap: 0.75rem;
             padding: 0.5rem;
         }
-        
+
         .weekly-stats-item .text-value {
             font-size: 1.1rem !important;
         }
-        
+
         .weekly-stats-item .text-label {
             font-size: 0.6rem;
         }
-        
+
         .stat-ring {
             width: 75px;
             height: 75px;
         }
-        
+
         .stat-ring svg {
             max-width: 75px;
             max-height: 75px;
         }
-        
+
         .stat-ring-value {
             font-size: 0.9rem;
         }
-        
+
         .stat-ring-label {
             font-size: 0.6rem;
         }
@@ -718,7 +721,8 @@
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        min-width: 600px; /* Ensure minimum width for horizontal scroll */
+        min-width: 600px;
+        /* Ensure minimum width for horizontal scroll */
     }
 
     .table-custom th {
@@ -871,11 +875,11 @@
         .digital-clock {
             font-size: 3rem;
         }
-        
+
         .card-body-clean {
             padding: 20px;
         }
-        
+
         /* Ensure proper alignment in weekly stats for large tablets */
     }
 
@@ -883,20 +887,20 @@
         .digital-clock {
             font-size: 2.8rem;
         }
-        
+
         .shift-card {
             margin-bottom: 20px;
         }
-        
+
         .pro-icon-box {
             width: 56px;
             height: 56px;
         }
-        
+
         .pro-icon-box i {
             font-size: 1.3rem;
         }
-        
+
         /* Weekly stats alignment for tablets */
     }
 
@@ -904,36 +908,37 @@
         .container-fluid {
             padding: 15px 10px;
         }
-        
+
         /* Stack columns vertically on mobile */
-        .col-lg-3, .col-lg-6 {
+        .col-lg-3,
+        .col-lg-6 {
             margin-bottom: 20px;
         }
-        
+
         /* Adjust clock widget for mobile */
         .digital-clock {
             font-size: 2.5rem;
             letter-spacing: -1px;
         }
-        
+
         .current-date {
             font-size: 0.85rem;
             padding: 5px 12px;
         }
-        
+
         /* Mobile-friendly buttons */
         .btn-clock {
             padding: 18px 20px;
             font-size: 0.95rem;
             margin-bottom: 10px;
         }
-        
+
         .btn-icon-wrapper {
             width: 28px;
             height: 28px;
             font-size: 1rem;
         }
-        
+
         /* Adjust shift card for mobile */
         .shift-header {
             padding: 20px 20px 10px;
@@ -941,74 +946,75 @@
             align-items: flex-start;
             gap: 15px;
         }
-        
+
         .shift-icon-box {
             width: 48px;
             height: 48px;
             margin-right: 15px;
         }
-        
+
         .shift-icon-box i {
             font-size: 1.2rem;
         }
-        
+
         .shift-badge {
             padding: 8px 20px;
             font-size: 0.75rem;
         }
-        
+
         .pro-icon-box {
             width: 48px;
             height: 48px;
         }
-        
+
         .pro-icon-box i {
             font-size: 1.1rem;
         }
-        
+
         /* Shift card mobile adjustments */
         .shift-clock-section {
             flex-direction: column;
             padding: 1.5rem 1rem;
             gap: 1.5rem;
         }
-        
+
         .shift-divider {
             width: 60px;
             height: 1px;
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
         }
-        
+
         .shift-time-display {
             font-size: 1.8rem;
         }
-        
+
         /* Adjust timeline for mobile */
         .timeline-container {
             padding: 60px 30px 50px;
         }
-        
+
         .timeline-track {
             left: 30px;
             right: 30px;
         }
-        
+
         .timeline-nodes {
             left: 30px;
             right: 30px;
         }
-        
+
         /* Mobile table improvements */
         .table-custom {
             font-size: 0.85rem;
-            min-width: 700px; /* Force horizontal scroll on mobile */
+            min-width: 700px;
+            /* Force horizontal scroll on mobile */
         }
-        
+
         .table-custom th,
         .table-custom td {
             padding: 12px 15px;
         }
-        
+
         /* Mobile-specific table layout */
         .table-responsive {
             -webkit-overflow-scrolling: touch;
@@ -1017,7 +1023,7 @@
             position: relative;
             margin-bottom: 20px;
         }
-        
+
         /* Add swipe indicator for mobile tables */
         .table-responsive::after {
             content: "← Swipe to see more →";
@@ -1036,140 +1042,149 @@
             opacity: 0.8;
             animation: fadeInOut 3s ease-in-out infinite;
         }
-        
+
         @keyframes fadeInOut {
-            0%, 100% { opacity: 0.8; }
-            50% { opacity: 0.4; }
+
+            0%,
+            100% {
+                opacity: 0.8;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
         }
-        
+
         /* Hide swipe indicator after user scrolls */
         .table-responsive.scrolled::after {
             display: none;
         }
-        
+
         /* Responsive table columns for mobile - hide less important columns */
-        .table-custom th:nth-child(4), /* Hours column */
+        .table-custom th:nth-child(4),
+        /* Hours column */
         .table-custom td:nth-child(4) {
             display: none;
         }
-        
+
         /* Keep Map column visible but make it more compact */
-        .table-custom th:nth-child(6), /* Map column */
+        .table-custom th:nth-child(6),
+        /* Map column */
         .table-custom td:nth-child(6) {
             min-width: 50px;
             padding: 8px 4px;
             text-align: center;
         }
-        
+
         .table-custom td:nth-child(6) .btn {
             width: 32px;
             height: 32px;
             padding: 0;
             font-size: 0.8rem;
         }
-        
+
         /* Make status badges smaller on mobile */
         .status-badge {
             padding: 4px 8px;
             font-size: 0.7rem;
         }
-        
+
         /* Compact date display */
         .table-custom td:first-child {
             min-width: 70px;
         }
-        
+
         .table-custom td:first-child .fw-bold {
             font-size: 0.9rem;
         }
-        
+
         .table-custom td:first-child .small {
             font-size: 0.7rem;
         }
-        
+
         /* Time columns more compact */
         .table-custom td:nth-child(2),
         .table-custom td:nth-child(3) {
             min-width: 80px;
             font-size: 0.8rem;
         }
-        
+
         /* Attendance log card header mobile optimization */
         .keka-card .card-header-clean {
             padding: 15px 20px 10px;
         }
-        
+
         .keka-card .card-title-text {
             font-size: 0.95rem;
         }
-        
+
         .keka-card .btn-sm {
             font-size: 0.75rem;
             padding: 6px 12px;
         }
-        
+
         /* Adjust stat ring for mobile */
         .stat-ring {
             width: 100px;
             height: 100px;
             margin: 0 auto 12px;
         }
-        
+
         .stat-ring svg {
             max-width: 100px;
             max-height: 100px;
         }
-        
+
         .stat-ring circle {
             stroke-width: 6;
         }
-        
+
         .stat-ring-content {
             width: 75%;
             max-width: 70px;
         }
-        
+
         .stat-ring-value {
             font-size: 1rem;
             line-height: 1.1;
         }
-        
+
         .stat-ring-label {
             font-size: 0.65rem;
             margin-top: 1px;
         }
-        
+
         /* Weekly stats mobile alignment */
-        
+
         /* Week days adjustment */
         .week-days {
             gap: 3px;
             padding: 8px;
         }
-        
+
         .day-badge {
             width: 28px;
             height: 28px;
             font-size: 0.75rem;
         }
-        
+
         /* Celebration items */
         .celebration-item {
             padding: 10px;
             margin-bottom: 8px;
         }
-        
+
         .celebration-avatar {
             width: 36px;
             height: 36px;
             font-size: 0.9rem;
         }
-        
+
         /* Modal adjustments */
         .modal-dialog {
             margin: 15px;
         }
-        
+
         .modal-content {
             border-radius: 16px;
         }
@@ -1179,125 +1194,127 @@
         .container-fluid {
             padding: 10px 8px;
         }
-        
+
         /* Header adjustments */
         .d-flex.justify-content-between.align-items-end {
             flex-direction: column;
             align-items: flex-start;
             gap: 10px;
         }
-        
+
         .d-flex.justify-content-between.align-items-end h4 {
             font-size: 1.3rem;
         }
-        
+
         /* Further reduce clock size */
         .digital-clock {
             font-size: 2rem;
         }
-        
+
         .current-date {
             font-size: 0.8rem;
         }
-        
+
         /* Compact buttons */
         .btn-clock {
             padding: 15px 18px;
             font-size: 0.9rem;
         }
-        
+
         /* Shift card adjustments */
         .shift-header {
             padding: 15px 15px 8px;
         }
-        
+
         .shift-header h3 {
             font-size: 1.1rem;
         }
-        
+
         .shift-header .opacity-75 {
             font-size: 1rem;
         }
-        
+
         .timeline-container {
             padding: 50px 20px 40px;
         }
-        
+
         .timeline-track {
             left: 20px;
             right: 20px;
         }
-        
+
         .timeline-nodes {
             left: 20px;
             right: 20px;
         }
-        
+
         .shift-footer {
             padding: 15px 20px;
             flex-direction: column;
             gap: 15px;
             text-align: center;
         }
-        
+
         /* Very compact stats ring for small screens */
         .stat-ring {
             width: 80px;
             height: 80px;
             margin: 0 auto 10px;
         }
-        
+
         .stat-ring svg {
             max-width: 80px;
             max-height: 80px;
         }
-        
+
         .stat-ring circle {
             stroke-width: 5;
         }
-        
+
         .stat-ring-content {
             width: 70%;
             max-width: 56px;
         }
-        
+
         .stat-ring-value {
             font-size: 0.9rem;
             line-height: 1;
         }
-        
+
         .stat-ring-label {
             font-size: 0.6rem;
             margin-top: 1px;
         }
-        
+
         /* Weekly stats very small screens alignment */
-        
+
         /* Very compact table */
         .table-custom {
             font-size: 0.8rem;
-            min-width: 600px; /* Reduce minimum width for very small screens */
+            min-width: 600px;
+            /* Reduce minimum width for very small screens */
         }
-        
+
         .table-custom th,
         .table-custom td {
             padding: 10px 8px;
         }
-        
+
         /* Hide more columns on very small screens but keep Map visible */
         .table-custom th:nth-child(4),
         .table-custom td:nth-child(4) {
             display: none;
         }
-        
+
         /* Make Map column even more compact on very small screens */
-        .table-custom th:nth-child(6), /* Map column */
+        .table-custom th:nth-child(6),
+        /* Map column */
         .table-custom td:nth-child(6) {
             min-width: 40px;
             padding: 6px 2px;
             text-align: center;
         }
-        
+
         .table-custom td:nth-child(6) .btn {
             width: 28px;
             height: 28px;
@@ -1308,7 +1325,7 @@
             justify-content: center;
             border-radius: 50%;
         }
-        
+
         /* Ensure map buttons are touch-friendly */
         .table-custom td:nth-child(6) a {
             min-width: 32px;
@@ -1316,60 +1333,60 @@
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
         }
-        
+
         /* Make the table more compact */
         .table-custom th {
             font-size: 0.7rem;
             padding: 8px 6px;
         }
-        
+
         .table-custom td {
             padding: 8px 6px;
             font-size: 0.75rem;
         }
-        
+
         /* Ultra-compact date display */
         .table-custom td:first-child {
             min-width: 50px;
         }
-        
+
         .table-custom td:first-child .fw-bold {
             font-size: 0.8rem;
             line-height: 1.2;
         }
-        
+
         .table-custom td:first-child .small {
             font-size: 0.65rem;
         }
-        
+
         /* Ultra-compact time columns */
         .table-custom td:nth-child(2),
         .table-custom td:nth-child(3) {
             min-width: 60px;
             font-size: 0.7rem;
         }
-        
+
         /* Ultra-compact status badges */
         .status-badge {
             padding: 2px 6px;
             font-size: 0.65rem;
             border-radius: 8px;
         }
-        
+
         /* Shift card very small screens */
         .shift-time-display {
             font-size: 1.5rem;
         }
-        
+
         .pro-icon-box {
             width: 40px;
             height: 40px;
         }
-        
+
         .pro-icon-box i {
             font-size: 1rem !important;
         }
-        
+
         /* Card header adjustments for mobile */
         .card-header-clean {
             padding: 15px 15px 10px;
@@ -1377,36 +1394,36 @@
             align-items: flex-start;
             gap: 10px;
         }
-        
+
         .card-title-text {
             font-size: 0.95rem;
         }
-        
+
         .btn-sm {
             font-size: 0.7rem;
             padding: 4px 8px;
         }
-        
+
         /* Improve table scrolling experience */
         .table-responsive {
             border-radius: 8px;
             margin-bottom: 15px;
         }
-        
+
         /* Adjust swipe indicator for very small screens */
         .table-responsive::after {
             font-size: 0.65rem;
             padding: 3px 8px;
             bottom: 8px;
         }
-        
+
         /* Compact week days */
         .day-badge {
             width: 24px;
             height: 24px;
             font-size: 0.7rem;
         }
-        
+
         /* Compact celebration items */
         .celebration-avatar {
             width: 32px;
@@ -1414,11 +1431,11 @@
             font-size: 0.8rem;
             margin-right: 10px;
         }
-        
+
         .celebration-item-content {
             font-size: 0.85rem;
         }
-        
+
         /* Modal full width on very small screens */
         .modal-dialog {
             margin: 10px;
@@ -1433,31 +1450,31 @@
             height: 70px;
             margin: 0 auto 8px;
         }
-        
+
         .stat-ring svg {
             max-width: 70px;
             max-height: 70px;
         }
-        
+
         .stat-ring circle {
             stroke-width: 4;
         }
-        
+
         .stat-ring-content {
             width: 65%;
             max-width: 45px;
         }
-        
+
         .stat-ring-value {
             font-size: 0.8rem;
             line-height: 0.9;
         }
-        
+
         .stat-ring-label {
             font-size: 0.55rem;
             margin-top: 0;
         }
-        
+
         /* Ultra compact weekly stats */
     }
 
@@ -1466,38 +1483,38 @@
         .digital-clock {
             font-size: 2.2rem;
         }
-        
+
         .shift-card {
             margin-bottom: 15px;
         }
-        
+
         .timeline-container {
             padding: 40px 25px 35px;
         }
-        
+
         /* Adjust stat ring for landscape */
         .stat-ring {
             width: 90px;
             height: 90px;
         }
-        
+
         .stat-ring svg {
             max-width: 90px;
             max-height: 90px;
         }
-        
+
         .stat-ring-content {
             max-width: 65px;
         }
-        
+
         .stat-ring-value {
             font-size: 0.95rem;
         }
-        
+
         .stat-ring-label {
             font-size: 0.6rem;
         }
-        
+
         /* Weekly stats landscape alignment */
     }
 
@@ -1506,16 +1523,16 @@
         .btn-clock {
             min-height: 48px;
         }
-        
+
         .keka-card:hover {
             transform: none;
             box-shadow: var(--shadow-sm);
         }
-        
+
         .celebration-item:hover {
             transform: none;
         }
-        
+
         .table-responsive {
             -webkit-overflow-scrolling: touch;
         }
@@ -1525,7 +1542,8 @@
 {% block content %}
 <!-- Hidden Data Context for JS -->
 <div id="page-context" data-csrf="{{ csrf_token }}" data-clock-in="{{ attendance.clock_in|date:'Y-m-d H:i:s' }}"
-    data-avg-hours="{{ avg_hours|default:'00:00' }}" style="display:none;"></div>
+    data-avg-hours="{{ avg_hours|default:'00:00' }}" data-user-timezone="{{ user_timezone }}" style="display:none;">
+</div>
 <div class="container-fluid py-4 px-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-end mb-5 animate-enter">
@@ -2022,14 +2040,14 @@
                             font-weight: 800;
                             color: white;
                             margin-bottom: 0;
-                            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
                             line-height: 1.2;
                         }
 
                         .shift-divider {
                             width: 1px;
                             height: 60px;
-                            background: rgba(255,255,255,0.2);
+                            background: rgba(255, 255, 255, 0.2);
                             flex-shrink: 0;
                         }
                     </style>
@@ -2045,7 +2063,8 @@
                             </div>
                             <div class="text-white opacity-75 small text-uppercase fw-bold mb-1">Clock In
                             </div>
-                            <div class="fs-2 fw-bold text-white mb-0 shift-time-display" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div class="fs-2 fw-bold text-white mb-0 shift-time-display"
+                                style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 {% if attendance and attendance.clock_in %}
                                 {{ attendance.clock_in|time:"h:i A" }}
                                 {% else %}
@@ -2055,7 +2074,8 @@
                         </div>
 
                         <!-- Divider Line (Vertical) -->
-                        <div class="shift-divider" style="width: 1px; height: 60px; background: rgba(255,255,255,0.2);"></div>
+                        <div class="shift-divider" style="width: 1px; height: 60px; background: rgba(255,255,255,0.2);">
+                        </div>
 
                         <!-- Clock Out Block -->
                         <div class="text-center shift-time-block">
@@ -2067,7 +2087,8 @@
                             </div>
                             <div class="text-white opacity-75 small text-uppercase fw-bold mb-1">Clock Out
                             </div>
-                            <div class="fs-2 fw-bold text-white mb-0 shift-time-display" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div class="fs-2 fw-bold text-white mb-0 shift-time-display"
+                                style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 {% if attendance and attendance.clock_out and not attendance.is_currently_clocked_in %}
                                 {{ attendance.clock_out|time:"h:i A" }}
                                 {% else %}
@@ -2354,7 +2375,8 @@
                 <div class="keka-card animate-enter delay-125">
                     <div class="card-header-clean">
                         <h6 class="card-title-text">
-                            <div class="card-icon-soft primary" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
+                            <div class="card-icon-soft primary"
+                                style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
                                 <i class="fas fa-calendar-check"></i>
                             </div>
                             Leave Balance
@@ -2362,7 +2384,8 @@
                     </div>
                     <div class="card-body-clean">
                         <!-- Casual Leave -->
-                        <div class="d-flex justify-content-between align-items-center mb-3 p-3" style="background: rgba(99, 102, 241, 0.05); border-radius: 12px; border-left: 4px solid #6366f1;">
+                        <div class="d-flex justify-content-between align-items-center mb-3 p-3"
+                            style="background: rgba(99, 102, 241, 0.05); border-radius: 12px; border-left: 4px solid #6366f1;">
                             <div>
                                 <div class="text-label mb-1">Casual Leave</div>
                                 <div class="fw-bold text-primary" style="font-size: 1.25rem;">{{ leave_balance.casual_leave_balance|floatformat:1 }}</div>
@@ -2372,9 +2395,10 @@
                                 <i class="fas fa-mug-hot text-primary" style="font-size: 1.5rem; opacity: 0.7;"></i>
                             </div>
                         </div>
-                        
+
                         <!-- Sick Leave -->
-                        <div class="d-flex justify-content-between align-items-center p-3" style="background: rgba(16, 185, 129, 0.05); border-radius: 12px; border-left: 4px solid #10b981;">
+                        <div class="d-flex justify-content-between align-items-center p-3"
+                            style="background: rgba(16, 185, 129, 0.05); border-radius: 12px; border-left: 4px solid #10b981;">
                             <div>
                                 <div class="text-label mb-1">Sick Leave</div>
                                 <div class="fw-bold text-success" style="font-size: 1.25rem;">{{ leave_balance.sick_leave_balance|floatformat:1 }}</div>
@@ -2384,10 +2408,11 @@
                                 <i class="fas fa-user-md text-success" style="font-size: 1.5rem; opacity: 0.7;"></i>
                             </div>
                         </div>
-                        
+
                         <!-- Quick Apply Button -->
                         <div class="mt-3">
-                            <a href="{% url 'my_leaves' %}" class="btn btn-primary w-100" style="border-radius: 12px; padding: 12px;">
+                            <a href="{% url 'my_leaves' %}" class="btn btn-primary w-100"
+                                style="border-radius: 12px; padding: 12px;">
                                 <i class="fas fa-plus me-2"></i>Apply for Leave
                             </a>
                         </div>
@@ -2502,10 +2527,10 @@
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script>
     // Weekly Stats Scroll Indicator
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const scrollContainer = document.querySelector('.weekly-stats-scroll-container');
         if (scrollContainer) {
-            scrollContainer.addEventListener('scroll', function() {
+            scrollContainer.addEventListener('scroll', function () {
                 if (this.scrollLeft > 10) {
                     this.classList.add('scrolled');
                 } else {
@@ -2518,8 +2543,23 @@
     // Clock
     function updateClock() {
         const now = new Date();
-        const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-        const dateString = now.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+        const pageContext = document.getElementById('page-context');
+        const userTimezone = pageContext ? pageContext.dataset.userTimezone : null;
+
+        const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: true };
+        const dateOptions = { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' };
+
+        if (userTimezone) {
+            try {
+                timeOptions.timeZone = userTimezone;
+                dateOptions.timeZone = userTimezone;
+            } catch (e) {
+                console.error("Invalid timezone:", userTimezone);
+            }
+        }
+
+        const timeString = now.toLocaleTimeString('en-US', timeOptions);
+        const dateString = now.toLocaleDateString('en-US', dateOptions);
 
         document.getElementById('clock').innerText = timeString;
         document.getElementById('date-sub').innerText = dateString;
@@ -2529,12 +2569,31 @@
         if (headerDate) headerDate.innerText = dateString;
 
         // Update dynamic greeting based on time
-        updateGreeting(now);
+        updateGreeting(now, userTimezone);
     }
 
     // Dynamic Greeting based on time of day
-    function updateGreeting(now) {
-        const hour = now.getHours();
+    function updateGreeting(now, userTimezone) {
+        let hour = now.getHours();
+
+        // If timezone is provided, we need to get the hour in that timezone
+        if (userTimezone) {
+            try {
+                // Formatting to 24h format to parse the hour correctly in the target timezone
+                const parts = new Intl.DateTimeFormat('en-US', {
+                    hour: 'numeric',
+                    hour12: false,
+                    timeZone: userTimezone
+                }).formatToParts(now);
+                const hourPart = parts.find(p => p.type === 'hour');
+                if (hourPart) {
+                    hour = parseInt(hourPart.value, 10);
+                }
+            } catch (e) {
+                console.error("Error calculating greeting hour:", e);
+            }
+        }
+
         const greetingElement = document.getElementById('dynamic-greeting');
 
         if (!greetingElement) return;
@@ -3234,39 +3293,39 @@
     });
 
     // Enhanced Mobile Table Experience
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const tableResponsive = document.querySelector('.table-responsive');
-        
+
         if (tableResponsive && window.innerWidth <= 768) {
             let scrollTimeout;
-            
+
             // Hide swipe indicator after user scrolls
-            tableResponsive.addEventListener('scroll', function() {
+            tableResponsive.addEventListener('scroll', function () {
                 this.classList.add('scrolled');
-                
+
                 // Clear existing timeout
                 clearTimeout(scrollTimeout);
-                
+
                 // Show indicator again after 3 seconds of no scrolling
                 scrollTimeout = setTimeout(() => {
                     this.classList.remove('scrolled');
                 }, 3000);
             });
-            
+
             // Add touch feedback for better mobile experience
             const tableRows = tableResponsive.querySelectorAll('tr');
             tableRows.forEach(row => {
-                row.addEventListener('touchstart', function() {
+                row.addEventListener('touchstart', function () {
                     this.style.backgroundColor = 'rgba(99, 102, 241, 0.05)';
                 }, { passive: true });
-                
-                row.addEventListener('touchend', function() {
+
+                row.addEventListener('touchend', function () {
                     setTimeout(() => {
                         this.style.backgroundColor = '';
                     }, 150);
                 }, { passive: true });
             });
-            
+
             // Auto-hide swipe indicator after 5 seconds
             setTimeout(() => {
                 tableResponsive.classList.add('scrolled');

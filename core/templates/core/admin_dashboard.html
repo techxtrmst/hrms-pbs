@@ -1637,13 +1637,13 @@
 
 {% block content %}
 <div class="container-fluid px-4 pb-4">
-    
+
     <!-- Employee Search Bar -->
     <div class="employee-search-container">
         <div class="search-wrapper">
             <i class="fas fa-search search-icon"></i>
-            <input type="text" id="employeeSearchInput" class="employee-search-input" 
-                   placeholder="Search employees by name, ID, department..." autocomplete="off">
+            <input type="text" id="employeeSearchInput" class="employee-search-input"
+                placeholder="Search employees by name, ID, department..." autocomplete="off">
             <div id="searchResults" class="search-results" style="display: none;"></div>
         </div>
     </div>
@@ -1738,10 +1738,12 @@
                                         <div>
                                             <h4 class="announcement-title-large">{{ announcement.title }}</h4>
                                             <div class="announcement-meta-row">
-                                                <span><i class="far fa-calendar-alt me-1"></i> {{ announcement.created_at|date:"d M Y" }}</span>
+                                                <span><i class="far fa-calendar-alt me-1"></i> {{
+                                                    announcement.created_at|date:"d M Y" }}</span>
                                                 {% if announcement.location %}
                                                 <span class="text-primary bg-soft-primary px-2 py-1 rounded small"><i
-                                                        class="fas fa-map-marker-alt me-1"></i> {{ announcement.location.name }}</span>
+                                                        class="fas fa-map-marker-alt me-1"></i> {{
+                                                    announcement.location.name }}</span>
                                                 {% else %}
                                                 <span class="text-warning bg-soft-warning px-2 py-1 rounded small"><i
                                                         class="fas fa-globe me-1"></i> Global</span>
@@ -1801,7 +1803,8 @@
                                 <div class="announcement-details">
                                     <div class="announcement-text">{{ birthday.employee.user.get_full_name }}</div>
                                     <div class="announcement-subtext">
-                                        {{ birthday.employee.designation|default:"N/A" }} • {{ birthday.employee.department|default:"N/A" }}
+                                        {{ birthday.employee.designation|default:"N/A" }} • {{
+                                        birthday.employee.department|default:"N/A" }}
                                     </div>
                                 </div>
                             </div>
@@ -1836,7 +1839,9 @@
                                 <div class="announcement-details">
                                     <div class="announcement-text">{{ anniversary.employee.user.get_full_name }}</div>
                                     <div class="announcement-subtext">
-                                        {{ anniversary.employee.designation|default:"N/A" }} • {{ anniversary.employee.department|default:"N/A" }} • {{ anniversary.years }} year{{ anniversary.years|pluralize }}
+                                        {{ anniversary.employee.designation|default:"N/A" }} • {{
+                                        anniversary.employee.department|default:"N/A" }} • {{ anniversary.years }}
+                                        year{{ anniversary.years|pluralize }}
                                     </div>
                                 </div>
                             </div>
@@ -2091,9 +2096,10 @@
         name: "{{ att.employee.user.get_full_name }}",
             designation: "{{ att.employee.designation|default:'N/A' }}",
                 dept: "{{ att.employee.department|default:'N/A' }}",
-                    time: "{{ att.clock_in|time:'h:i A' }}",
-                        id: "{{ att.employee.id }}",
-                            initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
+                    location: "{{ att.employee.location.name|default:'N/A' }}",
+                        time: "{{ att.local_clock_in_time|time:'h:i A' }}",
+                            id: "{{ att.employee.id }}",
+                                initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
     } {% if not forloop.last %}, {% endif %}
     {% endfor %}
         ],
@@ -2103,9 +2109,10 @@
         name: "{{ att.employee.user.get_full_name }}",
             designation: "{{ att.employee.designation|default:'N/A' }}",
                 dept: "{{ att.employee.department|default:'N/A' }}",
-                    time: "{{ att.clock_out|time:'h:i A' }}",
-                        id: "{{ att.employee.id }}",
-                            initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
+                    location: "{{ att.employee.location.name|default:'N/A' }}",
+                        time: "{{ att.local_clock_out_time|time:'h:i A' }}",
+                            id: "{{ att.employee.id }}",
+                                initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
     } {% if not forloop.last %}, {% endif %}
     {% endfor %}
         ],
@@ -2115,9 +2122,10 @@
         name: "{{ att.employee.user.get_full_name }}",
             designation: "{{ att.employee.designation|default:'N/A' }}",
                 dept: "{{ att.employee.department|default:'N/A' }}",
-                    time: "{% if att.clock_in %}{{ att.clock_in|time:'h:i A' }}{% else %}N/A{% endif %}",
-                        id: "{{ att.employee.id }}",
-                            initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
+                    location: "{{ att.employee.location.name|default:'N/A' }}",
+                        time: "{% if att.local_clock_in_time %}{{ att.local_clock_in_time|time:'h:i A' }}{% else %}N/A{% endif %}",
+                            id: "{{ att.employee.id }}",
+                                initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
     } {% if not forloop.last %}, {% endif %}
     {% endfor %}
         ]
@@ -2145,9 +2153,17 @@
                         <div class="insight-employee-avatar">${item.initials.toUpperCase()}</div>
                         <div class="insight-employee-info">
                             <div class="insight-employee-name">${item.name}</div>
-                            <div class="insight-employee-dept">${item.designation}</div>
+                            <div class="insight-employee-dept">
+                                ${item.designation} 
+                                <span style="font-size: 0.85em; color: var(--keka-text-secondary); margin-left: 6px;">
+                                    <i class="fas fa-map-marker-alt" style="font-size: 0.9em;"></i> ${item.location}
+                                </span>
+                            </div>
                         </div>
-                        <div class="insight-time">${item.time}</div>
+                        <div class="insight-time" style="text-align: right;">
+                            <div>${item.time}</div>
+                            <div style="font-size: 0.7em; color: var(--keka-text-secondary);">Local Time</div>
+                        </div>
                     </div>
                 `;
             });

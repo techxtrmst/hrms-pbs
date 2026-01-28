@@ -224,7 +224,7 @@ def admin_dashboard(request):
 
     # Today's attendance records
     today_attendance = Attendance.objects.filter(employee__company=company, date=today).select_related(
-        "employee", "employee__user"
+        "employee", "employee__user", "employee__location"
     )
 
     if location_id:
@@ -240,10 +240,22 @@ def admin_dashboard(request):
 
     # Define office start time (9:00 AM)
     office_start = dt_time(9, 0)
+    
+    import pytz
 
     for att in today_attendance:
+        # Determine employee timezone
+        tz_name = "Asia/Kolkata"
+        if att.employee.location and att.employee.location.timezone:
+            tz_name = att.employee.location.timezone
+        
+        emp_tz = pytz.timezone(tz_name)
+
         if att.clock_in:
-            clock_in_time = timezone.localtime(att.clock_in).time()
+            # Attach local times to the object for template display
+            local_in_dt = att.clock_in.astimezone(emp_tz)
+            att.local_clock_in_time = local_in_dt.time()
+            
             # Late arrivals
             if att.is_late:
                 late_arrivals_list.append(att)
@@ -257,6 +269,10 @@ def admin_dashboard(request):
             # Remote clock-ins
             if att.location_in and att.status == "WFH":
                 remote_clockins += 1
+                
+        if att.clock_out:
+            local_out_dt = att.clock_out.astimezone(emp_tz)
+            att.local_clock_out_time = local_out_dt.time()
 
         # On Duty (Interpreted as Currently Clocked In / Active based on user request)
         if (att.clock_in and not att.clock_out) or att.status == "ON_DUTY":
@@ -685,6 +701,16 @@ def employee_dashboard(request):
         return redirect("personal_home")
 
     today = timezone.localtime().date()
+    
+    # Adjust today based on employee location timezone
+    if employee.location and hasattr(employee.location, "timezone"):
+        try:
+            import pytz
+            tz = pytz.timezone(employee.location.timezone)
+            # Use now() to get accurate current moment, then convert to user timezone
+            today = timezone.now().astimezone(tz).date()
+        except Exception:
+            pass
 
     # Today's attendance
     attendance = Attendance.objects.filter(employee=employee, date=today).first()
@@ -1001,6 +1027,19 @@ def personal_home(request):
     if hasattr(request.user, "employee_profile"):
         employee = request.user.employee_profile
         today = timezone.localdate()
+
+        # Adjust today based on employee location timezone
+        user_timezone = "Asia/Kolkata"
+        if employee.location and hasattr(employee.location, "timezone"):
+            try:
+                import pytz
+                user_timezone = employee.location.timezone
+                tz = pytz.timezone(user_timezone)
+                today = timezone.now().astimezone(tz).date()
+            except Exception:
+                pass
+        
+        context["user_timezone"] = user_timezone
 
         # Today's attendance
         attendance = Attendance.objects.filter(employee=employee, date=today).first()
