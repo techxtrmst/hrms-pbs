@@ -309,7 +309,7 @@
         color: var(--primary-color);
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
-    
+
     .nav-pills-custom .nav-link:hover {
         background: rgba(255, 255, 255, 0.7);
         color: var(--primary-color);
@@ -451,51 +451,51 @@
         justify-content: center;
         min-height: 180px;
     }
-    
+
     /* Optimized padding for Work Timeline card */
     .content-card:has(.timeline-wrapper) .card-body-clean,
     .timeline-wrapper .card-body-clean {
         padding: 1rem 1.25rem;
         min-height: 200px;
     }
-    
+
     /* Tab content responsive styles */
     @media (max-width: 991px) {
         .tab-content {
             margin-top: 2rem;
         }
-        
+
         .row.g-4 {
             --bs-gutter-x: 1rem;
             --bs-gutter-y: 1rem;
         }
     }
-    
+
     @media (max-width: 767px) {
         .tab-content {
             margin-top: 1.5rem;
         }
-        
+
         .content-card {
             margin-bottom: 1rem;
             border-radius: 0.75rem;
         }
-        
+
         .card-header-clean {
             padding: 1rem 1.25rem;
             font-size: 0.9rem;
         }
-        
+
         .card-body-clean {
             padding: 1.25rem;
         }
-        
+
         .card-icon {
             width: 28px;
             height: 28px;
             font-size: 0.8rem;
         }
-        
+
         /* Stack columns on mobile */
         .col-lg-5,
         .col-lg-7,
@@ -505,65 +505,65 @@
             max-width: 100%;
             margin-bottom: 1rem;
         }
-        
+
         .row.g-4 {
             --bs-gutter-x: 0.75rem;
             --bs-gutter-y: 0.75rem;
         }
     }
-    
+
     @media (max-width: 575px) {
         .card-header-clean {
             padding: 0.875rem 1rem;
             font-size: 0.85rem;
         }
-        
+
         .card-body-clean {
             padding: 1rem;
             min-height: 150px;
         }
-        
+
         .card-icon {
             width: 24px;
             height: 24px;
             font-size: 0.75rem;
         }
-        
+
         .row.g-4 {
             --bs-gutter-x: 0.5rem;
             --bs-gutter-y: 0.5rem;
         }
-        
+
         /* Reporting hierarchy mobile */
         .reporting-manager-card {
             padding: 1.25rem;
             min-height: 160px;
         }
-        
+
         .manager-avatar {
             width: 60px;
             height: 60px;
             font-size: 1.4rem;
         }
-        
+
         .manager-name {
             font-size: 0.9rem;
         }
-        
+
         .manager-title {
             font-size: 0.75rem;
         }
-        
+
         .manager-contact-btn {
             padding: 0.375rem 1rem;
             font-size: 0.75rem;
         }
-        
+
         .no-manager-assigned {
             padding: 1.25rem;
             min-height: 160px;
         }
-        
+
         .no-manager-icon {
             width: 45px;
             height: 45px;
@@ -588,7 +588,7 @@
         word-break: break-word;
         line-height: 1.4;
     }
-    
+
     .info-group {
         background: #f8fafc;
         padding: 0.75rem 1rem;
@@ -602,23 +602,23 @@
         background: #fff;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
     }
-    
+
     /* Info sections responsive */
     @media (max-width: 767px) {
         .info-group {
             padding: 0.625rem 0.875rem;
             margin-bottom: 0.75rem;
         }
-        
+
         .info-label {
             font-size: 0.7rem;
             margin-bottom: 0.125rem;
         }
-        
+
         .info-value {
             font-size: 0.875rem;
         }
-        
+
         /* Stack info columns */
         .col-sm-6 {
             flex: 0 0 100%;
@@ -626,21 +626,21 @@
             margin-bottom: 0.75rem;
         }
     }
-    
+
     @media (max-width: 575px) {
         .info-group {
             padding: 0.5rem 0.75rem;
         }
-        
+
         .info-label {
             font-size: 0.65rem;
         }
-        
+
         .info-value {
             font-size: 0.8rem;
         }
     }
-    
+
     /* Address boxes responsive */
     .address-box {
         background: #fff;
@@ -670,23 +670,23 @@
         margin: 0;
         word-break: break-word;
     }
-    
+
     @media (max-width: 767px) {
         .address-box {
             padding: 1rem;
             margin-bottom: 1rem;
         }
-        
+
         .address-header {
             font-size: 0.8rem;
             margin-bottom: 0.75rem;
         }
-        
+
         .address-text {
             font-size: 0.875rem;
             line-height: 1.5;
         }
-        
+
         /* Stack address columns */
         .col-md-6 {
             flex: 0 0 100%;
@@ -694,17 +694,17 @@
             margin-bottom: 1rem;
         }
     }
-    
+
     @media (max-width: 575px) {
         .address-box {
             padding: 0.875rem;
         }
-        
+
         .address-header {
             font-size: 0.75rem;
             margin-bottom: 0.5rem;
         }
-        
+
         .address-text {
             font-size: 0.8rem;
         }
@@ -798,10 +798,12 @@
             transform: scale(1);
             opacity: 0.8;
         }
+
         50% {
             transform: scale(1.5);
             opacity: 0.4;
         }
+
         100% {
             transform: scale(2);
             opacity: 0;
@@ -809,9 +811,12 @@
     }
 
     @keyframes pulse-dot {
-        0%, 100% {
+
+        0%,
+        100% {
             transform: scale(1);
         }
+
         50% {
             transform: scale(1.1);
         }
@@ -997,103 +1002,106 @@
         line-height: 1.6;
         margin: 0;
     }
-    
+
     /* Form responsive styles */
     @media (max-width: 767px) {
+
         .form-control,
         .form-select {
-            font-size: 16px !important; /* Prevents zoom on iOS */
+            font-size: 16px !important;
+            /* Prevents zoom on iOS */
             padding: 0.75rem;
             border-radius: 0.5rem;
             min-height: 44px;
         }
-        
+
         .form-label {
             font-size: 0.8rem;
             font-weight: 600;
             margin-bottom: 0.375rem;
         }
-        
+
         .btn {
             padding: 0.75rem 1.5rem;
             font-size: 0.875rem;
             border-radius: 0.5rem;
             min-height: 44px;
         }
-        
+
         .btn-sm {
             padding: 0.5rem 1rem;
             font-size: 0.8rem;
             min-height: 36px;
         }
-        
+
         /* Form grid responsive */
-        .row.g-3 > .col-md-6,
-        .row.g-3 > .col-md-4 {
+        .row.g-3>.col-md-6,
+        .row.g-3>.col-md-4 {
             flex: 0 0 100%;
             max-width: 100%;
             margin-bottom: 0.75rem;
         }
-        
-        .row.g-2 > .col-md-4 {
+
+        .row.g-2>.col-md-4 {
             flex: 0 0 100%;
             max-width: 100%;
             margin-bottom: 0.5rem;
         }
     }
-    
+
     @media (max-width: 575px) {
+
         .form-control,
         .form-select {
             padding: 0.625rem;
             font-size: 16px !important;
         }
-        
+
         .btn {
             padding: 0.625rem 1.25rem;
             font-size: 0.8rem;
         }
-        
+
         .form-label {
             font-size: 0.75rem;
         }
     }
-    
+
     /* Emergency contacts responsive */
     @media (max-width: 767px) {
         .border.rounded-3 {
             padding: 1rem !important;
             margin-bottom: 0.75rem;
         }
-        
+
         .border.rounded-3 h6 {
             font-size: 0.9rem;
         }
-        
+
         .border.rounded-3 .small {
             font-size: 0.8rem;
         }
-        
+
         .border.rounded-3 .badge {
             font-size: 0.65rem;
             padding: 0.25rem 0.5rem;
         }
     }
-    
+
     @media (max-width: 575px) {
         .border.rounded-3 {
             padding: 0.875rem !important;
         }
-        
+
         .border.rounded-3 h6 {
             font-size: 0.85rem;
         }
-        
+
         .border.rounded-3 .small {
             font-size: 0.75rem;
         }
     }
-    
+
     /* Document upload responsive */
     .doc-upload-box {
         border: 2px dashed #cbd5e1;
@@ -1131,24 +1139,24 @@
         right: 10px;
         z-index: 10;
     }
-    
+
     @media (max-width: 767px) {
         .doc-upload-box {
             padding: 1.25rem;
             border-radius: 0.5rem;
             min-height: 100px;
         }
-        
+
         .doc-preview-img {
             max-height: 100px;
         }
-        
+
         .doc-status-badge {
             top: 8px;
             right: 8px;
             font-size: 0.7rem;
         }
-        
+
         /* Stack document columns */
         .col-md-4 {
             flex: 0 0 100%;
@@ -1156,49 +1164,50 @@
             margin-bottom: 1rem;
         }
     }
-    
+
     @media (max-width: 575px) {
         .doc-upload-box {
             padding: 1rem;
             min-height: 80px;
         }
-        
+
         .doc-preview-img {
             max-height: 80px;
         }
-        
+
         .doc-status-badge {
             font-size: 0.65rem;
             padding: 0.25rem 0.5rem;
         }
     }
-    
+
     /* Job tab responsive */
     @media (max-width: 767px) {
+
         /* Employment details responsive */
         .col-sm-6 {
             flex: 0 0 100%;
             max-width: 100%;
             margin-bottom: 1rem;
         }
-        
+
         /* Reporting hierarchy responsive */
         .d-inline-flex {
             width: 80px;
             height: 80px;
         }
-        
+
         .d-inline-flex span {
             font-size: 1.5rem;
         }
     }
-    
+
     @media (max-width: 575px) {
         .d-inline-flex {
             width: 60px;
             height: 60px;
         }
-        
+
         .d-inline-flex span {
             font-size: 1.2rem;
         }
@@ -1206,17 +1215,48 @@
 
     /* === TABLET RESPONSIVE (768px - 1023px) === */
     @media (max-width: 1023px) and (min-width: 768px) {
-        .profile-hero { height: 180px; }
-        .profile-card-main { margin-top: -2.5rem; padding: 1.75rem; }
-        .profile-avatar-wrapper { width: 100px; height: 100px; margin: -3.5rem auto 1rem; }
-        .profile-avatar.placeholder { font-size: 1.8rem; }
-        .camera-btn { width: 28px; height: 28px; }
-        .profile-name { font-size: 1.5rem; }
-        
-        .content-area, .card-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-        .info-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
-        .nav-pills-custom .nav-link { padding: 0.5rem 1rem; font-size: 0.85rem; }
-        
+        .profile-hero {
+            height: 180px;
+        }
+
+        .profile-card-main {
+            margin-top: -2.5rem;
+            padding: 1.75rem;
+        }
+
+        .profile-avatar-wrapper {
+            width: 100px;
+            height: 100px;
+            margin: -3.5rem auto 1rem;
+        }
+
+        .profile-avatar.placeholder {
+            font-size: 1.8rem;
+        }
+
+        .camera-btn {
+            width: 28px;
+            height: 28px;
+        }
+
+        .profile-name {
+            font-size: 1.5rem;
+        }
+
+        .content-area,
+        .card-grid {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .info-grid {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+
+        .nav-pills-custom .nav-link {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+
         .profile-layout {
             flex-direction: column;
             text-align: center;
@@ -1226,33 +1266,51 @@
 
     /* === MOBILE RESPONSIVE (max-width: 767px) === */
     @media (max-width: 767px) {
-        .container { padding-left: 10px; padding-right: 10px; }
-        
-        .profile-hero { height: 160px; }
-        .profile-card-main { 
-            margin-top: -2rem; 
-            padding: 1.5rem 1rem; 
-            border-radius: 1rem; 
+        .container {
+            padding-left: 10px;
+            padding-right: 10px;
         }
-        
+
+        .profile-hero {
+            height: 160px;
+        }
+
+        .profile-card-main {
+            margin-top: -2rem;
+            padding: 1.5rem 1rem;
+            border-radius: 1rem;
+        }
+
         .profile-layout {
             flex-direction: column;
             text-align: center;
             align-items: center;
             gap: 1rem;
         }
-        
-        .profile-avatar-wrapper { 
-            width: 90px; 
-            height: 90px; 
-            margin: -3rem auto 1rem; 
+
+        .profile-avatar-wrapper {
+            width: 90px;
+            height: 90px;
+            margin: -3rem auto 1rem;
         }
-        .profile-avatar.placeholder { font-size: 1.6rem; }
-        .camera-btn { width: 26px; height: 26px; }
-        
-        .profile-name { font-size: 1.3rem; }
-        .profile-role { font-size: 0.85rem; }
-        
+
+        .profile-avatar.placeholder {
+            font-size: 1.6rem;
+        }
+
+        .camera-btn {
+            width: 26px;
+            height: 26px;
+        }
+
+        .profile-name {
+            font-size: 1.3rem;
+        }
+
+        .profile-role {
+            font-size: 0.85rem;
+        }
+
         /* Navigation */
         .nav-pills-custom {
             flex-direction: column;
@@ -1260,13 +1318,14 @@
             padding: 0.5rem;
             width: 100%;
         }
+
         .nav-pills-custom .nav-link {
             padding: 0.6rem;
             font-size: 0.85rem;
             flex: none;
             width: 100%;
         }
-        
+
         /* Grids to single column */
         .content-area,
         .card-grid,
@@ -1278,90 +1337,142 @@
             grid-template-columns: 1fr;
             gap: 1rem;
         }
-        
+
         .form-grid-2 {
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             gap: 0.75rem;
         }
-        
+
         /* Cards */
-        .content-card { margin-bottom: 1rem; border-radius: 0.75rem; }
-        .card-header-clean { padding: 1rem; font-size: 0.9rem; }
-        .card-body-clean { padding: 0.5; }
-        
+        .content-card {
+            margin-bottom: 1rem;
+            border-radius: 0.75rem;
+        }
+
+        .card-header-clean {
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .card-body-clean {
+            padding: 0.5;
+        }
+
         /* Work Timeline specific mobile padding */
         .content-card:has(.timeline-wrapper) .card-body-clean {
             padding: 0.75rem 1rem;
             min-height: 160px;
         }
-        .card-icon { width: 28px; height: 28px; font-size: 0.8rem; }
-        
+
+        .card-icon {
+            width: 28px;
+            height: 28px;
+            font-size: 0.8rem;
+        }
+
         /* Info sections */
-        .info-group { padding: 0.625rem 0.875rem; }
-        .info-label { font-size: 0.7rem; }
-        .info-value { font-size: 0.875rem; }
-        
+        .info-group {
+            padding: 0.625rem 0.875rem;
+        }
+
+        .info-label {
+            font-size: 0.7rem;
+        }
+
+        .info-value {
+            font-size: 0.875rem;
+        }
+
         /* Address */
-        .address-box { padding: 1rem; }
-        .address-header { font-size: 0.8rem; margin-bottom: 0.75rem; }
-        .address-text { font-size: 0.875rem; }
-        
+        .address-box {
+            padding: 1rem;
+        }
+
+        .address-header {
+            font-size: 0.8rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .address-text {
+            font-size: 0.875rem;
+        }
+
         /* Timeline - Mobile Optimized */
-        .timeline-wrapper { 
+        .timeline-wrapper {
             padding: 0.75rem 0.5rem 0.75rem 1.75rem;
             min-height: 180px;
         }
-        .timeline-line { 
-            left: 12px; 
+
+        .timeline-line {
+            left: 12px;
             top: 0.75rem;
             bottom: 0.75rem;
         }
-        .timeline-dot { 
-            width: 14px; 
-            height: 14px; 
+
+        .timeline-dot {
+            width: 14px;
+            height: 14px;
             left: 6px;
             border-width: 2px;
         }
+
         .timeline-dot-inner {
             width: 3px;
             height: 3px;
         }
+
         .timeline-dot.active .timeline-dot-inner {
             width: 4px;
             height: 4px;
         }
-        .timeline-node { 
-            padding-left: 1.75rem; 
+
+        .timeline-node {
+            padding-left: 1.75rem;
             margin-bottom: 1.25rem;
             min-height: 50px;
         }
-        .timeline-content { 
-            padding: 0.875rem 1rem; 
+
+        .timeline-content {
+            padding: 0.875rem 1rem;
             margin-left: 0.25rem;
             border-radius: 0.75rem;
         }
+
         .timeline-title {
             font-size: 0.95rem;
             line-height: 1.3;
         }
+
         .timeline-date {
             font-size: 0.65rem;
             margin-bottom: 0.25rem;
         }
-        
+
         /* Documents */
-        .doc-upload-box { padding: 1.25rem; min-height: 100px; }
-        .doc-preview-img { max-height: 100px; }
-        
+        .doc-upload-box {
+            padding: 1.25rem;
+            min-height: 100px;
+        }
+
+        .doc-preview-img {
+            max-height: 100px;
+        }
+
         /* Forms */
-        .form-control, .form-select {
-            font-size: 16px; /* Prevents zoom on iOS */
+        .form-control,
+        .form-select {
+            font-size: 16px;
+            /* Prevents zoom on iOS */
             padding: 0.75rem;
             border-radius: 0.5rem;
             min-height: 44px;
         }
-        .btn { min-height: 44px; padding: 0.75rem 1.5rem; }
-        
+
+        .btn {
+            min-height: 44px;
+            padding: 0.75rem 1.5rem;
+        }
+
         /* Reporting hierarchy */
         .reporting-manager-card {
             padding: 1.5rem;
@@ -1371,30 +1482,30 @@
             justify-content: center;
             align-items: center;
         }
-        
+
         .manager-avatar {
             width: 70px;
             height: 70px;
             font-size: 1.6rem;
             flex-shrink: 0;
         }
-        
+
         .manager-name {
             font-size: 1rem;
             word-wrap: break-word;
             overflow-wrap: break-word;
         }
-        
+
         .manager-title {
             font-size: 0.8rem;
         }
-        
+
         .manager-contact-btn {
             padding: 0.4rem 1.2rem;
             font-size: 0.8rem;
             flex-shrink: 0;
         }
-        
+
         .no-manager-assigned {
             padding: 1.5rem;
             min-height: 180px;
@@ -1403,7 +1514,7 @@
             justify-content: center;
             align-items: center;
         }
-        
+
         .no-manager-icon {
             width: 50px;
             height: 50px;
@@ -1414,276 +1525,362 @@
 
     /* === SMALL MOBILE (max-width: 575px) === */
     @media (max-width: 575px) {
-        .container { padding-left: 8px; padding-right: 8px; }
-        
-        .profile-hero { height: 140px; }
-        .profile-card-main { 
-            margin-top: -1.5rem; 
-            padding: 1.25rem 0.875rem; 
+        .container {
+            padding-left: 8px;
+            padding-right: 8px;
         }
-        
-        .profile-avatar-wrapper { 
-            width: 80px; 
-            height: 80px; 
-            margin: -2.5rem auto 0.75rem; 
+
+        .profile-hero {
+            height: 140px;
         }
-        .profile-avatar.placeholder { font-size: 1.4rem; }
-        .camera-btn { width: 24px; height: 24px; }
-        
-        .profile-name { font-size: 1.2rem; }
-        .profile-role { font-size: 0.8rem; }
-        
-        .nav-pills-custom .nav-link { 
-            padding: 0.5rem; 
-            font-size: 0.8rem; 
+
+        .profile-card-main {
+            margin-top: -1.5rem;
+            padding: 1.25rem 0.875rem;
         }
-        
-        .form-grid-2 { grid-template-columns: 1fr; }
-        
-        .card-header-clean { padding: 0.875rem; font-size: 0.85rem; }
-        .card-body-clean { padding: 1rem; }
-        .card-icon { width: 24px; height: 24px; font-size: 0.75rem; }
-        
-        .info-group { padding: 0.5rem 0.75rem; }
-        .info-label { font-size: 0.65rem; }
-        .info-value { font-size: 0.8rem; }
-        
-        .address-box { padding: 0.875rem; }
-        .doc-upload-box { padding: 1rem; min-height: 80px; }
-        .doc-preview-img { max-height: 80px; }
-        
-        .shift-info-item { padding: 0.625rem; }
+
+        .profile-avatar-wrapper {
+            width: 80px;
+            height: 80px;
+            margin: -2.5rem auto 0.75rem;
+        }
+
+        .profile-avatar.placeholder {
+            font-size: 1.4rem;
+        }
+
+        .camera-btn {
+            width: 24px;
+            height: 24px;
+        }
+
+        .profile-name {
+            font-size: 1.2rem;
+        }
+
+        .profile-role {
+            font-size: 0.8rem;
+        }
+
+        .nav-pills-custom .nav-link {
+            padding: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .form-grid-2 {
+            grid-template-columns: 1fr;
+        }
+
+        .card-header-clean {
+            padding: 0.875rem;
+            font-size: 0.85rem;
+        }
+
+        .card-body-clean {
+            padding: 1rem;
+        }
+
+        .card-icon {
+            width: 24px;
+            height: 24px;
+            font-size: 0.75rem;
+        }
+
+        .info-group {
+            padding: 0.5rem 0.75rem;
+        }
+
+        .info-label {
+            font-size: 0.65rem;
+        }
+
+        .info-value {
+            font-size: 0.8rem;
+        }
+
+        .address-box {
+            padding: 0.875rem;
+        }
+
+        .doc-upload-box {
+            padding: 1rem;
+            min-height: 80px;
+        }
+
+        .doc-preview-img {
+            max-height: 80px;
+        }
+
+        .shift-info-item {
+            padding: 0.625rem;
+        }
     }
 
     /* === EXTRA SMALL MOBILE (max-width: 400px) === */
     @media (max-width: 400px) {
-        .container { padding-left: 5px; padding-right: 5px; }
-        
-        .profile-hero { height: 120px; }
-        .profile-card-main { 
-            margin-top: -1rem; 
-            padding: 1rem 0.75rem; 
-            border-radius: 0.75rem; 
+        .container {
+            padding-left: 5px;
+            padding-right: 5px;
         }
-        
-        .profile-avatar-wrapper { 
-            width: 70px; 
-            height: 70px; 
-            margin: -2rem auto 0.5rem; 
+
+        .profile-hero {
+            height: 120px;
         }
-        .profile-avatar.placeholder { font-size: 1.2rem; }
-        .camera-btn { width: 22px; height: 22px; }
-        
-        .profile-name { font-size: 1.1rem; }
-        .profile-role { font-size: 0.75rem; }
-        
-        .nav-pills-custom .nav-link { 
-            padding: 0.4rem 0.6rem; 
-            font-size: 0.75rem; 
+
+        .profile-card-main {
+            margin-top: -1rem;
+            padding: 1rem 0.75rem;
+            border-radius: 0.75rem;
         }
-        
-        .form-grid-2 { grid-template-columns: 1fr; }
-        
-        .card-header-clean { padding: 0.75rem; font-size: 0.8rem; }
-        .card-body-clean { padding: 0.875rem; min-height: 140px; }
-        
+
+        .profile-avatar-wrapper {
+            width: 70px;
+            height: 70px;
+            margin: -2rem auto 0.5rem;
+        }
+
+        .profile-avatar.placeholder {
+            font-size: 1.2rem;
+        }
+
+        .camera-btn {
+            width: 22px;
+            height: 22px;
+        }
+
+        .profile-name {
+            font-size: 1.1rem;
+        }
+
+        .profile-role {
+            font-size: 0.75rem;
+        }
+
+        .nav-pills-custom .nav-link {
+            padding: 0.4rem 0.6rem;
+            font-size: 0.75rem;
+        }
+
+        .form-grid-2 {
+            grid-template-columns: 1fr;
+        }
+
+        .card-header-clean {
+            padding: 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .card-body-clean {
+            padding: 0.875rem;
+            min-height: 140px;
+        }
+
         /* Work Timeline ultra-small mobile */
         .content-card:has(.timeline-wrapper) .card-body-clean {
             padding: 0.75rem 1rem;
             min-height: 160px;
         }
-        
-        .timeline-wrapper { 
+
+        .timeline-wrapper {
             padding: 0.5rem 0.25rem 0.5rem 1.5rem;
             min-height: 140px;
         }
-        
-        .timeline-line { 
-            left: 10px; 
+
+        .timeline-line {
+            left: 10px;
             top: 0.5rem;
             bottom: 0.5rem;
             width: 1.5px;
         }
-        
-        .timeline-dot { 
-            width: 12px; 
-            height: 12px; 
+
+        .timeline-dot {
+            width: 12px;
+            height: 12px;
             left: 4px;
             border-width: 2px;
         }
-        
+
         .timeline-dot-inner {
             width: 2px;
             height: 2px;
         }
-        
+
         .timeline-dot.active .timeline-dot-inner {
             width: 3px;
             height: 3px;
         }
-        
-        .timeline-node { 
-            padding-left: 1.5rem; 
+
+        .timeline-node {
+            padding-left: 1.5rem;
             margin-bottom: 1rem;
             min-height: 45px;
         }
-        
-        .timeline-content { 
-            padding: 0.75rem 0.875rem; 
+
+        .timeline-content {
+            padding: 0.75rem 0.875rem;
             margin-left: 0.125rem;
             border-radius: 0.625rem;
         }
-        
+
         .timeline-title {
             font-size: 0.9rem;
             line-height: 1.25;
             margin-bottom: 0.375rem;
         }
-        
+
         .timeline-date {
             font-size: 0.6rem;
             margin-bottom: 0.25rem;
         }
-        
+
         .timeline-content .badge {
             font-size: 0.65rem;
             padding: 0.2rem 0.6rem;
         }
-        
+
         .timeline-content .small {
             font-size: 0.75rem;
         }
-        .card-icon { width: 22px; height: 22px; font-size: 0.7rem; }
-        
-        .info-group { padding: 0.5rem 0.75rem; }
-        .info-label { font-size: 0.65rem; }
-        .info-value { font-size: 0.8rem; }
-        
-        .address-box { padding: 0.875rem; }
-        .doc-upload-box { padding: 1rem; min-height: 80px; }
-        .doc-preview-img { max-height: 80px; }
-        
-        .shift-info-item { padding: 0.625rem; }
-        
+
+        .card-icon {
+            width: 22px;
+            height: 22px;
+            font-size: 0.7rem;
+        }
+
+        .info-group {
+            padding: 0.5rem 0.75rem;
+        }
+
+        .info-label {
+            font-size: 0.65rem;
+        }
+
+        .info-value {
+            font-size: 0.8rem;
+        }
+
+        .address-box {
+            padding: 0.875rem;
+        }
+
+        .doc-upload-box {
+            padding: 1rem;
+            min-height: 80px;
+        }
+
+        .doc-preview-img {
+            max-height: 80px;
+        }
+
+        .shift-info-item {
+            padding: 0.625rem;
+        }
+
         /* Extra small reporting hierarchy */
         .reporting-manager-card {
             padding: 1rem;
             min-height: 140px;
         }
-        
+
         .manager-avatar {
             width: 50px;
             height: 50px;
             font-size: 1.2rem;
         }
-        
+
         .manager-name {
             font-size: 0.85rem;
         }
-        
+
         .manager-title {
             font-size: 0.7rem;
         }
-        
+
         .manager-contact-btn {
             padding: 0.3rem 0.8rem;
             font-size: 0.7rem;
         }
-        
+
         .no-manager-assigned {
             padding: 1rem;
             min-height: 140px;
         }
-        
+
         .no-manager-icon {
             width: 40px;
             height: 40px;
             font-size: 1.1rem;
         }
-        
+
         /* Extra small timeline */
-        .timeline-wrapper { 
+        .timeline-wrapper {
             padding: 0.375rem 0.25rem 0.375rem 1.25rem;
             min-height: 120px;
         }
-        
-        .timeline-line { 
-            left: 8px; 
+
+        .timeline-line {
+            left: 8px;
             top: 0.375rem;
             bottom: 0.375rem;
             width: 1px;
         }
-        
-        .timeline-dot { 
-            width: 10px; 
-            height: 10px; 
+
+        .timeline-dot {
+            width: 10px;
+            height: 10px;
             left: 3px;
             border-width: 1.5px;
         }
-        
+
         .timeline-dot-inner {
             width: 2px;
             height: 2px;
         }
-        
+
         .timeline-dot.active .timeline-dot-inner {
             width: 2.5px;
             height: 2.5px;
         }
-        
-        .timeline-node { 
-            padding-left: 1.25rem; 
+
+        .timeline-node {
+            padding-left: 1.25rem;
             margin-bottom: 0.875rem;
             min-height: 40px;
         }
-        
-        .timeline-content { 
-            padding: 0.625rem 0.75rem; 
+
+        .timeline-content {
+            padding: 0.625rem 0.75rem;
             margin-left: 0.1rem;
             border-radius: 0.5rem;
         }
-        
+
         .timeline-title {
             font-size: 0.85rem;
             line-height: 1.2;
             margin-bottom: 0.25rem;
         }
-        
+
         .timeline-date {
             font-size: 0.55rem;
             margin-bottom: 0.2rem;
         }
-        
+
         .timeline-content .badge {
             font-size: 0.6rem;
             padding: 0.15rem 0.5rem;
         }
-        
+
         .timeline-content .small {
             font-size: 0.7rem;
         }
-    } { 
-            padding: 0.4rem; 
-            font-size: 0.75rem; 
-        }
-        
-        .card-header-clean { padding: 0.75rem; font-size: 0.8rem; }
-        .card-body-clean { padding: 0.875rem; }
-        
-        .content-area,
-        .card-grid,
-        .info-grid,
-        .address-grid,
-        .doc-grid,
-        .contacts-grid,
-        .form-grid,
-        .form-grid-2 {
-            gap: 0.5rem;
-        }
     }
+
+
 
     /* === ACCESSIBILITY & PERFORMANCE === */
     @media (prefers-reduced-motion: reduce) {
+
         .fade-in-up,
         .timeline-dot.pulsing::after,
         * {
@@ -1693,6 +1890,7 @@
     }
 
     @media (prefers-contrast: high) {
+
         .profile-card-main,
         .content-card,
         .info-group,
@@ -1813,10 +2011,26 @@
 
     /* === PRINT STYLES === */
     @media print {
-        .profile-hero { height: auto; background: none !important; }
-        .profile-card-main { margin-top: 0; box-shadow: none; }
-        .camera-btn, .nav-pills-custom, .btn { display: none !important; }
-        .profile-avatar-wrapper { position: static; margin: 0 auto 1rem; }
+        .profile-hero {
+            height: auto;
+            background: none !important;
+        }
+
+        .profile-card-main {
+            margin-top: 0;
+            box-shadow: none;
+        }
+
+        .camera-btn,
+        .nav-pills-custom,
+        .btn {
+            display: none !important;
+        }
+
+        .profile-avatar-wrapper {
+            position: static;
+            margin: 0 auto 1rem;
+        }
     }
 </style>
 {% endblock %}
@@ -1879,7 +2093,7 @@
                             class="fas fa-times-circle me-1"></i> Inactive</span>
                     {% endif %}
                 </div>
-                
+
                 <div class="nav-container">
                     <ul class="nav nav-pills-custom" id="profileTabs" role="tablist">
                         <li class="nav-item"><button class="nav-link active" id="about-tab" data-bs-toggle="tab"
@@ -1937,9 +2151,9 @@
                                         <span class="timeline-date">{{ probation_date|date:"d M, Y" }}</span>
                                         <div class="timeline-title">
                                             {% if probation_status == 'COMPLETED_TODAY' %}
-                                                <span class="text-success">🎉 Probation Completed</span>
+                                            <span class="text-success">🎉 Probation Completed</span>
                                             {% else %}
-                                                Probation Completed
+                                            Probation Completed
                                             {% endif %}
                                         </div>
                                         <div class="small text-muted">Confirmed Employee</div>
@@ -2291,7 +2505,8 @@
                         <div class="card-header-clean">
                             <div class="card-icon gradient-icon"><i class="fas fa-clock"></i></div>Shift Configuration
                             <div class="ms-auto">
-                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#shiftConfigModal">
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                                    data-bs-target="#shiftConfigModal">
                                     <i class="fas fa-edit me-1"></i>Configure
                                 </button>
                             </div>
@@ -2317,7 +2532,8 @@
                                     <div class="shift-info-label">
                                         <i class="fas fa-hourglass-half text-warning me-2"></i>Grace Period
                                     </div>
-                                    <div class="shift-info-value">{{ employee.assigned_shift.grace_period_minutes }} minutes</div>
+                                    <div class="shift-info-value">{{ employee.assigned_shift.grace_period_minutes }}
+                                        minutes</div>
                                 </div>
                                 <div class="shift-info-item">
                                     <div class="shift-info-label">
@@ -2325,13 +2541,20 @@
                                     </div>
                                     <div class="shift-info-value">
                                         <div class="working-days-badges">
-                                            {% if employee.assigned_shift.monday %}<span class="badge bg-primary me-1">Mon</span>{% endif %}
-                                            {% if employee.assigned_shift.tuesday %}<span class="badge bg-primary me-1">Tue</span>{% endif %}
-                                            {% if employee.assigned_shift.wednesday %}<span class="badge bg-primary me-1">Wed</span>{% endif %}
-                                            {% if employee.assigned_shift.thursday %}<span class="badge bg-primary me-1">Thu</span>{% endif %}
-                                            {% if employee.assigned_shift.friday %}<span class="badge bg-primary me-1">Fri</span>{% endif %}
-                                            {% if employee.assigned_shift.saturday %}<span class="badge bg-secondary me-1">Sat</span>{% endif %}
-                                            {% if employee.assigned_shift.sunday %}<span class="badge bg-secondary me-1">Sun</span>{% endif %}
+                                            {% if employee.assigned_shift.monday %}<span
+                                                class="badge bg-primary me-1">Mon</span>{% endif %}
+                                            {% if employee.assigned_shift.tuesday %}<span
+                                                class="badge bg-primary me-1">Tue</span>{% endif %}
+                                            {% if employee.assigned_shift.wednesday %}<span
+                                                class="badge bg-primary me-1">Wed</span>{% endif %}
+                                            {% if employee.assigned_shift.thursday %}<span
+                                                class="badge bg-primary me-1">Thu</span>{% endif %}
+                                            {% if employee.assigned_shift.friday %}<span
+                                                class="badge bg-primary me-1">Fri</span>{% endif %}
+                                            {% if employee.assigned_shift.saturday %}<span
+                                                class="badge bg-secondary me-1">Sat</span>{% endif %}
+                                            {% if employee.assigned_shift.sunday %}<span
+                                                class="badge bg-secondary me-1">Sun</span>{% endif %}
                                         </div>
                                     </div>
                                 </div>
@@ -2341,7 +2564,8 @@
                                         <i class="fas fa-utensils text-orange me-2"></i>Lunch Break
                                     </div>
                                     <div class="shift-info-value">
-                                        {{ employee.assigned_shift.lunch_break_start|time:"H:i" }} - {{ employee.assigned_shift.lunch_break_end|time:"H:i" }}
+                                        {{ employee.assigned_shift.lunch_break_start|time:"H:i" }} - {{
+                                        employee.assigned_shift.lunch_break_end|time:"H:i" }}
                                     </div>
                                 </div>
                                 {% endif %}
@@ -2356,6 +2580,8 @@
                         </div>
                     </div>
                 </div>
+
+
                 {% endif %}
 
                 <div class="reporting-hierarchy-container">
@@ -2403,17 +2629,21 @@
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="doc-grid">
-                            <!-- Aadhar Front -->
+                            <!-- Aadhar/NID/State ID Front -->
                             <div>
                                 <div class="doc-upload-box" onclick="this.querySelector('input').click()">
                                     {% if id_proofs.aadhar_front %}
                                     <span class="badge bg-success doc-status-badge"><i class="fas fa-check"></i></span>
                                     <img src="{{ id_proofs.aadhar_front.url }}" class="doc-preview-img w-100">
-                                    <div class="fw-bold text-dark">Aadhar Front</div>
+                                    <div class="fw-bold text-dark">
+                                        {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Front{% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID Front{% else %}Aadhar Front{% endif %}
+                                    </div>
                                     {% else %}
                                     <div class="py-4 text-muted"><i
                                             class="fas fa-id-card display-4 mb-3 opacity-50"></i>
-                                        <div class="fw-bold">Aadhar Front</div>
+                                        <div class="fw-bold">
+                                            {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Front{% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID Front{% else %}Aadhar Front{% endif %}
+                                        </div>
                                         <div class="small">Click to upload</div>
                                     </div>
                                     {% endif %}
@@ -2426,17 +2656,21 @@
                                 </div>
                             </div>
 
-                            <!-- Aadhar Back -->
+                            <!-- Aadhar/NID/State ID Back -->
                             <div>
                                 <div class="doc-upload-box" onclick="this.querySelector('input').click()">
                                     {% if id_proofs.aadhar_back %}
                                     <span class="badge bg-success doc-status-badge"><i class="fas fa-check"></i></span>
                                     <img src="{{ id_proofs.aadhar_back.url }}" class="doc-preview-img w-100">
-                                    <div class="fw-bold text-dark">Aadhar Back</div>
+                                    <div class="fw-bold text-dark">
+                                        {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Back{% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID Back{% else %}Aadhar Back{% endif %}
+                                    </div>
                                     {% else %}
                                     <div class="py-4 text-muted"><i
                                             class="fas fa-id-card display-4 mb-3 opacity-50"></i>
-                                        <div class="fw-bold">Aadhar Back</div>
+                                        <div class="fw-bold">
+                                            {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Back{% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID Back{% else %}Aadhar Back{% endif %}
+                                        </div>
                                         <div class="small">Click to upload</div>
                                     </div>
                                     {% endif %}
@@ -2449,17 +2683,21 @@
                                 </div>
                             </div>
 
-                            <!-- PAN Card -->
+                            <!-- PAN/TIN/SSN Card -->
                             <div>
                                 <div class="doc-upload-box" onclick="this.querySelector('input').click()">
                                     {% if id_proofs.pan_card %}
                                     <span class="badge bg-success doc-status-badge"><i class="fas fa-check"></i></span>
                                     <img src="{{ id_proofs.pan_card.url }}" class="doc-preview-img w-100">
-                                    <div class="fw-bold text-dark">PAN Card</div>
+                                    <div class="fw-bold text-dark">
+                                        {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}TIN Card{% elif employee.location.country_code == "US" or "US" in employee.location.name %}SSN Card{% else %}PAN Card{% endif %}
+                                    </div>
                                     {% else %}
                                     <div class="py-4 text-muted"><i
                                             class="fas fa-address-card display-4 mb-3 opacity-50"></i>
-                                        <div class="fw-bold">PAN Card</div>
+                                        <div class="fw-bold">
+                                            {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}TIN Card{% elif employee.location.country_code == "US" or "US" in employee.location.name %}SSN Card{% else %}PAN Card{% endif %}
+                                        </div>
                                         <div class="small">Click to upload</div>
                                     </div>
                                     {% endif %}
@@ -2497,91 +2735,90 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form method="post" action="{% url 'employee_profile' %}"></form>
-                {% csrf_token %}
-                <input type="hidden" name="action" value="assign_shift">
-                <div class="modal-body">
-                    <div class="mb-4">
-                        <label for="shiftSelect" class="form-label fw-bold">
-                            <i class="fas fa-list me-2 text-primary"></i>Select Shift
-                        </label>
-                        <select class="form-select" id="shiftSelect" name="assigned_shift" required>
-                            <option value="">Choose a shift...</option>
-                            {% for shift in available_shifts %}
-                            <option value="{{ shift.id }}" 
-                                    {% if employee.assigned_shift.id == shift.id %}selected{% endif %}
-                                    data-start="{{ shift.start_time|time:'H:i' }}"
-                                    data-end="{{ shift.end_time|time:'H:i' }}"
-                                    data-grace="{{ shift.grace_period_minutes }}"
-                                    data-working-days="{{ shift.working_days_list|join:', ' }}">
-                                {{ shift.name }} ({{ shift.start_time|time:"H:i" }} - {{ shift.end_time|time:"H:i" }})
-                            </option>
-                            {% endfor %}
-                        </select>
-                        <div class="form-text">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Select the appropriate shift schedule for this employee
-                        </div>
+            {% csrf_token %}
+            <input type="hidden" name="action" value="assign_shift">
+            <div class="modal-body">
+                <div class="mb-4">
+                    <label for="shiftSelect" class="form-label fw-bold">
+                        <i class="fas fa-list me-2 text-primary"></i>Select Shift
+                    </label>
+                    <select class="form-select" id="shiftSelect" name="assigned_shift" required>
+                        <option value="">Choose a shift...</option>
+                        {% for shift in available_shifts %}
+                        <option value="{{ shift.id }}" {% if employee.assigned_shift.id == shift.id %}selected{% endif %}
+                            data-start="{{ shift.start_time|time:'H:i' }}" data-end="{{ shift.end_time|time:'H:i' }}"
+                            data-grace="{{ shift.grace_period_minutes }}"
+                            data-working-days="{{ shift.working_days_list|join:', ' }}">
+                            {{ shift.name }} ({{ shift.start_time|time:"H:i" }} - {{ shift.end_time|time:"H:i" }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Select the appropriate shift schedule for this employee
                     </div>
+                </div>
 
-                    <!-- Shift Preview -->
-                    <div id="shiftPreview" class="shift-preview-card" style="display: none;">
-                        <div class="card border-primary">
-                            <div class="card-header bg-primary text-white">
-                                <h6 class="mb-0"><i class="fas fa-eye me-2"></i>Shift Preview</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <div class="preview-item">
-                                            <div class="preview-label">
-                                                <i class="fas fa-clock text-success me-2"></i>Working Hours
-                                            </div>
-                                            <div class="preview-value" id="previewTiming">-</div>
+                <!-- Shift Preview -->
+                <div id="shiftPreview" class="shift-preview-card" style="display: none;">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="fas fa-eye me-2"></i>Shift Preview</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="preview-item">
+                                        <div class="preview-label">
+                                            <i class="fas fa-clock text-success me-2"></i>Working Hours
                                         </div>
+                                        <div class="preview-value" id="previewTiming">-</div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="preview-item">
-                                            <div class="preview-label">
-                                                <i class="fas fa-hourglass-half text-warning me-2"></i>Grace Period
-                                            </div>
-                                            <div class="preview-value" id="previewGrace">-</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="preview-item">
+                                        <div class="preview-label">
+                                            <i class="fas fa-hourglass-half text-warning me-2"></i>Grace Period
                                         </div>
+                                        <div class="preview-value" id="previewGrace">-</div>
                                     </div>
-                                    <div class="col-12">
-                                        <div class="preview-item">
-                                            <div class="preview-label">
-                                                <i class="fas fa-calendar-week text-info me-2"></i>Working Days
-                                            </div>
-                                            <div class="preview-value" id="previewWorkingDays">-</div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="preview-item">
+                                        <div class="preview-label">
+                                            <i class="fas fa-calendar-week text-info me-2"></i>Working Days
                                         </div>
+                                        <div class="preview-value" id="previewWorkingDays">-</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Current Assignment Info -->
-                    {% if employee.assigned_shift %}
-                    <div class="alert alert-info mt-3">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <strong>Current Assignment:</strong> {{ employee.assigned_shift.name }} 
-                        ({{ employee.assigned_shift.start_time|time:"H:i" }} - {{ employee.assigned_shift.end_time|time:"H:i" }})
-                    </div>
-                    {% else %}
-                    <div class="alert alert-warning mt-3">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>No Shift Assigned:</strong> This employee currently has no shift assignment.
-                    </div>
-                    {% endif %}
+                <!-- Current Assignment Info -->
+                {% if employee.assigned_shift %}
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Current Assignment:</strong> {{ employee.assigned_shift.name }}
+                    ({{ employee.assigned_shift.start_time|time:"H:i" }} - {{
+                    employee.assigned_shift.end_time|time:"H:i" }})
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Cancel
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-1"></i>Assign Shift
-                    </button>
+                {% else %}
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>No Shift Assigned:</strong> This employee currently has no shift assignment.
                 </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-1"></i>Assign Shift
+                </button>
+            </div>
             </form>
         </div>
     </div>
@@ -2593,19 +2830,19 @@
 <script src="{% static 'js/employee-profile-enhanced-responsive.js' %}"></script>
 <script>
     // Initialize tooltips
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Bootstrap tooltips
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) { 
-            return new bootstrap.Tooltip(tooltipTriggerEl); 
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
         });
 
         // Initialize responsive behavior
         initResponsiveBehavior();
-        
+
         // Initialize shift configuration
         initShiftConfiguration();
-        
+
         // Fix Job tab visibility
         initJobTabFix();
     });
@@ -2617,11 +2854,11 @@
             let vh = window.innerHeight * 0.01;
             document.documentElement.style.setProperty('--vh', `${vh}px`);
         }
-        
+
         setVH();
         window.addEventListener('resize', setVH);
         window.addEventListener('orientationchange', setVH);
-        
+
         // Fix timeline display issues
         function fixTimelineDisplay() {
             const timelineWrapper = document.querySelector('.timeline-wrapper');
@@ -2629,14 +2866,14 @@
                 timelineWrapper.style.display = 'block';
                 timelineWrapper.style.visibility = 'visible';
                 timelineWrapper.style.opacity = '1';
-                
+
                 const timelineNodes = timelineWrapper.querySelectorAll('.timeline-node');
                 timelineNodes.forEach(node => {
                     node.style.display = 'block';
                     node.style.visibility = 'visible';
                     node.style.opacity = '1';
                 });
-                
+
                 const timelineContents = timelineWrapper.querySelectorAll('.timeline-content');
                 timelineContents.forEach(content => {
                     content.style.display = 'block';
@@ -2645,42 +2882,42 @@
                 });
             }
         }
-        
+
         // Run timeline fix immediately and after delays
         fixTimelineDisplay();
         setTimeout(fixTimelineDisplay, 100);
         setTimeout(fixTimelineDisplay, 500);
-        
+
         // Handle touch feedback for mobile
         if ('ontouchstart' in window) {
             document.body.classList.add('touch-device');
-            
+
             const touchElements = document.querySelectorAll('.camera-btn, .nav-link, .btn, .doc-upload-box');
             touchElements.forEach(element => {
-                element.addEventListener('touchstart', function() {
+                element.addEventListener('touchstart', function () {
                     this.classList.add('touch-active');
                 });
-                
-                element.addEventListener('touchend', function() {
+
+                element.addEventListener('touchend', function () {
                     setTimeout(() => {
                         this.classList.remove('touch-active');
                     }, 150);
                 });
             });
         }
-        
+
         // Handle responsive navigation
         function handleResponsiveNav() {
             const navPills = document.querySelector('.nav-pills-custom');
             if (!navPills) return;
-            
+
             if (window.innerWidth <= 767) {
                 navPills.classList.add('nav-mobile');
             } else {
                 navPills.classList.remove('nav-mobile');
             }
         }
-        
+
         handleResponsiveNav();
         window.addEventListener('resize', handleResponsiveNav);
     }
@@ -2701,48 +2938,51 @@
                 img.src = e.target.result;
                 img.className = 'doc-preview-img w-100 temp-preview';
 
-                var label = document.createElement('div');
-                label.className = 'fw-bold text-dark temp-label';
-                var nameMap = {
-                    'aadhar_front': 'Aadhar Front',
-                    'aadhar_back': 'Aadhar Back',
-                    'pan_card': 'PAN Card'
-                };
-                label.innerText = nameMap[input.name] + ' (Selected)';
+                var isBD = {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}true{% else %}false{% endif %};
+                var isUS = {% if employee.location.country_code == "US" or "US" in employee.location.name %}true{% else %}false{% endif %};
 
-                var badge = document.createElement('span');
-                badge.className = 'badge bg-info doc-status-badge';
-                badge.innerHTML = '<i class="fas fa-save"></i> Save Required';
+        var label = document.createElement('div');
+        label.className = 'fw-bold text-dark temp-label';
+        var nameMap = {
+            'aadhar_front': isBD ? 'NID Front' : (isUS ? 'State ID Front' : 'Aadhar Front'),
+            'aadhar_back': isBD ? 'NID Back' : (isUS ? 'State ID Back' : 'Aadhar Back'),
+            'pan_card': isBD ? 'TIN Card' : (isUS ? 'SSN Card' : 'PAN Card')
+        };
+        label.innerText = (nameMap[input.name] || 'Document') + ' (Selected)';
 
-                box.insertBefore(badge, input);
-                box.insertBefore(img, input);
-                box.insertBefore(label, input);
-            }
-            reader.readAsDataURL(input.files[0]);
+        var badge = document.createElement('span');
+        badge.className = 'badge bg-info doc-status-badge';
+        badge.innerHTML = '<i class="fas fa-save"></i> Save Required';
+
+        box.insertBefore(badge, input);
+        box.insertBefore(img, input);
+        box.insertBefore(label, input);
+    }
+    reader.readAsDataURL(input.files[0]);
         }
     }
-    
+
     // Initialize shift configuration functionality
     function initShiftConfiguration() {
         const shiftSelect = document.getElementById('shiftSelect');
         const shiftPreview = document.getElementById('shiftPreview');
-        
+
         if (shiftSelect && shiftPreview) {
-            shiftSelect.addEventListener('change', function() {
+            shiftSelect.addEventListener('change', function () {
                 const selectedOption = this.options[this.selectedIndex];
-                
+
                 if (selectedOption.value) {
                     shiftPreview.style.display = 'block';
-                    
+
                     const startTime = selectedOption.getAttribute('data-start');
                     const endTime = selectedOption.getAttribute('data-end');
                     const gracePeriod = selectedOption.getAttribute('data-grace');
                     const workingDays = selectedOption.getAttribute('data-working-days');
-                    
+
                     document.getElementById('previewTiming').textContent = `${startTime} - ${endTime}`;
                     document.getElementById('previewGrace').textContent = `${gracePeriod} minutes`;
                     document.getElementById('previewWorkingDays').textContent = workingDays || 'Not specified';
-                    
+
                     // Add animation
                     shiftPreview.style.opacity = '0';
                     setTimeout(() => {
@@ -2753,33 +2993,33 @@
                     shiftPreview.style.display = 'none';
                 }
             });
-            
+
             // Initialize preview if there's a selected value
             if (shiftSelect.value) {
                 shiftSelect.dispatchEvent(new Event('change'));
             }
         }
     }
-    
-    // Fix Job tab visibility issues
-    function initJobTabFix() {
-        function showJobContent() {
-            const jobTab = document.getElementById('job');
-            if (jobTab) {
-                jobTab.style.display = 'block';
-                jobTab.style.visibility = 'visible';
-                jobTab.style.opacity = '1';
-                jobTab.style.height = 'auto';
-                jobTab.style.overflow = 'visible';
-                
-                const cardGrid = jobTab.querySelector('.card-grid');
+
+    // Fix tab visibility issues
+    function initTabVisibilityFix() {
+        function showContent(tabId) {
+            const tab = document.getElementById(tabId);
+            if (tab) {
+                tab.style.display = 'block';
+                tab.style.visibility = 'visible';
+                tab.style.opacity = '1';
+                tab.style.height = 'auto';
+                tab.style.overflow = 'visible';
+
+                const cardGrid = tab.querySelector('.card-grid, .doc-grid');
                 if (cardGrid) {
-                    cardGrid.style.display = 'grid';
+                    cardGrid.style.display = cardGrid.classList.contains('doc-grid') ? 'grid' : 'grid';
                     cardGrid.style.visibility = 'visible';
                     cardGrid.style.opacity = '1';
                 }
-                
-                const contentCards = jobTab.querySelectorAll('.content-card');
+
+                const contentCards = tab.querySelectorAll('.content-card');
                 contentCards.forEach(card => {
                     card.style.display = 'block';
                     card.style.visibility = 'visible';
@@ -2787,18 +3027,25 @@
                 });
             }
         }
-        
-        // Run immediately and after delays
-        showJobContent();
-        setTimeout(showJobContent, 100);
-        
+
+        // Run immediately for active tab
+        showContent('about');
+        showContent('job');
+        showContent('docs');
+
+        // After delays
+        setTimeout(() => { showContent('about'); showContent('job'); showContent('docs'); }, 100);
+
         // Handle tab clicks
-        const jobTabButton = document.getElementById('job-tab');
-        if (jobTabButton) {
-            jobTabButton.addEventListener('click', function() {
-                setTimeout(showJobContent, 50);
-            });
-        }
+        ['about-tab', 'job-tab', 'docs-tab'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.addEventListener('click', function () {
+                    const targetId = this.getAttribute('data-bs-target').replace('#', '');
+                    setTimeout(() => showContent(targetId), 50);
+                });
+            }
+        });
     }
 </script>
 
@@ -2808,26 +3055,26 @@
         transform: scale(0.95);
         background: rgba(30, 41, 59, 0.8);
     }
-    
+
     .touch-device .nav-link.touch-active {
         background: rgba(99, 102, 241, 0.1);
     }
-    
+
     .touch-device .btn.touch-active {
         transform: scale(0.98);
     }
-    
+
     .nav-mobile {
         flex-direction: column !important;
         width: 100% !important;
     }
-    
+
     .nav-mobile .nav-link {
         width: 100% !important;
         margin-bottom: 0.25rem !important;
         text-align: center !important;
     }
-    
+
     /* Timeline visibility fixes */
     .timeline-wrapper,
     .timeline-node,
@@ -2838,50 +3085,50 @@
         visibility: visible !important;
         opacity: 1 !important;
     }
-    
+
     .timeline-wrapper {
         position: relative !important;
         overflow: visible !important;
         height: auto !important;
         min-height: 200px !important;
     }
-    
+
     .timeline-node {
         position: relative !important;
         overflow: visible !important;
         height: auto !important;
     }
-    
+
     .timeline-content {
         position: relative !important;
         overflow: visible !important;
         height: auto !important;
         z-index: 1 !important;
     }
-    
+
     .timeline-dot {
         position: absolute !important;
         z-index: 3 !important;
     }
-    
+
     .timeline-line {
         position: absolute !important;
         z-index: 2 !important;
     }
-    
+
     /* Shift configuration styles */
     .shift-preview-card {
         margin-top: 1rem;
         animation: fadeInUp 0.3s ease;
     }
-    
+
     .preview-item {
         background: #f8fafc;
         padding: 0.75rem;
         border-radius: 0.5rem;
         border: 1px solid #e2e8f0;
     }
-    
+
     .preview-label {
         font-size: 0.75rem;
         font-weight: 600;
@@ -2890,36 +3137,36 @@
         display: flex;
         align-items: center;
     }
-    
+
     .preview-value {
         font-size: 0.9rem;
         font-weight: 500;
         color: #1e293b;
     }
-    
+
     .working-days-badges {
         display: flex;
         flex-wrap: wrap;
         gap: 0.25rem;
     }
-    
+
     .working-days-badges .badge {
         font-size: 0.7rem;
         padding: 0.25rem 0.5rem;
         border-radius: 0.375rem;
     }
-    
+
     /* Modal enhancements */
     .modal-header {
         background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
         color: white;
         border-bottom: none;
     }
-    
+
     .modal-header .btn-close {
         filter: invert(1);
     }
-    
+
     .text-orange {
         color: #ea580c !important;
     }

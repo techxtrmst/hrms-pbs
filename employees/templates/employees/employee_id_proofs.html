@@ -412,26 +412,38 @@
 
             <div class="form-group">
                 <label for="aadhar_front">
-                    <i class="fas fa-id-card"></i> Aadhar Card (Front)
+                    <i class="fas fa-id-card"></i> {% if employee.location.country_code == "BD" or "Dhaka" in
+                    employee.location.name %}NID Card (Front){% elif employee.location.country_code == "US" or "US" in
+                    employee.location.name %}State ID (Front){% else %}Aadhar Card (Front){% endif %}
                 </label>
                 <input type="file" id="aadhar_front" name="aadhar_front" accept="image/*">
-                <p class="help-text">Upload a clear image of the front side of your Aadhar card</p>
+                <p class="help-text">Upload a clear image of the front side of your {% if employee.location.country_code
+                    == "BD" or "Dhaka" in employee.location.name %}NID Card{% elif employee.location.country_code ==
+                    "US" or "US" in employee.location.name %}State ID{% else %}Aadhar Card{% endif %}</p>
             </div>
 
             <div class="form-group">
                 <label for="aadhar_back">
-                    <i class="fas fa-id-card"></i> Aadhar Card (Back)
+                    <i class="fas fa-id-card"></i> {% if employee.location.country_code == "BD" or "Dhaka" in
+                    employee.location.name %}NID Card (Back){% elif employee.location.country_code == "US" or "US" in
+                    employee.location.name %}State ID (Back){% else %}Aadhar Card (Back){% endif %}
                 </label>
                 <input type="file" id="aadhar_back" name="aadhar_back" accept="image/*">
-                <p class="help-text">Upload a clear image of the back side of your Aadhar card</p>
+                <p class="help-text">Upload a clear image of the back side of your {% if employee.location.country_code
+                    == "BD" or "Dhaka" in employee.location.name %}NID Card{% elif employee.location.country_code ==
+                    "US" or "US" in employee.location.name %}State ID{% else %}Aadhar Card{% endif %}</p>
             </div>
 
             <div class="form-group">
                 <label for="pan_card">
-                    <i class="fas fa-credit-card"></i> PAN Card
+                    <i class="fas fa-credit-card"></i> {% if employee.location.country_code == "BD" or "Dhaka" in
+                    employee.location.name %}TIN Card{% elif employee.location.country_code == "US" or "US" in
+                    employee.location.name %}SSN Card{% else %}PAN Card{% endif %}
                 </label>
                 <input type="file" id="pan_card" name="pan_card" accept="image/*">
-                <p class="help-text">Upload a clear image of your PAN card</p>
+                <p class="help-text">Upload a clear image of your {% if employee.location.country_code == "BD" or
+                    "Dhaka" in employee.location.name %}TIN Card{% elif employee.location.country_code == "US" or "US"
+                    in employee.location.name %}SSN Card{% else %}PAN Card{% endif %}</p>
             </div>
 
             <button type="submit" class="btn-upload">
@@ -448,7 +460,9 @@
             <div class="card-header">
                 <div class="card-title">
                     <i class="fas fa-id-card"></i>
-                    Aadhar Card (Front)
+                    {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Card
+                    (Front){% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID
+                    (Front){% else %}Aadhar Card (Front){% endif %}
                 </div>
                 {% if id_proofs.aadhar_front %}
                 <span class="status-badge status-uploaded">
@@ -463,7 +477,10 @@
 
             <div class="proof-image-container">
                 {% if id_proofs.aadhar_front %}
-                <img src="{{ id_proofs.aadhar_front.url }}" alt="Aadhar Front" onclick="openImageModal(this.src)">
+                <img src="{{ id_proofs.aadhar_front.url }}" alt="{% if employee.location.country_code == " BD"
+                    or "Dhaka" in employee.location.name %}NID Front{% elif employee.location.country_code=="US" or "US"
+                    in employee.location.name %}State ID Front{% else %}Aadhar Front{% endif %}"
+                    onclick="openImageModal(this.src)">
                 {% else %}
                 <div class="no-image-placeholder">
                     <i class="fas fa-image"></i>
@@ -497,7 +514,9 @@
             <div class="card-header">
                 <div class="card-title">
                     <i class="fas fa-id-card"></i>
-                    Aadhar Card (Back)
+                    {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Card
+                    (Back){% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID
+                    (Back){% else %}Aadhar Card (Back){% endif %}
                 </div>
                 {% if id_proofs.aadhar_back %}
                 <span class="status-badge status-uploaded">
@@ -512,7 +531,10 @@
 
             <div class="proof-image-container">
                 {% if id_proofs.aadhar_back %}
-                <img src="{{ id_proofs.aadhar_back.url }}" alt="Aadhar Back" onclick="openImageModal(this.src)">
+                <img src="{{ id_proofs.aadhar_back.url }}" alt="{% if employee.location.country_code == " BD" or "Dhaka"
+                    in employee.location.name %}NID Back{% elif employee.location.country_code=="US" or "US" in
+                    employee.location.name %}State ID Back{% else %}Aadhar Back{% endif %}"
+                    onclick="openImageModal(this.src)">
                 {% else %}
                 <div class="no-image-placeholder">
                     <i class="fas fa-image"></i>
@@ -546,7 +568,9 @@
             <div class="card-header">
                 <div class="card-title">
                     <i class="fas fa-credit-card"></i>
-                    PAN Card
+                    {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}TIN Card{% elif
+                    employee.location.country_code == "US" or "US" in employee.location.name %}SSN Card{% else %}PAN
+                    Card{% endif %}
                 </div>
                 {% if id_proofs.pan_card %}
                 <span class="status-badge status-uploaded">
@@ -561,7 +585,9 @@
 
             <div class="proof-image-container">
                 {% if id_proofs.pan_card %}
-                <img src="{{ id_proofs.pan_card.url }}" alt="PAN Card" onclick="openImageModal(this.src)">
+                <img src="{{ id_proofs.pan_card.url }}" alt="{% if employee.location.country_code == " BD" or "Dhaka" in
+                    employee.location.name %}TIN Card{% elif employee.location.country_code=="US" or "US" in
+                    employee.location.name %}SSN Card{% else %}PAN Card{% endif %}" onclick="openImageModal(this.src)">
                 {% else %}
                 <div class="no-image-placeholder">
                     <i class="fas fa-image"></i>
