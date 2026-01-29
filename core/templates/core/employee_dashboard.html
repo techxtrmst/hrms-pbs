@@ -1963,8 +1963,7 @@
                         </div>
                         <div class="celebration-info flex-grow-1">
                             <h4>{{ item.employee.user.get_full_name }}</h4>
-                            <p>{{ item.display_date|date:"M d" }} • {% if item.is_today %}Today! 🎉{% else %}in {{
-                                item.days_left }} days{% endif %}</p>
+                            <p>{{ item.display_date|date:"M d" }} • {% if item.is_today %}Today! 🎉{% else %}in {{ item.days_left }} days{% endif %}</p>
                         </div>
                         <div class="ann-date-badge" style="background: #eef2ff; color: #4f46e5;">
                             <i class="fas fa-birthday-cake"></i>
