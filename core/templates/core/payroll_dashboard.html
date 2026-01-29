@@ -579,11 +579,11 @@
                         <input type="hidden" name="month" value="{{ selected_month }}">
                         <input type="hidden" name="year" value="{{ selected_year }}">
 
-                        <a href="{% url 'bulk_payroll_template' %}" class="btn btn-view w-100 mb-2">
+                        <a href="{% url 'bulk_payroll_template' %}?month={{ selected_month }}&year={{ selected_year }}"
+                            class="btn btn-view w-100 mb-2">
                             <i class="fas fa-download me-2"></i>Download Excel template
                         </a>
-                        <p class="small text-muted mb-3">Template: Employee ID, Name, Department, Designation, Monthly
-                            Gross, Net Pay, Payable Days</p>
+                        <p class="small text-muted mb-3">Template: Employee ID, Name, Department, Designation, Monthly Gross, Net Pay, Payable Days, and all payroll components</p>
 
                         <div class="border-dashed p-4 rounded-3 text-muted position-relative" style="cursor: pointer;"
                             onclick="document.getElementById('xlsx_file').click()">
@@ -832,7 +832,39 @@
                     }
 
                     document.getElementById('res_hra').innerText = symbol + res.hra.toLocaleString();
+<<<<<<< Updated upstream
                     document.getElementById('res_other').innerText = symbol + (res.other_allowance + res.lta).toLocaleString();
+=======
+
+                    // Show individual allowances only if they have values > 0
+                    if (res.lta > 0) {
+                        document.getElementById('row_lta').style.display = 'flex';
+                        document.getElementById('res_lta').innerText = symbol + res.lta.toLocaleString();
+                    } else {
+                        document.getElementById('row_lta').style.display = 'none';
+                    }
+
+                    if (res.other_allowance > 0) {
+                        document.getElementById('row_other').style.display = 'flex';
+                        document.getElementById('res_other').innerText = symbol + res.other_allowance.toLocaleString();
+                    } else {
+                        document.getElementById('row_other').style.display = 'none';
+                    }
+
+                    if (res.conveyance > 0) {
+                        document.getElementById('row_conveyance').style.display = 'flex';
+                        document.getElementById('res_conveyance').innerText = symbol + res.conveyance.toLocaleString();
+                    } else {
+                        document.getElementById('row_conveyance').style.display = 'none';
+                    }
+
+                    if (res.special_allowance > 0) {
+                        document.getElementById('row_special').style.display = 'flex';
+                        document.getElementById('res_special').innerText = symbol + res.special_allowance.toLocaleString();
+                    } else {
+                        document.getElementById('row_special').style.display = 'none';
+                    }
+>>>>>>> Stashed changes
                     document.getElementById('res_deductions').innerText = symbol + (res.employee_pf + res.professional_tax).toLocaleString();
                     document.getElementById('res_net').innerText = symbol + res.net_salary.toLocaleString();
                 } else {

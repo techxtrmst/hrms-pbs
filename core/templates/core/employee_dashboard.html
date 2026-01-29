@@ -105,35 +105,35 @@
             padding: 1rem 0;
             margin: 0 0 1rem 0;
         }
-        
+
         .welcome-card {
             padding: 1rem;
         }
-        
+
         .user-avatar-hero {
             width: 40px;
             height: 40px;
             font-size: 1rem;
         }
-        
+
         .welcome-text h1 {
             font-size: 1.25rem;
         }
-        
+
         .welcome-text p {
             font-size: 0.8rem;
         }
-        
+
         .quick-actions-hero {
             margin-top: 0.5rem;
         }
-        
+
         .quick-btn-hero {
             padding: 0.4rem 0.8rem;
             font-size: 0.75rem;
             gap: 0.25rem;
         }
-        
+
         .quick-btn-hero i {
             font-size: 0.8rem;
         }
@@ -143,20 +143,20 @@
         .hero-header {
             padding: 0.75rem 0;
         }
-        
+
         .welcome-card {
             padding: 0.75rem;
         }
-        
+
         .welcome-text h1 {
             font-size: 1.1rem;
         }
-        
+
         .quick-actions-hero {
             flex-direction: column;
             gap: 0.25rem;
         }
-        
+
         .quick-btn-hero {
             justify-content: center;
             padding: 0.5rem;
@@ -378,8 +378,10 @@
     }
 
     .status-present {
-        background: #dcfce7;
-        color: #166534;
+        background: #4ade80;
+        color: #064e3b;
+        border: 1px solid rgba(6, 78, 59, 0.1);
+        box-shadow: 0 2px 4px rgba(74, 222, 128, 0.2);
     }
 
     .status-absent {
@@ -403,8 +405,10 @@
     }
 
     .status-wfh {
-        background: #f5f3ff;
-        color: #7c3aed;
+        background: #8b5cf6;
+        color: #ffffff;
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
     }
 
     .status-leave {
@@ -1207,18 +1211,22 @@
             -webkit-overflow-scrolling: touch;
             padding: 0.25rem 0.25rem 0.25rem 0.25rem;
             gap: 0.25rem;
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE/Edge */
+            scrollbar-width: none;
+            /* Firefox */
+            -ms-overflow-style: none;
+            /* IE/Edge */
             white-space: nowrap;
             display: flex !important;
             flex-wrap: nowrap !important;
-            padding-right: 30px; /* Space for scroll indicator */
+            padding-right: 30px;
+            /* Space for scroll indicator */
             width: 100%;
             min-width: 0;
         }
 
         .ann-tabs::-webkit-scrollbar {
-            display: none !important; /* Chrome/Safari */
+            display: none !important;
+            /* Chrome/Safari */
         }
 
         .ann-tab-btn {
@@ -1400,7 +1408,8 @@
         .ann-tabs {
             gap: 0.125rem;
             padding: 0.125rem 0.125rem 0.125rem 0.125rem;
-            padding-right: 25px; /* Space for scroll indicator */
+            padding-right: 25px;
+            /* Space for scroll indicator */
         }
 
         .ann-tab-btn {
@@ -1706,8 +1715,8 @@
                         </div>
                         <div class="attendance-metric">
                             <div class="metric-value">
-                                {% if attendance and attendance.clock_in and attendance.clock_out %}
-                                {{ attendance.total_hours|default:"0:00" }}
+                                {% if attendance and attendance.clock_in %}
+                                {{ attendance.effective_hours|default:"0:00" }}
                                 {% else %}
                                 0:00
                                 {% endif %}
@@ -1732,7 +1741,8 @@
                                 {% elif attendance.status == 'NOT_LOGGED_IN' %}
                                 <span class="status-badge status-not-login">Not Login</span>
                                 {% else %}
-                                <span class="status-badge status-absent">{{ attendance.get_status_display|default:attendance.status }}</span>
+                                <span class="status-badge status-absent">{{
+                                    attendance.get_status_display|default:attendance.status }}</span>
                                 {% endif %}
                                 {% else %}
                                 Not Marked
@@ -1953,7 +1963,8 @@
                         </div>
                         <div class="celebration-info flex-grow-1">
                             <h4>{{ item.employee.user.get_full_name }}</h4>
-                            <p>{{ item.display_date|date:"M d" }} • {% if item.is_today %}Today! 🎉{% else %}in {{ item.days_left }} days{% endif %}</p>
+                            <p>{{ item.display_date|date:"M d" }} • {% if item.is_today %}Today! 🎉{% else %}in {{
+                                item.days_left }} days{% endif %}</p>
                         </div>
                         <div class="ann-date-badge" style="background: #eef2ff; color: #4f46e5;">
                             <i class="fas fa-birthday-cake"></i>
@@ -2016,430 +2027,429 @@
 
 </div>
 </div>
-    <div class="ann-modal-overlay" id="announcementModal">
-        <div class="ann-modal" onclick="event.stopPropagation()">
-            <div class="ann-modal-header">
-                <div>
-                    <div class="ann-modal-title" id="modalTitle">Announcement Title</div>
-                    <div class="ann-modal-date">
-                        <i class="far fa-calendar-alt"></i> <span id="modalDate">Jan 21, 2026</span> •
-                        <i class="far fa-clock"></i> <span id="modalTime">10:00 AM</span>
-                    </div>
+<div class="ann-modal-overlay" id="announcementModal">
+    <div class="ann-modal" onclick="event.stopPropagation()">
+        <div class="ann-modal-header">
+            <div>
+                <div class="ann-modal-title" id="modalTitle">Announcement Title</div>
+                <div class="ann-modal-date">
+                    <i class="far fa-calendar-alt"></i> <span id="modalDate">Jan 21, 2026</span> •
+                    <i class="far fa-clock"></i> <span id="modalTime">10:00 AM</span>
                 </div>
-                <button class="ann-modal-close" onclick="closeAnnouncementModal()">
-                    <i class="fas fa-times"></i>
-                </button>
             </div>
-            <div class="ann-modal-body">
-                <img src="" alt="" class="ann-modal-image" id="modalImage" style="display: none;">
+            <button class="ann-modal-close" onclick="closeAnnouncementModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="ann-modal-body">
+            <img src="" alt="" class="ann-modal-image" id="modalImage" style="display: none;">
 
-                <div class="ann-modal-meta" id="modalMeta">
-                    <span id="modalLocation" style="display: none; margin-right: 15px;"><i
-                            class="fas fa-map-marker-alt"></i> <span></span></span>
-                    <span id="modalDepartment" style="display: none; margin-right: 15px;"><i
-                            class="fas fa-building"></i>
-                        <span></span></span>
-                    <span id="modalCompanyWide" style="display: none;" class="text-warning"><i class="fas fa-globe"></i>
-                        Company-wide</span>
-                </div>
-
-                <div id="modalContent"></div>
+            <div class="ann-modal-meta" id="modalMeta">
+                <span id="modalLocation" style="display: none; margin-right: 15px;"><i
+                        class="fas fa-map-marker-alt"></i> <span></span></span>
+                <span id="modalDepartment" style="display: none; margin-right: 15px;"><i class="fas fa-building"></i>
+                    <span></span></span>
+                <span id="modalCompanyWide" style="display: none;" class="text-warning"><i class="fas fa-globe"></i>
+                    Company-wide</span>
             </div>
+
+            <div id="modalContent"></div>
         </div>
     </div>
-    {% endblock %}
+</div>
+{% endblock %}
 
-    {% block extra_js %}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Tab switching
-            const tabButtons = document.querySelectorAll('.tab-btn');
-            const tabContents = document.querySelectorAll('.tab-content');
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Tab switching
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
 
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const targetTab = button.getAttribute('data-tab');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.getAttribute('data-tab');
 
-                    // Remove active class from all buttons and contents
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    tabContents.forEach(content => content.classList.remove('active'));
+                // Remove active class from all buttons and contents
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
 
-                    // Add active class to clicked button and corresponding content
-                    button.classList.add('active');
-                    document.getElementById(targetTab).classList.add('active');
+                // Add active class to clicked button and corresponding content
+                button.classList.add('active');
+                document.getElementById(targetTab).classList.add('active');
 
-                    // Load data for the selected tab
-                    loadTabData(targetTab);
-                });
-            });
-
-            // Announcement Tabs
-            const annTabButtons = document.querySelectorAll('.ann-tab-btn');
-            const annTabContents = document.querySelectorAll('.ann-tab-pane');
-
-            annTabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const targetId = button.getAttribute('data-ann-tab');
-                    console.log('Tab clicked:', targetId);
-
-                    // Remove active from all buttons and contents
-                    annTabButtons.forEach(b => b.classList.remove('active'));
-                    annTabContents.forEach(c => {
-                        c.classList.remove('active');
-                        c.style.display = 'none';
-                    });
-
-                    // Add active to clicked button
-                    button.classList.add('active');
-                    
-                    // Show target content
-                    const targetContent = document.getElementById(targetId);
-                    if (targetContent) {
-                        targetContent.classList.add('active');
-                        targetContent.style.display = 'block';
-                        console.log('Showing content for:', targetId);
-                    } else {
-                        console.error('Target content not found:', targetId);
-                    }
-                    
-                    // Re-check content scrolling after tab change
-                    if (annContentArea) {
-                        setTimeout(() => {
-                            const hasScroll = annContentArea.scrollHeight > annContentArea.clientHeight;
-                            if (hasScroll) {
-                                annContentArea.classList.add('has-scroll');
-                                annContentArea.classList.remove('scrolled');
-                                setTimeout(() => {
-                                    annContentArea.classList.add('scrolled');
-                                }, 3000);
-                            } else {
-                                annContentArea.classList.remove('has-scroll');
-                            }
-                        }, 100);
-                    }
-                });
-            });
-
-            // Function to load data for each tab
-            function loadTabData(tab) {
-                // All data is now loaded from the backend - no dummy data needed
-                // Just trigger animations for progress bars
-
-                if (tab === 'week') {
-                    // Animate the progress bar
-                    const weekBar = document.getElementById('weekAttendanceBar');
-                    const weekRate = weekBar.style.width;
-                    weekBar.style.width = '0%';
-                    setTimeout(() => {
-                        weekBar.style.width = weekRate;
-                    }, 100);
-                } else if (tab === 'year') {
-                    // Animate the progress bar
-                    const yearBar = document.getElementById('yearAttendanceBar');
-                    const yearRate = yearBar.style.width;
-                    yearBar.style.width = '0%';
-                    setTimeout(() => {
-                        yearBar.style.width = yearRate;
-                    }, 100);
-                }
-            }
-
-            // Animate stat cards on scroll
-            const observerOptions = {
-                threshold: 0.1,
-                rootMargin: '0px 0px -100px 0px'
-            };
-
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.style.opacity = '1';
-                        entry.target.style.transform = 'translateY(0)';
-                    }
-                });
-            }, observerOptions);
-
-            document.querySelectorAll('.stat-card-modern, .attendance-stats-section, .leave-balance-card').forEach(el => {
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(30px)';
-                el.style.transition = 'all 0.6s ease-out';
-                observer.observe(el);
-            });
-
-            // Add hover effect sound (optional)
-            document.querySelectorAll('.stat-card-modern, .attendance-metric, .balance-item-modern').forEach(card => {
-                card.addEventListener('mouseenter', function () {
-                    this.style.transform = 'translateY(-10px) scale(1.02)';
-                });
-                card.addEventListener('mouseleave', function () {
-                    this.style.transform = 'translateY(0) scale(1)';
-                });
+                // Load data for the selected tab
+                loadTabData(targetTab);
             });
         });
 
-        // Announcement Modal Functions
-        function openAnnouncementModal(element) {
-            const dataContainer = element.querySelector('.ann-full-data');
-            if (!dataContainer) return;
+        // Announcement Tabs
+        const annTabButtons = document.querySelectorAll('.ann-tab-btn');
+        const annTabContents = document.querySelectorAll('.ann-tab-pane');
 
-            const title = dataContainer.querySelector('.data-title').textContent;
-            const date = dataContainer.querySelector('.data-date').textContent;
-            const time = dataContainer.querySelector('.data-time').textContent;
-            const content = dataContainer.querySelector('.data-content').innerHTML;
-            const imageSpan = dataContainer.querySelector('.data-image');
-            const location = dataContainer.querySelector('.data-location').textContent.trim();
-            const department = dataContainer.querySelector('.data-department').textContent.trim();
+        annTabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetId = button.getAttribute('data-ann-tab');
+                console.log('Tab clicked:', targetId);
 
-            // Populate Modal
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalDate').textContent = date;
-            document.getElementById('modalTime').textContent = time;
-            document.getElementById('modalContent').innerHTML = content;
+                // Remove active from all buttons and contents
+                annTabButtons.forEach(b => b.classList.remove('active'));
+                annTabContents.forEach(c => {
+                    c.classList.remove('active');
+                    c.style.display = 'none';
+                });
 
-            // Image
-            const imgEl = document.getElementById('modalImage');
-            if (imageSpan && imageSpan.textContent.trim()) {
-                imgEl.src = imageSpan.textContent.trim();
-                imgEl.style.display = 'block';
-            } else {
-                imgEl.style.display = 'none';
-            }
+                // Add active to clicked button
+                button.classList.add('active');
 
-            // Meta (Location/Dept)
-            const locEl = document.getElementById('modalLocation');
-            const deptEl = document.getElementById('modalDepartment');
-            const compEl = document.getElementById('modalCompanyWide');
-            const metaContainer = document.getElementById('modalMeta');
-
-            let hasMeta = false;
-            if (location) {
-                locEl.style.display = 'inline-flex';
-                locEl.querySelector('span').textContent = location;
-                hasMeta = true;
-            } else {
-                locEl.style.display = 'none';
-            }
-
-            if (department) {
-                deptEl.style.display = 'inline-flex';
-                deptEl.querySelector('span').textContent = department;
-                hasMeta = true;
-            } else {
-                deptEl.style.display = 'none';
-            }
-
-            if (!hasMeta) {
-                compEl.style.display = 'inline-flex';
-            } else {
-                compEl.style.display = 'none';
-            }
-
-            metaContainer.style.display = 'flex';
-
-            // Show Modal
-            const modal = document.getElementById('announcementModal');
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden'; // Prevent scrolling
-            
-            // Add mobile-specific modal handling
-            if (window.innerWidth <= 768) {
-                // Prevent background scroll on mobile
-                document.body.style.position = 'fixed';
-                document.body.style.width = '100%';
-                document.body.style.top = `-${window.scrollY}px`;
-            }
-        }
-
-        function closeAnnouncementModal() {
-            const modal = document.getElementById('announcementModal');
-            modal.classList.remove('active');
-            
-            // Restore scrolling
-            if (window.innerWidth <= 768) {
-                const scrollY = document.body.style.top;
-                document.body.style.position = '';
-                document.body.style.width = '';
-                document.body.style.top = '';
-                if (scrollY) {
-                    window.scrollTo(0, parseInt(scrollY || '0') * -1);
+                // Show target content
+                const targetContent = document.getElementById(targetId);
+                if (targetContent) {
+                    targetContent.classList.add('active');
+                    targetContent.style.display = 'block';
+                    console.log('Showing content for:', targetId);
+                } else {
+                    console.error('Target content not found:', targetId);
                 }
-            } else {
-                document.body.style.overflow = '';
-            }
-        }
 
-        // Enhanced mobile tab scrolling
-        document.addEventListener('DOMContentLoaded', function() {
-            const annTabs = document.querySelector('.ann-tabs');
-            const annContentArea = document.querySelector('.ann-content-area');
-            
-            // Handle tab scrolling
-            if (annTabs) {
-                // Force horizontal scrolling on mobile
-                function setupMobileTabScrolling() {
-                    if (window.innerWidth <= 768) {
-                        // Force horizontal scrolling layout
-                        annTabs.style.justifyContent = 'flex-start';
-                        annTabs.style.overflowX = 'auto';
-                        annTabs.style.flexWrap = 'nowrap';
-                        annTabs.style.whiteSpace = 'nowrap';
-                        annTabs.style.width = '100%';
-                        annTabs.style.minWidth = '0';
-                        
-                        // Check if scrolling is needed
-                        const needsScroll = annTabs.scrollWidth > annTabs.clientWidth;
-                        if (needsScroll) {
-                            annTabs.classList.remove('scrolled');
-                            
-                            // Show scroll indicator for 3 seconds
-                            setTimeout(() => {
-                                annTabs.classList.add('scrolled');
-                            }, 3000);
-                        }
-                        
-                        console.log('Tab scrolling setup:', {
-                            scrollWidth: annTabs.scrollWidth,
-                            clientWidth: annTabs.clientWidth,
-                            needsScroll: needsScroll
-                        });
-                    } else {
-                        // Desktop layout
-                        annTabs.style.justifyContent = 'space-between';
-                        annTabs.classList.add('scrolled'); // Hide indicator
-                    }
-                }
-                
-                // Setup on load and resize
-                setupMobileTabScrolling();
-                window.addEventListener('resize', setupMobileTabScrolling);
-                
-                // Add scroll event listener for mobile
-                if (window.innerWidth <= 768) {
-                    let scrollTimeout;
-                    
-                    annTabs.addEventListener('scroll', function() {
-                        // Hide scroll indicator when user scrolls
-                        this.classList.add('scrolled');
-                        
-                        // Add visual feedback for scrolling
-                        this.style.boxShadow = 'inset 0 0 10px rgba(0,0,0,0.1)';
-                        
-                        clearTimeout(scrollTimeout);
-                        scrollTimeout = setTimeout(() => {
-                            this.style.boxShadow = '';
-                            // Show indicator again if not at the end
-                            if (this.scrollLeft < this.scrollWidth - this.clientWidth - 10) {
-                                this.classList.remove('scrolled');
-                            }
-                        }, 2000);
-                    });
-                    
-                    // Auto-scroll to active tab on mobile
-                    const activeTab = annTabs.querySelector('.ann-tab-btn.active');
-                    if (activeTab) {
-                        setTimeout(() => {
-                            activeTab.scrollIntoView({ 
-                                behavior: 'smooth', 
-                                inline: 'center',
-                                block: 'nearest'
-                            });
-                        }, 500);
-                    }
-                    
-                    // Force scroll to show all tabs are available
+                // Re-check content scrolling after tab change
+                if (annContentArea) {
                     setTimeout(() => {
-                        if (annTabs.scrollWidth > annTabs.clientWidth) {
-                            // Scroll a bit to show there are more tabs
-                            annTabs.scrollLeft = 20;
+                        const hasScroll = annContentArea.scrollHeight > annContentArea.clientHeight;
+                        if (hasScroll) {
+                            annContentArea.classList.add('has-scroll');
+                            annContentArea.classList.remove('scrolled');
                             setTimeout(() => {
-                                annTabs.scrollLeft = 0;
-                            }, 1000);
+                                annContentArea.classList.add('scrolled');
+                            }, 3000);
+                        } else {
+                            annContentArea.classList.remove('has-scroll');
                         }
-                    }, 1000);
+                    }, 100);
+                }
+            });
+        });
+
+        // Function to load data for each tab
+        function loadTabData(tab) {
+            // All data is now loaded from the backend - no dummy data needed
+            // Just trigger animations for progress bars
+
+            if (tab === 'week') {
+                // Animate the progress bar
+                const weekBar = document.getElementById('weekAttendanceBar');
+                const weekRate = weekBar.style.width;
+                weekBar.style.width = '0%';
+                setTimeout(() => {
+                    weekBar.style.width = weekRate;
+                }, 100);
+            } else if (tab === 'year') {
+                // Animate the progress bar
+                const yearBar = document.getElementById('yearAttendanceBar');
+                const yearRate = yearBar.style.width;
+                yearBar.style.width = '0%';
+                setTimeout(() => {
+                    yearBar.style.width = yearRate;
+                }, 100);
+            }
+        }
+
+        // Animate stat cards on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.stat-card-modern, .attendance-stats-section, .leave-balance-card').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'all 0.6s ease-out';
+            observer.observe(el);
+        });
+
+        // Add hover effect sound (optional)
+        document.querySelectorAll('.stat-card-modern, .attendance-metric, .balance-item-modern').forEach(card => {
+            card.addEventListener('mouseenter', function () {
+                this.style.transform = 'translateY(-10px) scale(1.02)';
+            });
+            card.addEventListener('mouseleave', function () {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+    });
+
+    // Announcement Modal Functions
+    function openAnnouncementModal(element) {
+        const dataContainer = element.querySelector('.ann-full-data');
+        if (!dataContainer) return;
+
+        const title = dataContainer.querySelector('.data-title').textContent;
+        const date = dataContainer.querySelector('.data-date').textContent;
+        const time = dataContainer.querySelector('.data-time').textContent;
+        const content = dataContainer.querySelector('.data-content').innerHTML;
+        const imageSpan = dataContainer.querySelector('.data-image');
+        const location = dataContainer.querySelector('.data-location').textContent.trim();
+        const department = dataContainer.querySelector('.data-department').textContent.trim();
+
+        // Populate Modal
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalDate').textContent = date;
+        document.getElementById('modalTime').textContent = time;
+        document.getElementById('modalContent').innerHTML = content;
+
+        // Image
+        const imgEl = document.getElementById('modalImage');
+        if (imageSpan && imageSpan.textContent.trim()) {
+            imgEl.src = imageSpan.textContent.trim();
+            imgEl.style.display = 'block';
+        } else {
+            imgEl.style.display = 'none';
+        }
+
+        // Meta (Location/Dept)
+        const locEl = document.getElementById('modalLocation');
+        const deptEl = document.getElementById('modalDepartment');
+        const compEl = document.getElementById('modalCompanyWide');
+        const metaContainer = document.getElementById('modalMeta');
+
+        let hasMeta = false;
+        if (location) {
+            locEl.style.display = 'inline-flex';
+            locEl.querySelector('span').textContent = location;
+            hasMeta = true;
+        } else {
+            locEl.style.display = 'none';
+        }
+
+        if (department) {
+            deptEl.style.display = 'inline-flex';
+            deptEl.querySelector('span').textContent = department;
+            hasMeta = true;
+        } else {
+            deptEl.style.display = 'none';
+        }
+
+        if (!hasMeta) {
+            compEl.style.display = 'inline-flex';
+        } else {
+            compEl.style.display = 'none';
+        }
+
+        metaContainer.style.display = 'flex';
+
+        // Show Modal
+        const modal = document.getElementById('announcementModal');
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Prevent scrolling
+
+        // Add mobile-specific modal handling
+        if (window.innerWidth <= 768) {
+            // Prevent background scroll on mobile
+            document.body.style.position = 'fixed';
+            document.body.style.width = '100%';
+            document.body.style.top = `-${window.scrollY}px`;
+        }
+    }
+
+    function closeAnnouncementModal() {
+        const modal = document.getElementById('announcementModal');
+        modal.classList.remove('active');
+
+        // Restore scrolling
+        if (window.innerWidth <= 768) {
+            const scrollY = document.body.style.top;
+            document.body.style.position = '';
+            document.body.style.width = '';
+            document.body.style.top = '';
+            if (scrollY) {
+                window.scrollTo(0, parseInt(scrollY || '0') * -1);
+            }
+        } else {
+            document.body.style.overflow = '';
+        }
+    }
+
+    // Enhanced mobile tab scrolling
+    document.addEventListener('DOMContentLoaded', function () {
+        const annTabs = document.querySelector('.ann-tabs');
+        const annContentArea = document.querySelector('.ann-content-area');
+
+        // Handle tab scrolling
+        if (annTabs) {
+            // Force horizontal scrolling on mobile
+            function setupMobileTabScrolling() {
+                if (window.innerWidth <= 768) {
+                    // Force horizontal scrolling layout
+                    annTabs.style.justifyContent = 'flex-start';
+                    annTabs.style.overflowX = 'auto';
+                    annTabs.style.flexWrap = 'nowrap';
+                    annTabs.style.whiteSpace = 'nowrap';
+                    annTabs.style.width = '100%';
+                    annTabs.style.minWidth = '0';
+
+                    // Check if scrolling is needed
+                    const needsScroll = annTabs.scrollWidth > annTabs.clientWidth;
+                    if (needsScroll) {
+                        annTabs.classList.remove('scrolled');
+
+                        // Show scroll indicator for 3 seconds
+                        setTimeout(() => {
+                            annTabs.classList.add('scrolled');
+                        }, 3000);
+                    }
+
+                    console.log('Tab scrolling setup:', {
+                        scrollWidth: annTabs.scrollWidth,
+                        clientWidth: annTabs.clientWidth,
+                        needsScroll: needsScroll
+                    });
+                } else {
+                    // Desktop layout
+                    annTabs.style.justifyContent = 'space-between';
+                    annTabs.classList.add('scrolled'); // Hide indicator
                 }
             }
-            
-            // Handle content area scrolling
-            if (annContentArea && window.innerWidth <= 768) {
-                function checkContentScroll() {
-                    const hasScroll = annContentArea.scrollHeight > annContentArea.clientHeight;
-                    if (hasScroll) {
-                        annContentArea.classList.add('has-scroll');
-                        
-                        // Hide indicator after 3 seconds
-                        setTimeout(() => {
-                            annContentArea.classList.add('scrolled');
-                        }, 3000);
-                    } else {
-                        annContentArea.classList.remove('has-scroll');
-                    }
-                }
-                
-                // Check on load and when tab content changes
-                checkContentScroll();
-                
-                // Add scroll event listener
-                let contentScrollTimeout;
-                annContentArea.addEventListener('scroll', function() {
+
+            // Setup on load and resize
+            setupMobileTabScrolling();
+            window.addEventListener('resize', setupMobileTabScrolling);
+
+            // Add scroll event listener for mobile
+            if (window.innerWidth <= 768) {
+                let scrollTimeout;
+
+                annTabs.addEventListener('scroll', function () {
+                    // Hide scroll indicator when user scrolls
                     this.classList.add('scrolled');
-                    
-                    clearTimeout(contentScrollTimeout);
-                    contentScrollTimeout = setTimeout(() => {
-                        // Show indicator again if not at bottom
-                        if (this.scrollTop < this.scrollHeight - this.clientHeight - 10) {
+
+                    // Add visual feedback for scrolling
+                    this.style.boxShadow = 'inset 0 0 10px rgba(0,0,0,0.1)';
+
+                    clearTimeout(scrollTimeout);
+                    scrollTimeout = setTimeout(() => {
+                        this.style.boxShadow = '';
+                        // Show indicator again if not at the end
+                        if (this.scrollLeft < this.scrollWidth - this.clientWidth - 10) {
                             this.classList.remove('scrolled');
                         }
                     }, 2000);
                 });
-                
-                // Re-check when tab changes
-                const annTabButtons = document.querySelectorAll('.ann-tab-btn');
-                annTabButtons.forEach(button => {
-                    button.addEventListener('click', () => {
-                        setTimeout(checkContentScroll, 100);
-                    });
-                });
-            }
-            
-            // Add touch feedback for announcement items
-            const annItems = document.querySelectorAll('.ann-item, .celebration-item');
-            annItems.forEach(item => {
-                item.addEventListener('touchstart', function() {
-                    this.style.backgroundColor = '#f3f4f6';
-                    this.style.transform = 'scale(0.98)';
-                }, { passive: true });
-                
-                item.addEventListener('touchend', function() {
+
+                // Auto-scroll to active tab on mobile
+                const activeTab = annTabs.querySelector('.ann-tab-btn.active');
+                if (activeTab) {
                     setTimeout(() => {
-                        this.style.backgroundColor = '';
-                        this.style.transform = '';
-                    }, 150);
-                }, { passive: true });
-                
-                item.addEventListener('touchcancel', function() {
+                        activeTab.scrollIntoView({
+                            behavior: 'smooth',
+                            inline: 'center',
+                            block: 'nearest'
+                        });
+                    }, 500);
+                }
+
+                // Force scroll to show all tabs are available
+                setTimeout(() => {
+                    if (annTabs.scrollWidth > annTabs.clientWidth) {
+                        // Scroll a bit to show there are more tabs
+                        annTabs.scrollLeft = 20;
+                        setTimeout(() => {
+                            annTabs.scrollLeft = 0;
+                        }, 1000);
+                    }
+                }, 1000);
+            }
+        }
+
+        // Handle content area scrolling
+        if (annContentArea && window.innerWidth <= 768) {
+            function checkContentScroll() {
+                const hasScroll = annContentArea.scrollHeight > annContentArea.clientHeight;
+                if (hasScroll) {
+                    annContentArea.classList.add('has-scroll');
+
+                    // Hide indicator after 3 seconds
+                    setTimeout(() => {
+                        annContentArea.classList.add('scrolled');
+                    }, 3000);
+                } else {
+                    annContentArea.classList.remove('has-scroll');
+                }
+            }
+
+            // Check on load and when tab content changes
+            checkContentScroll();
+
+            // Add scroll event listener
+            let contentScrollTimeout;
+            annContentArea.addEventListener('scroll', function () {
+                this.classList.add('scrolled');
+
+                clearTimeout(contentScrollTimeout);
+                contentScrollTimeout = setTimeout(() => {
+                    // Show indicator again if not at bottom
+                    if (this.scrollTop < this.scrollHeight - this.clientHeight - 10) {
+                        this.classList.remove('scrolled');
+                    }
+                }, 2000);
+            });
+
+            // Re-check when tab changes
+            const annTabButtons = document.querySelectorAll('.ann-tab-btn');
+            annTabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    setTimeout(checkContentScroll, 100);
+                });
+            });
+        }
+
+        // Add touch feedback for announcement items
+        const annItems = document.querySelectorAll('.ann-item, .celebration-item');
+        annItems.forEach(item => {
+            item.addEventListener('touchstart', function () {
+                this.style.backgroundColor = '#f3f4f6';
+                this.style.transform = 'scale(0.98)';
+            }, { passive: true });
+
+            item.addEventListener('touchend', function () {
+                setTimeout(() => {
                     this.style.backgroundColor = '';
                     this.style.transform = '';
-                }, { passive: true });
-            });
-            
-            // Close modal on overlay click (mobile-friendly)
-            const modalOverlay = document.getElementById('announcementModal');
-            if (modalOverlay) {
-                modalOverlay.addEventListener('click', function(e) {
-                    if (e.target === this) {
-                        closeAnnouncementModal();
-                    }
-                });
-            }
-            
-            // Handle escape key for modal
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && modalOverlay && modalOverlay.classList.contains('active')) {
+                }, 150);
+            }, { passive: true });
+
+            item.addEventListener('touchcancel', function () {
+                this.style.backgroundColor = '';
+                this.style.transform = '';
+            }, { passive: true });
+        });
+
+        // Close modal on overlay click (mobile-friendly)
+        const modalOverlay = document.getElementById('announcementModal');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function (e) {
+                if (e.target === this) {
                     closeAnnouncementModal();
                 }
             });
-        });
+        }
 
-    </script>
-    {% endblock %}
+        // Handle escape key for modal
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && modalOverlay && modalOverlay.classList.contains('active')) {
+                closeAnnouncementModal();
+            }
+        });
+    });
+
+</script>
+{% endblock %}

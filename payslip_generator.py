@@ -199,7 +199,7 @@ class PayslipGenerator:
         }
         
         .logo-section img {
-            height: 50px;
+            height: 70px;
             width: auto;
         }
         
@@ -374,13 +374,15 @@ class PayslipGenerator:
 </head>
 <body>
     <div class="container">
+        <!-- Title Section -->
+        <div class="header-title" style="margin-bottom: 15px;">
+            <span style="font-weight: bold; color: #000;">PAYSLIP</span> 
+            <span style="font-weight: normal; color: #666; font-size: 18px;">{{ month_short|upper }} {{ year }}</span>
+        </div>
+
         <!-- Header with Company Info on Left, Logo on Right -->
         <div class="header">
             <div class="header-content">
-                <div class="header-title">
-                    <span style="font-weight: bold; color: #000;">PAYSLIP</span> 
-                    <span style="font-weight: normal; color: #666; font-size: 18px;">{{ month_short|upper }} {{ year }}</span>
-                </div>
                 <div class="company-name">{{ company_name }}</div>
                 <div class="company-address">
                     {{ company_address }}<br>
@@ -396,7 +398,7 @@ class PayslipGenerator:
         </div>
         
         <!-- Employee Name -->
-        <div class="employee-name">{{ employee_name|upper }}</div>
+        <div class="employee-name">{{ employee_name }}</div>
         
         <!-- Thin line below name -->
         <div style="border-bottom: 1px solid #333; margin: 0 0 10px 0;"></div>
@@ -478,16 +480,19 @@ class PayslipGenerator:
                     {% for earning in earnings %}
                     <tr>
                         <td class="salary-label">{{ earning.name }}</td>
-                        <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(earning.amount) }}</td>
+                        <td class="salary-amount">{{ currency_symbol }}{{ "{:,.2f}".format(earning.amount) }}</td>
                     </tr>
                     {% endfor %}
                     <tr class="salary-total-row">
                         <td class="salary-label">Total Earnings (A)</td>
-                        <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(total_earnings) }}</td>
+                        <td class="salary-amount">{{ currency_symbol }}{{ "{:,.2f}".format(total_earnings) }}</td>
                     </tr>
                 </table>
             </div>
             
+            <!-- Vertical Separator Line -->
+            <div class="separator-line"></div>
+
             <!-- Right Column: CONTRIBUTIONS (TOP) + TAXES & DEDUCTIONS (BOTTOM) STACKED -->
             <div style="flex: 1;">
                 <!-- CONTRIBUTIONS Section (Top) -->
@@ -497,12 +502,12 @@ class PayslipGenerator:
                         {% for deduction in pf_contributions %}
                         <tr>
                             <td class="salary-label">PF Employee</td>
-                            <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(deduction.amount) }}</td>
+                            <td class="salary-amount">{{ currency_symbol }}{{ "{:,.2f}".format(deduction.amount) }}</td>
                         </tr>
                         {% endfor %}
                         <tr class="salary-total-row">
                             <td class="salary-label">Total Contributions (B)</td>
-                            <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(total_contributions) }}</td>
+                            <td class="salary-amount">{{ currency_symbol }}{{ "{:,.2f}".format(total_contributions) }}</td>
                         </tr>
                     </table>
                 </div>
@@ -515,12 +520,12 @@ class PayslipGenerator:
                         {% for deduction in tax_deductions %}
                         <tr>
                             <td class="salary-label">{{ deduction.name }}</td>
-                            <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(deduction.amount) }}</td>
+                            <td class="salary-amount">{{ currency_symbol }}{{ "{:,.2f}".format(deduction.amount) }}</td>
                         </tr>
                         {% endfor %}
                         <tr class="salary-total-row">
                             <td class="salary-label">Total Taxes & Deductions (C)</td>
-                            <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(total_taxes_deductions) }}</td>
+                            <td class="salary-amount">{{ currency_symbol }}{{ "{:,.2f}".format(total_taxes_deductions) }}</td>
                         </tr>
                     </table>
                 </div>
@@ -537,12 +542,12 @@ class PayslipGenerator:
                     {% for earning in earnings %}
                     <tr>
                         <td class="salary-label">{{ earning.name }}</td>
-                        <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(earning.amount) }}</td>
+                        <td class="salary-amount">{{ currency_symbol }}{{ "{:,.2f}".format(earning.amount) }}</td>
                     </tr>
                     {% endfor %}
                     <tr class="salary-total-row">
                         <td class="salary-label">Total Earnings (A)</td>
-                        <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(total_earnings) }}</td>
+                        <td class="salary-amount">{{ currency_symbol }}{{ "{:,.2f}".format(total_earnings) }}</td>
                     </tr>
                 </table>
             </div>
@@ -559,12 +564,12 @@ class PayslipGenerator:
                     {% for deduction in deductions %}
                     <tr>
                         <td class="salary-label">{{ deduction.name }}</td>
-                        <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(deduction.amount) }}</td>
+                        <td class="salary-amount">{{ currency_symbol }}{{ "{:,.2f}".format(deduction.amount) }}</td>
                     </tr>
                     {% endfor %}
                     <tr class="salary-total-row">
                         <td class="salary-label">Total Taxes & Deductions (B)</td>
-                        <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(total_deductions) }}</td>
+                        <td class="salary-amount">{{ currency_symbol }}{{ "{:,.2f}".format(total_deductions) }}</td>
                     </tr>
                 </table>
                 {% else %}
@@ -577,12 +582,16 @@ class PayslipGenerator:
         <!-- Net Salary -->
         <div class="net-salary-section">
             <div class="net-salary-row">
-                {% if has_pf_deductions %}
+                {% if has_pf_deductions and tax_deductions|length > 0 %}
                 <span class="net-salary-label">Net Salary Payable ( A - B - C )</span>
+                {% elif has_pf_deductions %}
+                <span class="net-salary-label">Net Salary Payable ( A - B )</span>
+                {% elif tax_deductions|length > 0 %}
+                <span class="net-salary-label">Net Salary Payable ( A - B )</span>
                 {% else %}
-                <span class="net-salary-label">Net Salary Payable ( A {% if deductions %}- B {% endif %})</span>
+                <span class="net-salary-label">Net Salary Payable ( A )</span>
                 {% endif %}
-                <span class="net-salary-amount">{{ currency_symbol }}{{ "%.2f"|format(net_salary) }}</span>
+                <span class="net-salary-amount">{{ currency_symbol }}{{ "{:,.2f}".format(net_salary) }}</span>
             </div>
             <div class="net-salary-row">
                 <span class="net-salary-label">Net Salary in words</span>
