@@ -398,14 +398,14 @@
         <form method="GET" class="filter-section">
             <select name="month" class="filter-select" onchange="this.form.submit()">
                 {% for month in months %}
-                <option value="{{ month.value }}" {% if month.value==selected_month %}selected{% endif %}>
+                <option value="{{ month.value }}" {% if month.value == selected_month %}selected{% endif %}>
                     {{ month.name }}
                 </option>
                 {% endfor %}
             </select>
             <select name="year" class="filter-select" onchange="this.form.submit()">
                 {% for year in years %}
-                <option value="{{ year }}" {% if year==selected_year %}selected{% endif %}>
+                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>
                     {{ year }}
                 </option>
                 {% endfor %}
@@ -446,18 +446,14 @@
                                     data-currency="{{ data.employee.location.currency|default:data.employee.company.currency|default:'INR' }}"
                                     data-country="{{ data.employee.location.country_code|upper|default:'IN' }}">
                                     <div class="search-item-avatar">
-                                        {{ data.employee.user.first_name|first }}{{ data.employee.user.last_name|first
-                                        }}
+                                        {{ data.employee.user.first_name|first }}{{ data.employee.user.last_name|first }}
                                     </div>
                                     <div class="search-item-details">
-                                        <div class="search-item-name">{{
-                                            data.employee.user.get_full_name|default:data.employee.user.username }}
+                                        <div class="search-item-name">{{ data.employee.user.get_full_name|default:data.employee.user.username }}
                                         </div>
                                         <div class="search-item-meta">
-                                            <span><i class="fas fa-id-badge"></i> {{ data.employee.badge_id|default:"No
-                                                ID" }}</span>
-                                            <span><i class="fas fa-briefcase"></i> {{
-                                                data.employee.designation|default:"N/A" }}</span>
+                                            <span><i class="fas fa-id-badge"></i> {{ data.employee.badge_id|default:"No ID" }}</span>
+                                            <span><i class="fas fa-briefcase"></i> {{ data.employee.designation|default:"N/A" }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -651,24 +647,18 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% with
-                            curr=data.employee.location.currency|default:data.employee.company.currency|default:"INR" %}
-                            {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{
-                            data.employee.annual_ctc|default:"0" }}
+                            {% with curr=data.employee.location.currency|default:data.employee.company.currency|default:"INR" %} {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{ data.employee.annual_ctc|default:"0" }}
                             {% endwith %}
                         </td>
                         <td>
                             <span class="badge bg-light text-dark">
-                                {{ data.employee.location.currency|default:data.employee.company.currency|default:"INR"
-                                }}
+                                {{ data.employee.location.currency|default:data.employee.company.currency|default:"INR" }}
                             </span>
                         </td>
                         <td>
                             {% if data.payslip %}
-                            {% with
-                            curr=data.employee.location.currency|default:data.employee.company.currency|default:"INR" %}
-                            {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{
-                            data.payslip.net_salary|default:"0" }}
+                            {% with curr=data.employee.location.currency|default:data.employee.company.currency|default:"INR" %}
+                            {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{ data.payslip.net_salary|default:"0" }}
                             {% endwith %}
                             {% else %}
                             -
