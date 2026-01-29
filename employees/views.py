@@ -749,10 +749,14 @@ def clock_out(request):
                 #     pass
 
                 if not current_session:
+                    # Auto-correct state: Attendance says clocked in but no session is active
+                    attendance.is_currently_clocked_in = False
+                    attendance.save(update_fields=["is_currently_clocked_in"])
+                    
                     return JsonResponse(
                         {
-                            "status": "error",
-                            "message": "No active session found.",
+                            "status": "success",
+                            "message": "System sync corrected. You are clocked out.",
                         }
                     )
 

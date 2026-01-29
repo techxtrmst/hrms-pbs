@@ -4,6 +4,28 @@ from django.template.loader import get_template
 from xhtml2pdf import pisa
 from django.core.files.base import ContentFile
 
+# Conditional import for PayslipGenerator to handle CI/CD environments
+try:
+    from payslip_generator import PayslipGenerator
+    PAYSLIP_GENERATOR_AVAILABLE = True
+except Exception as e:
+    print(f"WARNING: PayslipGenerator module import failed: {e}")
+    PAYSLIP_GENERATOR_AVAILABLE = False
+    PayslipGenerator = None
+
+
+def render_to_pdf_weasyprint(template_src, context_dict={}):
+    """Render PDF using WeasyPrint - for non-payslip PDFs"""
+    try:
+        from weasyprint import HTML
+        template = get_template(template_src)
+        html = template.render(context_dict)
+        result = io.BytesIO()
+        HTML(string=html).write_pdf(result)
+        return result.getvalue()
+    except Exception as e:
+        print(f"WeasyPrint PDF generation error: {e}")
+        return None
 def render_to_pdf(template_src, context_dict={}):
     template = get_template(template_src)
     html = template.render(context_dict)
