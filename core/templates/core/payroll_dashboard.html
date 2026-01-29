@@ -398,14 +398,14 @@
         <form method="GET" class="filter-section">
             <select name="month" class="filter-select" onchange="this.form.submit()">
                 {% for month in months %}
-                <option value="{{ month.value }}" {% if month.value == selected_month %}selected{% endif %}>
+                <option value="{{ month.value }}" {% if month.value==selected_month %}selected{% endif %}>
                     {{ month.name }}
                 </option>
                 {% endfor %}
             </select>
             <select name="year" class="filter-select" onchange="this.form.submit()">
                 {% for year in years %}
-                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>
+                <option value="{{ year }}" {% if year==selected_year %}selected{% endif %}>
                     {{ year }}
                 </option>
                 {% endfor %}
@@ -446,14 +446,18 @@
                                     data-currency="{{ data.employee.location.currency|default:data.employee.company.currency|default:'INR' }}"
                                     data-country="{{ data.employee.location.country_code|upper|default:'IN' }}">
                                     <div class="search-item-avatar">
-                                        {{ data.employee.user.first_name|first }}{{ data.employee.user.last_name|first }}
+                                        {{ data.employee.user.first_name|first }}{{ data.employee.user.last_name|first
+                                        }}
                                     </div>
                                     <div class="search-item-details">
-                                        <div class="search-item-name">{{ data.employee.user.get_full_name|default:data.employee.user.username }}
+                                        <div class="search-item-name">{{
+                                            data.employee.user.get_full_name|default:data.employee.user.username }}
                                         </div>
                                         <div class="search-item-meta">
-                                            <span><i class="fas fa-id-badge"></i> {{ data.employee.badge_id|default:"No ID" }}</span>
-                                            <span><i class="fas fa-briefcase"></i> {{ data.employee.designation|default:"N/A" }}</span>
+                                            <span><i class="fas fa-id-badge"></i> {{ data.employee.badge_id|default:"No
+                                                ID" }}</span>
+                                            <span><i class="fas fa-briefcase"></i> {{
+                                                data.employee.designation|default:"N/A" }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -583,11 +587,12 @@
                         <input type="hidden" name="month" value="{{ selected_month }}">
                         <input type="hidden" name="year" value="{{ selected_year }}">
 
-                        <a href="{% url 'bulk_payroll_template' %}" class="btn btn-view w-100 mb-2">
+                        <a href="{% url 'bulk_payroll_template' %}?month={{ selected_month }}&year={{ selected_year }}"
+                            class="btn btn-view w-100 mb-2">
                             <i class="fas fa-download me-2"></i>Download Excel template
                         </a>
                         <p class="small text-muted mb-3">Template: Employee ID, Name, Department, Designation, Monthly
-                            Gross, Net Pay, Payable Days</p>
+                            Gross, Net Pay, Payable Days, and all payroll components</p>
 
                         <div class="border-dashed p-4 rounded-3 text-muted position-relative" style="cursor: pointer;"
                             onclick="document.getElementById('xlsx_file').click()">
@@ -646,19 +651,24 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% with curr=data.employee.location.currency|default:data.employee.company.currency|default:"INR" %}
-                            {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{ data.employee.annual_ctc|default:"0" }}
+                            {% with
+                            curr=data.employee.location.currency|default:data.employee.company.currency|default:"INR" %}
+                            {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{
+                            data.employee.annual_ctc|default:"0" }}
                             {% endwith %}
                         </td>
                         <td>
                             <span class="badge bg-light text-dark">
-                                {{ data.employee.location.currency|default:data.employee.company.currency|default:"INR" }}
+                                {{ data.employee.location.currency|default:data.employee.company.currency|default:"INR"
+                                }}
                             </span>
                         </td>
                         <td>
                             {% if data.payslip %}
-                            {% with curr=data.employee.location.currency|default:data.employee.company.currency|default:"INR" %}
-                            {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{ data.payslip.net_salary|default:"0" }}
+                            {% with
+                            curr=data.employee.location.currency|default:data.employee.company.currency|default:"INR" %}
+                            {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{
+                            data.payslip.net_salary|default:"0" }}
                             {% endwith %}
                             {% else %}
                             -
@@ -829,7 +839,6 @@
                     }
 
                     document.getElementById('res_hra').innerText = symbol + res.hra.toLocaleString();
-                    
                     // Show individual allowances only if they have values > 0
                     if (res.lta > 0) {
                         document.getElementById('row_lta').style.display = 'flex';
@@ -837,27 +846,28 @@
                     } else {
                         document.getElementById('row_lta').style.display = 'none';
                     }
-                    
+
                     if (res.other_allowance > 0) {
                         document.getElementById('row_other').style.display = 'flex';
                         document.getElementById('res_other').innerText = symbol + res.other_allowance.toLocaleString();
                     } else {
                         document.getElementById('row_other').style.display = 'none';
                     }
-                    
+
                     if (res.conveyance > 0) {
                         document.getElementById('row_conveyance').style.display = 'flex';
                         document.getElementById('res_conveyance').innerText = symbol + res.conveyance.toLocaleString();
                     } else {
                         document.getElementById('row_conveyance').style.display = 'none';
                     }
-                    
+
                     if (res.special_allowance > 0) {
                         document.getElementById('row_special').style.display = 'flex';
                         document.getElementById('res_special').innerText = symbol + res.special_allowance.toLocaleString();
                     } else {
                         document.getElementById('row_special').style.display = 'none';
                     }
+
                     document.getElementById('res_deductions').innerText = symbol + (res.employee_pf + res.professional_tax).toLocaleString();
                     document.getElementById('res_net').innerText = symbol + res.net_salary.toLocaleString();
                 } else {

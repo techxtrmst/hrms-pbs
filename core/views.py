@@ -3168,30 +3168,108 @@ def process_payslip_generation(request):
 @admin_required
 def download_payslip_template(request):
     """Download Excel template for bulk payslip upload"""
-    import openpyxl
-    from django.http import HttpResponse
+    # Get current month and year or from request parameters
+    current_date = datetime.now()
+    month = request.GET.get('month', current_date.month)
+    year = request.GET.get('year', current_date.year)
+    
+    try:
+        # Format month-year header (e.g., "Jul-2025")
+        month_year_header = datetime(int(year), int(month), 1).strftime('%b-%Y')
+    except (ValueError, TypeError):
+        month_year_header = current_date.strftime('%b-%Y')
     
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Payslip Template"
     
-    headers = ["Employee ID", "Name", "Department", "Designation", "Monthly Gross", "Net Pay", "Payable Days"]
+    # Fonts
+    bold_font = Font(bold=True)
+    red_font = Font(color="FF0000", bold=True)
+    
+    # Fills
+    blue_fill = PatternFill(start_color="B6DDE8", end_color="B6DDE8", fill_type="solid")
+    grey_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
+    
+    # Define all column headers as per user requirement
+    headers = [
+        "Employee Number", "Employee Name", "Job Title", "Department", "Location",
+        "Monthly Earned Gross", "Net Pay", "No Of Payable Units (Days / Hours / Units)",
+        "Basic", "HRA", "Medical Allowance", "PF Employee", "Conveyance Allowance",
+        "Special Allowance", "Professional Allowance", "Travel Reimbursement (LTA)",
+        "Food Coupons", "Voluntary Provident Fund", "Professional Tax", "Arrears",
+        "City Compensatory Allowance", "Daily Allowance", "Employee Gratuity",
+        "Employee Gratuity contribution", "Dearness Allowance", "Leave Encashment",
+        "Final Settlement", "NPS Employer", "Over Time (OT)", "Notice Period Buyout",
+        "LWF", "Shift Allowance (SA)", "Loan EMI", "Loan Disbursement",
+        "Cash Advance", "Cash Advance Settlement", "PF Employee (ABRY)",
+        "PF Employer (ABRY)", "Commission", "LWF Employer", "Incentives",
+        "Joining Bonus", "Asset Damage Recovery (ADR)", "IncomeTax", "Cess",
+        "Surcharge", "Cash", "General expenses"
+    ]
+    
+    # Apply blue fill to row 1
+    ws.row_dimensions[1].height = 25
+    for col_num in range(1, len(headers) + 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.fill = blue_fill
+        if col_num == 1:
+            cell.value = month_year_header
+            cell.font = bold_font
+            cell.alignment = Alignment(horizontal="left", vertical="center")
+
+    # Add headers in row 2 with grey background
+    ws.row_dimensions[2].height = 20
     for col_num, header in enumerate(headers, 1):
-        ws.cell(row=1, column=col_num, value=header)
+        cell = ws.cell(row=2, column=col_num, value=header)
+        cell.fill = grey_fill
+        # Apply red font to "Employee Number" (column 1) and "Monthly Earned Gross" (column 6)
+        if col_num == 1 or col_num == 6:
+            cell.font = red_font
+        else:
+            cell.font = bold_font
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+    
+    # Add auto-filter for headers
+    from openpyxl.utils import get_column_letter
+    ws.auto_filter.ref = f"A2:{get_column_letter(len(headers))}2"
+    
+    # Optionally add sample data from active employees
+    employees = Employee.objects.filter(company=request.user.company, is_active=True).select_related('user', 'location')[:5]
+    for row_num, emp in enumerate(employees, 3):
+        # Employee Number - with red font (Col 1)
+        cell = ws.cell(row=row_num, column=1, value=emp.badge_id)
+        cell.font = red_font
         
-    # Add some sample data from active employees
-    employees = Employee.objects.filter(company=request.user.company, is_active=True).select_related('user')[:5]
-    for row_num, emp in enumerate(employees, 2):
-        ws.cell(row=row_num, column=1, value=emp.badge_id)
+        # Employee Name (Col 2)
         ws.cell(row=row_num, column=2, value=emp.user.get_full_name())
-        ws.cell(row=row_num, column=3, value=emp.department or "N/A")
-        ws.cell(row=row_num, column=4, value=emp.designation or "N/A")
-        ws.cell(row=row_num, column=5, value=float(emp.annual_ctc or 0) / 12)
-        # Net pay is not easily pre-calculated without knowing worked days
-        ws.cell(row=row_num, column=7, value=30) 
         
+        # Job Title (Designation) (Col 3)
+        ws.cell(row=row_num, column=3, value=emp.designation or "")
+        
+        # Department (Col 4)
+        ws.cell(row=row_num, column=4, value=emp.department or "")
+        
+        # Location (Col 5)
+        ws.cell(row=row_num, column=5, value=emp.location.name if emp.location else "")
+        
+        # Monthly Earned Gross - with red font (Col 6)
+        monthly_gross = float(emp.annual_ctc or 0) / 12
+        cell = ws.cell(row=row_num, column=6, value=monthly_gross)
+        cell.font = red_font
+        
+        # No Of Payable Units (default to 30 days) (Col 8)
+        ws.cell(row=row_num, column=8, value=30)
+    
+    # Adjust column widths for better readability
+    col_widths = {
+        'A': 18, 'B': 25, 'C': 20, 'D': 20, 'E': 20, 'F': 22, 'G': 15, 'H': 35
+    }
+    for col, width in col_widths.items():
+        ws.column_dimensions[col].width = width
+    
     response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    response["Content-Disposition"] = 'attachment; filename="Bulk_Payslip_Template.xlsx"'
+    response["Content-Disposition"] = f'attachment; filename="Bulk_Payslip_Template_{month_year_header}.xlsx"'
     wb.save(response)
     return response
 
@@ -3199,9 +3277,8 @@ def download_payslip_template(request):
 @login_required
 @admin_required
 def bulk_upload_payslips(request):
-    """Refined bulk upload from Excel"""
+    """Refined bulk upload from Excel based on the new template"""
     if request.method == "POST" and request.FILES.get("excel_file"):
-        import openpyxl
         from datetime import date
         
         excel_file = request.FILES["excel_file"]
@@ -3213,26 +3290,32 @@ def bulk_upload_payslips(request):
             wb = openpyxl.load_workbook(excel_file)
             ws = wb.active
             
-            # Map headers to column indices
+            # Map headers to column indices from Row 2 (since Row 1 is the month-year header)
             header_map = {}
-            for cell in ws[1]:
-                if cell.value:
-                    header_map[cell.value.strip().lower()] = cell.column - 1
+            header_row = list(ws.iter_rows(min_row=2, max_row=2, values_only=True))[0]
+            for idx, value in enumerate(header_row):
+                if value:
+                    header_map[value.strip().lower()] = idx
             
-            # Required columns
-            needed = ['employee id', 'monthly gross', 'payable days']
+            # Required columns (now matching new template names)
+            badge_key = 'employee number'
+            gross_key = 'monthly earned gross'
+            days_key = 'no of payable units (days / hours / units)'
+            
+            needed = [badge_key, gross_key, days_key]
             for col in needed:
                 if col not in header_map:
-                    messages.error(request, f"Required column missing: {col}")
+                    messages.error(request, f"Required column missing in template: {col}")
                     return redirect(f"{reverse('payroll_dashboard')}?month={month}&year={year}")
             
             success_count = 0
             error_count = 0
             
-            for row in ws.iter_rows(min_row=2, values_only=True):
-                badge_id = str(row[header_map['employee id']]) if row[header_map['employee id']] else None
-                monthly_gross = row[header_map['monthly gross']]
-                payable_days = row[header_map['payable days']]
+            # Iterate through data starting from Row 3
+            for row in ws.iter_rows(min_row=3, values_only=True):
+                badge_id = str(row[header_map[badge_key]]) if row[header_map[badge_key]] is not None else None
+                monthly_gross = row[header_map[gross_key]]
+                payable_days = row[header_map[days_key]]
                 
                 if not badge_id or monthly_gross is None or payable_days is None:
                     continue
