@@ -716,8 +716,12 @@ def employee_dashboard(request):
         pass
 
 
-    # Today's attendance
-    attendance = Attendance.objects.filter(employee=employee, date=today).first()
+    # Prioritize active clock-in session (e.g., Night Shift or Stale Session)
+    attendance = Attendance.objects.filter(employee=employee, is_currently_clocked_in=True).first()
+    
+    # If no active session, fetch today's record
+    if not attendance:
+        attendance = Attendance.objects.filter(employee=employee, date=today).first()
 
     # --- Comprehensive Attendance History (Last 30 Days) ---
     end_date = today
@@ -1048,8 +1052,12 @@ def personal_home(request):
         context["user_timezone"] = user_timezone
 
 
-        # Today's attendance
-        attendance = Attendance.objects.filter(employee=employee, date=today).first()
+        # Prioritize active clock-in session (e.g., Night Shift or Stale Session)
+        attendance = Attendance.objects.filter(employee=employee, is_currently_clocked_in=True).first()
+        
+        # If no active session, fetch today's record
+        if not attendance:
+            attendance = Attendance.objects.filter(employee=employee, date=today).first()
         context["attendance"] = attendance
 
         # --- Comprehensive Attendance History (Last 30 Days) ---

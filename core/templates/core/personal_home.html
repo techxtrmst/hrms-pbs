@@ -2934,8 +2934,7 @@
                     }
                     else if (data.already_clocked_in) {
                         alert(data.message || 'You are already clocked in.');
-                        btn.innerHTML = origText;
-                        btn.disabled = false;
+                        location.reload(); // Reload to sync UI with backend state
                     }
                     else {
                         alert(data.message || 'An error occurred');

@@ -8,7 +8,8 @@ from django.core.files.base import ContentFile
 try:
     from payslip_generator import PayslipGenerator
     PAYSLIP_GENERATOR_AVAILABLE = True
-except ImportError:
+except Exception as e:
+    print(f"WARNING: PayslipGenerator module import failed: {e}")
     PAYSLIP_GENERATOR_AVAILABLE = False
     PayslipGenerator = None
 
@@ -21,6 +22,16 @@ def render_to_pdf_weasyprint(template_src, context_dict={}):
         html = template.render(context_dict)
         result = io.BytesIO()
         HTML(string=html).write_pdf(result)
+        return result.getvalue()
+    except Exception as e:
+        print(f"WeasyPrint PDF generation error: {e}")
+        return None
+def render_to_pdf(template_src, context_dict={}):
+    template = get_template(template_src)
+    html = template.render(context_dict)
+    result = io.BytesIO()
+    pdf = pisa.pisaDocument(io.BytesIO(html.encode("UTF-8")), result)
+    if not pdf.err:
         return result.getvalue()
     except Exception as e:
         print(f"WeasyPrint PDF generation error: {e}")
