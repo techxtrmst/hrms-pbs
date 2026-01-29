@@ -13,7 +13,8 @@ from typing import Dict, Any
 try:
     from weasyprint import HTML
     WEASYPRINT_AVAILABLE = True
-except ImportError:
+except (ImportError, OSError) as e:
+    print(f"WARNING: WeasyPrint could not be imported: {e}")
     WEASYPRINT_AVAILABLE = False
     HTML = None
 
@@ -62,7 +63,7 @@ class PayslipGenerator:
         
         # Check if WeasyPrint is available
         if not WEASYPRINT_AVAILABLE:
-            raise ImportError("WeasyPrint is not available. Please install it with: pip install weasyprint")
+            raise ImportError("WeasyPrint is not available (missing module or system dependencies like GTK3). On Windows, please install the GTK3 runtime.")
         
         # Get logo (if provided in employee_data)
         logo_base64 = None

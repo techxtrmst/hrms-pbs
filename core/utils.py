@@ -3,12 +3,14 @@ import io
 import os
 from django.template.loader import get_template
 from django.core.files.base import ContentFile
+from xhtml2pdf import pisa
 
 # Conditional import for PayslipGenerator to handle CI/CD environments
 try:
     from payslip_generator import PayslipGenerator
     PAYSLIP_GENERATOR_AVAILABLE = True
-except ImportError:
+except Exception as e:
+    print(f"WARNING: PayslipGenerator module import failed: {e}")
     PAYSLIP_GENERATOR_AVAILABLE = False
     PayslipGenerator = None
 
@@ -28,17 +30,23 @@ def render_to_pdf_weasyprint(template_src, context_dict={}):
 
 
 def render_to_pdf(template_src, context_dict={}):
-    """Legacy function - now uses WeasyPrint"""
-    return render_to_pdf_weasyprint(template_src, context_dict)
+    """Legacy function using xhtml2pdf (pisa)"""
+    template = get_template(template_src)
+    html = template.render(context_dict)
+    result = io.BytesIO()
+    pdf = pisa.pisaDocument(io.BytesIO(html.encode("UTF-8")), result)
+    if not pdf.err:
+        return result.getvalue()
+    return None
 
 
 def save_pdf_to_model(model_instance, template_src, context_dict, filename):
-    """Save PDF to model using WeasyPrint"""
     pdf_content = render_to_pdf(template_src, context_dict)
     if pdf_content:
         model_instance.pdf_file.save(filename, ContentFile(pdf_content), save=True)
         return True
     return False
+
 
 def get_user_timezone(user, company=None):
     """
