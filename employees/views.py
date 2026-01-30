@@ -416,20 +416,21 @@ def clock_in(request):
 
             employee = request.user.employee_profile
 
-            # Get timezone from request data or detect from coordinates
-            user_timezone = data.get("timezone")
+            # --- TIMEZONE RESOLUTION (Assigned Location First) ---
+            from core.utils import get_user_timezone
+            user_timezone = get_user_timezone(request.user, getattr(request, "company", None))
 
-            if not user_timezone:
-                # Try to detect timezone from coordinates
-                user_timezone = detect_timezone_from_coordinates(lat, lng)
+            # Only fallback to browser/coordinates if assigned location doesn't have a specific TZ
+            # (get_user_timezone returns "Asia/Kolkata" as a final fallback, so we check if coordinates can be more specific)
+            if not user_timezone or user_timezone == "Asia/Kolkata":
+                detected_tz = data.get("timezone")
+                if not detected_tz:
+                    detected_tz = detect_timezone_from_coordinates(lat, lng)
+                
+                if detected_tz:
+                    user_timezone = detected_tz
 
-            if not user_timezone:
-                # Use central utility for consistent resolution (handles company fallback)
-                from core.utils import get_user_timezone
-                user_timezone = get_user_timezone(request.user, getattr(request, "company", None))
-
-
-            # Calculate today based on user's timezone
+            # Calculate today based on the resolved timezone
             import pytz
             
             try:
@@ -470,9 +471,6 @@ def clock_in(request):
                 attendance.save(update_fields=["user_timezone"])
 
             # Check if employee can clock in
-            # FORCE OVERRIDE: Allow up to 3 sessions/day regardless of model setting (user request)
-            MAX_ALLOWED_SESSIONS = 3
-
             if not attendance.can_clock_in():
                 if attendance.is_currently_clocked_in:
                     return JsonResponse(
@@ -482,18 +480,6 @@ def clock_in(request):
                             "already_clocked_in": True,
                         }
                     )
-                # Use loose check instead of strict model field check
-                elif attendance.daily_sessions_count >= MAX_ALLOWED_SESSIONS:
-                    return JsonResponse(
-                        {
-                            "status": "error",
-                            "message": f"Maximum {MAX_ALLOWED_SESSIONS} sessions per day reached.",
-                        }
-                    )
-
-            # Ensure model reflects this override if needed
-            if attendance.max_daily_sessions < MAX_ALLOWED_SESSIONS:
-                attendance.max_daily_sessions = MAX_ALLOWED_SESSIONS
 
 
 
@@ -698,11 +684,17 @@ def clock_out(request):
 
             employee = request.user.employee_profile
             
+            # Find active attendance regardless of current date (Keka-style Night Shift Logic)
+            attendance = Attendance.objects.filter(employee=employee, is_currently_clocked_in=True).first()
+
             # Determine today based on employee's location timezone
             from core.utils import get_user_timezone
             user_timezone = get_user_timezone(request.user, getattr(request, "company", None))
+            
+            # Override with active record's timezone if available
+            if attendance and attendance.user_timezone:
+                user_timezone = attendance.user_timezone
 
-                
             try:
                 tz = pytz.timezone(user_timezone)
                 today = timezone.now().astimezone(tz).date()
@@ -710,9 +702,6 @@ def clock_out(request):
                 today = timezone.localdate()
 
             try:
-                # Keka-style Night Shift Logic: Find active attendance regardless of current date
-                attendance = Attendance.objects.filter(employee=employee, is_currently_clocked_in=True).first()
-
                 # Fallback to today's record if no active session found (to show appropriate error)
                 if not attendance:
                     attendance = Attendance.objects.filter(employee=employee, date=today).first()
@@ -3269,11 +3258,11 @@ def approve_regularization(request, pk):
         attendance, created = Attendance.objects.get_or_create(employee=reg_request.employee, date=reg_request.date)
 
         # Get employee location timezone
-        import pytz
-        tz_name = "Asia/Kolkata"
-        if reg_request.employee.location and hasattr(reg_request.employee.location, "timezone"):
-             tz_name = reg_request.employee.location.timezone
+        from core.utils import get_user_timezone
+        tz_name = get_user_timezone(reg_request.employee.user, reg_request.employee.company)
+        attendance.user_timezone = tz_name
         
+        import pytz
         local_tz = pytz.timezone(tz_name)
 
         if reg_request.check_in:

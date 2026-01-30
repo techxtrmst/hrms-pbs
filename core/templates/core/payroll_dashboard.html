@@ -398,14 +398,14 @@
         <form method="GET" class="filter-section">
             <select name="month" class="filter-select" onchange="this.form.submit()">
                 {% for month in months %}
-                <option value="{{ month.value }}" {% if month.value == selected_month %}selected{% endif %}>
+                <option value="{{ month.value }}" {% if month.value==selected_month %}selected{% endif %}>
                     {{ month.name }}
                 </option>
                 {% endfor %}
             </select>
             <select name="year" class="filter-select" onchange="this.form.submit()">
                 {% for year in years %}
-                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>
+                <option value="{{ year }}" {% if year==selected_year %}selected{% endif %}>
                     {{ year }}
                 </option>
                 {% endfor %}
@@ -446,14 +446,18 @@
                                     data-currency="{{ data.employee.location.currency|default:data.employee.company.currency|default:'INR' }}"
                                     data-country="{{ data.employee.location.country_code|upper|default:'IN' }}">
                                     <div class="search-item-avatar">
-                                        {{ data.employee.user.first_name|first }}{{ data.employee.user.last_name|first }}
+                                        {{ data.employee.user.first_name|first }}{{ data.employee.user.last_name|first
+                                        }}
                                     </div>
                                     <div class="search-item-details">
-                                        <div class="search-item-name">{{ data.employee.user.get_full_name|default:data.employee.user.username }}
+                                        <div class="search-item-name">{{
+                                            data.employee.user.get_full_name|default:data.employee.user.username }}
                                         </div>
                                         <div class="search-item-meta">
-                                            <span><i class="fas fa-id-badge"></i> {{ data.employee.badge_id|default:"No ID" }}</span>
-                                            <span><i class="fas fa-briefcase"></i> {{ data.employee.designation|default:"N/A" }}</span>
+                                            <span><i class="fas fa-id-badge"></i> {{ data.employee.badge_id|default:"No
+                                                ID" }}</span>
+                                            <span><i class="fas fa-briefcase"></i> {{
+                                                data.employee.designation|default:"N/A" }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -539,11 +543,11 @@
                         <span id="res_hra"></span>
                     </div>
                     <div id="row_lta" class="d-flex justify-content-between mb-2" style="display: none;">
-                        <span id="label_lta" class="text-secondary">LTA:</span>
+                        <span id="label_lta" class="text-secondary">Conveyance Allowance:</span>
                         <span id="res_lta"></span>
                     </div>
                     <div id="row_other" class="d-flex justify-content-between mb-2" style="display: none;">
-                        <span id="label_other" class="text-secondary">Other Allowance:</span>
+                        <span id="label_other" class="text-secondary">Special Allowance:</span>
                         <span id="res_other"></span>
                     </div>
                     <div id="row_conveyance" class="d-flex justify-content-between mb-2" style="display: none;">
@@ -551,7 +555,7 @@
                         <span id="res_conveyance"></span>
                     </div>
                     <div id="row_special" class="d-flex justify-content-between mb-2" style="display: none;">
-                        <span id="label_special" class="text-secondary">Special Allowance:</span>
+                        <span id="label_special" class="text-secondary">Medical Allowance:</span>
                         <span id="res_special"></span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
@@ -647,18 +651,24 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% with curr=data.employee.location.currency|default:data.employee.company.currency|default:"INR" %} {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{ data.employee.annual_ctc|default:"0" }}
+                            {% with
+                            curr=data.employee.location.currency|default:data.employee.company.currency|default:"INR" %}
+                            {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{
+                            data.employee.annual_ctc|default:"0" }}
                             {% endwith %}
                         </td>
                         <td>
                             <span class="badge bg-light text-dark">
-                                {{ data.employee.location.currency|default:data.employee.company.currency|default:"INR" }}
+                                {{ data.employee.location.currency|default:data.employee.company.currency|default:"INR"
+                                }}
                             </span>
                         </td>
                         <td>
                             {% if data.payslip %}
-                            {% with curr=data.employee.location.currency|default:data.employee.company.currency|default:"INR" %}
-                            {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{ data.payslip.net_salary|default:"0" }}
+                            {% with
+                            curr=data.employee.location.currency|default:data.employee.company.currency|default:"INR" %}
+                            {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{
+                            data.payslip.net_salary|default:"0" }}
                             {% endwith %}
                             {% else %}
                             -
@@ -813,22 +823,43 @@
                     document.getElementById('res_gross').innerText = symbol + res.gross_monthly.toLocaleString();
                     document.getElementById('res_basic').innerText = symbol + res.basic.toLocaleString();
 
-                    // Handle Label changes and show individual allowances
+                    // Handle Label changes
                     const hraLabel = document.getElementById('label_hra');
                     if (country === 'BD') {
                         hraLabel.innerText = 'House Rent:';
-                        document.getElementById('label_special').innerText = 'Medical:';
+                        document.getElementById('row_medical').style.display = 'flex';
+                        document.getElementById('row_conveyance').style.display = 'flex';
+                        document.getElementById('res_medical').innerText = symbol + res.medical.toLocaleString();
+                        document.getElementById('res_conveyance').innerText = symbol + res.conveyance.toLocaleString();
+                        document.getElementById('label_other').innerText = 'LTA/Other:';
                     } else if (country === 'US') {
                         hraLabel.innerText = 'HRA:';
-                        document.getElementById('label_special').innerText = 'Special Allowance:';
+<<<<<<< Updated upstream
+                        document.getElementById('row_medical').style.display = 'flex';
+                        document.getElementById('row_conveyance').style.display = 'none';
+                        document.getElementById('res_medical').innerText = symbol + res.medical.toLocaleString();
+                        document.getElementById('label_other').innerText = 'Other Allowance:';
+=======
+                        document.getElementById('label_special').innerText = 'Medical Allowance:';
+>>>>>>> Stashed changes
                     } else {
-                        // India - show Conveyance Allowance instead of LTA
                         hraLabel.innerText = 'HRA:';
+<<<<<<< Updated upstream
+                        document.getElementById('row_medical').style.display = 'none';
+                        document.getElementById('row_conveyance').style.display = 'none';
+                        document.getElementById('label_other').innerText = 'Other Allowance:';
+=======
                         document.getElementById('label_lta').innerText = 'Conveyance Allowance:';
-                        document.getElementById('label_special').innerText = 'Special Allowance:';
+                        document.getElementById('label_other').innerText = 'Special Allowance:';
+                        document.getElementById('label_special').innerText = 'Medical Allowance:';
+>>>>>>> Stashed changes
                     }
 
                     document.getElementById('res_hra').innerText = symbol + res.hra.toLocaleString();
+<<<<<<< Updated upstream
+                    document.getElementById('res_other').innerText = symbol + (res.other_allowance + res.lta).toLocaleString();
+=======
+
                     // Show individual allowances only if they have values > 0
                     if (res.lta > 0) {
                         document.getElementById('row_lta').style.display = 'flex';
@@ -857,7 +888,7 @@
                     } else {
                         document.getElementById('row_special').style.display = 'none';
                     }
-
+>>>>>>> Stashed changes
                     document.getElementById('res_deductions').innerText = symbol + (res.employee_pf + res.professional_tax).toLocaleString();
                     document.getElementById('res_net').innerText = symbol + res.net_salary.toLocaleString();
                 } else {

@@ -77,15 +77,15 @@ def test_payslip_generation():
         month = payslip.month.strftime('%B')
         year = payslip.month.strftime('%Y')
         
-        print(f"Attempting to generate PDF for {month} {year}")
+        print(f"Attempting to generate HTML for {month} {year}")
         
-        pdf_path = generator.generate_payslip(employee_data, month, year)
-        print(f"PDF generated at: {pdf_path}")
+        html_content = generator.generate_html(employee_data, month, year)
+        print(f"HTML generated successfully, length: {len(html_content)} chars")
         
-        if os.path.exists(pdf_path):
-            print(f"✅ PDF file exists and is {os.path.getsize(pdf_path)} bytes")
+        if html_content and "<html>" in html_content:
+            print(f"✅ HTML content valid")
         else:
-            print("❌ PDF file was not created")
+            print("❌ HTML content seems invalid")
             
     except Exception as e:
         print(f"❌ Error during generation: {e}")
