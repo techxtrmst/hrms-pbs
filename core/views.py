@@ -385,7 +385,17 @@ def admin_dashboard(request):
         # Get attendance for the selected month
         month_attendance = Attendance.objects.filter(employee=emp, date__range=[month_start, month_end])
 
-        att_map = {att.date.day: att for att in month_attendance}
+        # Prepare timezone for calendar entries
+        tz_name = get_user_timezone(emp.user, company)
+        emp_tz = pytz.timezone(tz_name)
+
+        att_map = {}
+        for att in month_attendance:
+            if att.clock_in:
+                att.display_clock_in = att.clock_in.astimezone(emp_tz)
+            if att.clock_out:
+                att.display_clock_out = att.clock_out.astimezone(emp_tz)
+            att_map[att.date.day] = att
 
         # Sick Leave Map
         # Find approved SL requests that overlap with this month

@@ -131,8 +131,8 @@
         }
 
         .logo {
-            max-width: 140px;
-            max-height: 70px;
+            max-width: 180px;
+            max-height: 90px;
             width: auto;
             height: auto;
             margin-left: auto;
@@ -321,7 +321,9 @@
     <div class="net-box">
         <table class="net-table">
             <tr>
-                <td style="width: 70%;">Net Salary Payable {% if payslip.employee_pf > 0 and payslip.professional_tax > 0 %}( A - B - C ){% elif payslip.employee_pf > 0 or payslip.professional_tax > 0 %}( A - B ){% endif %}</td>
+                <td style="width: 70%;">Net Salary Payable {% if payslip.employee_pf > 0 and payslip.professional_tax >
+                    0 %}( A - B - C ){% elif payslip.employee_pf > 0 or payslip.professional_tax > 0 %}( A - B ){% endif
+                    %}</td>
                 <td style="text-align: right;">{{ payslip.net_salary|floatformat:2 }}</td>
             </tr>
             <tr>
