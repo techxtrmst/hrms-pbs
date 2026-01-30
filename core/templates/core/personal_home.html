@@ -2011,7 +2011,8 @@
                                 </span>
                             </div>
                             {% if attendance.clock_in %}
-                            <div class="text-muted small mt-1">Started at {{ attendance.get_current_session.clock_in|default:attendance.clock_in|time:"h:i A" }}
+                            <div class="text-muted small mt-1">
+                                Started at <strong>{{ attendance.get_current_session.clock_in|default:attendance.clock_in|date:"d M, Y | h:i A" }}</strong>
                             </div>
                             {% endif %}
 
@@ -2057,23 +2058,16 @@
                         {% endif %}
 
                         <div class="d-grid gap-3">
-                            {% if not attendance or attendance.daily_sessions_count < attendance.max_daily_sessions %}
-                                <button class="btn-clock btn-clock-in-office"
+                            <button class="btn-clock btn-clock-in-office"
                                 onclick="handleClockAction('in', 'office', this)">
                                 <span class="btn-icon-wrapper"><i class="fas fa-building"></i></span>
                                 Web Clock-In
-                                </button>
-                                <button class="btn-clock btn-clock-in-remote"
-                                    onclick="handleClockAction('in', 'remote', this)">
-                                    <span class="btn-icon-wrapper"><i class="fas fa-laptop-house"></i></span>
-                                    Remote Clock-In
-                                </button>
-                                {% else %}
-                                <!-- Max sessions limit reached (Hidden from UI as per request) -->
-                                <div class="text-muted text-center small mt-2">
-                                    All sessions completed for today.
-                                </div>
-                                {% endif %}
+                            </button>
+                            <button class="btn-clock btn-clock-in-remote"
+                                onclick="handleClockAction('in', 'remote', this)">
+                                <span class="btn-icon-wrapper"><i class="fas fa-laptop-house"></i></span>
+                                Remote Clock-In
+                            </button>
                         </div>
                         {% endif %}
                     </div>
@@ -2578,7 +2572,7 @@
                             {% if assigned_shift.breaks.all %}
                             {% for break_item in assigned_shift.breaks.all %}
                             <div class="fw-bold text-white" style="font-size: 0.85rem;">
-                                {{ break_item.name }}: {{ break_item.start_time|time:"H:i" }} - {{ break_item.end_time|time:"H:i" }}
+                                {{ break_item.name }}: {{ break_item.start_time|time:"H:i" }} - {{  break_item.end_time|time:"H:i" }}
                             </div>
                             {% endfor %}
                             {% else %}

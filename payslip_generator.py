@@ -9,14 +9,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any
 
-# Conditional import for weasyprint to handle CI/CD environments
-try:
-    from weasyprint import HTML
-    WEASYPRINT_AVAILABLE = True
-except (ImportError, OSError) as e:
-    print(f"WARNING: WeasyPrint could not be imported: {e}")
-    WEASYPRINT_AVAILABLE = False
-    HTML = None
+# WeasyPrint dependency removed
+
 
 from jinja2 import Template
 
@@ -56,14 +50,10 @@ class PayslipGenerator:
         with open(logo_path, 'rb') as logo_file:
             return base64.b64encode(logo_file.read()).decode('utf-8')
     
-    def generate_payslip(self, employee_data: Dict[str, Any], month: str, year: str) -> str:
+    def generate_html(self, employee_data: Dict[str, Any], month: str, year: str) -> str:
         """
-        Generate payslip PDF using WeasyPrint with exact template format
+        Generate payslip HTML content
         """
-        
-        # Check if WeasyPrint is available
-        if not WEASYPRINT_AVAILABLE:
-            raise ImportError("WeasyPrint is not available (missing module or system dependencies like GTK3). On Windows, please install the GTK3 runtime.")
         
         # Get logo (if provided in employee_data)
         logo_base64 = None
@@ -72,62 +62,7 @@ class PayslipGenerator:
             logo_base64 = self._encode_logo(logo_path)
         
         # Render HTML from template
-        html_content = self._render_html_template(employee_data, month, year, logo_base64)
-        
-        # Generate PDF filename
-        emp_name = employee_data.get('name', 'Employee').replace(' ', '_')
-        pdf_filename = f"{emp_name}-Payslip_{month}-{year}.pdf"
-        pdf_path = self.output_dir / pdf_filename
-        
-        # Use WeasyPrint with optimized settings for exact formatting
-        try:
-            from weasyprint import CSS
-            
-            # Create CSS for better PDF rendering - optimized for exact format
-            pdf_css = CSS(string="""
-                @page {
-                    size: A4;
-                    margin: 15mm;
-                }
-                body {
-                    -webkit-print-color-adjust: exact;
-                    color-adjust: exact;
-                    print-color-adjust: exact;
-                }
-                table {
-                    page-break-inside: avoid;
-                }
-                .header-section,
-                .company-section,
-                .employee-name-section,
-                .employee-details,
-                .salary-header,
-                .salary-table,
-                .net-salary-section,
-                .footer-section {
-                    page-break-inside: avoid;
-                }
-            """)
-            
-            # Generate PDF with WeasyPrint
-            HTML(string=html_content).write_pdf(
-                str(pdf_path),
-                stylesheets=[pdf_css],
-                presentational_hints=True,
-                optimize_images=True
-            )
-            
-        except Exception as e:
-            print(f"Error with WeasyPrint CSS: {e}")
-            # Fallback to basic generation
-            try:
-                HTML(string=html_content).write_pdf(str(pdf_path))
-            except Exception as fallback_error:
-                print(f"Fallback PDF generation also failed: {fallback_error}")
-                raise fallback_error
-        
-        print(f"✓ Payslip generated with WeasyPrint: {pdf_path}")
-        return str(pdf_path)
+        return self._render_html_template(employee_data, month, year, logo_base64)
     
     def _render_html_template(self, employee_data: Dict[str, Any], month: str, year: str, logo_base64: str = None) -> str:
         """Render HTML template - EXACT format matching original payslip"""

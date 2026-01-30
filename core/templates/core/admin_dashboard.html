@@ -2028,7 +2028,7 @@
                         </td>
                         {% for day in emp_data.days %}
                         <td>
-                            <div class="day-cell {{ day.status }}" title="{{ day.date|date:'d M Y' }}">
+                            <div class="day-cell {{ day.status }}" data-bs-toggle="tooltip" data-bs-html="true" title="<strong>{{ day.date|date:'d M Y' }}</strong><br>{% if day.record %}<div class='mt-1' style='text-align:left;'>In: <span class='text-success'>{{ day.record.local_clock_in_time|time:'h:i A'|default:'--:--' }}</span><br>Out: <span class='text-danger'>{{ day.record.local_clock_out_time|time:'h:i A'|default:'--:--' }}</span></div>{% else %}<span class='text-warning'>{{ day.status|title }}</span>{% endif %}">
                                 {{ day.day }}
                             </div>
                         </td>
@@ -2224,6 +2224,12 @@
     // Start auto-refresh on page load
     document.addEventListener('DOMContentLoaded', () => {
         startAutoRefresh();
+
+        // Initialize Bootstrap tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
     });
 
     // Stop auto-refresh when page is hidden

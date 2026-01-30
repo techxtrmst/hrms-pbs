@@ -1,17 +1,11 @@
 # PDF Utility for Payslip Generation
 import io
-from django.template.loader import get_template
-from xhtml2pdf import pisa
+import os
 from django.core.files.base import ContentFile
+from django.template.loader import render_to_string, get_template
+from xhtml2pdf import pisa
+from employees.payroll_utils import num2words_flexible
 
-# Conditional import for PayslipGenerator to handle CI/CD environments
-try:
-    from payslip_generator import PayslipGenerator
-    PAYSLIP_GENERATOR_AVAILABLE = True
-except Exception as e:
-    print(f"WARNING: PayslipGenerator module import failed: {e}")
-    PAYSLIP_GENERATOR_AVAILABLE = False
-    PayslipGenerator = None
 
 
 def render_to_pdf_weasyprint(template_src, context_dict={}):
@@ -54,15 +48,87 @@ def get_user_timezone(user, company=None):
 
     # 2. Try Company Settings Fallback
     if company:
+        name_upper = company.name.upper()
         if company.location == "INDIA":
+            return "Asia/Kolkata"
+        elif company.location == "BOTH" or "SOFTSTANDARD" in name_upper:
+            # For BOTH (Softstandard), default to India if unknown
+            return "Asia/Kolkata"
+        elif "BLUEBIX" in name_upper:
+            # Bluebix often has Indian employees even if primary location is US
+            # Default to India unless a specific US office is set on profile (handled in Step 1)
             return "Asia/Kolkata"
         elif company.location == "US":
             return "America/New_York"
-        elif company.location == "BOTH":
-            # For BOTH (Softstandard), default to India if unknown
-            # But we could also try to guess from company name if needed
-            return "Asia/Kolkata"
         
     # 3. Final Fallback
     return "Asia/Kolkata"
 
+
+def generate_payslip_pdf_with_generator(payslip_instance, output_dir="media/payslips"):
+    """
+    Generate payslip PDF using the standard Django template: employees/templates/employees/payslip_pdf.html
+    This replaces the previous PayslipGenerator logic.
+    """
+    
+    try:
+        from weasyprint import HTML
+        
+        # Prepare context data for the template
+        employee = payslip_instance.employee
+        company = employee.company
+        
+        # Determine branding details (name and logo logic is mostly in the template or requires branding dict)
+        company_name = company.name.upper()
+        branding_name = 'PETABYTZ TECHNOLOGY SERVICES PVT LTD'
+        
+        if 'SOFTSTANDARD' in company_name or 'SOFT STANDARD' in company_name:
+            branding_name = 'SOFTSTANDARD SOLUTIONS'
+        elif 'BLUEBIX' in company_name:
+            branding_name = 'BLUEBIX TECHNOLOGY SERVICES PVT LTD'
+
+        branding = {'name': branding_name}
+        
+        # Calculate Net Salary in Words
+        currency = "INR"
+        currency_name = "Rupees"
+        if employee.location:
+            currency = employee.location.currency or "INR"
+            if currency == "USD":
+                currency_name = "Dollars"
+            elif currency == "BDT":
+                currency_name = "Taka"
+                
+        net_salary_words = num2words_flexible(payslip_instance.net_salary, currency_name)
+        
+        context = {
+            'payslip': payslip_instance,
+            'company': company,
+            'branding': branding,
+            'net_salary_words': net_salary_words,
+            'currency': currency,
+        }
+        
+        # Render HTML from the Django template
+        html_content = render_to_string('employees/payslip_pdf.html', context)
+        
+        # Generate PDF in memory
+        pdf_buffer = io.BytesIO()
+        HTML(string=html_content).write_pdf(pdf_buffer)
+        
+        # Generate Filename
+        month_str = payslip_instance.month.strftime('%B-%Y')
+        emp_name = employee.user.get_full_name().replace(' ', '_')
+        pdf_filename = f"{emp_name}-Payslip_{month_str}.pdf"
+        
+        # Save to model
+        payslip_instance.pdf_file.save(pdf_filename, ContentFile(pdf_buffer.getvalue()), save=True)
+        
+        return True
+        
+    except Exception as e:
+        print(f"Payslip PDF generation error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+        
