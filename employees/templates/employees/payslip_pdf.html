@@ -321,14 +321,12 @@
     <div class="net-box">
         <table class="net-table">
             <tr>
-                <td style="width: 70%;">Net Salary Payable {% if payslip.employee_pf > 0 and payslip.professional_tax >
-                    0 %}( A - B - C ){% elif payslip.employee_pf > 0 or payslip.professional_tax > 0 %}( A - B ){% endif
-                    %}</td>
+                <td style="width: 70%;">Net Salary Payable {% if payslip.employee_pf > 0 and payslip.professional_tax > 0 %}( A - B - C ){% elif payslip.employee_pf > 0 or payslip.professional_tax > 0 %}( A - B ){% endif %}</td>
                 <td style="text-align: right;">{{ payslip.net_salary|floatformat:2 }}</td>
             </tr>
             <tr>
                 <td>Net Salary in words</td>
-                <td><strong>{{ net_salary_words }}</strong></td>
+                <td style="white-space: nowrap;"><strong>{{ net_salary_words }}</strong></td>
             </tr>
         </table>
     </div>
