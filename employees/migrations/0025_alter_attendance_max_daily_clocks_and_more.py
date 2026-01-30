@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('employees', '0024_auto_20260128_1715'),
+        ('employees', '0023_payslip_monthly_gross'),
     ]
 
     operations = [
