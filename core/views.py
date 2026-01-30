@@ -454,7 +454,9 @@ def admin_dashboard(request):
                         # No record and not holiday/weekoff = absent
                         status_class = "no-attendance"
 
-            emp_data["days"].append({"day": day, "status": status_class, "date": day_date})
+            # Debug print to force reload
+            # print(f"Adding day {day} for {emp}")
+            emp_data["days"].append({"day": day, "status": status_class, "date": day_date, "record": att})
 
         employee_calendar_data.append(emp_data)
 
@@ -679,6 +681,11 @@ def search_employees_api(request):
                 "email": emp.user.email,
                 "phone": emp.mobile_number or "N/A",
                 "profile_url": f"/employees/{emp.id}/detail/",
+                # Payroll specific fields
+                "annual_ctc": float(emp.annual_ctc) if emp.annual_ctc else 0,
+                "pf_enabled": emp.pf_enabled,
+                "currency": emp.location.currency if emp.location and hasattr(emp.location, 'currency') else emp.company.currency if hasattr(emp.company, 'currency') else "INR",
+                "country_code": emp.location.country_code.upper() if emp.location and hasattr(emp.location, 'country_code') else "IN",
             }
             results.append(result)
             logger.info(f"Added employee: {result['name']}")

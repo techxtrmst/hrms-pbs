@@ -2028,7 +2028,7 @@
                         </td>
                         {% for day in emp_data.days %}
                         <td>
-                            <div class="day-cell {{ day.status }}" data-bs-toggle="tooltip" data-bs-html="true" title="<strong>{{ day.date|date:'d M Y' }}</strong><br>{% if day.record %}<div class='mt-1' style='text-align:left;'>In: <span class='text-success'>{{ day.record.local_clock_in_time|time:'h:i A'|default:'--:--' }}</span><br>Out: <span class='text-danger'>{{ day.record.local_clock_out_time|time:'h:i A'|default:'--:--' }}</span></div>{% else %}<span class='text-warning'>{{ day.status|title }}</span>{% endif %}">
+                            <div class="day-cell {{ day.status }}" data-bs-toggle="tooltip" data-bs-html="true" title="<strong>{{ day.date|date:'d M Y' }}</strong><br>{% if day.record %}<div class='mt-1 text-start'><strong>In:</strong> <span class='text-success'>{{ day.record.local_clock_in|date:'d M h:i A'|default:'--:--' }}</span><br><strong>Out:</strong> <span class='text-danger'>{{ day.record.local_clock_out|date:'d M h:i A'|default:'--:--' }}</span></div>{% else %}<span class='text-warning'>{{ day.status|title }}</span>{% endif %}">
                                 {{ day.day }}
                             </div>
                         </td>

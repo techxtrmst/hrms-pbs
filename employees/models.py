@@ -384,6 +384,32 @@ class Attendance(models.Model):
     def __str__(self):
         return f"{self.employee} - {self.date}"
 
+    @property
+    def local_clock_in(self):
+        """Return clock_in converted to user's timezone"""
+        if not self.clock_in:
+            return None
+        import pytz
+        tz_name = self.user_timezone or "Asia/Kolkata"
+        try:
+            tz = pytz.timezone(tz_name)
+            return self.clock_in.astimezone(tz)
+        except pytz.UnknownTimeZoneError:
+            return self.clock_in
+
+    @property
+    def local_clock_out(self):
+        """Return clock_out converted to user's timezone"""
+        if not self.clock_out:
+            return None
+        import pytz
+        tz_name = self.user_timezone or "Asia/Kolkata"
+        try:
+            tz = pytz.timezone(tz_name)
+            return self.clock_out.astimezone(tz)
+        except pytz.UnknownTimeZoneError:
+            return self.clock_out
+
     def calculate_late_arrival(self):
         """Calculate if employee is late based on their shift schedule and location timezone"""
         from datetime import datetime, timedelta
