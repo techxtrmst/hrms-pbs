@@ -49,6 +49,13 @@ CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
 # Application definition
 
 INSTALLED_APPS = [
+    # Unfold admin theme (must be before django.contrib.admin)
+    "unfold",
+    "unfold.contrib.filters",
+    "unfold.contrib.forms",
+    "unfold.contrib.import_export",
+    "unfold.contrib.inlines",
+    # Django core apps
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -60,6 +67,13 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "corsheaders",
     "widget_tweaks",
+    "import_export",  # django-import-export
+    "crispy_forms",
+    "crispy_tailwind",
+    "django_celery_beat",
+    "django_celery_results",
+    "hijack",
+    "hijack.contrib.admin",
     # Local apps
     "companies",
     "accounts",
@@ -84,6 +98,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "hijack.middleware.HijackUserMiddleware",  # User impersonation
     "core.middleware.CompanyIsolationMiddleware",
     "core.middleware.LoggingMiddleware",  # Loguru request logging
     "hrms_core.posthog_config.PostHogMiddleware",  # PostHog error tracking
@@ -232,7 +247,221 @@ from hrms_core.logging_config import initialize_logging, setup_django_logging
 initialize_logging()
 setup_django_logging()
 
-# reload
-# reload2
-# reload3
-# reload4
+# =============================================================================
+# Crispy Forms Configuration (Tailwind for Unfold compatibility)
+# =============================================================================
+CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
+CRISPY_TEMPLATE_PACK = "tailwind"
+
+# =============================================================================
+# Celery Configuration (Redis broker, database-backed periodic tasks)
+# =============================================================================
+REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/1")
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = "django-db"  # Store results in Django database
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+# =============================================================================
+# Unfold Admin Theme Configuration
+# =============================================================================
+from django.urls import reverse_lazy
+from django.utils.translation import gettext_lazy as _
+
+
+def environment_callback(request):
+    """Return environment label for admin header."""
+    if DEBUG:
+        return ["Development", "warning"]
+    return ["Production", "danger"]
+
+
+def badge_callback(request):
+    """Return notification count for dashboard badge."""
+    return 0  # Implement actual count logic if needed
+
+
+UNFOLD = {
+    "SITE_TITLE": "HRMS PBS",
+    "SITE_HEADER": "HRMS PBS",
+    "SITE_SUBHEADER": "Human Resource Management System",
+    "SITE_URL": "/",
+    "SITE_SYMBOL": "corporate_fare",  # Material icon
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": True,
+    "SHOW_BACK_BUTTON": True,
+    "ENVIRONMENT": "hrms_core.settings.environment_callback",
+    "LOGIN": {
+        "redirect_after": lambda request: reverse_lazy("admin:index"),
+    },
+    "COLORS": {
+        "primary": {
+            "50": "oklch(97.7% .014 254.604)",
+            "100": "oklch(93.2% .032 255.585)",
+            "200": "oklch(86.2% .065 259.391)",
+            "300": "oklch(75.8% .113 259.416)",
+            "400": "oklch(64.6% .158 262.052)",
+            "500": "oklch(54.6% .215 262.881)",
+            "600": "oklch(48.8% .243 264.376)",
+            "700": "oklch(44.4% .23 265.638)",
+            "800": "oklch(38.3% .19 265.522)",
+            "900": "oklch(33.2% .146 266.059)",
+            "950": "oklch(23.5% .106 268.022)",
+        },
+    },
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": True,
+        "navigation": [
+            {
+                "title": _("Dashboard"),
+                "separator": True,
+                "collapsible": False,
+                "items": [
+                    {
+                        "title": _("Dashboard"),
+                        "icon": "dashboard",
+                        "link": reverse_lazy("admin:index"),
+                    },
+                ],
+            },
+            {
+                "title": _("Organization"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Companies"),
+                        "icon": "business",
+                        "link": reverse_lazy("admin:companies_company_changelist"),
+                    },
+                    {
+                        "title": _("Locations"),
+                        "icon": "location_on",
+                        "link": reverse_lazy("admin:companies_location_changelist"),
+                    },
+                    {
+                        "title": _("Shift Schedules"),
+                        "icon": "schedule",
+                        "link": reverse_lazy("admin:companies_shiftschedule_changelist"),
+                    },
+                    {
+                        "title": _("Holidays"),
+                        "icon": "celebration",
+                        "link": reverse_lazy("admin:companies_holiday_changelist"),
+                    },
+                    {
+                        "title": _("Announcements"),
+                        "icon": "campaign",
+                        "link": reverse_lazy("admin:companies_announcement_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("People"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Users"),
+                        "icon": "person",
+                        "link": reverse_lazy("admin:accounts_user_changelist"),
+                    },
+                    {
+                        "title": _("Employees"),
+                        "icon": "badge",
+                        "link": reverse_lazy("admin:employees_employee_changelist"),
+                    },
+                    {
+                        "title": _("Emergency Contacts"),
+                        "icon": "emergency",
+                        "link": reverse_lazy("admin:employees_emergencycontact_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Attendance"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Attendance Records"),
+                        "icon": "fact_check",
+                        "link": reverse_lazy("admin:employees_attendance_changelist"),
+                    },
+                    {
+                        "title": _("Attendance Sessions"),
+                        "icon": "timer",
+                        "link": reverse_lazy("admin:employees_attendancesession_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Documents"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Handbook Sections"),
+                        "icon": "folder",
+                        "link": reverse_lazy("admin:handbooks_handbooksection_changelist"),
+                    },
+                    {
+                        "title": _("Handbooks"),
+                        "icon": "menu_book",
+                        "link": reverse_lazy("admin:handbooks_handbook_changelist"),
+                    },
+                    {
+                        "title": _("Acknowledgments"),
+                        "icon": "verified",
+                        "link": reverse_lazy("admin:handbooks_handbookacknowledgment_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("AI & Automation"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Attrition Risks"),
+                        "icon": "trending_down",
+                        "link": reverse_lazy("admin:ai_assistant_attritionrisk_changelist"),
+                    },
+                    {
+                        "title": _("Resume Parsing Jobs"),
+                        "icon": "description",
+                        "link": reverse_lazy("admin:ai_assistant_resumeparsingjob_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Scheduled Tasks"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Periodic Tasks"),
+                        "icon": "event_repeat",
+                        "link": reverse_lazy("admin:django_celery_beat_periodictask_changelist"),
+                    },
+                    {
+                        "title": _("Crontab Schedules"),
+                        "icon": "schedule",
+                        "link": reverse_lazy("admin:django_celery_beat_crontabschedule_changelist"),
+                    },
+                    {
+                        "title": _("Interval Schedules"),
+                        "icon": "timelapse",
+                        "link": reverse_lazy("admin:django_celery_beat_intervalschedule_changelist"),
+                    },
+                ],
+            },
+        ],
+    },
+}

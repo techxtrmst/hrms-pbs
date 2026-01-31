@@ -1,13 +1,15 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin, TabularInline
+
 from .models import (
-    HandbookSection,
     Handbook,
     HandbookAcknowledgment,
     HandbookAttachment,
+    HandbookSection,
 )
 
 
-class HandbookAttachmentInline(admin.TabularInline):
+class HandbookAttachmentInline(TabularInline):
     model = HandbookAttachment
     extra = 1
     fields = ["title", "file", "file_type", "file_size"]
@@ -15,7 +17,9 @@ class HandbookAttachmentInline(admin.TabularInline):
 
 
 @admin.register(HandbookSection)
-class HandbookSectionAdmin(admin.ModelAdmin):
+class HandbookSectionAdmin(ModelAdmin):
+    """Handbook Section admin with Unfold styling."""
+
     list_display = ["title", "company", "icon", "order", "is_active", "updated_at"]
     list_filter = ["company", "is_active"]
     search_fields = ["title"]
@@ -30,7 +34,9 @@ class HandbookSectionAdmin(admin.ModelAdmin):
 
 
 @admin.register(Handbook)
-class HandbookAdmin(admin.ModelAdmin):
+class HandbookAdmin(ModelAdmin):
+    """Handbook admin with Unfold styling."""
+
     list_display = [
         "title",
         "location",
@@ -77,10 +83,7 @@ class HandbookAdmin(admin.ModelAdmin):
         # If user is company admin, show only their company's handbooks
         if request.user.role == "COMPANY_ADMIN" and request.user.company:
             # Further filter by location if admin has a specific location
-            if (
-                hasattr(request.user, "employee_profile")
-                and request.user.employee_profile.location
-            ):
+            if hasattr(request.user, "employee_profile") and request.user.employee_profile.location:
                 return qs.filter(
                     company=request.user.company,
                     location=request.user.employee_profile.location,
@@ -96,7 +99,9 @@ class HandbookAdmin(admin.ModelAdmin):
 
 
 @admin.register(HandbookAcknowledgment)
-class HandbookAcknowledgmentAdmin(admin.ModelAdmin):
+class HandbookAcknowledgmentAdmin(ModelAdmin):
+    """Handbook Acknowledgment admin with Unfold styling."""
+
     list_display = [
         "employee",
         "handbook",
@@ -117,10 +122,7 @@ class HandbookAcknowledgmentAdmin(admin.ModelAdmin):
         qs = super().get_queryset(request)
         # Company admins see only their company's acknowledgments
         if request.user.role == "COMPANY_ADMIN" and request.user.company:
-            if (
-                hasattr(request.user, "employee_profile")
-                and request.user.employee_profile.location
-            ):
+            if hasattr(request.user, "employee_profile") and request.user.employee_profile.location:
                 return qs.filter(
                     handbook__company=request.user.company,
                     handbook__location=request.user.employee_profile.location,
@@ -130,7 +132,9 @@ class HandbookAcknowledgmentAdmin(admin.ModelAdmin):
 
 
 @admin.register(HandbookAttachment)
-class HandbookAttachmentAdmin(admin.ModelAdmin):
+class HandbookAttachmentAdmin(ModelAdmin):
+    """Handbook Attachment admin with Unfold styling."""
+
     list_display = [
         "title",
         "handbook",
@@ -147,10 +151,7 @@ class HandbookAttachmentAdmin(admin.ModelAdmin):
         qs = super().get_queryset(request)
         # Company admins see only their company's attachments
         if request.user.role == "COMPANY_ADMIN" and request.user.company:
-            if (
-                hasattr(request.user, "employee_profile")
-                and request.user.employee_profile.location
-            ):
+            if hasattr(request.user, "employee_profile") and request.user.employee_profile.location:
                 return qs.filter(
                     handbook__company=request.user.company,
                     handbook__location=request.user.employee_profile.location,

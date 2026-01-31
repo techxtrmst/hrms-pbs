@@ -1,9 +1,18 @@
 from django.contrib import admin
-from .models import Company, Holiday, ShiftSchedule, Location, Announcement
+from import_export.admin import ImportExportModelAdmin
+from unfold.admin import ModelAdmin
+from unfold.contrib.import_export.forms import ExportForm, ImportForm
+
+from .models import Announcement, Company, Holiday, Location, ShiftSchedule
 
 
 @admin.register(Company)
-class CompanyAdmin(admin.ModelAdmin):
+class CompanyAdmin(ModelAdmin, ImportExportModelAdmin):
+    """Company admin with Unfold styling and import/export support."""
+
+    import_form_class = ImportForm
+    export_form_class = ExportForm
+
     list_display = (
         "name",
         "primary_domain",
@@ -17,7 +26,12 @@ class CompanyAdmin(admin.ModelAdmin):
 
 
 @admin.register(Location)
-class LocationAdmin(admin.ModelAdmin):
+class LocationAdmin(ModelAdmin, ImportExportModelAdmin):
+    """Location admin with Unfold styling and import/export support."""
+
+    import_form_class = ImportForm
+    export_form_class = ExportForm
+
     list_display = ("name", "company", "country_code", "currency", "timezone", "is_active")
     list_filter = ("company", "country_code", "currency", "is_active")
     search_fields = ("name", "company__name")
@@ -35,7 +49,12 @@ class LocationAdmin(admin.ModelAdmin):
 
 
 @admin.register(Holiday)
-class HolidayAdmin(admin.ModelAdmin):
+class HolidayAdmin(ModelAdmin, ImportExportModelAdmin):
+    """Holiday admin with Unfold styling and import/export support."""
+
+    import_form_class = ImportForm
+    export_form_class = ExportForm
+
     list_display = ("name", "company", "date", "location", "holiday_type", "is_active")
     search_fields = ("name", "company__name")
     list_filter = ("company", "location", "holiday_type", "is_active", "year")
@@ -43,7 +62,12 @@ class HolidayAdmin(admin.ModelAdmin):
 
 
 @admin.register(ShiftSchedule)
-class ShiftScheduleAdmin(admin.ModelAdmin):
+class ShiftScheduleAdmin(ModelAdmin, ImportExportModelAdmin):
+    """Shift Schedule admin with Unfold styling and import/export support."""
+
+    import_form_class = ImportForm
+    export_form_class = ExportForm
+
     list_display = (
         "name",
         "company",
@@ -94,7 +118,9 @@ class ShiftScheduleAdmin(admin.ModelAdmin):
 
 
 @admin.register(Announcement)
-class AnnouncementAdmin(admin.ModelAdmin):
+class AnnouncementAdmin(ModelAdmin):
+    """Announcement admin with Unfold styling."""
+
     list_display = ("title", "company", "location", "is_active", "created_at")
     search_fields = ("title", "content", "company__name")
     list_filter = ("company", "location", "is_active", "created_at")

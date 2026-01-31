@@ -1,15 +1,24 @@
 from django.contrib import admin
-from .models import Employee, EmergencyContact, Attendance, AttendanceSession
+from import_export.admin import ImportExportModelAdmin
+from unfold.admin import ModelAdmin, TabularInline
+from unfold.contrib.import_export.forms import ExportForm, ImportForm
+
+from .models import Attendance, AttendanceSession, EmergencyContact, Employee
 
 
-class EmergencyContactInline(admin.TabularInline):
+class EmergencyContactInline(TabularInline):
     model = EmergencyContact
     extra = 1
     fields = ("name", "phone_number", "relationship", "is_primary")
 
 
 @admin.register(Employee)
-class EmployeeAdmin(admin.ModelAdmin):
+class EmployeeAdmin(ModelAdmin, ImportExportModelAdmin):
+    """Employee admin with Unfold styling and import/export support."""
+
+    import_form_class = ImportForm
+    export_form_class = ExportForm
+
     list_display = (
         "user",
         "company",
@@ -30,7 +39,9 @@ class EmployeeAdmin(admin.ModelAdmin):
 
 
 @admin.register(EmergencyContact)
-class EmergencyContactAdmin(admin.ModelAdmin):
+class EmergencyContactAdmin(ModelAdmin):
+    """Emergency Contact admin with Unfold styling."""
+
     list_display = ("employee", "name", "phone_number", "relationship", "is_primary")
     list_filter = ("is_primary", "relationship")
     search_fields = (
@@ -45,19 +56,28 @@ from .models import HandbookSection, PolicySection
 
 
 @admin.register(HandbookSection)
-class HandbookSectionAdmin(admin.ModelAdmin):
+class HandbookSectionAdmin(ModelAdmin):
+    """Handbook Section admin with Unfold styling."""
+
     list_display = ("title", "order", "is_active", "updated_at")
     list_editable = ("order", "is_active")
 
 
 @admin.register(PolicySection)
-class PolicySectionAdmin(admin.ModelAdmin):
+class PolicySectionAdmin(ModelAdmin):
+    """Policy Section admin with Unfold styling."""
+
     list_display = ("title", "order", "is_active", "updated_at")
     list_editable = ("order", "is_active")
 
 
 @admin.register(Attendance)
-class AttendanceAdmin(admin.ModelAdmin):
+class AttendanceAdmin(ModelAdmin, ImportExportModelAdmin):
+    """Attendance admin with Unfold styling and import/export support."""
+
+    import_form_class = ImportForm
+    export_form_class = ExportForm
+
     list_display = (
         "employee",
         "date",
@@ -75,7 +95,9 @@ class AttendanceAdmin(admin.ModelAdmin):
 
 
 @admin.register(AttendanceSession)
-class AttendanceSessionAdmin(admin.ModelAdmin):
+class AttendanceSessionAdmin(ModelAdmin):
+    """Attendance Session admin with Unfold styling."""
+
     list_display = (
         "employee",
         "date",

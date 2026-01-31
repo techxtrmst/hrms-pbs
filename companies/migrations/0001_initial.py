@@ -409,11 +409,6 @@ class Migration(migrations.Migration):
                 "unique_together": {("company", "name")},
             },
         ),
-        migrations.RenameIndex(
-            model_name="holiday",
-            new_name="companies_h_company_a18c66_idx",
-            old_name="companies_h_company_f6931c_idx",
-        ),
         migrations.AlterField(
             model_name="holiday",
             name="location",

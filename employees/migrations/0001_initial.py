@@ -10,8 +10,8 @@ def column_exists(table_name, column_name):
     with connection.cursor() as cursor:
         cursor.execute(
             """
-            SELECT column_name 
-            FROM information_schema.columns 
+            SELECT column_name
+            FROM information_schema.columns
             WHERE table_name = %s AND column_name = %s
         """,
             [table_name, column_name],
@@ -983,96 +983,86 @@ class Migration(migrations.Migration):
                 max_length=50,
             ),
         ),
-        migrations.SeparateDatabaseAndState(
-            database_operations=[
-                migrations.RunSQL(
-                    sql="\n                    -- Add employee_id column if not exists\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS employee_id INTEGER;\n                    \n                    -- Add date column if not exists\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS date DATE;\n                    \n                    -- Populate employee_id and date from attendance FK\n                    UPDATE employees_attendancesession AS s\n                    SET employee_id = a.employee_id, date = a.date\n                    FROM employees_attendance AS a\n                    WHERE s.attendance_id = a.id AND s.employee_id IS NULL;\n                    \n                    -- Add location coordinate columns\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS clock_in_latitude DECIMAL(10,7);\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS clock_in_longitude DECIMAL(10,7);\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS clock_out_latitude DECIMAL(10,7);\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS clock_out_longitude DECIMAL(10,7);\n                    \n                    -- Add new boolean columns\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS location_validated BOOLEAN DEFAULT FALSE;\n                    \n                    -- Add duration_minutes (convert from duration_hours if exists)\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS duration_minutes INTEGER DEFAULT 0;\n                    \n                    -- Convert duration_hours to duration_minutes if duration_hours exists\n                    DO $$\n                    BEGIN\n                        IF EXISTS (\n                            SELECT 1 FROM information_schema.columns \n                            WHERE table_name = 'employees_attendancesession' AND column_name = 'duration_hours'\n                        ) THEN\n                            UPDATE employees_attendancesession \n                            SET duration_minutes = COALESCE(ROUND(duration_hours * 60)::INTEGER, 0)\n                            WHERE duration_minutes = 0 OR duration_minutes IS NULL;\n                        END IF;\n                    END $$;\n                    \n                    -- Add updated_at column\n                    ALTER TABLE employees_attendancesession \n                    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();\n                    \n                    -- Update session_type values to match new choices\n                    UPDATE employees_attendancesession \n                    SET session_type = 'WEB' \n                    WHERE session_type NOT IN ('WEB', 'REMOTE');\n                    \n                    -- Alter session_type column size if needed\n                    ALTER TABLE employees_attendancesession \n                    ALTER COLUMN session_type TYPE VARCHAR(50);\n                    \n                    -- Drop old columns that are no longer needed\n                    ALTER TABLE employees_attendancesession \n                    DROP COLUMN IF EXISTS attendance_id CASCADE;\n                    ALTER TABLE employees_attendancesession \n                    DROP COLUMN IF EXISTS location_in CASCADE;\n                    ALTER TABLE employees_attendancesession \n                    DROP COLUMN IF EXISTS location_out CASCADE;\n                    ALTER TABLE employees_attendancesession \n                    DROP COLUMN IF EXISTS duration_hours CASCADE;\n                    ALTER TABLE employees_attendancesession \n                    DROP COLUMN IF EXISTS user_timezone CASCADE;\n                    \n                    -- Add foreign key constraint for employee\n                    DO $$\n                    BEGIN\n                        IF NOT EXISTS (\n                            SELECT 1 FROM information_schema.table_constraints \n                            WHERE constraint_name = 'employees_attendancesession_employee_id_fk' \n                            AND table_name = 'employees_attendancesession'\n                        ) THEN\n                            ALTER TABLE employees_attendancesession \n                            ADD CONSTRAINT employees_attendancesession_employee_id_fk \n                            FOREIGN KEY (employee_id) REFERENCES employees_employee(id) ON DELETE CASCADE;\n                        END IF;\n                    END $$;\n                    \n                    -- Add NOT NULL constraint to employee_id (only for rows that have valid data)\n                    DELETE FROM employees_attendancesession WHERE employee_id IS NULL;\n                    ALTER TABLE employees_attendancesession \n                    ALTER COLUMN employee_id SET NOT NULL;\n                    \n                    -- Add NOT NULL constraint to date\n                    ALTER TABLE employees_attendancesession \n                    ALTER COLUMN date SET NOT NULL;\n                    \n                    -- Drop old unique constraint and add new one\n                    DO $$\n                    DECLARE\n                        constraint_rec RECORD;\n                    BEGIN\n                        FOR constraint_rec IN \n                            SELECT constraint_name FROM information_schema.table_constraints \n                            WHERE table_name = 'employees_attendancesession' AND constraint_type = 'UNIQUE'\n                        LOOP\n                            EXECUTE 'ALTER TABLE employees_attendancesession DROP CONSTRAINT IF EXISTS ' || constraint_rec.constraint_name;\n                        END LOOP;\n                    END $$;\n                    \n                    -- Create new unique constraint\n                    DO $$\n                    BEGIN\n                        IF NOT EXISTS (\n                            SELECT 1 FROM information_schema.table_constraints \n                            WHERE constraint_name = 'employees_attendancesession_employee_date_session_unique' \n                            AND table_name = 'employees_attendancesession'\n                        ) THEN\n                            ALTER TABLE employees_attendancesession \n                            ADD CONSTRAINT employees_attendancesession_employee_date_session_unique \n                            UNIQUE (employee_id, date, session_number);\n                        END IF;\n                    END $$;\n                    ",
-                    reverse_sql="",
+        migrations.CreateModel(
+            name="AttendanceSession",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
                 ),
-            ],
-            state_operations=[
-                migrations.CreateModel(
-                    name="AttendanceSession",
-                    fields=[
-                        (
-                            "id",
-                            models.BigAutoField(
-                                auto_created=True,
-                                primary_key=True,
-                                serialize=False,
-                                verbose_name="ID",
-                            ),
-                        ),
-                        (
-                            "session_number",
-                            models.IntegerField(
-                                help_text="Session number for the day (1, 2, 3)"
-                            ),
-                        ),
-                        ("clock_in", models.DateTimeField()),
-                        ("clock_out", models.DateTimeField(blank=True, null=True)),
-                        (
-                            "clock_in_latitude",
-                            models.DecimalField(
-                                blank=True, decimal_places=7, max_digits=10, null=True
-                            ),
-                        ),
-                        (
-                            "clock_in_longitude",
-                            models.DecimalField(
-                                blank=True, decimal_places=7, max_digits=10, null=True
-                            ),
-                        ),
-                        (
-                            "clock_out_latitude",
-                            models.DecimalField(
-                                blank=True, decimal_places=7, max_digits=10, null=True
-                            ),
-                        ),
-                        (
-                            "clock_out_longitude",
-                            models.DecimalField(
-                                blank=True, decimal_places=7, max_digits=10, null=True
-                            ),
-                        ),
-                        (
-                            "session_type",
-                            models.CharField(
-                                choices=[
-                                    ("WEB", "Web/Office"),
-                                    ("REMOTE", "Remote/WFH"),
-                                ],
-                                max_length=50,
-                            ),
-                        ),
-                        ("is_active", models.BooleanField(default=True)),
-                        ("location_validated", models.BooleanField(default=False)),
-                        (
-                            "duration_minutes",
-                            models.IntegerField(
-                                default=0,
-                                help_text="Duration of this session in minutes",
-                            ),
-                        ),
-                        ("created_at", models.DateTimeField(auto_now_add=True)),
-                        ("updated_at", models.DateTimeField(auto_now=True)),
-                        (
-                            "employee",
-                            models.ForeignKey(
-                                on_delete=django.db.models.deletion.CASCADE,
-                                related_name="attendance_sessions",
-                                to="employees.employee",
-                            ),
-                        ),
-                        ("date", models.DateField()),
-                    ],
-                    options={
-                        "db_table": "employees_attendancesession",
-                        "ordering": ["date", "session_number"],
-                        "unique_together": {("employee", "date", "session_number")},
-                    },
+                (
+                    "session_number",
+                    models.IntegerField(
+                        help_text="Session number for the day (1, 2, 3)"
+                    ),
                 ),
+                ("clock_in", models.DateTimeField()),
+                ("clock_out", models.DateTimeField(blank=True, null=True)),
+                (
+                    "clock_in_latitude",
+                    models.DecimalField(
+                        blank=True, decimal_places=7, max_digits=10, null=True
+                    ),
+                ),
+                (
+                    "clock_in_longitude",
+                    models.DecimalField(
+                        blank=True, decimal_places=7, max_digits=10, null=True
+                    ),
+                ),
+                (
+                    "clock_out_latitude",
+                    models.DecimalField(
+                        blank=True, decimal_places=7, max_digits=10, null=True
+                    ),
+                ),
+                (
+                    "clock_out_longitude",
+                    models.DecimalField(
+                        blank=True, decimal_places=7, max_digits=10, null=True
+                    ),
+                ),
+                (
+                    "session_type",
+                    models.CharField(
+                        choices=[
+                            ("WEB", "Web/Office"),
+                            ("REMOTE", "Remote/WFH"),
+                        ],
+                        max_length=50,
+                    ),
+                ),
+                ("is_active", models.BooleanField(default=True)),
+                ("location_validated", models.BooleanField(default=False)),
+                (
+                    "duration_minutes",
+                    models.IntegerField(
+                        default=0,
+                        help_text="Duration of this session in minutes",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "employee",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="attendance_sessions",
+                        to="employees.employee",
+                    ),
+                ),
+                ("date", models.DateField()),
             ],
+            options={
+                "db_table": "employees_attendancesession",
+                "ordering": ["date", "session_number"],
+                "unique_together": {("employee", "date", "session_number")},
+            },
         ),
         migrations.RunSQL(
             sql="\n            -- Add clock_in_attempts column\n            ALTER TABLE employees_attendance \n            ADD COLUMN IF NOT EXISTS clock_in_attempts INTEGER DEFAULT 0;\n            \n            -- Add daily_clock_count column\n            ALTER TABLE employees_attendance \n            ADD COLUMN IF NOT EXISTS daily_clock_count INTEGER DEFAULT 0;\n            \n            -- Add max_daily_clocks column\n            ALTER TABLE employees_attendance \n            ADD COLUMN IF NOT EXISTS max_daily_clocks INTEGER DEFAULT 3;\n            \n            -- Remove old columns no longer in model\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS user_timezone CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS current_session_type CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS daily_sessions_count CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS max_daily_sessions CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS total_break_hours CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS total_working_hours CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS local_clock_in_time CASCADE;\n            ALTER TABLE employees_attendance \n            DROP COLUMN IF EXISTS local_clock_out_time CASCADE;\n            ",
