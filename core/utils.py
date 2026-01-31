@@ -1,17 +1,59 @@
 # PDF Utility for Payslip Generation
 import io
-import os
+
+import pytz
 from django.core.files.base import ContentFile
-from django.template.loader import render_to_string, get_template
+from django.template.loader import get_template, render_to_string
 from xhtml2pdf import pisa
+
 from employees.payroll_utils import num2words_flexible
 
+# Common timezone abbreviation mappings to valid pytz timezones
+TIMEZONE_ABBREVIATION_MAP = {
+    "IST": "Asia/Kolkata",  # Indian Standard Time
+    "EST": "America/New_York",
+    "EDT": "America/New_York",
+    "PST": "America/Los_Angeles",
+    "PDT": "America/Los_Angeles",
+    "CST": "America/Chicago",
+    "CDT": "America/Chicago",
+    "MST": "America/Denver",
+    "MDT": "America/Denver",
+    "GMT": "UTC",
+    "UTC": "UTC",
+    "BST": "Europe/London",
+}
+
+
+def normalize_timezone(tz_name, fallback="Asia/Kolkata"):
+    """
+    Normalize a timezone string to a valid pytz timezone.
+    Handles common abbreviations like IST, EST, etc.
+    """
+    if not tz_name:
+        return fallback
+
+    # Check if it's already a valid pytz timezone
+    try:
+        pytz.timezone(tz_name)
+        return tz_name
+    except pytz.UnknownTimeZoneError:
+        pass
+
+    # Try to map common abbreviations
+    tz_upper = tz_name.upper().strip()
+    if tz_upper in TIMEZONE_ABBREVIATION_MAP:
+        return TIMEZONE_ABBREVIATION_MAP[tz_upper]
+
+    # Return fallback for unknown timezones
+    return fallback
 
 
 def render_to_pdf_weasyprint(template_src, context_dict={}):
     """Render PDF using WeasyPrint - for non-payslip PDFs"""
     try:
         from weasyprint import HTML
+
         template = get_template(template_src)
         html = template.render(context_dict)
         result = io.BytesIO()
@@ -20,6 +62,8 @@ def render_to_pdf_weasyprint(template_src, context_dict={}):
     except Exception as e:
         print(f"WeasyPrint PDF generation error: {e}")
         return None
+
+
 def render_to_pdf(template_src, context_dict={}):
     template = get_template(template_src)
     html = template.render(context_dict)
@@ -29,6 +73,7 @@ def render_to_pdf(template_src, context_dict={}):
         return result.getvalue()
     return None
 
+
 def save_pdf_to_model(model_instance, template_src, context_dict, filename):
     pdf_content = render_to_pdf(template_src, context_dict)
     if pdf_content:
@@ -36,15 +81,18 @@ def save_pdf_to_model(model_instance, template_src, context_dict, filename):
         return True
     return False
 
+
 def get_user_timezone(user, company=None):
     """
     Resolve the correct timezone for a user based on their profile or company location.
+    Returns a valid pytz timezone string.
     """
     # 1. Try Employee Profile Location
     if user and user.is_authenticated and hasattr(user, "employee_profile"):
         employee = user.employee_profile
         if employee.location and employee.location.timezone:
-            return employee.location.timezone
+            # Normalize the timezone to handle abbreviations like IST
+            return normalize_timezone(employee.location.timezone)
 
     # 2. Try Company Settings Fallback
     if company:
@@ -60,7 +108,7 @@ def get_user_timezone(user, company=None):
             return "Asia/Kolkata"
         elif company.location == "US":
             return "America/New_York"
-        
+
     # 3. Final Fallback
     return "Asia/Kolkata"
 
@@ -70,25 +118,25 @@ def generate_payslip_pdf_with_generator(payslip_instance, output_dir="media/pays
     Generate payslip PDF using the standard Django template: employees/templates/employees/payslip_pdf.html
     This replaces the previous PayslipGenerator logic.
     """
-    
+
     try:
         from weasyprint import HTML
-        
+
         # Prepare context data for the template
         employee = payslip_instance.employee
         company = employee.company
-        
+
         # Determine branding details (name and logo logic is mostly in the template or requires branding dict)
         company_name = company.name.upper()
-        branding_name = 'PETABYTZ TECHNOLOGY SERVICES PVT LTD'
-        
-        if 'SOFTSTANDARD' in company_name or 'SOFT STANDARD' in company_name:
-            branding_name = 'SOFTSTANDARD SOLUTIONS'
-        elif 'BLUEBIX' in company_name:
-            branding_name = 'BLUEBIX TECHNOLOGY SERVICES PVT LTD'
+        branding_name = "PETABYTZ TECHNOLOGY SERVICES PVT LTD"
 
-        branding = {'name': branding_name}
-        
+        if "SOFTSTANDARD" in company_name or "SOFT STANDARD" in company_name:
+            branding_name = "SOFTSTANDARD SOLUTIONS"
+        elif "BLUEBIX" in company_name:
+            branding_name = "BLUEBIX TECHNOLOGY SERVICES PVT LTD"
+
+        branding = {"name": branding_name}
+
         # Calculate Net Salary in Words
         currency = "INR"
         currency_name = "Rupees"
@@ -98,37 +146,37 @@ def generate_payslip_pdf_with_generator(payslip_instance, output_dir="media/pays
                 currency_name = "Dollars"
             elif currency == "BDT":
                 currency_name = "Taka"
-                
+
         net_salary_words = num2words_flexible(payslip_instance.net_salary, currency_name)
-        
+
         context = {
-            'payslip': payslip_instance,
-            'company': company,
-            'branding': branding,
-            'net_salary_words': net_salary_words,
-            'currency': currency,
+            "payslip": payslip_instance,
+            "company": company,
+            "branding": branding,
+            "net_salary_words": net_salary_words,
+            "currency": currency,
         }
-        
+
         # Render HTML from the Django template
-        html_content = render_to_string('employees/payslip_pdf.html', context)
-        
+        html_content = render_to_string("employees/payslip_pdf.html", context)
+
         # Generate PDF in memory
         pdf_buffer = io.BytesIO()
         HTML(string=html_content).write_pdf(pdf_buffer)
-        
+
         # Generate Filename
-        month_str = payslip_instance.month.strftime('%B-%Y')
-        emp_name = employee.user.get_full_name().replace(' ', '_')
+        month_str = payslip_instance.month.strftime("%B-%Y")
+        emp_name = employee.user.get_full_name().replace(" ", "_")
         pdf_filename = f"{emp_name}-Payslip_{month_str}.pdf"
-        
+
         # Save to model
         payslip_instance.pdf_file.save(pdf_filename, ContentFile(pdf_buffer.getvalue()), save=True)
-        
+
         return True
-        
+
     except Exception as e:
         print(f"Payslip PDF generation error: {e}")
         import traceback
+
         traceback.print_exc()
         return False
-        
