@@ -116,9 +116,12 @@ WSGI_APPLICATION = "hrms_core.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# Database configuration
+DB_ENGINE = env("DB_ENGINE", default="django.db.backends.postgresql")
+
 DATABASES = {
     "default": {
-        "ENGINE": env("DB_ENGINE", default="django.db.backends.postgresql"),
+        "ENGINE": DB_ENGINE,
         "NAME": env("DB_NAME"),
         "USER": env("DB_USER"),
         "PASSWORD": env("DB_PASSWORD"),
@@ -126,6 +129,12 @@ DATABASES = {
         "PORT": env("DB_PORT", default="5432"),
     }
 }
+
+# Add PostgreSQL-specific options only if using PostgreSQL
+if "postgresql" in DB_ENGINE:
+    DATABASES["default"]["OPTIONS"] = {
+        "sslmode": "disable",
+    }
 
 
 # Password validation

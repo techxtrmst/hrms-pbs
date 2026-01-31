@@ -106,7 +106,7 @@
         }
 
         .net-table {
-            width: 60%;
+            width: 100%;
             border-collapse: collapse;
             background-color: #d4d2d2;
         }
@@ -131,8 +131,8 @@
         }
 
         .logo {
-            max-width: 100px;
-            max-height: 50px;
+            max-width: 180px;
+            max-height: 90px;
             width: auto;
             height: auto;
             margin-left: auto;
@@ -153,10 +153,14 @@
 </head>
 
 <body>
+    <div class="title" style="margin-bottom: 5px;">
+        <span style="font-weight: 800; color: #000;">PAYSLIP</span>
+        <span class="month" style="font-weight: 400; color: #666;">{{ payslip.month|date:"M Y"|upper }}</span>
+    </div>
+
     <table class="header-table">
         <tr>
             <td style="vertical-align: top;">
-                <div class="title">PAYSLIP <span class="month">{{ payslip.month|date:"M Y"|upper }}</span></div>
                 <div class="company-name">{{ branding.name }}</div>
                 <div class="company-address">PLOT NO 201 & 202, 1ST FLOOR, DMR CORPORATE, KAVURI HILLS RD, HYDERABAD,
                     TELANGANA 500081.
@@ -177,7 +181,7 @@
         </tr>
     </table>
 
-    {% with currency=payslip.employee.location.currency|default:payslip.employee.company.currency|default:"INR" %}
+
     <div class="employee-name">{{ payslip.employee.user.get_full_name }}</div>
 
     <table class="info-table">
@@ -219,8 +223,7 @@
         </tr>
         <tr>
             <td>
-                <div class="label">{% if payslip.employee.location.country_code == 'BD' %}TIN{% else %}UAN{% endif %}
-                </div>
+                <div class="label">UAN</div>
                 <div class="value">{{ payslip.employee.uan|default:"N/A" }}</div>
             </td>
             <td>
@@ -244,11 +247,8 @@
 
     <table style="width: 100%; margin-top: 15px;">
         <tr>
-            {% if payslip.total_deductions > 0 %}
-            <td style="width: 50%; padding-right: 20px; border-right: 1px solid #e0e0e0;">
-                {% else %}
-            <td style="width: 50%; padding-right: 20px;">
-                {% endif %}
+            <td
+                style="width: 50%; padding-right: 20px;{% if payslip.employee_pf > 0 or payslip.professional_tax > 0 %} border-right: 1px solid #e0e0e0;{% endif %}">
                 <div class="label" style="font-weight: 700;">EARNINGS</div>
                 <table style="width: 100%;">
                     <tr>
@@ -256,25 +256,24 @@
                         <td style="text-align: right;">{{ payslip.basic|floatformat:2 }}</td>
                     </tr>
                     <tr>
-                        <td>{% if payslip.employee.location.country_code == 'BD' %}House Rent{% else %}HRA{% endif %}
-                        </td>
+                        <td>HRA</td>
                         <td style="text-align: right;">{{ payslip.hra|floatformat:2 }}</td>
                     </tr>
                     {% if payslip.lta > 0 %}<tr>
-                        <td>LTA</td>
+                        <td>Conveyance Allowance</td>
                         <td style="text-align: right;">{{ payslip.lta|floatformat:2 }}</td>
                     </tr>{% endif %}
                     {% if payslip.other_allowance > 0 %}<tr>
-                        <td>Other Allowance</td>
+                        <td>Special Allowance</td>
                         <td style="text-align: right;">{{ payslip.other_allowance|floatformat:2 }}</td>
                     </tr>{% endif %}
                     {% if payslip.conveyance_allowance > 0 %}<tr>
-                        <td>Conveyance</td>
+                        <td>Conveyance Allowance</td>
                         <td style="text-align: right;">{{ payslip.conveyance_allowance|floatformat:2 }}</td>
                     </tr>{% endif %}
-                    {% if payslip.special_allowance > 0 %}<tr>
-                        <td>{% if payslip.employee.location.country_code == 'BD' %}Medical{% else %}Special{% endif %}
-                        </td>
+                    {% if payslip.special_allowance > 0 %}
+                    <tr>
+                        <td>Special Allowance</td>
                         <td style="text-align: right;">{{ payslip.special_allowance|floatformat:2 }}</td>
                     </tr>{% endif %}
                     <tr style="font-weight: 700;">
@@ -283,26 +282,38 @@
                     </tr>
                 </table>
             </td>
-            {% if payslip.total_deductions > 0 %}
+
             <td style="width: 50%; padding-left: 20px;">
-                <div class="label" style="font-weight: 700;">DEDUCTIONS</div>
-                <table style="width: 100%;">
-                    {% if payslip.employee_pf > 0 %}<tr>
-                        <td>{% if currency == "USD" or payslip.employee.location.country_code == "US" %}Social
-                            Security/FICA{% else %}Provident Fund{% endif %}</td>
+                {% if payslip.employee_pf > 0 %}
+                <div class="label" style="font-weight: 700;">CONTRIBUTIONS</div>
+                <table style="width: 100%; margin-bottom: 20px;">
+                    <tr>
+                        <td>PF Employee</td>
                         <td style="text-align: right;">{{ payslip.employee_pf|floatformat:2 }}</td>
-                    </tr>{% endif %}
-                    {% if payslip.professional_tax > 0 %}<tr>
-                        <td>{% if currency == "USD" %}Federal/State Tax{% else %}Professional Tax{% endif %}</td>
-                        <td style="text-align: right;">{{ payslip.professional_tax|floatformat:2 }}</td>
-                    </tr>{% endif %}
+                    </tr>
                     <tr style="font-weight: 700;">
-                        <td>Total Deductions (B)</td>
-                        <td style="text-align: right;">{{ payslip.total_deductions|floatformat:2 }}</td>
+                        <td>Total Contributions (B)</td>
+                        <td style="text-align: right;">{{ payslip.employee_pf|floatformat:2 }}</td>
                     </tr>
                 </table>
+                {% endif %}
+
+                {% if payslip.professional_tax > 0 %}
+                <div class="label" style="font-weight: 700;">TAXES & DEDUCTIONS</div>
+                <table style="width: 100%;">
+                    <tr>
+                        <td>Professional Tax</td>
+                        <td style="text-align: right;">{{ payslip.professional_tax|floatformat:2 }}</td>
+                    </tr>
+                    <tr style="font-weight: 700;">
+                        <td>Total Taxes & Deductions ({% if payslip.employee_pf > 0 %}C{% else %}B{% endif %})</td>
+                        <td style="text-align: right;">{{ payslip.professional_tax|floatformat:2 }}</td>
+                    </tr>
+                </table>
+                {% elif payslip.employee_pf == 0 %}
+                <!-- No deductions at all -->
+                {% endif %}
             </td>
-            {% endif %}
         </tr>
     </table>
 
@@ -310,17 +321,19 @@
     <div class="net-box">
         <table class="net-table">
             <tr>
-                <td style="width: 40%;">Net Salary Payable</td>
-                <td>{{ payslip.net_salary|floatformat:2 }}</td>
+                <td style="width: 70%;">Net Salary Payable {% if payslip.employee_pf > 0 and payslip.professional_tax > 0 %}( A - B - C ){% elif payslip.employee_pf > 0 or payslip.professional_tax > 0 %}( A - B ){% endif %}</td>
+                <td style="text-align: right;">{{ payslip.net_salary|floatformat:2 }}</td>
             </tr>
             <tr>
                 <td>Net Salary in words</td>
-                <td><strong>{{ net_salary_words }}</strong></td>
+                <td style="white-space: nowrap;"><strong>{{ net_salary_words }}</strong></td>
             </tr>
         </table>
     </div>
-    <div class="note">**Note : All amounts displayed in this payslip are in {{ currency }}</div>
-    {% endwith %}
+    <div class="note">
+        <strong>**Note :</strong> <em>All amounts displayed in this payslip are in <strong>{{ currency }}</strong></em>
+    </div>
+
 
 
     <div class="footer">*This is computer generated statement, does not require signature.</div>

@@ -330,7 +330,7 @@ class Attendance(models.Model):
     clock_in_attempts = models.IntegerField(default=0, help_text="Number of clock-in attempts (max 3)")
     daily_clock_count = models.IntegerField(default=0, help_text="Number of valid clock-ins today")
     is_currently_clocked_in = models.BooleanField(default=False, help_text="Currently clocked in status")
-    max_daily_clocks = models.IntegerField(default=3, help_text="Maximum allowed clock-ins per day")
+    max_daily_clocks = models.IntegerField(default=999, help_text="Maximum allowed clock-ins per day")
 
     # Working hours tracking
     total_working_hours = models.DecimalField(
@@ -350,7 +350,7 @@ class Attendance(models.Model):
 
     # Session tracking
     daily_sessions_count = models.IntegerField(default=0, help_text="Number of sessions today")
-    max_daily_sessions = models.IntegerField(default=3, help_text="Maximum allowed sessions per day")
+    max_daily_sessions = models.IntegerField(default=999, help_text="Maximum allowed sessions per day")
     current_session_type = models.CharField(
         max_length=20,
         null=True,
@@ -384,6 +384,32 @@ class Attendance(models.Model):
     def __str__(self):
         return f"{self.employee} - {self.date}"
 
+    @property
+    def local_clock_in(self):
+        """Return clock_in converted to user's timezone"""
+        if not self.clock_in:
+            return None
+        import pytz
+        tz_name = self.user_timezone or "Asia/Kolkata"
+        try:
+            tz = pytz.timezone(tz_name)
+            return self.clock_in.astimezone(tz)
+        except pytz.UnknownTimeZoneError:
+            return self.clock_in
+
+    @property
+    def local_clock_out(self):
+        """Return clock_out converted to user's timezone"""
+        if not self.clock_out:
+            return None
+        import pytz
+        tz_name = self.user_timezone or "Asia/Kolkata"
+        try:
+            tz = pytz.timezone(tz_name)
+            return self.clock_out.astimezone(tz)
+        except pytz.UnknownTimeZoneError:
+            return self.clock_out
+
     def calculate_late_arrival(self):
         """Calculate if employee is late based on their shift schedule and location timezone"""
         from datetime import datetime, timedelta
@@ -395,9 +421,12 @@ class Attendance(models.Model):
         if not self.clock_in:
             return
 
-        # Get location timezone
-        from core.utils import get_user_timezone
-        tz_name = get_user_timezone(self.employee.user, self.employee.company)
+        # Get location timezone - prioritize user_timezone stored on record
+        tz_name = getattr(self, "user_timezone", None)
+        if not tz_name:
+            from core.utils import get_user_timezone
+            tz_name = get_user_timezone(self.employee.user, self.employee.company)
+            
         local_tz = pytz.timezone(tz_name)
 
 
@@ -489,9 +518,12 @@ class Attendance(models.Model):
         if not self.clock_out:
             return
 
-        # Get location timezone
-        from core.utils import get_user_timezone
-        tz_name = get_user_timezone(self.employee.user, self.employee.company)
+        # Get location timezone - prioritize user_timezone stored on record
+        tz_name = getattr(self, "user_timezone", None)
+        if not tz_name:
+            from core.utils import get_user_timezone
+            tz_name = get_user_timezone(self.employee.user, self.employee.company)
+            
         local_tz = pytz.timezone(tz_name)
 
 
@@ -499,17 +531,18 @@ class Attendance(models.Model):
         local_clock_out = self.clock_out.astimezone(local_tz)
         clock_out_time = local_clock_out.time()
 
-        # Get shift schedule
-        from companies.models import ShiftSchedule
-
-        shift = None
-        if self.employee.shift_schedule:
-            shift = ShiftSchedule.objects.filter(
-                company=self.employee.company, name__iexact=self.employee.shift_schedule
-            ).first()
-
+        # Determine Shift
+        shift = self.employee.assigned_shift
         if not shift:
-            shift = ShiftSchedule.objects.filter(company=self.employee.company).first()
+            # Fallback (Legacy)
+            from companies.models import ShiftSchedule
+            if self.employee.shift_schedule:
+                shift = ShiftSchedule.objects.filter(
+                    company=self.employee.company,
+                    name__iexact=self.employee.shift_schedule,
+                ).first()
+            if not shift:
+                shift = ShiftSchedule.objects.filter(company=self.employee.company).first()
 
         if not shift:
             return
@@ -524,7 +557,7 @@ class Attendance(models.Model):
         if shift_end_dt <= shift_start_dt:
             shift_end_dt += timedelta(days=1)
 
-        threshold_dt = shift_end_dt - timedelta(minutes=threshold_minutes)
+        threshold_dt = shift_end_dt - timedelta(minutes=shift.early_departure_threshold_minutes)
         clock_out_dt = local_clock_out  # Already aware and in local_tz
 
         if clock_out_dt < threshold_dt:
@@ -822,13 +855,9 @@ class Attendance(models.Model):
         )
 
     def can_clock_in(self):
-        """Check if employee can clock in based on current state and session limits"""
+        """Check if employee can clock in based on current state"""
         # Cannot clock in if already clocked in
         if self.is_currently_clocked_in:
-            return False
-
-        # Cannot clock in if maximum daily sessions reached
-        if self.daily_sessions_count >= self.max_daily_sessions:
             return False
 
         return True
@@ -1333,10 +1362,10 @@ class Payslip(models.Model):
     # Financial Breakdown
     basic = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     hra = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    lta = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    other_allowance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    conveyance_allowance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    special_allowance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    lta = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Conveyance Allowance")
+    other_allowance = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Special Allowance")
+    conveyance_allowance = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Conveyance")
+    special_allowance = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Medical Allowance")
     monthly_gross = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     gross_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     
