@@ -1,0 +1,23 @@
+# =============================================================================
+# HRMS-PBS rclone Configuration for Google Drive
+# =============================================================================
+# This is a template file - environment variables are substituted at runtime
+# by the backup scripts using `envsubst`
+#
+# Required environment variables:
+#   - GDRIVE_TOKEN (JSON token from rclone authorize)
+#
+# Optional environment variables:
+#   - GDRIVE_ROOT_FOLDER_ID (to use a specific folder as root)
+# =============================================================================
+
+[gdrive]
+type = drive
+token = ${GDRIVE_TOKEN}
+scope = drive
+root_folder_id = ${GDRIVE_ROOT_FOLDER_ID}
+
+# Performance tuning for backups
+# These settings optimize for large backup files
+chunk_size = 64M
+upload_cutoff = 64M

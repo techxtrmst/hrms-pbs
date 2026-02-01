@@ -161,6 +161,31 @@ if ($envVars['LOG_LEVEL']) {
     Write-Host "⚠️ Logging configuration not found in .env.staging - skipping" -ForegroundColor Yellow
 }
 
+# === Google Drive Backup Configuration ===
+Write-Host "☁️ Setting Google Drive Backup Configuration..." -ForegroundColor Cyan
+# Only set token if it's not empty
+if ($envVars['GDRIVE_TOKEN'] -and $envVars['GDRIVE_TOKEN'].Trim() -ne '') {
+    gh secret set STAGING_GDRIVE_TOKEN --repo $REPO --body $envVars['GDRIVE_TOKEN']
+    Write-Host "✅ Google Drive backup configuration set (with token)" -ForegroundColor Green
+} else {
+    Write-Host "ℹ️ GDRIVE_TOKEN is empty - run scripts/rclone-authorize.ps1 to obtain token" -ForegroundColor Yellow
+}
+
+# Set root folder ID if provided
+if ($envVars['GDRIVE_ROOT_FOLDER_ID'] -and $envVars['GDRIVE_ROOT_FOLDER_ID'].Trim() -ne '') {
+    gh secret set STAGING_GDRIVE_ROOT_FOLDER_ID --repo $REPO --body $envVars['GDRIVE_ROOT_FOLDER_ID']
+    Write-Host "✅ Google Drive root folder ID set" -ForegroundColor Green
+}
+
+# === Backup Encryption Configuration (Optional) ===
+Write-Host "🔐 Setting Backup Encryption Configuration..." -ForegroundColor Cyan
+if ($envVars['RESTIC_PASSWORD'] -and $envVars['RESTIC_PASSWORD'].Trim() -ne '') {
+    gh secret set STAGING_RESTIC_PASSWORD --repo $REPO --body $envVars['RESTIC_PASSWORD']
+    Write-Host "✅ Backup encryption enabled (RESTIC_PASSWORD set)" -ForegroundColor Green
+} else {
+    Write-Host "ℹ️ RESTIC_PASSWORD not set - backups will be unencrypted" -ForegroundColor Cyan
+}
+
 Write-Host ""
 Write-Host "✅ All secrets have been configured!" -ForegroundColor Green
 Write-Host ""
@@ -168,6 +193,13 @@ Write-Host "📋 Next steps:" -ForegroundColor Yellow
 Write-Host "   1. Create a 'staging' branch if it doesn't exist" -ForegroundColor Gray
 Write-Host "   2. Push to the staging branch to trigger deployment" -ForegroundColor Gray
 Write-Host "   3. Monitor the GitHub Actions workflow" -ForegroundColor Gray
+Write-Host ""
+Write-Host "📦 Backup setup:" -ForegroundColor Yellow
+Write-Host "   1. If GDRIVE_TOKEN is empty, run: .\scripts\rclone-authorize.ps1" -ForegroundColor Gray
+Write-Host "   2. After deployment, initialize backup repo:" -ForegroundColor Gray
+Write-Host "      ssh $($envVars['STAGING_SSH_USERNAME'])@$($envVars['STAGING_SSH_HOST'])" -ForegroundColor Gray
+Write-Host "      cd $($envVars['STAGING_DEPLOY_PATH'])" -ForegroundColor Gray
+Write-Host "      docker compose exec backup /scripts/init-backup-repo.sh" -ForegroundColor Gray
 Write-Host ""
 if ($envVars['STAGING_SSH_HOST'] -and $envVars['APP_PORT']) {
     Write-Host "🌐 Application will be available at: http://$($envVars['STAGING_SSH_HOST']):$($envVars['APP_PORT'])" -ForegroundColor Cyan

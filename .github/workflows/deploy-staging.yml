@@ -247,7 +247,21 @@ jobs:
           POSTHOG_ENABLED=${{ secrets.STAGING_POSTHOG_ENABLED }}
           LOG_LEVEL=${{ secrets.STAGING_LOG_LEVEL }}
           LOG_DIR=/app/_logs
+          GDRIVE_TOKEN=${{ secrets.STAGING_GDRIVE_TOKEN }}
+          GDRIVE_ROOT_FOLDER_ID=${{ secrets.STAGING_GDRIVE_ROOT_FOLDER_ID }}
+          RESTIC_PASSWORD=${{ secrets.STAGING_RESTIC_PASSWORD }}
+          STAGING_TEAMS_WEBHOOK_URL=${{ secrets.STAGING_TEAMS_WEBHOOK_URL }}
           EOF
+
+          # Copy backup-related files for the backup container build
+          mkdir -p /tmp/deployment/scripts
+          cp scripts/Dockerfile.backup /tmp/deployment/scripts/
+          cp scripts/backup-database.sh /tmp/deployment/scripts/
+          cp scripts/backup-media.sh /tmp/deployment/scripts/
+          cp scripts/restore-test.sh /tmp/deployment/scripts/
+          cp scripts/init-backup-repo.sh /tmp/deployment/scripts/
+          cp scripts/rclone.conf.template /tmp/deployment/scripts/
+          cp scripts/backup-crontab /tmp/deployment/scripts/
 
           # Create deployment archive
           cd /tmp/deployment
@@ -462,6 +476,10 @@ jobs:
 
             # Tag the pulled image for local use
             docker tag ghcr.io/${REPO_LOWER}:staging hrms-backend:latest
+
+            # Build backup container separately (uses Dockerfile.backup)
+            echo "🔨 Building backup container..."
+            $DOCKER_COMPOSE_CMD build backup
 
             # Start all services (database health check and migrations handled automatically)
             echo "🚀 Starting all services..."

@@ -87,3 +87,7 @@ class ClockedScheduleAdmin(BaseClockedScheduleAdmin, ModelAdmin):
     """Clocked Schedule admin with Unfold styling."""
 
     pass
+
+
+# Import backup admin to register models
+from core.backup_admin import *  # noqa: F401, F403, E402

@@ -227,80 +227,78 @@
         color: #6b7280;
     }
 
-    /* Dark mode - using prefers-color-scheme */
-    @media (prefers-color-scheme: dark) {
-        .obs-dashboard h1 {
-            color: #f9fafb;
-        }
-        .obs-card {
-            background: #1f2937;
-        }
-        .obs-card-header {
-            border-bottom-color: #374151;
-        }
-        .obs-card-header h2 {
-            color: #f9fafb;
-        }
-        .obs-stat-icon.red { background: #7f1d1d; }
-        .obs-stat-icon.orange { background: #7c2d12; }
-        .obs-stat-icon.blue { background: #1e3a8a; }
-        .obs-stat-icon.green { background: #14532d; }
-        .obs-stat-icon.red svg { color: #fca5a5; }
-        .obs-stat-icon.orange svg { color: #fdba74; }
-        .obs-stat-icon.blue svg { color: #93c5fd; }
-        .obs-stat-icon.green svg { color: #86efac; }
-        .obs-stat-label {
-            color: #9ca3af;
-        }
-        .obs-stat-value {
-            color: #f9fafb;
-        }
-        .obs-list li {
-            border-bottom-color: #374151;
-        }
-        .obs-list a:hover {
-            background: #374151;
-        }
-        .obs-list-title {
-            color: #f87171;
-        }
-        .obs-list-title.default {
-            color: #f9fafb;
-        }
-        .obs-list-sub {
-            color: #9ca3af;
-        }
-        .obs-badge {
-            background: #7f1d1d;
-            color: #fecaca;
-        }
-        .obs-empty {
-            color: #9ca3af;
-        }
-        .obs-table thead {
-            background: #374151;
-        }
-        .obs-table th {
-            color: #d1d5db;
-        }
-        .obs-table td {
-            border-top-color: #374151;
-        }
-        .obs-method.get { background: #1e3a8a; color: #93c5fd; }
-        .obs-method.post { background: #14532d; color: #86efac; }
-        .obs-method.other { background: #374151; color: #d1d5db; }
-        .obs-link {
-            color: #60a5fa;
-        }
-        .obs-link:hover {
-            color: #93c5fd;
-        }
-        .obs-duration {
-            color: #f9fafb;
-        }
-        .obs-muted {
-            color: #9ca3af;
-        }
+    /* Dark mode - Unfold uses .dark class on html element */
+    html.dark .obs-dashboard h1 {
+        color: #f9fafb;
+    }
+    html.dark .obs-card {
+        background: #1f2937;
+    }
+    html.dark .obs-card-header {
+        border-bottom-color: #374151;
+    }
+    html.dark .obs-card-header h2 {
+        color: #f9fafb;
+    }
+    html.dark .obs-stat-icon.red { background: #7f1d1d; }
+    html.dark .obs-stat-icon.orange { background: #7c2d12; }
+    html.dark .obs-stat-icon.blue { background: #1e3a8a; }
+    html.dark .obs-stat-icon.green { background: #14532d; }
+    html.dark .obs-stat-icon.red svg { color: #fca5a5; }
+    html.dark .obs-stat-icon.orange svg { color: #fdba74; }
+    html.dark .obs-stat-icon.blue svg { color: #93c5fd; }
+    html.dark .obs-stat-icon.green svg { color: #86efac; }
+    html.dark .obs-stat-label {
+        color: #9ca3af;
+    }
+    html.dark .obs-stat-value {
+        color: #f9fafb;
+    }
+    html.dark .obs-list li {
+        border-bottom-color: #374151;
+    }
+    html.dark .obs-list a:hover {
+        background: #374151;
+    }
+    html.dark .obs-list-title {
+        color: #f87171;
+    }
+    html.dark .obs-list-title.default {
+        color: #f9fafb;
+    }
+    html.dark .obs-list-sub {
+        color: #9ca3af;
+    }
+    html.dark .obs-badge {
+        background: #7f1d1d;
+        color: #fecaca;
+    }
+    html.dark .obs-empty {
+        color: #9ca3af;
+    }
+    html.dark .obs-table thead {
+        background: #374151;
+    }
+    html.dark .obs-table th {
+        color: #d1d5db;
+    }
+    html.dark .obs-table td {
+        border-top-color: #374151;
+    }
+    html.dark .obs-method.get { background: #1e3a8a; color: #93c5fd; }
+    html.dark .obs-method.post { background: #14532d; color: #86efac; }
+    html.dark .obs-method.other { background: #374151; color: #d1d5db; }
+    html.dark .obs-link {
+        color: #60a5fa;
+    }
+    html.dark .obs-link:hover {
+        color: #93c5fd;
+    }
+    html.dark .obs-duration {
+        color: #f9fafb;
+    }
+    html.dark .obs-muted {
+        color: #9ca3af;
     }
 </style>
 {% endblock %}

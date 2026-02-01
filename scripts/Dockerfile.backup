@@ -1,0 +1,82 @@
+# =============================================================================
+# HRMS-PBS Backup Container Dockerfile
+# =============================================================================
+# Alpine-based container with restic, rclone, and PostgreSQL client
+# Uses supercronic for Docker-friendly cron scheduling
+#
+# Features:
+# - restic: Deduplicating backup with optional encryption
+# - rclone: Google Drive cloud storage integration
+# - postgresql-client: pg_dump for database backups
+# - supercronic: Docker-optimized cron scheduler
+# - curl: For MS Teams webhook notifications
+# =============================================================================
+
+FROM alpine:3.19
+
+LABEL maintainer="HRMS-PBS Team"
+LABEL description="Backup container with restic, rclone, and PostgreSQL client"
+
+# Install required packages (excluding restic - we'll install newer version manually)
+# Note: postgresql17-client requires Alpine 3.20+ or manual install
+RUN apk add --no-cache \
+    rclone \
+    curl \
+    bash \
+    gettext \
+    tzdata \
+    ca-certificates \
+    bzip2 \
+    && rm -rf /var/cache/apk/*
+
+# Install PostgreSQL 17 client from official PostgreSQL repos
+# Alpine 3.19's apk only has pg16, but server is pg17
+RUN wget -q https://download.postgresql.org/pub/repos/yum/17/redhat/rhel-9-x86_64/postgresql17-libs-17.5-1PGDG.rhel9.x86_64.rpm 2>/dev/null || true && \
+    echo "Installing PostgreSQL 17 client from edge repository..." && \
+    apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main postgresql17-client
+
+# Install restic 0.17.3 (supports --insecure-no-password for repos without encryption)
+# https://github.com/restic/restic/releases
+ARG RESTIC_VERSION=0.17.3
+RUN wget -q -O /tmp/restic.bz2 \
+    "https://github.com/restic/restic/releases/download/v${RESTIC_VERSION}/restic_${RESTIC_VERSION}_linux_amd64.bz2" \
+    && bunzip2 /tmp/restic.bz2 \
+    && mv /tmp/restic /usr/local/bin/restic \
+    && chmod +x /usr/local/bin/restic \
+    && restic version
+
+# Install supercronic (Docker-friendly cron)
+# https://github.com/aptible/supercronic
+ARG SUPERCRONIC_VERSION=v0.2.29
+ARG SUPERCRONIC_SHA1SUM=cd48d45c4b10f3f0bfdd3a57d054cd05ac96812b
+RUN wget -q -O /usr/local/bin/supercronic \
+    "https://github.com/aptible/supercronic/releases/download/${SUPERCRONIC_VERSION}/supercronic-linux-amd64" \
+    && echo "${SUPERCRONIC_SHA1SUM}  /usr/local/bin/supercronic" | sha1sum -c - \
+    && chmod +x /usr/local/bin/supercronic
+
+# Create directories
+RUN mkdir -p /scripts /var/log/backup /root/.config/rclone /root/.cache/restic
+
+# Copy backup scripts
+COPY scripts/backup-database.sh /scripts/
+COPY scripts/backup-media.sh /scripts/
+COPY scripts/restore-test.sh /scripts/
+COPY scripts/init-backup-repo.sh /scripts/
+COPY scripts/rclone.conf.template /scripts/
+COPY scripts/backup-crontab /etc/supercronic/backup-crontab
+
+# Make scripts executable
+RUN chmod +x /scripts/*.sh
+
+# Set timezone (configurable via TZ env var)
+ENV TZ=UTC
+
+# Create non-root user for running backups (optional, can run as root for simplicity)
+# RUN adduser -D -u 1000 backup && chown -R backup:backup /scripts /var/log/backup
+
+# Health check - verify rclone and restic are available
+HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
+    CMD restic version && rclone version || exit 1
+
+# Default command: run supercronic with the backup schedule
+CMD ["supercronic", "-json", "/etc/supercronic/backup-crontab"]

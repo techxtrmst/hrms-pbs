@@ -1,0 +1,34 @@
+# =============================================================================
+# HRMS-PBS Backup Crontab for Supercronic
+# =============================================================================
+# This file defines the backup schedule using cron syntax
+# Supercronic is a Docker-friendly cron replacement that:
+#   - Logs to stdout/stderr (visible in docker logs)
+#   - Doesn't require a syslog daemon
+#   - Handles container lifecycle properly
+#
+# Schedule Overview:
+#   - Database backup: Every 3 hours (aligned to 00:00, 03:00, 06:00, etc.)
+#   - Media backup: Daily at 02:00 (off-peak, before morning)
+#   - Restore test: Monthly on 1st at 03:00
+#
+# Cron Syntax: minute hour day month weekday command
+# =============================================================================
+
+# Database backup - every 3 hours
+# Runs at: 00:00, 03:00, 06:00, 09:00, 12:00, 15:00, 18:00, 21:00
+0 */3 * * * /scripts/backup-database.sh >> /var/log/backup/database.log 2>&1
+
+# Media backup - daily at 02:00
+# Runs less frequently as media changes less often than database
+0 2 * * * /scripts/backup-media.sh >> /var/log/backup/media.log 2>&1
+
+# Monthly restore test - 1st of each month at 03:00
+# Validates backup integrity by restoring to temp database
+0 3 1 * * /scripts/restore-test.sh >> /var/log/backup/restore-test.log 2>&1
+
+# =============================================================================
+# Optional: Weekly integrity check (uncomment to enable)
+# Runs on Sunday at 04:00, checks 10% of backup data
+# =============================================================================
+# 0 4 * * 0 /scripts/integrity-check.sh >> /var/log/backup/integrity.log 2>&1

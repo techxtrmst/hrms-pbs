@@ -481,6 +481,33 @@ def navigation_callback(request):
                 },
             ],
         },
+        {
+            "title": _("Backup & Recovery"),
+            "separator": True,
+            "collapsible": True,
+            "items": [
+                {
+                    "title": _("Dashboard"),
+                    "icon": "backup",
+                    "link": reverse_lazy("admin:backup_dashboard"),
+                },
+                {
+                    "title": _("Backup Jobs"),
+                    "icon": "cloud_upload",
+                    "link": reverse_lazy("admin:core_backupjob_changelist"),
+                },
+                {
+                    "title": _("Snapshots"),
+                    "icon": "inventory_2",
+                    "link": reverse_lazy("admin:core_backupsnapshot_changelist"),
+                },
+                {
+                    "title": _("Configuration"),
+                    "icon": "settings",
+                    "link": reverse_lazy("admin:core_backupconfiguration_changelist"),
+                },
+            ],
+        },
     ]
 
     # Add sensitive sections only in debug mode

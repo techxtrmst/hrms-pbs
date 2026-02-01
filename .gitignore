@@ -57,6 +57,7 @@ desktop.ini
 # Backup files
 *.bak
 *.backup
+!scripts/Dockerfile.backup
 *.html.bak
 
 # Migrations (optional - uncomment if you don't want to track migrations)
