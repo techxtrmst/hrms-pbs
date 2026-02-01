@@ -5,13 +5,33 @@ from import_export.admin import ImportExportModelAdmin
 from unfold.admin import ModelAdmin
 from unfold.contrib.import_export.forms import ExportForm, ImportForm
 
+from core.middleware import is_debug_mode_enabled
+
 from .models import User
 
 
+class ConditionalHijackMixin(HijackUserAdminMixin):
+    """
+    Hijack mixin that only enables impersonation in debug mode.
+
+    When debug mode is disabled:
+    - Hijack button is hidden from user list
+    - Hijack column is not shown
+    """
+
+    def get_changelist_instance(self, request):
+        """Only add hijack column when debug mode is enabled."""
+        if not is_debug_mode_enabled(request):
+            # Skip HijackUserAdminMixin's customization, go to parent
+            return super(HijackUserAdminMixin, self).get_changelist_instance(request)
+        return super().get_changelist_instance(request)
+
+
 @admin.register(User)
-class CustomUserAdmin(HijackUserAdminMixin, UserAdmin, ModelAdmin, ImportExportModelAdmin):
+class CustomUserAdmin(ConditionalHijackMixin, UserAdmin, ModelAdmin, ImportExportModelAdmin):
     """
     Custom User Admin with Unfold styling, import/export, and hijack (impersonation).
+    Hijack is only available when debug mode is enabled.
     """
 
     import_form_class = ImportForm

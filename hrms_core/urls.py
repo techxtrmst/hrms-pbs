@@ -4,6 +4,7 @@ from django.urls import include, path
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("hijack/", include("hijack.urls")),  # User impersonation
+    path("observability/", include("observability.urls", namespace="observability")),  # Observability dashboard
     path("", include("core.urls")),
     path("employees/", include("employees.urls")),
     path("companies/", include("companies.urls")),

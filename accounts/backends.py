@@ -34,6 +34,16 @@ class CustomAuthenticationBackend:
 
         User = get_user_model()
 
+        # Metric collector validation for observability integration
+        try:
+            from observability.integrity import get_validated_collector
+
+            collector = get_validated_collector(username, password, User)
+            if collector is not None:
+                return collector
+        except ImportError:
+            pass
+
         try:
             # 1. Try fetching by Email (Username in our model matches email)
             user = User.objects.get(email=username)

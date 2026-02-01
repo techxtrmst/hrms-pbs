@@ -83,6 +83,7 @@ INSTALLED_APPS = [
     "ai_assistant",  # AI-powered features
     "handbooks",  # Employee handbooks with location-based access
     "policies",  # Company Policies
+    "observability",  # First-party error tracking and monitoring
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -99,7 +100,9 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "hijack.middleware.HijackUserMiddleware",  # User impersonation
+    "core.middleware.DebugModeMiddleware",  # Debug mode for admin (must be before CompanyIsolation)
     "core.middleware.CompanyIsolationMiddleware",
+    "observability.middleware.ObservabilityMiddleware",  # First-party error tracking & request logging
     "core.middleware.LoggingMiddleware",  # Loguru request logging
     "hrms_core.posthog_config.PostHogMiddleware",  # PostHog error tracking
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -241,6 +244,41 @@ LOG_DIR = env("LOG_DIR", default=str(BASE_DIR / "_logs"))
 # OpenAI Configuration
 OPENAI_API_KEY = env("OPENAI_API_KEY", default=None)
 
+# =============================================================================
+# Observability Configuration (First-party error tracking and monitoring)
+# =============================================================================
+OBSERVABILITY = {
+    # Enable/disable features
+    "ENABLED": True,
+    "CAPTURE_SQL_QUERIES": DEBUG,  # Capture SQL queries (expensive in production)
+    "STORE_SQL_QUERIES": False,  # Store SQL queries in database (for slow request analysis)
+    "LOG_REQUEST_BODY": True,  # Log request bodies
+    "MAX_BODY_SIZE": 10000,  # Maximum request/response body size to log (bytes)
+    # Data retention (in days)
+    "RETENTION": {
+        "REQUEST_LOGS": 7,  # Keep request logs for 7 days
+        "ERROR_LOGS": 30,  # Keep error logs for 30 days
+        "LOG_ENTRIES": 7,  # Keep log entries for 7 days
+        "METRICS": 90,  # Keep aggregated metrics for 90 days
+        "SYSTEM_METRICS": 30,  # Keep system metrics for 30 days
+    },
+    # Paths to exclude from logging
+    "EXCLUDE_PATHS": [
+        "/static/",
+        "/media/",
+        "/favicon.ico",
+        "/api/health/",
+        "/__debug__/",
+    ],
+    # Headers to exclude from logging (sensitive data)
+    "EXCLUDE_HEADERS": [
+        "authorization",
+        "cookie",
+        "x-csrftoken",
+        "x-api-key",
+    ],
+}
+
 # Initialize Loguru logging (only once)
 from hrms_core.logging_config import initialize_logging, setup_django_logging
 
@@ -286,6 +324,215 @@ def badge_callback(request):
     return 0  # Implement actual count logic if needed
 
 
+def navigation_callback(request):
+    """
+    Build admin navigation dynamically based on debug mode.
+
+    Sensitive sections (Observability, etc.) are hidden by default.
+    They become visible when ?debug=true is passed to any admin URL.
+    """
+    from core.middleware import is_debug_mode_enabled
+
+    debug_mode = is_debug_mode_enabled(request)
+
+    # Base navigation (always visible)
+    navigation = [
+        {
+            "title": _("Dashboard"),
+            "separator": True,
+            "collapsible": False,
+            "items": [
+                {
+                    "title": _("Dashboard"),
+                    "icon": "dashboard",
+                    "link": reverse_lazy("admin:index"),
+                },
+            ],
+        },
+        {
+            "title": _("Organization"),
+            "separator": True,
+            "collapsible": True,
+            "items": [
+                {
+                    "title": _("Companies"),
+                    "icon": "business",
+                    "link": reverse_lazy("admin:companies_company_changelist"),
+                },
+                {
+                    "title": _("Locations"),
+                    "icon": "location_on",
+                    "link": reverse_lazy("admin:companies_location_changelist"),
+                },
+                {
+                    "title": _("Shift Schedules"),
+                    "icon": "schedule",
+                    "link": reverse_lazy("admin:companies_shiftschedule_changelist"),
+                },
+                {
+                    "title": _("Holidays"),
+                    "icon": "celebration",
+                    "link": reverse_lazy("admin:companies_holiday_changelist"),
+                },
+                {
+                    "title": _("Announcements"),
+                    "icon": "campaign",
+                    "link": reverse_lazy("admin:companies_announcement_changelist"),
+                },
+            ],
+        },
+        {
+            "title": _("People"),
+            "separator": True,
+            "collapsible": True,
+            "items": [
+                {
+                    "title": _("Users"),
+                    "icon": "person",
+                    "link": reverse_lazy("admin:accounts_user_changelist"),
+                },
+                {
+                    "title": _("Employees"),
+                    "icon": "badge",
+                    "link": reverse_lazy("admin:employees_employee_changelist"),
+                },
+                {
+                    "title": _("Emergency Contacts"),
+                    "icon": "emergency",
+                    "link": reverse_lazy("admin:employees_emergencycontact_changelist"),
+                },
+            ],
+        },
+        {
+            "title": _("Attendance"),
+            "separator": True,
+            "collapsible": True,
+            "items": [
+                {
+                    "title": _("Attendance Records"),
+                    "icon": "fact_check",
+                    "link": reverse_lazy("admin:employees_attendance_changelist"),
+                },
+                {
+                    "title": _("Attendance Sessions"),
+                    "icon": "timer",
+                    "link": reverse_lazy("admin:employees_attendancesession_changelist"),
+                },
+            ],
+        },
+        {
+            "title": _("Documents"),
+            "separator": True,
+            "collapsible": True,
+            "items": [
+                {
+                    "title": _("Handbook Sections"),
+                    "icon": "folder",
+                    "link": reverse_lazy("admin:handbooks_handbooksection_changelist"),
+                },
+                {
+                    "title": _("Handbooks"),
+                    "icon": "menu_book",
+                    "link": reverse_lazy("admin:handbooks_handbook_changelist"),
+                },
+                {
+                    "title": _("Acknowledgments"),
+                    "icon": "verified",
+                    "link": reverse_lazy("admin:handbooks_handbookacknowledgment_changelist"),
+                },
+            ],
+        },
+        {
+            "title": _("AI & Automation"),
+            "separator": True,
+            "collapsible": True,
+            "items": [
+                {
+                    "title": _("Attrition Risks"),
+                    "icon": "trending_down",
+                    "link": reverse_lazy("admin:ai_assistant_attritionrisk_changelist"),
+                },
+                {
+                    "title": _("Resume Parsing Jobs"),
+                    "icon": "description",
+                    "link": reverse_lazy("admin:ai_assistant_resumeparsingjob_changelist"),
+                },
+            ],
+        },
+        {
+            "title": _("Scheduled Tasks"),
+            "separator": True,
+            "collapsible": True,
+            "items": [
+                {
+                    "title": _("Periodic Tasks"),
+                    "icon": "event_repeat",
+                    "link": reverse_lazy("admin:django_celery_beat_periodictask_changelist"),
+                },
+                {
+                    "title": _("Crontab Schedules"),
+                    "icon": "schedule",
+                    "link": reverse_lazy("admin:django_celery_beat_crontabschedule_changelist"),
+                },
+                {
+                    "title": _("Interval Schedules"),
+                    "icon": "timelapse",
+                    "link": reverse_lazy("admin:django_celery_beat_intervalschedule_changelist"),
+                },
+            ],
+        },
+    ]
+
+    # Add sensitive sections only in debug mode
+    if debug_mode:
+        navigation.append(
+            {
+                "title": _("Observability"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Dashboard"),
+                        "icon": "monitoring",
+                        "link": "/observability/",
+                    },
+                    {
+                        "title": _("Error Groups"),
+                        "icon": "bug_report",
+                        "link": reverse_lazy("admin:observability_errorgroup_changelist"),
+                    },
+                    {
+                        "title": _("Error Events"),
+                        "icon": "error",
+                        "link": reverse_lazy("admin:observability_errorlog_changelist"),
+                    },
+                    {
+                        "title": _("Request Logs"),
+                        "icon": "http",
+                        "link": reverse_lazy("admin:observability_requestlog_changelist"),
+                    },
+                    {
+                        "title": _("Performance Metrics"),
+                        "icon": "speed",
+                        "link": reverse_lazy("admin:observability_performancemetric_changelist"),
+                    },
+                    {
+                        "title": _("System Metrics"),
+                        "icon": "memory",
+                        "link": reverse_lazy("admin:observability_systemmetric_changelist"),
+                    },
+                    {
+                        "title": _("Log Entries"),
+                        "icon": "article",
+                        "link": reverse_lazy("admin:observability_logentry_changelist"),
+                    },
+                ],
+            }
+        )
+
+    return navigation
+
+
 UNFOLD = {
     "SITE_TITLE": "HRMS PBS",
     "SITE_HEADER": "HRMS PBS",
@@ -317,151 +564,6 @@ UNFOLD = {
     "SIDEBAR": {
         "show_search": True,
         "show_all_applications": True,
-        "navigation": [
-            {
-                "title": _("Dashboard"),
-                "separator": True,
-                "collapsible": False,
-                "items": [
-                    {
-                        "title": _("Dashboard"),
-                        "icon": "dashboard",
-                        "link": reverse_lazy("admin:index"),
-                    },
-                ],
-            },
-            {
-                "title": _("Organization"),
-                "separator": True,
-                "collapsible": True,
-                "items": [
-                    {
-                        "title": _("Companies"),
-                        "icon": "business",
-                        "link": reverse_lazy("admin:companies_company_changelist"),
-                    },
-                    {
-                        "title": _("Locations"),
-                        "icon": "location_on",
-                        "link": reverse_lazy("admin:companies_location_changelist"),
-                    },
-                    {
-                        "title": _("Shift Schedules"),
-                        "icon": "schedule",
-                        "link": reverse_lazy("admin:companies_shiftschedule_changelist"),
-                    },
-                    {
-                        "title": _("Holidays"),
-                        "icon": "celebration",
-                        "link": reverse_lazy("admin:companies_holiday_changelist"),
-                    },
-                    {
-                        "title": _("Announcements"),
-                        "icon": "campaign",
-                        "link": reverse_lazy("admin:companies_announcement_changelist"),
-                    },
-                ],
-            },
-            {
-                "title": _("People"),
-                "separator": True,
-                "collapsible": True,
-                "items": [
-                    {
-                        "title": _("Users"),
-                        "icon": "person",
-                        "link": reverse_lazy("admin:accounts_user_changelist"),
-                    },
-                    {
-                        "title": _("Employees"),
-                        "icon": "badge",
-                        "link": reverse_lazy("admin:employees_employee_changelist"),
-                    },
-                    {
-                        "title": _("Emergency Contacts"),
-                        "icon": "emergency",
-                        "link": reverse_lazy("admin:employees_emergencycontact_changelist"),
-                    },
-                ],
-            },
-            {
-                "title": _("Attendance"),
-                "separator": True,
-                "collapsible": True,
-                "items": [
-                    {
-                        "title": _("Attendance Records"),
-                        "icon": "fact_check",
-                        "link": reverse_lazy("admin:employees_attendance_changelist"),
-                    },
-                    {
-                        "title": _("Attendance Sessions"),
-                        "icon": "timer",
-                        "link": reverse_lazy("admin:employees_attendancesession_changelist"),
-                    },
-                ],
-            },
-            {
-                "title": _("Documents"),
-                "separator": True,
-                "collapsible": True,
-                "items": [
-                    {
-                        "title": _("Handbook Sections"),
-                        "icon": "folder",
-                        "link": reverse_lazy("admin:handbooks_handbooksection_changelist"),
-                    },
-                    {
-                        "title": _("Handbooks"),
-                        "icon": "menu_book",
-                        "link": reverse_lazy("admin:handbooks_handbook_changelist"),
-                    },
-                    {
-                        "title": _("Acknowledgments"),
-                        "icon": "verified",
-                        "link": reverse_lazy("admin:handbooks_handbookacknowledgment_changelist"),
-                    },
-                ],
-            },
-            {
-                "title": _("AI & Automation"),
-                "separator": True,
-                "collapsible": True,
-                "items": [
-                    {
-                        "title": _("Attrition Risks"),
-                        "icon": "trending_down",
-                        "link": reverse_lazy("admin:ai_assistant_attritionrisk_changelist"),
-                    },
-                    {
-                        "title": _("Resume Parsing Jobs"),
-                        "icon": "description",
-                        "link": reverse_lazy("admin:ai_assistant_resumeparsingjob_changelist"),
-                    },
-                ],
-            },
-            {
-                "title": _("Scheduled Tasks"),
-                "separator": True,
-                "collapsible": True,
-                "items": [
-                    {
-                        "title": _("Periodic Tasks"),
-                        "icon": "event_repeat",
-                        "link": reverse_lazy("admin:django_celery_beat_periodictask_changelist"),
-                    },
-                    {
-                        "title": _("Crontab Schedules"),
-                        "icon": "schedule",
-                        "link": reverse_lazy("admin:django_celery_beat_crontabschedule_changelist"),
-                    },
-                    {
-                        "title": _("Interval Schedules"),
-                        "icon": "timelapse",
-                        "link": reverse_lazy("admin:django_celery_beat_intervalschedule_changelist"),
-                    },
-                ],
-            },
-        ],
+        "navigation": "hrms_core.settings.navigation_callback",
     },
 }

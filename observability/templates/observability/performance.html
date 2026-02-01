@@ -1,0 +1,134 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Performance Analysis{% endblock %}
+
+{% block content %}
+<div class="p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Performance Analysis</h1>
+        <a href="{% url 'observability:slow_requests' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            View Slow Requests
+        </a>
+    </div>
+
+    <!-- Endpoint Performance -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-semibold">Endpoint Performance (Last 24 Hours)</h2>
+        </div>
+        <div class="overflow-x-auto">
+            {% if endpoint_stats %}
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Endpoint</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Requests</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Avg Duration</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Max Duration</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Avg SQL</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Errors</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for stat in endpoint_stats %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                                {% if stat.method == 'GET' %}bg-blue-100 text-blue-800{% elif stat.method == 'POST' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %} mr-2">
+                                {{ stat.method }}
+                            </span>
+                            <span class="text-sm text-gray-900 dark:text-white">{{ stat.path|truncatechars:50 }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                            {{ stat.count }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm {% if stat.avg_duration > 1000 %}text-yellow-600{% elif stat.avg_duration > 3000 %}text-red-600{% else %}text-gray-900{% endif %}">
+                                {{ stat.avg_duration|floatformat:0 }}ms
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm {% if stat.max_duration > 3000 %}text-red-600 font-bold{% elif stat.max_duration > 1000 %}text-yellow-600{% else %}text-gray-500{% endif %}">
+                                {{ stat.max_duration|floatformat:0 }}ms
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ stat.avg_sql|floatformat:1 }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if stat.error_count > 0 %}
+                            <span class="text-sm text-red-600 font-medium">{{ stat.error_count }}</span>
+                            {% else %}
+                            <span class="text-sm text-gray-400">0</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-gray-500 text-center py-8">No endpoint data available</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Slowest Endpoints -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-semibold">Slowest Endpoints (Avg)</h2>
+            </div>
+            <div class="p-6">
+                {% if slowest_endpoints %}
+                <ul class="space-y-3">
+                    {% for ep in slowest_endpoints %}
+                    <li class="flex items-center justify-between">
+                        <div class="flex items-center min-w-0">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 mr-2">
+                                {{ ep.method }}
+                            </span>
+                            <span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ ep.path|truncatechars:35 }}</span>
+                        </div>
+                        <span class="text-sm font-medium {% if ep.avg_duration > 3000 %}text-red-600{% elif ep.avg_duration > 1000 %}text-yellow-600{% else %}text-gray-900{% endif %} ml-2">
+                            {{ ep.avg_duration|floatformat:0 }}ms
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-gray-500 text-center py-4">No data available</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- SQL-Heavy Endpoints -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-semibold">Most SQL Queries (Avg)</h2>
+            </div>
+            <div class="p-6">
+                {% if sql_heavy_endpoints %}
+                <ul class="space-y-3">
+                    {% for ep in sql_heavy_endpoints %}
+                    <li class="flex items-center justify-between">
+                        <div class="flex items-center min-w-0">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 mr-2">
+                                {{ ep.method }}
+                            </span>
+                            <span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ ep.path|truncatechars:35 }}</span>
+                        </div>
+                        <span class="text-sm font-medium {% if ep.avg_sql > 50 %}text-red-600{% elif ep.avg_sql > 20 %}text-yellow-600{% else %}text-gray-900{% endif %} ml-2">
+                            {{ ep.avg_sql|floatformat:1 }} queries
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-gray-500 text-center py-4">No data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
