@@ -3,97 +3,397 @@
 
 {% block title %}Observability Dashboard{% endblock %}
 
+{% block extrahead %}
+{{ block.super }}
+<style>
+    /* Base styles */
+    .obs-dashboard {
+        padding: 1.5rem;
+    }
+    .obs-dashboard h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+    }
+    .obs-grid-4 {
+        display: grid;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    @media (min-width: 768px) {
+        .obs-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (min-width: 1024px) {
+        .obs-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+    .obs-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    @media (min-width: 1024px) {
+        .obs-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    /* Card styles */
+    .obs-card {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        padding: 1.5rem;
+    }
+    .obs-card-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .obs-card-header h2 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #111827;
+        margin: 0;
+    }
+    .obs-card-body {
+        padding: 1.5rem;
+    }
+
+    /* Stat card */
+    .obs-stat-card {
+        display: flex;
+        align-items: center;
+    }
+    .obs-stat-icon {
+        padding: 0.75rem;
+        border-radius: 9999px;
+    }
+    .obs-stat-icon.red { background: #fee2e2; }
+    .obs-stat-icon.orange { background: #ffedd5; }
+    .obs-stat-icon.blue { background: #dbeafe; }
+    .obs-stat-icon.green { background: #dcfce7; }
+    .obs-stat-icon svg {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+    .obs-stat-icon.red svg { color: #dc2626; }
+    .obs-stat-icon.orange svg { color: #ea580c; }
+    .obs-stat-icon.blue svg { color: #2563eb; }
+    .obs-stat-icon.green svg { color: #16a34a; }
+    .obs-stat-content {
+        margin-left: 1rem;
+    }
+    .obs-stat-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+    .obs-stat-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #111827;
+    }
+    .obs-stat-sub {
+        font-size: 0.75rem;
+        color: #9ca3af;
+    }
+
+    /* List styles */
+    .obs-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .obs-list li {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .obs-list li:last-child {
+        border-bottom: none;
+    }
+    .obs-list a {
+        display: block;
+        padding: 0.25rem 0.5rem;
+        margin: -0.25rem -0.5rem;
+        border-radius: 0.25rem;
+        text-decoration: none;
+    }
+    .obs-list a:hover {
+        background: #f9fafb;
+    }
+    .obs-list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+    .obs-list-main {
+        flex: 1;
+        min-width: 0;
+    }
+    .obs-list-title {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #dc2626;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .obs-list-title.default {
+        color: #111827;
+    }
+    .obs-list-sub {
+        font-size: 0.875rem;
+        color: #6b7280;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .obs-list-side {
+        margin-left: 1rem;
+        flex-shrink: 0;
+        text-align: right;
+    }
+    .obs-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.125rem 0.625rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    .obs-time {
+        font-size: 0.75rem;
+        color: #9ca3af;
+    }
+    .obs-empty {
+        text-align: center;
+        padding: 1rem;
+        color: #6b7280;
+    }
+
+    /* Table styles */
+    .obs-table-wrap {
+        overflow-x: auto;
+    }
+    .obs-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .obs-table thead {
+        background: #f9fafb;
+    }
+    .obs-table th {
+        padding: 0.75rem 1.5rem;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #6b7280;
+        text-transform: uppercase;
+    }
+    .obs-table td {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid #e5e7eb;
+    }
+    .obs-table tbody tr:first-child td {
+        border-top: none;
+    }
+    .obs-method {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.125rem 0.625rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .obs-method.get { background: #dbeafe; color: #1e40af; }
+    .obs-method.post { background: #dcfce7; color: #166534; }
+    .obs-method.other { background: #f3f4f6; color: #374151; }
+    .obs-link {
+        font-size: 0.875rem;
+        color: #2563eb;
+        text-decoration: none;
+    }
+    .obs-link:hover {
+        color: #1d4ed8;
+    }
+    .obs-duration {
+        font-size: 0.875rem;
+        color: #111827;
+    }
+    .obs-duration.slow { color: #ca8a04; }
+    .obs-duration.critical { color: #dc2626; font-weight: 700; }
+    .obs-muted {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+
+    /* Dark mode - using prefers-color-scheme */
+    @media (prefers-color-scheme: dark) {
+        .obs-dashboard h1 {
+            color: #f9fafb;
+        }
+        .obs-card {
+            background: #1f2937;
+        }
+        .obs-card-header {
+            border-bottom-color: #374151;
+        }
+        .obs-card-header h2 {
+            color: #f9fafb;
+        }
+        .obs-stat-icon.red { background: #7f1d1d; }
+        .obs-stat-icon.orange { background: #7c2d12; }
+        .obs-stat-icon.blue { background: #1e3a8a; }
+        .obs-stat-icon.green { background: #14532d; }
+        .obs-stat-icon.red svg { color: #fca5a5; }
+        .obs-stat-icon.orange svg { color: #fdba74; }
+        .obs-stat-icon.blue svg { color: #93c5fd; }
+        .obs-stat-icon.green svg { color: #86efac; }
+        .obs-stat-label {
+            color: #9ca3af;
+        }
+        .obs-stat-value {
+            color: #f9fafb;
+        }
+        .obs-list li {
+            border-bottom-color: #374151;
+        }
+        .obs-list a:hover {
+            background: #374151;
+        }
+        .obs-list-title {
+            color: #f87171;
+        }
+        .obs-list-title.default {
+            color: #f9fafb;
+        }
+        .obs-list-sub {
+            color: #9ca3af;
+        }
+        .obs-badge {
+            background: #7f1d1d;
+            color: #fecaca;
+        }
+        .obs-empty {
+            color: #9ca3af;
+        }
+        .obs-table thead {
+            background: #374151;
+        }
+        .obs-table th {
+            color: #d1d5db;
+        }
+        .obs-table td {
+            border-top-color: #374151;
+        }
+        .obs-method.get { background: #1e3a8a; color: #93c5fd; }
+        .obs-method.post { background: #14532d; color: #86efac; }
+        .obs-method.other { background: #374151; color: #d1d5db; }
+        .obs-link {
+            color: #60a5fa;
+        }
+        .obs-link:hover {
+            color: #93c5fd;
+        }
+        .obs-duration {
+            color: #f9fafb;
+        }
+        .obs-muted {
+            color: #9ca3af;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="p-6">
-    <h1 class="text-2xl font-bold mb-6">Observability Dashboard</h1>
+<div class="obs-dashboard">
+    <h1>Observability Dashboard</h1>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="obs-grid-4">
         <!-- Unresolved Errors -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-red-100 dark:bg-red-900">
-                    <svg class="w-6 h-6 text-red-600 dark:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="obs-card">
+            <div class="obs-stat-card">
+                <div class="obs-stat-icon red">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                     </svg>
                 </div>
-                <div class="ml-4">
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Unresolved Errors</p>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ unresolved_errors }}</p>
+                <div class="obs-stat-content">
+                    <p class="obs-stat-label">Unresolved Errors</p>
+                    <p class="obs-stat-value">{{ unresolved_errors }}</p>
                 </div>
             </div>
         </div>
 
         <!-- Errors (24h) -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-orange-100 dark:bg-orange-900">
-                    <svg class="w-6 h-6 text-orange-600 dark:text-orange-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="obs-card">
+            <div class="obs-stat-card">
+                <div class="obs-stat-icon orange">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                 </div>
-                <div class="ml-4">
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Errors (24h)</p>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ errors_24h }}</p>
-                    <p class="text-xs text-gray-400">{{ errors_1h }} in last hour</p>
+                <div class="obs-stat-content">
+                    <p class="obs-stat-label">Errors (24h)</p>
+                    <p class="obs-stat-value">{{ errors_24h }}</p>
+                    <p class="obs-stat-sub">{{ errors_1h }} in last hour</p>
                 </div>
             </div>
         </div>
 
         <!-- Requests (24h) -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900">
-                    <svg class="w-6 h-6 text-blue-600 dark:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="obs-card">
+            <div class="obs-stat-card">
+                <div class="obs-stat-icon blue">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
                 </div>
-                <div class="ml-4">
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Requests (24h)</p>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ requests_24h }}</p>
-                    <p class="text-xs text-gray-400">{{ error_rate|floatformat:1 }}% error rate</p>
+                <div class="obs-stat-content">
+                    <p class="obs-stat-label">Requests (24h)</p>
+                    <p class="obs-stat-value">{{ requests_24h }}</p>
+                    <p class="obs-stat-sub">{{ error_rate|floatformat:1 }}% error rate</p>
                 </div>
             </div>
         </div>
 
         <!-- Avg Response Time -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-green-100 dark:bg-green-900">
-                    <svg class="w-6 h-6 text-green-600 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="obs-card">
+            <div class="obs-stat-card">
+                <div class="obs-stat-icon green">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                 </div>
-                <div class="ml-4">
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Avg Response</p>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ avg_response_time|floatformat:0 }}ms</p>
-                    <p class="text-xs text-gray-400">{{ avg_sql_queries|floatformat:1 }} avg queries</p>
+                <div class="obs-stat-content">
+                    <p class="obs-stat-label">Avg Response</p>
+                    <p class="obs-stat-value">{{ avg_response_time|floatformat:0 }}ms</p>
+                    <p class="obs-stat-sub">{{ avg_sql_queries|floatformat:1 }} avg queries</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="obs-grid-2">
         <!-- Top Error Groups -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
-            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Top Unresolved Errors</h2>
+        <div class="obs-card" style="padding: 0;">
+            <div class="obs-card-header">
+                <h2>Top Unresolved Errors</h2>
             </div>
-            <div class="p-6">
+            <div class="obs-card-body">
                 {% if top_error_groups %}
-                <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+                <ul class="obs-list">
                     {% for group in top_error_groups %}
-                    <li class="py-3">
-                        <a href="{% url 'admin:observability_errorgroup_change' group.pk %}" class="block hover:bg-gray-50 dark:hover:bg-gray-700 -mx-2 px-2 py-1 rounded">
-                            <div class="flex justify-between items-start">
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-medium text-red-600 dark:text-red-400 truncate">{{ group.exception_type }}</p>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400 truncate">{{ group.title|truncatechars:60 }}</p>
+                    <li>
+                        <a href="{% url 'admin:observability_errorgroup_change' group.pk %}">
+                            <div class="obs-list-item">
+                                <div class="obs-list-main">
+                                    <p class="obs-list-title">{{ group.exception_type }}</p>
+                                    <p class="obs-list-sub">{{ group.title|truncatechars:60 }}</p>
                                 </div>
-                                <div class="ml-4 flex-shrink-0 text-right">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                                        {{ group.event_count }} events
-                                    </span>
+                                <div class="obs-list-side">
+                                    <span class="obs-badge">{{ group.event_count }} events</span>
                                 </div>
                             </div>
                         </a>
@@ -101,29 +401,29 @@
                     {% endfor %}
                 </ul>
                 {% else %}
-                <p class="text-gray-500 dark:text-gray-400 text-center py-4">No unresolved errors</p>
+                <p class="obs-empty">No unresolved errors</p>
                 {% endif %}
             </div>
         </div>
 
         <!-- Recent Errors -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
-            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Errors</h2>
+        <div class="obs-card" style="padding: 0;">
+            <div class="obs-card-header">
+                <h2>Recent Errors</h2>
             </div>
-            <div class="p-6">
+            <div class="obs-card-body">
                 {% if recent_errors %}
-                <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+                <ul class="obs-list">
                     {% for error in recent_errors %}
-                    <li class="py-3">
-                        <a href="{% url 'admin:observability_errorlog_change' error.pk %}" class="block hover:bg-gray-50 dark:hover:bg-gray-700 -mx-2 px-2 py-1 rounded">
-                            <div class="flex justify-between items-start">
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ error.exception_type }}</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ error.request_path|truncatechars:40 }}</p>
+                    <li>
+                        <a href="{% url 'admin:observability_errorlog_change' error.pk %}">
+                            <div class="obs-list-item">
+                                <div class="obs-list-main">
+                                    <p class="obs-list-title default">{{ error.exception_type }}</p>
+                                    <p class="obs-list-sub">{{ error.request_path|truncatechars:40 }}</p>
                                 </div>
-                                <div class="ml-4 flex-shrink-0 text-right">
-                                    <p class="text-xs text-gray-400">{{ error.timestamp|timesince }} ago</p>
+                                <div class="obs-list-side">
+                                    <p class="obs-time">{{ error.timestamp|timesince }} ago</p>
                                 </div>
                             </div>
                         </a>
@@ -131,56 +431,55 @@
                     {% endfor %}
                 </ul>
                 {% else %}
-                <p class="text-gray-500 dark:text-gray-400 text-center py-4">No recent errors</p>
+                <p class="obs-empty">No recent errors</p>
                 {% endif %}
             </div>
         </div>
     </div>
 
     <!-- Slow Requests -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
-        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Slow Requests (>1s)</h2>
+    <div class="obs-card" style="padding: 0;">
+        <div class="obs-card-header">
+            <h2>Slow Requests (&gt;1s)</h2>
         </div>
-        <div class="overflow-x-auto">
+        <div class="obs-table-wrap">
             {% if slow_requests %}
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-gray-700">
+            <table class="obs-table">
+                <thead>
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Method</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Path</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Duration</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SQL Queries</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">User</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Time</th>
+                        <th>Method</th>
+                        <th>Path</th>
+                        <th>Duration</th>
+                        <th>SQL Queries</th>
+                        <th>User</th>
+                        <th>Time</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody>
                     {% for req in slow_requests %}
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium
-                                {% if req.method == 'GET' %}bg-blue-100 text-blue-800{% elif req.method == 'POST' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                        <td>
+                            <span class="obs-method {% if req.method == 'GET' %}get{% elif req.method == 'POST' %}post{% else %}other{% endif %}">
                                 {{ req.method }}
                             </span>
                         </td>
-                        <td class="px-6 py-4">
-                            <a href="{% url 'admin:observability_requestlog_change' req.pk %}" class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400">
+                        <td>
+                            <a href="{% url 'admin:observability_requestlog_change' req.pk %}" class="obs-link">
                                 {{ req.path|truncatechars:50 }}
                             </a>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm {% if req.duration_ms > 3000 %}text-red-600 font-bold{% elif req.duration_ms > 1000 %}text-yellow-600{% else %}text-gray-900{% endif %}">
+                        <td>
+                            <span class="obs-duration {% if req.duration_ms > 3000 %}critical{% elif req.duration_ms > 1000 %}slow{% endif %}">
                                 {{ req.duration_ms|floatformat:0 }}ms
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td class="obs-muted">
                             {{ req.sql_query_count }} queries
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td class="obs-muted">
                             {{ req.user_email|default:"Anonymous" }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                        <td class="obs-time">
                             {{ req.timestamp|timesince }} ago
                         </td>
                     </tr>
@@ -188,7 +487,7 @@
                 </tbody>
             </table>
             {% else %}
-            <p class="text-gray-500 dark:text-gray-400 text-center py-8">No slow requests in the last 24 hours</p>
+            <p class="obs-empty" style="padding: 2rem;">No slow requests in the last 24 hours</p>
             {% endif %}
         </div>
     </div>
