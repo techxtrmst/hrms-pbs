@@ -8,8 +8,8 @@ def fix_locationlog_schema(apps, schema_editor):
     with connection.cursor() as cursor:
         # Check if column exists
         cursor.execute("""
-            SELECT column_name 
-            FROM information_schema.columns 
+            SELECT column_name
+            FROM information_schema.columns
             WHERE table_name='employees_locationlog' AND column_name='attendance_session_id'
         """)
         if not cursor.fetchone():
@@ -18,7 +18,7 @@ def fix_locationlog_schema(apps, schema_editor):
             )
             # Add column - using bigint because DEFAULT_AUTO_FIELD is BigAutoField
             cursor.execute("""
-                ALTER TABLE employees_locationlog 
+                ALTER TABLE employees_locationlog
                 ADD COLUMN attendance_session_id bigint NULL
             """)
 
@@ -27,7 +27,7 @@ def fix_locationlog_schema(apps, schema_editor):
             cursor.execute("""
                 ALTER TABLE employees_locationlog
                 ADD CONSTRAINT employees_locationlog_attendance_session_id_fk_employees_attendancesession_id
-                FOREIGN KEY (attendance_session_id) 
+                FOREIGN KEY (attendance_session_id)
                 REFERENCES employees_attendancesession(id)
                 DEFERRABLE INITIALLY DEFERRED
             """)
@@ -35,7 +35,7 @@ def fix_locationlog_schema(apps, schema_editor):
             # Create index
             print("Creating index")
             cursor.execute("""
-                CREATE INDEX employees_locationlog_attendance_session_id_idx 
+                CREATE INDEX employees_locationlog_attendance_session_id_idx
                 ON employees_locationlog(attendance_session_id)
             """)
         else:

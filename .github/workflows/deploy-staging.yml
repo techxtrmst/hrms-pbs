@@ -47,7 +47,7 @@ jobs:
           ALLOWED_HOSTS: 'localhost'
         run: |
           echo "🔍 Checking if models are in sync with migrations..."
-          
+
           # Check if there are any model changes that need new migrations
           if python manage.py makemigrations --check --dry-run 2>&1; then
             echo "✅ All models are in sync with migrations"
@@ -176,7 +176,7 @@ jobs:
             if [ -d "$BACKUP_ROOT" ]; then
               echo "📦 Current backups:"
               ls -lhd "$BACKUP_ROOT"/backup-* 2>/dev/null || echo "No backups found"
-              
+
               # Clean up FAILED deployment backups only (keep all successful ones for now)
               echo "🗑️ Cleaning up failed deployment backups..."
               find "$BACKUP_ROOT" -name "backup-*" -type d | while read backup_dir; do
@@ -331,7 +331,7 @@ jobs:
             if [ -f "docker-compose.yml" ]; then
               echo "💾 Creating backup of current deployment..."
               mkdir -p "$BACKUP_DIR"
-              
+
               # Backup database FIRST (before stopping services)
               DB_BACKUP_SUCCESSFUL=false
               echo "🗃️ Backing up database..."
@@ -339,7 +339,7 @@ jobs:
                 if $DOCKER_COMPOSE_CMD exec -T db pg_dump -U postgres postgres > "$BACKUP_DIR/database-backup.sql" 2>&1; then
                   if [ -f "$BACKUP_DIR/database-backup.sql" ] && [ -s "$BACKUP_DIR/database-backup.sql" ]; then
                     BACKUP_SIZE=$(du -h "$BACKUP_DIR/database-backup.sql" | cut -f1)
-                    
+
                     # Verify backup integrity by checking for SQL dump header
                     if head -n 1 "$BACKUP_DIR/database-backup.sql" | grep -q "PostgreSQL database dump"; then
                       echo "✅ Database backup verified: $BACKUP_SIZE"
@@ -357,18 +357,18 @@ jobs:
               else
                 echo "⚠️ Database container not running, skipping backup"
               fi
-              
+
               # Backup config files
               cp -r . "$BACKUP_DIR/" 2>/dev/null || true
               [ -f ".env" ] && cp ".env" "$BACKUP_DIR/.env" 2>/dev/null || true
-              
+
               # Record current image ID for rollback
               CURRENT_IMAGE=$(docker images hrms-backend:latest -q 2>/dev/null)
               if [ -n "$CURRENT_IMAGE" ]; then
                 echo "$CURRENT_IMAGE" > "$BACKUP_DIR/.image_id"
                 echo "📦 Recorded image ID: $CURRENT_IMAGE"
               fi
-              
+
               # Mark this backup's status
               if [ "$DB_BACKUP_SUCCESSFUL" = true ]; then
                 echo "complete" > "$BACKUP_DIR/.backup_status"
@@ -386,7 +386,7 @@ jobs:
               if [ -n "$CURRENT_IMAGE" ]; then
                 # Tag with deployment ID
                 docker tag hrms-backend:latest "hrms-backend:deploy-$DEPLOYMENT_ID" || true
-                
+
                 # Also update 'last-known-good' if there was a last successful deployment
                 if [ -n "$LAST_SUCCESSFUL_DEPLOYMENT" ]; then
                   LAST_GOOD_IMAGE=$(docker images "hrms-backend:deploy-$LAST_SUCCESSFUL_DEPLOYMENT" -q 2>/dev/null)
@@ -396,7 +396,7 @@ jobs:
                     echo "✅ Tagged last known good: deploy-$LAST_SUCCESSFUL_DEPLOYMENT"
                   fi
                 fi
-                
+
                 echo "✅ Tagged current image: deploy-$DEPLOYMENT_ID ($CURRENT_IMAGE)"
               fi
             fi
@@ -405,18 +405,18 @@ jobs:
             if [ -f "docker-compose.yml" ]; then
               echo "🛑 Stopping current services (preserving database volume)..."
               $DOCKER_COMPOSE_CMD down --remove-orphans || true
-              
+
               # Clean up stopped containers only
               echo "🧹 Cleaning up stopped containers..."
               docker container prune -f || true
-              
+
               # Remove dangling images only (untagged)
               echo "🗑️ Removing dangling images..."
               docker image prune -f || true
-              
+
               # Keep all tagged images for rollback - do NOT remove deployment-tagged images
               echo "✅ Preserving all tagged images for rollback capability"
-              
+
               # Remove only anonymous volumes (preserve named volumes like postgres_data)
               echo "🔄 Cleaning up anonymous volumes (keeping database data)..."
               docker volume prune -f || true
@@ -508,14 +508,14 @@ jobs:
             if ! $DOCKER_COMPOSE_CMD ps --services --filter "status=running" | grep -q "backend\|db\|redis\|nginx"; then
               echo "❌ Not all services are running"
               $DOCKER_COMPOSE_CMD ps
-              
+
               # Mark this deployment as failed
               touch "$BACKUP_DIR/.deployment_failed"
               echo "deployment_id=$DEPLOYMENT_ID" > "$BACKUP_DIR/.deployment_info"
               echo "status=failed" >> "$BACKUP_DIR/.deployment_info"
               echo "reason=services_not_running" >> "$BACKUP_DIR/.deployment_info"
               echo "timestamp=$(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$BACKUP_DIR/.deployment_info"
-              
+
               exit 1
             fi
 
@@ -524,14 +524,14 @@ jobs:
               echo "❌ External health check failed"
               echo "📋 Nginx logs:"
               $DOCKER_COMPOSE_CMD logs nginx --tail=10
-              
+
               # Mark this deployment as failed
               touch "$BACKUP_DIR/.deployment_failed"
               echo "deployment_id=$DEPLOYMENT_ID" > "$BACKUP_DIR/.deployment_info"
               echo "status=failed" >> "$BACKUP_DIR/.deployment_info"
               echo "reason=health_check_failed" >> "$BACKUP_DIR/.deployment_info"
               echo "timestamp=$(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$BACKUP_DIR/.deployment_info"
-              
+
               exit 1
             fi
 
@@ -569,13 +569,13 @@ jobs:
               backup_path="$BACKUP_ROOT/$backup_name"
               if [ -d "$backup_path" ]; then
                 echo "  Removing old successful backup: $backup_name"
-                
+
                 # Also remove associated image tag if it exists
                 if [ -f "$backup_path/.deployment_info" ]; then
                   old_deploy_id=$(grep "deployment_id=" "$backup_path/.deployment_info" | cut -d= -f2)
                   docker rmi "hrms-backend:deploy-$old_deploy_id" 2>/dev/null || true
                 fi
-                
+
                 rm -rf "$backup_path"
               fi
             done
@@ -650,10 +650,10 @@ jobs:
             if [ -z "$LAST_SUCCESSFUL_DEPLOYMENT" ]; then
               echo "❌ No last successful deployment found in state file"
               echo "🔍 Searching for any successful backup..."
-              
+
               # Try to find any successful backup
               LAST_SUCCESSFUL_BACKUP=$(find "$BACKUP_ROOT" -name ".deployment_info" -type f | xargs grep -l "status=success" | sort -r | head -n 1)
-              
+
               if [ -n "$LAST_SUCCESSFUL_BACKUP" ]; then
                 LAST_SUCCESSFUL_DEPLOYMENT=$(grep "deployment_id=" "$LAST_SUCCESSFUL_BACKUP" | cut -d= -f2)
                 echo "✅ Found successful backup: $LAST_SUCCESSFUL_DEPLOYMENT"
@@ -671,7 +671,7 @@ jobs:
             if [ -z "$ROLLBACK_IMAGE" ]; then
               # Try deployment-specific tag
               ROLLBACK_IMAGE=$(docker images "hrms-backend:deploy-$LAST_SUCCESSFUL_DEPLOYMENT" -q 2>/dev/null)
-              
+
               if [ -z "$ROLLBACK_IMAGE" ]; then
                 echo "❌ No rollback image found"
                 echo "ℹ️ Available images:"
@@ -691,19 +691,19 @@ jobs:
 
             if [ -d "$ROLLBACK_BACKUP" ]; then
               echo "📋 Restoring configuration from: $ROLLBACK_BACKUP"
-              
+
               # Restore .env
               if [ -f "$ROLLBACK_BACKUP/.env" ]; then
                 cp "$ROLLBACK_BACKUP/.env" "./.env"
                 echo "✅ Restored .env file"
               fi
-              
+
               # Restore docker-compose.yml if it exists
               if [ -f "$ROLLBACK_BACKUP/docker-compose.yml" ]; then
                 cp "$ROLLBACK_BACKUP/docker-compose.yml" "./docker-compose.yml"
                 echo "✅ Restored docker-compose.yml"
               fi
-              
+
               # Check if database backup exists and ask about restoration
               if [ -f "$ROLLBACK_BACKUP/database-backup.sql" ] && [ -s "$ROLLBACK_BACKUP/database-backup.sql" ]; then
                 BACKUP_SIZE=$(du -h "$ROLLBACK_BACKUP/database-backup.sql" | cut -f1)

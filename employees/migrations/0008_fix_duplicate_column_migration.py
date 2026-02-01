@@ -13,16 +13,16 @@ def check_and_add_columns_safely(apps, schema_editor):
     with connection.cursor() as cursor:
         # Check if current_session_type column exists
         cursor.execute("""
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_name='employees_attendance' 
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name='employees_attendance'
             AND column_name='current_session_type'
         """)
 
         if not cursor.fetchone():
             print("Adding current_session_type column...")
             cursor.execute("""
-                ALTER TABLE employees_attendance 
+                ALTER TABLE employees_attendance
                 ADD COLUMN current_session_type VARCHAR(20) NULL
             """)
             print("✅ Added current_session_type column")
@@ -31,16 +31,16 @@ def check_and_add_columns_safely(apps, schema_editor):
 
         # Check if daily_sessions_count column exists
         cursor.execute("""
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_name='employees_attendance' 
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name='employees_attendance'
             AND column_name='daily_sessions_count'
         """)
 
         if not cursor.fetchone():
             print("Adding daily_sessions_count column...")
             cursor.execute("""
-                ALTER TABLE employees_attendance 
+                ALTER TABLE employees_attendance
                 ADD COLUMN daily_sessions_count INTEGER DEFAULT 0 NOT NULL
             """)
             print("✅ Added daily_sessions_count column")
@@ -49,16 +49,16 @@ def check_and_add_columns_safely(apps, schema_editor):
 
         # Check if max_daily_sessions column exists
         cursor.execute("""
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_name='employees_attendance' 
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name='employees_attendance'
             AND column_name='max_daily_sessions'
         """)
 
         if not cursor.fetchone():
             print("Adding max_daily_sessions column...")
             cursor.execute("""
-                ALTER TABLE employees_attendance 
+                ALTER TABLE employees_attendance
                 ADD COLUMN max_daily_sessions INTEGER DEFAULT 3 NOT NULL
             """)
             print("✅ Added max_daily_sessions column")
@@ -67,8 +67,8 @@ def check_and_add_columns_safely(apps, schema_editor):
 
             # Update existing records to have max 3 sessions
             cursor.execute("""
-                UPDATE employees_attendance 
-                SET max_daily_sessions = 3 
+                UPDATE employees_attendance
+                SET max_daily_sessions = 3
                 WHERE max_daily_sessions > 3
             """)
             updated_count = cursor.rowcount
@@ -76,16 +76,16 @@ def check_and_add_columns_safely(apps, schema_editor):
 
         # Check if total_working_hours column exists
         cursor.execute("""
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_name='employees_attendance' 
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name='employees_attendance'
             AND column_name='total_working_hours'
         """)
 
         if not cursor.fetchone():
             print("Adding total_working_hours column...")
             cursor.execute("""
-                ALTER TABLE employees_attendance 
+                ALTER TABLE employees_attendance
                 ADD COLUMN total_working_hours DECIMAL(5,2) DEFAULT 0.00 NOT NULL
             """)
             print("✅ Added total_working_hours column")

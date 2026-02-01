@@ -13,13 +13,13 @@
             --text-main: #1e293b;
             --text-muted: #64748b;
         }
-        
+
         body {
             background: #f8fafc;
             padding: 20px;
             font-family: 'Inter', sans-serif;
         }
-        
+
         .test-container {
             max-width: 800px;
             margin: 0 auto;
@@ -28,7 +28,7 @@
             border-radius: 16px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        
+
         .device-info {
             text-align: center;
             margin-bottom: 30px;
@@ -37,20 +37,20 @@
             border-radius: 12px;
             font-size: 0.9rem;
         }
-        
+
         .test-section {
             margin-bottom: 40px;
             padding: 20px;
             border: 1px solid #e2e8f0;
             border-radius: 12px;
         }
-        
+
         .test-section h6 {
             color: #6366f1;
             font-weight: 600;
             margin-bottom: 20px;
         }
-        
+
         /* Profile avatar test styles */
         .profile-hero {
             height: 120px;
@@ -58,7 +58,7 @@
             border-radius: 12px;
             margin-bottom: 20px;
         }
-        
+
         .profile-card-test {
             background: white;
             border-radius: 12px;
@@ -68,14 +68,14 @@
             z-index: 10;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
-        
+
         .avatar-test-wrapper {
             position: relative;
             width: 100px;
             height: 100px;
             margin: -50px auto 20px;
         }
-        
+
         .avatar-test {
             width: 100%;
             height: 100%;
@@ -84,7 +84,7 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             object-fit: cover;
         }
-        
+
         .avatar-placeholder {
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             color: white;
@@ -93,7 +93,7 @@
             justify-content: center;
             font-size: 2rem;
         }
-        
+
         .camera-btn-test {
             position: absolute;
             bottom: 2px;
@@ -109,7 +109,7 @@
             justify-content: center;
             font-size: 0.7rem;
         }
-        
+
         .employee-list-test {
             display: flex;
             align-items: center;
@@ -128,9 +128,9 @@
             <strong>Device Type:</strong> <span id="device-type"></span><br>
             <strong>Orientation:</strong> <span id="orientation"></span>
         </div>
-        
+
         <h4 class="text-center mb-4 text-primary">Profile Avatar Responsive Test</h4>
-        
+
         <!-- Profile Circle Test -->
         <div class="test-section">
             <h6><i class="fas fa-chart-pie me-2"></i>Profile Circles (Stat Rings)</h6>
@@ -161,7 +161,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Profile Avatar Test -->
         <div class="test-section">
             <h6><i class="fas fa-user-circle me-2"></i>Profile Avatar</h6>
@@ -181,7 +181,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Employee List Test -->
         <div class="test-section">
             <h6><i class="fas fa-users me-2"></i>Employee List Avatars</h6>
@@ -207,7 +207,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="text-center mt-4">
             <p class="text-muted small">
                 <i class="fas fa-info-circle me-1"></i>
@@ -222,7 +222,7 @@
             const width = window.innerWidth;
             const height = window.innerHeight;
             document.getElementById('screen-width').textContent = width;
-            
+
             let deviceType = 'Desktop';
             if (width <= 320) deviceType = 'Extra Small Phone';
             else if (width <= 400) deviceType = 'Small Phone';
@@ -230,13 +230,13 @@
             else if (width <= 768) deviceType = 'Mobile/Tablet';
             else if (width <= 992) deviceType = 'Tablet';
             else if (width <= 1200) deviceType = 'Small Desktop';
-            
+
             document.getElementById('device-type').textContent = deviceType;
-            
+
             const orientation = width > height ? 'Landscape' : 'Portrait';
             document.getElementById('orientation').textContent = orientation;
         }
-        
+
         updateDeviceInfo();
         window.addEventListener('resize', updateDeviceInfo);
     </script>

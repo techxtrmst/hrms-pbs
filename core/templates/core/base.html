@@ -433,12 +433,12 @@
             :root {
                 --sidebar-width: 260px;
             }
-            
+
             .topbar {
                 width: calc(100% - var(--sidebar-width));
                 padding: 15px 24px;
             }
-            
+
             .topbar h4 {
                 font-size: 1.1rem;
                 max-width: 250px;
@@ -449,17 +449,17 @@
             :root {
                 --sidebar-width: 240px;
             }
-            
+
             .topbar {
                 padding: 15px 20px;
                 width: calc(100% - var(--sidebar-width));
             }
-            
+
             .topbar h4 {
                 font-size: 1rem;
                 max-width: 200px;
             }
-            
+
             .content {
                 padding: 20px;
             }
@@ -493,11 +493,11 @@
                 overflow-y: auto;
                 -webkit-overflow-scrolling: touch;
             }
-            
+
             .sidebar.show {
                 transform: translateX(0);
             }
-            
+
             .content {
                 margin-left: 0;
                 padding: 15px;
@@ -505,7 +505,7 @@
                 min-height: 100vh;
                 overflow-x: hidden;
             }
-            
+
             /* Mobile Topbar Adjustments */
             .topbar {
                 margin-left: 0;
@@ -517,24 +517,24 @@
                 min-height: 64px;
                 box-sizing: border-box;
             }
-            
+
             .topbar .d-flex:first-child {
                 gap: 12px;
                 flex-wrap: nowrap;
                 overflow: hidden;
             }
-            
+
             .topbar .d-flex:last-child {
                 gap: 12px;
                 flex-shrink: 0;
             }
-            
+
             .topbar h4 {
                 font-size: 0.95rem;
                 max-width: 150px;
                 flex-shrink: 1;
             }
-            
+
             .mobile-menu-toggle {
                 display: flex !important;
                 order: -1; /* Ensure it appears first */
@@ -604,30 +604,30 @@
             .search-result-meta span {
                 font-size: 13px;
             }
-            
+
             /* User info section adjustments */
             .topbar .text-end {
                 display: block !important;
                 min-width: 80px;
                 text-align: right;
             }
-            
+
             .topbar .text-end .fw-bold {
                 font-size: 0.8rem;
                 line-height: 1.2;
             }
-            
+
             .topbar .text-end .text-muted {
                 font-size: 0.7rem;
                 line-height: 1.1;
             }
-            
+
             /* Dropdown avatar adjustments */
             .topbar .dropdown img {
                 width: 36px;
                 height: 36px;
             }
-            
+
             /* Notification adjustments */
             .notification-dropdown {
                 width: calc(100vw - 30px);
@@ -640,33 +640,33 @@
                 border-radius: 16px;
                 box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             }
-            
+
             /* Prevent body scroll when sidebar is open */
             body.sidebar-open {
                 overflow: hidden;
                 position: fixed;
                 width: 100%;
             }
-            
+
             /* Aggressive spacing reset for mobile */
             .sidebar * {
                 margin-top: 0 !important;
                 margin-bottom: 0 !important;
             }
-            
+
             .sidebar > a,
             .sidebar > .sidebar-dropdown-toggle {
                 margin: 0 !important;
                 padding: 10px 24px !important;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             }
-            
+
             .sidebar .sub-menu a {
                 margin: 0 !important;
                 padding: 8px 24px 8px 48px !important;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.03);
             }
-            
+
             /* Completely hide collapsed sections */
             .sidebar .collapse:not(.show) {
                 display: none !important;
@@ -682,27 +682,27 @@
                 position: absolute !important;
                 left: -9999px !important;
             }
-            
+
             .sidebar .collapse:not(.show) * {
                 display: none !important;
                 height: 0 !important;
                 min-height: 0 !important;
                 max-height: 0 !important;
             }
-            
+
             /* Force any element with excessive height to be limited */
             .sidebar * {
                 max-height: 50px !important;
             }
-            
+
             .sidebar .collapse.show {
                 max-height: none !important;
             }
-            
+
             .sidebar .collapse.show * {
                 max-height: none !important;
             }
-            
+
             /* Specific fix for any 250px height elements */
             .sidebar [style*="height: 250px"],
             .sidebar [style*="height:250px"] {
@@ -710,21 +710,21 @@
                 max-height: 20px !important;
             }
         }
-            
+
             /* Hide desktop-only elements */
             .d-none.d-md-block {
                 display: none !important;
             }
-            
+
             /* Adjust brand section for mobile */
             .brand-section {
                 padding: 20px 24px;
             }
-            
+
             .brand-section h3 {
                 font-size: 1.2rem;
             }
-            
+
             /* Adjust sidebar links for mobile */
             .sidebar a {
                 padding: 12px 24px;
@@ -734,26 +734,26 @@
                 align-items: center;
                 margin: 1px 0;
             }
-            
+
             .sidebar-section-title {
                 padding: 16px 24px 8px;
                 font-size: 0.65rem;
             }
-            
+
             /* Notification dropdown adjustments */
             .notification-dropdown {
                 width: calc(100vw - 30px);
                 right: 15px;
                 left: 15px;
             }
-            
+
             /* Topbar user info adjustments - only hide on very small screens */
-            
+
             .topbar .dropdown img {
                 width: 35px;
                 height: 35px;
             }
-            
+
             /* Prevent body scroll when sidebar is open */
             body.sidebar-open {
                 overflow: hidden;
@@ -769,18 +769,18 @@
                 min-height: 56px;
                 gap: 8px;
             }
-            
+
             .topbar .d-flex:first-child {
                 gap: 8px;
                 min-width: 0;
                 flex: 1;
             }
-            
+
             .topbar .d-flex:last-child {
                 gap: 8px;
                 flex-shrink: 0;
             }
-            
+
             .topbar h4 {
                 font-size: 0.9rem;
                 max-width: 100px;
@@ -788,7 +788,7 @@
                 text-overflow: ellipsis;
                 white-space: nowrap;
             }
-            
+
             .mobile-menu-toggle {
                 min-width: 40px;
                 min-height: 40px;
@@ -835,22 +835,22 @@
             .search-result-meta span {
                 font-size: 12px;
             }
-            
+
             /* Hide user info text on very small screens only */
             .topbar .text-end {
                 display: none !important;
             }
-            
+
             /* Compact dropdown avatar */
             .topbar .dropdown img {
                 width: 32px;
                 height: 32px;
             }
-            
+
             .content {
                 padding: 10px;
             }
-            
+
             /* Notification dropdown adjustments */
             .notification-dropdown {
                 width: calc(100vw - 20px);
@@ -1105,7 +1105,7 @@
                 /* Ensure dropdown is not cut off by parent containers */
                 position: fixed;
             }
-            
+
             .notification-header {
                 padding: 18px 24px;
                 background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
@@ -1113,37 +1113,37 @@
                 top: 0;
                 z-index: 10;
             }
-            
+
             .notification-list {
                 max-height: 520px;
                 padding: 8px 0;
                 overflow-y: auto;
                 overflow-x: hidden;
             }
-            
+
             /* Ensure proper positioning relative to parent */
             #notificationContainer {
                 position: relative;
             }
-            
+
             /* Better scrollbar for desktop */
             .notification-list::-webkit-scrollbar {
                 width: 6px;
             }
-            
+
             .notification-list::-webkit-scrollbar-track {
                 background: #f8fafc;
             }
-            
+
             .notification-list::-webkit-scrollbar-thumb {
                 background: #cbd5e0;
                 border-radius: 3px;
             }
-            
+
             .notification-list::-webkit-scrollbar-thumb:hover {
                 background: #a0aec0;
             }
-            
+
             /* Ensure user info is visible on desktop/laptop */
             .topbar .text-end {
                 display: block !important;
@@ -1305,7 +1305,7 @@
                 z-index: 1060;
                 box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             }
-            
+
             .notification-header {
                 padding: 12px 16px;
                 position: sticky;
@@ -1314,17 +1314,17 @@
                 background: white;
                 border-radius: 16px 16px 0 0;
             }
-            
+
             .notification-header h6 {
                 font-size: 0.9rem;
             }
-            
+
             .notification-list {
                 max-height: calc(100vh - 140px);
                 padding-bottom: 10px;
                 -webkit-overflow-scrolling: touch;
             }
-            
+
             .notification-item {
                 padding: 12px 16px;
                 border-bottom: 1px solid #f1f3f5;
@@ -1335,28 +1335,28 @@
                 -webkit-tap-highlight-color: transparent;
                 touch-action: manipulation;
             }
-            
+
             .notification-item:active {
                 background: rgba(99, 102, 241, 0.1);
             }
-            
+
             .notification-item-content {
                 font-size: 0.85rem;
                 line-height: 1.4;
             }
-            
+
             .notification-item-time {
                 font-size: 0.7rem;
             }
-            
+
             .notification-empty {
                 padding: 30px 16px;
             }
-            
+
             .notification-empty i {
                 font-size: 2.5rem;
             }
-            
+
             /* Sound button adjustments */
             #testSoundBtn {
                 padding: 6px;
@@ -1367,7 +1367,7 @@
                 align-items: center;
                 justify-content: center;
             }
-            
+
             #markAllRead {
                 font-size: 0.7rem;
                 padding: 4px 8px;
@@ -1375,7 +1375,7 @@
                 display: flex;
                 align-items: center;
             }
-            
+
             #closeNotificationDropdown {
                 min-height: 32px;
                 min-width: 32px;
@@ -1393,44 +1393,44 @@
                 border-radius: 12px;
                 max-height: calc(100vh - 60px);
             }
-            
+
             .notification-header {
                 padding: 10px 12px;
                 border-radius: 12px 12px 0 0;
             }
-            
+
             .notification-header h6 {
                 font-size: 0.85rem;
             }
-            
+
             .notification-list {
                 max-height: calc(100vh - 120px);
             }
-            
+
             .notification-item {
                 padding: 10px 12px;
             }
-            
+
             .notification-item-content {
                 font-size: 0.8rem;
             }
-            
+
             .notification-item-time {
                 font-size: 0.65rem;
             }
-            
+
             .notification-empty {
                 padding: 20px 12px;
             }
-            
+
             #closeNotificationDropdown {
                 font-size: 1rem;
             }
-            
+
             #testSoundBtn {
                 display: none; /* Hide sound button on very small screens */
             }
-            
+
             #markAllRead {
                 font-size: 0.65rem;
                 padding: 3px 6px;
@@ -1444,7 +1444,7 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             visibility: hidden;
         }
-        
+
         .notification-dropdown.show {
             opacity: 1;
             transform: translateY(0);
@@ -1462,7 +1462,7 @@
                 width: 420px;
                 max-height: 650px;
             }
-            
+
             .notification-list {
                 max-height: 570px;
             }
@@ -1475,12 +1475,12 @@
                 opacity: 1 !important;
                 visibility: visible !important;
             }
-            
+
             .topbar .text-end .fw-bold {
                 font-size: 0.95rem;
                 color: #1e2139 !important;
             }
-            
+
             .topbar .text-end .text-muted {
                 font-size: 0.8rem !important;
                 color: #6c7293 !important;
@@ -1509,7 +1509,7 @@
                 /* Ensure dropdown stays within viewport */
                 max-width: calc(100vw - 40px);
             }
-            
+
             /* If dropdown would go off-screen, adjust position */
             .notification-dropdown.adjust-position {
                 right: auto;
@@ -1533,7 +1533,7 @@
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
         }
-        
+
         .notification-backdrop.show {
             opacity: 1;
         }
@@ -1857,7 +1857,7 @@
             <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation">
                 <i class="fas fa-bars"></i>
             </button>
-            
+
             <h4 class="m-0 fw-bold" style="color: #4a5568">
                 {% if request.user.company %}
                 {% if request.user.company.slug == 'petabytz' %}
@@ -2002,21 +2002,21 @@
                 const mobileToggle = document.getElementById('mobileMenuToggle');
                 const sidebar = document.querySelector('.sidebar');
                 const overlay = document.getElementById('sidebarOverlay');
-                
+
                 if (mobileToggle && sidebar && overlay) {
                     // Check if responsive.js already handled this
                     if (!mobileToggle.hasAttribute('data-responsive-handled')) {
                         console.log('Responsive.js not detected, using fallback mobile navigation');
-                        
+
                         // Simple fallback mobile navigation
                         mobileToggle.addEventListener('click', function(e) {
                             e.preventDefault();
                             e.stopPropagation();
-                            
+
                             console.log('Fallback: Mobile toggle clicked');
-                            
+
                             const isOpen = sidebar.classList.contains('show');
-                            
+
                             if (isOpen) {
                                 sidebar.classList.remove('show');
                                 overlay.classList.remove('show');
@@ -2031,7 +2031,7 @@
                                 this.setAttribute('aria-expanded', 'true');
                             }
                         });
-                        
+
                         overlay.addEventListener('click', function() {
                             sidebar.classList.remove('show');
                             overlay.classList.remove('show');
@@ -2039,7 +2039,7 @@
                             mobileToggle.querySelector('i').className = 'fas fa-bars';
                             mobileToggle.setAttribute('aria-expanded', 'false');
                         });
-                        
+
                         // Prevent dropdown toggles from closing sidebar
                         const dropdownToggles = sidebar.querySelectorAll('[data-bs-toggle="collapse"]');
                         dropdownToggles.forEach(toggle => {
@@ -2048,13 +2048,13 @@
                                 console.log('Dropdown toggle clicked, preventing sidebar close');
                             });
                         });
-                        
+
                         mobileToggle.setAttribute('data-responsive-handled', 'fallback');
                     }
                 }
             }, 500);
         });
-        
+
         // Background Location Tracking Integration
         // Load the background location tracker
         const backgroundScript = document.createElement('script');
@@ -2297,12 +2297,12 @@
         if (searchInput) {
             console.log('Search input found:', searchInput);
             console.log('Search results div found:', searchResults);
-            
+
             // Search on input with debouncing
             searchInput.addEventListener('input', function () {
                 const query = this.value.trim();
                 console.log('🔍 Input event triggered, query:', query);
-                
+
                 // Visual feedback - change border color when typing
                 this.style.borderColor = query.length > 0 ? '#6366f1' : '#e8ecf4';
 
@@ -2377,14 +2377,14 @@
         function hideSearchResults() {
             if (isSearchOpen) {
                 searchResults.classList.remove('show');
-                
+
                 // Wait for animation to complete before hiding
                 setTimeout(() => {
                     searchResults.style.display = 'none';
                 }, 300);
-                
+
                 isSearchOpen = false;
-                
+
                 // Remove backdrop
                 removeSearchBackdrop();
             }
@@ -2393,7 +2393,7 @@
         function createSearchBackdrop() {
             // Remove existing backdrop
             removeSearchBackdrop();
-            
+
             // Create new backdrop
             const backdrop = document.createElement('div');
             backdrop.id = 'searchBackdrop';
@@ -2409,14 +2409,14 @@
                 transition: opacity 0.3s ease;
                 pointer-events: auto;
             `;
-            
+
             document.body.appendChild(backdrop);
-            
+
             // Trigger animation
             setTimeout(() => {
                 backdrop.style.opacity = '1';
             }, 10);
-            
+
             // Close on backdrop click
             backdrop.addEventListener('click', hideSearchResults);
         }
@@ -2434,7 +2434,7 @@
         function performSearch(query) {
             console.log('Performing search for:', query);
             console.log('Fetch URL:', `/api/search-employees/?q=${encodeURIComponent(query)}`);
-            
+
             fetch(`/api/search-employees/?q=${encodeURIComponent(query)}`, {
                 method: 'GET',
                 headers: {
@@ -2446,22 +2446,22 @@
                 .then(response => {
                     console.log('Search response status:', response.status);
                     console.log('Search response headers:', response.headers);
-                    
+
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
-                    
+
                     return response.json();
                 })
                 .then(data => {
                     console.log('Search data received:', data);
-                    
+
                     if (data.error) {
                         console.error('API returned error:', data.error);
                         searchResults.innerHTML = `<div class="search-no-results"><i class="fas fa-exclamation-circle"></i><div>Error: ${data.error}</div></div>`;
                         return;
                     }
-                    
+
                     displaySearchResults(data.employees);
                 })
                 .catch(error => {
@@ -2472,7 +2472,7 @@
 
         function displaySearchResults(employees) {
             console.log('Displaying results for employees:', employees);
-            
+
             if (employees.length === 0) {
                 searchResults.innerHTML = `
                     <div class="search-no-results">
@@ -2530,7 +2530,7 @@
         });
 
         // Search functionality complete
-        
+
     </script>
     {% endif %}
 
@@ -2555,17 +2555,17 @@
                 if (window.innerWidth > 768) {
                     adjustNotificationPosition();
                 }
-                
+
                 notificationDropdown.style.display = 'block';
                 // Force reflow before adding show class for smooth animation
                 notificationDropdown.offsetHeight;
                 notificationDropdown.classList.add('show');
-                
+
                 // Add backdrop for mobile
                 if (window.innerWidth <= 768) {
                     createNotificationBackdrop();
                 }
-                
+
                 loadNotifications();
             } else {
                 closeNotificationDropdown();
@@ -2577,12 +2577,12 @@
             const dropdown = notificationDropdown;
             const containerRect = container.getBoundingClientRect();
             const dropdownWidth = 420; // Max width from CSS
-            
+
             // For desktop, use fixed positioning and calculate position relative to viewport
             if (window.innerWidth > 768) {
                 dropdown.style.position = 'fixed';
                 dropdown.style.top = (containerRect.bottom + 10) + 'px';
-                
+
                 // Check if dropdown would go off the right edge
                 if (containerRect.right - dropdownWidth < 20) {
                     // Position from left edge of container
@@ -2604,7 +2604,7 @@
             if (existingBackdrop) {
                 existingBackdrop.remove();
             }
-            
+
             // Create new backdrop
             const backdrop = document.createElement('div');
             backdrop.id = 'notificationBackdrop';
@@ -2621,21 +2621,21 @@
                 transition: opacity 0.3s ease;
                 pointer-events: auto;
             `;
-            
+
             document.body.appendChild(backdrop);
-            
+
             // Trigger animation
             setTimeout(() => {
                 backdrop.style.opacity = '1';
             }, 10);
-            
+
             // Close on backdrop click
             backdrop.addEventListener('click', closeNotificationDropdown);
         }
 
         function closeNotificationDropdown() {
             notificationDropdown.classList.remove('show');
-            
+
             // Wait for animation to complete before hiding
             setTimeout(() => {
                 notificationDropdown.style.display = 'none';
@@ -2646,9 +2646,9 @@
                 notificationDropdown.style.right = '';
                 notificationDropdown.style.left = '';
             }, 300);
-            
+
             isDropdownOpen = false;
-            
+
             // Remove backdrop
             const backdrop = document.getElementById('notificationBackdrop');
             if (backdrop) {
@@ -2689,13 +2689,13 @@
         document.addEventListener('DOMContentLoaded', function() {
             const userInfoSection = document.getElementById('userInfoSection');
             const debugInfo = document.getElementById('debugInfo');
-            
+
             if (userInfoSection) {
                 console.log('User info section found:', userInfoSection);
                 console.log('Computed style:', window.getComputedStyle(userInfoSection));
                 console.log('Display:', window.getComputedStyle(userInfoSection).display);
                 console.log('Visibility:', window.getComputedStyle(userInfoSection).visibility);
-                
+
                 // Show debug info on double-click
                 userInfoSection.addEventListener('dblclick', function() {
                     if (debugInfo) {
@@ -2957,38 +2957,38 @@
     {% endif %}
 
     {% block extra_js %}{% endblock %}
-    
+
     <!-- Employee Search Functionality -->
     <script>
         // Simple typing test with actual search
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🔍 DOM loaded, setting up search...');
-            
+
             const searchInput = document.getElementById('employeeSearchInput');
             const searchResults = document.getElementById('searchResults');
             let searchTimeout;
-            
+
             if (searchInput && searchResults) {
                 console.log('✅ Search input and results found, adding event listener');
-                
+
                 searchInput.addEventListener('input', function() {
                     const query = this.value.trim();
                     console.log('⌨️ Typing detected:', query);
-                    
+
                     // Change border color to show it's working
                     this.style.borderColor = query.length > 0 ? '#28a745' : '#e8ecf4';
-                    
+
                     // Clear previous timeout
                     clearTimeout(searchTimeout);
-                    
+
                     if (query.length >= 1) {
                         console.log('🔍 Query long enough, searching for:', query);
-                        
+
                         // Show loading
                         searchResults.style.display = 'block';
                         searchResults.classList.add('show');
                         searchResults.innerHTML = '<div class="search-loading"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
-                        
+
                         // Debounce search
                         searchTimeout = setTimeout(() => {
                             performLiveSearch(query);
@@ -2999,16 +2999,16 @@
                         searchResults.classList.remove('show');
                     }
                 });
-                
+
                 console.log('✅ Event listener added successfully');
             } else {
                 console.error('❌ Search elements not found');
             }
-            
+
             // Live search function
             function performLiveSearch(query) {
                 console.log('🌐 Performing live search for:', query);
-                
+
                 fetch(`/api/search-employees/?q=${encodeURIComponent(query)}`)
                     .then(response => {
                         console.log('📡 Live search response status:', response.status);
@@ -3016,7 +3016,7 @@
                     })
                     .then(data => {
                         console.log('📊 Live search data:', data);
-                        
+
                         if (data.employees && data.employees.length > 0) {
                             console.log('✅ Found employees:', data.employees.length);
                             displayLiveResults(data.employees);
@@ -3030,11 +3030,11 @@
                         searchResults.innerHTML = `<div class="search-no-results"><i class="fas fa-exclamation-circle"></i><div>Error: ${error.message}</div></div>`;
                     });
             }
-            
+
             // Display live results
             function displayLiveResults(employees) {
                 console.log('📋 Displaying live results for', employees.length, 'employees');
-                
+
                 let html = '';
                 employees.forEach(emp => {
                     const nameParts = emp.name.split(' ');
@@ -3056,11 +3056,11 @@
                         </div>
                     `;
                 });
-                
+
                 searchResults.innerHTML = html;
                 console.log('✅ Live results displayed successfully');
             }
-            
+
             // Navigation function
             window.navigateToEmployee = function(url) {
                 console.log('🔗 Navigating to:', url);
@@ -3068,7 +3068,7 @@
                 searchResults.classList.remove('show');
                 window.location.href = url;
             };
-            
+
             // Close results when clicking outside
             document.addEventListener('click', function(e) {
                 if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {

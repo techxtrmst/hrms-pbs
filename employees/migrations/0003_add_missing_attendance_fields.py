@@ -11,16 +11,16 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
             sql="""
             -- Add missing columns to employees_attendance table
-            ALTER TABLE employees_attendance 
+            ALTER TABLE employees_attendance
             ADD COLUMN IF NOT EXISTS daily_sessions_count INTEGER DEFAULT 0;
-            
-            ALTER TABLE employees_attendance 
+
+            ALTER TABLE employees_attendance
             ADD COLUMN IF NOT EXISTS max_daily_sessions INTEGER DEFAULT 3;
-            
-            ALTER TABLE employees_attendance 
+
+            ALTER TABLE employees_attendance
             ADD COLUMN IF NOT EXISTS current_session_type VARCHAR(20);
-            
-            ALTER TABLE employees_attendance 
+
+            ALTER TABLE employees_attendance
             ADD COLUMN IF NOT EXISTS user_timezone VARCHAR(50) DEFAULT 'Asia/Kolkata';
             """,
             reverse_sql="""

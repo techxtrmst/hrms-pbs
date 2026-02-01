@@ -4,12 +4,12 @@ from django.db import migrations
 
 def update_location_currencies(apps, schema_editor):
     Location = apps.get_model('companies', 'Location')
-    
+
     # Update Dhaka locations to BDT
     # We update if name contains Dhaka or country code is BD
     dhaka_updated = Location.objects.filter(name__icontains='Dhaka').update(currency='BDT')
     bd_updated = Location.objects.filter(country_code__iexact='BD').update(currency='BDT')
-    
+
     # Update US locations to USD
     us_updated = Location.objects.filter(name__icontains='United States').update(currency='USD')
     us_code_updated = Location.objects.filter(country_code__iexact='US').update(currency='USD')

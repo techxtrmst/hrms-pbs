@@ -171,12 +171,12 @@
             :root {
                 --sidebar-width: 260px;
             }
-            
+
             .topbar {
                 width: calc(100% - var(--sidebar-width));
                 padding: 15px 24px;
             }
-            
+
             .topbar h4 {
                 font-size: 1.1rem;
                 max-width: 250px;
@@ -187,12 +187,12 @@
             :root {
                 --sidebar-width: 240px;
             }
-            
+
             .topbar {
                 padding: 15px 20px;
                 width: calc(100% - var(--sidebar-width));
             }
-            
+
             .topbar h4 {
                 font-size: 1rem;
                 max-width: 200px;
@@ -216,24 +216,24 @@
                 min-height: 64px;
                 box-sizing: border-box;
             }
-            
+
             .topbar .d-flex:first-child {
                 gap: 12px;
                 flex-wrap: nowrap;
                 overflow: hidden;
             }
-            
+
             .topbar .d-flex:last-child {
                 gap: 12px;
                 flex-shrink: 0;
             }
-            
+
             .topbar h4 {
                 font-size: 0.95rem;
                 max-width: 150px;
                 flex-shrink: 1;
             }
-            
+
             .mobile-menu-toggle {
                 display: flex !important;
                 order: -1;
@@ -263,23 +263,23 @@
                 left: 10px;
                 font-size: 13px;
             }
-            
+
             .user-info {
                 display: block !important;
                 min-width: 80px;
                 text-align: right;
             }
-            
+
             .user-info .fw-bold {
                 font-size: 0.8rem;
                 line-height: 1.2;
             }
-            
+
             .user-info .text-muted {
                 font-size: 0.7rem;
                 line-height: 1.1;
             }
-            
+
             .topbar .dropdown img {
                 width: 36px;
                 height: 36px;
@@ -293,18 +293,18 @@
                 min-height: 56px;
                 gap: 8px;
             }
-            
+
             .topbar .d-flex:first-child {
                 gap: 8px;
                 min-width: 0;
                 flex: 1;
             }
-            
+
             .topbar .d-flex:last-child {
                 gap: 8px;
                 flex-shrink: 0;
             }
-            
+
             .topbar h4 {
                 font-size: 0.9rem;
                 max-width: 100px;
@@ -312,7 +312,7 @@
                 text-overflow: ellipsis;
                 white-space: nowrap;
             }
-            
+
             .mobile-menu-toggle {
                 min-width: 40px;
                 min-height: 40px;
@@ -339,11 +339,11 @@
                 left: 8px;
                 font-size: 12px;
             }
-            
+
             .user-info {
                 display: none !important;
             }
-            
+
             .topbar .dropdown img {
                 width: 32px;
                 height: 32px;
@@ -382,7 +382,7 @@
                 transition: transform 0.3s ease;
                 z-index: 1000;
             }
-            
+
             .demo-sidebar.show {
                 transform: translateX(0);
             }
@@ -411,11 +411,11 @@
             <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation">
                 <i class="fas fa-bars"></i>
             </button>
-            
+
             <h4 class="m-0 fw-bold" style="color: #4a5568">
                 PetaBytz HRMS
             </h4>
-            
+
             <!-- Employee Search Bar -->
             <div class="employee-search-container">
                 <i class="fas fa-search search-icon"></i>
@@ -423,7 +423,7 @@
                     placeholder="Search employees..." autocomplete="off">
             </div>
         </div>
-        
+
         <div class="d-flex align-items-center gap-3">
             <!-- Notification Bell -->
             <div class="position-relative">
@@ -438,7 +438,7 @@
                 <div class="fw-bold">John Doe</div>
                 <div class="text-muted">Administrator</div>
             </div>
-            
+
             <div class="dropdown">
                 <a href="#" class="d-flex align-items-center link-dark text-decoration-none dropdown-toggle"
                     data-bs-toggle="dropdown" aria-expanded="false">
@@ -494,13 +494,13 @@
 
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <script>
         // Mobile menu toggle functionality
         document.getElementById('mobileMenuToggle').addEventListener('click', function() {
             const sidebar = document.getElementById('demoSidebar');
             const isOpen = sidebar.classList.contains('show');
-            
+
             if (isOpen) {
                 sidebar.classList.remove('show');
                 this.querySelector('i').className = 'fas fa-bars';
@@ -521,13 +521,13 @@
         function logScreenSize() {
             const width = window.innerWidth;
             let breakpoint = '';
-            
+
             if (width >= 1200) breakpoint = 'Desktop (XL)';
             else if (width >= 992) breakpoint = 'Laptop (LG)';
             else if (width >= 768) breakpoint = 'Tablet (MD)';
             else if (width >= 576) breakpoint = 'Mobile (SM)';
             else breakpoint = 'Small Mobile (XS)';
-            
+
             console.log(`Screen size: ${width}px - ${breakpoint}`);
         }
 

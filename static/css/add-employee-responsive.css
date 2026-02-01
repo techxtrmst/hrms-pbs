@@ -437,7 +437,7 @@ body {
     .container {
         max-width: 1100px;
     }
-    
+
     .form-card {
         padding: 2.5rem;
     }
@@ -450,34 +450,34 @@ body {
         padding-left: 1rem;
         padding-right: 1rem;
     }
-    
+
     .page-header {
         padding: 1.25rem 1.5rem;
     }
-    
+
     .page-title {
         font-size: 1.5rem;
     }
-    
+
     .form-card {
         padding: 1.5rem;
     }
-    
+
     .progress-stepper {
         gap: 0.75rem;
         padding: 0.875rem;
     }
-    
+
     .step-circle {
         width: 36px;
         height: 36px;
         font-size: 0.85rem;
     }
-    
+
     .step-label {
         font-size: 0.8rem;
     }
-    
+
     .step-divider {
         width: 30px;
     }
@@ -490,7 +490,7 @@ body {
         padding-left: 0.75rem;
         padding-right: 0.75rem;
     }
-    
+
     .page-header {
         padding: 1rem;
         margin-bottom: 1.5rem;
@@ -498,28 +498,28 @@ body {
         flex-direction: column;
         gap: 1rem;
     }
-    
+
     .page-header .d-flex {
         flex-direction: column;
         align-items: flex-start !important;
         gap: 1rem;
     }
-    
+
     .page-title {
         font-size: 1.3rem;
         margin-bottom: 0.5rem;
     }
-    
+
     .page-subtitle {
         font-size: 0.85rem;
     }
-    
+
     .btn-back {
         align-self: stretch;
         text-align: center;
         padding: 0.75rem 1.5rem;
     }
-    
+
     /* Mobile Progress Stepper */
     .progress-stepper {
         padding: 0.75rem;
@@ -529,39 +529,39 @@ body {
         scrollbar-width: none;
         -ms-overflow-style: none;
     }
-    
+
     .progress-stepper::-webkit-scrollbar {
         display: none;
     }
-    
+
     .step {
         flex-direction: column;
         gap: 0.25rem;
         min-width: 80px;
     }
-    
+
     .step-circle {
         width: 32px;
         height: 32px;
         font-size: 0.8rem;
     }
-    
+
     .step-label {
         font-size: 0.7rem;
         text-align: center;
         line-height: 1.2;
     }
-    
+
     .step-divider {
         display: none;
     }
-    
+
     /* Mobile Form */
     .form-card {
         padding: 1.25rem;
         border-radius: 8px;
     }
-    
+
     .section-title {
         font-size: 1rem;
         margin-bottom: 1.25rem;
@@ -570,11 +570,11 @@ body {
         align-items: flex-start;
         gap: 0.5rem;
     }
-    
+
     .section-title i {
         font-size: 1.1rem;
     }
-    
+
     /* Mobile Form Controls */
     .form-control,
     .form-select {
@@ -582,58 +582,58 @@ body {
         font-size: 16px; /* Prevents zoom on iOS */
         border-radius: 6px;
     }
-    
+
     .input-group-text {
         padding: 0.875rem;
         font-size: 0.8rem;
     }
-    
+
     /* Mobile Radio Buttons */
     .role-selector,
     .company-selector {
         grid-template-columns: 1fr;
         gap: 0.75rem;
     }
-    
+
     .role-option label,
     .company-option label {
         padding: 0.875rem;
         min-height: 50px;
         font-size: 0.85rem;
     }
-    
+
     /* Mobile Grid */
     .row.g-3 {
         --bs-gutter-y: 1rem;
         --bs-gutter-x: 0;
     }
-    
+
     .row.g-3 > * {
         padding-left: 0;
         padding-right: 0;
     }
-    
+
     /* Mobile Emergency Contacts */
     .emergency-contact-form {
         padding: 1rem;
         border-radius: 8px;
     }
-    
+
     .emergency-contact-form .d-flex {
         flex-direction: column;
         align-items: flex-start !important;
         gap: 0.75rem;
     }
-    
+
     .emergency-contact-form h6 {
         font-size: 0.9rem;
     }
-    
+
     .btn-outline-danger {
         align-self: stretch;
         text-align: center;
     }
-    
+
     /* Mobile Buttons */
     .btn-next,
     .btn-previous,
@@ -642,15 +642,15 @@ body {
         padding: 1rem;
         font-size: 0.9rem;
     }
-    
+
     .text-end {
         text-align: center !important;
     }
-    
+
     .text-start {
         text-align: center !important;
     }
-    
+
     /* Mobile button groups */
     .d-flex.gap-2 {
         flex-direction: column;
@@ -664,56 +664,56 @@ body {
         padding-left: 0.5rem;
         padding-right: 0.5rem;
     }
-    
+
     .page-header {
         padding: 0.875rem;
     }
-    
+
     .page-title {
         font-size: 1.2rem;
     }
-    
+
     .form-card {
         padding: 1rem;
     }
-    
+
     .progress-stepper {
         padding: 0.5rem;
     }
-    
+
     .step {
         min-width: 70px;
     }
-    
+
     .step-circle {
         width: 28px;
         height: 28px;
         font-size: 0.75rem;
     }
-    
+
     .step-label {
         font-size: 0.65rem;
     }
-    
+
     .section-title {
         font-size: 0.95rem;
     }
-    
+
     .form-control,
     .form-select {
         padding: 0.75rem;
     }
-    
+
     .emergency-contact-form {
         padding: 0.875rem;
     }
-    
+
     /* Compact input group for employee ID */
     .input-group-text {
         font-size: 0.75rem;
         padding: 0.75rem 0.5rem;
     }
-    
+
     #id_location_code_select {
         max-width: 80px !important;
     }
@@ -725,17 +725,17 @@ body {
         position: relative;
         margin-bottom: 1rem;
     }
-    
+
     .step {
         flex-direction: row;
         gap: 0.5rem;
     }
-    
+
     .step-divider {
         display: block;
         width: 20px;
     }
-    
+
     .form-card {
         padding: 1rem;
     }
@@ -752,12 +752,12 @@ body {
         -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
     }
-    
+
     .role-option label:active,
     .company-option label:active {
         transform: scale(0.98);
     }
-    
+
     .btn:active {
         transform: scale(0.98);
     }
@@ -771,7 +771,7 @@ body {
     .company-option label {
         border-width: 3px;
     }
-    
+
     .btn {
         border-width: 3px;
     }
@@ -793,12 +793,12 @@ body {
     .alert {
         display: none !important;
     }
-    
+
     .form-card {
         box-shadow: none;
         border: 1px solid #000;
     }
-    
+
     .page-header {
         box-shadow: none;
         border: 1px solid #000;

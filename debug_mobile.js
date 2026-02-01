@@ -7,29 +7,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const mobileToggle = document.getElementById('mobileMenuToggle');
     const sidebar = document.querySelector('.sidebar');
     const overlay = document.getElementById('sidebarOverlay');
-    
+
     console.log('📱 Elements found:', {
         mobileToggle: !!mobileToggle,
         sidebar: !!sidebar,
         overlay: !!overlay
     });
-    
+
     if (mobileToggle) {
         console.log('🔘 Mobile toggle button found');
-        
+
         // Log all event listeners
         mobileToggle.addEventListener('click', function(e) {
             console.log('🖱️ Click event fired');
         });
-        
+
         mobileToggle.addEventListener('touchstart', function(e) {
             console.log('👆 Touch start event fired');
         });
-        
+
         mobileToggle.addEventListener('touchend', function(e) {
             console.log('👆 Touch end event fired');
         });
-        
+
         // Monitor sidebar state changes
         const observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
@@ -39,19 +39,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
-        
+
         if (sidebar) {
             observer.observe(sidebar, { attributes: true });
         }
-        
+
         // Monitor rapid clicks
         let clickCount = 0;
         let clickTimer;
-        
+
         mobileToggle.addEventListener('click', function() {
             clickCount++;
             clearTimeout(clickTimer);
-            
+
             clickTimer = setTimeout(() => {
                 if (clickCount > 1) {
                     console.warn('⚠️ Rapid clicks detected:', clickCount, 'clicks in 500ms');
@@ -62,12 +62,12 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         console.error('❌ Mobile toggle button not found!');
     }
-    
+
     // Monitor viewport changes
     window.addEventListener('resize', function() {
         console.log('📐 Viewport changed:', window.innerWidth + 'x' + window.innerHeight);
     });
-    
+
     // Monitor touch events globally
     document.addEventListener('touchstart', function(e) {
         console.log('👆 Global touch start on:', e.target.tagName, e.target.className);

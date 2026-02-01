@@ -325,11 +325,11 @@
                 grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
                 gap: 1.25rem;
             }
-            
+
             .stat-value {
                 font-size: 2.2rem;
             }
-            
+
             .dashboard-hero {
                 padding: 1.75rem;
             }
@@ -340,30 +340,30 @@
                 grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
                 gap: 1rem;
             }
-            
+
             .stat-card {
                 padding: 1.25rem;
                 min-height: 140px;
             }
-            
+
             .stat-icon-wrapper {
                 width: 42px;
                 height: 42px;
                 font-size: 1.1rem;
             }
-            
+
             .stat-value {
                 font-size: 2rem;
             }
-            
+
             .stat-label {
                 font-size: 0.9rem;
             }
-            
+
             .dashboard-hero {
                 padding: 1.5rem;
             }
-            
+
             .hero-title {
                 font-size: 1.5rem;
             }
@@ -373,43 +373,43 @@
             .test-container {
                 padding: 0 10px;
             }
-            
+
             .test-section {
                 padding: 20px;
                 margin-bottom: 20px;
             }
-            
+
             /* Stack stats cards on mobile */
             .stats-grid {
                 grid-template-columns: 1fr;
                 gap: 1rem;
                 margin-bottom: 2rem;
             }
-            
+
             .stat-card {
                 padding: 1rem;
                 min-height: 120px;
                 border-radius: 16px;
             }
-            
+
             .stat-icon-wrapper {
                 width: 36px;
                 height: 36px;
                 font-size: 1rem;
                 margin-bottom: 0.75rem;
             }
-            
+
             .stat-value {
                 font-size: 1.75rem;
             }
-            
+
             .stat-label {
                 font-size: 0.85rem;
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 0.25rem;
             }
-            
+
             /* Hero section mobile */
             .dashboard-hero {
                 padding: 1.25rem;
@@ -417,44 +417,44 @@
                 text-align: center;
                 gap: 1rem;
             }
-            
+
             .hero-title {
                 font-size: 1.4rem;
                 margin-bottom: 0.25rem;
             }
-            
+
             .hero-subtitle {
                 font-size: 0.9rem;
             }
-            
+
             .btn-apply-float {
                 padding: 10px 24px;
                 font-size: 0.9rem;
             }
-            
+
             /* Leave form mobile */
             .leave-card {
                 margin: 20px 0;
                 border-radius: 12px;
             }
-            
+
             .leave-header {
                 padding: 20px;
             }
-            
+
             .leave-body {
                 padding: 20px;
             }
-            
+
             .leave-title {
                 font-size: 1.1rem;
             }
-            
+
             .leave-type-grid {
                 grid-template-columns: 1fr;
                 gap: 0.75rem;
             }
-            
+
             .leave-type-option {
                 padding: 1rem;
             }
@@ -466,55 +466,55 @@
                 padding: 0.875rem;
                 min-height: 100px;
             }
-            
+
             .stat-icon-wrapper {
                 width: 32px;
                 height: 32px;
                 font-size: 0.9rem;
                 margin-bottom: 0.5rem;
             }
-            
+
             .stat-value {
                 font-size: 1.5rem;
             }
-            
+
             .stat-label {
                 font-size: 0.8rem;
             }
-            
+
             .progress-track {
                 height: 4px;
                 margin-top: 0.75rem;
             }
-            
+
             /* Hero section very small */
             .dashboard-hero {
                 padding: 1rem;
             }
-            
+
             .hero-title {
                 font-size: 1.2rem;
             }
-            
+
             .hero-subtitle {
                 font-size: 0.85rem;
             }
-            
+
             .btn-apply-float {
                 padding: 8px 20px;
                 font-size: 0.85rem;
             }
-            
+
             /* Leave form very small */
             .leave-header,
             .leave-body {
                 padding: 15px;
             }
-            
+
             .leave-title {
                 font-size: 1rem;
             }
-            
+
             .form-control,
             .form-select {
                 padding: 0.75rem;
@@ -528,19 +528,19 @@
                 padding: 0.75rem;
                 min-height: 90px;
             }
-            
+
             .stat-value {
                 font-size: 1.3rem;
             }
-            
+
             .stat-label {
                 font-size: 0.75rem;
             }
-            
+
             .hero-title {
                 font-size: 1.1rem;
             }
-            
+
             .btn-apply-float {
                 padding: 6px 16px;
                 font-size: 0.8rem;
@@ -553,12 +553,12 @@
                 grid-template-columns: repeat(3, 1fr);
                 gap: 0.75rem;
             }
-            
+
             .stat-card {
                 min-height: 110px;
                 padding: 1rem;
             }
-            
+
             .dashboard-hero {
                 padding: 1rem;
                 flex-direction: row;
@@ -699,7 +699,7 @@
                             <div class="leave-type-label">Unpaid Leave</div>
                         </div>
                     </div>
-                    
+
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Start Date</label>
@@ -734,23 +734,23 @@
         function updateDeviceInfo() {
             const width = window.innerWidth;
             const height = window.innerHeight;
-            
+
             document.getElementById('screen-width').textContent = width;
             document.getElementById('viewport').textContent = `${width}×${height}`;
-            
+
             let deviceType = 'Desktop';
             if (width <= 400) deviceType = 'Extra Small Phone';
             else if (width <= 576) deviceType = 'Small Phone';
             else if (width <= 768) deviceType = 'Mobile/Tablet';
             else if (width <= 992) deviceType = 'Tablet';
             else if (width <= 1200) deviceType = 'Small Desktop';
-            
+
             document.getElementById('device-type').textContent = deviceType;
-            
+
             const orientation = width > height ? 'Landscape' : 'Portrait';
             document.getElementById('orientation').textContent = orientation;
         }
-        
+
         // Leave type selection
         document.querySelectorAll('.leave-type-option').forEach(option => {
             option.addEventListener('click', function() {
@@ -758,7 +758,7 @@
                 this.classList.add('active');
             });
         });
-        
+
         updateDeviceInfo();
         window.addEventListener('resize', updateDeviceInfo);
     </script>

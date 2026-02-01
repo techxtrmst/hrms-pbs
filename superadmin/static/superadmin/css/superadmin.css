@@ -8,19 +8,19 @@
     --sa-warning: #f59e0b;
     --sa-danger: #ef4444;
     --sa-success: #10b981;
-    
+
     --sa-bg-light: #f8fafc;
     --sa-bg-card: #ffffff;
     --sa-text-primary: #1e293b;
     --sa-text-secondary: #64748b;
     --sa-text-muted: #94a3b8;
-    
+
     --sa-border: #e2e8f0;
     --sa-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
     --sa-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     --sa-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     --sa-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    
+
     --sa-radius: 12px;
     --sa-radius-sm: 8px;
     --sa-radius-lg: 16px;
@@ -406,17 +406,17 @@
     .sa-metric-cards {
         grid-template-columns: 1fr;
     }
-    
+
     .sa-header {
         flex-direction: column;
         align-items: flex-start !important;
         gap: 1rem;
     }
-    
+
     .sa-table-container {
         overflow-x: auto;
     }
-    
+
     .sa-table {
         min-width: 600px;
     }

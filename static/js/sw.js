@@ -33,7 +33,7 @@ self.addEventListener('periodicsync', event => {
 // Message handling from main thread
 self.addEventListener('message', event => {
     const { type, data } = event.data;
-    
+
     switch (type) {
         case 'START_BACKGROUND_TRACKING':
             startBackgroundTracking(data);
@@ -59,18 +59,18 @@ let trackingState = {
 // Start background tracking
 async function startBackgroundTracking(config) {
     console.log('Starting background location tracking...', config);
-    
+
     trackingState.isActive = true;
     trackingState.employeeId = config.employeeId;
     trackingState.clockInTime = config.clockInTime;
     trackingState.lastLocationTime = config.lastLocationTime;
-    
+
     // Store config in IndexedDB for persistence
     await storeTrackingConfig(config);
-    
+
     // Start periodic location capture
     scheduleNextLocationCapture();
-    
+
     // Register periodic background sync if supported
     if ('serviceWorker' in navigator && 'periodicSync' in window.ServiceWorkerRegistration.prototype) {
         try {
@@ -88,17 +88,17 @@ async function startBackgroundTracking(config) {
 // Stop background tracking
 async function stopBackgroundTracking() {
     console.log('Stopping background location tracking...');
-    
+
     trackingState.isActive = false;
-    
+
     if (trackingState.intervalId) {
         clearTimeout(trackingState.intervalId);
         trackingState.intervalId = null;
     }
-    
+
     // Clear stored config
     await clearTrackingConfig();
-    
+
     // Unregister periodic sync
     try {
         const registration = await navigator.serviceWorker.ready;
@@ -111,15 +111,15 @@ async function stopBackgroundTracking() {
 // Schedule next location capture
 function scheduleNextLocationCapture() {
     if (!trackingState.isActive) return;
-    
+
     const now = new Date();
     const nextHour = new Date(now);
     nextHour.setHours(now.getHours() + 1, 0, 0, 0);
-    
+
     const timeUntilNextHour = nextHour.getTime() - now.getTime();
-    
+
     console.log(`Next location capture scheduled in ${Math.round(timeUntilNextHour / 1000 / 60)} minutes`);
-    
+
     trackingState.intervalId = setTimeout(() => {
         performHourlyLocationTrack();
         scheduleNextLocationCapture(); // Schedule next one
@@ -129,47 +129,47 @@ function scheduleNextLocationCapture() {
 // Perform hourly location tracking
 async function performHourlyLocationTrack() {
     if (!trackingState.isActive) return;
-    
+
     console.log('Performing hourly location track...');
-    
+
     try {
         // Check if still clocked in
         const statusResponse = await fetch(`${API_BASE}location-tracking-status/`, {
             method: 'GET',
             credentials: 'include'
         });
-        
+
         if (!statusResponse.ok) {
             throw new Error('Failed to check tracking status');
         }
-        
+
         const statusData = await statusResponse.json();
-        
+
         if (!statusData.is_clocked_in || statusData.tracking_stopped) {
             console.log('Employee no longer clocked in, stopping background tracking');
             await stopBackgroundTracking();
             return;
         }
-        
+
         if (!statusData.needs_location) {
             console.log('Location update not needed yet');
             return;
         }
-        
+
         // Get current location
         const position = await getCurrentPosition();
-        
+
         if (position) {
             await submitLocationData(position);
             trackingState.lastLocationTime = new Date().toISOString();
-            
+
             // Show notification to user
             showLocationUpdateNotification();
         }
-        
+
     } catch (error) {
         console.error('Error in hourly location track:', error);
-        
+
         // Store failed attempt for later sync
         await storeFailedLocationAttempt({
             timestamp: new Date().toISOString(),
@@ -185,13 +185,13 @@ function getCurrentPosition() {
             reject(new Error('Geolocation not supported'));
             return;
         }
-        
+
         const options = {
             enableHighAccuracy: true,
             timeout: 30000, // 30 seconds
             maximumAge: 0 // No cached positions
         };
-        
+
         navigator.geolocation.getCurrentPosition(
             position => resolve(position),
             error => reject(error),
@@ -208,7 +208,7 @@ async function submitLocationData(position) {
         accuracy: position.coords.accuracy,
         timestamp: new Date().toISOString()
     };
-    
+
     try {
         const response = await fetch(`${API_BASE}submit-hourly-location/`, {
             method: 'POST',
@@ -218,28 +218,28 @@ async function submitLocationData(position) {
             credentials: 'include',
             body: JSON.stringify(locationData)
         });
-        
+
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        
+
         const result = await response.json();
         console.log('Location submitted successfully:', result);
-        
+
         return result;
-        
+
     } catch (error) {
         console.error('Failed to submit location:', error);
-        
+
         // Store for background sync
         await storeLocationForSync(locationData);
-        
+
         // Register background sync
         if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
             const registration = await navigator.serviceWorker.ready;
             await registration.sync.register('background-location-sync');
         }
-        
+
         throw error;
     }
 }
@@ -247,10 +247,10 @@ async function submitLocationData(position) {
 // Sync stored location data
 async function syncLocationData() {
     console.log('Syncing stored location data...');
-    
+
     try {
         const storedLocations = await getStoredLocations();
-        
+
         for (const locationData of storedLocations) {
             try {
                 await submitLocationData(locationData);
@@ -259,7 +259,7 @@ async function syncLocationData() {
                 console.error('Failed to sync location:', error);
             }
         }
-        
+
     } catch (error) {
         console.error('Error syncing location data:', error);
     }
@@ -282,32 +282,32 @@ function showLocationUpdateNotification() {
 async function storeTrackingConfig(config) {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open('HRMSLocationTracker', 1);
-        
+
         request.onerror = () => reject(request.error);
-        
+
         request.onsuccess = () => {
             const db = request.result;
             const transaction = db.transaction(['config'], 'readwrite');
             const store = transaction.objectStore('config');
-            
+
             store.put({ id: 'tracking-config', ...config });
-            
+
             transaction.oncomplete = () => resolve();
             transaction.onerror = () => reject(transaction.error);
         };
-        
+
         request.onupgradeneeded = () => {
             const db = request.result;
-            
+
             if (!db.objectStoreNames.contains('config')) {
                 db.createObjectStore('config', { keyPath: 'id' });
             }
-            
+
             if (!db.objectStoreNames.contains('locations')) {
                 const locationStore = db.createObjectStore('locations', { keyPath: 'id', autoIncrement: true });
                 locationStore.createIndex('timestamp', 'timestamp');
             }
-            
+
             if (!db.objectStoreNames.contains('failed-attempts')) {
                 db.createObjectStore('failed-attempts', { keyPath: 'id', autoIncrement: true });
             }
@@ -318,16 +318,16 @@ async function storeTrackingConfig(config) {
 async function clearTrackingConfig() {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open('HRMSLocationTracker', 1);
-        
+
         request.onerror = () => reject(request.error);
-        
+
         request.onsuccess = () => {
             const db = request.result;
             const transaction = db.transaction(['config'], 'readwrite');
             const store = transaction.objectStore('config');
-            
+
             store.delete('tracking-config');
-            
+
             transaction.oncomplete = () => resolve();
             transaction.onerror = () => reject(transaction.error);
         };
@@ -337,16 +337,16 @@ async function clearTrackingConfig() {
 async function storeLocationForSync(locationData) {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open('HRMSLocationTracker', 1);
-        
+
         request.onerror = () => reject(request.error);
-        
+
         request.onsuccess = () => {
             const db = request.result;
             const transaction = db.transaction(['locations'], 'readwrite');
             const store = transaction.objectStore('locations');
-            
+
             store.add(locationData);
-            
+
             transaction.oncomplete = () => resolve();
             transaction.onerror = () => reject(transaction.error);
         };
@@ -356,16 +356,16 @@ async function storeLocationForSync(locationData) {
 async function getStoredLocations() {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open('HRMSLocationTracker', 1);
-        
+
         request.onerror = () => reject(request.error);
-        
+
         request.onsuccess = () => {
             const db = request.result;
             const transaction = db.transaction(['locations'], 'readonly');
             const store = transaction.objectStore('locations');
-            
+
             const getAllRequest = store.getAll();
-            
+
             getAllRequest.onsuccess = () => resolve(getAllRequest.result);
             getAllRequest.onerror = () => reject(getAllRequest.error);
         };
@@ -375,16 +375,16 @@ async function getStoredLocations() {
 async function removeStoredLocation(id) {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open('HRMSLocationTracker', 1);
-        
+
         request.onerror = () => reject(request.error);
-        
+
         request.onsuccess = () => {
             const db = request.result;
             const transaction = db.transaction(['locations'], 'readwrite');
             const store = transaction.objectStore('locations');
-            
+
             store.delete(id);
-            
+
             transaction.oncomplete = () => resolve();
             transaction.onerror = () => reject(transaction.error);
         };
@@ -394,16 +394,16 @@ async function removeStoredLocation(id) {
 async function storeFailedLocationAttempt(attemptData) {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open('HRMSLocationTracker', 1);
-        
+
         request.onerror = () => reject(request.error);
-        
+
         request.onsuccess = () => {
             const db = request.result;
             const transaction = db.transaction(['failed-attempts'], 'readwrite');
             const store = transaction.objectStore('failed-attempts');
-            
+
             store.add(attemptData);
-            
+
             transaction.oncomplete = () => resolve();
             transaction.onerror = () => reject(transaction.error);
         };

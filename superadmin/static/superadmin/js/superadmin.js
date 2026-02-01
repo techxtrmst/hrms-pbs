@@ -75,7 +75,7 @@
         loadSavedContext: function() {
             const savedCompany = localStorage.getItem('sa_selected_company');
             const selector = document.getElementById('companySelectorDropdown');
-            
+
             if (savedCompany && selector) {
                 selector.value = savedCompany;
             }
@@ -95,8 +95,8 @@
             if (employeesCard) {
                 employeesCard.addEventListener('click', () => {
                     const companyId = this.getCurrentCompanyId();
-                    const url = companyId ? 
-                        `/superadmin/employees/?company_id=${companyId}` : 
+                    const url = companyId ?
+                        `/superadmin/employees/?company_id=${companyId}` :
                         '/superadmin/employees/';
                     window.location.href = url;
                 });
@@ -107,8 +107,8 @@
             if (presentCard) {
                 presentCard.addEventListener('click', () => {
                     const companyId = this.getCurrentCompanyId();
-                    const url = companyId ? 
-                        `/superadmin/attendance/today/?company_id=${companyId}` : 
+                    const url = companyId ?
+                        `/superadmin/attendance/today/?company_id=${companyId}` :
                         '/superadmin/attendance/today/';
                     window.location.href = url;
                 });
@@ -119,8 +119,8 @@
             if (leaveCard) {
                 leaveCard.addEventListener('click', () => {
                     const companyId = this.getCurrentCompanyId();
-                    const url = companyId ? 
-                        `/superadmin/leaves/today/?company_id=${companyId}` : 
+                    const url = companyId ?
+                        `/superadmin/leaves/today/?company_id=${companyId}` :
                         '/superadmin/leaves/today/';
                     window.location.href = url;
                 });
@@ -298,7 +298,7 @@
             if (!container) return;
 
             const data = JSON.parse(container.dataset.heatmapData || '[]');
-            
+
             // Render heatmap using custom implementation
             this.renderHeatmap(container, data);
         },
@@ -308,9 +308,9 @@
             const html = data.map(day => {
                 const intensity = this.calculateIntensity(day.present_count, day.total_employees);
                 const color = this.getHeatmapColor(intensity);
-                
+
                 return `
-                    <div class="heatmap-cell" 
+                    <div class="heatmap-cell"
                          style="background-color: ${color}"
                          title="${day.date}: ${day.present_count}/${day.total_employees} present">
                         ${new Date(day.date).getDate()}
@@ -339,7 +339,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         CompanyContext.init();
         ExportManager.init();
-        
+
         // Initialize charts if Chart.js is loaded
         if (typeof Chart !== 'undefined') {
             ChartManager.init();

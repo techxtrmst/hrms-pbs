@@ -19,7 +19,7 @@ def reset_staging_migration_state(apps, schema_editor):
         # Get current table structure
         cursor.execute("""
             SELECT column_name, data_type, is_nullable, column_default
-            FROM information_schema.columns 
+            FROM information_schema.columns
             WHERE table_name='employees_attendance'
             ORDER BY ordinal_position
         """)
@@ -48,7 +48,7 @@ def reset_staging_migration_state(apps, schema_editor):
             if col_name not in column_names:
                 print(f"➕ Adding missing column: {col_name}")
                 cursor.execute(f"""
-                    ALTER TABLE employees_attendance 
+                    ALTER TABLE employees_attendance
                     ADD COLUMN {col_name} {col_definition}
                 """)
             else:
@@ -56,8 +56,8 @@ def reset_staging_migration_state(apps, schema_editor):
 
         # Update max_daily_sessions to 3 for existing records
         cursor.execute("""
-            UPDATE employees_attendance 
-            SET max_daily_sessions = 3 
+            UPDATE employees_attendance
+            SET max_daily_sessions = 3
             WHERE max_daily_sessions > 3
         """)
         updated_count = cursor.rowcount
@@ -66,8 +66,8 @@ def reset_staging_migration_state(apps, schema_editor):
 
         # Ensure user_timezone has default value
         cursor.execute("""
-            UPDATE employees_attendance 
-            SET user_timezone = 'Asia/Kolkata' 
+            UPDATE employees_attendance
+            SET user_timezone = 'Asia/Kolkata'
             WHERE user_timezone IS NULL OR user_timezone = ''
         """)
         timezone_updated = cursor.rowcount

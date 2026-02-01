@@ -350,13 +350,13 @@
         .mobile-card-body {
             grid-template-columns: 1fr;
         }
-        
+
         .mobile-card-header {
             flex-direction: column;
             align-items: stretch;
             gap: 1rem;
         }
-        
+
         .mobile-card-actions {
             align-self: center;
         }
@@ -518,7 +518,7 @@
         .badge-dept:hover::after {
             display: none; /* Hide tooltips on mobile to avoid issues */
         }
-        
+
         .user-profile h6:hover::before,
         .user-profile small:hover::before,
         .badge-dept:hover::before {
@@ -1918,13 +1918,13 @@
     // Search Filter - Updated to handle both layouts and inputs
     function setupSearch() {
         const searchInputs = ['searchInput', 'searchInputMobile'];
-        
+
         searchInputs.forEach(inputId => {
             const input = document.getElementById(inputId);
             if (input) {
                 input.addEventListener('keyup', function (e) {
                     const val = e.target.value.toLowerCase();
-                    
+
                     // Sync the other input
                     searchInputs.forEach(otherId => {
                         if (otherId !== inputId) {
@@ -1934,7 +1934,7 @@
                             }
                         }
                     });
-                    
+
                     // Filter desktop cards
                     const desktopCards = document.querySelectorAll('.desktop-layout .employee-card');
                     desktopCards.forEach(card => {
@@ -1975,7 +1975,7 @@
                 const hasScroll = wrapper.scrollWidth > wrapper.clientWidth;
                 wrapper.classList.toggle('has-scroll', hasScroll);
             }
-            
+
             checkScroll();
             window.addEventListener('resize', checkScroll);
         }
@@ -2034,7 +2034,7 @@
                 if (data.status === 'success') {
                     icon.className = 'fas fa-check';
                     showToast('Allocations updated!');
-                    
+
                     // Sync values between desktop and mobile inputs
                     if (desktopSick && mobileSick) {
                         desktopSick.value = sick;
@@ -2044,7 +2044,7 @@
                         desktopCasual.value = casual;
                         mobileCasual.value = casual;
                     }
-                    
+
                     // Reset icon after delay
                     setTimeout(() => icon.className = oldClass, 2000);
                 } else {
@@ -2064,7 +2064,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         setupSearch();
         setupScrollIndicator();
-        
+
         // Handle window resize to maintain consistency
         let resizeTimeout;
         window.addEventListener('resize', function() {
@@ -2116,7 +2116,7 @@
             card.addEventListener('touchstart', function() {
                 this.style.transform = 'scale(0.98)';
             });
-            
+
             card.addEventListener('touchend', function() {
                 this.style.transform = '';
             });
@@ -2131,18 +2131,18 @@
         // Check if there's a bulk upload success message
         const messages = document.querySelectorAll('.alert');
         let bulkUploadSuccess = false;
-        
+
         messages.forEach(message => {
             if (message.textContent.includes('BULK_UPLOAD_SUCCESS')) {
                 bulkUploadSuccess = true;
                 message.style.display = 'none'; // Hide the flag message
             }
         });
-        
+
         if (bulkUploadSuccess) {
             // Show immediate feedback
             showToast('Leave balances updated successfully! Refreshing data...', 'success');
-            
+
             // Force refresh the page after a short delay to show updated data
             setTimeout(() => {
                 // Add cache-busting parameter to force fresh data
@@ -2166,21 +2166,21 @@
             // Parse the response and update only the employee cards
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
-            
+
             // Update desktop layout
             const newDesktopList = doc.querySelector('.desktop-layout .employee-list');
             const currentDesktopList = document.querySelector('.desktop-layout .employee-list');
             if (newDesktopList && currentDesktopList) {
                 currentDesktopList.innerHTML = newDesktopList.innerHTML;
             }
-            
+
             // Update mobile layout
             const newMobileList = doc.querySelector('.mobile-layout .employee-list');
             const currentMobileList = document.querySelector('.mobile-layout .employee-list');
             if (newMobileList && currentMobileList) {
                 currentMobileList.innerHTML = newMobileList.innerHTML;
             }
-            
+
             showToast('Leave balances refreshed successfully!', 'success');
         })
         .catch(error => {

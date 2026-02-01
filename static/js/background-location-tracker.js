@@ -225,25 +225,25 @@ window.backgroundLocationTracker = new BackgroundLocationTracker();
 // Auto-initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', async function() {
     const tracker = window.backgroundLocationTracker;
-    
+
     // Initialize the tracker
     const initialized = await tracker.initialize();
-    
+
     if (initialized) {
         console.log('Background location tracker initialized successfully');
-        
+
         // Check if we should start tracking
         const status = await tracker.checkTrackingStatus();
-        
+
         if (status && status.is_clocked_in && !status.tracking_stopped) {
             await tracker.startTracking(status.employee_id, status.clock_in_time);
         }
-        
+
         // Set up periodic status checks (every 5 minutes)
         setInterval(() => {
             tracker.checkTrackingStatus();
         }, 5 * 60 * 1000);
-        
+
     } else {
         console.warn('Background location tracker could not be initialized');
     }

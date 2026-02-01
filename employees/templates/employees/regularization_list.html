@@ -6,29 +6,29 @@
 {% block extra_css %}
 <style>
     /* Regularization Requests Responsive Styles */
-    
+
     /* Base styles */
     .regularization-container {
         padding: 1rem;
     }
-    
+
     .page-header {
         margin-bottom: 1.5rem;
     }
-    
+
     .page-title {
         font-size: 1.5rem;
         font-weight: 700;
         color: #1e293b;
         margin-bottom: 0.25rem;
     }
-    
+
     .page-subtitle {
         color: #64748b;
         font-size: 0.9rem;
         margin: 0;
     }
-    
+
     /* Table container */
     .requests-table-container {
         background: white;
@@ -37,13 +37,13 @@
         overflow: hidden;
         position: relative;
     }
-    
+
     /* Desktop table styles */
     .requests-table {
         margin: 0;
         width: 100%;
     }
-    
+
     .requests-table thead th {
         background: #f8fafc;
         border: none;
@@ -55,24 +55,24 @@
         color: #64748b;
         white-space: nowrap;
     }
-    
+
     .requests-table tbody td {
         padding: 1rem;
         border-top: 1px solid #f1f5f9;
         vertical-align: middle;
     }
-    
+
     .requests-table tbody tr:hover {
         background: #f8fafc;
     }
-    
+
     /* Employee info */
     .employee-info {
         display: flex;
         align-items: center;
         gap: 0.75rem;
     }
-    
+
     .employee-avatar {
         width: 36px;
         height: 36px;
@@ -81,7 +81,7 @@
         border: 2px solid #e2e8f0;
         flex-shrink: 0;
     }
-    
+
     .employee-avatar-placeholder {
         width: 36px;
         height: 36px;
@@ -95,51 +95,51 @@
         font-size: 0.9rem;
         flex-shrink: 0;
     }
-    
+
     .employee-details h6 {
         margin: 0;
         font-size: 0.9rem;
         font-weight: 600;
         color: #1e293b;
     }
-    
+
     .employee-details .designation {
         font-size: 0.75rem;
         color: #64748b;
         margin: 0;
     }
-    
+
     /* Date info */
     .date-info {
         font-weight: 600;
         color: #1e293b;
     }
-    
+
     .date-day {
         font-size: 0.75rem;
         color: #64748b;
         margin-top: 0.125rem;
     }
-    
+
     /* Timing info */
     .timing-info {
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
     }
-    
+
     .timing-item {
         display: flex;
         align-items: center;
         gap: 0.5rem;
         font-size: 0.85rem;
     }
-    
+
     .timing-icon {
         width: 16px;
         text-align: center;
     }
-    
+
     /* Reason column */
     .reason-text {
         max-width: 200px;
@@ -149,7 +149,7 @@
         font-size: 0.85rem;
         color: #374151;
     }
-    
+
     /* Status badges */
     .status-badge {
         padding: 0.375rem 0.75rem;
@@ -158,37 +158,37 @@
         font-weight: 600;
         border: 1px solid;
     }
-    
+
     .status-approved {
         background: #dcfce7;
         color: #166534;
         border-color: #bbf7d0;
     }
-    
+
     .status-rejected {
         background: #fef2f2;
         color: #dc2626;
         border-color: #fecaca;
     }
-    
+
     .status-pending {
         background: #fef3c7;
         color: #d97706;
         border-color: #fde68a;
     }
-    
+
     .status-cancelled {
         background: #f3f4f6;
         color: #6b7280;
         border-color: #d1d5db;
     }
-    
+
     /* Action buttons */
     .action-buttons {
         display: flex;
         gap: 0.5rem;
     }
-    
+
     .btn-action {
         padding: 0.375rem 0.75rem;
         font-size: 0.8rem;
@@ -200,32 +200,32 @@
         align-items: center;
         gap: 0.25rem;
     }
-    
+
     .btn-approve {
         color: #059669;
         border-color: #059669;
     }
-    
+
     .btn-approve:hover {
         background: #059669;
         color: white;
     }
-    
+
     .btn-reject {
         color: #dc2626;
         border-color: #dc2626;
     }
-    
+
     .btn-reject:hover {
         background: #dc2626;
         color: white;
     }
-    
+
     /* Mobile card layout */
     .mobile-card-layout {
         display: none;
     }
-    
+
     .request-card {
         background: white;
         border: 1px solid #e5e7eb;
@@ -234,7 +234,7 @@
         margin-bottom: 1rem;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
-    
+
     .request-card-header {
         display: flex;
         align-items: center;
@@ -243,18 +243,18 @@
         padding-bottom: 0.75rem;
         border-bottom: 1px solid #f3f4f6;
     }
-    
+
     .request-card-body {
         display: grid;
         gap: 0.75rem;
     }
-    
+
     .card-field {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
     }
-    
+
     .card-field-label {
         font-size: 0.75rem;
         font-weight: 600;
@@ -264,14 +264,14 @@
         flex-shrink: 0;
         width: 100px;
     }
-    
+
     .card-field-value {
         flex: 1;
         text-align: right;
         font-size: 0.85rem;
         color: #374151;
     }
-    
+
     .request-card-actions {
         margin-top: 1rem;
         padding-top: 0.75rem;
@@ -280,313 +280,313 @@
         gap: 0.5rem;
         justify-content: flex-end;
     }
-    
+
     /* Empty state */
     .empty-state {
         text-align: center;
         padding: 3rem 1rem;
         color: #6b7280;
     }
-    
+
     .empty-state i {
         font-size: 3rem;
         opacity: 0.3;
         margin-bottom: 1rem;
         display: block;
     }
-    
+
     /* Modal responsive */
     .modal-content {
         border: none;
         border-radius: 12px;
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     }
-    
+
     .modal-header {
         border-bottom: 1px solid #f3f4f6;
         padding: 1.25rem;
     }
-    
+
     .modal-body {
         padding: 1.25rem;
     }
-    
+
     .modal-footer {
         border-top: 1px solid #f3f4f6;
         padding: 1rem 1.25rem;
     }
-    
+
     /* Responsive breakpoints */
-    
+
     /* Large desktop */
     @media (min-width: 1400px) {
         .regularization-container {
             padding: 2rem;
         }
-        
+
         .page-title {
             font-size: 1.75rem;
         }
-        
+
         .requests-table thead th,
         .requests-table tbody td {
             padding: 1.25rem;
         }
     }
-    
+
     /* Desktop */
     @media (max-width: 1199px) {
         .reason-text {
             max-width: 150px;
         }
-        
+
         .requests-table thead th,
         .requests-table tbody td {
             padding: 0.875rem;
         }
     }
-    
+
     /* Tablet */
     @media (max-width: 991px) {
         .regularization-container {
             padding: 1rem;
         }
-        
+
         .reason-text {
             max-width: 120px;
         }
-        
+
         .requests-table thead th,
         .requests-table tbody td {
             padding: 0.75rem;
             font-size: 0.85rem;
         }
-        
+
         .employee-avatar,
         .employee-avatar-placeholder {
             width: 32px;
             height: 32px;
         }
-        
+
         .employee-details h6 {
             font-size: 0.85rem;
         }
-        
+
         .employee-details .designation {
             font-size: 0.7rem;
         }
     }
-    
+
     /* Mobile landscape and small tablets */
     @media (max-width: 768px) {
         .regularization-container {
             padding: 0.75rem;
         }
-        
+
         .page-header {
             text-align: center;
             margin-bottom: 1rem;
         }
-        
+
         .page-title {
             font-size: 1.25rem;
         }
-        
+
         .page-subtitle {
             font-size: 0.85rem;
         }
-        
+
         /* Hide desktop table, show mobile cards */
         .desktop-table-layout {
             display: none;
         }
-        
+
         .mobile-card-layout {
             display: block;
         }
-        
+
         .request-card {
             margin-bottom: 0.75rem;
             padding: 0.875rem;
         }
-        
+
         .employee-info {
             gap: 0.5rem;
         }
-        
+
         .employee-avatar,
         .employee-avatar-placeholder {
             width: 40px;
             height: 40px;
         }
-        
+
         .employee-details h6 {
             font-size: 0.9rem;
         }
-        
+
         .card-field {
             flex-direction: column;
             gap: 0.25rem;
         }
-        
+
         .card-field-label {
             width: auto;
         }
-        
+
         .card-field-value {
             text-align: left;
         }
-        
+
         .request-card-actions {
             flex-direction: column;
         }
-        
+
         .btn-action {
             justify-content: center;
             padding: 0.75rem;
         }
     }
-    
+
     /* Mobile portrait */
     @media (max-width: 575px) {
         .regularization-container {
             padding: 0.5rem;
         }
-        
+
         .page-title {
             font-size: 1.1rem;
         }
-        
+
         .page-subtitle {
             font-size: 0.8rem;
         }
-        
+
         .request-card {
             padding: 0.75rem;
             border-radius: 8px;
         }
-        
+
         .employee-details h6 {
             font-size: 0.85rem;
         }
-        
+
         .employee-details .designation {
             font-size: 0.7rem;
         }
-        
+
         .card-field-label {
             font-size: 0.7rem;
         }
-        
+
         .card-field-value {
             font-size: 0.8rem;
         }
-        
+
         .status-badge {
             padding: 0.25rem 0.5rem;
             font-size: 0.7rem;
         }
-        
+
         .btn-action {
             font-size: 0.75rem;
             padding: 0.625rem;
         }
     }
-    
+
     /* Very small screens */
     @media (max-width: 400px) {
         .regularization-container {
             padding: 0.25rem;
         }
-        
+
         .request-card {
             margin-bottom: 0.5rem;
             padding: 0.625rem;
         }
-        
+
         .employee-avatar,
         .employee-avatar-placeholder {
             width: 36px;
             height: 36px;
         }
-        
+
         .request-card-actions {
             gap: 0.375rem;
         }
-        
+
         .btn-action {
             font-size: 0.7rem;
             padding: 0.5rem;
         }
     }
-    
+
     /* Modal responsive */
     @media (max-width: 767px) {
         .modal-dialog {
             margin: 1rem;
             max-width: calc(100% - 2rem);
         }
-        
+
         .modal-header,
         .modal-body,
         .modal-footer {
             padding: 1rem;
         }
-        
+
         .modal-footer {
             flex-direction: column;
             gap: 0.5rem;
         }
-        
+
         .modal-footer .btn {
             width: 100%;
         }
     }
-    
+
     @media (max-width: 575px) {
         .modal-dialog {
             margin: 0.5rem;
             max-width: calc(100% - 1rem);
         }
-        
+
         .modal-header,
         .modal-body {
             padding: 0.875rem;
         }
-        
+
         .modal-footer {
             padding: 0.75rem;
         }
     }
-    
+
     /* Touch device optimizations */
     @media (hover: none) and (pointer: coarse) {
         .btn-action {
             min-height: 44px;
             min-width: 44px;
         }
-        
+
         .request-card {
             transition: transform 0.1s ease;
         }
-        
+
         .request-card:active {
             transform: scale(0.98);
         }
     }
-    
+
     /* High contrast mode */
     @media (prefers-contrast: high) {
         .request-card,
         .requests-table-container {
             border: 2px solid #000;
         }
-        
+
         .btn-action {
             border-width: 2px;
         }
     }
-    
+
     /* Reduced motion */
     @media (prefers-reduced-motion: reduce) {
         .request-card,
@@ -594,22 +594,22 @@
             transition: none;
         }
     }
-    
+
     /* Print styles */
     @media print {
         .mobile-card-layout {
             display: none;
         }
-        
+
         .desktop-table-layout {
             display: block;
         }
-        
+
         .btn-action,
         .request-card-actions {
             display: none;
         }
-        
+
         .request-card {
             break-inside: avoid;
             box-shadow: none;
@@ -761,7 +761,7 @@
                 <span class="status-badge status-pending">Pending</span>
                 {% endif %}
             </div>
-            
+
             <div class="request-card-body">
                 <div class="card-field">
                     <span class="card-field-label">Date</span>
@@ -770,7 +770,7 @@
                         <div class="date-day">{{ req.date|date:"l" }}</div>
                     </div>
                 </div>
-                
+
                 <div class="card-field">
                     <span class="card-field-label">Timings</span>
                     <div class="card-field-value">
@@ -790,13 +790,13 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="card-field">
                     <span class="card-field-label">Reason</span>
                     <div class="card-field-value">{{ req.reason }}</div>
                 </div>
             </div>
-            
+
             {% if req.status == 'PENDING' %}
             <div class="request-card-actions">
                 <button type="button" class="btn-action btn-approve" data-bs-toggle="modal"
@@ -899,7 +899,7 @@
             const isMobile = window.innerWidth <= 768;
             const desktopLayout = document.querySelector('.desktop-table-layout');
             const mobileLayout = document.querySelector('.mobile-card-layout');
-            
+
             if (isMobile) {
                 if (desktopLayout) desktopLayout.style.display = 'none';
                 if (mobileLayout) mobileLayout.style.display = 'block';
@@ -908,22 +908,22 @@
                 if (mobileLayout) mobileLayout.style.display = 'none';
             }
         }
-        
+
         // Initial check
         handleResponsiveLayout();
-        
+
         // Handle window resize
         let resizeTimeout;
         window.addEventListener('resize', function() {
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(handleResponsiveLayout, 100);
         });
-        
+
         // Handle orientation change
         window.addEventListener('orientationchange', function() {
             setTimeout(handleResponsiveLayout, 100);
         });
-        
+
         // Add touch feedback for mobile
         if ('ontouchstart' in window) {
             const touchElements = document.querySelectorAll('.btn-action, .request-card');
@@ -931,7 +931,7 @@
                 element.addEventListener('touchstart', function() {
                     this.style.transform = 'scale(0.98)';
                 });
-                
+
                 element.addEventListener('touchend', function() {
                     setTimeout(() => {
                         this.style.transform = '';
@@ -939,7 +939,7 @@
                 });
             });
         }
-        
+
         // Handle modal responsive behavior
         const modals = document.querySelectorAll('.modal');
         modals.forEach(modal => {
@@ -950,19 +950,19 @@
                 }
             });
         });
-        
+
         // Handle form validation
         const forms = document.querySelectorAll('form');
         forms.forEach(form => {
             form.addEventListener('submit', function(e) {
                 const requiredFields = form.querySelectorAll('[required]');
                 let isValid = true;
-                
+
                 requiredFields.forEach(field => {
                     if (!field.value.trim()) {
                         isValid = false;
                         field.classList.add('is-invalid');
-                        
+
                         // Scroll to first invalid field on mobile
                         if (window.innerWidth <= 767 && isValid === false) {
                             field.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -971,13 +971,13 @@
                         field.classList.remove('is-invalid');
                     }
                 });
-                
+
                 if (!isValid) {
                     e.preventDefault();
                 }
             });
         });
-        
+
         // Add loading states for better UX
         const actionButtons = document.querySelectorAll('.btn-action');
         actionButtons.forEach(button => {
