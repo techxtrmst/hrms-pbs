@@ -6,7 +6,6 @@ def notification_count(request):
     Context processor to add unread notification count to all templates
     """
     from accounts.models import User
-    from .models import Notification
 
     # Only allow managers, admins, and HR department users
     emp = getattr(request.user, "employee_profile", None)

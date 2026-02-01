@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.db import connection, models
+
 from employees.models import Employee, LeaveBalance
 
 
@@ -10,9 +11,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("🔧 Fixing database sequences..."))
 
         # Fix Employee sequence
-        max_employee_id = (
-            Employee.objects.aggregate(max_id=models.Max("id"))["max_id"] or 0
-        )
+        max_employee_id = Employee.objects.aggregate(max_id=models.Max("id"))["max_id"] or 0
 
         with connection.cursor() as cursor:
             cursor.execute("SELECT last_value FROM employees_employee_id_seq;")
@@ -20,25 +19,15 @@ class Command(BaseCommand):
 
             if employee_seq_value <= max_employee_id:
                 new_seq_value = max_employee_id + 1
-                cursor.execute(
-                    f"SELECT setval('employees_employee_id_seq', {new_seq_value});"
-                )
+                cursor.execute(f"SELECT setval('employees_employee_id_seq', {new_seq_value});")
                 self.stdout.write(
-                    self.style.SUCCESS(
-                        f"✅ Employee sequence updated: {employee_seq_value} → {new_seq_value}"
-                    )
+                    self.style.SUCCESS(f"✅ Employee sequence updated: {employee_seq_value} → {new_seq_value}")
                 )
             else:
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f"✅ Employee sequence is correct: {employee_seq_value}"
-                    )
-                )
+                self.stdout.write(self.style.SUCCESS(f"✅ Employee sequence is correct: {employee_seq_value}"))
 
         # Fix LeaveBalance sequence
-        max_lb_id = (
-            LeaveBalance.objects.aggregate(max_id=models.Max("id"))["max_id"] or 0
-        )
+        max_lb_id = LeaveBalance.objects.aggregate(max_id=models.Max("id"))["max_id"] or 0
 
         with connection.cursor() as cursor:
             cursor.execute("SELECT last_value FROM employees_leavebalance_id_seq;")
@@ -46,19 +35,11 @@ class Command(BaseCommand):
 
             if lb_seq_value <= max_lb_id:
                 new_seq_value = max_lb_id + 1
-                cursor.execute(
-                    f"SELECT setval('employees_leavebalance_id_seq', {new_seq_value});"
-                )
+                cursor.execute(f"SELECT setval('employees_leavebalance_id_seq', {new_seq_value});")
                 self.stdout.write(
-                    self.style.SUCCESS(
-                        f"✅ LeaveBalance sequence updated: {lb_seq_value} → {new_seq_value}"
-                    )
+                    self.style.SUCCESS(f"✅ LeaveBalance sequence updated: {lb_seq_value} → {new_seq_value}")
                 )
             else:
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f"✅ LeaveBalance sequence is correct: {lb_seq_value}"
-                    )
-                )
+                self.stdout.write(self.style.SUCCESS(f"✅ LeaveBalance sequence is correct: {lb_seq_value}"))
 
         self.stdout.write(self.style.SUCCESS("🎉 All sequences have been fixed!"))

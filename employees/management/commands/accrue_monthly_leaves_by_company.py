@@ -1,7 +1,9 @@
-from django.core.management.base import BaseCommand
-from employees.models import Employee, LeaveBalance
-from companies.models import Company
 from datetime import date
+
+from django.core.management.base import BaseCommand
+
+from companies.models import Company
+from employees.models import Employee, LeaveBalance
 
 
 class Command(BaseCommand):
@@ -13,12 +15,8 @@ class Command(BaseCommand):
             type=int,
             help="Month to accrue leaves for (1-12, default: current month)",
         )
-        parser.add_argument(
-            "--year", type=int, help="Year to accrue leaves for (default: current year)"
-        )
-        parser.add_argument(
-            "--company-id", type=int, help="Accrue leaves for specific company ID only"
-        )
+        parser.add_argument("--year", type=int, help="Year to accrue leaves for (default: current year)")
+        parser.add_argument("--company-id", type=int, help="Accrue leaves for specific company ID only")
         parser.add_argument(
             "--dry-run",
             action="store_true",
@@ -57,10 +55,7 @@ class Command(BaseCommand):
         }
 
         # Get companies to process
-        if company_id:
-            companies = Company.objects.filter(id=company_id)
-        else:
-            companies = Company.objects.all()
+        companies = Company.objects.filter(id=company_id) if company_id else Company.objects.all()
 
         if not companies.exists():
             self.stdout.write(self.style.WARNING("No companies found"))
@@ -69,22 +64,14 @@ class Command(BaseCommand):
         target_date_str = f"{target_month:02d}/{target_year}"
 
         if dry_run:
-            self.stdout.write(
-                self.style.WARNING(
-                    f"🔍 DRY RUN - Showing what would be accrued for {target_date_str}"
-                )
-            )
+            self.stdout.write(self.style.WARNING(f"🔍 DRY RUN - Showing what would be accrued for {target_date_str}"))
         else:
             self.stdout.write(f"💰 Accruing monthly leaves for {target_date_str}")
 
         if preserve_manual:
-            self.stdout.write(
-                self.style.SUCCESS("✅ Manual admin adjustments will be preserved")
-            )
+            self.stdout.write(self.style.SUCCESS("✅ Manual admin adjustments will be preserved"))
         else:
-            self.stdout.write(
-                self.style.WARNING("⚠️  Manual admin adjustments will be overwritten")
-            )
+            self.stdout.write(self.style.WARNING("⚠️  Manual admin adjustments will be overwritten"))
 
         total_updated = 0
 
@@ -96,11 +83,7 @@ class Command(BaseCommand):
                 rules = leave_allocation_rules[company_name]
             else:
                 # Skip companies without defined rules
-                self.stdout.write(
-                    self.style.WARNING(
-                        f"⚠️  Skipping {company_name} - no leave rules defined"
-                    )
-                )
+                self.stdout.write(self.style.WARNING(f"⚠️  Skipping {company_name} - no leave rules defined"))
                 continue
 
             self.stdout.write(f"\n📍 Processing Company: {company_name}")
@@ -137,22 +120,15 @@ class Command(BaseCommand):
 
                 if preserve_manual:
                     # Add monthly accrual to existing balance (preserves manual adjustments)
-                    new_cl = (
-                        leave_balance.casual_leave_allocated
-                        + rules["casual_leave_monthly"]
-                    )
-                    new_sl = (
-                        leave_balance.sick_leave_allocated + rules["sick_leave_monthly"]
-                    )
+                    new_cl = leave_balance.casual_leave_allocated + rules["casual_leave_monthly"]
+                    new_sl = leave_balance.sick_leave_allocated + rules["sick_leave_monthly"]
                 else:
                     # Calculate expected total based on months (overwrites manual adjustments)
                     # Calculate months from January 2026 to target month
                     start_month = date(2026, 1, 1)
                     target_date = date(target_year, target_month, 1)
                     months_elapsed = (
-                        (target_date.year - start_month.year) * 12
-                        + (target_date.month - start_month.month)
-                        + 1
+                        (target_date.year - start_month.year) * 12 + (target_date.month - start_month.month) + 1
                     )
 
                     new_cl = rules["casual_leave_monthly"] * months_elapsed
@@ -185,23 +161,13 @@ class Command(BaseCommand):
 
             if dry_run:
                 self.stdout.write(
-                    self.style.WARNING(
-                        f"   🔍 Would update {company_updated} employees for {company_name}"
-                    )
+                    self.style.WARNING(f"   🔍 Would update {company_updated} employees for {company_name}")
                 )
             else:
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f"   ✅ Updated {company_updated} employees for {company_name}"
-                    )
-                )
+                self.stdout.write(self.style.SUCCESS(f"   ✅ Updated {company_updated} employees for {company_name}"))
 
         if dry_run:
-            self.stdout.write(
-                self.style.WARNING(
-                    f"\n🔍 DRY RUN COMPLETE - Would update {total_updated} employees"
-                )
-            )
+            self.stdout.write(self.style.WARNING(f"\n🔍 DRY RUN COMPLETE - Would update {total_updated} employees"))
             self.stdout.write(
                 self.style.SUCCESS(
                     f"To apply changes, run: python manage.py accrue_monthly_leaves_by_company --month {target_month} --year {target_year}"
@@ -209,9 +175,7 @@ class Command(BaseCommand):
             )
         else:
             self.stdout.write(
-                self.style.SUCCESS(
-                    f"\n🎉 Monthly leave accrual completed! Updated {total_updated} employees"
-                )
+                self.style.SUCCESS(f"\n🎉 Monthly leave accrual completed! Updated {total_updated} employees")
             )
 
         # Show updated summary
@@ -222,9 +186,7 @@ class Command(BaseCommand):
                 if company_name in leave_allocation_rules:
                     employees = Employee.objects.filter(company=company, is_active=True)
                     if employees.exists():
-                        sample_balance = LeaveBalance.objects.filter(
-                            employee__company=company
-                        ).first()
+                        sample_balance = LeaveBalance.objects.filter(employee__company=company).first()
                         if sample_balance:
                             self.stdout.write(
                                 f"   {company_name}: CL={sample_balance.casual_leave_allocated}, "
@@ -235,15 +197,9 @@ class Command(BaseCommand):
         # Show admin guidance
         if not dry_run and preserve_manual:
             self.stdout.write("\n📝 ADMIN GUIDANCE:")
-            self.stdout.write(
-                "   • Manual leave adjustments made via Django Admin are preserved"
-            )
+            self.stdout.write("   • Manual leave adjustments made via Django Admin are preserved")
             self.stdout.write(
                 "   • To add previous/carry-forward leaves: Edit individual employee leave balances in Admin"
             )
-            self.stdout.write(
-                "   • To override manual adjustments: Use --preserve-manual=False flag"
-            )
-            self.stdout.write(
-                "   • Monthly accrual will continue to add to existing balances"
-            )
+            self.stdout.write("   • To override manual adjustments: Use --preserve-manual=False flag")
+            self.stdout.write("   • Monthly accrual will continue to add to existing balances")

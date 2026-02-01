@@ -1,7 +1,9 @@
+import logging
+
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+
 from employees.models import Attendance
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +24,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.WARNING("Starting missing punch detection..."))
 
         # Get all attendance records with clock_in but no clock_out
-        incomplete_attendance = Attendance.objects.filter(
-            clock_in__isnull=False, clock_out__isnull=True
-        ).exclude(
+        incomplete_attendance = Attendance.objects.filter(clock_in__isnull=False, clock_out__isnull=True).exclude(
             status="MISSING_PUNCH"  # Don't process already marked records
         )
 
@@ -33,10 +33,7 @@ class Command(BaseCommand):
 
         for attendance in incomplete_attendance:
             # Check if shift end time has passed
-            if (
-                attendance.location_tracking_end_time
-                and now >= attendance.location_tracking_end_time
-            ):
+            if attendance.location_tracking_end_time and now >= attendance.location_tracking_end_time:
                 # Shift duration has passed, mark as missing punch
 
                 if dry_run:
@@ -54,8 +51,7 @@ class Command(BaseCommand):
 
                     self.stdout.write(
                         self.style.SUCCESS(
-                            f"Marked as MISSING_PUNCH: "
-                            f"{attendance.employee.user.get_full_name()} on {attendance.date}"
+                            f"Marked as MISSING_PUNCH: {attendance.employee.user.get_full_name()} on {attendance.date}"
                         )
                     )
 
@@ -67,11 +63,7 @@ class Command(BaseCommand):
                 updated_count += 1
 
         if dry_run:
-            self.stdout.write(
-                self.style.WARNING(
-                    f"\\n[DRY RUN] Would update {updated_count} attendance record(s)"
-                )
-            )
+            self.stdout.write(self.style.WARNING(f"\\n[DRY RUN] Would update {updated_count} attendance record(s)"))
         else:
             self.stdout.write(
                 self.style.SUCCESS(

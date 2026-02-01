@@ -1,15 +1,15 @@
-from django.core.management.base import BaseCommand
-from companies.models import Company, Location, Holiday
 from datetime import date
+
+from django.core.management.base import BaseCommand
+
+from companies.models import Company, Holiday, Location
 
 
 class Command(BaseCommand):
     help = "Setup sample holidays for companies and locations"
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "--company-id", type=int, help="Setup holidays for specific company ID"
-        )
+        parser.add_argument("--company-id", type=int, help="Setup holidays for specific company ID")
         parser.add_argument(
             "--year",
             type=int,
@@ -22,10 +22,7 @@ class Command(BaseCommand):
         year = options["year"]
 
         # Get companies
-        if company_id:
-            companies = Company.objects.filter(id=company_id)
-        else:
-            companies = Company.objects.all()
+        companies = Company.objects.filter(id=company_id) if company_id else Company.objects.all()
 
         if not companies.exists():
             self.stdout.write(self.style.WARNING("No companies found"))
@@ -131,23 +128,13 @@ class Command(BaseCommand):
                         total_created += 1
 
                 if location_created > 0:
-                    self.stdout.write(
-                        self.style.SUCCESS(
-                            f"  Created {location_created} holidays for {location.name}"
-                        )
-                    )
+                    self.stdout.write(self.style.SUCCESS(f"  Created {location_created} holidays for {location.name}"))
                 else:
                     self.stdout.write(
-                        self.style.WARNING(
-                            f"  No new holidays created for {location.name} (may already exist)"
-                        )
+                        self.style.WARNING(f"  No new holidays created for {location.name} (may already exist)")
                     )
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"\n✅ Total holidays created: {total_created} for year {year}"
-            )
-        )
+        self.stdout.write(self.style.SUCCESS(f"\n✅ Total holidays created: {total_created} for year {year}"))
 
         # Show next steps
         self.stdout.write(

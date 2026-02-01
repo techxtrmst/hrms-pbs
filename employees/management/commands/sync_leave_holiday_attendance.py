@@ -2,11 +2,13 @@
 Management command to sync attendance records for approved leaves and holidays
 """
 
+from datetime import date, timedelta
+
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from datetime import timedelta, date
-from employees.models import Employee, Attendance, LeaveRequest
+
 from companies.models import Holiday
+from employees.models import Attendance, Employee, LeaveRequest
 
 
 class Command(BaseCommand):
@@ -82,22 +84,18 @@ class Command(BaseCommand):
                         )
                 current_date += timedelta(days=1)
 
-        self.stdout.write(
-            self.style.SUCCESS(f"✓ Created {leave_count} leave attendance records")
-        )
+        self.stdout.write(self.style.SUCCESS(f"✓ Created {leave_count} leave attendance records"))
 
         # 2. Sync holidays
         self.stdout.write("\n2. Syncing holidays...")
-        holidays = Holiday.objects.filter(
-            date__gte=start_date, date__lte=end_date, is_active=True
-        ).select_related("company", "location")
+        holidays = Holiday.objects.filter(date__gte=start_date, date__lte=end_date, is_active=True).select_related(
+            "company", "location"
+        )
 
         holiday_count = 0
         for holiday in holidays:
             # Get all employees for this company and location
-            employees = Employee.objects.filter(
-                company=holiday.company, location=holiday.location, is_active=True
-            )
+            employees = Employee.objects.filter(company=holiday.company, location=holiday.location, is_active=True)
 
             for emp in employees:
                 # Skip if it's a weekly off for this employee
@@ -119,12 +117,8 @@ class Command(BaseCommand):
                                 f"  Created HOLIDAY attendance for {emp.user.get_full_name()} on {holiday.date} ({holiday.name})"
                             )
 
-        self.stdout.write(
-            self.style.SUCCESS(f"✓ Created {holiday_count} holiday attendance records")
-        )
+        self.stdout.write(self.style.SUCCESS(f"✓ Created {holiday_count} holiday attendance records"))
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f"\n✓ Sync complete! Total records created: {leave_count + holiday_count}"
-            )
+            self.style.SUCCESS(f"\n✓ Sync complete! Total records created: {leave_count + holiday_count}")
         )

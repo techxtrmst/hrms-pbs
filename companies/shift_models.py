@@ -1,4 +1,5 @@
 from django.db import models
+
 from .models import Company
 
 
@@ -7,30 +8,20 @@ class ShiftSchedule(models.Model):
     Defines shift timings for employees
     """
 
-    company = models.ForeignKey(
-        Company, on_delete=models.CASCADE, related_name="shifts"
-    )
-    name = models.CharField(
-        max_length=100, help_text="e.g., Morning Shift, Night Shift, General"
-    )
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="shifts")
+    name = models.CharField(max_length=100, help_text="e.g., Morning Shift, Night Shift, General")
     start_time = models.TimeField(help_text="Shift start time")
     end_time = models.TimeField(help_text="Shift end time")
 
     # Grace period and late arrival settings
-    grace_period_minutes = models.IntegerField(
-        default=15, help_text="Grace period in minutes for late arrival"
-    )
+    grace_period_minutes = models.IntegerField(default=15, help_text="Grace period in minutes for late arrival")
     early_departure_threshold_minutes = models.IntegerField(
         default=15, help_text="Minutes before shift end considered early departure"
     )
 
     # Break times
-    lunch_break_start = models.TimeField(
-        null=True, blank=True, help_text="Lunch break start time"
-    )
-    lunch_break_end = models.TimeField(
-        null=True, blank=True, help_text="Lunch break end time"
-    )
+    lunch_break_start = models.TimeField(null=True, blank=True, help_text="Lunch break start time")
+    lunch_break_end = models.TimeField(null=True, blank=True, help_text="Lunch break end time")
 
     # Working days
     monday = models.BooleanField(default=True)

@@ -1,7 +1,9 @@
+import logging
+
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+
 from employees.models import Employee
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -16,9 +18,7 @@ class Command(BaseCommand):
 
         # Find active employees whose exit date is today or in the past
         # We look for employees where is_active is True but exit_date is set and <= today
-        exiting_employees = Employee.objects.filter(
-            is_active=True, exit_date__lte=today, exit_date__isnull=False
-        )
+        exiting_employees = Employee.objects.filter(is_active=True, exit_date__lte=today, exit_date__isnull=False)
 
         count = 0
         for employee in exiting_employees:
@@ -42,10 +42,6 @@ class Command(BaseCommand):
 
             except Exception as e:
                 logger.error(f"Error processing exit for {employee}: {str(e)}")
-                self.stdout.write(
-                    self.style.ERROR(f"Error processing {employee}: {str(e)}")
-                )
+                self.stdout.write(self.style.ERROR(f"Error processing {employee}: {str(e)}"))
 
-        self.stdout.write(
-            self.style.SUCCESS(f"Successfully processed {count} scheduled exits.")
-        )
+        self.stdout.write(self.style.SUCCESS(f"Successfully processed {count} scheduled exits."))

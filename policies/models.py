@@ -1,7 +1,8 @@
-from django.db import models
 from django.conf import settings
-from companies.models import Company, Location
+from django.db import models
 from django.utils import timezone
+
+from companies.models import Company, Location
 
 
 class PolicySection(models.Model):
@@ -9,13 +10,9 @@ class PolicySection(models.Model):
     Defines the sections/chapters of a policy (e.g., Leave Policy, HR Policy, Work Culture, etc.)
     """
 
-    company = models.ForeignKey(
-        Company, on_delete=models.CASCADE, related_name="policy_sections"
-    )
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="policy_sections")
     title = models.CharField(max_length=200)
-    icon = models.CharField(
-        max_length=50, blank=True, help_text="Emoji or icon class (e.g., 📘, 🎯, 📋)"
-    )
+    icon = models.CharField(max_length=50, blank=True, help_text="Emoji or icon class (e.g., 📘, 🎯, 📋)")
     order = models.PositiveIntegerField(default=0, help_text="Display order")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -37,9 +34,7 @@ class Policy(models.Model):
     Each entity/location can have its own policy.
     """
 
-    company = models.ForeignKey(
-        Company, on_delete=models.CASCADE, related_name="policies"
-    )
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="policies")
     location = models.ForeignKey(
         Location,
         on_delete=models.CASCADE,
@@ -57,20 +52,12 @@ class Policy(models.Model):
 
     title = models.CharField(max_length=300)
     subtitle = models.CharField(max_length=500, blank=True)
-    content = models.TextField(
-        help_text="Main policy content (supports HTML/rich text)"
-    )
+    content = models.TextField(help_text="Main policy content (supports HTML/rich text)")
 
     # Metadata
-    version = models.CharField(
-        max_length=50, default="1.0", help_text="Version number of this policy"
-    )
-    is_published = models.BooleanField(
-        default=False, help_text="Only published policies are visible to employees"
-    )
-    effective_date = models.DateField(
-        default=timezone.now, help_text="Date when this policy becomes effective"
-    )
+    version = models.CharField(max_length=50, default="1.0", help_text="Version number of this policy")
+    is_published = models.BooleanField(default=False, help_text="Only published policies are visible to employees")
+    effective_date = models.DateField(default=timezone.now, help_text="Date when this policy becomes effective")
 
     # Audit fields
     created_by = models.ForeignKey(
@@ -116,9 +103,7 @@ class Policy(models.Model):
         from employees.models import Employee
 
         # Get all active employees at this location
-        total_employees = Employee.objects.filter(
-            company=self.company, location=self.location, is_active=True
-        ).count()
+        total_employees = Employee.objects.filter(company=self.company, location=self.location, is_active=True).count()
         acknowledged = self.get_acknowledgment_count()
         return total_employees - acknowledged
 
@@ -128,9 +113,7 @@ class PolicyAcknowledgment(models.Model):
     Tracks which employees have read and acknowledged the policy
     """
 
-    policy = models.ForeignKey(
-        Policy, on_delete=models.CASCADE, related_name="acknowledgments"
-    )
+    policy = models.ForeignKey(Policy, on_delete=models.CASCADE, related_name="acknowledgments")
     employee = models.ForeignKey(
         "employees.Employee",
         on_delete=models.CASCADE,
@@ -162,9 +145,7 @@ class PolicyAttachment(models.Model):
     Attachments/documents related to a policy (PDFs, images, etc.)
     """
 
-    policy = models.ForeignKey(
-        Policy, on_delete=models.CASCADE, related_name="attachments"
-    )
+    policy = models.ForeignKey(Policy, on_delete=models.CASCADE, related_name="attachments")
     title = models.CharField(max_length=200)
     file = models.FileField(
         upload_to="policy_attachments/%Y/%m/",
@@ -172,9 +153,7 @@ class PolicyAttachment(models.Model):
     )
     file_type = models.CharField(max_length=50, blank=True)
     file_size = models.PositiveIntegerField(default=0, help_text="File size in bytes")
-    uploaded_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
-    )
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

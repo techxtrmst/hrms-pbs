@@ -2,12 +2,14 @@
 Management command to test calendar attendance statuses
 """
 
+from collections import Counter
+from datetime import date, timedelta
+
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from datetime import date, timedelta
-from employees.models import Employee, Attendance, LeaveRequest
+
 from companies.models import Holiday
-from collections import Counter
+from employees.models import Attendance, Employee, LeaveRequest
 
 
 class Command(BaseCommand):
@@ -66,9 +68,7 @@ class Command(BaseCommand):
             self.stdout.write("-" * 60)
 
             # Get attendance for the month
-            month_attendance = Attendance.objects.filter(
-                employee=emp, date__range=[month_start, month_end]
-            )
+            month_attendance = Attendance.objects.filter(employee=emp, date__range=[month_start, month_end])
             att_map = {att.date.day: att for att in month_attendance}
 
             # Get sick leaves
@@ -153,16 +153,14 @@ class Command(BaseCommand):
 
                 # Show first few days for each employee
                 if day <= 7:
-                    self.stdout.write(
-                        f"  Day {day:2d}: {status_class:15s} - {status_desc}"
-                    )
+                    self.stdout.write(f"  Day {day:2d}: {status_class:15s} - {status_desc}")
 
             # Show employee summary
             emp_counter = Counter(employee_statuses)
             self.stdout.write(f"  Summary: {dict(emp_counter)}")
 
         # Overall summary
-        self.stdout.write(f"\n" + "=" * 80)
+        self.stdout.write("\n" + "=" * 80)
         self.stdout.write("OVERALL STATUS DISTRIBUTION")
         self.stdout.write("=" * 80)
 
@@ -187,34 +185,26 @@ class Command(BaseCommand):
 
         missing_statuses = [s for s in expected_statuses if s not in status_counts]
         if missing_statuses:
-            self.stdout.write(
-                f"\n⚠️  Missing statuses (no data found): {missing_statuses}"
-            )
+            self.stdout.write(f"\n⚠️  Missing statuses (no data found): {missing_statuses}")
         else:
-            self.stdout.write(f"\n✅ All status types found in data!")
+            self.stdout.write("\n✅ All status types found in data!")
 
         # Recommendations
-        self.stdout.write(f"\n" + "=" * 80)
+        self.stdout.write("\n" + "=" * 80)
         self.stdout.write("RECOMMENDATIONS")
         self.stdout.write("=" * 80)
 
         if status_counts.get("no-attendance", 0) > 0:
-            self.stdout.write(
-                "📝 Run sync_all_attendance command to create missing attendance records"
-            )
+            self.stdout.write("📝 Run sync_all_attendance command to create missing attendance records")
 
         if status_counts.get("future", 0) == 0:
             self.stdout.write("📝 Testing past month - future dates not applicable")
 
         if status_counts.get("holiday", 0) == 0:
-            self.stdout.write(
-                "📝 No holidays found - check if holidays are configured in database"
-            )
+            self.stdout.write("📝 No holidays found - check if holidays are configured in database")
 
         if status_counts.get("sick-leave", 0) == 0:
-            self.stdout.write(
-                "📝 No sick leaves found - check if SL leave requests are approved"
-            )
+            self.stdout.write("📝 No sick leaves found - check if SL leave requests are approved")
 
-        self.stdout.write(f"\n✅ Calendar status test completed!")
+        self.stdout.write("\n✅ Calendar status test completed!")
         self.stdout.write("=" * 80)

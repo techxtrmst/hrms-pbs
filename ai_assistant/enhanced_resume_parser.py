@@ -3,9 +3,11 @@ Enhanced Resume Parser with comprehensive data extraction
 Extracts: Basic Info, Education, Experience, Projects, Certifications, Skills
 """
 
-import re
+import contextlib
 import hashlib
+import re
 from datetime import datetime
+
 from dateutil import parser as date_parser
 
 
@@ -202,9 +204,7 @@ class EnhancedResumeParser:
                 "education": EnhancedResumeParser._extract_education(text),
                 # Experience
                 "experience": EnhancedResumeParser._extract_experience(text),
-                "total_experience_years": EnhancedResumeParser._calculate_total_experience(
-                    text
-                ),
+                "total_experience_years": EnhancedResumeParser._calculate_total_experience(text),
                 # Projects
                 "projects": EnhancedResumeParser._extract_projects(text),
                 # Certifications
@@ -238,7 +238,7 @@ class EnhancedResumeParser:
                 return EnhancedResumeParser._extract_text_from_docx(file_path)
             else:
                 return ""
-        except:
+        except Exception:
             return ""
 
     @staticmethod
@@ -259,9 +259,7 @@ class EnhancedResumeParser:
                         page_text = re.sub(r"([a-z])([A-Z])", r"\1 \2", page_text)
 
                         # Add space after email if stuck to next word (e.g. .comName -> .com Name)
-                        page_text = re.sub(
-                            r"(\.com|\.in|\.org|\.net)([A-Za-z])", r"\1 \2", page_text
-                        )
+                        page_text = re.sub(r"(\.com|\.in|\.org|\.net)([A-Za-z])", r"\1 \2", page_text)
 
                         text += page_text + "\n"
 
@@ -273,7 +271,7 @@ class EnhancedResumeParser:
                 return ""
 
             return text
-        except:
+        except Exception:
             return ""
 
     # ==================== BASIC DETAILS ====================
@@ -281,7 +279,7 @@ class EnhancedResumeParser:
     @staticmethod
     def _extract_name(text):
         """Extract candidate name - The Ultimate Fallback Strategy"""
-        lines = [l.strip() for l in text.split("\n") if l.strip()]
+        lines = [line.strip() for line in text.split("\n") if line.strip()]
 
         # Banned words - Expanded to kill "Uber Data Analytics"
         banned = [
@@ -353,12 +351,13 @@ class EnhancedResumeParser:
             words = clean_line.split()
 
             # Name typical format: 2 or 3 words (First Last)
-            if 2 <= len(words) <= 3:
-                # Must be Title Case or UPPER
-                if clean_line.istitle() or clean_line.isupper():
-                    # Must be alphabet only
-                    if clean_line.replace(" ", "").replace(".", "").isalpha():
-                        return clean_line  # Return the FIRST valid match at the top.
+            # Must be Title Case or UPPER and alphabet only
+            if (
+                2 <= len(words) <= 3
+                and (clean_line.istitle() or clean_line.isupper())
+                and clean_line.replace(" ", "").replace(".", "").isalpha()
+            ):
+                return clean_line  # Return the FIRST valid match at the top.
 
         return "Unknown Candidate"
 
@@ -403,9 +402,7 @@ class EnhancedResumeParser:
         # Ban List
         ban_list = ["git", "hub", "github", "python", "java", "react", "node"]
 
-        matches = re.findall(
-            r"\b([A-Z][a-z]+(?: [A-Z][a-z]+)*,\s*[A-Z][a-z]+(?: [A-Z][a-z]+)*)\b", text
-        )
+        matches = re.findall(r"\b([A-Z][a-z]+(?: [A-Z][a-z]+)*,\s*[A-Z][a-z]+(?: [A-Z][a-z]+)*)\b", text)
 
         for match in matches:
             match_lower = match.lower()
@@ -423,9 +420,8 @@ class EnhancedResumeParser:
                     has_known = True
                     break
 
-            if has_known:
-                if len(match) < 60:
-                    return match
+            if has_known and len(match) < 60:
+                return match
 
         # Fallback for single line cities "Hyderabad"
         for line in text.split("\n"):
@@ -515,9 +511,7 @@ class EnhancedResumeParser:
                     return loc
 
         # 2. Pattern Search (City, State)
-        loc_pattern = (
-            r"\b([A-Z][a-z]+(?: [A-Z][a-z]+)*,\s*[A-Z][a-z]+(?: [A-Z][a-z]+)*)\b"
-        )
+        loc_pattern = r"\b([A-Z][a-z]+(?: [A-Z][a-z]+)*,\s*[A-Z][a-z]+(?: [A-Z][a-z]+)*)\b"
         matches = re.findall(loc_pattern, text)
 
         for match in matches:
@@ -764,9 +758,7 @@ class EnhancedResumeParser:
                 if i + 2 < len(lines):
                     context_lines.append(lines[i + 2].strip())
 
-                full_context = " | ".join(
-                    [l for l in context_lines if l]
-                )  # Use separator
+                full_context = " | ".join([ctx_line for ctx_line in context_lines if ctx_line])  # Use separator
 
                 # A. Extract Year (4 digits, 1990-2030)
                 years = re.findall(r"\b(199\d|20[0-2]\d|2030)\b", full_context)
@@ -777,20 +769,14 @@ class EnhancedResumeParser:
                 gpa_pattern = r"\b(\d{1,2}\.?\d{0,2})\s*(?:CGPA|GPA|%|/10|/100)\b"
                 gpa_match = re.search(gpa_pattern, full_context, re.IGNORECASE)
                 if gpa_match:
-                    try:
+                    with contextlib.suppress(BaseException):
                         gpa = float(gpa_match.group(1))
-                    except:
-                        pass
                 else:
                     # Fallback: finding float at end of line (e.g. "... | 7.94")
-                    fallback = re.search(
-                        r"(?:\||\-)\s*(\d{1,2}\.\d{2})\b", full_context
-                    )
+                    fallback = re.search(r"(?:\||\-)\s*(\d{1,2}\.\d{2})\b", full_context)
                     if fallback:
-                        try:
+                        with contextlib.suppress(BaseException):
                             gpa = float(fallback.group(1))
-                        except:
-                            pass
 
                 # C. Extract University / College
                 # Strategy: Look for specific keywords or assume non-degree parts are Uni
@@ -823,11 +809,16 @@ class EnhancedResumeParser:
                     parts = line_str.split("|")
                     for part in parts:
                         p = part.strip()
-                        if degree not in p and not re.search(r"\d", p) and len(p) > 5:
+                        if (
+                            degree not in p
+                            and not re.search(r"\d", p)
+                            and len(p) > 5
+                            and "Science" not in p
+                            and "Engineering" not in p
+                        ):
                             # Avoid "Computer Science" as uni
-                            if "Science" not in p and "Engineering" not in p:
-                                university = p
-                                break
+                            university = p
+                            break
 
                 # D. Extract Specialization
                 specs = [
@@ -858,9 +849,7 @@ class EnhancedResumeParser:
                 education_list.append(
                     {
                         "degree": degree,
-                        "university": university
-                        if university
-                        else "University Not Detected",
+                        "university": university if university else "University Not Detected",
                         "specialization": specialization,
                         "year": year,
                         "gpa": gpa,
@@ -893,17 +882,13 @@ class EnhancedResumeParser:
             line_lower = line.lower().strip()
 
             # Detect experience section start
-            if any(
-                keyword in line_lower
-                for keyword in ["experience", "work history", "employment"]
-            ):
+            if any(keyword in line_lower for keyword in ["experience", "work history", "employment"]):
                 in_experience_section = True
                 continue
 
             # Detect section end
             if in_experience_section and any(
-                keyword in line_lower
-                for keyword in ["education", "skills", "projects", "certifications"]
+                keyword in line_lower for keyword in ["education", "skills", "projects", "certifications"]
             ):
                 break
 
@@ -916,9 +901,7 @@ class EnhancedResumeParser:
                     # Found a date range, likely an experience entry
                     match = re.search(date_pattern, line, re.IGNORECASE)
                     start_date = f"{match.group(1)} {match.group(2)}"
-                    end_date = (
-                        f"{match.group(3)} {match.group(4) if match.group(4) else ''}"
-                    )
+                    end_date = f"{match.group(3)} {match.group(4) if match.group(4) else ''}"
 
                     # Company and title are usually in nearby lines
                     company = None
@@ -944,11 +927,7 @@ class EnhancedResumeParser:
                             break
 
                         # Stop if complex empty line sequence (end of section)
-                        if (
-                            not desc_line
-                            and j + 1 < len(lines)
-                            and not lines[j + 1].strip()
-                        ):
+                        if not desc_line and j + 1 < len(lines) and not lines[j + 1].strip():
                             continue
 
                         if desc_line:
@@ -994,17 +973,14 @@ class EnhancedResumeParser:
             for exp in experience:
                 try:
                     start = date_parser.parse(exp["start_date"], fuzzy=True)
-                    if (
-                        "present" in exp["end_date"].lower()
-                        or "current" in exp["end_date"].lower()
-                    ):
+                    if "present" in exp["end_date"].lower() or "current" in exp["end_date"].lower():
                         end = datetime.now()
                     else:
                         end = date_parser.parse(exp["end_date"], fuzzy=True)
 
                     months = (end.year - start.year) * 12 + (end.month - start.month)
                     total_months += months
-                except:
+                except Exception:
                     pass
 
             if total_months > 0:
@@ -1025,16 +1001,12 @@ class EnhancedResumeParser:
         for i, line in enumerate(lines):
             line_lower = line.lower().strip()
 
-            if any(
-                keyword in line_lower
-                for keyword in ["projects", "project work", "academic projects"]
-            ):
+            if any(keyword in line_lower for keyword in ["projects", "project work", "academic projects"]):
                 in_projects_section = True
                 continue
 
             if in_projects_section and any(
-                keyword in line_lower
-                for keyword in ["experience", "education", "certifications", "skills"]
+                keyword in line_lower for keyword in ["experience", "education", "certifications", "skills"]
             ):
                 break
 
@@ -1050,18 +1022,15 @@ class EnhancedResumeParser:
 
                     if next_line:
                         # Stop if we hit a new potential project title (short line, capitalized) or section
+                        # Only break if it really looks like a header (no bullet)
                         if (
                             len(next_line) < 40
                             and j > i + 2
-                            and not any(
-                                kw in next_line.lower()
-                                for kw in EnhancedResumeParser.TECHNICAL_SKILLS
-                            )
+                            and not any(kw in next_line.lower() for kw in EnhancedResumeParser.TECHNICAL_SKILLS)
                             and next_line[0].isupper()
+                            and not next_line.startswith(("•", "-", "*", "➢"))
                         ):
-                            # Only break if it really looks like a header (no bullet)
-                            if not next_line.startswith(("•", "-", "*", "➢")):
-                                break
+                            break
 
                         # Check for technology keywords
                         for tech in EnhancedResumeParser.TECHNICAL_SKILLS:
@@ -1074,15 +1043,9 @@ class EnhancedResumeParser:
                     projects_list.append(
                         {
                             "title": title[:100],
-                            "technologies": list(set(technologies))[
-                                :15
-                            ],  # Unique, max 15
-                            "description": "\n".join(description)
-                            if description
-                            else None,
-                            "domain": EnhancedResumeParser._determine_project_domain(
-                                title + " ".join(description)
-                            ),
+                            "technologies": list(set(technologies))[:15],  # Unique, max 15
+                            "description": "\n".join(description) if description else None,
+                            "domain": EnhancedResumeParser._determine_project_domain(title + " ".join(description)),
                         }
                     )
 
@@ -1096,21 +1059,13 @@ class EnhancedResumeParser:
         """Determine project domain"""
         text_lower = text.lower()
 
-        if any(
-            kw in text_lower
-            for kw in ["web", "website", "e-commerce", "portal", "dashboard"]
-        ):
+        if any(kw in text_lower for kw in ["web", "website", "e-commerce", "portal", "dashboard"]):
             return "Web"
         elif any(kw in text_lower for kw in ["mobile", "android", "ios", "app"]):
             return "Mobile"
-        elif any(
-            kw in text_lower
-            for kw in ["ai", "ml", "machine learning", "deep learning", "neural"]
-        ):
+        elif any(kw in text_lower for kw in ["ai", "ml", "machine learning", "deep learning", "neural"]):
             return "AI/ML"
-        elif any(
-            kw in text_lower for kw in ["data", "analytics", "visualization", "bi"]
-        ):
+        elif any(kw in text_lower for kw in ["data", "analytics", "visualization", "bi"]):
             return "Data"
         elif any(kw in text_lower for kw in ["cloud", "aws", "azure", "devops"]):
             return "Cloud"
@@ -1130,16 +1085,12 @@ class EnhancedResumeParser:
         for i, line in enumerate(lines):
             line_lower = line.lower().strip()
 
-            if any(
-                keyword in line_lower
-                for keyword in ["certification", "certificate", "courses", "training"]
-            ):
+            if any(keyword in line_lower for keyword in ["certification", "certificate", "courses", "training"]):
                 in_cert_section = True
                 continue
 
             if in_cert_section and any(
-                keyword in line_lower
-                for keyword in ["experience", "education", "projects", "skills"]
+                keyword in line_lower for keyword in ["experience", "education", "projects", "skills"]
             ):
                 break
 
@@ -1161,9 +1112,7 @@ class EnhancedResumeParser:
                     if next_line:
                         issuer = re.sub(r"\d{4}", "", next_line).strip()[:100]
 
-                certifications_list.append(
-                    {"name": cert_name[:150], "issuer": issuer, "year": year}
-                )
+                certifications_list.append({"name": cert_name[:150], "issuer": issuer, "year": year})
 
                 if len(certifications_list) >= 10:  # Limit to 10
                     break
@@ -1279,23 +1228,13 @@ class EnhancedResumeParser:
         """Determine industry domain"""
         text_lower = text.lower()
 
-        if any(
-            kw in text_lower
-            for kw in ["software", "developer", "programming", "coding", "tech"]
-        ):
+        if any(kw in text_lower for kw in ["software", "developer", "programming", "coding", "tech"]):
             return "IT"
-        elif any(
-            kw in text_lower
-            for kw in ["finance", "banking", "accounting", "investment"]
-        ):
+        elif any(kw in text_lower for kw in ["finance", "banking", "accounting", "investment"]):
             return "Finance"
-        elif any(
-            kw in text_lower for kw in ["healthcare", "medical", "hospital", "pharma"]
-        ):
+        elif any(kw in text_lower for kw in ["healthcare", "medical", "hospital", "pharma"]):
             return "Healthcare"
-        elif any(
-            kw in text_lower for kw in ["marketing", "sales", "business development"]
-        ):
+        elif any(kw in text_lower for kw in ["marketing", "sales", "business development"]):
             return "Marketing"
         elif any(kw in text_lower for kw in ["hr", "human resource", "recruitment"]):
             return "HR"

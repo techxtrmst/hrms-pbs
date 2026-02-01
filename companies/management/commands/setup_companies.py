@@ -4,6 +4,7 @@ Creates Petabytz, Bluebix, and Softstandar with their respective configurations
 """
 
 from django.core.management.base import BaseCommand
+
 from companies.models import Company
 
 
@@ -51,22 +52,12 @@ class Command(BaseCommand):
         ]
 
         for company_data in companies_data:
-            company, created = Company.objects.update_or_create(
-                slug=company_data["slug"], defaults=company_data
-            )
+            company, created = Company.objects.update_or_create(slug=company_data["slug"], defaults=company_data)
 
             if created:
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f"✓ Created company: {company.name} ({company.primary_domain})"
-                    )
-                )
+                self.stdout.write(self.style.SUCCESS(f"✓ Created company: {company.name} ({company.primary_domain})"))
             else:
-                self.stdout.write(
-                    self.style.WARNING(
-                        f"✓ Updated company: {company.name} ({company.primary_domain})"
-                    )
-                )
+                self.stdout.write(self.style.WARNING(f"✓ Updated company: {company.name} ({company.primary_domain})"))
 
         self.stdout.write(
             self.style.SUCCESS(

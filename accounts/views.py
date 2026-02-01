@@ -1,8 +1,17 @@
-from django.urls import reverse_lazy
-from django.contrib.auth.views import PasswordChangeView, LoginView
-from django.contrib import messages
+import logging
 import os
+
 from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.views import (
+    LoginView,
+    PasswordChangeView,
+    PasswordResetConfirmView,
+)
+from django.urls import reverse_lazy
+
+logger = logging.getLogger(__name__)
 
 
 class CustomLoginView(LoginView):
@@ -25,13 +34,11 @@ class CustomLoginView(LoginView):
                     # Check for image extensions
                     # NOTE: Images optimized to AVIF format for 88%+ size reduction
                     # Original JPGs were 43.42 MB, now 4.93 MB in AVIF
-                    if filename.lower().endswith(
-                        (".avif", ".png", ".jpg", ".jpeg", ".gif", ".webp")
-                    ):
+                    if filename.lower().endswith((".avif", ".png", ".jpg", ".jpeg", ".gif", ".webp")):
                         # Add relative path for static tag usage
                         slide_images.append(f"accounts/slides/{filename}")
             except Exception as e:
-                print(f"Error reading slides directory: {e}")
+                logger.warning("Error reading slides directory: %s", e)
 
         # If no images found, template falls back to Unsplash placeholder images
         context["slide_images"] = slide_images
@@ -48,18 +55,13 @@ class CustomPasswordChangeView(PasswordChangeView):
         user.must_change_password = False
         user.save(update_fields=["must_change_password"])
 
-        print(f"DEBUG: Password changed for {user.email}. Flag set to False.")
+        logger.debug("Password changed for %s. Flag set to False.", user.email)
 
         # Ensure session auth hash is updated to prevent logout
-        from django.contrib.auth import update_session_auth_hash
-
         update_session_auth_hash(self.request, user)
 
         messages.success(self.request, "Your password has been successfully updated.")
         return super().form_valid(form)
-
-
-from django.contrib.auth.views import PasswordResetConfirmView
 
 
 class CustomPasswordResetConfirmView(PasswordResetConfirmView):

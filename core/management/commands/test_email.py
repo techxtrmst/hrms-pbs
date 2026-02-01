@@ -1,7 +1,8 @@
-from django.core.management.base import BaseCommand
-from django.core.mail import send_mail
-from django.conf import settings
 import smtplib
+
+from django.conf import settings
+from django.core.mail import send_mail
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
@@ -23,17 +24,9 @@ class Command(BaseCommand):
                 [settings.EMAIL_HOST_USER],  # Send to self for testing
                 fail_silently=False,
             )
-            self.stdout.write(
-                self.style.SUCCESS("Successfully sent test email! Check your inbox.")
-            )
+            self.stdout.write(self.style.SUCCESS("Successfully sent test email! Check your inbox."))
         except smtplib.SMTPAuthenticationError as e:
             self.stdout.write(self.style.ERROR(f"Authentication Error: {e}"))
-            self.stdout.write(
-                self.style.ERROR(
-                    "Please check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD in settings.py"
-                )
-            )
+            self.stdout.write(self.style.ERROR("Please check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD in settings.py"))
         except Exception as e:
-            self.stdout.write(
-                self.style.ERROR(f"Failed to send email: {type(e).__name__}: {e}")
-            )
+            self.stdout.write(self.style.ERROR(f"Failed to send email: {type(e).__name__}: {e}"))

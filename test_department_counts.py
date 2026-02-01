@@ -1,8 +1,10 @@
 """
 Test script to verify department employee counts
 """
-from employees.models import Employee
+
 from collections import Counter
+
+from employees.models import Employee
 
 # Get all active employees
 employees = Employee.objects.filter(is_active=True)
@@ -12,7 +14,7 @@ print("DEPARTMENT EMPLOYEE COUNT VERIFICATION")
 print("=" * 70)
 
 # Method 1: Using Counter (what we see in database)
-dept_list = employees.values_list('department', flat=True)
+dept_list = employees.values_list("department", flat=True)
 dept_counts = Counter(dept_list)
 
 print("\n1. Raw Department Counts (from database):")
@@ -29,7 +31,7 @@ for dept in departments_raw:
     if dept and dept.strip():
         departments_set.add(dept.strip())
 
-departments_list = sorted(list(departments_set))
+departments_list = sorted(departments_set)
 
 print("\n2. After Deduplication (what dashboard shows):")
 print("-" * 70)

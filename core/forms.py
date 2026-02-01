@@ -7,9 +7,7 @@ User = get_user_model()
 class ForgotPasswordForm(forms.Form):
     email = forms.EmailField(
         label="Enter your registered email",
-        widget=forms.EmailInput(
-            attrs={"class": "form-control", "placeholder": "name@company.com"}
-        ),
+        widget=forms.EmailInput(attrs={"class": "form-control", "placeholder": "name@company.com"}),
     )
 
     def clean_email(self):
@@ -23,24 +21,18 @@ class OTPVerificationForm(forms.Form):
     otp = forms.CharField(
         label="Enter OTP",
         max_length=6,
-        widget=forms.TextInput(
-            attrs={"class": "form-control", "placeholder": "123456"}
-        ),
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "123456"}),
     )
 
 
 class ResetPasswordForm(forms.Form):
     new_password = forms.CharField(
         label="New Password",
-        widget=forms.PasswordInput(
-            attrs={"class": "form-control", "placeholder": "New Password"}
-        ),
+        widget=forms.PasswordInput(attrs={"class": "form-control", "placeholder": "New Password"}),
     )
     confirm_password = forms.CharField(
         label="Confirm Password",
-        widget=forms.PasswordInput(
-            attrs={"class": "form-control", "placeholder": "Confirm Password"}
-        ),
+        widget=forms.PasswordInput(attrs={"class": "form-control", "placeholder": "Confirm Password"}),
     )
 
     def clean(self):

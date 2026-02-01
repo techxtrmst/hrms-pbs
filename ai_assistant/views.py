@@ -145,7 +145,7 @@ def chatbot_query(request):
         try:
             ChatMessage.objects.create(user=request.user, user_message=question, bot_response=response_text)
         except Exception as e:
-            print(f"Error saving chat history: {e}")
+            logger.error(f"Error saving chat history: {e}")
 
         return JsonResponse(
             {
@@ -159,8 +159,8 @@ def chatbot_query(request):
     except Exception as e:
         import traceback
 
-        print(f"Chatbot error: {str(e)}")
-        print(traceback.format_exc())
+        logger.error(f"Chatbot error: {str(e)}")
+        logger.error(traceback.format_exc())
         return JsonResponse({"error": str(e)}, status=500)
 
 
@@ -632,8 +632,8 @@ def chatbot_query_floating(request):
     except Exception as e:
         import traceback
 
-        print(f"Floating chatbot error: {str(e)}")
-        print(traceback.format_exc())
+        logger.error(f"Floating chatbot error: {str(e)}")
+        logger.error(traceback.format_exc())
         return JsonResponse(
             {
                 "response": f"I encountered an error: {str(e)}. Would you like to speak with human support?",
@@ -651,8 +651,8 @@ def escalate_support(request):
     """
     try:
         data = json.loads(request.body)
-        user_id = data.get("user_id")
-        user_name = data.get("user_name")
+        data.get("user_id")
+        data.get("user_name")
         user_email = data.get("user_email")
 
         # Generate ticket ID

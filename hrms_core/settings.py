@@ -297,7 +297,7 @@ UNFOLD = {
     "SHOW_BACK_BUTTON": True,
     "ENVIRONMENT": "hrms_core.settings.environment_callback",
     "LOGIN": {
-        "redirect_after": lambda request: reverse_lazy("admin:index"),
+        "redirect_after": lambda _request: reverse_lazy("admin:index"),
     },
     "COLORS": {
         "primary": {

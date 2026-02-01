@@ -1,5 +1,6 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db import models
+
 from companies.models import Company
 
 
@@ -11,9 +12,7 @@ class User(AbstractUser):
         EMPLOYEE = "EMPLOYEE", "Employee"
 
     email = models.EmailField(unique=True)
-    company = models.ForeignKey(
-        Company, on_delete=models.CASCADE, related_name="users", null=True, blank=True
-    )
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="users", null=True, blank=True)
     role = models.CharField(max_length=50, choices=Role.choices, default=Role.EMPLOYEE)
     must_change_password = models.BooleanField(default=True)
 

@@ -13,9 +13,7 @@ class PersonalInfoForm(forms.ModelForm):
     """Step 1: Personal Information"""
 
     email = forms.EmailField(required=True, label="Official Email")
-    personal_email = forms.EmailField(
-        required=False, label="Personal Email", help_text="For information only"
-    )
+    personal_email = forms.EmailField(required=False, label="Personal Email", help_text="For information only")
     first_name = forms.CharField(max_length=30, required=True, label="First Name")
     last_name = forms.CharField(max_length=30, required=True, label="Last Name")
 
@@ -200,14 +198,14 @@ class JobDetailsForm(forms.ModelForm):
                         desig = Designation.objects.filter(company=self.company, id=initial["designation_id"]).first()
                         if desig:
                             self.initial["designation"] = desig
-                    except:
+                    except Exception:
                         pass
                 elif isinstance(initial.get("designation"), str):
                     try:
                         desig = Designation.objects.filter(company=self.company, name=initial["designation"]).first()
                         if desig:
                             self.initial["designation"] = desig
-                    except:
+                    except Exception:
                         pass
 
                 # Handle department - can be ID or name
@@ -216,14 +214,14 @@ class JobDetailsForm(forms.ModelForm):
                         dept = Department.objects.filter(company=self.company, id=initial["department_id"]).first()
                         if dept:
                             self.initial["department"] = dept
-                    except:
+                    except Exception:
                         pass
                 elif isinstance(initial.get("department"), str):
                     try:
                         dept = Department.objects.filter(company=self.company, name=initial["department"]).first()
                         if dept:
                             self.initial["department"] = dept
-                    except:
+                    except Exception:
                         pass
 
                 # Handle shift - can be ID or name
@@ -234,7 +232,7 @@ class JobDetailsForm(forms.ModelForm):
                         ).first()
                         if shift:
                             self.initial["shift_schedule"] = shift
-                    except:
+                    except Exception:
                         pass
                 elif isinstance(initial.get("shift_schedule"), str):
                     try:
@@ -243,7 +241,7 @@ class JobDetailsForm(forms.ModelForm):
                         ).first()
                         if shift:
                             self.initial["shift_schedule"] = shift
-                    except:
+                    except Exception:
                         pass
 
 

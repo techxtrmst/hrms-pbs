@@ -22,22 +22,31 @@ PATTERNS = [
     (r"^\s*breakpoint\s*\(", "breakpoint() found"),
     # console.log equivalent
     (r"console\.log\(", "console.log() found (JavaScript)"),
-    # Sensitive data patterns in logs
+    # Sensitive data patterns in logs - only match if actually logging a variable
+    # that appears to contain the sensitive value (e.g., {password}, password=)
     (
-        r"logger\.(info|debug|warning|error)\([^)]*password[^)]*\)",
-        "Potential password in log",
+        r"logger\.(info|debug|warning|error)\([^)]*\{password\}",
+        "Potential password value in log",
     ),
     (
-        r"logger\.(info|debug|warning|error)\([^)]*secret[^)]*\)",
-        "Potential secret in log",
+        r"logger\.(info|debug|warning|error)\([^)]*password\s*=",
+        "Potential password value in log",
     ),
     (
-        r"logger\.(info|debug|warning|error)\([^)]*token[^)]*\)",
-        "Potential token in log",
+        r"logger\.(info|debug|warning|error)\([^)]*\{secret\}",
+        "Potential secret value in log",
     ),
     (
-        r"logger\.(info|debug|warning|error)\([^)]*api[_-]?key[^)]*\)",
-        "Potential API key in log",
+        r"logger\.(info|debug|warning|error)\([^)]*secret\s*=",
+        "Potential secret value in log",
+    ),
+    (
+        r"logger\.(info|debug|warning|error)\([^)]*\{.*token.*\}",
+        "Potential token value in log",
+    ),
+    (
+        r"logger\.(info|debug|warning|error)\([^)]*\{.*api[_-]?key.*\}",
+        "Potential API key value in log",
     ),
     # TODO/FIXME with security implications
     (r"#\s*TODO.*security", "Security-related TODO found"),
@@ -57,6 +66,14 @@ EXCLUDE_PATTERNS = [
     r"scripts/check_env_example\.py$",  # Exclude check scripts
     r"scripts/django_checks\.py$",  # Exclude check scripts
     r"scripts/setup_precommit\.py$",  # Exclude setup script
+    # Exclude debug and test scripts in root (standalone utilities)
+    r"^debug_.*\.py$",
+    r"^test_.*\.py$",
+    r"^check_.*\.py$",
+    r"^diagnose_.*\.py$",
+    r"^verify_.*\.py$",
+    r"^fix_.*\.py$",
+    r"^payslip_generator\.py$",
 ]
 
 

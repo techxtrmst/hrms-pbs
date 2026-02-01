@@ -3,7 +3,14 @@ from import_export.admin import ImportExportModelAdmin
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.contrib.import_export.forms import ExportForm, ImportForm
 
-from .models import Attendance, AttendanceSession, EmergencyContact, Employee
+from .models import (
+    Attendance,
+    AttendanceSession,
+    EmergencyContact,
+    Employee,
+    HandbookSection,
+    PolicySection,
+)
 
 
 class EmergencyContactInline(TabularInline):
@@ -50,9 +57,6 @@ class EmergencyContactAdmin(ModelAdmin):
         "name",
         "phone_number",
     )
-
-
-from .models import HandbookSection, PolicySection
 
 
 @admin.register(HandbookSection)

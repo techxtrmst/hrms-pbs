@@ -1,4 +1,6 @@
+import contextlib
 import json
+import logging
 from datetime import timedelta
 
 import pytz
@@ -9,10 +11,11 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from django.views.generic import CreateView, DeleteView, FormView, ListView, UpdateView
 from loguru import logger
 from timezonefinder import TimezoneFinder
@@ -32,15 +35,11 @@ from .forms import (
     LeaveApplicationForm,
     RegularizationRequestForm,
 )
-from .location_tracking_views import (
-    get_employee_location_history,
-    get_location_tracking_status,
-    submit_hourly_location,
-)
 from .models import (
     Attendance,
     AttendanceSession,
     Employee,
+    EmployeeIDProof,
     LeaveBalance,
     LeaveRequest,
     LocationLog,
@@ -239,10 +238,12 @@ class EmployeeUpdateView(LoginRequiredMixin, CompanyAdminRequiredMixin, UpdateVi
         # This handles contacts that were removed from the form
         existing_contacts = EmergencyContact.objects.filter(employee=employee)
         for contact in existing_contacts:
-            if contact.id not in processed_contact_ids:
+            if (
+                contact.id not in processed_contact_ids
+                and f"emergency_contact_delete_{contact.id}" in self.request.POST
+            ):
                 # Check if it's marked for deletion
-                if f"emergency_contact_delete_{contact.id}" in self.request.POST:
-                    contact.delete()
+                contact.delete()
 
         return response
 
@@ -418,6 +419,7 @@ def clock_in(request):
 
             # --- TIMEZONE RESOLUTION (Assigned Location First) ---
             from core.utils import get_user_timezone
+
             user_timezone = get_user_timezone(request.user, getattr(request, "company", None))
 
             # Only fallback to browser/coordinates if assigned location doesn't have a specific TZ
@@ -426,13 +428,13 @@ def clock_in(request):
                 detected_tz = data.get("timezone")
                 if not detected_tz:
                     detected_tz = detect_timezone_from_coordinates(lat, lng)
-                
+
                 if detected_tz:
                     user_timezone = detected_tz
 
             # Calculate today based on the resolved timezone
             import pytz
-            
+
             try:
                 tz = pytz.timezone(user_timezone)
                 today = timezone.now().astimezone(tz).date()
@@ -471,17 +473,14 @@ def clock_in(request):
                 attendance.save(update_fields=["user_timezone"])
 
             # Check if employee can clock in
-            if not attendance.can_clock_in():
-                if attendance.is_currently_clocked_in:
-                    return JsonResponse(
-                        {
-                            "status": "error",
-                            "message": "You are already clocked in. Please clock out first.",
-                            "already_clocked_in": True,
-                        }
-                    )
-
-
+            if not attendance.can_clock_in() and attendance.is_currently_clocked_in:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "You are already clocked in. Please clock out first.",
+                        "already_clocked_in": True,
+                    }
+                )
 
             # Determine session type and status
             session_type = "WEB" if clock_in_type == "office" else "REMOTE"
@@ -683,14 +682,15 @@ def clock_out(request):
                 )
 
             employee = request.user.employee_profile
-            
+
             # Find active attendance regardless of current date (Keka-style Night Shift Logic)
             attendance = Attendance.objects.filter(employee=employee, is_currently_clocked_in=True).first()
 
             # Determine today based on employee's location timezone
             from core.utils import get_user_timezone
+
             user_timezone = get_user_timezone(request.user, getattr(request, "company", None))
-            
+
             # Override with active record's timezone if available
             if attendance and attendance.user_timezone:
                 user_timezone = attendance.user_timezone
@@ -733,7 +733,7 @@ def clock_out(request):
                     # Auto-correct state: Attendance says clocked in but no session is active
                     attendance.is_currently_clocked_in = False
                     attendance.save(update_fields=["is_currently_clocked_in"])
-                    
+
                     return JsonResponse(
                         {
                             "status": "success",
@@ -988,16 +988,9 @@ def update_location(request):
         # Return 200 even if no data to prevent log spam
         return JsonResponse({"status": "ignored", "message": "No valid data provided"}, status=200)
     except Exception as e:
-        import logging
-
-        logger = logging.getLogger(__name__)
-        logger.error(f"Update location error: {str(e)}", exc_info=True)
+        err_logger = logging.getLogger(__name__)
+        err_logger.error(f"Update location error: {str(e)}", exc_info=True)
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
-
-
-from django.shortcuts import redirect
-
-from .models import EmployeeIDProof
 
 
 @login_required
@@ -1156,17 +1149,14 @@ def employee_profile(request):
         def can_upload(current_file):
             return not current_file or is_admin
 
-        if "aadhar_front" in request.FILES:
-            if can_upload(id_proofs.aadhar_front):
-                id_proofs.aadhar_front = request.FILES["aadhar_front"]
+        if "aadhar_front" in request.FILES and can_upload(id_proofs.aadhar_front):
+            id_proofs.aadhar_front = request.FILES["aadhar_front"]
 
-        if "aadhar_back" in request.FILES:
-            if can_upload(id_proofs.aadhar_back):
-                id_proofs.aadhar_back = request.FILES["aadhar_back"]
+        if "aadhar_back" in request.FILES and can_upload(id_proofs.aadhar_back):
+            id_proofs.aadhar_back = request.FILES["aadhar_back"]
 
-        if "pan_card" in request.FILES:
-            if can_upload(id_proofs.pan_card):
-                id_proofs.pan_card = request.FILES["pan_card"]
+        if "pan_card" in request.FILES and can_upload(id_proofs.pan_card):
+            id_proofs.pan_card = request.FILES["pan_card"]
 
         id_proofs.save()
         from django.contrib import messages
@@ -1595,15 +1585,11 @@ def attendance_map(request, pk):
         target_tz = pytz.timezone("Asia/Kolkata")  # Default
 
         if attendance.user_timezone:
-            try:
+            with contextlib.suppress(BaseException):
                 target_tz = pytz.timezone(attendance.user_timezone)
-            except:
-                pass
         elif employee.location and hasattr(employee.location, "timezone") and employee.location.timezone:
-            try:
+            with contextlib.suppress(BaseException):
                 target_tz = pytz.timezone(employee.location.timezone)
-            except:
-                pass
 
         # Activate timezone for the template
         timezone.activate(target_tz)
@@ -1758,9 +1744,9 @@ def employee_detail(request, pk):
             employee=employee, status="APPROVED", start_date__lte=end_date, end_date__gte=start_date
         )
         leave_dates = {}
-        for l in leaves:
-            curr = max(l.start_date, start_date)
-            while curr <= min(l.end_date, end_date):
+        for leave in leaves:
+            curr = max(leave.start_date, start_date)
+            while curr <= min(leave.end_date, end_date):
                 leave_dates[curr] = "LEAVE"
                 curr += timedelta(days=1)
 
@@ -1826,10 +1812,7 @@ def employee_detail(request, pk):
         absent = 0
 
         for item in full_history:
-            if isinstance(item, Attendance):
-                status = item.status
-            else:
-                status = item.get("status")
+            status = item.status if isinstance(item, Attendance) else item.get("status")
 
             if status == "PRESENT":
                 present += 1
@@ -1955,9 +1938,6 @@ def employee_detail(request, pk):
         return redirect("employee_list")
 
 
-from django.views.decorators.http import require_http_methods
-
-
 @csrf_exempt
 @login_required
 def employee_exit_action(request, pk):
@@ -1967,8 +1947,6 @@ def employee_exit_action(request, pk):
     - Absconding/Termination: Calculates last working day, disables login immediately
     Only accessible by Company Admin or Super Admin
     """
-    from datetime import timedelta
-
     from .models import ExitInitiative
 
     # Permission check
@@ -2763,13 +2741,12 @@ def exit_initiatives_list(request):
     elif user.role == User.Role.MANAGER:
         # Managers can only see their team members' exit initiatives
         try:
-            manager_employee = user.employee_profile
             exit_initiatives = (
                 ExitInitiative.objects.filter(employee__manager=user)
                 .select_related("employee", "employee__user", "approved_by")
                 .order_by("-created_at")
             )
-        except:
+        except Exception:
             exit_initiatives = ExitInitiative.objects.none()
     else:
         # Regular employees cannot access this page
@@ -2810,10 +2787,13 @@ def get_attendance_map_data(request, pk):
 
         # Safe manager check
         is_manager = False
-        if request.user.role == User.Role.MANAGER and hasattr(request.user, "employee_profile"):
+        if (
+            request.user.role == User.Role.MANAGER
+            and hasattr(request.user, "employee_profile")
+            and attendance.employee.manager
+        ):
             # Compare manager's user object with request user
-            if attendance.employee.manager:
-                is_manager = attendance.employee.manager == request.user
+            is_manager = attendance.employee.manager == request.user
 
         is_self = attendance.employee.user == request.user
 
@@ -3021,7 +3001,7 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                         Department.objects.get_or_create(company=self.request.user.company, name=dept_name)
                         Designation.objects.get_or_create(company=self.request.user.company, name=desig_name)
 
-                        employee = Employee.objects.create(
+                        Employee.objects.create(
                             user=user,
                             company=self.request.user.company,
                             designation=desig_name,
@@ -3259,10 +3239,12 @@ def approve_regularization(request, pk):
 
         # Get employee location timezone
         from core.utils import get_user_timezone
+
         tz_name = get_user_timezone(reg_request.employee.user, reg_request.employee.company)
         attendance.user_timezone = tz_name
-        
+
         import pytz
+
         local_tz = pytz.timezone(tz_name)
 
         if reg_request.check_in:
@@ -3274,7 +3256,7 @@ def approve_regularization(request, pk):
             local_dt = timezone.datetime.combine(reg_request.date, reg_request.check_out)
             # Handle possible overnight shift if check_out < check_in (though form currently validates against this)
             if reg_request.check_in and reg_request.check_out < reg_request.check_in:
-                 local_dt += timedelta(days=1)
+                local_dt += timedelta(days=1)
             attendance.clock_out = local_tz.localize(local_dt)
 
         # Update status to Present if not already (or whatever logic user wants, implicitly if regulating, they were present)
@@ -3796,7 +3778,7 @@ def download_leave_template(request):
             ws.cell(row=row, column=5, value=balance.casual_leave_used)
             ws.cell(row=row, column=6, value=balance.sick_leave_used)
             ws.cell(row=row, column=7, value=balance.carry_forward_leave)
-        except:
+        except Exception:
             # Default values for new employees
             ws.cell(row=row, column=3, value=12.0)  # Default CL
             ws.cell(row=row, column=4, value=12.0)  # Default SL
@@ -3849,7 +3831,7 @@ def download_leave_template(request):
                 try:
                     if len(str(cell.value)) > max_length:
                         max_length = len(str(cell.value))
-                except:
+                except (TypeError, ValueError):
                     pass
             adjusted_width = min(max_length + 2, 50)
             ws_sheet.column_dimensions[column_letter].width = adjusted_width
@@ -4071,254 +4053,6 @@ def update_emergency_contact(request, contact_id):
     except EmergencyContact.DoesNotExist:
         return JsonResponse({"status": "error", "message": "Contact not found"}, status=404)
     except Exception as e:
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
-
-
-# --- Location Tracking API Endpoints ---
-
-
-@csrf_exempt
-@login_required
-def submit_hourly_location(request):
-    """
-    API endpoint for employees to submit their hourly location updates
-    """
-    if request.method != "POST":
-        return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
-
-    try:
-        data = json.loads(request.body)
-        lat = data.get("latitude")
-        lng = data.get("longitude")
-        accuracy = data.get("accuracy")
-
-        if not lat or not lng:
-            return JsonResponse(
-                {"status": "error", "message": "Latitude and longitude are required"},
-                status=400,
-            )
-
-        if not hasattr(request.user, "employee_profile"):
-            return JsonResponse({"status": "error", "message": "No employee profile found"}, status=400)
-
-        employee = request.user.employee_profile
-        today = timezone.localdate()
-
-        # Find the current active session
-        active_session = AttendanceSession.objects.filter(
-            employee=employee, date=today, clock_out__isnull=True, is_active=True
-        ).first()
-
-        if not active_session:
-            return JsonResponse({"status": "error", "message": "No active session found"}, status=400)
-
-        # Check for 9-hour limit
-        time_since_clockin = timezone.now() - active_session.clock_in
-        if time_since_clockin >= timedelta(hours=9):
-            return JsonResponse(
-                {
-                    "status": "tracking_stopped",
-                    "message": "Shift limit reached (9 hours)",
-                }
-            )
-
-        # Create location log
-        location_log = LocationLog.objects.create(
-            employee=employee,
-            attendance_session=active_session,
-            latitude=lat,
-            longitude=lng,
-            log_type="HOURLY",
-            accuracy=accuracy,
-            is_valid=True,
-        )
-
-        return JsonResponse(
-            {
-                "status": "success",
-                "message": "Location updated successfully",
-                "log_id": location_log.id,
-                "timestamp": location_log.timestamp.isoformat(),
-            }
-        )
-
-    except Exception as e:
-        import logging
-
-        logger = logging.getLogger(__name__)
-        logger.error(f"Hourly location update error: {str(e)}", exc_info=True)
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
-
-
-@csrf_exempt
-@login_required
-def get_location_tracking_status(request):
-    """
-    API endpoint to check if employee needs to provide location update
-    """
-    if request.method != "GET":
-        return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
-
-    try:
-        if not hasattr(request.user, "employee_profile"):
-            return JsonResponse({"status": "error", "message": "No employee profile found"}, status=400)
-
-        employee = request.user.employee_profile
-        today = timezone.localdate()
-        current_time = timezone.now()
-
-        # Find the current active session
-        active_session = AttendanceSession.objects.filter(
-            employee=employee, date=today, clock_out__isnull=True, is_active=True
-        ).first()
-
-        if not active_session:
-            return JsonResponse(
-                {
-                    "status": "success",
-                    "needs_location": False,
-                    "message": "No active session",
-                }
-            )
-
-        # Check if location update is needed
-        last_log = (
-            LocationLog.objects.filter(attendance_session=active_session, log_type__in=["CLOCK_IN", "HOURLY"])
-            .order_by("-timestamp")
-            .first()
-        )
-
-        needs_location = False
-        next_update_time = None
-
-        if not last_log:
-            # Check if shift duration (9 hours) exceeded
-            time_since_clockin = current_time - active_session.clock_in
-            if time_since_clockin >= timedelta(hours=9):
-                return JsonResponse(
-                    {
-                        "status": "success",
-                        "needs_location": False,
-                        "tracking_stopped": True,
-                        "message": "Shift limit reached",
-                    }
-                )
-
-            if time_since_clockin >= timedelta(hours=1):
-                needs_location = True
-        else:
-            # Check if it's been 1 hour since last log
-            time_since_last_log = current_time - last_log.timestamp
-            if time_since_last_log >= timedelta(hours=1):
-                needs_location = True
-            else:
-                # Calculate when next update is needed
-                next_update_time = (last_log.timestamp + timedelta(hours=1)).isoformat()
-
-        return JsonResponse(
-            {
-                "status": "success",
-                "needs_location": needs_location,
-                "active_session": True,
-                "session_start": active_session.clock_in.isoformat(),
-                "next_update_time": next_update_time,
-                "last_update": last_log.timestamp.isoformat() if last_log else None,
-            }
-        )
-
-    except Exception as e:
-        import logging
-
-        logger = logging.getLogger(__name__)
-        logger.error(f"Location tracking status error: {str(e)}", exc_info=True)
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
-
-
-@login_required
-def get_employee_location_history(request, employee_id):
-    """
-    API endpoint to get location history for an employee (for managers/admins)
-    """
-    try:
-        # Check permissions
-        if request.user.role not in [User.Role.COMPANY_ADMIN, User.Role.MANAGER]:
-            return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
-
-        employee = Employee.objects.get(id=employee_id)
-
-        # If manager, ensure they can only see their subordinates
-        if request.user.role == User.Role.MANAGER:
-            if employee.manager != request.user:
-                return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
-
-        # Get date range from query params
-        from datetime import datetime
-
-        start_date = request.GET.get("start_date")
-        end_date = request.GET.get("end_date")
-
-        if start_date:
-            start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
-        else:
-            start_date = timezone.localdate() - timedelta(days=7)  # Default to last 7 days
-
-        if end_date:
-            end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
-        else:
-            end_date = timezone.localdate()
-
-        # Get location logs
-        location_logs = (
-            LocationLog.objects.filter(
-                employee=employee,
-                timestamp__date__gte=start_date,
-                timestamp__date__lte=end_date,
-                is_valid=True,
-            )
-            .select_related("attendance_session")
-            .order_by("-timestamp")
-        )
-
-        # Format response
-        logs_data = []
-        for log in location_logs:
-            logs_data.append(
-                {
-                    "id": log.id,
-                    "timestamp": log.timestamp.isoformat(),
-                    "latitude": float(log.latitude),
-                    "longitude": float(log.longitude),
-                    "log_type": log.log_type,
-                    "accuracy": log.accuracy,
-                    "session_number": log.attendance_session.session_number if log.attendance_session else None,
-                    "session_type": log.attendance_session.session_type if log.attendance_session else None,
-                }
-            )
-
-        return JsonResponse(
-            {
-                "status": "success",
-                "employee": {
-                    "id": employee.id,
-                    "name": employee.user.get_full_name(),
-                    "email": employee.user.email,
-                },
-                "date_range": {
-                    "start": start_date.isoformat(),
-                    "end": end_date.isoformat(),
-                },
-                "location_logs": logs_data,
-                "total_logs": len(logs_data),
-            }
-        )
-
-    except Employee.DoesNotExist:
-        return JsonResponse({"status": "error", "message": "Employee not found"}, status=404)
-    except Exception as e:
-        import logging
-
-        logger = logging.getLogger(__name__)
-        logger.error(f"Location history error: {str(e)}", exc_info=True)
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 

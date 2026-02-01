@@ -1,6 +1,8 @@
-from django.core.management.base import BaseCommand
-from employees.models import Attendance, AttendanceSession
 from datetime import date, timedelta
+
+from django.core.management.base import BaseCommand
+
+from employees.models import Attendance, AttendanceSession
 
 
 class Command(BaseCommand):
@@ -30,9 +32,7 @@ class Command(BaseCommand):
         dry_run = options.get("dry_run", False)
 
         if dry_run:
-            self.stdout.write(
-                self.style.WARNING("🔍 DRY RUN - Showing what would be fixed")
-            )
+            self.stdout.write(self.style.WARNING("🔍 DRY RUN - Showing what would be fixed"))
         else:
             self.stdout.write("🔧 Fixing attendance working hours calculation")
 
@@ -42,12 +42,8 @@ class Command(BaseCommand):
             self.stdout.write("📅 Processing all attendance records")
         else:
             start_date = date.today() - timedelta(days=days_back)
-            attendances = Attendance.objects.filter(date__gte=start_date).order_by(
-                "-date"
-            )
-            self.stdout.write(
-                f"📅 Processing attendance records from {start_date} to today"
-            )
+            attendances = Attendance.objects.filter(date__gte=start_date).order_by("-date")
+            self.stdout.write(f"📅 Processing attendance records from {start_date} to today")
 
         total_records = attendances.count()
         if total_records == 0:
@@ -94,9 +90,7 @@ class Command(BaseCommand):
             ).exists()
 
             new_effective_hours = (
-                f"{hours}:{minutes:02d}{'+' if has_active_session else ''}"
-                if new_total_hours > 0
-                else "0:00"
+                f"{hours}:{minutes:02d}{'+' if has_active_session else ''}" if new_total_hours > 0 else "0:00"
             )
 
             # Check if this record needs fixing
@@ -121,9 +115,7 @@ class Command(BaseCommand):
                 else:
                     old_decimal = float(str(old_effective_hours).replace("+", ""))
 
-                if (
-                    abs(old_decimal - new_total_hours) > 0.1
-                ):  # More than 6 minutes difference
+                if abs(old_decimal - new_total_hours) > 0.1:  # More than 6 minutes difference
                     needs_fixing = True
             except (ValueError, AttributeError):
                 needs_fixing = True
@@ -142,11 +134,7 @@ class Command(BaseCommand):
             if needs_fixing:
                 fixed_count += 1
 
-                incomplete_info = (
-                    f" ({incomplete_sessions.count()} incomplete)"
-                    if incomplete_sessions.exists()
-                    else ""
-                )
+                incomplete_info = f" ({incomplete_sessions.count()} incomplete)" if incomplete_sessions.exists() else ""
 
                 self.stdout.write(
                     f"   {attendance.employee.user.get_full_name()} ({attendance.date}): "
@@ -165,11 +153,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("\n🔍 DRY RUN COMPLETE"))
             self.stdout.write(f"   Records that would be fixed: {fixed_count}")
             self.stdout.write(f"   Problematic records found: {problematic_count}")
-            self.stdout.write(
-                self.style.SUCCESS(
-                    "To apply changes, run: python manage.py fix_attendance_hours"
-                )
-            )
+            self.stdout.write(self.style.SUCCESS("To apply changes, run: python manage.py fix_attendance_hours"))
         else:
             self.stdout.write(self.style.SUCCESS("\n✅ ATTENDANCE HOURS FIXED"))
             self.stdout.write(f"   Records processed: {total_records}")
@@ -179,9 +163,7 @@ class Command(BaseCommand):
         # Show examples of fixed records
         if fixed_count > 0:
             self.stdout.write("\n📋 SUMMARY OF CHANGES:")
-            self.stdout.write(
-                "   • Only completed sessions counted (clock-in + clock-out)"
-            )
+            self.stdout.write("   • Only completed sessions counted (clock-in + clock-out)")
             self.stdout.write("   • Incomplete sessions ignored (until regularization)")
             self.stdout.write("   • Realistic daily hours (typically 6-10 hours)")
             self.stdout.write("   • Multiple sessions properly summed")

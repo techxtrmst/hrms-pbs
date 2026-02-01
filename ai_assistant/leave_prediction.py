@@ -97,7 +97,7 @@ class LeavePrediction:
         }
 
     @staticmethod
-    def _predict_upcoming_leaves(employee, day_frequency):
+    def _predict_upcoming_leaves(_employee, day_frequency):
         """
         Predict potential upcoming leaves based on patterns
         """
@@ -242,13 +242,13 @@ class LeavePrediction:
                     }
                 )
 
-        except:
+        except Exception:
             pass
 
         return recommendations
 
     @staticmethod
-    def analyze_festival_clustering(company, days_ahead=60):
+    def analyze_festival_clustering(_company, _days_ahead=60):
         """
         Analyze leave clustering around holidays/festivals
         This is a placeholder - implement based on your holiday calendar

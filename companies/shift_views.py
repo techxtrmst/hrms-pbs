@@ -1,10 +1,11 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.forms import inlineformset_factory
-from companies.models import ShiftSchedule, ShiftBreak
-from companies.forms import ShiftScheduleForm, ShiftBreakForm
+from django.shortcuts import get_object_or_404, redirect, render
+
 from accounts.models import User
+from companies.forms import ShiftBreakForm, ShiftScheduleForm
+from companies.models import ShiftBreak, ShiftSchedule
 
 
 @login_required
@@ -14,11 +15,7 @@ def shift_list(request):
         messages.error(request, "Only admins can manage shifts.")
         return redirect("dashboard")
 
-    shifts = (
-        ShiftSchedule.objects.filter(company=request.user.company)
-        .prefetch_related("breaks")
-        .order_by("name")
-    )
+    shifts = ShiftSchedule.objects.filter(company=request.user.company).prefetch_related("breaks").order_by("name")
     return render(request, "companies/shift_list.html", {"shifts": shifts})
 
 
@@ -29,9 +26,7 @@ def shift_create(request):
         messages.error(request, "Only admins can create shifts.")
         return redirect("dashboard")
 
-    ShiftBreakFormSet = inlineformset_factory(
-        ShiftSchedule, ShiftBreak, form=ShiftBreakForm, extra=1, can_delete=True
-    )
+    ShiftBreakFormSet = inlineformset_factory(ShiftSchedule, ShiftBreak, form=ShiftBreakForm, extra=1, can_delete=True)
 
     if request.method == "POST":
         form = ShiftScheduleForm(request.POST)
@@ -70,9 +65,7 @@ def shift_edit(request, pk):
 
     shift = get_object_or_404(ShiftSchedule, pk=pk, company=request.user.company)
 
-    ShiftBreakFormSet = inlineformset_factory(
-        ShiftSchedule, ShiftBreak, form=ShiftBreakForm, extra=0, can_delete=True
-    )
+    ShiftBreakFormSet = inlineformset_factory(ShiftSchedule, ShiftBreak, form=ShiftBreakForm, extra=0, can_delete=True)
 
     if request.method == "POST":
         form = ShiftScheduleForm(request.POST, instance=shift)

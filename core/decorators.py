@@ -1,6 +1,8 @@
 from functools import wraps
-from django.shortcuts import redirect
+
 from django.contrib import messages
+from django.shortcuts import redirect
+
 from accounts.models import User
 
 

@@ -1,4 +1,5 @@
 from django.urls import path
+
 from . import views
 
 urlpatterns = [
@@ -33,9 +34,7 @@ urlpatterns = [
         name="employee_attendance_detail",
     ),
     # Leave Prediction
-    path(
-        "leave-prediction/", views.leave_prediction_dashboard, name="leave_prediction"
-    ),
+    path("leave-prediction/", views.leave_prediction_dashboard, name="leave_prediction"),
     path("my-leave-insights/", views.my_leave_insights, name="my_leave_insights"),
     # Smart Notifications
     path(

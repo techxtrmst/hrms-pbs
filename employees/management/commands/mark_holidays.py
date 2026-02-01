@@ -1,8 +1,10 @@
+from datetime import timedelta
+
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from employees.models import Employee, Attendance
+
 from companies.models import Holiday
-from datetime import timedelta
+from employees.models import Attendance, Employee
 
 
 class Command(BaseCommand):
@@ -15,12 +17,8 @@ class Command(BaseCommand):
             default=30,
             help="Number of days to process (default: 30 days from today)",
         )
-        parser.add_argument(
-            "--employee-id", type=int, help="Process only specific employee ID"
-        )
-        parser.add_argument(
-            "--company-id", type=int, help="Process only specific company ID"
-        )
+        parser.add_argument("--employee-id", type=int, help="Process only specific employee ID")
+        parser.add_argument("--company-id", type=int, help="Process only specific company ID")
 
     def handle(self, *args, **options):
         days = options["days"]
@@ -28,9 +26,7 @@ class Command(BaseCommand):
         company_id = options.get("company_id")
 
         # Get employees
-        employees = Employee.objects.filter(is_active=True).select_related(
-            "location", "company"
-        )
+        employees = Employee.objects.filter(is_active=True).select_related("location", "company")
 
         if employee_id:
             employees = employees.filter(id=employee_id)
@@ -47,9 +43,9 @@ class Command(BaseCommand):
         end_date = today
 
         # Get all holidays in the date range
-        holidays = Holiday.objects.filter(
-            date__gte=start_date, date__lte=end_date, is_active=True
-        ).select_related("company", "location")
+        holidays = Holiday.objects.filter(date__gte=start_date, date__lte=end_date, is_active=True).select_related(
+            "company", "location"
+        )
 
         # Group holidays by company and location
         holiday_map = {}
@@ -110,7 +106,5 @@ class Command(BaseCommand):
                 total_marked += employee_marked
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f"\nTotal: Marked {total_marked} holiday days for {employees.count()} employees"
-            )
+            self.style.SUCCESS(f"\nTotal: Marked {total_marked} holiday days for {employees.count()} employees")
         )

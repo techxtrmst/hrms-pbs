@@ -1,4 +1,5 @@
 from django import forms
+
 from .models import Handbook
 
 
@@ -19,25 +20,13 @@ class HandbookForm(forms.ModelForm):
         widgets = {
             "location": forms.Select(attrs={"class": "form-input"}),
             "section": forms.Select(attrs={"class": "form-input"}),
-            "title": forms.TextInput(
-                attrs={"class": "form-input", "placeholder": "e.g. Leave Policy"}
-            ),
-            "subtitle": forms.TextInput(
-                attrs={"class": "form-input", "placeholder": "Optional subtitle"}
-            ),
-            "content": forms.Textarea(
-                attrs={"class": "form-input", "rows": 15, "id": "content-editor"}
-            ),
-            "version": forms.TextInput(
-                attrs={"class": "form-input", "placeholder": "1.0"}
-            ),
-            "effective_date": forms.DateInput(
-                attrs={"class": "form-input", "type": "date"}
-            ),
+            "title": forms.TextInput(attrs={"class": "form-input", "placeholder": "e.g. Leave Policy"}),
+            "subtitle": forms.TextInput(attrs={"class": "form-input", "placeholder": "Optional subtitle"}),
+            "content": forms.Textarea(attrs={"class": "form-input", "rows": 15, "id": "content-editor"}),
+            "version": forms.TextInput(attrs={"class": "form-input", "placeholder": "1.0"}),
+            "effective_date": forms.DateInput(attrs={"class": "form-input", "type": "date"}),
             "is_published": forms.CheckboxInput(attrs={"class": "form-checkbox"}),
-            "requires_acknowledgment": forms.CheckboxInput(
-                attrs={"class": "form-checkbox"}
-            ),
+            "requires_acknowledgment": forms.CheckboxInput(attrs={"class": "form-checkbox"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -49,13 +38,9 @@ class HandbookForm(forms.ModelForm):
             from companies.models import Location
 
             if user.role == "COMPANY_ADMIN" and user.company:
-                self.fields["location"].queryset = Location.objects.filter(
-                    company=user.company
-                )
+                self.fields["location"].queryset = Location.objects.filter(company=user.company)
                 if hasattr(user, "employee_profile") and user.employee_profile.location:
-                    self.fields["location"].queryset = Location.objects.filter(
-                        id=user.employee_profile.location.id
-                    )
+                    self.fields["location"].queryset = Location.objects.filter(id=user.employee_profile.location.id)
                     self.fields["location"].initial = user.employee_profile.location
                     # If only one location, maybe hide it or make read-only?
                     # For now just defaulting is fine.
@@ -64,6 +49,4 @@ class HandbookForm(forms.ModelForm):
             from .models import HandbookSection
 
             if user.role == "COMPANY_ADMIN" and user.company:
-                self.fields["section"].queryset = HandbookSection.objects.filter(
-                    company=user.company
-                )
+                self.fields["section"].queryset = HandbookSection.objects.filter(company=user.company)

@@ -1,18 +1,23 @@
-from django.shortcuts import render, get_object_or_404, redirect
+import logging
+
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse, HttpResponseForbidden
-from django.utils import timezone
-from django.db.models import Q, Count
 from django.core.mail import send_mail
+from django.db.models import Count, Q
+from django.http import HttpResponseForbidden, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.html import strip_tags
+
+from employees.models import Employee
+
 from .models import (
     Handbook,
-    HandbookSection,
     HandbookAcknowledgment,
-    HandbookAttachment,
+    HandbookSection,
 )
-from employees.models import Employee
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -38,9 +43,7 @@ def handbook_list(request):
     )
 
     # Get sections for grouping
-    sections = HandbookSection.objects.filter(
-        company=employee.company, is_active=True
-    ).order_by("order")
+    sections = HandbookSection.objects.filter(company=employee.company, is_active=True).order_by("order")
 
     # Group handbooks by section
     handbooks_by_section = {}
@@ -53,9 +56,9 @@ def handbook_list(request):
     no_section_handbooks = handbooks.filter(section__isnull=True)
 
     # Get acknowledgment status
-    acknowledgments = HandbookAcknowledgment.objects.filter(
-        employee=employee, handbook__in=handbooks
-    ).values_list("handbook_id", "acknowledged")
+    acknowledgments = HandbookAcknowledgment.objects.filter(employee=employee, handbook__in=handbooks).values_list(
+        "handbook_id", "acknowledged"
+    )
     acknowledgment_dict = dict(acknowledgments)
 
     context = {
@@ -88,9 +91,7 @@ def handbook_detail(request, handbook_id):
     )
 
     # Get or create acknowledgment record
-    acknowledgment, created = HandbookAcknowledgment.objects.get_or_create(
-        handbook=handbook, employee=employee
-    )
+    acknowledgment, created = HandbookAcknowledgment.objects.get_or_create(handbook=handbook, employee=employee)
 
     # Get attachments
     attachments = handbook.attachments.all()
@@ -128,9 +129,7 @@ def acknowledge_handbook(request, handbook_id):
     )
 
     # Get or create acknowledgment
-    acknowledgment, created = HandbookAcknowledgment.objects.get_or_create(
-        handbook=handbook, employee=employee
-    )
+    acknowledgment, created = HandbookAcknowledgment.objects.get_or_create(handbook=handbook, employee=employee)
 
     # Update acknowledgment
     acknowledgment.acknowledged = True
@@ -154,17 +153,13 @@ def acknowledge_handbook(request, handbook_id):
             "employee_name": employee.user.get_full_name(),
             "handbook_title": handbook.title,
             "version": handbook.version,
-            "acknowledged_at": acknowledgment.acknowledged_at.strftime(
-                "%Y-%m-%d %H:%M"
-            ),
+            "acknowledged_at": acknowledgment.acknowledged_at.strftime("%Y-%m-%d %H:%M"),
             "company_name": employee.company.name,
             "department": employee.department.name if employee.department else "N/A",
         }
 
         # 1. Email to Employee
-        html_message_employee = render_to_string(
-            "core/emails/handbook_acknowledgment_employee.html", email_context
-        )
+        html_message_employee = render_to_string("core/emails/handbook_acknowledgment_employee.html", email_context)
         plain_message_employee = strip_tags(html_message_employee)
 
         send_mail(
@@ -177,9 +172,7 @@ def acknowledge_handbook(request, handbook_id):
         )
 
         # 2. Email to Admin (hrms@petabytz.com)
-        html_message_admin = render_to_string(
-            "core/emails/handbook_acknowledgment_admin.html", email_context
-        )
+        html_message_admin = render_to_string("core/emails/handbook_acknowledgment_admin.html", email_context)
         plain_message_admin = strip_tags(html_message_admin)
 
         send_mail(
@@ -192,15 +185,13 @@ def acknowledge_handbook(request, handbook_id):
         )
 
     except Exception as e:
-        print(f"Error sending acknowledgment emails: {e}")
+        logger.error(f"Error sending acknowledgment emails: {e}")
         # We don't return error to user as acknowledgment is successful
 
     return JsonResponse(
         {
             "success": True,
-            "acknowledged_at": acknowledgment.acknowledged_at.strftime(
-                "%Y-%m-%d %H:%M:%S"
-            ),
+            "acknowledged_at": acknowledgment.acknowledged_at.strftime("%Y-%m-%d %H:%M:%S"),
         }
     )
 
@@ -216,25 +207,16 @@ def admin_handbook_list(request):
         return HttpResponseForbidden("You don't have permission to access this page.")
 
     # Filter handbooks based on admin's location
-    handbooks = Handbook.objects.select_related(
-        "company", "location", "section", "created_by", "updated_by"
-    ).annotate(
-        acknowledgment_count=Count(
-            "acknowledgments", filter=Q(acknowledgments__acknowledged=True)
-        )
+    handbooks = Handbook.objects.select_related("company", "location", "section", "created_by", "updated_by").annotate(
+        acknowledgment_count=Count("acknowledgments", filter=Q(acknowledgments__acknowledged=True))
     )
 
     if request.user.role == "COMPANY_ADMIN":
         handbooks = handbooks.filter(company=request.user.company)
 
         # Further filter by location if admin has a specific location
-        if (
-            hasattr(request.user, "employee_profile")
-            and request.user.employee_profile.location
-        ):
-            handbooks = handbooks.filter(
-                location=request.user.employee_profile.location
-            )
+        if hasattr(request.user, "employee_profile") and request.user.employee_profile.location:
+            handbooks = handbooks.filter(location=request.user.employee_profile.location)
 
     handbooks = handbooks.order_by("-updated_at")
 
@@ -288,18 +270,14 @@ def admin_handbook_edit(request, handbook_id):
     # Verify admin has access to this handbook's location
     if request.user.role == "COMPANY_ADMIN":
         if handbook.company != request.user.company:
-            return HttpResponseForbidden(
-                "You don't have permission to edit this handbook."
-            )
+            return HttpResponseForbidden("You don't have permission to edit this handbook.")
 
         if (
             hasattr(request.user, "employee_profile")
             and request.user.employee_profile.location
+            and handbook.location != request.user.employee_profile.location
         ):
-            if handbook.location != request.user.employee_profile.location:
-                return HttpResponseForbidden(
-                    "You don't have permission to edit this handbook."
-                )
+            return HttpResponseForbidden("You don't have permission to edit this handbook.")
 
     from .forms import HandbookForm
 
@@ -337,18 +315,14 @@ def admin_acknowledgment_report(request, handbook_id):
     # Verify access
     if request.user.role == "COMPANY_ADMIN":
         if handbook.company != request.user.company:
-            return HttpResponseForbidden(
-                "You don't have permission to view this report."
-            )
+            return HttpResponseForbidden("You don't have permission to view this report.")
 
         if (
             hasattr(request.user, "employee_profile")
             and request.user.employee_profile.location
+            and handbook.location != request.user.employee_profile.location
         ):
-            if handbook.location != request.user.employee_profile.location:
-                return HttpResponseForbidden(
-                    "You don't have permission to view this report."
-                )
+            return HttpResponseForbidden("You don't have permission to view this report.")
 
     # Get all employees at this location
     employees = Employee.objects.filter(
@@ -356,9 +330,7 @@ def admin_acknowledgment_report(request, handbook_id):
     ).select_related("user")
 
     # Get acknowledgments
-    acknowledgments = HandbookAcknowledgment.objects.filter(
-        handbook=handbook
-    ).select_related("employee__user")
+    acknowledgments = HandbookAcknowledgment.objects.filter(handbook=handbook).select_related("employee__user")
 
     acknowledgment_dict = {ack.employee_id: ack for ack in acknowledgments}
 
@@ -371,9 +343,7 @@ def admin_acknowledgment_report(request, handbook_id):
                 "employee": employee,
                 "acknowledgment": ack,
                 "acknowledged": ack.acknowledged if ack else False,
-                "acknowledged_at": ack.acknowledged_at
-                if ack and ack.acknowledged
-                else None,
+                "acknowledged_at": ack.acknowledged_at if ack and ack.acknowledged else None,
             }
         )
 

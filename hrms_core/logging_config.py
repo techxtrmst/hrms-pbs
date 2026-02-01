@@ -9,10 +9,11 @@ This module provides centralized logging with:
 - Exception capture with full context
 """
 
-import sys
-import os
 import logging
+import os
+import sys
 from pathlib import Path
+
 from loguru import logger
 
 
@@ -40,8 +41,7 @@ def configure_logging():
 
     # Common format for file logs
     file_format = (
-        "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | "
-        "{name}:{function}:{line} | {extra[request_id]} | {message}"
+        "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} | {extra[request_id]} | {message}"
     )
 
     # Console handler - colored output for development
@@ -130,9 +130,7 @@ def configure_logging():
         }
     )
 
-    logger.info(
-        "Logging configured successfully", log_level=log_level, log_dir=str(log_dir)
-    )
+    logger.info("Logging configured successfully", log_level=log_level, log_dir=str(log_dir))
 
     return logger
 
@@ -173,9 +171,7 @@ class InterceptHandler(logging.Handler):
             frame = frame.f_back
             depth += 1
 
-        logger.opt(depth=depth, exception=record.exc_info).log(
-            level, record.getMessage()
-        )
+        logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 
 def setup_django_logging():

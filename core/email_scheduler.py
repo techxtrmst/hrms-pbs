@@ -6,11 +6,12 @@ based on employee location timezone.
 Add this to your Django app to run automatically.
 """
 
+import logging
 import threading
 import time
-import logging
-from django.core.management import call_command
 from datetime import datetime
+
+from django.core.management import call_command
 
 logger = logging.getLogger(__name__)
 
@@ -45,9 +46,7 @@ class EmailSchedulerService:
         while self.running:
             try:
                 current_time = datetime.now()
-                logger.info(
-                    f"🔍 Checking for birthdays/anniversaries at {current_time.strftime('%Y-%m-%d %H:%M:%S')}"
-                )
+                logger.info(f"🔍 Checking for birthdays/anniversaries at {current_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
                 # Run the management command
                 # Run the management command

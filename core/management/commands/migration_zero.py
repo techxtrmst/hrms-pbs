@@ -15,8 +15,6 @@ Usage:
     python manage.py migration_zero --apps accounts employees  # Only specific apps
 """
 
-import os
-import shutil
 from pathlib import Path
 
 from django.apps import apps
@@ -108,10 +106,7 @@ class Command(BaseCommand):
         exclude_apps = options.get("exclude_apps") or []
 
         # Determine which apps to process
-        if specified_apps:
-            app_labels = specified_apps
-        else:
-            app_labels = self.get_local_apps()
+        app_labels = specified_apps or self.get_local_apps()
 
         # Apply exclusions
         app_labels = [a for a in app_labels if a not in exclude_apps]
@@ -120,9 +115,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("No apps found to process."))
             return
 
-        self.stdout.write(
-            self.style.MIGRATE_HEADING("\n=== Migration Zero Pattern ===\n")
-        )
+        self.stdout.write(self.style.MIGRATE_HEADING("\n=== Migration Zero Pattern ===\n"))
 
         # Check for unapplied migrations first
         if not skip_check:
@@ -136,28 +129,18 @@ class Command(BaseCommand):
 
                 if plan:
                     self.stdout.write(
-                        self.style.ERROR(
-                            "\n❌ There are unapplied migrations! Please run 'migrate' first.\n"
-                        )
+                        self.style.ERROR("\n❌ There are unapplied migrations! Please run 'migrate' first.\n")
                     )
                     for migration, _ in plan:
                         self.stdout.write(f"  - {migration.app_label}.{migration.name}")
-                    raise CommandError(
-                        "Cannot reset migrations with unapplied migrations."
-                    )
+                    raise CommandError("Cannot reset migrations with unapplied migrations.")
                 else:
-                    self.stdout.write(
-                        self.style.SUCCESS("✅ All migrations are applied.\n")
-                    )
+                    self.stdout.write(self.style.SUCCESS("✅ All migrations are applied.\n"))
             except Exception as e:
-                if (
-                    "no such table" in str(e).lower()
-                    or "does not exist" in str(e).lower()
-                ):
+                if "no such table" in str(e).lower() or "does not exist" in str(e).lower():
                     self.stdout.write(
                         self.style.WARNING(
-                            "⚠️  Cannot check migration status (database not configured). "
-                            "Proceeding anyway...\n"
+                            "⚠️  Cannot check migration status (database not configured). Proceeding anyway...\n"
                         )
                     )
                 else:
@@ -188,9 +171,7 @@ class Command(BaseCommand):
 
         if dry_run:
             self.stdout.write(
-                self.style.WARNING(
-                    "\n[DRY RUN] No files were deleted. Remove --dry-run to perform actual deletion.\n"
-                )
+                self.style.WARNING("\n[DRY RUN] No files were deleted. Remove --dry-run to perform actual deletion.\n")
             )
             return
 
@@ -199,8 +180,7 @@ class Command(BaseCommand):
             self.stdout.write("")
             confirm = input(
                 self.style.WARNING(
-                    "⚠️  This will DELETE all migration files listed above.\n"
-                    "Are you sure you want to continue? [y/N]: "
+                    "⚠️  This will DELETE all migration files listed above.\nAre you sure you want to continue? [y/N]: "
                 )
             )
             if confirm.lower() not in ("y", "yes"):
@@ -211,7 +191,7 @@ class Command(BaseCommand):
         self.stdout.write("\n🗑️  Deleting migration files...")
 
         deleted_count = 0
-        for app_label, files in files_to_delete.items():
+        for _app_label, files in files_to_delete.items():
             for f in files:
                 try:
                     f.unlink()
@@ -226,16 +206,10 @@ class Command(BaseCommand):
 
         try:
             call_command("makemigrations", *app_labels, verbosity=1)
-            self.stdout.write(
-                self.style.SUCCESS("\n✅ Initial migrations created successfully!\n")
-            )
+            self.stdout.write(self.style.SUCCESS("\n✅ Initial migrations created successfully!\n"))
         except Exception as e:
-            self.stdout.write(
-                self.style.ERROR(f"\n❌ Failed to create migrations: {e}")
-            )
-            raise CommandError(
-                "Migration creation failed. Your migrations are in an inconsistent state!"
-            )
+            self.stdout.write(self.style.ERROR(f"\n❌ Failed to create migrations: {e}"))
+            raise CommandError("Migration creation failed. Your migrations are in an inconsistent state!")
 
         # Final instructions
         self.stdout.write(self.style.MIGRATE_HEADING("\n=== Next Steps ===\n"))

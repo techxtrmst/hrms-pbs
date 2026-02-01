@@ -1,7 +1,9 @@
+import logging
+
 from django.core.management.base import BaseCommand
 from django.db import transaction
+
 from employees.models import LeaveBalance
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -35,14 +37,8 @@ class Command(BaseCommand):
                     balance.save()
                     updated_count += 1
 
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f"Successfully accrued leaves for {updated_count} employees."
-                    )
-                )
-                logger.info(
-                    f"Monthly leave accrual completed for {updated_count} employees."
-                )
+                self.stdout.write(self.style.SUCCESS(f"Successfully accrued leaves for {updated_count} employees."))
+                logger.info(f"Monthly leave accrual completed for {updated_count} employees.")
 
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Error during leave accrual: {str(e)}"))

@@ -5,6 +5,7 @@ AI-powered utilities for HRMS
 3. Resume Parser
 """
 
+import logging
 import re
 from datetime import datetime, timedelta
 
@@ -15,6 +16,8 @@ from django.utils import timezone
 
 from ai_assistant.models import AttritionRisk
 from employees.models import Attendance, Employee, LeaveRequest
+
+logger = logging.getLogger(__name__)
 
 
 class AttritionPredictor:
@@ -261,16 +264,17 @@ class HRChatbot:
                         }
 
                     # 3. Generic Navigation Context (checks for breadcrumbs like Me -> X)
-                    if "Need help finding it?" in last_response or "finding it" in last_response:
+                    if (
+                        "Need help finding it?" in last_response or "finding it" in last_response
+                    ) and "Policies" in last_response:
                         # Fallback for Policies
-                        if "Policies" in last_response:
-                            return {
-                                "answer": "Here is the link to Policies:\n[Open Policies](/me/policy/)",
-                                "type": "navigation",
-                            }
+                        return {
+                            "answer": "Here is the link to Policies:\n[Open Policies](/me/policy/)",
+                            "type": "navigation",
+                        }
 
             except Exception as e:
-                print(f"Error in context handler: {e}")
+                logger.warning("Error in context handler: %s", e)
 
         # Approve/Reject Leave
         if "approve leave" in question_lower or "reject leave" in question_lower:
@@ -345,7 +349,7 @@ class HRChatbot:
         return HRChatbot._get_fallback_response(user_name, role)
 
     @staticmethod
-    def _get_llm_response(question, employee, role, request):
+    def _get_llm_response(question, employee, role, _request):
         """
         Generate response using OpenAI with context-aware RAG
         """
@@ -572,15 +576,12 @@ class HRChatbot:
             return {"answer": ai_text, "type": "ai_response", "action": action}
 
         except Exception as e:
-            import traceback
-
-            print(f"AI Error: {e}")
-            print(traceback.format_exc())
+            logger.error("AI Error: %s", e, exc_info=True)
             # Fallback to rule-based if AI fails
             return HRChatbot._get_fallback_response(employee.user.first_name, role)
 
     @staticmethod
-    def _handle_approval_action(query, employee, user_name):
+    def _handle_approval_action(query, employee, _user_name):
         """
         Handle Approve/Reject logic specifically
         """
@@ -693,7 +694,7 @@ class HRChatbot:
             return {"answer": f"Configuration Error: {str(e)}", "type": "error"}
 
     @staticmethod
-    def _get_greeting_response(user_name, role):
+    def _get_greeting_response(user_name, _role):
         """Friendly greeting based on time of day"""
         hour = datetime.now().hour
 
@@ -714,7 +715,7 @@ class HRChatbot:
     # ==========================
 
     @staticmethod
-    def _handle_admin_query(query, employee, user_name, request=None):
+    def _handle_admin_query(query, employee, user_name, _request=None):
         """Handle Admin-specific intents with friendly tone"""
 
         # Employee Management
@@ -1011,8 +1012,7 @@ class HRChatbot:
                         "type": "team_attendance",
                     }
             except Exception as e:
-                print(f"Error in late logins: {e}")
-                pass
+                logger.warning("Error in late logins: %s", e)
 
         # Pending Leave Requests
         if "leave" in query and any(w in query for w in ["request", "pending", "approve", "approval"]):
@@ -1124,7 +1124,7 @@ class HRChatbot:
                     "type": "error",
                 }
             except Exception as e:
-                print(f"Error processing leave action: {e}")
+                logger.error("Error processing leave action: %s", e)
                 return {
                     "answer": "Something went wrong processing that request. 😔",
                     "type": "error",
@@ -1194,26 +1194,26 @@ class HRChatbot:
             "total staff",
         ]
 
-        if any(w in query for w in manager_keywords):
+        if any(w in query for w in manager_keywords) and (
+            employee.user.subordinates_user.exists()
+            or employee.user.role in ["MANAGER", "COMPANY_ADMIN"]
+            or employee.user.is_superuser
+        ):
             # Check if they have subordinates OR are marked as Manager/Admin
-            if (
-                employee.user.subordinates_user.exists()
-                or employee.user.role in ["MANAGER", "COMPANY_ADMIN"]
-                or employee.user.is_superuser
-            ):
-                response = HRChatbot._handle_manager_query(query, employee, user_name, request)
-                if response:
-                    return response
+            response = HRChatbot._handle_manager_query(query, employee, user_name, request)
+            if response:
+                return response
 
         # Also check "Show pending leave requests" specifically if missed above
-        if "leave" in query and ("request" in query or "pending" in query) and "apply" not in query:
-            if employee.user.subordinates_user.exists() or employee.user.role in [
-                "MANAGER",
-                "COMPANY_ADMIN",
-            ]:
-                response = HRChatbot._handle_manager_query(query, employee, user_name, request)
-                if response:
-                    return response
+        if (
+            "leave" in query
+            and ("request" in query or "pending" in query)
+            and "apply" not in query
+            and (employee.user.subordinates_user.exists() or employee.user.role in ["MANAGER", "COMPANY_ADMIN"])
+        ):
+            response = HRChatbot._handle_manager_query(query, employee, user_name, request)
+            if response:
+                return response
 
         # Clock In/Out Actions
         if any(w in query for w in ["clock in", "clock-in", "clockin", "punch in", "check in"]):
@@ -1426,10 +1426,7 @@ class HRChatbot:
                 "type": "leave_balance",
             }
         except Exception as e:
-            import traceback
-
-            print(f"Chatbot Balance Error: {str(e)}")
-            print(traceback.format_exc())
+            logger.error("Chatbot Balance Error: %s", e, exc_info=True)
             return {
                 "answer": f"Sorry {user_name}, I couldn't fetch your leave balance right now. 😔\n\nPlease check the **Leave** section or contact HR.",
                 "type": "error",
@@ -1556,7 +1553,7 @@ class HRChatbot:
         }
 
     @staticmethod
-    def _get_policy_info(employee, user_name, query):
+    def _get_policy_info(_employee, user_name, query):
         """Fetch and display policy information from database"""
         from employees.models import PolicySection
 
@@ -1611,7 +1608,7 @@ class HRChatbot:
             }
 
     @staticmethod
-    def _get_handbook_info(employee, user_name, query):
+    def _get_handbook_info(_employee, user_name, query):
         """Fetch and display employee handbook information from database"""
         from employees.models import HandbookSection
 
@@ -1770,7 +1767,7 @@ class HRChatbot:
                 available = 0
 
             balance_text = f"\n\n📊 **Available {leave_name}:** {available:.1f} days"
-        except:
+        except Exception:
             balance_text = ""
 
         return {
@@ -1786,7 +1783,7 @@ class HRChatbot:
         }
 
     @staticmethod
-    def _handle_regularization(employee, user_name):
+    def _handle_regularization(_employee, user_name):
         """Handle regularization request action"""
         return {
             "answer": f"Sure, {user_name}! 📝\n\nI'll help you regularize your attendance.\n\nClick the button below to submit a regularization request:",
@@ -1920,24 +1917,27 @@ class ResumeParser:
             if re.match(r"^[A-Za-z\s\.\,\']+$", line):
                 # Count words - names usually have 2-4 words
                 words = line.split()
-                if 1 <= len(words) <= 4:
+                if 1 <= len(words) <= 4 and all(word[0].isupper() for word in words if word):
                     # Check if words are capitalized (typical for names)
-                    if all(word[0].isupper() for word in words if word):
-                        return line
+                    return line
 
             # Fallback: if line has 2-3 capitalized words, likely a name
             words = line.split()
-            if 2 <= len(words) <= 3:
-                if all(word[0].isupper() and word.isalpha() for word in words):
-                    return line
+            if 2 <= len(words) <= 3 and all(word[0].isupper() and word.isalpha() for word in words):
+                return line
 
         # Ultimate fallback: return first non-empty, non-keyword line
         for line in lines[:15]:
             line = line.strip()
-            if line and len(line) > 2 and len(line) < 60:
+            if (
+                line
+                and len(line) > 2
+                and len(line) < 60
+                and "@" not in line
+                and not any(kw in line.lower() for kw in ["resume", "cv", "email", "phone"])
+            ):
                 # Skip if it contains @ or common keywords
-                if "@" not in line and not any(kw in line.lower() for kw in ["resume", "cv", "email", "phone"]):
-                    return line
+                return line
 
         return None
 

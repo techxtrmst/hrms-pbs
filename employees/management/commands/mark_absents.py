@@ -2,11 +2,13 @@
 Management command to mark employees as absent for working days where they didn't clock in
 """
 
+from datetime import date, timedelta
+
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from datetime import timedelta, date
-from employees.models import Employee, Attendance
+
 from companies.models import Holiday
+from employees.models import Attendance, Employee
 
 
 class Command(BaseCommand):
@@ -36,9 +38,7 @@ class Command(BaseCommand):
         dry_run = options["dry_run"]
 
         if dry_run:
-            self.stdout.write(
-                self.style.WARNING("DRY RUN MODE - No changes will be made")
-            )
+            self.stdout.write(self.style.WARNING("DRY RUN MODE - No changes will be made"))
 
         self.stdout.write(f"Processing absents for year {year}...")
 
@@ -59,22 +59,18 @@ class Command(BaseCommand):
             end_date = today - timedelta(days=1)  # Process up to yesterday
 
         if start_date > end_date:
-            self.stdout.write(
-                self.style.WARNING("No dates to process (start date is in the future)")
-            )
+            self.stdout.write(self.style.WARNING("No dates to process (start date is in the future)"))
             return
 
         self.stdout.write(f"Date range: {start_date} to {end_date}")
 
         # Get all active employees
-        employees = Employee.objects.filter(is_active=True).select_related(
-            "company", "location"
-        )
+        employees = Employee.objects.filter(is_active=True).select_related("company", "location")
 
         # Get all holidays in the date range
-        holidays = Holiday.objects.filter(
-            date__gte=start_date, date__lte=end_date, is_active=True
-        ).select_related("location")
+        holidays = Holiday.objects.filter(date__gte=start_date, date__lte=end_date, is_active=True).select_related(
+            "location"
+        )
 
         # Create holiday map by location and date
         holiday_map = {}
@@ -84,14 +80,13 @@ class Command(BaseCommand):
             holiday_map[holiday.location_id].add(holiday.date)
 
         absent_count = 0
-        skipped_count = 0
 
         for emp in employees:
             # Get all existing attendance records for this employee in the date range
             existing_attendance = set(
-                Attendance.objects.filter(
-                    employee=emp, date__gte=start_date, date__lte=end_date
-                ).values_list("date", flat=True)
+                Attendance.objects.filter(employee=emp, date__gte=start_date, date__lte=end_date).values_list(
+                    "date", flat=True
+                )
             )
 
             # Process each date in the range
@@ -108,11 +103,7 @@ class Command(BaseCommand):
                     continue
 
                 # Skip if it's a holiday for this employee's location
-                if (
-                    emp.location_id
-                    and emp.location_id in holiday_map
-                    and current_date in holiday_map[emp.location_id]
-                ):
+                if emp.location_id and emp.location_id in holiday_map and current_date in holiday_map[emp.location_id]:
                     current_date += timedelta(days=1)
                     continue
 
@@ -142,14 +133,8 @@ class Command(BaseCommand):
                 current_date += timedelta(days=1)
 
         if dry_run:
-            self.stdout.write(
-                self.style.WARNING(
-                    f"\n[DRY RUN] Would create {absent_count} absent records"
-                )
-            )
+            self.stdout.write(self.style.WARNING(f"\n[DRY RUN] Would create {absent_count} absent records"))
         else:
-            self.stdout.write(
-                self.style.SUCCESS(f"\n✓ Created {absent_count} absent records")
-            )
+            self.stdout.write(self.style.SUCCESS(f"\n✓ Created {absent_count} absent records"))
 
-        self.stdout.write(self.style.SUCCESS(f"✓ Processing complete!"))
+        self.stdout.write(self.style.SUCCESS("✓ Processing complete!"))

@@ -1,14 +1,12 @@
 from django.urls import path
-from . import views
-from . import inline_views
+
+from . import inline_views, location_tracking_views, views
 from .multi_step_views import add_employee_step1, add_employee_step2, add_employee_step3
 
 urlpatterns = [
     path("", views.EmployeeListView.as_view(), name="employee_list"),
     path("add/", views.EmployeeCreateView.as_view(), name="employee_add"),
-    path(
-        "import/", views.BulkEmployeeImportView.as_view(), name="employee_bulk_import"
-    ),
+    path("import/", views.BulkEmployeeImportView.as_view(), name="employee_bulk_import"),
     path(
         "import/download-sample/",
         views.download_sample_import_file,
@@ -21,9 +19,7 @@ urlpatterns = [
     path("<int:pk>/detail/", views.employee_detail, name="employee_detail"),
     path("<int:pk>/update-inline/", inline_views.update_employee_inline, name="employee_update_inline"),
     path("<int:pk>/edit/", views.EmployeeUpdateView.as_view(), name="employee_edit"),
-    path(
-        "<int:pk>/delete/", views.EmployeeDeleteView.as_view(), name="employee_delete"
-    ),
+    path("<int:pk>/delete/", views.EmployeeDeleteView.as_view(), name="employee_delete"),
     path(
         "<int:pk>/resend-welcome/",
         views.resend_welcome_email,
@@ -51,27 +47,23 @@ urlpatterns = [
     # Location Tracking API endpoints
     path(
         "api/location/hourly/",
-        views.submit_hourly_location,
+        location_tracking_views.submit_hourly_location,
         name="api_submit_hourly_location",
     ),
     path(
         "api/location/status/",
-        views.get_location_tracking_status,
+        location_tracking_views.get_location_tracking_status,
         name="api_location_tracking_status",
     ),
     path(
         "api/location/history/<int:employee_id>/",
-        views.get_employee_location_history,
+        location_tracking_views.get_employee_location_history,
         name="api_employee_location_history",
     ),
     path("attendance/<int:pk>/map/", views.attendance_map, name="attendance_map"),
     # Employee Exit Actions
-    path(
-        "<int:pk>/exit-action/", views.employee_exit_action, name="employee_exit_action"
-    ),
-    path(
-        "exit-initiatives/", views.exit_initiatives_list, name="exit_initiatives_list"
-    ),
+    path("<int:pk>/exit-action/", views.employee_exit_action, name="employee_exit_action"),
+    path("exit-initiatives/", views.exit_initiatives_list, name="exit_initiatives_list"),
     path(
         "exit-initiatives/<int:pk>/approve/",
         views.approve_exit_initiative,

@@ -1,26 +1,27 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.http import JsonResponse, HttpResponse
-from django.utils import timezone
-from django.db.models import Q, Count
-from django.core.paginator import Paginator
-
-from companies.models import Company
-from employees.models import Employee, Attendance, LeaveRequest
-from .decorators import superadmin_required, company_context_optional
-from .utils import (
-    get_dashboard_metrics,
-    get_attendance_today_data,
-    get_leaves_today_data,
-    get_employee_lifecycle_data,
-    get_leave_analytics,
-    get_attendance_heatmap_data,
-    get_company_summary,
-)
-
 import csv
 from datetime import datetime
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.db.models import Count, Q
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+
+from companies.models import Company
+from employees.models import Attendance, Employee, LeaveRequest
+
+from .decorators import company_context_optional, superadmin_required
+from .utils import (
+    get_attendance_heatmap_data,
+    get_attendance_today_data,
+    get_company_summary,
+    get_dashboard_metrics,
+    get_employee_lifecycle_data,
+    get_leave_analytics,
+    get_leaves_today_data,
+)
 
 
 @login_required
@@ -38,9 +39,7 @@ def superadmin_dashboard(request, selected_company=None, selected_company_id=Non
 
     # Get company overview for table
     company_overview = (
-        Company.objects.filter(is_active=True)
-        .annotate(employee_count=Count("employees"))
-        .order_by("name")
+        Company.objects.filter(is_active=True).annotate(employee_count=Count("employees")).order_by("name")
     )
 
     context = {
@@ -86,9 +85,7 @@ def switch_company_api(request):
                 }
             )
         except Company.DoesNotExist:
-            return JsonResponse(
-                {"success": False, "message": "Company not found"}, status=404
-            )
+            return JsonResponse({"success": False, "message": "Company not found"}, status=404)
 
     return JsonResponse({"success": False, "message": "Invalid request"}, status=400)
 
@@ -101,9 +98,7 @@ def company_list_view(request):
     """
     companies = Company.objects.annotate(
         employee_count=Count("employees"),
-        active_employee_count=Count(
-            "employees", filter=Q(employees__user__is_active=True)
-        ),
+        active_employee_count=Count("employees", filter=Q(employees__user__is_active=True)),
     ).order_by("name")
 
     # Search functionality
@@ -140,9 +135,7 @@ def employee_list_view(request, selected_company=None, selected_company_id=None)
             pass
 
     # Base queryset
-    employees = Employee.objects.select_related("user", "company", "manager").order_by(
-        "-date_of_joining"
-    )
+    employees = Employee.objects.select_related("user", "company", "manager").order_by("-date_of_joining")
 
     # Apply company filter
     if selected_company_id:
@@ -285,9 +278,7 @@ def export_data_view(request, report_type):
     Export data to CSV
     """
     response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = (
-        f'attachment; filename="{report_type}_{datetime.now().strftime("%Y%m%d")}.csv"'
-    )
+    response["Content-Disposition"] = f'attachment; filename="{report_type}_{datetime.now().strftime("%Y%m%d")}.csv"'
 
     writer = csv.writer(response)
 
@@ -318,23 +309,17 @@ def export_data_view(request, report_type):
                     emp.company.name,
                     emp.department,
                     emp.designation,
-                    emp.date_of_joining.strftime("%Y-%m-%d")
-                    if emp.date_of_joining
-                    else "",
+                    emp.date_of_joining.strftime("%Y-%m-%d") if emp.date_of_joining else "",
                     "Active" if emp.user.is_active else "Inactive",
                 ]
             )
 
     elif report_type == "attendance":
         # Export today's attendance
-        writer.writerow(
-            ["Employee", "Company", "Date", "Clock In", "Clock Out", "Status", "Hours"]
-        )
+        writer.writerow(["Employee", "Company", "Date", "Clock In", "Clock Out", "Status", "Hours"])
 
         today = timezone.localtime().date()
-        attendance = Attendance.objects.filter(date=today).select_related(
-            "employee__user", "employee__company"
-        )
+        attendance = Attendance.objects.filter(date=today).select_related("employee__user", "employee__company")
 
         company_id = request.GET.get("company_id")
         if company_id:
@@ -367,9 +352,7 @@ def export_data_view(request, report_type):
             ]
         )
 
-        leaves = LeaveRequest.objects.select_related(
-            "employee__user", "employee__company"
-        ).all()
+        leaves = LeaveRequest.objects.select_related("employee__user", "employee__company").all()
 
         company_id = request.GET.get("company_id")
         if company_id:
@@ -380,7 +363,13 @@ def export_data_view(request, report_type):
                 [
                     leave.employee.user.get_full_name(),
                     leave.employee.company.name,
-                    "SL" if leave.leave_type == "SL" else ("PL" if leave.leave_type == "CL" else ("LOP" if leave.leave_type == "UL" else leave.get_leave_type_display())),
+                    "SL"
+                    if leave.leave_type == "SL"
+                    else (
+                        "PL"
+                        if leave.leave_type == "CL"
+                        else ("LOP" if leave.leave_type == "UL" else leave.get_leave_type_display())
+                    ),
                     leave.start_date.strftime("%Y-%m-%d"),
                     leave.end_date.strftime("%Y-%m-%d"),
                     leave.total_days,

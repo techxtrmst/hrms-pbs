@@ -3,8 +3,9 @@ Management command to create company admins for each tenant
 Creates admin users for Petabytz, Bluebix, and Softstandard
 """
 
-from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
+from django.core.management.base import BaseCommand
+
 from companies.models import Company
 
 User = get_user_model()
@@ -46,9 +47,7 @@ class Command(BaseCommand):
                 company = Company.objects.get(slug=admin_data["company_slug"])
             except Company.DoesNotExist:
                 self.stdout.write(
-                    self.style.ERROR(
-                        f"✗ Company {admin_data['company_slug']} not found. Run setup_companies first."
-                    )
+                    self.style.ERROR(f"✗ Company {admin_data['company_slug']} not found. Run setup_companies first.")
                 )
                 continue
 
@@ -69,20 +68,12 @@ class Command(BaseCommand):
             if created:
                 user.set_password(admin_data["password"])
                 user.save()
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f"✓ Created admin: {user.email} for {company.name}"
-                    )
-                )
+                self.stdout.write(self.style.SUCCESS(f"✓ Created admin: {user.email} for {company.name}"))
             else:
                 # Update password if user already exists
                 user.set_password(admin_data["password"])
                 user.save()
-                self.stdout.write(
-                    self.style.WARNING(
-                        f"✓ Updated admin: {user.email} for {company.name}"
-                    )
-                )
+                self.stdout.write(self.style.WARNING(f"✓ Updated admin: {user.email} for {company.name}"))
 
         self.stdout.write(
             self.style.SUCCESS(

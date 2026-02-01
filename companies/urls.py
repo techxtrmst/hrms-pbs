@@ -1,6 +1,7 @@
 from django.urls import path
-from .shift_views import shift_list, shift_create, shift_edit, shift_delete
+
 from . import views
+from .shift_views import shift_create, shift_delete, shift_edit, shift_list
 
 urlpatterns = [
     path("shifts/", shift_list, name="shift_list"),

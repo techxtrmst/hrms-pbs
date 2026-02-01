@@ -1,13 +1,14 @@
-from django.urls import path, include
 from django.http import JsonResponse
-from rest_framework.routers import DefaultRouter
+from django.urls import include, path
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
-from employees.api import EmployeeViewSet
+from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+
+from employees.api import EmployeeViewSet
 
 
 @api_view(["GET"])

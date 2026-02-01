@@ -1,5 +1,6 @@
 # PDF Utility for Payslip Generation
 import io
+import logging
 
 import pytz
 from django.core.files.base import ContentFile
@@ -7,6 +8,8 @@ from django.template.loader import get_template, render_to_string
 from xhtml2pdf import pisa
 
 from employees.payroll_utils import num2words_flexible
+
+logger = logging.getLogger(__name__)
 
 # Common timezone abbreviation mappings to valid pytz timezones
 TIMEZONE_ABBREVIATION_MAP = {
@@ -49,8 +52,10 @@ def normalize_timezone(tz_name, fallback="Asia/Kolkata"):
     return fallback
 
 
-def render_to_pdf_weasyprint(template_src, context_dict={}):
+def render_to_pdf_weasyprint(template_src, context_dict=None):
     """Render PDF using WeasyPrint - for non-payslip PDFs"""
+    if context_dict is None:
+        context_dict = {}
     try:
         from weasyprint import HTML
 
@@ -60,11 +65,13 @@ def render_to_pdf_weasyprint(template_src, context_dict={}):
         HTML(string=html).write_pdf(result)
         return result.getvalue()
     except Exception as e:
-        print(f"WeasyPrint PDF generation error: {e}")
+        logger.error("WeasyPrint PDF generation error: %s", e)
         return None
 
 
-def render_to_pdf(template_src, context_dict={}):
+def render_to_pdf(template_src, context_dict=None):
+    if context_dict is None:
+        context_dict = {}
     template = get_template(template_src)
     html = template.render(context_dict)
     result = io.BytesIO()
@@ -175,8 +182,5 @@ def generate_payslip_pdf_with_generator(payslip_instance, output_dir="media/pays
         return True
 
     except Exception as e:
-        print(f"Payslip PDF generation error: {e}")
-        import traceback
-
-        traceback.print_exc()
+        logger.error("Payslip PDF generation error: %s", e, exc_info=True)
         return False

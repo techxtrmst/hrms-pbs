@@ -179,33 +179,34 @@ class Employee(models.Model):
         - 'COMPLETED_TODAY': Employee completed probation today (exactly 3 months)
         """
         if not self.date_of_joining:
-            return 'IN_PROBATION'
-        
+            return "IN_PROBATION"
+
         from dateutil.relativedelta import relativedelta
         from django.utils import timezone
-        
+
         today = timezone.now().date()
         probation_end_date = self.date_of_joining + relativedelta(months=3)
-        
+
         if today < probation_end_date:
-            return 'IN_PROBATION'
+            return "IN_PROBATION"
         elif today == probation_end_date:
-            return 'COMPLETED_TODAY'
+            return "COMPLETED_TODAY"
         else:
-            return 'COMPLETED'
-    
+            return "COMPLETED"
+
     def get_probation_end_date(self):
         """Get the exact date when probation period ends (3 months from joining)"""
         if not self.date_of_joining:
             return None
-        
+
         from dateutil.relativedelta import relativedelta
+
         return self.date_of_joining + relativedelta(months=3)
-    
+
     def is_probation_completed(self):
         """Check if employee has completed probation period"""
         status = self.get_probation_status()
-        return status in ['COMPLETED', 'COMPLETED_TODAY']
+        return status in ["COMPLETED", "COMPLETED_TODAY"]
 
     def save(self, *args, **kwargs):
         """Auto-generate employee ID if not set"""
@@ -390,6 +391,7 @@ class Attendance(models.Model):
         if not self.clock_in:
             return None
         import pytz
+
         tz_name = self.user_timezone or "Asia/Kolkata"
         try:
             tz = pytz.timezone(tz_name)
@@ -403,6 +405,7 @@ class Attendance(models.Model):
         if not self.clock_out:
             return None
         import pytz
+
         tz_name = self.user_timezone or "Asia/Kolkata"
         try:
             tz = pytz.timezone(tz_name)
@@ -425,14 +428,14 @@ class Attendance(models.Model):
         tz_name = getattr(self, "user_timezone", None)
         if not tz_name:
             from core.utils import get_user_timezone
-            tz_name = get_user_timezone(self.employee.user, self.employee.company)
-            
-        local_tz = pytz.timezone(tz_name)
 
+            tz_name = get_user_timezone(self.employee.user, self.employee.company)
+
+        local_tz = pytz.timezone(tz_name)
 
         # Convert clock_in to local timezone
         local_clock_in = self.clock_in.astimezone(local_tz)
-        clock_in_time = local_clock_in.time()
+        local_clock_in.time()
 
         # Determine Shift
         shift = self.employee.assigned_shift
@@ -522,20 +525,21 @@ class Attendance(models.Model):
         tz_name = getattr(self, "user_timezone", None)
         if not tz_name:
             from core.utils import get_user_timezone
-            tz_name = get_user_timezone(self.employee.user, self.employee.company)
-            
-        local_tz = pytz.timezone(tz_name)
 
+            tz_name = get_user_timezone(self.employee.user, self.employee.company)
+
+        local_tz = pytz.timezone(tz_name)
 
         # Convert clock_out to local timezone
         local_clock_out = self.clock_out.astimezone(local_tz)
-        clock_out_time = local_clock_out.time()
+        local_clock_out.time()
 
         # Determine Shift
         shift = self.employee.assigned_shift
         if not shift:
             # Fallback (Legacy)
             from companies.models import ShiftSchedule
+
             if self.employee.shift_schedule:
                 shift = ShiftSchedule.objects.filter(
                     company=self.employee.company,
@@ -573,20 +577,20 @@ class Attendance(models.Model):
         try:
             # Use cumulative calculation including current session if active
             total_hours = self.get_cumulative_working_hours_including_current()
-            
+
             if total_hours > 0:
                 hours = int(total_hours)
                 minutes = int((total_hours - hours) * 60)
-                
+
                 # Cap display at 24 hours
                 if hours > 24:
                     hours = 24
                     minutes = 0
-                
+
                 # Show '+' if currently clocked in (active session)
                 is_active = self.is_currently_clocked_in
                 return f"{hours}:{minutes:02d}{'+' if is_active else ''}"
-            
+
             return "0:00"
         except Exception as e:
             logger.error(f"Error calculating effective hours: {str(e)}")
@@ -641,11 +645,10 @@ class Attendance(models.Model):
 
     def get_combined_session_summary(self):
         """Get a summary of all sessions combined for the day"""
-        sessions = AttendanceSession.objects.filter(employee=self.employee, date=self.date).order_by("session_number")
+        AttendanceSession.objects.filter(employee=self.employee, date=self.date).order_by("session_number")
 
     def calculate_total_working_hours(self):
         """Calculate total working hours from all completed sessions with 24-hour daily cap"""
-        from datetime import datetime, time
         from decimal import Decimal
 
         sessions = AttendanceSession.objects.filter(
@@ -690,70 +693,18 @@ class Attendance(models.Model):
             return False
 
         # Can't clock in if max sessions reached
-        if self.daily_sessions_count >= self.max_daily_sessions:
-            return False
-
-        return True
+        return not self.daily_sessions_count >= self.max_daily_sessions
 
     def can_clock_out(self):
         """Check if employee can clock out"""
         # Can only clock out if currently clocked in
         return self.is_currently_clocked_in
 
-        completed_sessions = sessions.filter(clock_in__isnull=False, clock_out__isnull=False)
-
-        active_sessions = sessions.filter(clock_in__isnull=False, clock_out__isnull=True)
-
-        total_minutes = 0
-        for session in completed_sessions:
-            duration = session.clock_out - session.clock_in
-            total_minutes += duration.total_seconds() / 60
-
-        worked_hours = total_minutes / 60
-        expected_hours = self.get_shift_duration_hours()
-
-        return {
-            "total_sessions": sessions.count(),
-            "completed_sessions": completed_sessions.count(),
-            "active_sessions": active_sessions.count(),
-            "total_worked_hours": round(worked_hours, 2),
-            "expected_hours": expected_hours,
-            "completion_percentage": round((worked_hours / expected_hours) * 100, 1) if expected_hours > 0 else 0,
-            "remaining_hours": max(0, expected_hours - worked_hours),
-            "is_shift_complete": worked_hours >= expected_hours * 0.9,  # 90% completion threshold
-        }
-
-    def calculate_total_working_hours(self):
-        """Calculate and update total working hours from all sessions"""
-        try:
-            from .models import AttendanceSession
-
-            # Fetch all completed sessions for this attendance record
-            sessions = AttendanceSession.objects.filter(
-                employee=self.employee,
-                date=self.date,
-                clock_in__isnull=False,
-                clock_out__isnull=False,
-            )
-
-            total_seconds = 0
-            for session in sessions:
-                duration = session.clock_out - session.clock_in
-                total_seconds += duration.total_seconds()
-
-            # Convert to hours
-            self.total_working_hours = round(total_seconds / 3600, 2)
-            self.save(update_fields=["total_working_hours"])
-            return self.total_working_hours
-
-        except Exception as e:
-            logger.error(f"Error calculating total working hours: {str(e)}")
-            return 0.0
-
     def get_cumulative_working_hours_including_current(self):
         """Calculate total working hours including current active session"""
         try:
             from django.utils import timezone
+
             from .models import AttendanceSession
 
             # Get all completed sessions for today
@@ -763,19 +714,19 @@ class Attendance(models.Model):
                 clock_in__isnull=False,
                 clock_out__isnull=False,
             )
-            
+
             # Calculate total hours from completed sessions
             total_seconds = 0
             for session in completed_sessions:
                 duration = session.clock_out - session.clock_in
                 total_seconds += duration.total_seconds()
-            
+
             # Add current active session if exists
             current_session = self.get_current_session()
             if current_session and current_session.clock_in:
                 current_duration = timezone.now() - current_session.clock_in
                 total_seconds += current_duration.total_seconds()
-            
+
             # Convert to hours
             return round(total_seconds / 3600, 2)
 
@@ -830,14 +781,11 @@ class Attendance(models.Model):
             return False
 
         # Stop if clocked out
-        if self.clock_out:
-            return True
-
         # User requested tracking until actual clock-out, so we ignore location_tracking_end_time for stopping
         # if self.location_tracking_end_time and timezone.now() >= self.location_tracking_end_time:
         #    return True
 
-        return False
+        return bool(self.clock_out)
 
     def get_current_session(self):
         """Get the currently active session (not clocked out)"""
@@ -853,14 +801,6 @@ class Attendance(models.Model):
             .order_by("-session_number")
             .first()
         )
-
-    def can_clock_in(self):
-        """Check if employee can clock in based on current state"""
-        # Cannot clock in if already clocked in
-        if self.is_currently_clocked_in:
-            return False
-
-        return True
 
 
 class AttendanceSession(models.Model):
@@ -1066,15 +1006,15 @@ class LeaveBalance(models.Model):
         # Ensure non-negative allocated leaves
         self.casual_leave_allocated = max(0, self.casual_leave_allocated)
         self.sick_leave_allocated = max(0, self.sick_leave_allocated)
-        
+
         # Ensure non-negative used leaves
         self.casual_leave_used = max(0, self.casual_leave_used)
         self.sick_leave_used = max(0, self.sick_leave_used)
         self.unpaid_leave = max(0, self.unpaid_leave)
-        
+
         # Ensure non-negative carry forward
         self.carry_forward_leave = max(0, self.carry_forward_leave)
-        
+
         self.save()
         return self
 
@@ -1199,7 +1139,7 @@ class LeaveRequest(models.Model):
         try:
             validation = self.validate_leave_application()
             return validation.get("will_be_lop", False)
-        except:
+        except Exception:
             return False
 
     def validate_leave_application(self):
@@ -1330,7 +1270,7 @@ class LeaveRequest(models.Model):
                         attendance_status = "HALF_DAY"
                     else:
                         attendance_status = "LEAVE"
-                    
+
                     # Create or update attendance record
                     Attendance.objects.update_or_create(
                         employee=self.employee,
@@ -1358,26 +1298,28 @@ class Payslip(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="payslips")
     month = models.DateField(help_text="Select any date in the month")
     pdf_file = models.FileField(upload_to="payslips/", null=True, blank=True)
-    
+
     # Financial Breakdown
     basic = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     hra = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     lta = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Conveyance Allowance")
     other_allowance = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Special Allowance")
     conveyance_allowance = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Conveyance")
-    special_allowance = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Medical Allowance")
+    special_allowance = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0, verbose_name="Medical Allowance"
+    )
     monthly_gross = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     gross_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    
+
     # Deductions
     employee_pf = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     employer_pf = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     professional_tax = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    
+
     # Meta info
     worked_days = models.FloatField(default=0)
     total_days = models.IntegerField(default=30)
-    
+
     net_salary = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     generated_at = models.DateTimeField(auto_now_add=True)
 
@@ -1566,10 +1508,10 @@ def create_leave_balance(sender, instance, created, **kwargs):
 def invalidate_leave_balance_cache(sender, instance, **kwargs):
     """Clear cached data when leave balance is updated"""
     from django.core.cache import cache
-    
+
     employee = instance.employee
     company = employee.company
-    
+
     # Clear employee-specific cache
     cache_keys_to_clear = [
         f"employee_leave_balance_{employee.id}",
@@ -1579,8 +1521,8 @@ def invalidate_leave_balance_cache(sender, instance, **kwargs):
         f"leave_config_data_{company.id}",
         f"company_leave_summary_{company.id}",
     ]
-    
+
     for cache_key in cache_keys_to_clear:
         cache.delete(cache_key)
-    
+
     logger.info(f"Cache invalidated for employee {employee.user.get_full_name()} leave balance update")

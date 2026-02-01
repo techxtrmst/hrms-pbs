@@ -4,7 +4,9 @@ Analyzes attendance patterns and provides insights
 """
 
 from datetime import timedelta
+
 from django.utils import timezone
+
 from employees.models import Attendance, Employee
 
 
@@ -23,9 +25,7 @@ class AttendanceIntelligence:
         start_date = end_date - timedelta(days=days)
 
         attendances = (
-            Attendance.objects.filter(
-                employee=employee, date__gte=start_date, date__lte=end_date
-            )
+            Attendance.objects.filter(employee=employee, date__gte=start_date, date__lte=end_date)
             .exclude(status="WEEKLY_OFF")
             .exclude(status="HOLIDAY")
         )
@@ -44,9 +44,7 @@ class AttendanceIntelligence:
         # Count various patterns
         late_logins = attendances.filter(is_late=True).count()
         early_logouts = attendances.filter(is_early_departure=True).count()
-        missed_clock_out = attendances.filter(
-            clock_in__isnull=False, clock_out__isnull=True
-        ).count()
+        missed_clock_out = attendances.filter(clock_in__isnull=False, clock_out__isnull=True).count()
         absences = attendances.filter(status="ABSENT").count()
         half_days = attendances.filter(status="HALF_DAY").count()
 
@@ -227,7 +225,7 @@ class AttendanceIntelligence:
         }
 
     @staticmethod
-    def check_location_mismatch(employee, days=7):
+    def check_location_mismatch(_employee, _days=7):
         """
         Detect location mismatches (WFH vs Office)
         This is a placeholder - implement based on your location tracking logic

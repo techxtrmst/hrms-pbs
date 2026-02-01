@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
-from employees.models import Employee, LeaveRequest, LeaveBalance
 from django.db import transaction
+
+from employees.models import Employee, LeaveRequest
 
 
 class Command(BaseCommand):
@@ -17,9 +18,7 @@ class Command(BaseCommand):
         dry_run = options["dry_run"]
 
         if dry_run:
-            self.stdout.write(
-                self.style.WARNING("DRY RUN MODE - No changes will be made")
-            )
+            self.stdout.write(self.style.WARNING("DRY RUN MODE - No changes will be made"))
 
         employees = Employee.objects.all()
         fixed_count = 0
@@ -34,44 +33,26 @@ class Command(BaseCommand):
 
                 if current_lop != expected_lop:
                     self.stdout.write(f"Employee: {employee.user.get_full_name()}")
-                    self.stdout.write(
-                        f"  Current LOP: {current_lop}, Expected LOP: {expected_lop}"
-                    )
+                    self.stdout.write(f"  Current LOP: {current_lop}, Expected LOP: {expected_lop}")
 
                     if not dry_run:
                         with transaction.atomic():
                             balance.unpaid_leave = expected_lop
                             balance.save()
-                        self.stdout.write(
-                            self.style.SUCCESS(
-                                f"  ✅ Fixed LOP for {employee.user.get_full_name()}"
-                            )
-                        )
+                        self.stdout.write(self.style.SUCCESS(f"  ✅ Fixed LOP for {employee.user.get_full_name()}"))
                     else:
-                        self.stdout.write(
-                            self.style.WARNING(
-                                f"  Would fix LOP for {employee.user.get_full_name()}"
-                            )
-                        )
+                        self.stdout.write(self.style.WARNING(f"  Would fix LOP for {employee.user.get_full_name()}"))
 
                     fixed_count += 1
 
             except Exception as e:
-                self.stdout.write(
-                    self.style.ERROR(
-                        f"Error processing {employee.user.get_full_name()}: {e}"
-                    )
-                )
+                self.stdout.write(self.style.ERROR(f"Error processing {employee.user.get_full_name()}: {e}"))
 
         if fixed_count == 0:
             self.stdout.write(self.style.SUCCESS("✅ All LOP calculations are correct"))
         else:
             action = "Would fix" if dry_run else "Fixed"
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f"✅ {action} LOP calculation for {fixed_count} employees"
-                )
-            )
+            self.stdout.write(self.style.SUCCESS(f"✅ {action} LOP calculation for {fixed_count} employees"))
 
     def calculate_expected_lop(self, employee):
         """Calculate expected LOP based on approved leave requests"""
@@ -79,14 +60,11 @@ class Command(BaseCommand):
         expected_lop = 0.0
 
         # Get all approved leave requests
-        approved_leaves = LeaveRequest.objects.filter(
-            employee=employee, status="APPROVED"
-        )
+        approved_leaves = LeaveRequest.objects.filter(employee=employee, status="APPROVED")
 
         # Track usage by leave type
         cl_used = 0.0
         sl_used = 0.0
-        ul_used = 0.0
 
         for leave in approved_leaves:
             days = leave.total_days

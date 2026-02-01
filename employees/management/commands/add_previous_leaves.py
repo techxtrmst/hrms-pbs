@@ -1,15 +1,14 @@
 from django.core.management.base import BaseCommand
-from employees.models import Employee, LeaveBalance
+
 from companies.models import Company
+from employees.models import Employee, LeaveBalance
 
 
 class Command(BaseCommand):
     help = "Add previous/carry-forward leaves to employee balances (Admin tool)"
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "--employee-id", type=int, help="Add leaves for specific employee ID only"
-        )
+        parser.add_argument("--employee-id", type=int, help="Add leaves for specific employee ID only")
         parser.add_argument(
             "--company-id",
             type=int,
@@ -63,22 +62,11 @@ class Command(BaseCommand):
 
         # Validate input
         if not employee_id and not company_id:
-            self.stdout.write(
-                self.style.ERROR(
-                    "❌ Please specify either --employee-id or --company-id"
-                )
-            )
+            self.stdout.write(self.style.ERROR("❌ Please specify either --employee-id or --company-id"))
             return
 
-        if (
-            casual_leave == 0
-            and sick_leave == 0
-            and earned_leave == 0
-            and comp_off == 0
-        ):
-            self.stdout.write(
-                self.style.ERROR("❌ Please specify at least one leave type to add")
-            )
+        if casual_leave == 0 and sick_leave == 0 and earned_leave == 0 and comp_off == 0:
+            self.stdout.write(self.style.ERROR("❌ Please specify at least one leave type to add"))
             return
 
         # Get employees to process
@@ -86,11 +74,7 @@ class Command(BaseCommand):
             try:
                 employees = Employee.objects.filter(id=employee_id, is_active=True)
                 if not employees.exists():
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f"❌ Employee with ID {employee_id} not found or inactive"
-                        )
-                    )
+                    self.stdout.write(self.style.ERROR(f"❌ Employee with ID {employee_id} not found or inactive"))
                     return
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"❌ Error finding employee: {e}"))
@@ -100,23 +84,15 @@ class Command(BaseCommand):
                 company = Company.objects.get(id=company_id)
                 employees = Employee.objects.filter(company=company, is_active=True)
                 if not employees.exists():
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f"❌ No active employees found for company {company.name}"
-                        )
-                    )
+                    self.stdout.write(self.style.ERROR(f"❌ No active employees found for company {company.name}"))
                     return
             except Company.DoesNotExist:
-                self.stdout.write(
-                    self.style.ERROR(f"❌ Company with ID {company_id} not found")
-                )
+                self.stdout.write(self.style.ERROR(f"❌ Company with ID {company_id} not found"))
                 return
 
         # Show what will be added
         if dry_run:
-            self.stdout.write(
-                self.style.WARNING("🔍 DRY RUN - Showing what would be added")
-            )
+            self.stdout.write(self.style.WARNING("🔍 DRY RUN - Showing what would be added"))
         else:
             self.stdout.write("💰 Adding previous/carry-forward leaves")
 
@@ -176,9 +152,7 @@ class Command(BaseCommand):
             if comp_off > 0:
                 changes.append(f"CO: {original_co} → {new_co} (+{comp_off})")
 
-            self.stdout.write(
-                f"   {employee.user.get_full_name()} ({employee.company.name}): {', '.join(changes)}"
-            )
+            self.stdout.write(f"   {employee.user.get_full_name()} ({employee.company.name}): {', '.join(changes)}")
 
             # Apply changes if not dry run
             if not dry_run:
@@ -188,9 +162,7 @@ class Command(BaseCommand):
                 leave_balance.comp_off_allocated = new_co
 
                 # Update carry_forward_leave field for audit trail
-                leave_balance.carry_forward_leave += (
-                    casual_leave + sick_leave + earned_leave + comp_off
-                )
+                leave_balance.carry_forward_leave += casual_leave + sick_leave + earned_leave + comp_off
 
                 leave_balance.save()
 
@@ -198,48 +170,28 @@ class Command(BaseCommand):
 
         # Summary
         if dry_run:
-            self.stdout.write(
-                self.style.WARNING(
-                    f"\n🔍 DRY RUN COMPLETE - Would update {total_updated} employees"
-                )
-            )
-            self.stdout.write(
-                self.style.SUCCESS("To apply changes, remove --dry-run flag")
-            )
+            self.stdout.write(self.style.WARNING(f"\n🔍 DRY RUN COMPLETE - Would update {total_updated} employees"))
+            self.stdout.write(self.style.SUCCESS("To apply changes, remove --dry-run flag"))
         else:
             self.stdout.write(
-                self.style.SUCCESS(
-                    f"\n🎉 Successfully added previous leaves to {total_updated} employees!"
-                )
+                self.style.SUCCESS(f"\n🎉 Successfully added previous leaves to {total_updated} employees!")
             )
 
         # Show usage examples
         if dry_run or total_updated > 0:
             self.stdout.write("\n📚 USAGE EXAMPLES:")
             self.stdout.write("   # Add 5 CL and 3 SL to specific employee")
-            self.stdout.write(
-                "   python manage.py add_previous_leaves --employee-id 1 --casual-leave 5 --sick-leave 3"
-            )
+            self.stdout.write("   python manage.py add_previous_leaves --employee-id 1 --casual-leave 5 --sick-leave 3")
             self.stdout.write("   ")
             self.stdout.write("   # Add 2.5 CL to all employees in company")
-            self.stdout.write(
-                "   python manage.py add_previous_leaves --company-id 1 --casual-leave 2.5"
-            )
+            self.stdout.write("   python manage.py add_previous_leaves --company-id 1 --casual-leave 2.5")
             self.stdout.write("   ")
             self.stdout.write("   # Test before applying (dry run)")
-            self.stdout.write(
-                "   python manage.py add_previous_leaves --employee-id 1 --casual-leave 5 --dry-run"
-            )
+            self.stdout.write("   python manage.py add_previous_leaves --employee-id 1 --casual-leave 5 --dry-run")
 
         # Show integration note
         if not dry_run and total_updated > 0:
             self.stdout.write("\n✅ INTEGRATION NOTE:")
-            self.stdout.write(
-                "   • These manual adjustments will be preserved during monthly accrual"
-            )
-            self.stdout.write(
-                "   • Monthly accrual will ADD to these balances, not overwrite them"
-            )
-            self.stdout.write(
-                "   • Changes are tracked in carry_forward_leave field for audit"
-            )
+            self.stdout.write("   • These manual adjustments will be preserved during monthly accrual")
+            self.stdout.write("   • Monthly accrual will ADD to these balances, not overwrite them")
+            self.stdout.write("   • Changes are tracked in carry_forward_leave field for audit")

@@ -1,15 +1,15 @@
+from datetime import date, datetime, time
+
 from django.core.management.base import BaseCommand
-from employees.models import Employee, Attendance, AttendanceSession
-from datetime import date, time, datetime
+
+from employees.models import Attendance, AttendanceSession, Employee
 
 
 class Command(BaseCommand):
     help = "Test and demonstrate multiple session combination for working hours calculation"
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "--employee-id", type=int, help="Test with specific employee ID"
-        )
+        parser.add_argument("--employee-id", type=int, help="Test with specific employee ID")
         parser.add_argument(
             "--create-test-data",
             action="store_true",
@@ -27,9 +27,7 @@ class Command(BaseCommand):
             try:
                 employee = Employee.objects.get(id=employee_id, is_active=True)
             except Employee.DoesNotExist:
-                self.stdout.write(
-                    self.style.ERROR(f"Employee with ID {employee_id} not found")
-                )
+                self.stdout.write(self.style.ERROR(f"Employee with ID {employee_id} not found"))
                 return
         else:
             employee = Employee.objects.filter(is_active=True).first()
@@ -37,9 +35,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR("No active employees found"))
                 return
 
-        self.stdout.write(
-            f"👤 Testing with: {employee.user.get_full_name()} ({employee.company.name})"
-        )
+        self.stdout.write(f"👤 Testing with: {employee.user.get_full_name()} ({employee.company.name})")
 
         # Get shift info
         shift = employee.assigned_shift
@@ -94,9 +90,7 @@ class Command(BaseCommand):
             ]
 
             for session_data in test_sessions:
-                session = AttendanceSession.objects.create(
-                    employee=employee, date=today, **session_data
-                )
+                session = AttendanceSession.objects.create(employee=employee, date=today, **session_data)
                 session.calculate_duration()
                 session.save()
 
@@ -119,9 +113,7 @@ class Command(BaseCommand):
 
         attendance = Attendance.objects.filter(employee=employee, date=today).first()
         if not attendance:
-            self.stdout.write(
-                self.style.WARNING("No attendance record found for today")
-            )
+            self.stdout.write(self.style.WARNING("No attendance record found for today"))
             return
 
         # Get session summary
@@ -137,14 +129,10 @@ class Command(BaseCommand):
         self.stdout.write(f"   Worked Hours: {summary['total_worked_hours']:.2f}h")
         self.stdout.write(f"   Completion: {summary['completion_percentage']:.1f}%")
         self.stdout.write(f"   Remaining: {summary['remaining_hours']:.2f}h")
-        self.stdout.write(
-            f"   Shift Complete: {'✅ Yes' if summary['is_shift_complete'] else '❌ No'}"
-        )
+        self.stdout.write(f"   Shift Complete: {'✅ Yes' if summary['is_shift_complete'] else '❌ No'}")
 
         # Show individual sessions
-        sessions = AttendanceSession.objects.filter(
-            employee=employee, date=today
-        ).order_by("session_number")
+        sessions = AttendanceSession.objects.filter(employee=employee, date=today).order_by("session_number")
 
         if sessions.exists():
             self.stdout.write("\n🔍 INDIVIDUAL SESSIONS:")
@@ -180,9 +168,7 @@ class Command(BaseCommand):
         # Show attendance display values
         self.stdout.write("\n📱 DISPLAY VALUES:")
         self.stdout.write(f"   Home Page Hours: {attendance.effective_hours}")
-        self.stdout.write(
-            f"   Total Working Hours: {attendance.total_working_hours:.2f}h"
-        )
+        self.stdout.write(f"   Total Working Hours: {attendance.total_working_hours:.2f}h")
         self.stdout.write(f"   Visual Progress: {attendance.visual_width:.1f}%")
         self.stdout.write(f"   Status: {attendance.get_status_display()}")
 
@@ -190,39 +176,25 @@ class Command(BaseCommand):
         self.stdout.write("\n💡 RECOMMENDATIONS:")
         if summary["completion_percentage"] < 90:
             remaining = summary["remaining_hours"]
-            self.stdout.write(
-                f"   • Employee needs {remaining:.1f} more hours to complete shift"
-            )
+            self.stdout.write(f"   • Employee needs {remaining:.1f} more hours to complete shift")
         else:
-            self.stdout.write(
-                f"   • ✅ Shift requirement met ({summary['completion_percentage']:.1f}%)"
-            )
+            self.stdout.write(f"   • ✅ Shift requirement met ({summary['completion_percentage']:.1f}%)")
 
         if summary["active_sessions"] > 0:
-            self.stdout.write(
-                "   • ⚠️  Employee currently clocked in - session incomplete"
-            )
+            self.stdout.write("   • ⚠️  Employee currently clocked in - session incomplete")
 
         if summary["total_sessions"] > 3:
-            self.stdout.write(
-                "   • ℹ️  Multiple sessions detected - all properly combined"
-            )
+            self.stdout.write("   • ℹ️  Multiple sessions detected - all properly combined")
 
         self.stdout.write("\n✅ Session combination test completed!")
 
         # Usage examples
         self.stdout.write("\n📚 USAGE EXAMPLES:")
         self.stdout.write("   # Test with specific employee")
-        self.stdout.write(
-            "   python manage.py test_session_combination --employee-id 1"
-        )
+        self.stdout.write("   python manage.py test_session_combination --employee-id 1")
         self.stdout.write("   ")
         self.stdout.write("   # Create test data and analyze")
-        self.stdout.write(
-            "   python manage.py test_session_combination --create-test-data"
-        )
+        self.stdout.write("   python manage.py test_session_combination --create-test-data")
         self.stdout.write("   ")
         self.stdout.write("   # Test with specific employee and create data")
-        self.stdout.write(
-            "   python manage.py test_session_combination --employee-id 1 --create-test-data"
-        )
+        self.stdout.write("   python manage.py test_session_combination --employee-id 1 --create-test-data")

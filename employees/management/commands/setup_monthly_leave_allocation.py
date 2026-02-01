@@ -1,7 +1,9 @@
-from django.core.management.base import BaseCommand
-from employees.models import Employee, LeaveBalance
-from companies.models import Company
 from datetime import date
+
+from django.core.management.base import BaseCommand
+
+from companies.models import Company
+from employees.models import Employee, LeaveBalance
 
 
 class Command(BaseCommand):
@@ -13,9 +15,7 @@ class Command(BaseCommand):
             action="store_true",
             help="Reset all existing leave balances to 0 before applying new allocation",
         )
-        parser.add_argument(
-            "--company-id", type=int, help="Setup leaves for specific company ID only"
-        )
+        parser.add_argument("--company-id", type=int, help="Setup leaves for specific company ID only")
 
     def handle(self, *args, **options):
         reset_balances = options.get("reset", False)
@@ -41,10 +41,7 @@ class Command(BaseCommand):
         }
 
         # Get companies to process
-        if company_id:
-            companies = Company.objects.filter(id=company_id)
-        else:
-            companies = Company.objects.all()
+        companies = Company.objects.filter(id=company_id) if company_id else Company.objects.all()
 
         if not companies.exists():
             self.stdout.write(self.style.WARNING("No companies found"))
@@ -55,15 +52,9 @@ class Command(BaseCommand):
         start_month = date(2026, 1, 1)
 
         # Calculate number of months from January 2026 to current month
-        months_elapsed = (
-            (current_date.year - start_month.year) * 12
-            + (current_date.month - start_month.month)
-            + 1
-        )
+        months_elapsed = (current_date.year - start_month.year) * 12 + (current_date.month - start_month.month) + 1
 
-        self.stdout.write(
-            f"Setting up leave allocation from January 2026 to {current_date.strftime('%B %Y')}"
-        )
+        self.stdout.write(f"Setting up leave allocation from January 2026 to {current_date.strftime('%B %Y')}")
         self.stdout.write(f"Months to allocate: {months_elapsed}")
 
         total_updated = 0
@@ -82,9 +73,7 @@ class Command(BaseCommand):
                     "earned_leave_monthly": 0.0,
                 }
                 self.stdout.write(
-                    self.style.WARNING(
-                        f"Using default rules for {company_name} (not in predefined rules)"
-                    )
+                    self.style.WARNING(f"Using default rules for {company_name} (not in predefined rules)")
                 )
 
             self.stdout.write(f"\n📍 Processing Company: {company_name}")
@@ -143,25 +132,15 @@ class Command(BaseCommand):
                 company_updated += 1
                 total_updated += 1
 
-                if created:
-                    action = "Created"
-                else:
-                    action = "Updated"
+                action = "Created" if created else "Updated"
 
                 self.stdout.write(
-                    f"   {action} {employee.user.get_full_name()}: "
-                    f"CL={total_cl}, SL={total_sl}, EL={total_el}"
+                    f"   {action} {employee.user.get_full_name()}: CL={total_cl}, SL={total_sl}, EL={total_el}"
                 )
 
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f"   ✅ {company_updated} employees updated for {company_name}"
-                )
-            )
+            self.stdout.write(self.style.SUCCESS(f"   ✅ {company_updated} employees updated for {company_name}"))
 
-        self.stdout.write(
-            self.style.SUCCESS(f"\n🎉 Total employees updated: {total_updated}")
-        )
+        self.stdout.write(self.style.SUCCESS(f"\n🎉 Total employees updated: {total_updated}"))
 
         # Show summary by company
         self.stdout.write("\n📊 LEAVE ALLOCATION SUMMARY:")
@@ -175,16 +154,10 @@ class Command(BaseCommand):
                 total_cl = monthly_cl * months_elapsed
                 total_sl = monthly_sl * months_elapsed
 
-                employee_count = Employee.objects.filter(
-                    company=company, is_active=True
-                ).count()
+                employee_count = Employee.objects.filter(company=company, is_active=True).count()
 
                 self.stdout.write(f"   {company_name}: {employee_count} employees")
                 self.stdout.write(f"     Monthly: {monthly_cl} CL + {monthly_sl} SL")
-                self.stdout.write(
-                    f"     Total allocated ({months_elapsed} months): {total_cl} CL + {total_sl} SL"
-                )
+                self.stdout.write(f"     Total allocated ({months_elapsed} months): {total_cl} CL + {total_sl} SL")
 
-        self.stdout.write(
-            self.style.SUCCESS("\n✅ Monthly leave allocation system setup completed!")
-        )
+        self.stdout.write(self.style.SUCCESS("\n✅ Monthly leave allocation system setup completed!"))

@@ -3,8 +3,9 @@ Management command to create a test user for development
 """
 
 from django.core.management.base import BaseCommand
-from companies.models import Company
+
 from accounts.models import User
+from companies.models import Company
 
 
 class Command(BaseCommand):
@@ -17,12 +18,8 @@ class Command(BaseCommand):
             default="test@test.com",
             help="Email address for the test user",
         )
-        parser.add_argument(
-            "--password", type=str, default="test", help="Password for the test user"
-        )
-        parser.add_argument(
-            "--company", type=str, default="Test Company", help="Company name"
-        )
+        parser.add_argument("--password", type=str, default="test", help="Password for the test user")
+        parser.add_argument("--company", type=str, default="Test Company", help="Company name")
         parser.add_argument(
             "--role",
             type=str,
@@ -49,22 +46,18 @@ class Command(BaseCommand):
         if created:
             self.stdout.write(self.style.SUCCESS(f"✓ Created company: {company.name}"))
         else:
-            self.stdout.write(
-                self.style.SUCCESS(f"✓ Company already exists: {company.name}")
-            )
+            self.stdout.write(self.style.SUCCESS(f"✓ Company already exists: {company.name}"))
 
         # Create or update user
         try:
             user = User.objects.get(email=email)
-            self.stdout.write(
-                self.style.WARNING(f"⚠ User {email} already exists - updating...")
-            )
+            self.stdout.write(self.style.WARNING(f"⚠ User {email} already exists - updating..."))
             user.set_password(password)
             user.company = company
             user.role = role
             user.must_change_password = False
-            user.is_staff = True if role in ["SUPERADMIN", "COMPANY_ADMIN"] else False
-            user.is_superuser = True if role == "SUPERADMIN" else False
+            user.is_staff = role in ["SUPERADMIN", "COMPANY_ADMIN"]
+            user.is_superuser = role == "SUPERADMIN"
             user.save()
             self.stdout.write(self.style.SUCCESS(f"✓ Updated user: {email}"))
         except User.DoesNotExist:
@@ -77,8 +70,8 @@ class Command(BaseCommand):
                 company=company,
                 role=role,
                 must_change_password=False,
-                is_staff=True if role in ["SUPERADMIN", "COMPANY_ADMIN"] else False,
-                is_superuser=True if role == "SUPERADMIN" else False,
+                is_staff=role in ["SUPERADMIN", "COMPANY_ADMIN"],
+                is_superuser=role == "SUPERADMIN",
                 is_active=True,
             )
             user.set_password(password)
@@ -92,6 +85,4 @@ class Command(BaseCommand):
         self.stdout.write(f"Role: {user.get_role_display()}")
         self.stdout.write(f"Company: {company.name}")
         self.stdout.write("")
-        self.stdout.write(
-            self.style.SUCCESS("You can now login at http://127.0.0.1:8000/")
-        )
+        self.stdout.write(self.style.SUCCESS("You can now login at http://127.0.0.1:8000/"))

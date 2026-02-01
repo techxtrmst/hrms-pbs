@@ -1,10 +1,12 @@
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from django.utils import timezone
-from django.db import models
 from datetime import timedelta
-from employees.models import Attendance
+
+from django.contrib.auth.decorators import login_required
+from django.db import models
+from django.shortcuts import render
+from django.utils import timezone
+
 from accounts.models import User
+from employees.models import Attendance
 
 
 @login_required
@@ -38,30 +40,19 @@ def attendance_late_early_report(request):
 
     # Filter by manager if user is a manager
     if request.user.role == User.Role.MANAGER:
-        attendance_query = attendance_query.filter(
-            employee__manager=request.user.employee_profile
-        )
+        attendance_query = attendance_query.filter(employee__manager=request.user.employee_profile)
 
     # Get late arrivals
-    late_arrivals = attendance_query.filter(is_late=True).order_by(
-        "-date", "-late_by_minutes"
-    )
+    late_arrivals = attendance_query.filter(is_late=True).order_by("-date", "-late_by_minutes")
 
     # Get early departures
-    early_departures = attendance_query.filter(is_early_departure=True).order_by(
-        "-date", "-early_departure_minutes"
-    )
+    early_departures = attendance_query.filter(is_early_departure=True).order_by("-date", "-early_departure_minutes")
 
     # Statistics
     total_late = late_arrivals.count()
     total_early = early_departures.count()
-    avg_late_minutes = (
-        late_arrivals.aggregate(avg=models.Avg("late_by_minutes"))["avg"] or 0
-    )
-    avg_early_minutes = (
-        early_departures.aggregate(avg=models.Avg("early_departure_minutes"))["avg"]
-        or 0
-    )
+    avg_late_minutes = late_arrivals.aggregate(avg=models.Avg("late_by_minutes"))["avg"] or 0
+    avg_early_minutes = early_departures.aggregate(avg=models.Avg("early_departure_minutes"))["avg"] or 0
 
     # Top offenders
     from django.db.models import Count, Sum
@@ -84,9 +75,7 @@ def attendance_late_early_report(request):
             "employee__user__last_name",
             "employee__badge_id",
         )
-        .annotate(
-            early_count=Count("id"), total_early_minutes=Sum("early_departure_minutes")
-        )
+        .annotate(early_count=Count("id"), total_early_minutes=Sum("early_departure_minutes"))
         .order_by("-early_count")[:10]
     )
 

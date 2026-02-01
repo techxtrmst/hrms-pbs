@@ -1,6 +1,6 @@
-from django.core.management.base import BaseCommand
-from django.core.mail import get_connection, EmailMessage
 from django.conf import settings
+from django.core.mail import EmailMessage, get_connection
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
@@ -8,9 +8,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("to_email", type=str, help="Recipient email address")
-        parser.add_argument(
-            "--password", type=str, help="Override settings password for testing"
-        )
+        parser.add_argument("--password", type=str, help="Override settings password for testing")
 
     def handle(self, *args, **options):
         to_email = options["to_email"]
@@ -41,27 +39,19 @@ class Command(BaseCommand):
                 connection=connection,
             )
             email.send(fail_silently=False)
-            self.stdout.write(
-                self.style.SUCCESS("✅ SUCCESS! Authenticated SMTP works.")
-            )
+            self.stdout.write(self.style.SUCCESS("✅ SUCCESS! Authenticated SMTP works."))
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"❌ FAILED: {str(e)}"))
             if "5.7.139" in str(e):
                 self.stdout.write(
-                    self.style.WARNING(
-                        "   -> This usually means MFA is blocking you. You NEED an App Password."
-                    )
+                    self.style.WARNING("   -> This usually means MFA is blocking you. You NEED an App Password.")
                 )
             if "5.7.57" in str(e):
                 self.stdout.write(
-                    self.style.WARNING(
-                        "   -> This means 'Authenticated SMTP' is disabled in Admin Center."
-                    )
+                    self.style.WARNING("   -> This means 'Authenticated SMTP' is disabled in Admin Center.")
                 )
 
         if "SUCCESS" not in locals().get("status_msg", ""):
             self.stdout.write(
-                self.style.SUCCESS(
-                    "✅ Configuration Test Complete. If Step 1 passed, your email system is ready."
-                )
+                self.style.SUCCESS("✅ Configuration Test Complete. If Step 1 passed, your email system is ready.")
             )

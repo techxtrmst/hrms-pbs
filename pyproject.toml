@@ -122,6 +122,17 @@ ignore = [
 "__init__.py" = ["F401"]  # unused imports in __init__.py
 "*/tests/*.py" = ["ARG001", "ARG002"]  # unused arguments in tests
 "*/migrations/*.py" = ["E501"]  # long lines in migrations
+# Standalone Django scripts that require django.setup() before imports
+"check_*.py" = ["E402"]
+"debug_*.py" = ["E402"]
+"diagnose_*.py" = ["E402"]
+"test_*.py" = ["E402"]
+"verify_*.py" = ["E402"]
+"fix_*.py" = ["E402"]
+"payslip_generator.py" = ["E402"]
+# Django settings/urls patterns require imports after config
+"hrms_core/settings.py" = ["E402"]
+"hrms_core/urls.py" = ["E402"]
 
 [tool.ruff.format]
 quote-style = "double"

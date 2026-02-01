@@ -10,7 +10,7 @@ This module provides:
 
 import os
 from functools import wraps
-from typing import Any, Dict
+from typing import Any
 
 from loguru import logger
 
@@ -74,7 +74,7 @@ def get_posthog_client():
 def capture_event(
     event_name: str,
     distinct_id: str = None,
-    properties: Dict[str, Any] = None,
+    properties: dict[str, Any] = None,
 ):
     """
     Capture a custom event in PostHog.
@@ -101,7 +101,7 @@ def capture_event(
 def capture_exception(
     exception: Exception,
     distinct_id: str = None,
-    properties: Dict[str, Any] = None,
+    properties: dict[str, Any] = None,
 ):
     """
     Manually capture an exception in PostHog.
@@ -114,9 +114,7 @@ def capture_exception(
     client = get_posthog_client()
     if not client:
         # Still log the exception even if PostHog is not available
-        logger.exception(
-            "Exception captured (PostHog unavailable)", exception=str(exception)
-        )
+        logger.exception("Exception captured (PostHog unavailable)", exception=str(exception))
         return
 
     try:
@@ -135,7 +133,7 @@ def capture_exception(
 
 def identify_user(
     distinct_id: str,
-    properties: Dict[str, Any] = None,
+    properties: dict[str, Any] = None,
 ):
     """
     Identify a user in PostHog by setting their properties.
@@ -243,7 +241,7 @@ class PostHogMiddleware:
         # Return None to let Django continue with its normal exception handling
         return None
 
-    def _build_request_context(self, request) -> Dict[str, Any]:
+    def _build_request_context(self, request) -> dict[str, Any]:
         """Build context dict from request for exception properties."""
         return {
             "request_path": request.path,
@@ -259,9 +257,7 @@ class PostHogMiddleware:
         user = request.user
         properties = {
             "email": user.email,
-            "name": user.get_full_name()
-            if hasattr(user, "get_full_name")
-            else str(user),
+            "name": user.get_full_name() if hasattr(user, "get_full_name") else str(user),
             "role": getattr(user, "role", "unknown"),
         }
 

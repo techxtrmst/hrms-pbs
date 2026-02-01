@@ -1,10 +1,12 @@
-from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse, HttpResponseForbidden
+from django.db.models import Count, Q
+from django.http import HttpResponseForbidden, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.db.models import Q, Count
-from .models import Policy, PolicySection, PolicyAcknowledgment, PolicyAttachment
+
 from employees.models import Employee
+
+from .models import Policy, PolicyAcknowledgment, PolicySection
 
 
 @login_required
@@ -30,9 +32,7 @@ def policy_list(request):
     )
 
     # Get sections for grouping
-    sections = PolicySection.objects.filter(
-        company=employee.company, is_active=True
-    ).order_by("order")
+    sections = PolicySection.objects.filter(company=employee.company, is_active=True).order_by("order")
 
     # Group policies by section
     policies_by_section = {}
@@ -45,9 +45,9 @@ def policy_list(request):
     no_section_policies = policies.filter(section__isnull=True)
 
     # Get acknowledgment status
-    acknowledgments = PolicyAcknowledgment.objects.filter(
-        employee=employee, policy__in=policies
-    ).values_list("policy_id", "acknowledged")
+    acknowledgments = PolicyAcknowledgment.objects.filter(employee=employee, policy__in=policies).values_list(
+        "policy_id", "acknowledged"
+    )
     acknowledgment_dict = dict(acknowledgments)
 
     context = {
@@ -80,9 +80,7 @@ def policy_detail(request, policy_id):
     )
 
     # Get or create acknowledgment record
-    acknowledgment, created = PolicyAcknowledgment.objects.get_or_create(
-        policy=policy, employee=employee
-    )
+    acknowledgment, created = PolicyAcknowledgment.objects.get_or_create(policy=policy, employee=employee)
 
     # Get attachments
     attachments = policy.attachments.all()
@@ -120,9 +118,7 @@ def acknowledge_policy(request, policy_id):
     )
 
     # Get or create acknowledgment
-    acknowledgment, created = PolicyAcknowledgment.objects.get_or_create(
-        policy=policy, employee=employee
-    )
+    acknowledgment, created = PolicyAcknowledgment.objects.get_or_create(policy=policy, employee=employee)
 
     # Update acknowledgment
     acknowledgment.acknowledged = True
@@ -142,9 +138,7 @@ def acknowledge_policy(request, policy_id):
     return JsonResponse(
         {
             "success": True,
-            "acknowledged_at": acknowledgment.acknowledged_at.strftime(
-                "%Y-%m-%d %H:%M:%S"
-            ),
+            "acknowledged_at": acknowledgment.acknowledged_at.strftime("%Y-%m-%d %H:%M:%S"),
         }
     )
 
@@ -160,22 +154,15 @@ def admin_policy_list(request):
         return HttpResponseForbidden("You don't have permission to access this page.")
 
     # Filter policies based on admin's location
-    policies = Policy.objects.select_related(
-        "company", "location", "section", "created_by", "updated_by"
-    ).annotate(
-        acknowledgment_count=Count(
-            "acknowledgments", filter=Q(acknowledgments__acknowledged=True)
-        )
+    policies = Policy.objects.select_related("company", "location", "section", "created_by", "updated_by").annotate(
+        acknowledgment_count=Count("acknowledgments", filter=Q(acknowledgments__acknowledged=True))
     )
 
     if request.user.role == "COMPANY_ADMIN":
         policies = policies.filter(company=request.user.company)
 
         # Further filter by location if admin has a specific location
-        if (
-            hasattr(request.user, "employee_profile")
-            and request.user.employee_profile.location
-        ):
+        if hasattr(request.user, "employee_profile") and request.user.employee_profile.location:
             policies = policies.filter(location=request.user.employee_profile.location)
 
     policies = policies.order_by("-updated_at")
@@ -197,18 +184,19 @@ def admin_policy_create(request):
     from .forms import PolicyForm
 
     # Auto-initialize default sections if they don't exist for this company
-    if request.user.role == "COMPANY_ADMIN" and request.user.company:
-        if not PolicySection.objects.filter(company=request.user.company).exists():
-            default_sections = [
-                {"title": "Leave Policy", "icon": "🌴", "order": 1},
-                {"title": "HR Policy", "icon": "👥", "order": 2},
-                {"title": "IT Policy", "icon": "💻", "order": 3},
-                {"title": "General", "icon": "📋", "order": 4},
-            ]
-            for section_data in default_sections:
-                PolicySection.objects.create(
-                    company=request.user.company, **section_data
-                )
+    if (
+        request.user.role == "COMPANY_ADMIN"
+        and request.user.company
+        and not PolicySection.objects.filter(company=request.user.company).exists()
+    ):
+        default_sections = [
+            {"title": "Leave Policy", "icon": "🌴", "order": 1},
+            {"title": "HR Policy", "icon": "👥", "order": 2},
+            {"title": "IT Policy", "icon": "💻", "order": 3},
+            {"title": "General", "icon": "📋", "order": 4},
+        ]
+        for section_data in default_sections:
+            PolicySection.objects.create(company=request.user.company, **section_data)
 
     if request.method == "POST":
         form = PolicyForm(request.POST, user=request.user)
@@ -242,18 +230,14 @@ def admin_policy_edit(request, policy_id):
     # Verify admin has access to this policy's location
     if request.user.role == "COMPANY_ADMIN":
         if policy.company != request.user.company:
-            return HttpResponseForbidden(
-                "You don't have permission to edit this policy."
-            )
+            return HttpResponseForbidden("You don't have permission to edit this policy.")
 
         if (
             hasattr(request.user, "employee_profile")
             and request.user.employee_profile.location
+            and policy.location != request.user.employee_profile.location
         ):
-            if policy.location != request.user.employee_profile.location:
-                return HttpResponseForbidden(
-                    "You don't have permission to edit this policy."
-                )
+            return HttpResponseForbidden("You don't have permission to edit this policy.")
 
     from .forms import PolicyForm
 
@@ -291,18 +275,14 @@ def admin_acknowledgment_report(request, policy_id):
     # Verify access
     if request.user.role == "COMPANY_ADMIN":
         if policy.company != request.user.company:
-            return HttpResponseForbidden(
-                "You don't have permission to view this report."
-            )
+            return HttpResponseForbidden("You don't have permission to view this report.")
 
         if (
             hasattr(request.user, "employee_profile")
             and request.user.employee_profile.location
+            and policy.location != request.user.employee_profile.location
         ):
-            if policy.location != request.user.employee_profile.location:
-                return HttpResponseForbidden(
-                    "You don't have permission to view this report."
-                )
+            return HttpResponseForbidden("You don't have permission to view this report.")
 
     # Get all employees at this location
     employees = Employee.objects.filter(
@@ -310,9 +290,7 @@ def admin_acknowledgment_report(request, policy_id):
     ).select_related("user")
 
     # Get acknowledgments
-    acknowledgments = PolicyAcknowledgment.objects.filter(policy=policy).select_related(
-        "employee__user"
-    )
+    acknowledgments = PolicyAcknowledgment.objects.filter(policy=policy).select_related("employee__user")
 
     acknowledgment_dict = {ack.employee_id: ack for ack in acknowledgments}
 
@@ -325,9 +303,7 @@ def admin_acknowledgment_report(request, policy_id):
                 "employee": employee,
                 "acknowledgment": ack,
                 "acknowledged": ack.acknowledged if ack else False,
-                "acknowledged_at": ack.acknowledged_at
-                if ack and ack.acknowledged
-                else None,
+                "acknowledged_at": ack.acknowledged_at if ack and ack.acknowledged else None,
             }
         )
 

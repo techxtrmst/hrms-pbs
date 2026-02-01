@@ -1,13 +1,13 @@
+from datetime import date, datetime, time, timedelta
+
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+
 from employees.models import Attendance, AttendanceSession
-from datetime import date, timedelta, datetime, time
 
 
 class Command(BaseCommand):
-    help = (
-        "Automatically clock out employees who forgot to clock out from previous days"
-    )
+    help = "Automatically clock out employees who forgot to clock out from previous days"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -34,22 +34,14 @@ class Command(BaseCommand):
         auto_clockout_time_str = options.get("auto_clockout_time", "23:59")
 
         try:
-            auto_clockout_hour, auto_clockout_minute = map(
-                int, auto_clockout_time_str.split(":")
-            )
+            auto_clockout_hour, auto_clockout_minute = map(int, auto_clockout_time_str.split(":"))
             auto_clockout_time = time(auto_clockout_hour, auto_clockout_minute)
         except ValueError:
-            self.stdout.write(
-                self.style.ERROR("Invalid time format. Use HH:MM (e.g., 23:59)")
-            )
+            self.stdout.write(self.style.ERROR("Invalid time format. Use HH:MM (e.g., 23:59)"))
             return
 
         if dry_run:
-            self.stdout.write(
-                self.style.WARNING(
-                    "🔍 DRY RUN - Showing what would be auto-clocked out"
-                )
-            )
+            self.stdout.write(self.style.WARNING("🔍 DRY RUN - Showing what would be auto-clocked out"))
         else:
             self.stdout.write("🕐 Auto-clocking out employees from previous days")
 
@@ -58,9 +50,7 @@ class Command(BaseCommand):
 
         for day_offset in range(1, days_back + 1):
             check_date = today - timedelta(days=day_offset)
-            self.stdout.write(
-                f"\n📅 Checking {check_date} ({day_offset} day{'s' if day_offset > 1 else ''} ago)"
-            )
+            self.stdout.write(f"\n📅 Checking {check_date} ({day_offset} day{'s' if day_offset > 1 else ''} ago)")
 
             # Find incomplete sessions (clocked in but not clocked out)
             incomplete_sessions = AttendanceSession.objects.filter(
@@ -77,9 +67,7 @@ class Command(BaseCommand):
                 employee = session.employee
 
                 # Create auto clock-out time for that date
-                auto_clockout_datetime = timezone.make_aware(
-                    datetime.combine(check_date, auto_clockout_time)
-                )
+                auto_clockout_datetime = timezone.make_aware(datetime.combine(check_date, auto_clockout_time))
 
                 # Calculate session duration
                 duration = auto_clockout_datetime - session.clock_in
@@ -99,9 +87,7 @@ class Command(BaseCommand):
                     session.save()
 
                     # Update attendance record
-                    attendance = Attendance.objects.filter(
-                        employee=employee, date=check_date
-                    ).first()
+                    attendance = Attendance.objects.filter(employee=employee, date=check_date).first()
 
                     if attendance:
                         # Update attendance status and working hours
@@ -121,20 +107,12 @@ class Command(BaseCommand):
         # Summary
         if dry_run:
             self.stdout.write(
-                self.style.WARNING(
-                    f"\n🔍 DRY RUN COMPLETE - Would fix {total_fixed} incomplete sessions"
-                )
+                self.style.WARNING(f"\n🔍 DRY RUN COMPLETE - Would fix {total_fixed} incomplete sessions")
             )
-            self.stdout.write(
-                self.style.SUCCESS(
-                    "To apply changes, run: python manage.py auto_clockout_previous_day"
-                )
-            )
+            self.stdout.write(self.style.SUCCESS("To apply changes, run: python manage.py auto_clockout_previous_day"))
         else:
             self.stdout.write(
-                self.style.SUCCESS(
-                    f"\n✅ AUTO CLOCK-OUT COMPLETED - Fixed {total_fixed} incomplete sessions"
-                )
+                self.style.SUCCESS(f"\n✅ AUTO CLOCK-OUT COMPLETED - Fixed {total_fixed} incomplete sessions")
             )
 
         # Show usage examples
@@ -143,27 +121,17 @@ class Command(BaseCommand):
         self.stdout.write("   python manage.py auto_clockout_previous_day")
         self.stdout.write("   ")
         self.stdout.write("   # Check last 3 days")
-        self.stdout.write(
-            "   python manage.py auto_clockout_previous_day --days-back 3"
-        )
+        self.stdout.write("   python manage.py auto_clockout_previous_day --days-back 3")
         self.stdout.write("   ")
         self.stdout.write("   # Set custom auto clock-out time")
-        self.stdout.write(
-            "   python manage.py auto_clockout_previous_day --auto-clockout-time 18:00"
-        )
+        self.stdout.write("   python manage.py auto_clockout_previous_day --auto-clockout-time 18:00")
         self.stdout.write("   ")
         self.stdout.write("   # Test before applying")
         self.stdout.write("   python manage.py auto_clockout_previous_day --dry-run")
 
         if total_fixed > 0:
             self.stdout.write("\n💡 RECOMMENDATIONS:")
-            self.stdout.write(
-                "   • Set up daily cron job to run this command automatically"
-            )
+            self.stdout.write("   • Set up daily cron job to run this command automatically")
             self.stdout.write("   • Run at start of each day (e.g., 6:00 AM)")
-            self.stdout.write(
-                "   • Consider sending notifications to employees about auto clock-outs"
-            )
-            self.stdout.write(
-                "   • Review regularization requests for these auto clock-outs"
-            )
+            self.stdout.write("   • Consider sending notifications to employees about auto clock-outs")
+            self.stdout.write("   • Review regularization requests for these auto clock-outs")

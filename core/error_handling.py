@@ -5,12 +5,14 @@ This module provides decorators and helper functions for consistent
 error handling with proper logging via Loguru and PostHog tracking.
 """
 
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, Optional, TypeVar
-from loguru import logger
+from typing import Any, TypeVar
+
+from django.contrib import messages
 from django.http import JsonResponse
 from django.shortcuts import redirect
-from django.contrib import messages
+from loguru import logger
 
 # Import PostHog capture functions
 from hrms_core.posthog_config import capture_exception
@@ -18,7 +20,7 @@ from hrms_core.posthog_config import capture_exception
 T = TypeVar("T")
 
 
-def safe_get_employee_profile(user) -> Optional[Any]:
+def safe_get_employee_profile(user) -> Any | None:
     """
     Safely get employee profile from user with proper error handling.
 
@@ -40,9 +42,7 @@ def safe_get_employee_profile(user) -> Optional[Any]:
             error=str(e),
             exception_type=type(e).__name__,
         )
-        capture_exception(
-            e, distinct_id=str(user.id), properties={"action": "get_employee_profile"}
-        )
+        capture_exception(e, distinct_id=str(user.id), properties={"action": "get_employee_profile"})
         return None
 
 
@@ -66,13 +66,11 @@ def safe_queryset_filter(model_class, **filter_kwargs):
             filters=str(filter_kwargs),
             error=str(e),
         )
-        capture_exception(
-            e, properties={"model": model_class.__name__, "action": "queryset_filter"}
-        )
+        capture_exception(e, properties={"model": model_class.__name__, "action": "queryset_filter"})
         return model_class.objects.none()
 
 
-def safe_parse_location(loc_str: str) -> tuple[Optional[float], Optional[float]]:
+def safe_parse_location(loc_str: str) -> tuple[float | None, float | None]:
     """
     Safely parse a location string to lat/lng coordinates.
 
@@ -154,9 +152,7 @@ def safe_parse_datetime(dt_str: str):
     try:
         return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
     except (ValueError, TypeError, AttributeError) as e:
-        logger.debug(
-            "Failed to parse datetime string", datetime_str=dt_str, error=str(e)
-        )
+        logger.debug("Failed to parse datetime string", datetime_str=dt_str, error=str(e))
         return None
 
 
@@ -193,9 +189,7 @@ def handle_view_exception(
                 )
                 capture_exception(
                     e,
-                    distinct_id=str(request.user.id)
-                    if request.user.is_authenticated
-                    else "anonymous",
+                    distinct_id=str(request.user.id) if request.user.is_authenticated else "anonymous",
                     properties={
                         "view": func.__name__,
                         "path": request.path,
@@ -245,9 +239,7 @@ def log_exception(context: str = "", reraise: bool = True):
         def __exit__(self, exc_type, exc_val, exc_tb):
             if exc_val is not None:
                 logger.exception(
-                    f"Exception in {self.context}"
-                    if self.context
-                    else "Exception occurred",
+                    f"Exception in {self.context}" if self.context else "Exception occurred",
                     exception_type=exc_type.__name__ if exc_type else "Unknown",
                 )
                 capture_exception(exc_val, properties={"context": self.context})
@@ -278,9 +270,7 @@ def safe_delete(queryset, context: str = ""):
     """
     try:
         result = queryset.delete()
-        logger.debug(
-            f"Deleted objects{f' ({context})' if context else ''}", count=result[0]
-        )
+        logger.debug(f"Deleted objects{f' ({context})' if context else ''}", count=result[0])
         return result
     except Exception as e:
         logger.warning(
@@ -313,7 +303,5 @@ def safe_get_or_none(model_class, **kwargs):
             filters=str(kwargs),
             error=str(e),
         )
-        capture_exception(
-            e, properties={"model": model_class.__name__, "action": "get"}
-        )
+        capture_exception(e, properties={"model": model_class.__name__, "action": "get"})
         return None

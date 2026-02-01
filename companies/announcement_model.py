@@ -6,9 +6,7 @@ class Announcement(models.Model):
     Model for company announcements with optional location targeting.
     """
 
-    company = models.ForeignKey(
-        "companies.Company", on_delete=models.CASCADE, related_name="announcements"
-    )
+    company = models.ForeignKey("companies.Company", on_delete=models.CASCADE, related_name="announcements")
     location = models.ForeignKey(
         "companies.Location",
         on_delete=models.CASCADE,

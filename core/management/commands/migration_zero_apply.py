@@ -12,20 +12,16 @@ Usage:
     python manage.py migration_zero_apply            # Apply changes
 """
 
-import os
 from pathlib import Path
 
 from django.apps import apps
 from django.conf import settings
-from django.core.management import call_command
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.db import connection
 
 
 class Command(BaseCommand):
-    help = (
-        "Apply migration zero changes to the database (update django_migrations table)"
-    )
+    help = "Apply migration zero changes to the database (update django_migrations table)"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -93,18 +89,13 @@ class Command(BaseCommand):
         specified_apps = options.get("apps")
 
         # Determine which apps to process
-        if specified_apps:
-            app_labels = specified_apps
-        else:
-            app_labels = self.get_local_apps()
+        app_labels = specified_apps or self.get_local_apps()
 
         if not app_labels:
             self.stdout.write(self.style.WARNING("No apps found to process."))
             return
 
-        self.stdout.write(
-            self.style.MIGRATE_HEADING("\n=== Migration Zero Apply ===\n")
-        )
+        self.stdout.write(self.style.MIGRATE_HEADING("\n=== Migration Zero Apply ===\n"))
 
         changes_needed = {}
 
@@ -127,18 +118,12 @@ class Command(BaseCommand):
                 changes_needed[app_label] = {
                     "current": current_migrations,
                     "applied": applied_migrations,
-                    "to_remove": [
-                        m for m in applied_migrations if m not in current_migrations
-                    ],
-                    "to_add": [
-                        m for m in current_migrations if m not in applied_migrations
-                    ],
+                    "to_remove": [m for m in applied_migrations if m not in current_migrations],
+                    "to_add": [m for m in current_migrations if m not in applied_migrations],
                 }
 
         if not changes_needed:
-            self.stdout.write(
-                self.style.SUCCESS("✅ All apps are in sync. No changes needed.\n")
-            )
+            self.stdout.write(self.style.SUCCESS("✅ All apps are in sync. No changes needed.\n"))
             return
 
         # Display changes
@@ -148,20 +133,18 @@ class Command(BaseCommand):
             self.stdout.write(f"\n{self.style.MIGRATE_LABEL(app_label)}:")
 
             if changes["to_remove"]:
-                self.stdout.write(f"  Records to remove from django_migrations:")
+                self.stdout.write("  Records to remove from django_migrations:")
                 for m in changes["to_remove"]:
                     self.stdout.write(f"    - {m}")
 
             if changes["to_add"]:
-                self.stdout.write(f"  Records to add to django_migrations:")
+                self.stdout.write("  Records to add to django_migrations:")
                 for m in changes["to_add"]:
                     self.stdout.write(f"    + {m}")
 
         if dry_run:
             self.stdout.write(
-                self.style.WARNING(
-                    "\n[DRY RUN] No changes were made. Remove --dry-run to apply changes.\n"
-                )
+                self.style.WARNING("\n[DRY RUN] No changes were made. Remove --dry-run to apply changes.\n")
             )
             return
 
@@ -170,8 +153,7 @@ class Command(BaseCommand):
             self.stdout.write("")
             confirm = input(
                 self.style.WARNING(
-                    "⚠️  This will modify the django_migrations table.\n"
-                    "Are you sure you want to continue? [y/N]: "
+                    "⚠️  This will modify the django_migrations table.\nAre you sure you want to continue? [y/N]: "
                 )
             )
             if confirm.lower() not in ("y", "yes"):
@@ -190,9 +172,7 @@ class Command(BaseCommand):
                         f"DELETE FROM django_migrations WHERE app = %s AND name IN ({placeholders})",
                         [app_label] + changes["to_remove"],
                     )
-                    self.stdout.write(
-                        f"  Removed {len(changes['to_remove'])} records from {app_label}"
-                    )
+                    self.stdout.write(f"  Removed {len(changes['to_remove'])} records from {app_label}")
 
                 # Add new migration records (fake them)
                 for migration_name in changes["to_add"]:
@@ -202,13 +182,7 @@ class Command(BaseCommand):
                     )
 
                 if changes["to_add"]:
-                    self.stdout.write(
-                        f"  Added {len(changes['to_add'])} records to {app_label}"
-                    )
+                    self.stdout.write(f"  Added {len(changes['to_add'])} records to {app_label}")
 
-        self.stdout.write(
-            self.style.SUCCESS("\n✅ Migration history updated successfully!\n")
-        )
-        self.stdout.write(
-            "You can now run 'python manage.py migrate' to apply any remaining migrations.\n"
-        )
+        self.stdout.write(self.style.SUCCESS("\n✅ Migration history updated successfully!\n"))
+        self.stdout.write("You can now run 'python manage.py migrate' to apply any remaining migrations.\n")

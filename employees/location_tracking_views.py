@@ -158,9 +158,12 @@ def get_location_tracking_status(request):
 
                 # If we have a current session, use its clock-in as baseline if it's later
                 current_session = attendance.get_current_session()
-                if current_session and current_session.clock_in:
-                    if not reference_time or current_session.clock_in > reference_time:
-                        reference_time = current_session.clock_in
+                if (
+                    current_session
+                    and current_session.clock_in
+                    and (not reference_time or current_session.clock_in > reference_time)
+                ):
+                    reference_time = current_session.clock_in
 
                 if last_log and last_log.timestamp > reference_time:
                     reference_time = last_log.timestamp
@@ -217,9 +220,8 @@ def get_employee_location_history(request, employee_id):
 
         # Check if user has permission to view this employee's data
         is_manager = False
-        if request.user.role == User.Role.MANAGER and hasattr(request.user, "employee_profile"):
-            if employee.manager:
-                is_manager = employee.manager == request.user
+        if request.user.role == User.Role.MANAGER and hasattr(request.user, "employee_profile") and employee.manager:
+            is_manager = employee.manager == request.user
 
         is_self = employee.user == request.user
 

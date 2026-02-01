@@ -1,7 +1,9 @@
+from datetime import timedelta
+
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from employees.models import Employee, Attendance
-from datetime import timedelta
+
+from employees.models import Attendance, Employee
 
 
 class Command(BaseCommand):
@@ -14,9 +16,7 @@ class Command(BaseCommand):
             default=30,
             help="Number of days to process (default: 30 days from today)",
         )
-        parser.add_argument(
-            "--employee-id", type=int, help="Process only specific employee ID"
-        )
+        parser.add_argument("--employee-id", type=int, help="Process only specific employee ID")
 
     def handle(self, *args, **options):
         days = options["days"]
@@ -48,8 +48,8 @@ class Command(BaseCommand):
                 if employee.is_week_off(current_date):
                     # Get user timezone using central utility
                     from core.utils import get_user_timezone
-                    tz_name = get_user_timezone(employee.user, employee.company)
 
+                    tz_name = get_user_timezone(employee.user, employee.company)
 
                     # Get or create attendance record
                     attendance, created = Attendance.objects.get_or_create(
@@ -76,14 +76,10 @@ class Command(BaseCommand):
 
             if employee_marked > 0:
                 self.stdout.write(
-                    self.style.SUCCESS(
-                        f"Marked {employee_marked} week-off days for {employee.user.get_full_name()}"
-                    )
+                    self.style.SUCCESS(f"Marked {employee_marked} week-off days for {employee.user.get_full_name()}")
                 )
                 total_marked += employee_marked
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f"\nTotal: Marked {total_marked} week-off days for {employees.count()} employees"
-            )
+            self.style.SUCCESS(f"\nTotal: Marked {total_marked} week-off days for {employees.count()} employees")
         )

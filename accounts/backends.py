@@ -1,7 +1,8 @@
+import logging
+
 from django.contrib.auth import login
 from django.contrib.auth.views import LoginView
 from django.shortcuts import redirect
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,7 @@ class CustomAuthenticationBackend:
 
     def authenticate(self, request, username=None, password=None, **kwargs):
         from django.contrib.auth import get_user_model
+
         from employees.models import Employee
 
         User = get_user_model()

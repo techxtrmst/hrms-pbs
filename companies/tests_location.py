@@ -1,10 +1,12 @@
-from django.test import TestCase
+from datetime import date, datetime, time
+
+import pytz
 from django.contrib.auth import get_user_model
 from django.db.models import Q
-from companies.models import Company, Location, Holiday, ShiftSchedule
-from employees.models import Employee, Attendance
-from datetime import date, time, datetime
-import pytz
+from django.test import TestCase
+
+from companies.models import Company, Holiday, Location, ShiftSchedule
+from employees.models import Attendance, Employee
 
 User = get_user_model()
 
@@ -116,9 +118,7 @@ class LocationLogicTest(TestCase):
         # UTC time for 9:10 IST: 9:10 - 5:30 = 3:40 UTC
         tz_india = pytz.timezone("Asia/Kolkata")
         clock_in_india = tz_india.localize(datetime(2025, 10, 1, 9, 10))
-        att_india = Attendance.objects.create(
-            employee=self.emp_india, date=date(2025, 10, 1), clock_in=clock_in_india
-        )
+        att_india = Attendance.objects.create(employee=self.emp_india, date=date(2025, 10, 1), clock_in=clock_in_india)
         att_india.calculate_late_arrival()
         self.assertFalse(att_india.is_late)
         self.assertEqual(att_india.late_by_minutes, 0)
@@ -139,17 +139,13 @@ class LocationLogicTest(TestCase):
         # UTC for 9:10 EST: 9:10 + 5:00 = 14:10 UTC (assuming no DST for simplicity or New York)
         tz_us = pytz.timezone("America/New_York")
         clock_in_us = tz_us.localize(datetime(2025, 10, 1, 9, 10))
-        att_us = Attendance.objects.create(
-            employee=self.emp_us, date=date(2025, 10, 1), clock_in=clock_in_us
-        )
+        att_us = Attendance.objects.create(employee=self.emp_us, date=date(2025, 10, 1), clock_in=clock_in_us)
         att_us.calculate_late_arrival()
         self.assertFalse(att_us.is_late)
 
         # Test Case 4: US employee clocks in at 9:20 EST (Late by 5 mins)
         clock_in_us_late = tz_us.localize(datetime(2025, 10, 1, 9, 20))
-        att_us_late = Attendance.objects.create(
-            employee=self.emp_us, date=date(2025, 10, 2), clock_in=clock_in_us_late
-        )
+        att_us_late = Attendance.objects.create(employee=self.emp_us, date=date(2025, 10, 2), clock_in=clock_in_us_late)
         att_us_late.calculate_late_arrival()
         self.assertTrue(att_us_late.is_late)
         self.assertEqual(att_us_late.late_by_minutes, 5)
