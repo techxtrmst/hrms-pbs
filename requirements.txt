@@ -190,21 +190,3 @@ weasyprint==63.1
     # via hrms-pbs
 jinja2==3.1.4
     # via weasyprint
-django-unfold==0.77.1
-    # via hrms-pbs
-django-crispy-forms==2.5
-    # via hrms-pbs
-crispy-tailwind==1.0.3
-    # via hrms-pbs
-django-celery-beat==2.8.1
-    # via hrms-pbs
-django-celery-results==2.6.0
-    # via hrms-pbs
-django-hijack==3.7.6
-    # via hrms-pbs
-django-timezone-field==7.2.1
-    # via django-celery-beat
-python-crontab==3.3.0
-    # via django-celery-beat
-cron-descriptor==2.0.6
-    # via django-celery-beat

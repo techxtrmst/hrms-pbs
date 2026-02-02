@@ -26,7 +26,7 @@ from employees.models import (
     Payslip,
     PolicySection,
 )
-from employees.payroll_utils import calculate_payslip_breakdown, num2words_flexible
+from employees.payroll_utils import calculate_payslip_breakdown
 
 from .decorators import admin_required, manager_required
 from .error_handling import (
@@ -34,7 +34,7 @@ from .error_handling import (
 )
 from .forms import ForgotPasswordForm, OTPVerificationForm, ResetPasswordForm
 from .models import PasswordResetOTP
-from .utils import generate_payslip_pdf_with_generator, save_pdf_to_model
+from .utils import generate_payslip_pdf
 
 
 @login_required
@@ -3128,17 +3128,6 @@ def process_payslip_generation(request):
             payslip.total_days = total_days
             payslip.save()
 
-            # Generate PDF
-            # Determine currency name for words
-            currency_name = "Rupees"
-            if employee.location:
-                if employee.location.country_code == "BD" or employee.location.currency == "BDT":
-                    currency_name = "Taka"
-                elif employee.location.country_code == "US" or employee.location.currency == "USD":
-                    currency_name = "Dollars"
-                elif employee.location.currency:
-                    currency_name = employee.location.currency
-
             # Prepare branding info
             cname_upper = employee.company.name.upper()
             branding = {
@@ -3161,34 +3150,13 @@ def process_payslip_generation(request):
                     addr += f" {loc.postal_code}"
                 branding["address"] = addr
 
-            context = {
-                "payslip": payslip,
-                "company": employee.company,
-                "branding": branding,
-                "net_salary_words": num2words_flexible(payslip.net_salary, currency_name),
-            }
-
-            # Use new PayslipGenerator instead of template-based approach
+            # Use PayslipGenerator for PDF generation
             try:
-                success = generate_payslip_pdf_with_generator(payslip)
+                success = generate_payslip_pdf(payslip)
                 if success:
-                    messages.success(
-                        request, f"Payslip for {employee.user.get_full_name()} generated successfully with WeasyPrint."
-                    )
-                else:
-                    # Fallback to old method if new generator fails
-                    filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
-                    save_pdf_to_model(payslip, "employees/payslip_pdf.html", context, filename)
-                    messages.success(
-                        request, f"Payslip for {employee.user.get_full_name()} generated successfully (fallback)."
-                    )
-            except ImportError:
-                # WeasyPrint not available, use fallback method
-                filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
-                save_pdf_to_model(payslip, "employees/payslip_pdf.html", context, filename)
-                messages.success(
-                    request, f"Payslip for {employee.user.get_full_name()} generated successfully (fallback method)."
-                )
+                    messages.success(request, f"Payslip for {employee.user.get_full_name()} generated successfully.")
+            except Exception as e:
+                messages.error(request, f"Error generating payslip for {employee.user.get_full_name()}: {str(e)}")
         except Exception as e:
             messages.error(request, f"Error generating payslip: {str(e)}")
 
@@ -3417,16 +3385,6 @@ def bulk_upload_payslips(request):
                     payslip.total_days = total_days
                     payslip.save()
 
-                    # Generate PDF
-                    currency_name = "Rupees"
-                    if employee.location:
-                        if employee.location.country_code == "BD" or employee.location.currency == "BDT":
-                            currency_name = "Taka"
-                        elif employee.location.country_code == "US" or employee.location.currency == "USD":
-                            currency_name = "Dollars"
-                        elif employee.location.currency:
-                            currency_name = employee.location.currency
-
                     cname_upper = employee.company.name.upper()
                     branding = {
                         "name": "PETABYTZ TECHNOLOGY SERVICES PVT LTD",
@@ -3447,26 +3405,15 @@ def bulk_upload_payslips(request):
                             addr += f" {loc.postal_code}"
                         branding["address"] = addr
 
-                    context = {
-                        "payslip": payslip,
-                        "company": employee.company,
-                        "branding": branding,
-                        "net_salary_words": num2words_flexible(payslip.net_salary, currency_name),
-                    }
-
-                    # Use new PayslipGenerator instead of template-based approach
+                    # Use PayslipGenerator for PDF generation
                     try:
-                        success = generate_payslip_pdf_with_generator(payslip)
-                        if not success:
-                            # Fallback to old method if new generator fails
-                            filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
-                            save_pdf_to_model(payslip, "employees/payslip_pdf.html", context, filename)
-                    except ImportError:
-                        # WeasyPrint not available, use fallback method
-                        filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
-                        save_pdf_to_model(payslip, "employees/payslip_pdf.html", context, filename)
-
-                    success_count += 1
+                        success = generate_payslip_pdf(payslip)
+                        if success:
+                            success_count += 1
+                        else:
+                            logger.error(f"Failed to generate payslip for {employee.user.get_full_name()}")
+                    except Exception as e:
+                        logger.error(f"Error generating payslip for {employee.user.get_full_name()}: {e}")
                 except Employee.DoesNotExist:
                     error_count += 1
                 except Exception:
