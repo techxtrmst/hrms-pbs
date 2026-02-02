@@ -1783,8 +1783,7 @@
 
                     <!-- Role -->
                     <div>
-                        <span class="badge-dept" title="{{ employee.designation|default:'No designation assigned' }}">{{
-                            employee.designation|default:"--" }}</span>
+                        <span class="badge-dept" title="{{ employee.designation|default:'No designation assigned' }}">{{ employee.designation|default:"--" }}</span>
                     </div>
 
                     {% if is_bluebix %}
@@ -1889,8 +1888,7 @@
                             </div>
                             {% endif %}
                             <div>
-                                <h6 class="mb-0 fw-bold text-dark" title="{{ employee.user.get_full_name }}">{{
-                                    employee.user.get_full_name }}</h6>
+                                <h6 class="mb-0 fw-bold text-dark" title="{{ employee.user.get_full_name }}">{{ employee.user.get_full_name }}</h6>
                                 <small class="text-muted" title="{{ employee.user.email }}">{{ employee.user.email }}</small>
                                 <div class="mt-1">
                                     <span class="badge-dept"
