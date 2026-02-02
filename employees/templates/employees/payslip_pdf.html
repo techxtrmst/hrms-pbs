@@ -1,0 +1,377 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            color: #000;
+            line-height: 1.2;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 800;
+            margin-top: 5px;
+            font-family: Arial, sans-serif;
+        }
+
+        .month {
+            font-size: 24px;
+            font-weight: 400;
+            color: #555;
+            margin-left: 6px;
+        }
+
+        .company-name {
+            padding-top: 2px;
+            margin-top: 5px;
+            font-size: 12px;
+            font-weight: 400;
+            font-family: Arial, sans-serif;
+        }
+
+        .company-address {
+            margin-top: 2px;
+            font-size: 10px;
+            line-height: 1.4;
+            max-width: 400px;
+        }
+
+        .section-title {
+            margin-top: 15px;
+            font-weight: 400;
+            font-size: 13px;
+            text-transform: uppercase;
+            border-bottom: 2px solid #000;
+            padding-bottom: 3px;
+            margin-bottom: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        td {
+            padding: 5px 0;
+            vertical-align: top;
+            font-size: 11.5px;
+        }
+
+        .label {
+            font-size: 10.5px;
+            color: #8e8e8e;
+            margin-bottom: 0;
+            line-height: 1;
+        }
+
+        .value {
+            font-size: 12.5px;
+            font-weight: 400;
+            color: #000;
+            margin-top: 0;
+            line-height: 1.1;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .info-table td {
+            width: 25%;
+            vertical-align: top;
+            padding: 5px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .employee-name {
+            font-size: 12.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-top: 2px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #000;
+        }
+
+        .net-box {
+            margin-top: 15px;
+        }
+
+        .net-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #d4d2d2;
+            table-layout: fixed;
+        }
+
+        .net-table td {
+            padding: 4px 8px;
+            font-size: 11.5px;
+            vertical-align: middle;
+            color: #040404;
+            white-space: nowrap !important;
+            overflow: hidden;
+        }
+
+        .note {
+            margin-top: 15px;
+            font-size: 10.5px;
+            line-height: 1.3;
+            width: 100%;
+            word-wrap: break-word;
+        }
+
+        .footer {
+            margin-top: 25px;
+            font-size: 9.5px;
+            font-style: italic;
+            color: #555;
+        }
+
+        .logo {
+            max-width: 150px !important;
+            max-height: 75px !important;
+            width: auto !important;
+            height: auto !important;
+            margin-left: auto;
+            margin-top: 10px;
+            display: block;
+            background-color: #ffffff;
+            object-fit: contain;
+        }
+
+        .header-table {
+            width: 100%;
+            margin-bottom: 5px;
+            table-layout: fixed;
+            height: 100px;
+        }
+
+        .header-table td {
+            padding: 0;
+            vertical-align: middle;
+        }
+
+        .header-table td:first-child {
+            width: 65%;
+        }
+
+        .header-table td:last-child {
+            width: 35%;
+        }
+    </style>
+</head>
+
+<body>
+    <table class="header-table">
+        <tr>
+            <td style="vertical-align: middle;">
+                <div class="title" style="margin-bottom: 2px;">
+                    <span style="font-weight: 800; color: #000;">PAYSLIP</span>
+                    <span class="month" style="font-weight: 400; color: #666;">{{ payslip.month|date:"M Y"|upper }}</span>
+                </div>
+                <div class="company-name">{{ branding.name }}</div>
+                <div class="company-address">PLOT NO 201 & 202, 1ST FLOOR, DMR CORPORATE, KAVURI HILLS RD, HYDERABAD,
+                    TELANGANA 500081. HYDERABAD TELANGANA 500081</div>
+            </td>
+            <td style="text-align: right; vertical-align: middle;">
+                {% if company.logo %}
+                <img src="{{ company.logo.path }}" class="logo">
+                {% else %}
+                {% if "SOFTSTANDARD" in branding.name or "RMINDS" in branding.name %}
+                <img src="https://softstandard.com/wp-content/uploads/2016/05/logo.jpg" class="logo">
+                {% else %}
+                <img src="https://media.licdn.com/dms/image/v2/D560BAQE9Kwch-NT0WQ/company-logo_200_200/company-logo_200_200/0/1665120774767/petabytz_technologies_logo?e=2147483647&v=beta&t=fQbdSHkcjGe3nkyRCM9OzU41lDlU9awEe6zLkfmIBzI"
+                    class="logo">
+                {% endif %}
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+
+    <br>
+
+    <div class="employee-name">{{ payslip.employee.user.get_full_name|upper }}</div>
+
+    <table class="info-table">
+        <tr>
+            <td>
+                <div class="label">Employee Number</div>
+                <div class="value">{{ payslip.employee.badge_id }}</div>
+            </td>
+            <td>
+                <div class="label">Date Joined</div>
+                <div class="value">{{ payslip.employee.date_of_joining|date:"d M Y" }}</div>
+            </td>
+            <td>
+                <div class="label">Department</div>
+                <div class="value">{{ payslip.employee.department }}</div>
+            </td>
+            <td>
+                <div class="label">Designation</div>
+                <div class="value">{{ payslip.employee.designation }}</div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="label">Payment Mode</div>
+                <div class="value">Bank Transfer</div>
+            </td>
+            <td>
+                <div class="label">Bank</div>
+                <div class="value">{{ payslip.employee.bank_name }}</div>
+            </td>
+            <td>
+                <div class="label">Bank IFSC</div>
+                <div class="value">{{ payslip.employee.ifsc_code }}</div>
+            </td>
+            <td>
+                <div class="label">Bank Account</div>
+                <div class="value">{{ payslip.employee.account_number }}</div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="label">UAN</div>
+                <div class="value">{{ payslip.employee.uan|default:"N/A" }}</div>
+            </td>
+            <td>
+                <div class="label">PAN Number</div>
+                <div class="value">{{ payslip.employee.pan_number }}</div>
+            </td>
+            <td></td>
+            <td></td>
+        </tr>
+    </table>
+
+    <div class="section-title">SALARY DETAILS</div>
+    <table style="width: 100%; border-bottom: 1px solid #d3d3d3; margin-bottom: 10px;">
+        <tr>
+            <td style="padding: 3px 0;">
+                <div class="label">PAYABLE UNITS</div>
+                <div class="value">{{ payslip.worked_days|floatformat:0 }} Days</div>
+            </td>
+        </tr>
+    </table>
+
+    <table style="width: 100%; margin-top: 15px;">
+        <tr>
+            <td
+                style="width: 50%; padding-right: 20px;{% if payslip.employee_pf > 0 or payslip.professional_tax > 0 %} border-right: 1px solid #e0e0e0;{% endif %}">
+                <div class="label" style="font-weight: 700; color: #000;">EARNINGS</div>
+                <table style="width: 100%; border-spacing: 0; border-collapse: collapse;">
+                    <tr>
+                        <td style="padding: 2px 0;">Basic</td>
+                        <td style="text-align: right; padding: 2px 0;">{{ payslip.basic|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 2px 0;">HRA</td>
+                        <td style="text-align: right; padding: 2px 0;">{{ payslip.hra|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 2px 0;">Conveyance Allowance</td>
+                        <td style="text-align: right; padding: 2px 0;">{{ payslip.conveyance_allowance|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 2px 0;">Special Allowance</td>
+                        <td style="text-align: right; padding: 2px 0;">{{ payslip.special_allowance|floatformat:2 }}</td>
+                    </tr>
+                    <tr style="font-weight: 700;">
+                        <td style="padding: 2px 0;">Total Earnings (A)</td>
+                        <td style="text-align: right; padding: 2px 0;">{{ payslip.gross_salary|floatformat:2 }}</td>
+                    </tr>
+                </table>
+            </td>
+
+            <td style="width: 50%; padding-left: 20px;">
+                {% if payslip.employee.pf_enabled %}
+                    <!-- PF Enabled: Show Contributions (B) and Taxes (C) -->
+                    {% if payslip.employee_pf > 0 %}
+                    <div class="label" style="font-weight: 700; color: #000;">CONTRIBUTIONS</div>
+                    <table style="width: 100%; margin-bottom: 0; border-spacing: 0; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 2px 0;">PF Employee</td>
+                            <td style="text-align: right; padding: 2px 0;">{{ payslip.employee_pf|floatformat:2 }}</td>
+                        </tr>
+                        <tr style="font-weight: 700;">
+                            <td style="padding: 2px 0;">Total Contributions (B)</td>
+                            <td style="text-align: right; padding: 2px 0;">{{ payslip.employee_pf|floatformat:2 }}</td>
+                        </tr>
+                        {% if payslip.professional_tax > 0 %}
+                        <tr>
+                            <td colspan="2" style="padding: 0;">
+                                <div class="label" style="font-weight: 700; color: #000; margin: 0; padding: 0; line-height: 1;">TAXES & DEDUCTIONS</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 2px 0;">Professional Tax</td>
+                            <td style="text-align: right; padding: 2px 0;">{{ payslip.professional_tax|floatformat:2 }}</td>
+                        </tr>
+                        <tr style="font-weight: 700;">
+                            <td style="padding: 2px 0;">Total Taxes & Deductions (C)</td>
+                            <td style="text-align: right; padding: 2px 0;">{{ payslip.professional_tax|floatformat:2 }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                    {% elif payslip.professional_tax > 0 %}
+                    <div class="label" style="font-weight: 700; color: #000;">TAXES & DEDUCTIONS</div>
+                    <table style="width: 100%;">
+                        <tr>
+                            <td>Professional Tax</td>
+                            <td style="text-align: right;">{{ payslip.professional_tax|floatformat:2 }}</td>
+                        </tr>
+                        <tr style="font-weight: 700;">
+                            <td>Total Taxes & Deductions (C)</td>
+                            <td style="text-align: right;">{{ payslip.professional_tax|floatformat:2 }}</td>
+                        </tr>
+                    </table>
+                    {% endif %}
+                {% else %}
+                    <!-- PF Disabled: Show only Professional Tax as (B) -->
+                    {% if payslip.professional_tax > 0 %}
+                    <div class="label" style="font-weight: 700; color: #000;">TAXES & DEDUCTIONS</div>
+                    <table style="width: 100%;">
+                        <tr>
+                            <td>Professional Tax</td>
+                            <td style="text-align: right;">{{ payslip.professional_tax|floatformat:2 }}</td>
+                        </tr>
+                        <tr style="font-weight: 700;">
+                            <td>Total Taxes & Deductions (B)</td>
+                            <td style="text-align: right;">{{ payslip.professional_tax|floatformat:2 }}</td>
+                        </tr>
+                    </table>
+                    {% endif %}
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">NET PAYABLE</div>
+    <div class="net-box">
+        <table class="net-table">
+            <tr>
+                <td style="width: 70%;">Net Salary Payable {% if payslip.employee.pf_enabled %}{% if payslip.employee_pf > 0 and payslip.professional_tax > 0 %}( A - B - C ){% elif payslip.employee_pf > 0 %}( A - B ){% elif payslip.professional_tax > 0 %}( A - C ){% endif %}{% else %}{% if payslip.professional_tax > 0 %}( A - B ){% endif %}{% endif %}</td>
+                <td style="text-align: right;">{{ payslip.net_salary|floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td style="width: 40%;">Net Salary in words</td>
+                <td style="text-align: right; width: 60%; font-size: 12px; line-height: 1; white-space: nowrap;"><strong>{{ net_salary_words }}</strong></td>
+            </tr>
+        </table>
+    </div>
+    <div class="note">
+        <strong>**Note :</strong> <em>All amounts displayed in this payslip are in <strong>{{ currency }}</strong></em>
+    </div>
+
+
+
+    <div class="footer">*This is computer generated statement, does not require signature.</div>
+</body>
+
+</html>

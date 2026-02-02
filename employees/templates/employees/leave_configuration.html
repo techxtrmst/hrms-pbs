@@ -36,7 +36,8 @@
         margin: 0 auto;
         width: 100%;
         box-sizing: border-box;
-        overflow-x: hidden; /* Prevent horizontal overflow */
+        overflow-x: hidden;
+        /* Prevent horizontal overflow */
     }
 
     /* Header Section */
@@ -124,6 +125,13 @@
 
     .header-actions {
         flex-shrink: 0;
+        position: relative;
+        z-index: 20;
+    }
+
+    .header-actions .d-flex {
+        position: relative;
+        z-index: 20;
     }
 
     .stat-badge {
@@ -202,7 +210,8 @@
     .desktop-layout {
         display: block;
         width: 100%;
-        overflow-x: auto; /* Allow horizontal scrolling if needed */
+        overflow-x: auto;
+        /* Allow horizontal scrolling if needed */
     }
 
     /* Wrapper for desktop table to handle overflow */
@@ -277,8 +286,15 @@
         animation: slideUp 0.4s ease-out forwards;
         opacity: 0;
         width: 100%;
-        min-width: 800px; /* Minimum width to prevent cramping */
+        min-width: 800px;
+        /* Minimum width to prevent cramping */
         box-sizing: border-box;
+    }
+
+    /* Bluebix specific layout - 4 columns instead of 5 */
+    .employee-card.bluebix-layout {
+        grid-template-columns: minmax(180px, 1.5fr) minmax(80px, 0.7fr) minmax(300px, 3fr) minmax(60px, 0.8fr);
+        min-width: 700px;
     }
 
     .employee-card:hover {
@@ -298,7 +314,14 @@
         letter-spacing: 0.05em;
         color: var(--text-muted);
         font-weight: 700;
-        min-width: 800px; /* Match employee card minimum width */
+        min-width: 800px;
+        /* Match employee card minimum width */
+    }
+
+    /* Bluebix specific header layout */
+    .col-header.bluebix-layout {
+        grid-template-columns: minmax(180px, 1.5fr) minmax(80px, 0.7fr) minmax(300px, 3fr) minmax(60px, 0.8fr);
+        min-width: 700px;
     }
 
     /* Mobile Employee Card */
@@ -432,12 +455,15 @@
         display: flex;
         align-items: center;
         gap: 1rem;
-        min-width: 0; /* Allow flex items to shrink */
-        overflow: hidden; /* Prevent overflow */
+        min-width: 0;
+        /* Allow flex items to shrink */
+        overflow: hidden;
+        /* Prevent overflow */
     }
 
-    .user-profile > div {
-        min-width: 0; /* Allow text container to shrink */
+    .user-profile>div {
+        min-width: 0;
+        /* Allow text container to shrink */
         flex: 1;
     }
 
@@ -513,10 +539,12 @@
 
     /* Mobile tooltip adjustments */
     @media (max-width: 991px) {
+
         .user-profile h6:hover::after,
         .user-profile small:hover::after,
         .badge-dept:hover::after {
-            display: none; /* Hide tooltips on mobile to avoid issues */
+            display: none;
+            /* Hide tooltips on mobile to avoid issues */
         }
 
         .user-profile h6:hover::before,
@@ -548,6 +576,7 @@
         font-size: 1.1rem;
         flex-shrink: 0;
     }
+
     .control-wrapper {
         display: flex;
         align-items: center;
@@ -589,7 +618,8 @@
         color: var(--text-main);
         outline: none;
         font-family: 'Plus Jakarta Sans', monospace;
-        font-size: 16px; /* Prevents zoom on iOS */
+        font-size: 16px;
+        /* Prevents zoom on iOS */
     }
 
     /* Buttons */
@@ -629,12 +659,20 @@
         white-space: nowrap;
         min-height: 44px;
         text-decoration: none;
+        cursor: pointer;
+        position: relative;
+        z-index: 10;
+        pointer-events: auto;
     }
 
     .btn-hero.btn-secondary {
         background: #6b7280;
         color: white;
         box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+        cursor: pointer;
+        position: relative;
+        z-index: 10;
+        pointer-events: auto;
     }
 
     .btn-hero.btn-secondary:hover {
@@ -642,6 +680,7 @@
         transform: translateY(-2px);
         box-shadow: 0 8px 16px rgba(75, 85, 99, 0.4);
         color: white;
+        text-decoration: none;
     }
 
     .btn-hero:hover {
@@ -649,6 +688,16 @@
         transform: translateY(-2px);
         box-shadow: 0 8px 16px rgba(79, 70, 229, 0.4);
         color: white;
+        text-decoration: none;
+    }
+
+    .btn-hero:focus {
+        outline: 2px solid var(--primary-brand);
+        outline-offset: 2px;
+    }
+
+    .btn-hero:active {
+        transform: translateY(0);
     }
 
     @keyframes slideUp {
@@ -824,11 +873,18 @@
             hyphens: none !important;
         }
 
-        h1, h2, h3, h4, h5, h6 {
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
             line-height: 1.1 !important;
         }
 
-        p, span, div {
+        p,
+        span,
+        div {
             line-height: 1.2 !important;
         }
     }
@@ -1051,7 +1107,8 @@
 
         .premium-search input {
             padding: 10px 16px 10px 40px;
-            font-size: 16px; /* Prevents zoom on iOS */
+            font-size: 16px;
+            /* Prevents zoom on iOS */
         }
 
         .premium-search i {
@@ -1556,6 +1613,7 @@
 
     /* High contrast mode */
     @media (prefers-contrast: high) {
+
         .header-card,
         .employee-card,
         .mobile-employee-card,
@@ -1572,6 +1630,7 @@
 
     /* Reduced motion */
     @media (prefers-reduced-motion: reduce) {
+
         .employee-card,
         .mobile-employee-card,
         .btn-hero,
@@ -1583,8 +1642,27 @@
         }
     }
 
+    /* Ensure bulk upload button is always clickable */
+    a[href*="bulk_leave_upload"],
+    a[href*="bulk-upload"] {
+        pointer-events: auto !important;
+        position: relative !important;
+        z-index: 100 !important;
+        cursor: pointer !important;
+    }
+
+    /* Fix any potential overlay issues */
+    .header-card::before {
+        pointer-events: none !important;
+    }
+
+    .desktop-table-wrapper::after {
+        pointer-events: none !important;
+    }
+
     /* Print styles */
     @media print {
+
         .btn-hero,
         .btn-save-row,
         .control-btn,
@@ -1617,7 +1695,8 @@
     <div class="header-card">
         <div class="header-content">
             <div class="header-info">
-                <h2><span class="d-none d-sm-inline">Leave Configuration</span><span class="d-sm-none">Leave Config</span></h2>
+                <h2><span class="d-none d-sm-inline">Leave Configuration</span><span class="d-sm-none">Leave
+                        Config</span></h2>
                 <p class="d-none d-sm-block">
                     Manage leave allocations for all employees. Automated monthly accruals run on the 1st of every
                     month.
@@ -1627,11 +1706,13 @@
                 </p>
                 <div class="header-stats">
                     <div class="stat-badge">
-                        <i class="fas fa-users"></i> <span class="d-none d-sm-inline">{{ employees|length }} Active</span><span class="d-sm-none">{{ employees|length }}</span>
+                        <i class="fas fa-users"></i> <span class="d-none d-sm-inline">{{ employees|length }}
+                            Active</span><span class="d-sm-none">{{ employees|length }}</span>
                     </div>
-                    <a href="#" class="stat-badge" data-bs-toggle="modal"
-                        data-bs-target="#accrualModal" title="Click to select month">
-                        <i class="fas fa-calendar-alt"></i> <span class="d-none d-sm-inline">Select Period</span><span class="d-sm-none">Period</span>
+                    <a href="#" class="stat-badge" data-bs-toggle="modal" data-bs-target="#accrualModal"
+                        title="Click to select month">
+                        <i class="fas fa-calendar-alt"></i> <span class="d-none d-sm-inline">Select Period</span><span
+                            class="d-sm-none">Period</span>
                     </a>
                 </div>
             </div>
@@ -1639,7 +1720,8 @@
                 <div class="d-flex flex-column flex-sm-row gap-3">
                     <button class="btn-hero" data-bs-toggle="modal" data-bs-target="#accrualModal">
                         <i class="fas fa-magic"></i>
-                        <span class="d-none d-sm-inline">Run Monthly Accrual</span><span class="d-sm-none">Run Accrual</span>
+                        <span class="d-none d-sm-inline">Run Monthly Accrual</span><span class="d-sm-none">Run
+                            Accrual</span>
                     </button>
                     <a href="{% url 'bulk_leave_upload' %}" class="btn-hero btn-secondary">
                         <i class="fas fa-cloud-upload-alt"></i>
@@ -1669,85 +1751,123 @@
             <div class="col-header">
                 <div>Employee</div>
                 <div>Role</div>
+                {% if is_bluebix %}
+                <div>Sick/Casual Leave</div>
+                <div></div> <!-- Empty column for alignment -->
+                {% else %}
                 <div>Sick Leave</div>
                 <div>Casual Leave</div>
+                {% endif %}
                 <div class="text-center">Save</div>
             </div>
 
             <!-- Employee List -->
             <div class="employee-list" id="employeeList">
-            {% for employee in employees %}
-            <div class="employee-card" style="animation-delay: {{ forloop.counter0|add:'1'|stringformat:'d' }}00ms;">
-                <!-- User -->
-                <div class="user-profile">
-                    {% if employee.profile_picture %}
-                    <img src="{{ employee.profile_picture.url }}" class="user-avatar" alt="pic">
+                {% for employee in employees %}
+                <div class="employee-card"
+                    style="animation-delay: {{ forloop.counter0|add:'1'|stringformat:'d' }}00ms;">
+                    <!-- User -->
+                    <div class="user-profile">
+                        {% if employee.profile_picture %}
+                        <img src="{{ employee.profile_picture.url }}" class="user-avatar" alt="pic">
+                        {% else %}
+                        <div class="user-initials">
+                            {{ employee.user.first_name|first }}{{ employee.user.last_name|first }}
+                        </div>
+                        {% endif %}
+                        <div>
+                            <h6 class="mb-0 fw-bold text-dark" title="{{ employee.user.get_full_name }}">{{ employee.user.get_full_name }}</h6>
+                            <small class="text-muted" title="{{ employee.user.email }}">{{ employee.user.email }}</small>
+                        </div>
+                    </div>
+
+                    <!-- Role -->
+                    <div>
+                        <span class="badge-dept" title="{{ employee.designation|default:'No designation assigned' }}">{{ employee.designation|default:"--" }}</span>
+                    </div>
+
+                    {% if is_bluebix %}
+                    <!-- Combined Sick/Casual Leave for Bluebix -->
+                    <div class="leave-stats-box">
+                        <div class="leave-stat-row">
+                            <span class="leave-stat-label">Allocated:</span>
+                            <div class="control-wrapper">
+                                <button class="control-btn"
+                                    onclick="modifyBluebixVal('combined_val_{{ employee.id }}', -0.5)">-</button>
+                                <input type="number" id="combined_val_{{ employee.id }}" class="control-input"
+                                    value="{{ employee.leave_balance.combined_sick_casual_allocated }}" step="0.5">
+                                <button class="control-btn"
+                                    onclick="modifyBluebixVal('combined_val_{{ employee.id }}', 0.5)">+</button>
+                            </div>
+                        </div>
+                        <div class="leave-stat-row">
+                            <span class="leave-stat-label">Used:</span>
+                            <span class="leave-stat-value used">{{ employee.leave_balance.combined_sick_casual_used|floatformat:1 }}</span>
+                        </div>
+                        <div class="leave-stat-row">
+                            <span class="leave-stat-label">Balance:</span>
+                            <span class="leave-stat-value balance">{{ employee.leave_balance.combined_sick_casual_balance|floatformat:1 }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Empty column for alignment -->
+                    <div></div>
                     {% else %}
-                    <div class="user-initials">
-                        {{ employee.user.first_name|first }}{{ employee.user.last_name|first }}
+                    <!-- Sick Leave Stats & Control -->
+                    <div class="leave-stats-box">
+                        <div class="leave-stat-row">
+                            <span class="leave-stat-label">Allocated:</span>
+                            <div class="control-wrapper">
+                                <button class="control-btn"
+                                    onclick="modifyVal('sick_val_{{ employee.id }}', -0.5)">-</button>
+                                <input type="number" id="sick_val_{{ employee.id }}" class="control-input"
+                                    value="{{ employee.leave_balance.sick_leave_allocated }}" step="0.5">
+                                <button class="control-btn"
+                                    onclick="modifyVal('sick_val_{{ employee.id }}', 0.5)">+</button>
+                            </div>
+                        </div>
+                        <div class="leave-stat-row">
+                            <span class="leave-stat-label">Used:</span>
+                            <span class="leave-stat-value used">{{ employee.leave_balance.sick_leave_used|floatformat:1 }}</span>
+                        </div>
+                        <div class="leave-stat-row">
+                            <span class="leave-stat-label">Balance:</span>
+                            <span class="leave-stat-value balance">{{ employee.leave_balance.sick_leave_balance|floatformat:1 }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Casual Leave Stats & Control -->
+                    <div class="leave-stats-box">
+                        <div class="leave-stat-row">
+                            <span class="leave-stat-label">Allocated:</span>
+                            <div class="control-wrapper">
+                                <button class="control-btn"
+                                    onclick="modifyVal('casual_val_{{ employee.id }}', -0.5)">-</button>
+                                <input type="number" id="casual_val_{{ employee.id }}" class="control-input"
+                                    value="{{ employee.leave_balance.casual_leave_allocated }}" step="0.5">
+                                <button class="control-btn"
+                                    onclick="modifyVal('casual_val_{{ employee.id }}', 0.5)">+</button>
+                            </div>
+                        </div>
+                        <div class="leave-stat-row">
+                            <span class="leave-stat-label">Used:</span>
+                            <span class="leave-stat-value used">{{ employee.leave_balance.casual_leave_used|floatformat:1 }}</span>
+                        </div>
+                        <div class="leave-stat-row">
+                            <span class="leave-stat-label">Balance:</span>
+                            <span class="leave-stat-value balance">{{ employee.leave_balance.casual_leave_balance|floatformat:1 }}</span>
+                        </div>
                     </div>
                     {% endif %}
-                    <div>
-                        <h6 class="mb-0 fw-bold text-dark" title="{{ employee.user.get_full_name }}">{{ employee.user.get_full_name }}</h6>
-                        <small class="text-muted" title="{{ employee.user.email }}">{{ employee.user.email }}</small>
-                    </div>
-                </div>
 
-                <!-- Role -->
-                <div>
-                    <span class="badge-dept" title="{{ employee.designation|default:'No designation assigned' }}">{{ employee.designation|default:"--" }}</span>
-                </div>
-
-                <!-- Sick Leave Stats & Control -->
-                <div class="leave-stats-box">
-                    <div class="leave-stat-row">
-                        <span class="leave-stat-label">Allocated:</span>
-                        <div class="control-wrapper">
-                            <button class="control-btn" onclick="modifyVal('sick_val_{{ employee.id }}', -0.5)">-</button>
-                            <input type="number" id="sick_val_{{ employee.id }}" class="control-input"
-                                value="{{ employee.leave_balance.sick_leave_balance }}" step="0.5">
-                            <button class="control-btn" onclick="modifyVal('sick_val_{{ employee.id }}', 0.5)">+</button>
-                        </div>
-                    </div>
-                    <div class="leave-stat-row">
-                        <span class="leave-stat-label">Used:</span>
-                        <span class="leave-stat-value used">{{ employee.leave_balance.sick_leave_used|floatformat:1 }}</span>
-                    </div>
-                    <div class="leave-stat-row">
-                        <span class="leave-stat-label">Balance:</span>
-                        <span class="leave-stat-value balance">{{ employee.leave_balance.sick_leave_balance|floatformat:1 }}</span>
+                    <!-- Actions -->
+                    <div class="d-flex justify-content-center">
+                        <button class="btn-save-row" onclick="saveRow({{ employee.id }}, this)" title="Save Changes">
+                            <i class="fas fa-check"></i>
+                        </button>
                     </div>
                 </div>
-
-                <!-- Casual Leave Stats & Control -->
-                <div class="leave-stats-box">
-                    <div class="leave-stat-row">
-                        <span class="leave-stat-label">Allocated:</span>
-                        <div class="control-wrapper">
-                            <button class="control-btn" onclick="modifyVal('casual_val_{{ employee.id }}', -0.5)">-</button>
-                            <input type="number" id="casual_val_{{ employee.id }}" class="control-input"
-                                value="{{ employee.leave_balance.casual_leave_balance }}" step="0.5">
-                            <button class="control-btn" onclick="modifyVal('casual_val_{{ employee.id }}', 0.5)">+</button>
-                        </div>
-                    </div>
-                    <div class="leave-stat-row">
-                        <span class="leave-stat-label">Used:</span>
-                        <span class="leave-stat-value used">{{ employee.leave_balance.casual_leave_used|floatformat:1 }}</span>
-                    </div>
-                    <div class="leave-stat-row">
-                        <span class="leave-stat-label">Balance:</span>
-                        <span class="leave-stat-value balance">{{ employee.leave_balance.casual_leave_balance|floatformat:1 }}</span>
-                    </div>
-                </div>
-
-                <!-- Actions -->
-                <div class="d-flex justify-content-center">
-                    <button class="btn-save-row" onclick="saveRow({{ employee.id }}, this)" title="Save Changes">
-                        <i class="fas fa-check"></i>
-                    </button>
-                </div>
-            </div>
-            {% endfor %}
+                {% endfor %}
             </div>
         </div>
     </div>
@@ -1771,7 +1891,8 @@
                                 <h6 class="mb-0 fw-bold text-dark" title="{{ employee.user.get_full_name }}">{{ employee.user.get_full_name }}</h6>
                                 <small class="text-muted" title="{{ employee.user.email }}">{{ employee.user.email }}</small>
                                 <div class="mt-1">
-                                    <span class="badge-dept" title="{{ employee.designation|default:'No designation assigned' }}">{{ employee.designation|default:"--" }}</span>
+                                    <span class="badge-dept"
+                                        title="{{ employee.designation|default:'No designation assigned' }}">{{ employee.designation|default:"--" }}</span>
                                 </div>
                             </div>
                         </div>
@@ -1784,6 +1905,34 @@
                 </div>
 
                 <div class="mobile-card-body">
+                    {% if is_bluebix %}
+                    <!-- Combined Sick/Casual Leave Section for Bluebix -->
+                    <div class="mobile-leave-section">
+                        <div class="mobile-leave-title">
+                            <i class="fas fa-heart me-2"></i>Sick/Casual Leave
+                        </div>
+                        <div class="mobile-leave-stats">
+                            <div class="leave-stat-row">
+                                <span class="leave-stat-label">Used:</span>
+                                <span class="leave-stat-value used">{{ employee.leave_balance.combined_sick_casual_used|floatformat:1 }}</span>
+                            </div>
+                            <div class="leave-stat-row">
+                                <span class="leave-stat-label">Balance:</span>
+                                <span class="leave-stat-value balance">{{ employee.leave_balance.combined_sick_casual_balance|floatformat:1 }}</span>
+                            </div>
+                        </div>
+                        <div class="mobile-leave-control">
+                            <div class="control-wrapper">
+                                <button class="control-btn"
+                                    onclick="modifyBluebixVal('mobile_combined_val_{{ employee.id }}', -0.5)">-</button>
+                                <input type="number" id="mobile_combined_val_{{ employee.id }}" class="control-input"
+                                    value="{{ employee.leave_balance.combined_sick_casual_allocated }}" step="0.5">
+                                <button class="control-btn"
+                                    onclick="modifyBluebixVal('mobile_combined_val_{{ employee.id }}', 0.5)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
                     <!-- Sick Leave Section -->
                     <div class="mobile-leave-section">
                         <div class="mobile-leave-title">
@@ -1801,10 +1950,12 @@
                         </div>
                         <div class="mobile-leave-control">
                             <div class="control-wrapper">
-                                <button class="control-btn" onclick="modifyVal('mobile_sick_val_{{ employee.id }}', -0.5)">-</button>
+                                <button class="control-btn"
+                                    onclick="modifyVal('mobile_sick_val_{{ employee.id }}', -0.5)">-</button>
                                 <input type="number" id="mobile_sick_val_{{ employee.id }}" class="control-input"
-                                    value="{{ employee.leave_balance.sick_leave_balance }}" step="0.5">
-                                <button class="control-btn" onclick="modifyVal('mobile_sick_val_{{ employee.id }}', 0.5)">+</button>
+                                    value="{{ employee.leave_balance.sick_leave_allocated }}" step="0.5">
+                                <button class="control-btn"
+                                    onclick="modifyVal('mobile_sick_val_{{ employee.id }}', 0.5)">+</button>
                             </div>
                         </div>
                     </div>
@@ -1826,13 +1977,16 @@
                         </div>
                         <div class="mobile-leave-control">
                             <div class="control-wrapper">
-                                <button class="control-btn" onclick="modifyVal('mobile_casual_val_{{ employee.id }}', -0.5)">-</button>
+                                <button class="control-btn"
+                                    onclick="modifyVal('mobile_casual_val_{{ employee.id }}', -0.5)">-</button>
                                 <input type="number" id="mobile_casual_val_{{ employee.id }}" class="control-input"
-                                    value="{{ employee.leave_balance.casual_leave_balance }}" step="0.5">
-                                <button class="control-btn" onclick="modifyVal('mobile_casual_val_{{ employee.id }}', 0.5)">+</button>
+                                    value="{{ employee.leave_balance.casual_leave_allocated }}" step="0.5">
+                                <button class="control-btn"
+                                    onclick="modifyVal('mobile_casual_val_{{ employee.id }}', 0.5)">+</button>
                             </div>
                         </div>
                     </div>
+                    {% endif %}
                 </div>
             </div>
             {% endfor %}
@@ -1915,6 +2069,24 @@
         el.value = val.toFixed(1);
     }
 
+    // Modify Bluebix Combined Leave Value
+    function modifyBluebixVal(id, delta) {
+        const el = document.getElementById(id);
+        let val = parseFloat(el.value) || 0;
+        val += delta;
+        el.value = val.toFixed(1);
+
+        // Sync between desktop and mobile inputs
+        const employeeId = id.replace('combined_val_', '').replace('mobile_combined_val_', '');
+        const desktopInput = document.getElementById(`combined_val_${employeeId}`);
+        const mobileInput = document.getElementById(`mobile_combined_val_${employeeId}`);
+
+        if (desktopInput && mobileInput) {
+            desktopInput.value = val.toFixed(1);
+            mobileInput.value = val.toFixed(1);
+        }
+    }
+
     // Search Filter - Updated to handle both layouts and inputs
     function setupSearch() {
         const searchInputs = ['searchInput', 'searchInputMobile'];
@@ -1962,7 +2134,7 @@
     }
 
     // Initialize search on page load
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         setupSearch();
         setupScrollIndicator();
     });
@@ -1999,9 +2171,59 @@
         }, 3000);
     }
 
-    // Save Row - Updated to handle both layouts
+    // Save Row - Updated to handle both layouts and Bluebix combined leave
     function saveRow(id, btn) {
-        // Get values from both desktop and mobile inputs
+        {% if is_bluebix %}
+        // Bluebix: Handle combined leave allocation
+        const desktopCombined = document.getElementById(`combined_val_${id}`);
+        const mobileCombined = document.getElementById(`mobile_combined_val_${id}`);
+
+        const combinedValue = desktopCombined ? desktopCombined.value : (mobileCombined ? mobileCombined.value : 0);
+
+        // Visual Loading
+        const icon = btn.querySelector('i');
+        const oldClass = icon.className;
+        icon.className = 'fas fa-spinner fa-spin';
+        btn.disabled = true;
+
+        fetch(`/employees/leave/balance/${id}/update/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                combined_sick_casual_allocated: combinedValue
+            })
+        })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                if (data.status === 'success') {
+                    icon.className = 'fas fa-check';
+                    showToast('Combined leave allocation updated!');
+
+                    // Sync values between desktop and mobile inputs
+                    if (desktopCombined && mobileCombined) {
+                        desktopCombined.value = combinedValue;
+                        mobileCombined.value = combinedValue;
+                    }
+
+                    // Reset icon after delay
+                    setTimeout(() => icon.className = oldClass, 2000);
+                } else {
+                    icon.className = 'fas fa-times text-danger';
+                    showToast(data.message, 'error');
+                    setTimeout(() => icon.className = oldClass, 2000);
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                icon.className = oldClass;
+                showToast('Network error occurred', 'error');
+            });
+        {% else %}
+        // Regular companies: Handle separate sick and casual leave
         const desktopSick = document.getElementById(`sick_val_${id}`);
         const desktopCasual = document.getElementById(`casual_val_${id}`);
         const mobileSick = document.getElementById(`mobile_sick_val_${id}`);
@@ -2058,18 +2280,20 @@
                 icon.className = oldClass;
                 showToast('Network error occurred', 'error');
             });
+        {% endif %}
     }
 
     // Responsive behavior enhancements
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         setupSearch();
         setupScrollIndicator();
+        ensureBulkUploadClickable(); // Add this line
 
         // Handle window resize to maintain consistency
         let resizeTimeout;
-        window.addEventListener('resize', function() {
+        window.addEventListener('resize', function () {
             clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(function() {
+            resizeTimeout = setTimeout(function () {
                 // Sync input values between layouts if both exist
                 const employees = document.querySelectorAll('[id^="sick_val_"]');
                 employees.forEach(input => {
@@ -2102,7 +2326,7 @@
         // Accessibility improvements
         const controlBtns = document.querySelectorAll('.control-btn');
         controlBtns.forEach(btn => {
-            btn.addEventListener('keydown', function(e) {
+            btn.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     btn.click();
@@ -2113,11 +2337,11 @@
         // Enhanced mobile interactions
         const mobileCards = document.querySelectorAll('.mobile-employee-card');
         mobileCards.forEach(card => {
-            card.addEventListener('touchstart', function() {
+            card.addEventListener('touchstart', function () {
                 this.style.transform = 'scale(0.98)';
             });
 
-            card.addEventListener('touchend', function() {
+            card.addEventListener('touchend', function () {
                 this.style.transform = '';
             });
         });
@@ -2153,6 +2377,38 @@
         }
     }
 
+    // Ensure bulk upload button is clickable
+    function ensureBulkUploadClickable() {
+        const bulkUploadBtn = document.querySelector('a[href*="bulk_leave_upload"], a[href*="bulk-upload"]');
+        if (bulkUploadBtn) {
+            // Remove any potential blocking styles
+            bulkUploadBtn.style.pointerEvents = 'auto';
+            bulkUploadBtn.style.position = 'relative';
+            bulkUploadBtn.style.zIndex = '100';
+
+            // Add click event listener as backup
+            bulkUploadBtn.addEventListener('click', function (e) {
+
+                // If for some reason the href doesn't work, manually navigate
+                if (!this.href || this.href === '#') {
+                    e.preventDefault();
+                    window.location.href = '/employees/leave/configuration/bulk-upload/';
+                }
+            });
+
+            // Add visual feedback
+            bulkUploadBtn.addEventListener('mouseenter', function () {
+                this.style.transform = 'translateY(-2px)';
+            });
+
+            bulkUploadBtn.addEventListener('mouseleave', function () {
+                this.style.transform = '';
+            });
+
+        }
+
+    }
+
     // Function to refresh leave balance data without full page reload
     function refreshLeaveBalances() {
         fetch(window.location.href, {
@@ -2161,32 +2417,31 @@
                 'X-Requested-With': 'XMLHttpRequest',
             }
         })
-        .then(response => response.text())
-        .then(html => {
-            // Parse the response and update only the employee cards
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
+            .then(response => response.text())
+            .then(html => {
+                // Parse the response and update only the employee cards
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
 
-            // Update desktop layout
-            const newDesktopList = doc.querySelector('.desktop-layout .employee-list');
-            const currentDesktopList = document.querySelector('.desktop-layout .employee-list');
-            if (newDesktopList && currentDesktopList) {
-                currentDesktopList.innerHTML = newDesktopList.innerHTML;
-            }
+                // Update desktop layout
+                const newDesktopList = doc.querySelector('.desktop-layout .employee-list');
+                const currentDesktopList = document.querySelector('.desktop-layout .employee-list');
+                if (newDesktopList && currentDesktopList) {
+                    currentDesktopList.innerHTML = newDesktopList.innerHTML;
+                }
 
-            // Update mobile layout
-            const newMobileList = doc.querySelector('.mobile-layout .employee-list');
-            const currentMobileList = document.querySelector('.mobile-layout .employee-list');
-            if (newMobileList && currentMobileList) {
-                currentMobileList.innerHTML = newMobileList.innerHTML;
-            }
+                // Update mobile layout
+                const newMobileList = doc.querySelector('.mobile-layout .employee-list');
+                const currentMobileList = document.querySelector('.mobile-layout .employee-list');
+                if (newMobileList && currentMobileList) {
+                    currentMobileList.innerHTML = newMobileList.innerHTML;
+                }
 
-            showToast('Leave balances refreshed successfully!', 'success');
-        })
-        .catch(error => {
-            console.error('Error refreshing leave balances:', error);
-            showToast('Error refreshing data. Please reload the page.', 'error');
-        });
+                showToast('Leave balances refreshed successfully!', 'success');
+            })
+            .catch(error => {
+                showToast('Error refreshing data. Please reload the page.', 'error');
+            });
     }
 </script>
 {% endblock %}

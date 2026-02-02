@@ -472,8 +472,16 @@
                             Upload Instructions
                         </div>
                         <ul class="instructions-list">
+                            {% if user.employee_profile.company.name|lower == "bluebix" %}
+                            <li><strong>Required Columns (Bluebix):</strong> employee_id, employee_name, sick_casual_leave_allocated</li>
+                            <li><strong>Optional Columns:</strong> sick_casual_leave_used, carry_forward_leave</li>
+                            <li><strong>Combined Leave System:</strong> Bluebix uses a single pool for sick/casual leave</li>
+                            <li><strong>Monthly Allocation:</strong> Employees typically get 1 combined leave per month</li>
+                            {% else %}
                             <li><strong>Required Columns:</strong> employee_id, employee_name, casual_leave_allocated, sick_leave_allocated</li>
                             <li><strong>Optional Columns:</strong> casual_leave_used, sick_leave_used, carry_forward_leave</li>
+                            <li><strong>Separate Leave System:</strong> Casual and sick leaves are managed separately</li>
+                            {% endif %}
                             <li><strong>Employee Identification:</strong> Provide either employee_id (badge ID) or employee_name</li>
                             <li><strong>File Formats:</strong> Excel (.xlsx, .xls) or CSV files supported</li>
                             <li><strong>File Size:</strong> Maximum 5MB file size allowed</li>

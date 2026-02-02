@@ -545,7 +545,7 @@
 
                 <div class="payslip-card-actions">
                     {% if slip.pdf_file %}
-                    <a href="{{ slip.pdf_file.url }}" class="btn-download btn-download-mobile" target="_blank">
+                    <a href="{{ slip.pdf_file.url }}" class="btn-download btn-download-mobile" download>
                         <i class="fas fa-cloud-download-alt"></i> Download PDF
                     </a>
                     {% endif %}

@@ -244,98 +244,66 @@ class BackupJobAdmin(ModelAdmin):
             )
 
         try:
-            # Execute backup script via docker compose
-            # Note: This requires the backup container to be accessible
-            import shutil
+            # Trigger backup using shared volume trigger file
+            # This approach works without requiring docker socket access
+            import os
 
-            docker_compose = shutil.which("docker-compose") or shutil.which("docker")
+            trigger_dir = "/var/run/backup-triggers"
 
-            if not docker_compose or "docker" not in docker_compose:
-                # Docker not available in this environment
-                if job:
-                    job.status = BackupJob.Status.PENDING
-                    job.save()
-                msg = f"Backup job created. Execute manually on server: docker compose exec backup /scripts/backup-{backup_type}.sh"
-                if is_ajax:
-                    return JsonResponse({"success": True, "message": msg, "job_id": job.job_id if job else None})
-                messages.info(request, msg)
-                if job:
-                    return HttpResponseRedirect(reverse("admin:core_backupjob_change", args=[job.pk]))
-                return HttpResponseRedirect(reverse("admin:backup_dashboard"))
+            # Ensure trigger directory exists
+            os.makedirs(trigger_dir, exist_ok=True)
 
-            # Build command based on backup type
+            # Create trigger file based on backup type
             if backup_type == "prune":
-                cmd = [
-                    "docker",
-                    "compose",
-                    "exec",
-                    "-T",
-                    "backup",
-                    "sh",
-                    "-c",
-                    "restic --insecure-no-password -r rclone:gdrive:HRMS-Backups/database forget --keep-last 8 --keep-daily 7 --keep-weekly 4 --keep-monthly 12 --prune",
-                ]
-            else:
-                cmd = ["docker", "compose", "exec", "-T", "backup", "sh", f"/scripts/backup-{backup_type}.sh"]
-
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=600,  # 10 minute timeout
-                cwd="/var/www/hrms-pbs-staging",  # Adjust path as needed
-            )
-
-            output = result.stdout + (f"\n\nSTDERR:\n{result.stderr}" if result.stderr else "")
-
-            if result.returncode == 0:
-                if job:
-                    job.status = BackupJob.Status.SUCCESS
-                    job.completed_at = timezone.now()
-                    if job.started_at:
-                        job.duration_seconds = int((job.completed_at - job.started_at).total_seconds())
-                    job.save()
-                msg = f"{backup_type.title()} operation completed successfully!"
-                if is_ajax:
-                    return JsonResponse(
-                        {"success": True, "message": msg, "output": output, "job_id": job.job_id if job else None}
-                    )
-                messages.success(request, f"✅ {msg}")
-            else:
+                # Prune is not supported via trigger files yet
                 if job:
                     job.status = BackupJob.Status.FAILED
-                    job.completed_at = timezone.now()
-                    job.error_message = result.stderr[:1000] if result.stderr else "Unknown error"
+                    job.error_message = "Prune operation not supported via trigger files"
                     job.save()
+                msg = "Prune operation not supported. Please run manually."
                 if is_ajax:
-                    return JsonResponse(
-                        {
-                            "success": False,
-                            "error": result.stderr[:500] if result.stderr else "Unknown error",
-                            "output": output,
-                        }
-                    )
-                messages.error(
-                    request, f"❌ Backup failed: {result.stderr[:200] if result.stderr else 'Unknown error'}"
-                )
+                    return JsonResponse({"success": False, "error": msg})
+                messages.error(request, msg)
+                return HttpResponseRedirect(reverse("admin:backup_dashboard"))
 
-        except subprocess.TimeoutExpired:
-            if job:
-                job.status = BackupJob.Status.FAILED
-                job.error_message = "Operation timed out after 10 minutes"
-                job.save()
-            if is_ajax:
-                return JsonResponse({"success": False, "error": "Operation timed out after 10 minutes"})
-            messages.error(request, "❌ Operation timed out after 10 minutes")
-        except FileNotFoundError:
-            # Docker not available in this environment
+            trigger_file = os.path.join(trigger_dir, f"trigger-{backup_type}")
+
+            # Create the trigger file
+            with open(trigger_file, "w") as f:
+                f.write(f"{timezone.now().isoformat()}\n")
+                f.write(f"user={request.user.username}\n")
+                f.write(f"job_id={job.job_id if job else 'none'}\n")
+
+            # Update job status to pending (will be picked up by watcher)
             if job:
                 job.status = BackupJob.Status.PENDING
                 job.save()
-            msg = f"Backup job created. Run on server: docker compose exec backup /scripts/backup-{backup_type}.sh"
+
+            msg = f"{backup_type.title()} backup triggered successfully! It will start within 5 seconds."
             if is_ajax:
                 return JsonResponse({"success": True, "message": msg, "job_id": job.job_id if job else None})
-            messages.info(request, msg)
+            messages.success(request, f"✅ {msg}")
+
+        except PermissionError:
+            # Trigger directory not accessible
+            if job:
+                job.status = BackupJob.Status.FAILED
+                job.error_message = "Cannot access trigger directory. Check volume mounts."
+                job.save()
+            msg = "Cannot trigger backup: permission denied. Check container configuration."
+            if is_ajax:
+                return JsonResponse({"success": False, "error": msg})
+            messages.error(request, f"❌ {msg}")
+        except FileNotFoundError:
+            # Trigger directory doesn't exist
+            if job:
+                job.status = BackupJob.Status.FAILED
+                job.error_message = "Trigger directory not found. Check volume mounts."
+                job.save()
+            msg = "Cannot trigger backup: trigger directory not found. Check docker-compose configuration."
+            if is_ajax:
+                return JsonResponse({"success": False, "error": msg})
+            messages.error(request, f"❌ {msg}")
         except Exception as e:
             if job:
                 job.status = BackupJob.Status.FAILED
