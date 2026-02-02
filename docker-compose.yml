@@ -61,6 +61,8 @@ services:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
       - logs_volume:/app/_logs
+      # Shared volume for triggering backups
+      - backup_triggers:/var/run/backup-triggers
     healthcheck:
       test: [ "CMD", "curl", "-fsS", "http://localhost:8000/api/health/" ]
       interval: 10s
@@ -123,14 +125,14 @@ services:
       # Media path
       - MEDIA_PATH=/app/media
     volumes:
-      # Scripts (read-only)
-      - ./scripts:/scripts:ro
       # Media volume for backup (read-only)
       - media_volume:/app/media:ro
       # Restic cache for deduplication
       - backup_cache:/root/.cache/restic
       # Backup logs
       - backup_logs:/var/log/backup
+      # Shared volume for trigger files
+      - backup_triggers:/var/run/backup-triggers
     restart: unless-stopped
     deploy:
       resources:
@@ -146,3 +148,4 @@ volumes:
   logs_volume:
   backup_cache:
   backup_logs:
+  backup_triggers:
