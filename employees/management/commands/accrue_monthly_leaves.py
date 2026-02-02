@@ -22,16 +22,21 @@ class Command(BaseCommand):
                 for balance in leave_balances:
                     company_name = balance.employee.company.name.lower()
 
-                    # Casual Leave: Standard 1.0 for everyone (unless specified otherwise)
-                    balance.casual_leave_allocated += 1.0
-
-                    # Sick Leave: Company specific
-                    if "petabytz" in company_name:
+                    if "bluebix" in company_name:
+                        # For Bluebix: Combined sick/casual leave allocation of 1 per month
+                        balance.combined_sick_casual_allocated += 1.0
+                        # Don't allocate to separate pools for Bluebix
+                    elif "petabytz" in company_name:
+                        # Casual Leave: Standard 1.0 for Petabytz
+                        balance.casual_leave_allocated += 1.0
                         balance.sick_leave_allocated += 1.0
-                    elif "bluebix" in company_name or "softstandard" in company_name:
+                    elif "softstandard" in company_name:
+                        # Casual Leave: Standard 1.0 for everyone (unless specified otherwise)
+                        balance.casual_leave_allocated += 1.0
                         balance.sick_leave_allocated += 0.5
                     else:
                         # Default fallback
+                        balance.casual_leave_allocated += 1.0
                         balance.sick_leave_allocated += 1.0
 
                     balance.save()

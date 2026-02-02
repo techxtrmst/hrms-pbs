@@ -34,8 +34,7 @@ class Command(BaseCommand):
                 "earned_leave_monthly": 0.0,  # No EL monthly accrual
             },
             "Bluebix": {
-                "casual_leave_monthly": 0.5,  # 0.5 CL per month
-                "sick_leave_monthly": 0.5,  # 0.5 SL per month
+                "combined_sick_casual_monthly": 1.0,  # 1 combined SL/CL per month
                 "earned_leave_monthly": 0.0,  # No EL monthly accrual
             },
         }

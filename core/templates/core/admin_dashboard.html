@@ -577,9 +577,24 @@
     }
 
     .day-cell.wfh {
-        background: transparent;
-        color: var(--keka-text-primary);
-        border: 1px solid #e5e7eb;
+        background: var(--keka-success);
+        color: white;
+        border: 2px solid #10b981;
+        position: relative;
+    }
+
+    .day-cell.wfh::after {
+        content: 'WFH';
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        background: #059669;
+        color: white;
+        font-size: 6px;
+        padding: 1px 2px;
+        border-radius: 2px;
+        font-weight: 700;
+        line-height: 1;
     }
 
     .day-cell.weekly-off {
@@ -2028,7 +2043,7 @@
                         </td>
                         {% for day in emp_data.days %}
                         <td>
-                            <div class="day-cell {{ day.status }}" data-bs-toggle="tooltip" data-bs-html="true" title="<strong>{{ day.date|date:'d M Y' }}</strong><br>{% if day.record.display_clock_in %}<div class='mt-1 text-start'><strong>In:</strong> <span class='text-success'>{{ day.record.display_clock_in|date:'d M h:i A' }}</span><br><strong>Out:</strong> <span class='text-danger'>{{ day.record.display_clock_out|date:'d M h:i A'|default:'--:--' }}</span></div>{% else %}<span class='text-warning'>{{ day.status|title }}</span>{% endif %}">
+                            <div class="day-cell {{ day.status }}" data-bs-toggle="tooltip" data-bs-html="true" title="<strong>{{ day.date|date:'d M Y' }}</strong><br>{% if day.record.display_clock_in %}<div class='mt-1 text-start'><strong>Status:</strong> <span class='text-info'>{% if day.status == 'wfh' %}Work From Home{% elif day.status == 'present' %}Present{% else %}{{ day.status|title }}{% endif %}</span><br><strong>In:</strong> <span class='text-success'>{{ day.record.display_clock_in|date:'d M h:i A' }}</span><br><strong>Out:</strong> <span class='text-danger'>{{ day.record.display_clock_out|date:'d M h:i A'|default:'--:--' }}</span></div>{% else %}<span class='text-warning'>{{ day.status|title }}</span>{% endif %}">
                                 {{ day.day }}
                             </div>
                         </td>
@@ -2043,7 +2058,7 @@
         <div class="legend">
             <div class="legend-item">
                 <div class="legend-dot" style="background: var(--keka-success);"></div>
-                <span>Present</span>
+                <span>Present / WFH</span>
             </div>
             <div class="legend-item">
                 <div class="legend-dot" style="background: transparent; border: 1px solid #e5e7eb;"></div>

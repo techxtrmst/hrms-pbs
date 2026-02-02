@@ -474,13 +474,23 @@ class BulkLeaveUploadForm(forms.Form):
 
             # Reset file pointer
             file.seek(0)
+            # Check if this is Bluebix company (combined leave system)
+            is_bluebix = company.name.lower() == "bluebix"
 
-            # Validate required columns
-            required_columns = ["employee_id", "employee_name", "casual_leave_allocated", "sick_leave_allocated"]
+            # Validate required columns based on company type
+            if is_bluebix:
+                required_columns = ["employee_id", "employee_name", "sick_casual_leave_allocated"]
+            else:
+                required_columns = ["employee_id", "employee_name", "casual_leave_allocated", "sick_leave_allocated"]
 
             missing_columns = [col for col in required_columns if col not in df.columns]
             if missing_columns:
-                errors.append(f"Missing required columns: {', '.join(missing_columns)}")
+                if is_bluebix:
+                    errors.append(
+                        f"Missing required columns for Bluebix: {', '.join(missing_columns)}. Expected: employee_id, employee_name, sick_casual_leave_allocated"
+                    )
+                else:
+                    errors.append(f"Missing required columns: {', '.join(missing_columns)}")
                 return None, errors
 
             # Process each row
@@ -522,30 +532,78 @@ class BulkLeaveUploadForm(forms.Form):
                 if not employee:
                     errors.extend(row_errors)
                     continue
-
-                # Validate numeric fields
+                # Validate numeric fields based on company type
                 try:
-                    casual_allocated = float(row.get("casual_leave_allocated", 0))
-                    sick_allocated = float(row.get("sick_leave_allocated", 0))
-                    casual_used = float(row.get("casual_leave_used", 0))
-                    sick_used = float(row.get("sick_leave_used", 0))
-                    carry_forward = float(row.get("carry_forward_leave", 0))
+                    if is_bluebix:
+                        # Bluebix: Combined sick/casual leave
+                        combined_allocated = float(row.get("sick_casual_leave_allocated", 0))
+                        combined_used = float(row.get("sick_casual_leave_used", 0))
+                        carry_forward = float(row.get("carry_forward_leave", 0))
 
-                    # Validate ranges
-                    if casual_allocated < 0 or sick_allocated < 0:
-                        row_errors.append(f"Row {row_num}: Allocated leaves cannot be negative")
+                        # Validate ranges
+                        if combined_allocated < 0:
+                            row_errors.append(f"Row {row_num}: Sick/Casual leave allocated cannot be negative")
 
-                    if casual_used < 0 or sick_used < 0:
-                        row_errors.append(f"Row {row_num}: Used leaves cannot be negative")
+                        if combined_used < 0:
+                            row_errors.append(f"Row {row_num}: Sick/Casual leave used cannot be negative")
 
-                    if casual_used > casual_allocated + carry_forward:
-                        row_errors.append(
-                            f"Row {row_num}: Casual leave used ({casual_used}) exceeds allocated + carry forward ({casual_allocated + carry_forward})"
+                        if combined_used > combined_allocated + carry_forward:
+                            row_errors.append(
+                                f"Row {row_num}: Sick/Casual leave used ({combined_used}) exceeds allocated + carry forward ({combined_allocated + carry_forward})"
+                            )
+
+                        # Add to processed data for Bluebix
+                        processed_data.append(
+                            {
+                                "employee": employee,
+                                "employee_id": employee_id,
+                                "employee_name": employee_name,
+                                "is_bluebix": True,
+                                "combined_sick_casual_allocated": combined_allocated,
+                                "combined_sick_casual_used": combined_used,
+                                "carry_forward_leave": carry_forward,
+                                "row_number": row_num,
+                            }
                         )
+                    else:
+                        # Other companies: Separate casual and sick leave
+                        casual_allocated = float(row.get("casual_leave_allocated", 0))
+                        sick_allocated = float(row.get("sick_leave_allocated", 0))
+                        casual_used = float(row.get("casual_leave_used", 0))
+                        sick_used = float(row.get("sick_leave_used", 0))
+                        carry_forward = float(row.get("carry_forward_leave", 0))
 
-                    if sick_used > sick_allocated:
-                        row_errors.append(
-                            f"Row {row_num}: Sick leave used ({sick_used}) exceeds allocated ({sick_allocated})"
+                        # Validate ranges
+                        if casual_allocated < 0 or sick_allocated < 0:
+                            row_errors.append(f"Row {row_num}: Allocated leaves cannot be negative")
+
+                        if casual_used < 0 or sick_used < 0:
+                            row_errors.append(f"Row {row_num}: Used leaves cannot be negative")
+
+                        if casual_used > casual_allocated + carry_forward:
+                            row_errors.append(
+                                f"Row {row_num}: Casual leave used ({casual_used}) exceeds allocated + carry forward ({casual_allocated + carry_forward})"
+                            )
+
+                        if sick_used > sick_allocated:
+                            row_errors.append(
+                                f"Row {row_num}: Sick leave used ({sick_used}) exceeds allocated ({sick_allocated})"
+                            )
+
+                        # Add to processed data for other companies
+                        processed_data.append(
+                            {
+                                "employee": employee,
+                                "employee_id": employee_id,
+                                "employee_name": employee_name,
+                                "is_bluebix": False,
+                                "casual_leave_allocated": casual_allocated,
+                                "sick_leave_allocated": sick_allocated,
+                                "casual_leave_used": casual_used,
+                                "sick_leave_used": sick_used,
+                                "carry_forward_leave": carry_forward,
+                                "row_number": row_num,
+                            }
                         )
 
                 except (ValueError, TypeError):
@@ -554,21 +612,6 @@ class BulkLeaveUploadForm(forms.Form):
                 if row_errors:
                     errors.extend(row_errors)
                     continue
-
-                # Add to processed data
-                processed_data.append(
-                    {
-                        "employee": employee,
-                        "employee_id": employee_id,
-                        "employee_name": employee_name,
-                        "casual_leave_allocated": casual_allocated,
-                        "sick_leave_allocated": sick_allocated,
-                        "casual_leave_used": casual_used,
-                        "sick_leave_used": sick_used,
-                        "carry_forward_leave": carry_forward,
-                        "row_number": row_num,
-                    }
-                )
 
             return processed_data, errors
 

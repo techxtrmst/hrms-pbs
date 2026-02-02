@@ -938,6 +938,12 @@ class LeaveBalance(models.Model):
     casual_leave_allocated = models.FloatField(default=12.0, help_text="Total CL allocated per year")
     sick_leave_allocated = models.FloatField(default=12.0, help_text="Total SL allocated per year")
 
+    # Combined Sick/Casual Leave for specific companies (like Bluebix)
+    combined_sick_casual_allocated = models.FloatField(
+        default=0.0, help_text="Combined SL/CL allocation for companies like Bluebix"
+    )
+    combined_sick_casual_used = models.FloatField(default=0.0, help_text="Combined SL/CL used")
+
     # Leave Used
     casual_leave_used = models.FloatField(default=0.0)
     sick_leave_used = models.FloatField(default=0.0)
@@ -951,14 +957,33 @@ class LeaveBalance(models.Model):
 
     @property
     def casual_leave_balance(self):
+        # For Bluebix, use combined balance
+        if self.employee.company.name.lower() == "bluebix":
+            return max(0, self.combined_sick_casual_allocated - self.combined_sick_casual_used)
         return max(0, self.casual_leave_allocated - self.casual_leave_used)
 
     @property
     def sick_leave_balance(self):
+        # For Bluebix, use combined balance
+        if self.employee.company.name.lower() == "bluebix":
+            return max(0, self.combined_sick_casual_allocated - self.combined_sick_casual_used)
         return max(0, self.sick_leave_allocated - self.sick_leave_used)
+
+    @property
+    def combined_sick_casual_balance(self):
+        """Combined sick/casual leave balance for companies like Bluebix"""
+        return max(0, self.combined_sick_casual_allocated - self.combined_sick_casual_used)
 
     def get_available_balance(self, leave_type):
         """Get available balance for a specific leave type"""
+        # For Bluebix, both CL and SL use the same combined pool
+        if self.employee.company.name.lower() == "bluebix":
+            if leave_type in ["CL", "SL"]:
+                return self.combined_sick_casual_balance
+            else:
+                return 0
+
+        # For other companies, use separate pools
         if leave_type == "CL":
             return self.casual_leave_balance
         elif leave_type == "SL":
@@ -991,12 +1016,20 @@ class LeaveBalance(models.Model):
 
     def apply_leave_deduction(self, leave_type, days_approved):
         """Deduct approved leave from balance"""
-        if leave_type == "CL":
-            self.casual_leave_used += days_approved
-        elif leave_type == "SL":
-            self.sick_leave_used += days_approved
-        elif leave_type == "UL":
-            self.unpaid_leave += days_approved
+        # For Bluebix, both CL and SL deduct from combined pool
+        if self.employee.company.name.lower() == "bluebix":
+            if leave_type in ["CL", "SL"]:
+                self.combined_sick_casual_used += days_approved
+            elif leave_type == "UL":
+                self.unpaid_leave += days_approved
+        else:
+            # For other companies, use separate pools
+            if leave_type == "CL":
+                self.casual_leave_used += days_approved
+            elif leave_type == "SL":
+                self.sick_leave_used += days_approved
+            elif leave_type == "UL":
+                self.unpaid_leave += days_approved
         # OD (On Duty) and OT (Others) don't affect leave balance
 
         self.save()
@@ -1006,10 +1039,12 @@ class LeaveBalance(models.Model):
         # Ensure non-negative allocated leaves
         self.casual_leave_allocated = max(0, self.casual_leave_allocated)
         self.sick_leave_allocated = max(0, self.sick_leave_allocated)
+        self.combined_sick_casual_allocated = max(0, self.combined_sick_casual_allocated)
 
         # Ensure non-negative used leaves
         self.casual_leave_used = max(0, self.casual_leave_used)
         self.sick_leave_used = max(0, self.sick_leave_used)
+        self.combined_sick_casual_used = max(0, self.combined_sick_casual_used)
         self.unpaid_leave = max(0, self.unpaid_leave)
 
         # Ensure non-negative carry forward
@@ -1020,6 +1055,9 @@ class LeaveBalance(models.Model):
 
     @property
     def total_balance(self):
+        # For Bluebix, return combined balance (but don't double count)
+        if self.employee.company.name.lower() == "bluebix":
+            return self.combined_sick_casual_balance
         return self.casual_leave_balance + self.sick_leave_balance
 
     @property

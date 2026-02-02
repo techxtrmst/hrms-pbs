@@ -34,7 +34,7 @@ from .error_handling import (
 )
 from .forms import ForgotPasswordForm, OTPVerificationForm, ResetPasswordForm
 from .models import PasswordResetOTP
-from .utils import generate_payslip_pdf_with_generator, save_pdf_to_model
+from .utils import save_pdf_to_model
 
 
 @login_required
@@ -239,7 +239,7 @@ def admin_dashboard(request):
     remote_clockins = 0
 
     # Define office start time (9:00 AM)
-    dt_time(9, 0)
+    office_start = dt_time(9, 0)
 
     import pytz
 
@@ -859,7 +859,7 @@ def employee_dashboard(request):
     week_total = 0  # Expected work days
 
     for item in week_history:
-        item.date if isinstance(item, Attendance) else item["date"]
+        date = item.date if isinstance(item, Attendance) else item["date"]
         status = item.status if isinstance(item, Attendance) else item["status"]
 
         if status == "PRESENT":
@@ -2958,7 +2958,7 @@ def payroll_dashboard(request):
 
     # Get payslips for the selected month/year
     # month_date is used for filtering. We use the first of the month.
-    date(selected_year, selected_month, 1)
+    month_filter = date(selected_year, selected_month, 1)
 
     existing_payslips = Payslip.objects.filter(
         employee__company=company, month__month=selected_month, month__year=selected_year
@@ -3116,8 +3116,14 @@ def process_payslip_generation(request):
             payslip.lta = breakdown["lta"]
             payslip.other_allowance = breakdown["other_allowance"]
             # Map location specific allowances
-            payslip.conveyance_allowance = breakdown.get("conveyance", 0.0)
-            payslip.special_allowance = breakdown.get("medical", 0.0)
+            # For India: lta -> conveyance_allowance, other_allowance -> special_allowance
+            # For other countries: conveyance -> conveyance_allowance, medical -> special_allowance
+            if breakdown.get("country_code", "IN") == "IN":
+                payslip.conveyance_allowance = breakdown.get("lta", 0.0)
+                payslip.special_allowance = breakdown.get("other_allowance", 0.0)
+            else:
+                payslip.conveyance_allowance = breakdown.get("conveyance", 0.0)
+                payslip.special_allowance = breakdown.get("medical", 0.0)
             payslip.monthly_gross = breakdown["full_monthly_gross"]
             payslip.gross_salary = breakdown["gross_monthly"]
             payslip.employee_pf = breakdown["employee_pf"]
@@ -3130,8 +3136,10 @@ def process_payslip_generation(request):
 
             # Generate PDF
             # Determine currency name for words
+            currency = "INR"  # Default currency
             currency_name = "Rupees"
             if employee.location:
+                currency = employee.location.currency or "INR"
                 if employee.location.country_code == "BD" or employee.location.currency == "BDT":
                     currency_name = "Taka"
                 elif employee.location.country_code == "US" or employee.location.currency == "USD":
@@ -3166,29 +3174,13 @@ def process_payslip_generation(request):
                 "company": employee.company,
                 "branding": branding,
                 "net_salary_words": num2words_flexible(payslip.net_salary, currency_name),
+                "currency": currency,
             }
 
-            # Use new PayslipGenerator instead of template-based approach
-            try:
-                success = generate_payslip_pdf_with_generator(payslip)
-                if success:
-                    messages.success(
-                        request, f"Payslip for {employee.user.get_full_name()} generated successfully with WeasyPrint."
-                    )
-                else:
-                    # Fallback to old method if new generator fails
-                    filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
-                    save_pdf_to_model(payslip, "employees/payslip_pdf.html", context, filename)
-                    messages.success(
-                        request, f"Payslip for {employee.user.get_full_name()} generated successfully (fallback)."
-                    )
-            except ImportError:
-                # WeasyPrint not available, use fallback method
-                filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
-                save_pdf_to_model(payslip, "employees/payslip_pdf.html", context, filename)
-                messages.success(
-                    request, f"Payslip for {employee.user.get_full_name()} generated successfully (fallback method)."
-                )
+            # Generate PDF using template-based approach (no WeasyPrint)
+            filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
+            save_pdf_to_model(payslip, "employees/payslip_pdf.html", context, filename)
+            messages.success(request, f"Payslip for {employee.user.get_full_name()} generated successfully.")
         except Exception as e:
             messages.error(request, f"Error generating payslip: {str(e)}")
 
@@ -3405,8 +3397,15 @@ def bulk_upload_payslips(request):
                     payslip.hra = breakdown["hra"]
                     payslip.lta = breakdown["lta"]
                     payslip.other_allowance = breakdown["other_allowance"]
-                    payslip.conveyance_allowance = breakdown.get("conveyance", 0.0)
-                    payslip.special_allowance = breakdown.get("medical", 0.0)
+                    # Map location specific allowances
+                    # For India: lta -> conveyance_allowance, other_allowance -> special_allowance
+                    # For other countries: conveyance -> conveyance_allowance, medical -> special_allowance
+                    if breakdown.get("country_code", "IN") == "IN":
+                        payslip.conveyance_allowance = breakdown.get("lta", 0.0)
+                        payslip.special_allowance = breakdown.get("other_allowance", 0.0)
+                    else:
+                        payslip.conveyance_allowance = breakdown.get("conveyance", 0.0)
+                        payslip.special_allowance = breakdown.get("medical", 0.0)
                     payslip.monthly_gross = breakdown["full_monthly_gross"]
                     payslip.gross_salary = breakdown["gross_monthly"]
                     payslip.employee_pf = breakdown["employee_pf"]
@@ -3418,8 +3417,10 @@ def bulk_upload_payslips(request):
                     payslip.save()
 
                     # Generate PDF
+                    currency = "INR"  # Default currency
                     currency_name = "Rupees"
                     if employee.location:
+                        currency = employee.location.currency or "INR"
                         if employee.location.country_code == "BD" or employee.location.currency == "BDT":
                             currency_name = "Taka"
                         elif employee.location.country_code == "US" or employee.location.currency == "USD":
@@ -3452,19 +3453,12 @@ def bulk_upload_payslips(request):
                         "company": employee.company,
                         "branding": branding,
                         "net_salary_words": num2words_flexible(payslip.net_salary, currency_name),
+                        "currency": currency,
                     }
 
-                    # Use new PayslipGenerator instead of template-based approach
-                    try:
-                        success = generate_payslip_pdf_with_generator(payslip)
-                        if not success:
-                            # Fallback to old method if new generator fails
-                            filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
-                            save_pdf_to_model(payslip, "employees/payslip_pdf.html", context, filename)
-                    except ImportError:
-                        # WeasyPrint not available, use fallback method
-                        filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
-                        save_pdf_to_model(payslip, "employees/payslip_pdf.html", context, filename)
+                    # Generate PDF using template-based approach (no WeasyPrint)
+                    filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
+                    save_pdf_to_model(payslip, "employees/payslip_pdf.html", context, filename)
 
                     success_count += 1
                 except Employee.DoesNotExist:
