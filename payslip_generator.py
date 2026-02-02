@@ -1,8 +1,7 @@
 """
-Payslip Generator - Final Version with Enhanced Features
-- PF Contributions and Taxes & Deductions separation
-- Multi-currency support
-- Improved header format
+Payslip Generator - Final Version
+FIXED: Always show layout with separator, empty deductions when none
+FIXED: Increased spacing between note and below
 """
 
 import os
@@ -33,49 +32,44 @@ class PayslipGenerator:
         if not logo_path:
             return None
 
-        try:
-            if logo_path.startswith(("http://", "https://")):
-                # Handle URL - download and encode with proper headers
-                import base64
+        import base64
 
+        # Check if it's a URL
+        if logo_path.startswith("http://") or logo_path.startswith("https://"):
+            try:
                 import requests
 
-                headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-                    "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
-                    "Accept-Language": "en-US,en;q=0.9",
-                    "Accept-Encoding": "gzip, deflate, br",
-                    "DNT": "1",
-                    "Connection": "keep-alive",
-                    "Upgrade-Insecure-Requests": "1",
-                }
-
-                response = requests.get(logo_path, headers=headers, timeout=10)
-                response.raise_for_status()
-                return base64.b64encode(response.content).decode("utf-8")
-            else:
-                # Handle local file
-                if not os.path.exists(logo_path):
+                response = requests.get(logo_path, timeout=10)
+                if response.status_code == 200:
+                    return base64.b64encode(response.content).decode("utf-8")
+                else:
+                    print(f"Failed to fetch logo from URL: {logo_path}")
                     return None
-                import base64
+            except Exception as e:
+                print(f"Error fetching logo from URL {logo_path}: {e}")
+                return None
 
-                with open(logo_path, "rb") as logo_file:
-                    return base64.b64encode(logo_file.read()).decode("utf-8")
-        except Exception as e:
-            print(f"Warning: Could not load logo from {logo_path}: {e}")
+        # Handle local file
+        if not os.path.exists(logo_path):
             return None
 
-    def generate_payslip(self, employee_data: dict[str, Any], month: str, year: str) -> str:
-        """Generate payslip PDF using WeasyPrint"""
+        with open(logo_path, "rb") as logo_file:
+            return base64.b64encode(logo_file.read()).decode("utf-8")
 
+    def generate_payslip(self, employee_data: dict[str, Any], month: str, year: str) -> str:
+        """
+        Generate payslip PDF using WeasyPrint with exact template format
+        """
+
+        # Check if WeasyPrint is available
         if not WEASYPRINT_AVAILABLE:
             raise ImportError("WeasyPrint is not available. Please install it with: pip install weasyprint")
 
-        # Get logo
+        # Get logo (if provided in employee_data)
         logo_base64 = None
-        logo_source = employee_data.get("logo_url") or employee_data.get("logo_path")
-        if logo_source:
-            logo_base64 = self._encode_logo(logo_source)
+        logo_path = employee_data.get("logo_path")
+        if logo_path:
+            logo_base64 = self._encode_logo(logo_path)
 
         # Render HTML from template
         html_content = self._render_html_template(employee_data, month, year, logo_base64)
@@ -85,10 +79,11 @@ class PayslipGenerator:
         pdf_filename = f"{emp_name}-Payslip_{month}-{year}.pdf"
         pdf_path = self.output_dir / pdf_filename
 
-        # Use WeasyPrint with optimized settings
+        # Use WeasyPrint with optimized settings for exact formatting
         try:
             from weasyprint import CSS
 
+            # Create CSS for better PDF rendering - optimized for exact format
             pdf_css = CSS(
                 string="""
                 @page {
@@ -103,15 +98,27 @@ class PayslipGenerator:
                 table {
                     page-break-inside: avoid;
                 }
+                .header-section,
+                .company-section,
+                .employee-name-section,
+                .employee-details,
+                .salary-header,
+                .salary-table,
+                .net-salary-section,
+                .footer-section {
+                    page-break-inside: avoid;
+                }
             """
             )
 
+            # Generate PDF with WeasyPrint
             HTML(string=html_content).write_pdf(
                 str(pdf_path), stylesheets=[pdf_css], presentational_hints=True, optimize_images=True
             )
 
         except Exception as e:
             print(f"Error with WeasyPrint CSS: {e}")
+            # Fallback to basic generation
             try:
                 HTML(string=html_content).write_pdf(str(pdf_path))
             except Exception as fallback_error:
@@ -155,8 +162,8 @@ class PayslipGenerator:
             display: flex;
             align-items: flex-start;
             justify-content: space-between;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
         }
 
         .header-content {
@@ -165,15 +172,14 @@ class PayslipGenerator:
         }
 
         .header-title {
-            font-family: 'Arial MT', Arial, sans-serif;
-            font-size: 18px;
+            font-size: 24px;
             font-weight: bold;
             margin-bottom: 8px;
         }
 
         .company-name {
             font-family: 'Arial MT', Arial, sans-serif;
-            font-size: 12px;
+            font-size: 14px;
             font-weight: normal;
             margin-bottom: 5px;
             color: #000;
@@ -181,7 +187,7 @@ class PayslipGenerator:
 
         .company-address {
             font-family: 'Arial MT', Arial, sans-serif;
-            font-size: 10px;
+            font-size: 11px;
             line-height: 1.3;
             margin-bottom: 3px;
         }
@@ -205,11 +211,6 @@ class PayslipGenerator:
             margin-bottom: 0px;
             text-align: left;
             text-transform: uppercase;
-        }
-
-        .divider-line {
-            border-bottom: 1px solid #333;
-            margin: 0 0 10px 0;
         }
 
         .info-section {
@@ -253,15 +254,15 @@ class PayslipGenerator:
             padding-bottom: 5px;
         }
 
+        /* EARNINGS AND DEDUCTIONS LAYOUT */
         .salary-flex {
             display: flex;
-            gap: 20px;
+            gap: 40px;
             margin-bottom: 15px;
         }
 
         .salary-column {
             flex: 1;
-            min-width: 0;
         }
 
         .salary-column-title {
@@ -271,14 +272,7 @@ class PayslipGenerator:
             text-transform: uppercase;
         }
 
-        .separator-line {
-            width: 1px;
-            background-color: #ccc;
-            min-height: 200px;
-            margin: 0 15px;
-            flex-shrink: 0;
-        }
-
+        /* TABLE FOR PROPER SPACING */
         .salary-table {
             width: 100%;
             border-collapse: collapse;
@@ -304,8 +298,8 @@ class PayslipGenerator:
 
         .salary-amount {
             text-align: right;
-            width: 80px;
-            padding-left: 10px;
+            width: 90px;
+            padding-left: 15px;
             font-weight: normal;
         }
 
@@ -317,6 +311,12 @@ class PayslipGenerator:
             font-weight: bold;
             padding: 6px 0;
             border-top: none;
+        }
+
+        .separator-line {
+            width: 1px;
+            background-color: #ccc;
+            min-height: 120px;
         }
 
         .net-salary-section {
@@ -342,6 +342,7 @@ class PayslipGenerator:
             margin-left: 20px;
         }
 
+        /* NOTE SECTION - INCREASED SPACING */
         .note-section {
             font-size: 9.5px;
             font-family: Arial, sans-serif;
@@ -363,16 +364,23 @@ class PayslipGenerator:
         .note-line:last-child {
             font-size: 7.5px;
         }
+
+        .footer {
+            font-size: 9px;
+            color: #999;
+            margin-top: 20px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
+        <!-- Header with Company Info on Left, Logo on Right -->
         <div class="header">
             <div class="header-content">
                 <div class="header-title">
-                    <span style="font-family: 'Arial MT', Arial, sans-serif; font-weight: bold; color: #000; font-size: 18px;">PAYSLIP</span>
-                    <span style="font-family: 'Arial MT', Arial, sans-serif; font-weight: normal; color: #666; font-size: 18px;">{{ month_short|upper }} {{ year }}</span>
+                    <span style="font-weight: bold; color: #000;">PAYSLIP</span>
+                    <span style="font-weight: normal; color: #666; font-size: 18px;">{{ month_short|upper }} {{ year }}</span>
                 </div>
                 <div class="company-name">{{ company_name }}</div>
                 <div class="company-address">
@@ -390,7 +398,9 @@ class PayslipGenerator:
 
         <!-- Employee Name -->
         <div class="employee-name">{{ employee_name|upper }}</div>
-        <div class="divider-line"></div>
+
+        <!-- Thin line below name -->
+        <div style="border-bottom: 1px solid #333; margin: 0 0 10px 0;"></div>
 
         <!-- Employee Details -->
         <div class="info-section">
@@ -455,14 +465,73 @@ class PayslipGenerator:
             <span>{{ payable_units }}</span>
         </div>
 
-        <!-- Grey line -->
+        <!-- Grey line after payable units -->
         <div style="border-bottom: 1px solid #ccc; margin-bottom: 15px;"></div>
 
-        <!-- EARNINGS, CONTRIBUTIONS AND DEDUCTIONS - VERTICAL LAYOUT -->
-
-        <!-- EARNINGS AND DEDUCTIONS - SIDE BY SIDE LAYOUT -->
-        <div class="salary-flex">
+        <!-- EARNINGS, CONTRIBUTIONS, AND TAXES & DEDUCTIONS - EXACT LAYOUT AS IMAGE -->
+        {% if has_pf_deductions %}
+        <!-- TWO COLUMN LAYOUT: EARNINGS (LEFT) | CONTRIBUTIONS + TAXES & DEDUCTIONS (RIGHT STACKED) -->
+        <div style="display: flex; gap: 40px; margin-bottom: 15px;">
             <!-- Left Column: EARNINGS -->
+            <div style="flex: 1;">
+                <div class="salary-column-title">EARNINGS</div>
+                <table class="salary-table">
+                    {% for earning in earnings %}
+                    <tr>
+                        <td class="salary-label">{{ earning.name }}</td>
+                        <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(earning.amount) }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="salary-total-row">
+                        <td class="salary-label">Total Earnings (A)</td>
+                        <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(total_earnings) }}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Right Column: CONTRIBUTIONS (TOP) + TAXES & DEDUCTIONS (BOTTOM) STACKED -->
+            <div style="flex: 1;">
+                <!-- CONTRIBUTIONS Section (Top) -->
+                <div style="margin-bottom: 30px;">
+                    <div class="salary-column-title">CONTRIBUTIONS</div>
+                    <table class="salary-table">
+                        {% for deduction in pf_contributions %}
+                        <tr>
+                            <td class="salary-label">PF Employee</td>
+                            <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(deduction.amount) }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="salary-total-row">
+                            <td class="salary-label">Total Contributions (B)</td>
+                            <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(total_contributions) }}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- TAXES & DEDUCTIONS Section (Bottom) -->
+                {% if tax_deductions and tax_deductions|length > 0 %}
+                <div>
+                    <div class="salary-column-title">TAXES & DEDUCTIONS</div>
+                    <table class="salary-table">
+                        {% for deduction in tax_deductions %}
+                        <tr>
+                            <td class="salary-label">{{ deduction.name }}</td>
+                            <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(deduction.amount) }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="salary-total-row">
+                            <td class="salary-label">Total Taxes & Deductions (C)</td>
+                            <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(total_taxes_deductions) }}</td>
+                        </tr>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <!-- TWO COLUMN LAYOUT: EARNINGS | DEDUCTIONS (NO PF) -->
+        <div class="salary-flex">
+            <!-- Earnings Column -->
             <div class="salary-column">
                 <div class="salary-column-title">EARNINGS</div>
                 <table class="salary-table">
@@ -479,78 +548,40 @@ class PayslipGenerator:
                 </table>
             </div>
 
-            <!-- Separator Line -->
+            <!-- Vertical Separator Line -->
             <div class="separator-line"></div>
 
-            <!-- Right Column: CONTRIBUTIONS & DEDUCTIONS -->
+            <!-- Deductions Column - EMPTY IF NO DEDUCTIONS -->
             <div class="salary-column">
-                {% if (contributions and contributions|length > 0) or (deductions and deductions|length > 0) %}
-
-                {% if contributions and contributions|length > 0 %}
-                <!-- Show CONTRIBUTIONS section when PF exists -->
-                <div class="salary-column-title">CONTRIBUTIONS</div>
+                {% if deductions and deductions|length > 0 %}
+                <!-- SHOW TAXES & DEDUCTIONS TITLE AND DATA -->
+                <div class="salary-column-title">TAXES & DEDUCTIONS</div>
                 <table class="salary-table">
-                    {% for contribution in contributions %}
+                    {% for deduction in deductions %}
                     <tr>
-                        <td class="salary-label">{{ contribution.name }}</td>
-                        <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(contribution.amount) }}</td>
+                        <td class="salary-label">{{ deduction.name }}</td>
+                        <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(deduction.amount) }}</td>
                     </tr>
                     {% endfor %}
                     <tr class="salary-total-row">
-                        <td class="salary-label">Total Contributions (B)</td>
-                        <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(total_contributions) }}</td>
+                        <td class="salary-label">Total Taxes & Deductions (B)</td>
+                        <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(total_deductions) }}</td>
                     </tr>
                 </table>
-
-                    {% if deductions and deductions|length > 0 %}
-                    <!-- When PF exists, deductions are labeled as C -->
-                    <div class="salary-column-title" style="margin-top: 15px;">TAXES & DEDUCTIONS</div>
-                    <table class="salary-table">
-                        {% for deduction in deductions %}
-                        <tr>
-                            <td class="salary-label">{{ deduction.name }}</td>
-                            <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(deduction.amount) }}</td>
-                        </tr>
-                        {% endfor %}
-                        <tr class="salary-total-row">
-                            <td class="salary-label">Total Taxes & Deductions (C)</td>
-                            <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(total_deductions) }}</td>
-                        </tr>
-                    </table>
-                    {% endif %}
-
                 {% else %}
-                    {% if deductions and deductions|length > 0 %}
-                    <!-- When NO PF exists, deductions are labeled as B -->
-                    <div class="salary-column-title">TAXES & DEDUCTIONS</div>
-                    <table class="salary-table">
-                        {% for deduction in deductions %}
-                        <tr>
-                            <td class="salary-label">{{ deduction.name }}</td>
-                            <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(deduction.amount) }}</td>
-                        </tr>
-                        {% endfor %}
-                        <tr class="salary-total-row">
-                            <td class="salary-label">Total Taxes & Deductions (B)</td>
-                            <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(total_deductions) }}</td>
-                        </tr>
-                    </table>
-                    {% endif %}
-                {% endif %}
-
+                <!-- NO DEDUCTIONS - COLUMN IS BLANK/EMPTY -->
                 {% endif %}
             </div>
         </div>
+        {% endif %}
 
         <!-- Net Salary -->
         <div class="net-salary-section">
             <div class="net-salary-row">
-                {% if contributions and contributions|length > 0 %}
-                    <!-- When PF exists: A - B - C -->
-                    <span class="net-salary-label">Net Salary Payable ( A {% if contributions %}- B {% endif %}{% if deductions %}- C {% endif %})</span>
+                {% if has_pf_deductions %}
+                <span class="net-salary-label">Net Salary Payable ( A - B - C )</span>
                 {% else %}
-                    <!-- When NO PF exists: A - B (deductions become B) -->
-                    <span class="net-salary-label">Net Salary Payable ( A {% if deductions %}- B {% endif %})</span>
+                <span class="net-salary-label">Net Salary Payable ( A {% if deductions %}- B {% endif %})</span>
                 {% endif %}
                 <span class="net-salary-amount">{{ currency_symbol }}{{ "%.2f"|format(net_salary) }}</span>
             </div>
@@ -560,7 +591,7 @@ class PayslipGenerator:
             </div>
         </div>
 
-        <!-- NOTE -->
+        <!-- NOTE - EXACT FORMAT WITH INCREASED SPACING -->
         <div class="note-section">
             <div class="note-line">
                 <span style="font-style: italic;"><strong>**Note :</strong> All amounts displayed in this payslip are in <strong>{{ currency }}</strong></span>
@@ -574,30 +605,38 @@ class PayslipGenerator:
 </html>
         """
 
-        # Calculate totals
+        # Calculate totals and separate PF contributions from other deductions
         total_earnings = sum(e["amount"] for e in employee_data.get("earnings", []))
-        total_contributions = (
-            sum(c["amount"] for c in employee_data.get("contributions", []))
-            if employee_data.get("contributions")
-            else 0
-        )
-        total_deductions = (
-            sum(d["amount"] for d in employee_data.get("deductions", [])) if employee_data.get("deductions") else 0
-        )
-        net_salary = total_earnings - total_contributions - total_deductions
 
-        # Currency
-        currency = employee_data.get("currency", "INR")
-        currency_symbols = {"INR": "₹", "USD": "$", "BDT": "৳", "EUR": "€", "GBP": "£"}
-        currency_symbol = currency_symbols.get(currency, "₹")
+        # Separate PF contributions from other deductions
+        pf_contributions = []
+        tax_deductions = []
 
-        # Number to words
-        salary_in_words = self._number_to_words(int(net_salary), currency)
+        for deduction in employee_data.get("deductions", []):
+            if "PF" in deduction["name"] or "Provident" in deduction["name"]:
+                pf_contributions.append(deduction)
+            else:
+                tax_deductions.append(deduction)
 
-        # Month short format
+        # Calculate totals for each category
+        total_contributions = sum(d["amount"] for d in pf_contributions)
+        total_taxes_deductions = sum(d["amount"] for d in tax_deductions)
+        total_deductions = total_contributions + total_taxes_deductions
+
+        # Determine if we have PF deductions (for layout decision)
+        has_pf_deductions = len(pf_contributions) > 0
+
+        net_salary = total_earnings - total_deductions
+
+        # Get currency information from employee location
+        employee_location = employee_data.get("location_obj")  # Location object passed from utils
+        currency_info = self._get_currency_info(employee_location)
+        salary_in_words = self._number_to_words_with_currency(int(net_salary), currency_info)
+
+        # Convert month to 3-letter format
         month_short = month[:3] if len(month) > 3 else month
 
-        # Context
+        # Prepare template context - ALL from employee_data
         context = {
             "month": month,
             "month_short": month_short,
@@ -620,25 +659,69 @@ class PayslipGenerator:
             "pan_number": employee_data.get("pan_number", ""),
             "payable_units": employee_data.get("payable_units", "30 Days"),
             "earnings": employee_data.get("earnings", []),
-            "contributions": employee_data.get("contributions", []),
             "deductions": employee_data.get("deductions", []),
+            "pf_contributions": pf_contributions,
+            "tax_deductions": tax_deductions,
+            "has_pf_deductions": has_pf_deductions,
             "total_earnings": total_earnings,
             "total_contributions": total_contributions,
+            "total_taxes_deductions": total_taxes_deductions,
             "total_deductions": total_deductions,
             "net_salary": net_salary,
             "salary_in_words": salary_in_words,
             "logo_base64": logo_base64,
-            "currency": currency,
-            "currency_symbol": currency_symbol,
+            "currency": employee_data.get("currency", "INR"),
+            "currency_code": currency_info["code"],
+            "currency_symbol": currency_info["symbol"],
+            "currency_name": currency_info["name"],
         }
 
-        # Render
+        # Render template
         template = Template(html_template)
         return template.render(context)
 
     @staticmethod
-    def _number_to_words(num: int, currency: str = "INR") -> str:
-        """Convert number to words"""
+    def _get_currency_info(location):
+        """Get currency information based on employee location"""
+        if not location:
+            return {"code": "INR", "symbol": "₹", "name": "Indian Rupees"}
+
+        # Currency mapping based on location
+        currency_map = {
+            "INR": {"code": "INR", "symbol": "₹", "name": "Indian Rupees"},
+            "USD": {"code": "USD", "symbol": "$", "name": "US Dollars"},
+            "BDT": {"code": "BDT", "symbol": "৳", "name": "Bangladeshi Taka"},
+            "EUR": {"code": "EUR", "symbol": "€", "name": "Euros"},
+            "GBP": {"code": "GBP", "symbol": "£", "name": "British Pounds"},
+        }
+
+        # Get currency from location or default to INR
+        location_currency = getattr(location, "currency", "INR").upper()
+
+        # Location-based currency detection
+        if hasattr(location, "country_code"):
+            country_code = location.country_code.upper()
+            if country_code == "US":
+                location_currency = "USD"
+            elif country_code == "BD":  # Bangladesh
+                location_currency = "BDT"
+            elif country_code == "IN":  # India
+                location_currency = "INR"
+
+        # Location name-based detection (fallback)
+        location_name = location.name.upper() if hasattr(location, "name") else ""
+        if "DHAKA" in location_name or "BANGLADESH" in location_name:
+            location_currency = "BDT"
+        elif "US" in location_name or "AMERICA" in location_name or "USA" in location_name:
+            location_currency = "USD"
+        elif "INDIA" in location_name or "INDIAN" in location_name:
+            location_currency = "INR"
+
+        return currency_map.get(location_currency, currency_map["INR"])
+
+    @staticmethod
+    def _number_to_words_with_currency(num: int, currency_info: dict) -> str:
+        """Convert number to words with appropriate currency"""
         ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"]
         teens = [
             "Ten",
@@ -669,7 +752,11 @@ class PayslipGenerator:
         if num == 0:
             return "Zero"
 
-        if currency == "INR":
+        currency_code = currency_info["code"]
+
+        # Different number systems based on currency
+        if currency_code == "INR":
+            # Indian numbering system (Crore, Lakh)
             crore = num // 10000000
             num %= 10000000
             lakh = num // 100000
@@ -689,5 +776,48 @@ class PayslipGenerator:
                 result.append(convert_below_thousand(remainder))
 
             return " ".join(result) + " Rupees only"
+
+        elif currency_code == "BDT":
+            # Bangladeshi Taka (similar to Indian system)
+            crore = num // 10000000
+            num %= 10000000
+            lakh = num // 100000
+            num %= 100000
+            thousand = num // 1000
+            num %= 1000
+            remainder = num
+
+            result = []
+            if crore > 0:
+                result.append(convert_below_thousand(crore) + " Crore")
+            if lakh > 0:
+                result.append(convert_below_thousand(lakh) + " Lakh")
+            if thousand > 0:
+                result.append(convert_below_thousand(thousand) + " Thousand")
+            if remainder > 0:
+                result.append(convert_below_thousand(remainder))
+
+            return " ".join(result) + " Taka only"
+
         else:
-            return str(num) + " " + currency + " only"
+            # Western numbering system (Million, Billion) for USD, EUR, GBP
+            billion = num // 1000000000
+            num %= 1000000000
+            million = num // 1000000
+            num %= 1000000
+            thousand = num // 1000
+            num %= 1000
+            remainder = num
+
+            result = []
+            if billion > 0:
+                result.append(convert_below_thousand(billion) + " Billion")
+            if million > 0:
+                result.append(convert_below_thousand(million) + " Million")
+            if thousand > 0:
+                result.append(convert_below_thousand(thousand) + " Thousand")
+            if remainder > 0:
+                result.append(convert_below_thousand(remainder))
+
+            currency_name = currency_info["name"].split()[-1]  # Get last word (Dollars, Euros, etc.)
+            return " ".join(result) + f" {currency_name} only"

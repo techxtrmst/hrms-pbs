@@ -4,8 +4,10 @@ import logging
 
 import pytz
 from django.core.files.base import ContentFile
-from django.template.loader import get_template
+from django.template.loader import get_template, render_to_string
 from xhtml2pdf import pisa
+
+from employees.payroll_utils import num2words_flexible
 
 logger = logging.getLogger(__name__)
 
@@ -127,16 +129,15 @@ def get_user_timezone(user, company=None):
     return "Asia/Kolkata"
 
 
-def generate_payslip_pdf(payslip_instance, output_dir="media/payslips"):
+def generate_payslip_pdf_with_generator(payslip_instance, output_dir="media/payslips"):
     """
     Generate payslip PDF using the PayslipGenerator class from payslip_generator.py
+    Falls back to Django template method if PayslipGenerator is not available.
     """
 
     if not PAYSLIP_GENERATOR_AVAILABLE:
-        logger.error(
-            "PayslipGenerator is required but not available. Please ensure payslip_generator.py is properly installed."
-        )
-        raise ImportError("PayslipGenerator is not available. Cannot generate payslip.")
+        logger.warning("PayslipGenerator not available, falling back to Django template method")
+        return _generate_payslip_pdf_fallback(payslip_instance)
 
     try:
         # Prepare employee data for PayslipGenerator
@@ -157,14 +158,14 @@ def generate_payslip_pdf(payslip_instance, output_dir="media/payslips"):
         if employee.location:
             currency = employee.location.currency or "INR"
 
-        # Prepare earnings data (Section A)
+        # Prepare earnings data
         earnings = []
         if payslip_instance.basic > 0:
             earnings.append({"name": "Basic", "amount": float(payslip_instance.basic)})
         if payslip_instance.hra > 0:
             earnings.append({"name": "HRA", "amount": float(payslip_instance.hra)})
         if payslip_instance.lta > 0:
-            earnings.append({"name": "Conveyance Allowance", "amount": float(payslip_instance.lta)})
+            earnings.append({"name": "LTA", "amount": float(payslip_instance.lta)})
         if payslip_instance.other_allowance > 0:
             earnings.append({"name": "Other Allowance", "amount": float(payslip_instance.other_allowance)})
         if payslip_instance.conveyance_allowance > 0:
@@ -172,13 +173,10 @@ def generate_payslip_pdf(payslip_instance, output_dir="media/payslips"):
         if payslip_instance.special_allowance > 0:
             earnings.append({"name": "Special Allowance", "amount": float(payslip_instance.special_allowance)})
 
-        # Prepare contributions data (Section B - PF Employee contributions)
-        contributions = []
-        if payslip_instance.employee_pf > 0:
-            contributions.append({"name": "PF Employee", "amount": float(payslip_instance.employee_pf)})
-
-        # Prepare deductions data (Section C - Taxes & Deductions)
+        # Prepare deductions data
         deductions = []
+        if payslip_instance.employee_pf > 0:
+            deductions.append({"name": "PF Employee", "amount": float(payslip_instance.employee_pf)})
         if payslip_instance.professional_tax > 0:
             deductions.append({"name": "Professional Tax", "amount": float(payslip_instance.professional_tax)})
 
@@ -187,15 +185,6 @@ def generate_payslip_pdf(payslip_instance, output_dir="media/payslips"):
             deductions.append({"name": "TDS", "amount": float(payslip_instance.tds)})
         if hasattr(payslip_instance, "lop_deduction") and payslip_instance.lop_deduction > 0:
             deductions.append({"name": "LOP Deduction", "amount": float(payslip_instance.lop_deduction)})
-
-        # Determine logo URL based on company
-        logo_url = None
-        if "PETABYTZ" in company_name or "PETABYTES" in company_name:
-            logo_url = "https://petabytz.com/images/logo/logo.png"
-        elif "BLUEBIX" in company_name:
-            logo_url = "https://petabytz.com/images/logo/logo.png"  # Using Petabytz logo for Bluebix as requested
-        elif "SOFTSTANDARD" in company_name or "SOFT STANDARD" in company_name:
-            logo_url = "https://softstandard.com/wp-content/uploads/2016/05/logo.jpg"
 
         # Prepare employee data dictionary
         employee_data = {
@@ -212,15 +201,13 @@ def generate_payslip_pdf(payslip_instance, output_dir="media/payslips"):
             "pan_number": employee.pan_number or "N/A",
             "payable_units": "30 Days",  # This could be calculated based on worked days
             "company_name": branding_name,
-            "company_address": "PLOT NO 201 & 202, 1ST FLOOR, DMR CORPORATE, KAVURI HILLS RD",
-            "company_city": "HYDERABAD",
-            "company_state": "TELANGANA 500081",
+            "company_address": company.address_line1 or "",
+            "company_city": company.city or "",
+            "company_state": company.state or "",
             "currency": currency,
             "earnings": earnings,
-            "contributions": contributions,
             "deductions": deductions,
             "location_obj": employee.location,  # Pass location object for currency info
-            "logo_url": logo_url,  # Add logo URL for the PayslipGenerator
         }
 
         # Initialize PayslipGenerator
@@ -251,4 +238,70 @@ def generate_payslip_pdf(payslip_instance, output_dir="media/payslips"):
         logger.error(
             f"PayslipGenerator failed for {payslip_instance.employee.user.get_full_name()}: {e}", exc_info=True
         )
+        # Fall back to Django template method
+        return _generate_payslip_pdf_fallback(payslip_instance)
+
+
+def _generate_payslip_pdf_fallback(payslip_instance):
+    """
+    Fallback method using Django template: employees/templates/employees/payslip_pdf.html
+    """
+    try:
+        from weasyprint import HTML
+
+        # Prepare context data for the template
+        employee = payslip_instance.employee
+        company = employee.company
+
+        # Determine branding details (name and logo logic is mostly in the template or requires branding dict)
+        company_name = company.name.upper()
+        branding_name = "PETABYTZ TECHNOLOGY SERVICES PVT LTD"
+
+        if "SOFTSTANDARD" in company_name or "SOFT STANDARD" in company_name:
+            branding_name = "SOFTSTANDARD SOLUTIONS"
+        elif "BLUEBIX" in company_name:
+            branding_name = "BLUEBIX TECHNOLOGY SERVICES PVT LTD"
+
+        branding = {"name": branding_name}
+
+        # Calculate Net Salary in Words
+        currency = "INR"
+        currency_name = "Rupees"
+        if employee.location:
+            currency = employee.location.currency or "INR"
+            if currency == "USD":
+                currency_name = "Dollars"
+            elif currency == "BDT":
+                currency_name = "Taka"
+
+        net_salary_words = num2words_flexible(payslip_instance.net_salary, currency_name)
+
+        context = {
+            "payslip": payslip_instance,
+            "company": company,
+            "branding": branding,
+            "net_salary_words": net_salary_words,
+            "currency": currency,
+        }
+
+        # Render HTML from the Django template
+        html_content = render_to_string("employees/payslip_pdf.html", context)
+
+        # Generate PDF in memory
+        pdf_buffer = io.BytesIO()
+        HTML(string=html_content).write_pdf(pdf_buffer)
+
+        # Generate Filename
+        month_str = payslip_instance.month.strftime("%B-%Y")
+        emp_name = employee.user.get_full_name().replace(" ", "_")
+        pdf_filename = f"{emp_name}-Payslip_{month_str}.pdf"
+
+        # Save to model
+        payslip_instance.pdf_file.save(pdf_filename, ContentFile(pdf_buffer.getvalue()), save=True)
+
+        logger.info(f"Payslip generated successfully with fallback method for {employee.user.get_full_name()}")
+        return True
+
+    except Exception as e:
+        logger.error("Payslip PDF generation error (fallback): %s", e, exc_info=True)
         return False
