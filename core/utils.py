@@ -154,13 +154,8 @@ def generate_payslip_pdf_with_generator(payslip_instance, output_dir="media/pays
         
         # Get currency information
         currency = "INR"
-        currency_symbol = "₹"
         if employee.location:
             currency = employee.location.currency or "INR"
-            if currency == "USD":
-                currency_symbol = "$"
-            elif currency == "BDT":
-                currency_symbol = "৳"
         
         # Prepare earnings data
         earnings = []
