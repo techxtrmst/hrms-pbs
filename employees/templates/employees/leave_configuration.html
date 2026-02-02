@@ -1776,17 +1776,14 @@
                         </div>
                         {% endif %}
                         <div>
-                            <h6 class="mb-0 fw-bold text-dark" title="{{ employee.user.get_full_name }}">{{
-                                employee.user.get_full_name }}</h6>
-                            <small class="text-muted" title="{{ employee.user.email }}">{{ employee.user.email
-                                }}</small>
+                            <h6 class="mb-0 fw-bold text-dark" title="{{ employee.user.get_full_name }}">{{ employee.user.get_full_name }}</h6>
+                            <small class="text-muted" title="{{ employee.user.email }}">{{ employee.user.email }}</small>
                         </div>
                     </div>
 
                     <!-- Role -->
                     <div>
-                        <span class="badge-dept" title="{{ employee.designation|default:'No designation assigned' }}">{{
-                            employee.designation|default:"--" }}</span>
+                        <span class="badge-dept" title="{{ employee.designation|default:'No designation assigned' }}">{{ employee.designation|default:"--" }}</span>
                     </div>
 
                     {% if is_bluebix %}
@@ -1805,13 +1802,11 @@
                         </div>
                         <div class="leave-stat-row">
                             <span class="leave-stat-label">Used:</span>
-                            <span class="leave-stat-value used">{{
-                                employee.leave_balance.combined_sick_casual_used|floatformat:1 }}</span>
+                            <span class="leave-stat-value used">{{ employee.leave_balance.combined_sick_casual_used|floatformat:1 }}</span>
                         </div>
                         <div class="leave-stat-row">
                             <span class="leave-stat-label">Balance:</span>
-                            <span class="leave-stat-value balance">{{
-                                employee.leave_balance.combined_sick_casual_balance|floatformat:1 }}</span>
+                            <span class="leave-stat-value balance">{{ employee.leave_balance.combined_sick_casual_balance|floatformat:1 }}</span>
                         </div>
                     </div>
 
@@ -1833,13 +1828,11 @@
                         </div>
                         <div class="leave-stat-row">
                             <span class="leave-stat-label">Used:</span>
-                            <span class="leave-stat-value used">{{ employee.leave_balance.sick_leave_used|floatformat:1
-                                }}</span>
+                            <span class="leave-stat-value used">{{ employee.leave_balance.sick_leave_used|floatformat:1 }}</span>
                         </div>
                         <div class="leave-stat-row">
                             <span class="leave-stat-label">Balance:</span>
-                            <span class="leave-stat-value balance">{{
-                                employee.leave_balance.sick_leave_balance|floatformat:1 }}</span>
+                            <span class="leave-stat-value balance">{{ employee.leave_balance.sick_leave_balance|floatformat:1 }}</span>
                         </div>
                     </div>
 
@@ -1858,13 +1851,11 @@
                         </div>
                         <div class="leave-stat-row">
                             <span class="leave-stat-label">Used:</span>
-                            <span class="leave-stat-value used">{{
-                                employee.leave_balance.casual_leave_used|floatformat:1 }}</span>
+                            <span class="leave-stat-value used">{{ employee.leave_balance.casual_leave_used|floatformat:1 }}</span>
                         </div>
                         <div class="leave-stat-row">
                             <span class="leave-stat-label">Balance:</span>
-                            <span class="leave-stat-value balance">{{
-                                employee.leave_balance.casual_leave_balance|floatformat:1 }}</span>
+                            <span class="leave-stat-value balance">{{ employee.leave_balance.casual_leave_balance|floatformat:1 }}</span>
                         </div>
                     </div>
                     {% endif %}
@@ -1897,14 +1888,11 @@
                             </div>
                             {% endif %}
                             <div>
-                                <h6 class="mb-0 fw-bold text-dark" title="{{ employee.user.get_full_name }}">{{
-                                    employee.user.get_full_name }}</h6>
-                                <small class="text-muted" title="{{ employee.user.email }}">{{ employee.user.email
-                                    }}</small>
+                                <h6 class="mb-0 fw-bold text-dark" title="{{ employee.user.get_full_name }}">{{ employee.user.get_full_name }}</h6>
+                                <small class="text-muted" title="{{ employee.user.email }}">{{ employee.user.email }}</small>
                                 <div class="mt-1">
                                     <span class="badge-dept"
-                                        title="{{ employee.designation|default:'No designation assigned' }}">{{
-                                        employee.designation|default:"--" }}</span>
+                                        title="{{ employee.designation|default:'No designation assigned' }}">{{ employee.designation|default:"--" }}</span>
                                 </div>
                             </div>
                         </div>
@@ -1926,13 +1914,11 @@
                         <div class="mobile-leave-stats">
                             <div class="leave-stat-row">
                                 <span class="leave-stat-label">Used:</span>
-                                <span class="leave-stat-value used">{{
-                                    employee.leave_balance.combined_sick_casual_used|floatformat:1 }}</span>
+                                <span class="leave-stat-value used">{{ employee.leave_balance.combined_sick_casual_used|floatformat:1 }}</span>
                             </div>
                             <div class="leave-stat-row">
                                 <span class="leave-stat-label">Balance:</span>
-                                <span class="leave-stat-value balance">{{
-                                    employee.leave_balance.combined_sick_casual_balance|floatformat:1 }}</span>
+                                <span class="leave-stat-value balance">{{ employee.leave_balance.combined_sick_casual_balance|floatformat:1 }}</span>
                             </div>
                         </div>
                         <div class="mobile-leave-control">
@@ -1955,13 +1941,11 @@
                         <div class="mobile-leave-stats">
                             <div class="leave-stat-row">
                                 <span class="leave-stat-label">Used:</span>
-                                <span class="leave-stat-value used">{{
-                                    employee.leave_balance.sick_leave_used|floatformat:1 }}</span>
+                                <span class="leave-stat-value used">{{ employee.leave_balance.sick_leave_used|floatformat:1 }}</span>
                             </div>
                             <div class="leave-stat-row">
                                 <span class="leave-stat-label">Balance:</span>
-                                <span class="leave-stat-value balance">{{
-                                    employee.leave_balance.sick_leave_balance|floatformat:1 }}</span>
+                                <span class="leave-stat-value balance">{{ employee.leave_balance.sick_leave_balance|floatformat:1 }}</span>
                             </div>
                         </div>
                         <div class="mobile-leave-control">
@@ -1984,13 +1968,11 @@
                         <div class="mobile-leave-stats">
                             <div class="leave-stat-row">
                                 <span class="leave-stat-label">Used:</span>
-                                <span class="leave-stat-value used">{{
-                                    employee.leave_balance.casual_leave_used|floatformat:1 }}</span>
+                                <span class="leave-stat-value used">{{ employee.leave_balance.casual_leave_used|floatformat:1 }}</span>
                             </div>
                             <div class="leave-stat-row">
                                 <span class="leave-stat-label">Balance:</span>
-                                <span class="leave-stat-value balance">{{
-                                    employee.leave_balance.casual_leave_balance|floatformat:1 }}</span>
+                                <span class="leave-stat-value balance">{{ employee.leave_balance.casual_leave_balance|floatformat:1 }}</span>
                             </div>
                         </div>
                         <div class="mobile-leave-control">
