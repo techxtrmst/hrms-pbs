@@ -1994,6 +1994,12 @@
                             <div class="text-label mb-2">Current Time</div>
                             <div id="clock" class="digital-clock">--:--</div>
                             <div id="date-sub" class="current-date">-- -- ----</div>
+                            {% if user_timezone %}
+                            <div class="text-muted small mt-1"
+                                style="font-size: 0.75rem; font-weight: 600; opacity: 0.8;">
+                                <i class="fas fa-globe-asia me-1"></i> Office Time: {{ user_timezone }}
+                            </div>
+                            {% endif %}
                         </div>
 
                         {% if attendance and attendance.is_currently_clocked_in %}
@@ -2101,6 +2107,12 @@
                                         <div class="text-value text-success">100%</div>
                                         <div class="text-label">On Time</div>
                                     </div>
+                                    {% if user.employee_profile.company.name|lower == "bluebix" %}
+                                    <div class="weekly-stats-item">
+                                        <div class="text-value text-primary">{{ leave_balance.combined_sick_casual_balance|floatformat:1|default:"0" }}</div>
+                                        <div class="text-label">Sick/Casual Available</div>
+                                    </div>
+                                    {% else %}
                                     <div class="weekly-stats-item">
                                         <div class="text-value text-primary">{{ leave_balance.casual_leave_balance|floatformat:1|default:"0" }}</div>
                                         <div class="text-label">CL Available</div>
@@ -2109,6 +2121,7 @@
                                         <div class="text-value text-warning">{{ leave_balance.sick_leave_balance|floatformat:1|default:"0" }}</div>
                                         <div class="text-label">SL Available</div>
                                     </div>
+                                    {% endif %}
                                 </div>
                             </div>
                             <!-- Scroll indicator for desktop -->
@@ -2572,7 +2585,7 @@
                             {% if assigned_shift.breaks.all %}
                             {% for break_item in assigned_shift.breaks.all %}
                             <div class="fw-bold text-white" style="font-size: 0.85rem;">
-                                {{ break_item.name }}: {{ break_item.start_time|time:"H:i" }} - {{  break_item.end_time|time:"H:i" }}
+                                {{ break_item.name }}: {{ break_item.start_time|time:"H:i" }} - {{ break_item.end_time|time:"H:i" }}
                             </div>
                             {% endfor %}
                             {% else %}
@@ -2795,6 +2808,20 @@
                         </h6>
                     </div>
                     <div class="card-body-clean">
+                        {% if user.employee_profile.company.name|lower == "bluebix" %}
+                        <!-- Combined Sick/Casual Leave for Bluebix -->
+                        <div class="d-flex justify-content-between align-items-center p-3"
+                            style="background: rgba(99, 102, 241, 0.05); border-radius: 12px; border-left: 4px solid #6366f1;">
+                            <div>
+                                <div class="text-label mb-1">Sick/Casual Leave</div>
+                                <div class="fw-bold text-primary" style="font-size: 1.25rem;">{{ leave_balance.combined_sick_casual_balance|floatformat:1 }}</div>
+                                <small class="text-muted">Days Available</small>
+                            </div>
+                            <div class="text-end">
+                                <i class="fas fa-user-md text-primary" style="font-size: 1.5rem; opacity: 0.7;"></i>
+                            </div>
+                        </div>
+                        {% else %}
                         <!-- Casual Leave -->
                         <div class="d-flex justify-content-between align-items-center mb-3 p-3"
                             style="background: rgba(99, 102, 241, 0.05); border-radius: 12px; border-left: 4px solid #6366f1;">
@@ -2820,6 +2847,7 @@
                                 <i class="fas fa-user-md text-success" style="font-size: 1.5rem; opacity: 0.7;"></i>
                             </div>
                         </div>
+                        {% endif %}
 
                         <!-- Quick Apply Button -->
                         <div class="mt-3">

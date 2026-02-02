@@ -502,38 +502,60 @@
                 </div>
 
                 <div id="calcResults" style="display: none;">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-secondary">Gross Salary:</span>
-                        <span id="res_gross" class="fw-bold"></span>
-                    </div>
+                    <!-- Always show earnings -->
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-secondary">Basic:</span>
                         <span id="res_basic"></span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
-                        <span id="label_hra" class="text-secondary">HRA:</span>
+                        <span class="text-secondary">HRA:</span>
                         <span id="res_hra"></span>
                     </div>
-                    <div id="row_lta" class="d-flex justify-content-between mb-2" style="display: none;">
-                        <span id="label_lta" class="text-secondary">Conveyance Allowance:</span>
-                        <span id="res_lta"></span>
-                    </div>
-                    <div id="row_other" class="d-flex justify-content-between mb-2" style="display: none;">
-                        <span id="label_other" class="text-secondary">Special Allowance:</span>
-                        <span id="res_other"></span>
-                    </div>
-                    <div id="row_conveyance" class="d-flex justify-content-between mb-2" style="display: none;">
-                        <span class="text-secondary">Conveyance:</span>
-                        <span id="res_conveyance"></span>
-                    </div>
-                    <div id="row_special" class="d-flex justify-content-between mb-2" style="display: none;">
-                        <span id="label_special" class="text-secondary">Medical Allowance:</span>
-                        <span id="res_special"></span>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-secondary">Conveyance Allowance:</span>
+                        <span id="res_conveyance_allowance"></span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
-                        <span class="text-secondary">Deductions:</span>
-                        <span id="res_deductions" class="text-danger"></span>
+                        <span class="text-secondary">Special Allowance:</span>
+                        <span id="res_special_allowance"></span>
                     </div>
+                    <div class="d-flex justify-content-between mb-2 fw-bold">
+                        <span class="text-secondary">Total Earnings (A):</span>
+                        <span id="res_gross" class="fw-bold"></span>
+                    </div>
+
+                    <!-- PF Enabled Section -->
+                    <div id="pf_enabled_section" style="display: none;">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-secondary">PF Employee:</span>
+                            <span id="res_pf"></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 fw-bold">
+                            <span class="text-secondary">Total Contributions (B):</span>
+                            <span id="res_contributions_total" class="fw-bold"></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-secondary">Professional Tax:</span>
+                            <span id="res_professional_tax_pf"></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 fw-bold">
+                            <span class="text-secondary">Total Taxes & Deductions (C):</span>
+                            <span id="res_taxes_total_pf" class="fw-bold"></span>
+                        </div>
+                    </div>
+
+                    <!-- PF Disabled Section -->
+                    <div id="pf_disabled_section" style="display: none;">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-secondary">Professional Tax:</span>
+                            <span id="res_professional_tax_no_pf"></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 fw-bold">
+                            <span class="text-secondary">Total Taxes & Deductions (B):</span>
+                            <span id="res_taxes_total_no_pf" class="fw-bold"></span>
+                        </div>
+                    </div>
+
                     <hr>
                     <div class="d-flex justify-content-between">
                         <span class="fw-bold">Net Salary:</span>
@@ -784,60 +806,48 @@
                     document.getElementById('summaryContent').style.display = 'none';
                     document.getElementById('calcResults').style.display = 'block';
 
-                    document.getElementById('res_gross').innerText = symbol + res.gross_monthly.toLocaleString();
+                    // Populate the simplified summary
                     document.getElementById('res_basic').innerText = symbol + res.basic.toLocaleString();
-
-                    // Handle Label changes
-                    const hraLabel = document.getElementById('label_hra');
-                    if (country === 'BD') {
-                        hraLabel.innerText = 'House Rent:';
-                        document.getElementById('row_medical').style.display = 'flex';
-                        document.getElementById('row_conveyance').style.display = 'flex';
-                        document.getElementById('res_medical').innerText = symbol + res.medical.toLocaleString();
-                        document.getElementById('res_conveyance').innerText = symbol + res.conveyance.toLocaleString();
-                        document.getElementById('label_other').innerText = 'LTA/Other:';
-                    } else if (country === 'US') {
-                        hraLabel.innerText = 'HRA:';
-                        document.getElementById('label_special').innerText = 'Medical Allowance:';
-                    } else {
-                        hraLabel.innerText = 'HRA:';
-                        document.getElementById('label_lta').innerText = 'Conveyance Allowance:';
-                        document.getElementById('label_other').innerText = 'Special Allowance:';
-                        document.getElementById('label_special').innerText = 'Medical Allowance:';
-                    }
-
                     document.getElementById('res_hra').innerText = symbol + res.hra.toLocaleString();
 
-                    // Show individual allowances only if they have values > 0
-                    if (res.lta > 0) {
-                        document.getElementById('row_lta').style.display = 'flex';
-                        document.getElementById('res_lta').innerText = symbol + res.lta.toLocaleString();
+                    // Map allowances based on country
+                    if (res.country_code === 'IN') {
+                        // For India: use lta and other_allowance
+                        document.getElementById('res_conveyance_allowance').innerText = symbol + (res.lta || 0).toLocaleString();
+                        document.getElementById('res_special_allowance').innerText = symbol + (res.other_allowance || 0).toLocaleString();
                     } else {
-                        document.getElementById('row_lta').style.display = 'none';
+                        // For other countries: use conveyance and medical
+                        document.getElementById('res_conveyance_allowance').innerText = symbol + (res.conveyance || 0).toLocaleString();
+                        document.getElementById('res_special_allowance').innerText = symbol + (res.medical || 0).toLocaleString();
                     }
 
-                    if (res.other_allowance > 0) {
-                        document.getElementById('row_other').style.display = 'flex';
-                        document.getElementById('res_other').innerText = symbol + res.other_allowance.toLocaleString();
-                    } else {
-                        document.getElementById('row_other').style.display = 'none';
-                    }
-
-                    if (res.conveyance > 0) {
-                        document.getElementById('row_conveyance').style.display = 'flex';
-                        document.getElementById('res_conveyance').innerText = symbol + res.conveyance.toLocaleString();
-                    } else {
-                        document.getElementById('row_conveyance').style.display = 'none';
-                    }
-
-                    if (res.special_allowance > 0) {
-                        document.getElementById('row_special').style.display = 'flex';
-                        document.getElementById('res_special').innerText = symbol + res.special_allowance.toLocaleString();
-                    } else {
-                        document.getElementById('row_special').style.display = 'none';
-                    }
-                    document.getElementById('res_deductions').innerText = symbol + (res.employee_pf + res.professional_tax).toLocaleString();
+                    document.getElementById('res_gross').innerText = symbol + res.gross_monthly.toLocaleString();
                     document.getElementById('res_net').innerText = symbol + res.net_salary.toLocaleString();
+
+                    // Show/hide sections based on PF status
+                    const pfEnabledCheckbox = document.getElementById('calc_pf_enabled').checked;
+                    const pfEnabledSection = document.getElementById('pf_enabled_section');
+                    const pfDisabledSection = document.getElementById('pf_disabled_section');
+
+                    if (pfEnabledCheckbox) {
+                        // PF is enabled - show PF section with contributions (B) and taxes (C)
+                        pfEnabledSection.style.display = 'block';
+                        pfDisabledSection.style.display = 'none';
+
+                        // Populate PF enabled values
+                        document.getElementById('res_pf').innerText = symbol + (res.employee_pf || 0).toLocaleString();
+                        document.getElementById('res_contributions_total').innerText = symbol + (res.employee_pf || 0).toLocaleString();
+                        document.getElementById('res_professional_tax_pf').innerText = symbol + (res.professional_tax || 0).toLocaleString();
+                        document.getElementById('res_taxes_total_pf').innerText = symbol + (res.professional_tax || 0).toLocaleString();
+                    } else {
+                        // PF is disabled - show only professional tax as (B)
+                        pfEnabledSection.style.display = 'none';
+                        pfDisabledSection.style.display = 'block';
+
+                        // Populate PF disabled values
+                        document.getElementById('res_professional_tax_no_pf').innerText = symbol + (res.professional_tax || 0).toLocaleString();
+                        document.getElementById('res_taxes_total_no_pf').innerText = symbol + (res.professional_tax || 0).toLocaleString();
+                    }
                 } else {
                     alert("Error: " + data.message);
                 }
@@ -855,6 +865,18 @@
         const pfEnabledInput = document.getElementById('calc_pf_enabled');
 
         let searchTimeout;
+
+        // PF checkbox change handler
+        const pfCheckbox = document.getElementById('calc_pf_enabled');
+        if (pfCheckbox) {
+            pfCheckbox.addEventListener('change', function() {
+                // If calculation results are visible, recalculate to update the display
+                const calcResults = document.getElementById('calcResults');
+                if (calcResults && calcResults.style.display !== 'none') {
+                    calculatePayslip();
+                }
+            });
+        }
 
         // Hide results on outside click
         document.addEventListener('click', function (e) {

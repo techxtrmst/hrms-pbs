@@ -179,33 +179,34 @@ class Employee(models.Model):
         - 'COMPLETED_TODAY': Employee completed probation today (exactly 3 months)
         """
         if not self.date_of_joining:
-            return 'IN_PROBATION'
-        
+            return "IN_PROBATION"
+
         from dateutil.relativedelta import relativedelta
         from django.utils import timezone
-        
+
         today = timezone.now().date()
         probation_end_date = self.date_of_joining + relativedelta(months=3)
-        
+
         if today < probation_end_date:
-            return 'IN_PROBATION'
+            return "IN_PROBATION"
         elif today == probation_end_date:
-            return 'COMPLETED_TODAY'
+            return "COMPLETED_TODAY"
         else:
-            return 'COMPLETED'
-    
+            return "COMPLETED"
+
     def get_probation_end_date(self):
         """Get the exact date when probation period ends (3 months from joining)"""
         if not self.date_of_joining:
             return None
-        
+
         from dateutil.relativedelta import relativedelta
+
         return self.date_of_joining + relativedelta(months=3)
-    
+
     def is_probation_completed(self):
         """Check if employee has completed probation period"""
         status = self.get_probation_status()
-        return status in ['COMPLETED', 'COMPLETED_TODAY']
+        return status in ["COMPLETED", "COMPLETED_TODAY"]
 
     def save(self, *args, **kwargs):
         """Auto-generate employee ID if not set"""
@@ -390,6 +391,7 @@ class Attendance(models.Model):
         if not self.clock_in:
             return None
         import pytz
+
         tz_name = self.user_timezone or "Asia/Kolkata"
         try:
             tz = pytz.timezone(tz_name)
@@ -403,6 +405,7 @@ class Attendance(models.Model):
         if not self.clock_out:
             return None
         import pytz
+
         tz_name = self.user_timezone or "Asia/Kolkata"
         try:
             tz = pytz.timezone(tz_name)
@@ -425,10 +428,10 @@ class Attendance(models.Model):
         tz_name = getattr(self, "user_timezone", None)
         if not tz_name:
             from core.utils import get_user_timezone
-            tz_name = get_user_timezone(self.employee.user, self.employee.company)
-            
-        local_tz = pytz.timezone(tz_name)
 
+            tz_name = get_user_timezone(self.employee.user, self.employee.company)
+
+        local_tz = pytz.timezone(tz_name)
 
         # Convert clock_in to local timezone
         local_clock_in = self.clock_in.astimezone(local_tz)
@@ -522,10 +525,10 @@ class Attendance(models.Model):
         tz_name = getattr(self, "user_timezone", None)
         if not tz_name:
             from core.utils import get_user_timezone
-            tz_name = get_user_timezone(self.employee.user, self.employee.company)
-            
-        local_tz = pytz.timezone(tz_name)
 
+            tz_name = get_user_timezone(self.employee.user, self.employee.company)
+
+        local_tz = pytz.timezone(tz_name)
 
         # Convert clock_out to local timezone
         local_clock_out = self.clock_out.astimezone(local_tz)
@@ -536,6 +539,7 @@ class Attendance(models.Model):
         if not shift:
             # Fallback (Legacy)
             from companies.models import ShiftSchedule
+
             if self.employee.shift_schedule:
                 shift = ShiftSchedule.objects.filter(
                     company=self.employee.company,
@@ -573,20 +577,20 @@ class Attendance(models.Model):
         try:
             # Use cumulative calculation including current session if active
             total_hours = self.get_cumulative_working_hours_including_current()
-            
+
             if total_hours > 0:
                 hours = int(total_hours)
                 minutes = int((total_hours - hours) * 60)
-                
+
                 # Cap display at 24 hours
                 if hours > 24:
                     hours = 24
                     minutes = 0
-                
+
                 # Show '+' if currently clocked in (active session)
                 is_active = self.is_currently_clocked_in
                 return f"{hours}:{minutes:02d}{'+' if is_active else ''}"
-            
+
             return "0:00"
         except Exception as e:
             logger.error(f"Error calculating effective hours: {str(e)}")
@@ -645,7 +649,6 @@ class Attendance(models.Model):
 
     def calculate_total_working_hours(self):
         """Calculate total working hours from all completed sessions with 24-hour daily cap"""
-        from datetime import datetime, time
         from decimal import Decimal
 
         sessions = AttendanceSession.objects.filter(
@@ -754,6 +757,7 @@ class Attendance(models.Model):
         """Calculate total working hours including current active session"""
         try:
             from django.utils import timezone
+
             from .models import AttendanceSession
 
             # Get all completed sessions for today
@@ -763,19 +767,19 @@ class Attendance(models.Model):
                 clock_in__isnull=False,
                 clock_out__isnull=False,
             )
-            
+
             # Calculate total hours from completed sessions
             total_seconds = 0
             for session in completed_sessions:
                 duration = session.clock_out - session.clock_in
                 total_seconds += duration.total_seconds()
-            
+
             # Add current active session if exists
             current_session = self.get_current_session()
             if current_session and current_session.clock_in:
                 current_duration = timezone.now() - current_session.clock_in
                 total_seconds += current_duration.total_seconds()
-            
+
             # Convert to hours
             return round(total_seconds / 3600, 2)
 
@@ -998,6 +1002,12 @@ class LeaveBalance(models.Model):
     casual_leave_allocated = models.FloatField(default=12.0, help_text="Total CL allocated per year")
     sick_leave_allocated = models.FloatField(default=12.0, help_text="Total SL allocated per year")
 
+    # Combined Sick/Casual Leave for specific companies (like Bluebix)
+    combined_sick_casual_allocated = models.FloatField(
+        default=0.0, help_text="Combined SL/CL allocation for companies like Bluebix"
+    )
+    combined_sick_casual_used = models.FloatField(default=0.0, help_text="Combined SL/CL used")
+
     # Leave Used
     casual_leave_used = models.FloatField(default=0.0)
     sick_leave_used = models.FloatField(default=0.0)
@@ -1011,14 +1021,33 @@ class LeaveBalance(models.Model):
 
     @property
     def casual_leave_balance(self):
+        # For Bluebix, use combined balance
+        if self.employee.company.name.lower() == "bluebix":
+            return max(0, self.combined_sick_casual_allocated - self.combined_sick_casual_used)
         return max(0, self.casual_leave_allocated - self.casual_leave_used)
 
     @property
     def sick_leave_balance(self):
+        # For Bluebix, use combined balance
+        if self.employee.company.name.lower() == "bluebix":
+            return max(0, self.combined_sick_casual_allocated - self.combined_sick_casual_used)
         return max(0, self.sick_leave_allocated - self.sick_leave_used)
+
+    @property
+    def combined_sick_casual_balance(self):
+        """Combined sick/casual leave balance for companies like Bluebix"""
+        return max(0, self.combined_sick_casual_allocated - self.combined_sick_casual_used)
 
     def get_available_balance(self, leave_type):
         """Get available balance for a specific leave type"""
+        # For Bluebix, both CL and SL use the same combined pool
+        if self.employee.company.name.lower() == "bluebix":
+            if leave_type in ["CL", "SL"]:
+                return self.combined_sick_casual_balance
+            else:
+                return 0
+
+        # For other companies, use separate pools
         if leave_type == "CL":
             return self.casual_leave_balance
         elif leave_type == "SL":
@@ -1051,12 +1080,20 @@ class LeaveBalance(models.Model):
 
     def apply_leave_deduction(self, leave_type, days_approved):
         """Deduct approved leave from balance"""
-        if leave_type == "CL":
-            self.casual_leave_used += days_approved
-        elif leave_type == "SL":
-            self.sick_leave_used += days_approved
-        elif leave_type == "UL":
-            self.unpaid_leave += days_approved
+        # For Bluebix, both CL and SL deduct from combined pool
+        if self.employee.company.name.lower() == "bluebix":
+            if leave_type in ["CL", "SL"]:
+                self.combined_sick_casual_used += days_approved
+            elif leave_type == "UL":
+                self.unpaid_leave += days_approved
+        else:
+            # For other companies, use separate pools
+            if leave_type == "CL":
+                self.casual_leave_used += days_approved
+            elif leave_type == "SL":
+                self.sick_leave_used += days_approved
+            elif leave_type == "UL":
+                self.unpaid_leave += days_approved
         # OD (On Duty) and OT (Others) don't affect leave balance
 
         self.save()
@@ -1066,20 +1103,25 @@ class LeaveBalance(models.Model):
         # Ensure non-negative allocated leaves
         self.casual_leave_allocated = max(0, self.casual_leave_allocated)
         self.sick_leave_allocated = max(0, self.sick_leave_allocated)
-        
+        self.combined_sick_casual_allocated = max(0, self.combined_sick_casual_allocated)
+
         # Ensure non-negative used leaves
         self.casual_leave_used = max(0, self.casual_leave_used)
         self.sick_leave_used = max(0, self.sick_leave_used)
+        self.combined_sick_casual_used = max(0, self.combined_sick_casual_used)
         self.unpaid_leave = max(0, self.unpaid_leave)
-        
+
         # Ensure non-negative carry forward
         self.carry_forward_leave = max(0, self.carry_forward_leave)
-        
+
         self.save()
         return self
 
     @property
     def total_balance(self):
+        # For Bluebix, return combined balance (but don't double count)
+        if self.employee.company.name.lower() == "bluebix":
+            return self.combined_sick_casual_balance
         return self.casual_leave_balance + self.sick_leave_balance
 
     @property
@@ -1330,7 +1372,7 @@ class LeaveRequest(models.Model):
                         attendance_status = "HALF_DAY"
                     else:
                         attendance_status = "LEAVE"
-                    
+
                     # Create or update attendance record
                     Attendance.objects.update_or_create(
                         employee=self.employee,
@@ -1358,26 +1400,28 @@ class Payslip(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="payslips")
     month = models.DateField(help_text="Select any date in the month")
     pdf_file = models.FileField(upload_to="payslips/", null=True, blank=True)
-    
+
     # Financial Breakdown
     basic = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     hra = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     lta = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Conveyance Allowance")
     other_allowance = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Special Allowance")
     conveyance_allowance = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Conveyance")
-    special_allowance = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Medical Allowance")
+    special_allowance = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0, verbose_name="Medical Allowance"
+    )
     monthly_gross = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     gross_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    
+
     # Deductions
     employee_pf = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     employer_pf = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     professional_tax = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    
+
     # Meta info
     worked_days = models.FloatField(default=0)
     total_days = models.IntegerField(default=30)
-    
+
     net_salary = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     generated_at = models.DateTimeField(auto_now_add=True)
 
@@ -1566,10 +1610,10 @@ def create_leave_balance(sender, instance, created, **kwargs):
 def invalidate_leave_balance_cache(sender, instance, **kwargs):
     """Clear cached data when leave balance is updated"""
     from django.core.cache import cache
-    
+
     employee = instance.employee
     company = employee.company
-    
+
     # Clear employee-specific cache
     cache_keys_to_clear = [
         f"employee_leave_balance_{employee.id}",
@@ -1579,8 +1623,8 @@ def invalidate_leave_balance_cache(sender, instance, **kwargs):
         f"leave_config_data_{company.id}",
         f"company_leave_summary_{company.id}",
     ]
-    
+
     for cache_key in cache_keys_to_clear:
         cache.delete(cache_key)
-    
+
     logger.info(f"Cache invalidated for employee {employee.user.get_full_name()} leave balance update")

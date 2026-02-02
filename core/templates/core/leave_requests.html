@@ -752,6 +752,14 @@
                 Current Leave Balance
             </div>
             <div class="balance-grid">
+                {% if leave.employee.company.name|lower == "bluebix" %}
+                <div class="balance-item">
+                    <div class="balance-label">Sick/Casual</div>
+                    <div class="balance-value balance-positive">
+                        {{ leave.employee.leave_balance.combined_sick_casual_balance }}
+                    </div>
+                </div>
+                {% else %}
                 <div class="balance-item">
                     <div class="balance-label">CL</div>
                     <div class="balance-value balance-positive">
@@ -764,6 +772,7 @@
                         {{ leave.employee.leave_balance.sick_leave_balance }}
                     </div>
                 </div>
+                {% endif %}
                 <div class="balance-item">
                     <div class="balance-label">LOP</div>
                     <div class="balance-value balance-negative">
@@ -870,7 +879,7 @@
                 <input type="hidden" name="action" value="approve">
                 <input type="hidden" name="leave_id" id="approveLeaveId">
                 <input type="hidden" name="approval_type" id="approvalTypeInput" value="FULL">
-                
+
                 <div class="modal-body">
                     <!-- Show approval options if insufficient balance -->
                     <div id="approvalOptionsSection" style="display: none; margin-bottom: 20px;">
@@ -882,7 +891,7 @@
                             </p>
                         </div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label class="form-label">Admin Comment (Optional)</label>
                         <textarea name="admin_comment" class="form-control" rows="4"
@@ -955,13 +964,13 @@
 <script>
     let currentLeaveId = null;
     let currentEmployeeName = null;
-    
+
     function approveWithDirectType(leaveId, employeeName, approvalType) {
         // For direct approval without modal (when balance is sufficient or specific action chosen)
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = `/employees/leave/${leaveId}/approve/`;
-        
+
         // Add CSRF token - get from existing form
         const existingCsrfToken = document.querySelector('#approveForm [name=csrfmiddlewaretoken]').value;
         const csrfInput = document.createElement('input');
@@ -969,29 +978,29 @@
         csrfInput.name = 'csrfmiddlewaretoken';
         csrfInput.value = existingCsrfToken;
         form.appendChild(csrfInput);
-        
+
         // Add approval type
         const approvalTypeInput = document.createElement('input');
         approvalTypeInput.type = 'hidden';
         approvalTypeInput.name = 'approval_type';
         approvalTypeInput.value = approvalType;
         form.appendChild(approvalTypeInput);
-        
+
         document.body.appendChild(form);
         form.submit();
     }
-    
+
     function approveLeave(leaveId, employeeName, hasInsufficientBalance) {
         currentLeaveId = leaveId;
         currentEmployeeName = employeeName;
-        
+
         document.getElementById('approveLeaveId').value = leaveId;
         document.getElementById('approveEmployeeName').textContent = 'For: ' + employeeName;
-        
+
         // Show/hide approval options based on balance
         const approvalOptionsSection = document.getElementById('approvalOptionsSection');
         const approveOnlyAvailableBtn = document.getElementById('approveOnlyAvailableBtn');
-        
+
         if (hasInsufficientBalance) {
             approvalOptionsSection.style.display = 'block';
             // Show the "Approve (Only Available)" button
@@ -1001,38 +1010,38 @@
             // Hide the "Approve (Only Available)" button when balance is sufficient
             approveOnlyAvailableBtn.style.display = 'none';
         }
-        
+
         document.getElementById('approveModal').style.display = 'block';
     }
-    
+
     function approveWithType(approvalType) {
         // Set the approval type
         document.getElementById('approvalTypeInput').value = approvalType;
-        
+
         // Submit the form
         const form = document.getElementById('approveForm');
         const formData = new FormData(form);
         const leaveId = currentLeaveId;
-        
+
         // Create a form and submit it
         const submitForm = document.createElement('form');
         submitForm.method = 'POST';
         submitForm.action = `/employees/leave/${leaveId}/approve/`;
-        
+
         // Add CSRF token
         const csrfInput = document.createElement('input');
         csrfInput.type = 'hidden';
         csrfInput.name = 'csrfmiddlewaretoken';
         csrfInput.value = formData.get('csrfmiddlewaretoken');
         submitForm.appendChild(csrfInput);
-        
+
         // Add approval type
         const approvalTypeInput = document.createElement('input');
         approvalTypeInput.type = 'hidden';
         approvalTypeInput.name = 'approval_type';
         approvalTypeInput.value = approvalType;
         submitForm.appendChild(approvalTypeInput);
-        
+
         // Add admin comment if provided
         const adminComment = formData.get('admin_comment');
         if (adminComment) {
@@ -1042,11 +1051,11 @@
             commentInput.value = adminComment;
             submitForm.appendChild(commentInput);
         }
-        
+
         document.body.appendChild(submitForm);
         submitForm.submit();
     }
-    
+
     function rejectFromApprovalModal() {
         // Close approve modal and open reject modal
         closeModal('approveModal');
@@ -1070,26 +1079,26 @@
             closeModal('rejectModal');
         }
     });
-    
+
     // Handle form submission for rejection
     document.getElementById('rejectForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
         const formData = new FormData(this);
         const leaveId = formData.get('leave_id');
-        
+
         // Create a form and submit it
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = `/employees/leave/${leaveId}/reject/`;
-        
+
         // Add CSRF token
         const csrfInput = document.createElement('input');
         csrfInput.type = 'hidden';
         csrfInput.name = 'csrfmiddlewaretoken';
         csrfInput.value = formData.get('csrfmiddlewaretoken');
         form.appendChild(csrfInput);
-        
+
         // Add rejection reason
         const rejectionReason = formData.get('admin_comment');
         if (rejectionReason) {
@@ -1099,7 +1108,7 @@
             reasonInput.value = rejectionReason;
             form.appendChild(reasonInput);
         }
-        
+
         document.body.appendChild(form);
         form.submit();
     });

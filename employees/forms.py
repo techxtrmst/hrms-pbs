@@ -4,14 +4,16 @@ from django.core.exceptions import ValidationError
 
 from companies.models import Company, ShiftSchedule
 
-from .models import EmergencyContact, Employee, LeaveRequest, RegularizationRequest, LeaveBalance
+from .models import EmergencyContact, Employee, LeaveRequest, RegularizationRequest
 
 User = get_user_model()
 
 # Try to import pandas, but make it optional
 try:
-    import pandas as pd
     import io
+
+    import pandas as pd
+
     PANDAS_AVAILABLE = True
 except ImportError:
     PANDAS_AVAILABLE = False
@@ -242,18 +244,18 @@ class LeaveApplicationForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
-        
+
         # Make required fields mandatory
-        self.fields['leave_type'].required = True
-        self.fields['start_date'].required = True
-        self.fields['end_date'].required = True
-        self.fields['reason'].required = True
-        
+        self.fields["leave_type"].required = True
+        self.fields["start_date"].required = True
+        self.fields["end_date"].required = True
+        self.fields["reason"].required = True
+
         # Add required attribute to widgets
-        self.fields['leave_type'].widget.attrs['required'] = True
-        self.fields['start_date'].widget.attrs['required'] = True
-        self.fields['end_date'].widget.attrs['required'] = True
-        self.fields['reason'].widget.attrs['required'] = True
+        self.fields["leave_type"].widget.attrs["required"] = True
+        self.fields["start_date"].widget.attrs["required"] = True
+        self.fields["end_date"].widget.attrs["required"] = True
+        self.fields["reason"].widget.attrs["required"] = True
 
     def clean(self):
         cleaned_data = super().clean()
@@ -359,16 +361,16 @@ class RegularizationRequestForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Make all fields required
-        self.fields['date'].required = True
-        self.fields['check_in'].required = True
-        self.fields['check_out'].required = True
-        self.fields['reason'].required = True
-        
+        self.fields["date"].required = True
+        self.fields["check_in"].required = True
+        self.fields["check_out"].required = True
+        self.fields["reason"].required = True
+
         # Add required attribute to widgets
-        self.fields['date'].widget.attrs['required'] = True
-        self.fields['check_in'].widget.attrs['required'] = True
-        self.fields['check_out'].widget.attrs['required'] = True
-        self.fields['reason'].widget.attrs['required'] = True
+        self.fields["date"].widget.attrs["required"] = True
+        self.fields["check_in"].widget.attrs["required"] = True
+        self.fields["check_out"].widget.attrs["required"] = True
+        self.fields["reason"].widget.attrs["required"] = True
 
     def clean(self):
         cleaned_data = super().clean()
@@ -415,102 +417,105 @@ class EmergencyContactForm(forms.ModelForm):
 
 class BulkLeaveUploadForm(forms.Form):
     """Form for bulk leave balance upload via Excel/CSV"""
-    
+
     upload_file = forms.FileField(
         label="Upload Leave Balance File",
         help_text="Upload Excel (.xlsx) or CSV file with employee leave balances",
-        widget=forms.FileInput(attrs={
-            'class': 'form-control',
-            'accept': '.xlsx,.xls,.csv'
-        })
+        widget=forms.FileInput(attrs={"class": "form-control", "accept": ".xlsx,.xls,.csv"}),
     )
-    
+
     update_mode = forms.ChoiceField(
         choices=[
-            ('REPLACE', 'Replace existing balances'),
-            ('ADD', 'Add to existing balances'),
-            ('UPDATE_ONLY', 'Update only specified fields')
+            ("REPLACE", "Replace existing balances"),
+            ("ADD", "Add to existing balances"),
+            ("UPDATE_ONLY", "Update only specified fields"),
         ],
-        initial='REPLACE',
-        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
+        initial="REPLACE",
+        widget=forms.RadioSelect(attrs={"class": "form-check-input"}),
         help_text="Choose how to handle existing leave balances",
-        label="Update Mode"
+        label="Update Mode",
     )
-    
+
     def clean_upload_file(self):
-        file = self.cleaned_data.get('upload_file')
+        file = self.cleaned_data.get("upload_file")
         if not file:
             raise ValidationError("Please select a file to upload.")
-        
+
         # Check file extension
-        allowed_extensions = ['.xlsx', '.xls', '.csv']
-        file_extension = file.name.lower().split('.')[-1]
-        if f'.{file_extension}' not in allowed_extensions:
+        allowed_extensions = [".xlsx", ".xls", ".csv"]
+        file_extension = file.name.lower().split(".")[-1]
+        if f".{file_extension}" not in allowed_extensions:
             raise ValidationError("Please upload only Excel (.xlsx, .xls) or CSV files.")
-        
+
         # Check file size (max 5MB)
         if file.size > 5 * 1024 * 1024:
             raise ValidationError("File size should not exceed 5MB.")
-        
+
         return file
-    
+
     def validate_file_content(self, company):
         """Validate the uploaded file content and return processed data"""
         if not PANDAS_AVAILABLE:
             return None, ["Pandas library is not installed. Please install pandas to use bulk upload feature."]
-        
-        file = self.cleaned_data.get('upload_file')
+
+        file = self.cleaned_data.get("upload_file")
         if not file:
             return None, ["No file uploaded"]
-        
+
         errors = []
         processed_data = []
-        
+
         try:
             # Read file based on extension
-            file_extension = file.name.lower().split('.')[-1]
-            
-            if file_extension == 'csv':
+            file_extension = file.name.lower().split(".")[-1]
+
+            if file_extension == "csv":
                 df = pd.read_csv(io.BytesIO(file.read()))
             else:  # Excel files
                 df = pd.read_excel(io.BytesIO(file.read()))
-            
+
             # Reset file pointer
             file.seek(0)
-            
-            # Validate required columns
-            required_columns = ['employee_id', 'employee_name', 'casual_leave_allocated', 'sick_leave_allocated']
-            optional_columns = ['casual_leave_used', 'sick_leave_used', 'carry_forward_leave']
-            
+            # Check if this is Bluebix company (combined leave system)
+            is_bluebix = company.name.lower() == "bluebix"
+
+            # Validate required columns based on company type
+            if is_bluebix:
+                required_columns = ["employee_id", "employee_name", "sick_casual_leave_allocated"]
+            else:
+                required_columns = ["employee_id", "employee_name", "casual_leave_allocated", "sick_leave_allocated"]
+
             missing_columns = [col for col in required_columns if col not in df.columns]
             if missing_columns:
-                errors.append(f"Missing required columns: {', '.join(missing_columns)}")
+                if is_bluebix:
+                    errors.append(
+                        f"Missing required columns for Bluebix: {', '.join(missing_columns)}. Expected: employee_id, employee_name, sick_casual_leave_allocated"
+                    )
+                else:
+                    errors.append(f"Missing required columns: {', '.join(missing_columns)}")
                 return None, errors
-            
+
             # Process each row
             for index, row in df.iterrows():
                 row_num = index + 2  # Excel row number (accounting for header)
                 row_errors = []
-                
+
                 # Validate employee
-                employee_id = str(row.get('employee_id', '')).strip()
-                employee_name = str(row.get('employee_name', '')).strip()
-                
+                employee_id = str(row.get("employee_id", "")).strip()
+                employee_name = str(row.get("employee_name", "")).strip()
+
                 if not employee_id and not employee_name:
                     row_errors.append(f"Row {row_num}: Either employee_id or employee_name is required")
                     continue
-                
+
                 # Find employee
                 employee = None
                 if employee_id:
                     try:
-                        employee = Employee.objects.get(
-                            badge_id=employee_id, 
-                            company=company
-                        )
+                        employee = Employee.objects.get(badge_id=employee_id, company=company)
                     except Employee.DoesNotExist:
                         row_errors.append(f"Row {row_num}: Employee with ID '{employee_id}' not found")
-                
+
                 if not employee and employee_name:
                     # Try to find by name
                     name_parts = employee_name.split()
@@ -518,59 +523,100 @@ class BulkLeaveUploadForm(forms.Form):
                         try:
                             employee = Employee.objects.get(
                                 user__first_name__icontains=name_parts[0],
-                                user__last_name__icontains=' '.join(name_parts[1:]),
-                                company=company
+                                user__last_name__icontains=" ".join(name_parts[1:]),
+                                company=company,
                             )
                         except (Employee.DoesNotExist, Employee.MultipleObjectsReturned):
-                            row_errors.append(f"Row {row_num}: Employee '{employee_name}' not found or multiple matches")
-                
+                            row_errors.append(
+                                f"Row {row_num}: Employee '{employee_name}' not found or multiple matches"
+                            )
+
                 if not employee:
                     errors.extend(row_errors)
                     continue
-                
-                # Validate numeric fields
+                # Validate numeric fields based on company type
                 try:
-                    casual_allocated = float(row.get('casual_leave_allocated', 0))
-                    sick_allocated = float(row.get('sick_leave_allocated', 0))
-                    casual_used = float(row.get('casual_leave_used', 0))
-                    sick_used = float(row.get('sick_leave_used', 0))
-                    carry_forward = float(row.get('carry_forward_leave', 0))
-                    
-                    # Validate ranges
-                    if casual_allocated < 0 or sick_allocated < 0:
-                        row_errors.append(f"Row {row_num}: Allocated leaves cannot be negative")
-                    
-                    if casual_used < 0 or sick_used < 0:
-                        row_errors.append(f"Row {row_num}: Used leaves cannot be negative")
-                    
-                    if casual_used > casual_allocated + carry_forward:
-                        row_errors.append(f"Row {row_num}: Casual leave used ({casual_used}) exceeds allocated + carry forward ({casual_allocated + carry_forward})")
-                    
-                    if sick_used > sick_allocated:
-                        row_errors.append(f"Row {row_num}: Sick leave used ({sick_used}) exceeds allocated ({sick_allocated})")
-                    
+                    if is_bluebix:
+                        # Bluebix: Combined sick/casual leave
+                        combined_allocated = float(row.get("sick_casual_leave_allocated", 0))
+                        combined_used = float(row.get("sick_casual_leave_used", 0))
+                        carry_forward = float(row.get("carry_forward_leave", 0))
+
+                        # Validate ranges
+                        if combined_allocated < 0:
+                            row_errors.append(f"Row {row_num}: Sick/Casual leave allocated cannot be negative")
+
+                        if combined_used < 0:
+                            row_errors.append(f"Row {row_num}: Sick/Casual leave used cannot be negative")
+
+                        if combined_used > combined_allocated + carry_forward:
+                            row_errors.append(
+                                f"Row {row_num}: Sick/Casual leave used ({combined_used}) exceeds allocated + carry forward ({combined_allocated + carry_forward})"
+                            )
+
+                        # Add to processed data for Bluebix
+                        processed_data.append(
+                            {
+                                "employee": employee,
+                                "employee_id": employee_id,
+                                "employee_name": employee_name,
+                                "is_bluebix": True,
+                                "combined_sick_casual_allocated": combined_allocated,
+                                "combined_sick_casual_used": combined_used,
+                                "carry_forward_leave": carry_forward,
+                                "row_number": row_num,
+                            }
+                        )
+                    else:
+                        # Other companies: Separate casual and sick leave
+                        casual_allocated = float(row.get("casual_leave_allocated", 0))
+                        sick_allocated = float(row.get("sick_leave_allocated", 0))
+                        casual_used = float(row.get("casual_leave_used", 0))
+                        sick_used = float(row.get("sick_leave_used", 0))
+                        carry_forward = float(row.get("carry_forward_leave", 0))
+
+                        # Validate ranges
+                        if casual_allocated < 0 or sick_allocated < 0:
+                            row_errors.append(f"Row {row_num}: Allocated leaves cannot be negative")
+
+                        if casual_used < 0 or sick_used < 0:
+                            row_errors.append(f"Row {row_num}: Used leaves cannot be negative")
+
+                        if casual_used > casual_allocated + carry_forward:
+                            row_errors.append(
+                                f"Row {row_num}: Casual leave used ({casual_used}) exceeds allocated + carry forward ({casual_allocated + carry_forward})"
+                            )
+
+                        if sick_used > sick_allocated:
+                            row_errors.append(
+                                f"Row {row_num}: Sick leave used ({sick_used}) exceeds allocated ({sick_allocated})"
+                            )
+
+                        # Add to processed data for other companies
+                        processed_data.append(
+                            {
+                                "employee": employee,
+                                "employee_id": employee_id,
+                                "employee_name": employee_name,
+                                "is_bluebix": False,
+                                "casual_leave_allocated": casual_allocated,
+                                "sick_leave_allocated": sick_allocated,
+                                "casual_leave_used": casual_used,
+                                "sick_leave_used": sick_used,
+                                "carry_forward_leave": carry_forward,
+                                "row_number": row_num,
+                            }
+                        )
+
                 except (ValueError, TypeError):
                     row_errors.append(f"Row {row_num}: Invalid numeric values for leave balances")
-                
+
                 if row_errors:
                     errors.extend(row_errors)
                     continue
-                
-                # Add to processed data
-                processed_data.append({
-                    'employee': employee,
-                    'employee_id': employee_id,
-                    'employee_name': employee_name,
-                    'casual_leave_allocated': casual_allocated,
-                    'sick_leave_allocated': sick_allocated,
-                    'casual_leave_used': casual_used,
-                    'sick_leave_used': sick_used,
-                    'carry_forward_leave': carry_forward,
-                    'row_number': row_num
-                })
-            
+
             return processed_data, errors
-            
+
         except Exception as e:
             errors.append(f"Error reading file: {str(e)}")
             return None, errors

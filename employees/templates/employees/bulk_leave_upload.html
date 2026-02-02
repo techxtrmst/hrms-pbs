@@ -322,15 +322,15 @@
         .upload-body {
             padding: 1.5rem;
         }
-        
+
         .upload-header {
             padding: 1.5rem;
         }
-        
+
         .action-buttons {
             flex-direction: column;
         }
-        
+
         .btn {
             justify-content: center;
         }
@@ -347,25 +347,25 @@
                     <h2><i class="fas fa-cloud-upload-alt me-2"></i>Bulk Leave Upload</h2>
                     <p>Upload employee leave balances in bulk using Excel or CSV files</p>
                 </div>
-                
+
                 <div class="upload-body">
                     <!-- Check if pandas is available -->
                     {% if not form.fields.upload_file %}
                     <div class="dependency-warning">
                         <h3><i class="fas fa-exclamation-triangle me-2"></i>Dependencies Required</h3>
                         <p>The bulk upload feature requires additional Python packages to be installed.</p>
-                        
+
                         <div class="install-commands">
                             <strong>Install using pip:</strong><br>
                             <code>pip install pandas openpyxl</code><br><br>
-                            
+
                             <strong>Or install all requirements:</strong><br>
                             <code>pip install -r requirements.txt</code><br><br>
-                            
+
                             <strong>Using the installation script:</strong><br>
                             <code>python install_bulk_upload_dependencies.py</code>
                         </div>
-                        
+
                         <div class="action-buttons">
                             <a href="{% url 'leave_configuration' %}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left"></i>
@@ -380,7 +380,7 @@
                     {% else %}
                     <form method="post" enctype="multipart/form-data" id="uploadForm">
                         {% csrf_token %}
-                        
+
                         <!-- File Upload Section -->
                         <div class="form-group">
                             <label class="form-label" for="{{ form.upload_file.id_for_label }}">
@@ -392,7 +392,7 @@
                                 </div>
                                 <div class="upload-text">Click to select file or drag and drop</div>
                                 <div class="upload-subtext">Supports .xlsx, .xls, and .csv files (max 5MB)</div>
-                                <input type="file" id="{{ form.upload_file.id_for_label }}" name="{{ form.upload_file.name }}" 
+                                <input type="file" id="{{ form.upload_file.id_for_label }}" name="{{ form.upload_file.name }}"
                                        accept=".xlsx,.xls,.csv" style="display: none;" onchange="updateFileName(this)">
                             </div>
                             <div id="fileName" class="help-text" style="display: none;">
@@ -472,8 +472,16 @@
                             Upload Instructions
                         </div>
                         <ul class="instructions-list">
+                            {% if user.employee_profile.company.name|lower == "bluebix" %}
+                            <li><strong>Required Columns (Bluebix):</strong> employee_id, employee_name, sick_casual_leave_allocated</li>
+                            <li><strong>Optional Columns:</strong> sick_casual_leave_used, carry_forward_leave</li>
+                            <li><strong>Combined Leave System:</strong> Bluebix uses a single pool for sick/casual leave</li>
+                            <li><strong>Monthly Allocation:</strong> Employees typically get 1 combined leave per month</li>
+                            {% else %}
                             <li><strong>Required Columns:</strong> employee_id, employee_name, casual_leave_allocated, sick_leave_allocated</li>
                             <li><strong>Optional Columns:</strong> casual_leave_used, sick_leave_used, carry_forward_leave</li>
+                            <li><strong>Separate Leave System:</strong> Casual and sick leaves are managed separately</li>
+                            {% endif %}
                             <li><strong>Employee Identification:</strong> Provide either employee_id (badge ID) or employee_name</li>
                             <li><strong>File Formats:</strong> Excel (.xlsx, .xls) or CSV files supported</li>
                             <li><strong>File Size:</strong> Maximum 5MB file size allowed</li>
@@ -493,7 +501,7 @@
     function updateFileName(input) {
         const fileName = document.getElementById('fileName');
         const fileNameText = document.getElementById('fileNameText');
-        
+
         if (input.files && input.files[0]) {
             fileNameText.textContent = input.files[0].name;
             fileName.style.display = 'block';
@@ -507,11 +515,11 @@
         document.querySelectorAll('.radio-option').forEach(option => {
             option.classList.remove('selected');
         });
-        
+
         // Select the radio button
         const radio = document.getElementById(radioId);
         radio.checked = true;
-        
+
         // Add selected class to parent
         radio.closest('.radio-option').classList.add('selected');
     }
@@ -574,10 +582,10 @@
         uploadForm.addEventListener('submit', function(e) {
             const submitBtn = this.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
-            
+
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-            
+
             // Re-enable button after 30 seconds as fallback
             setTimeout(() => {
                 submitBtn.disabled = false;
