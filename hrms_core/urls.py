@@ -15,7 +15,6 @@ urlpatterns = [
     path("handbooks/", include("handbooks.urls", namespace="handbooks")),  # Employee Handbooks
     path("policies/", include("policies.urls", namespace="policies")),  # Company Policies
     path("accounts/", include("django.contrib.auth.urls")),  # For password reset etc if needed
-
 ]
 
 from django.conf import settings
