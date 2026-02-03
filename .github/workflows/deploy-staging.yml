@@ -259,6 +259,8 @@ jobs:
           cp scripts/backup-database.sh /tmp/deployment/scripts/
           cp scripts/backup-media.sh /tmp/deployment/scripts/
           cp scripts/restore-test.sh /tmp/deployment/scripts/
+          cp scripts/backup-entrypoint.sh /tmp/deployment/scripts/
+          cp scripts/backup-trigger-watcher.sh /tmp/deployment/scripts/
           cp scripts/init-backup-repo.sh /tmp/deployment/scripts/
           cp scripts/rclone.conf.template /tmp/deployment/scripts/
           cp scripts/backup-crontab /tmp/deployment/scripts/
