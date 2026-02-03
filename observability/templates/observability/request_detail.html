@@ -1,0 +1,193 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Request Detail{% endblock %}
+
+{% block content %}
+<div class="p-6">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <a href="{% url 'observability:request_list' %}" class="text-blue-600 hover:text-blue-800 text-sm">&larr; Back to Request Logs</a>
+            <h1 class="text-2xl font-bold mt-2">
+                <span class="inline-flex items-center px-3 py-1 rounded text-lg font-medium
+                    {% if request_log.method == 'GET' %}bg-blue-100 text-blue-800{% elif request_log.method == 'POST' %}bg-green-100 text-green-800{% elif request_log.method == 'DELETE' %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ request_log.method }}
+                </span>
+                {{ request_log.path|truncatechars:60 }}
+            </h1>
+        </div>
+        <span class="inline-flex items-center px-4 py-2 rounded-full text-lg font-medium
+            {% if request_log.status_code < 300 %}bg-green-100 text-green-800{% elif request_log.status_code < 400 %}bg-blue-100 text-blue-800{% elif request_log.status_code < 500 %}bg-yellow-100 text-yellow-800{% else %}bg-red-100 text-red-800{% endif %}">
+            {{ request_log.status_code }}
+        </span>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Duration</p>
+            <p class="text-2xl font-semibold {% if request_log.duration_ms > 3000 %}text-red-600{% elif request_log.duration_ms > 1000 %}text-yellow-600{% else %}text-gray-900 dark:text-white{% endif %}">
+                {{ request_log.duration_ms|floatformat:0 }}ms
+            </p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">SQL Queries</p>
+            <p class="text-2xl font-semibold {% if request_log.sql_query_count > 50 %}text-red-600{% elif request_log.sql_query_count > 20 %}text-yellow-600{% else %}text-gray-900 dark:text-white{% endif %}">
+                {{ request_log.sql_query_count }}
+            </p>
+            <p class="text-xs text-gray-500">{{ request_log.sql_query_time_ms|floatformat:0 }}ms total</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Response Size</p>
+            <p class="text-2xl font-semibold text-gray-900 dark:text-white">
+                {% if request_log.response_body_size %}{{ request_log.response_body_size|filesizeformat }}{% else %}-{% endif %}
+            </p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Request ID</p>
+            <p class="text-sm font-mono text-gray-900 dark:text-white">{{ request_log.request_id }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Request Details -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-semibold">Request Details</h2>
+            </div>
+            <div class="p-6">
+                <dl class="space-y-3 text-sm">
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">Full URL</dt>
+                        <dd class="mt-1 font-mono text-xs break-all">{{ request_log.full_url }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">View</dt>
+                        <dd class="mt-1">{{ request_log.view_name|default:"-" }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">Content Type</dt>
+                        <dd class="mt-1">{{ request_log.request_content_type|default:"-" }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">Timestamp</dt>
+                        <dd class="mt-1">{{ request_log.timestamp }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <!-- User Context -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-semibold">User Context</h2>
+            </div>
+            <div class="p-6">
+                <dl class="space-y-3 text-sm">
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">User ID</dt>
+                        <dd class="mt-1">{{ request_log.user_id|default:"-" }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">Email</dt>
+                        <dd class="mt-1">{{ request_log.user_email|default:"-" }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">IP Address</dt>
+                        <dd class="mt-1 font-mono text-xs">{{ request_log.user_ip|default:"-" }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">Company ID</dt>
+                        <dd class="mt-1">{{ request_log.company_id|default:"-" }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Query Parameters -->
+    {% if request_log.query_params %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-semibold">Query Parameters</h2>
+        </div>
+        <div class="p-6">
+            <pre class="bg-gray-100 dark:bg-gray-700 p-4 rounded text-sm font-mono overflow-x-auto">{{ request_log.query_params|pprint }}</pre>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Request Headers -->
+    {% if request_log.request_headers %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-semibold">Request Headers</h2>
+        </div>
+        <div class="p-6">
+            <pre class="bg-gray-100 dark:bg-gray-700 p-4 rounded text-sm font-mono overflow-x-auto max-h-64 overflow-y-auto">{{ request_log.request_headers|pprint }}</pre>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Request Body -->
+    {% if request_log.request_body %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-semibold">Request Body</h2>
+        </div>
+        <div class="p-6">
+            <pre class="bg-gray-100 dark:bg-gray-700 p-4 rounded text-sm font-mono overflow-x-auto max-h-64 overflow-y-auto">{{ request_log.request_body }}</pre>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- SQL Queries -->
+    {% if request_log.sql_queries %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-semibold">SQL Queries ({{ request_log.sql_queries|length }})</h2>
+        </div>
+        <div class="p-6 space-y-4 max-h-96 overflow-y-auto">
+            {% for query in request_log.sql_queries %}
+            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium">Query {{ forloop.counter }}</span>
+                    <span class="text-sm text-gray-500">{{ query.time|floatformat:2 }}ms</span>
+                </div>
+                <pre class="text-xs font-mono text-gray-700 dark:text-gray-300 overflow-x-auto">{{ query.sql }}</pre>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Error Information -->
+    {% if request_log.has_error and request_log.error_log %}
+    <div class="bg-red-50 dark:bg-red-900/20 rounded-lg shadow mb-6 border border-red-200 dark:border-red-800">
+        <div class="px-6 py-4 border-b border-red-200 dark:border-red-800">
+            <h2 class="text-lg font-semibold text-red-800 dark:text-red-200">Error Occurred</h2>
+        </div>
+        <div class="p-6">
+            <p class="text-red-800 dark:text-red-200 font-medium">{{ request_log.error_log.exception_type }}</p>
+            <p class="text-red-700 dark:text-red-300 mt-2">{{ request_log.error_log.exception_value|truncatechars:200 }}</p>
+            <a href="{% url 'observability:error_detail' request_log.error_log.pk %}"
+               class="inline-flex items-center mt-4 px-4 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50">
+                View Error Details
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- User Agent -->
+    {% if request_log.user_agent %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-semibold">User Agent</h2>
+        </div>
+        <div class="p-6">
+            <p class="text-sm text-gray-600 dark:text-gray-400 break-all">{{ request_log.user_agent }}</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,135 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Request Logs{% endblock %}
+
+{% block content %}
+<div class="p-6">
+    <h1 class="text-2xl font-bold mb-6">Request Logs</h1>
+
+    <!-- Filters -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+        <form method="get" class="flex flex-wrap gap-4 items-end">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time Range</label>
+                <select name="range" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                    <option value="1h" {% if request.GET.range == '1h' or not request.GET.range %}selected{% endif %}>Last Hour</option>
+                    <option value="24h" {% if request.GET.range == '24h' %}selected{% endif %}>Last 24 Hours</option>
+                    <option value="7d" {% if request.GET.range == '7d' %}selected{% endif %}>Last 7 Days</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                <select name="status" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                    <option value="">All</option>
+                    <option value="2xx" {% if request.GET.status == '2xx' %}selected{% endif %}>2xx Success</option>
+                    <option value="4xx" {% if request.GET.status == '4xx' %}selected{% endif %}>4xx Client Error</option>
+                    <option value="5xx" {% if request.GET.status == '5xx' %}selected{% endif %}>5xx Server Error</option>
+                    <option value="error" {% if request.GET.status == 'error' %}selected{% endif %}>Has Error</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Method</label>
+                <select name="method" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                    <option value="">All</option>
+                    <option value="GET" {% if request.GET.method == 'GET' %}selected{% endif %}>GET</option>
+                    <option value="POST" {% if request.GET.method == 'POST' %}selected{% endif %}>POST</option>
+                    <option value="PUT" {% if request.GET.method == 'PUT' %}selected{% endif %}>PUT</option>
+                    <option value="DELETE" {% if request.GET.method == 'DELETE' %}selected{% endif %}>DELETE</option>
+                </select>
+            </div>
+            <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
+                <input type="text" name="search" value="{{ request.GET.search }}" placeholder="Search by path, email, or request ID"
+                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+            </div>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                Filter
+            </button>
+        </form>
+    </div>
+
+    <!-- Request List -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        {% if requests %}
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Method</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Path</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Duration</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SQL</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">User</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Time</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                {% for req in requests %}
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {% if req.status_code < 300 %}bg-green-100 text-green-800{% elif req.status_code < 400 %}bg-blue-100 text-blue-800{% elif req.status_code < 500 %}bg-yellow-100 text-yellow-800{% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ req.status_code }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                            {% if req.method == 'GET' %}bg-blue-100 text-blue-800{% elif req.method == 'POST' %}bg-green-100 text-green-800{% elif req.method == 'DELETE' %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ req.method }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <a href="{% url 'observability:request_detail' req.pk %}" class="text-sm text-blue-600 hover:text-blue-800">
+                            {{ req.path|truncatechars:50 }}
+                        </a>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm {% if req.duration_ms > 3000 %}text-red-600 font-bold{% elif req.duration_ms > 1000 %}text-yellow-600{% else %}text-gray-900{% endif %}">
+                            {{ req.duration_ms|floatformat:0 }}ms
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {% if req.sql_query_count > 50 %}
+                        <span class="text-red-600 font-bold">{{ req.sql_query_count }}</span>
+                        {% elif req.sql_query_count > 20 %}
+                        <span class="text-yellow-600">{{ req.sql_query_count }}</span>
+                        {% else %}
+                        {{ req.sql_query_count }}
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ req.user_email|default:"Anonymous"|truncatechars:20 }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                        {{ req.timestamp|time:"H:i:s" }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+            <nav class="flex justify-between items-center">
+                <div class="text-sm text-gray-500">
+                    Showing {{ page_obj.start_index }} - {{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+                </div>
+                <div class="flex gap-2">
+                    {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}" class="px-3 py-1 border rounded hover:bg-gray-50">Previous</a>
+                    {% endif %}
+                    {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}" class="px-3 py-1 border rounded hover:bg-gray-50">Next</a>
+                    {% endif %}
+                </div>
+            </nav>
+        </div>
+        {% endif %}
+        {% else %}
+        <p class="text-gray-500 text-center py-12">No requests found for the selected filters</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

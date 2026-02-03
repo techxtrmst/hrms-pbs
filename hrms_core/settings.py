@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     "ai_assistant",  # AI-powered features
     "handbooks",  # Employee handbooks with location-based access
     "policies",  # Company Policies
+    "observability",  # System observability and monitoring
 ]
 
 AUTHENTICATION_BACKENDS = [

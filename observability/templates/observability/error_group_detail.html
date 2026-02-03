@@ -1,0 +1,129 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}{{ group.exception_type }} - Error Group{% endblock %}
+
+{% block content %}
+<div class="p-6">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <a href="{% url 'observability:error_group_list' %}" class="text-blue-600 hover:text-blue-800 text-sm">&larr; Back to Error Groups</a>
+            <h1 class="text-2xl font-bold text-red-600 mt-2">{{ group.exception_type }}</h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                {% if group.status == 'unresolved' %}bg-red-100 text-red-800{% elif group.status == 'resolved' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                {{ group.status|title }}
+            </span>
+            <a href="{% url 'admin:observability_errorgroup_change' group.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Edit in Admin
+            </a>
+        </div>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Total Events</p>
+            <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ group.event_count }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Users Affected</p>
+            <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ group.user_count }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">First Seen</p>
+            <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ group.first_seen|date:"M d, Y" }}</p>
+            <p class="text-xs text-gray-500">{{ group.first_seen|timesince }} ago</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Last Seen</p>
+            <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ group.last_seen|date:"M d, Y" }}</p>
+            <p class="text-xs text-gray-500">{{ group.last_seen|timesince }} ago</p>
+        </div>
+    </div>
+
+    <!-- Error Details -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-semibold">Error Details</h2>
+        </div>
+        <div class="p-6">
+            <p class="text-gray-700 dark:text-gray-300 break-words mb-4">{{ group.title }}</p>
+            {% if group.culprit %}
+            <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <p class="text-sm text-gray-500">
+                    <span class="font-medium">Culprit:</span>
+                    <code class="text-sm bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">{{ group.culprit }}</code>
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Event Frequency Chart -->
+    {% if daily_counts %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-semibold">Event Frequency (Last 7 Days)</h2>
+        </div>
+        <div class="p-6">
+            <div class="flex items-end gap-1 h-32">
+                {% for day in daily_counts %}
+                <div class="flex-1 flex flex-col items-center">
+                    <div class="w-full bg-red-500 rounded-t" style="height: {{ day.count|default:0 }}%;" title="{{ day.count }} events"></div>
+                    <span class="text-xs text-gray-500 mt-1">{{ day.date|date:"D" }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Events -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-semibold">Recent Events</h2>
+        </div>
+        <div class="overflow-x-auto">
+            {% if events %}
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Request</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Environment</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Time</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for event in events %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td class="px-6 py-4">
+                            <a href="{% url 'observability:error_detail' event.pk %}" class="block">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 mr-1">
+                                    {{ event.request_method }}
+                                </span>
+                                <span class="text-sm text-blue-600 hover:text-blue-800">{{ event.request_path|truncatechars:40 }}</span>
+                            </a>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ event.user_email|default:"Anonymous" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ event.environment }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                            {{ event.timestamp|timesince }} ago
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-gray-500 text-center py-8">No events found</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

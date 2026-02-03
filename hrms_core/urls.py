@@ -19,6 +19,7 @@ urlpatterns = [
     path(
         "accounts/", include("django.contrib.auth.urls")
     ),  # For password reset etc if needed
+    path("observability/", include("observability.urls")),
 ]
 
 from django.conf import settings

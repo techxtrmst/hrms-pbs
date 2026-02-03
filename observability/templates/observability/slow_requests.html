@@ -1,0 +1,122 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Slow Requests{% endblock %}
+
+{% block content %}
+<div class="p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Slow Requests</h1>
+        <div class="flex space-x-2">
+            <a href="{% url 'observability:performance' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                ← Performance Overview
+            </a>
+        </div>
+    </div>
+
+    <!-- Threshold Filter -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
+        <form method="get" class="flex flex-wrap gap-4 items-center">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Min Duration (ms)</label>
+                <input type="number" name="min_duration" value="{{ min_duration|default:1000 }}"
+                    class="block w-32 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">HTTP Method</label>
+                <select name="method" class="block w-32 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <option value="">All</option>
+                    <option value="GET" {% if selected_method == 'GET' %}selected{% endif %}>GET</option>
+                    <option value="POST" {% if selected_method == 'POST' %}selected{% endif %}>POST</option>
+                    <option value="PUT" {% if selected_method == 'PUT' %}selected{% endif %}>PUT</option>
+                    <option value="DELETE" {% if selected_method == 'DELETE' %}selected{% endif %}>DELETE</option>
+                </select>
+            </div>
+            <div class="pt-5">
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Filter
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Slow Requests Table -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        {% if slow_requests %}
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Timestamp</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Request</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Duration</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SQL Queries</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">User</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                {% for request in slow_requests %}
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer" onclick="window.location='{% url 'observability:request_detail' pk=request.id %}'">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ request.timestamp|date:"M d, H:i:s" }}
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                            {% if request.method == 'GET' %}bg-blue-100 text-blue-800{% elif request.method == 'POST' %}bg-green-100 text-green-800{% elif request.method == 'PUT' %}bg-yellow-100 text-yellow-800{% elif request.method == 'DELETE' %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-800{% endif %} mr-2">
+                            {{ request.method }}
+                        </span>
+                        <span class="text-sm text-gray-900 dark:text-white">{{ request.path|truncatechars:50 }}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm font-bold {% if request.duration_ms > 5000 %}text-red-600{% elif request.duration_ms > 3000 %}text-orange-500{% else %}text-yellow-600{% endif %}">
+                            {{ request.duration_ms|floatformat:0 }}ms
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm {% if request.sql_query_count > 50 %}text-red-600 font-medium{% elif request.sql_query_count > 20 %}text-yellow-600{% else %}text-gray-500{% endif %}">
+                            {{ request.sql_query_count|default:"-" }}
+                        </span>
+                        {% if request.sql_time_ms %}
+                        <span class="text-xs text-gray-400 ml-1">({{ request.sql_time_ms|floatformat:0 }}ms)</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {% if request.user %}{{ request.user.username }}{% else %}Anonymous{% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {% if request.status_code >= 500 %}bg-red-100 text-red-800{% elif request.status_code >= 400 %}bg-yellow-100 text-yellow-800{% elif request.status_code >= 300 %}bg-blue-100 text-blue-800{% else %}bg-green-100 text-green-800{% endif %}">
+                            {{ request.status_code }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        {% if slow_requests.has_other_pages %}
+        <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+            <nav class="flex justify-between items-center">
+                <div class="text-sm text-gray-500">
+                    Page {{ slow_requests.number }} of {{ slow_requests.paginator.num_pages }}
+                </div>
+                <div class="flex space-x-2">
+                    {% if slow_requests.has_previous %}
+                    <a href="?page={{ slow_requests.previous_page_number }}{% if min_duration %}&min_duration={{ min_duration }}{% endif %}{% if selected_method %}&method={{ selected_method }}{% endif %}"
+                       class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">Previous</a>
+                    {% endif %}
+                    {% if slow_requests.has_next %}
+                    <a href="?page={{ slow_requests.next_page_number }}{% if min_duration %}&min_duration={{ min_duration }}{% endif %}{% if selected_method %}&method={{ selected_method }}{% endif %}"
+                       class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">Next</a>
+                    {% endif %}
+                </div>
+            </nav>
+        </div>
+        {% endif %}
+        {% else %}
+        <p class="text-gray-500 text-center py-12">No slow requests found with the current filters</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

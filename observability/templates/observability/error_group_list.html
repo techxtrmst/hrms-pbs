@@ -1,0 +1,108 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Error Groups{% endblock %}
+
+{% block content %}
+<div class="p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Error Groups (Issues)</h1>
+        <a href="{% url 'observability:error_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            View All Events
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+        <form method="get" class="flex flex-wrap gap-4 items-end">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                <select name="status" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                    <option value="unresolved" {% if request.GET.status == 'unresolved' or not request.GET.status %}selected{% endif %}>Unresolved</option>
+                    <option value="resolved" {% if request.GET.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                    <option value="ignored" {% if request.GET.status == 'ignored' %}selected{% endif %}>Ignored</option>
+                    <option value="all" {% if request.GET.status == 'all' %}selected{% endif %}>All</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sort By</label>
+                <select name="sort" class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                    <option value="-last_seen" {% if request.GET.sort == '-last_seen' or not request.GET.sort %}selected{% endif %}>Last Seen</option>
+                    <option value="-event_count" {% if request.GET.sort == '-event_count' %}selected{% endif %}>Event Count</option>
+                    <option value="-first_seen" {% if request.GET.sort == '-first_seen' %}selected{% endif %}>First Seen</option>
+                    <option value="-user_count" {% if request.GET.sort == '-user_count' %}selected{% endif %}>Users Affected</option>
+                </select>
+            </div>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                Apply
+            </button>
+        </form>
+    </div>
+
+    <!-- Error Groups List -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        {% if groups %}
+        <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+            {% for group in groups %}
+            <li class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <a href="{% url 'observability:error_group_detail' group.pk %}" class="block p-4">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    {% if group.status == 'unresolved' %}bg-red-100 text-red-800{% elif group.status == 'resolved' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ group.status|title }}
+                                </span>
+                                {% if group.is_regression %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                                    Regression
+                                </span>
+                                {% endif %}
+                            </div>
+                            <p class="text-sm font-medium text-red-600 dark:text-red-400">{{ group.exception_type }}</p>
+                            <p class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ group.title|truncatechars:100 }}</p>
+                            {% if group.culprit %}
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                <code class="bg-gray-100 dark:bg-gray-700 px-1 rounded">{{ group.culprit|truncatechars:60 }}</code>
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="ml-4 flex-shrink-0 text-right">
+                            <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ group.event_count }}</p>
+                            <p class="text-xs text-gray-500">events</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ group.user_count }} users</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between mt-2 text-xs text-gray-500">
+                        <span>First seen: {{ group.first_seen|timesince }} ago</span>
+                        <span>Last seen: {{ group.last_seen|timesince }} ago</span>
+                    </div>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+            <nav class="flex justify-between items-center">
+                <div class="text-sm text-gray-500">
+                    Showing {{ page_obj.start_index }} - {{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+                </div>
+                <div class="flex gap-2">
+                    {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}" class="px-3 py-1 border rounded hover:bg-gray-50">Previous</a>
+                    {% endif %}
+                    {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}" class="px-3 py-1 border rounded hover:bg-gray-50">Next</a>
+                    {% endif %}
+                </div>
+            </nav>
+        </div>
+        {% endif %}
+        {% else %}
+        <p class="text-gray-500 text-center py-12">No error groups found</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
