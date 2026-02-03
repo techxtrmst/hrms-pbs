@@ -134,6 +134,9 @@ class Employee(models.Model):
         default=True,
         help_text="Whether employee is currently active in the organization",
     )
+    biometric_id = models.CharField(
+        max_length=50, null=True, blank=True, unique=True, help_text="ID as registered in the biometric machine"
+    )
 
     # Week-off Configuration (Individual employee week-offs)
     week_off_monday = models.BooleanField(default=False, help_text="Monday is week-off")
@@ -309,6 +312,7 @@ class Attendance(models.Model):
         ("WEEKLY_OFF", "Weekly Off"),
         ("HOLIDAY", "Holiday"),
         ("MISSING_PUNCH", "Missing Punch"),
+        ("DOOR_OPEN", "Door Access Only"),
     ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="ABSENT")
     location_in = models.CharField(max_length=255, null=True, blank=True)  # Lat,Long
@@ -374,8 +378,10 @@ class Attendance(models.Model):
         choices=[
             ("WEB", "Web"),
             ("REMOTE", "Remote"),
+            ("BIOMETRIC", "Biometric Device"),
+            ("MOBILE", "Mobile App"),
         ],
-        help_text="Current session type (WEB/REMOTE)",
+        help_text="Current session type (WEB/REMOTE/BIOMETRIC)",
     )
 
     class Meta:
@@ -957,15 +963,15 @@ class LeaveBalance(models.Model):
 
     @property
     def casual_leave_balance(self):
-        # For Bluebix, use combined balance
-        if self.employee.company.name.lower() == "bluebix":
+        # For Bluebix and Softstandard, use combined balance
+        if self.employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]:
             return max(0, self.combined_sick_casual_allocated - self.combined_sick_casual_used)
         return max(0, self.casual_leave_allocated - self.casual_leave_used)
 
     @property
     def sick_leave_balance(self):
-        # For Bluebix, use combined balance
-        if self.employee.company.name.lower() == "bluebix":
+        # For Bluebix and Softstandard, use combined balance
+        if self.employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]:
             return max(0, self.combined_sick_casual_allocated - self.combined_sick_casual_used)
         return max(0, self.sick_leave_allocated - self.sick_leave_used)
 
@@ -976,8 +982,8 @@ class LeaveBalance(models.Model):
 
     def get_available_balance(self, leave_type):
         """Get available balance for a specific leave type"""
-        # For Bluebix, both CL and SL use the same combined pool
-        if self.employee.company.name.lower() == "bluebix":
+        # For Bluebix and Softstandard, both CL and SL use the same combined pool
+        if self.employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]:
             if leave_type in ["CL", "SL"]:
                 return self.combined_sick_casual_balance
             else:
@@ -1016,8 +1022,8 @@ class LeaveBalance(models.Model):
 
     def apply_leave_deduction(self, leave_type, days_approved):
         """Deduct approved leave from balance"""
-        # For Bluebix, both CL and SL deduct from combined pool
-        if self.employee.company.name.lower() == "bluebix":
+        # For Bluebix and Softstandard, both CL and SL deduct from combined pool
+        if self.employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]:
             if leave_type in ["CL", "SL"]:
                 self.combined_sick_casual_used += days_approved
             elif leave_type == "UL":
@@ -1055,8 +1061,8 @@ class LeaveBalance(models.Model):
 
     @property
     def total_balance(self):
-        # For Bluebix, return combined balance (but don't double count)
-        if self.employee.company.name.lower() == "bluebix":
+        # For Bluebix and Softstandard, return combined balance (but don't double count)
+        if self.employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]:
             return self.combined_sick_casual_balance
         return self.casual_leave_balance + self.sick_leave_balance
 
@@ -1103,6 +1109,8 @@ class LeaveRequest(models.Model):
     # Status and Approval
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="PENDING")
     approval_level = models.CharField(max_length=10, choices=APPROVAL_LEVEL_CHOICES, default="MANAGER")
+    current_step = models.PositiveIntegerField(default=1, help_text="Current step in the approval workflow")
+    workflow = models.ForeignKey("core.ApprovalWorkflow", on_delete=models.SET_NULL, null=True, blank=True)
 
     # Admin/Manager Actions
     approved_by = models.ForeignKey(
@@ -1564,3 +1572,34 @@ def invalidate_leave_balance_cache(sender, instance, **kwargs):
         cache.delete(cache_key)
 
     logger.info(f"Cache invalidated for employee {employee.user.get_full_name()} leave balance update")
+
+
+class WorkHistory(models.Model):
+    EVENT_TYPES = [
+        ("DESIGNATION", "Designation Change"),
+        ("CTC", "CTC Change"),
+        ("JOINING", "Joined"),
+        ("PROBATION", "Probation"),
+        ("OTHER", "Other"),
+    ]
+
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="work_history")
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    reason = models.TextField(blank=True, null=True, help_text="Reason for the change")
+    date = models.DateField(default=timezone.now)
+    event_type = models.CharField(max_length=20, choices=EVENT_TYPES, default="OTHER")
+
+    # Optional: Track old and new values for changes
+    previous_value = models.CharField(max_length=255, blank=True, null=True)
+    new_value = models.CharField(max_length=255, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-date", "-created_at"]
+        verbose_name_plural = "Work History"
+
+    def __str__(self):
+        return f"{self.title} - {self.employee.user.get_full_name()}"

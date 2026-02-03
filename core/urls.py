@@ -41,6 +41,7 @@ urlpatterns = [
     path("payroll/upload/", views.upload_payslip, name="upload_payslip"),
     path("payroll/calculate/", views.calculate_generated_payslip, name="calculate_payslip"),
     path("payroll/generate/", views.process_payslip_generation, name="process_payslip_generation"),
+    path("payroll/config/", views.payroll_settings, name="payroll_settings"),
     path("payroll/bulk-upload/", views.bulk_upload_payslips, name="bulk_payroll_upload"),
     path("payroll/download-template/", views.download_payslip_template, name="bulk_payroll_template"),
     # Config
@@ -65,4 +66,6 @@ urlpatterns = [
     path("api/notifications/", views.get_notifications, name="get_notifications"),
     path("api/notifications/<int:notification_id>/read/", views.mark_notification_read, name="mark_notification_read"),
     path("api/notifications/mark-all-read/", views.mark_all_notifications_read, name="mark_all_notifications_read"),
+    # Biometric Integration API
+    path("api/biometric/sync/", views.biometric_sync_api, name="biometric_sync_api"),
 ]

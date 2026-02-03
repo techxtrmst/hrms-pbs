@@ -83,7 +83,11 @@ INSTALLED_APPS = [
     "ai_assistant",  # AI-powered features
     "handbooks",  # Employee handbooks with location-based access
     "policies",  # Company Policies
+<<<<<<< HEAD
     "observability",  # First-party error tracking and monitoring
+=======
+    "observability",  # System observability and monitoring
+>>>>>>> notification-configuration
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -114,7 +118,7 @@ ROOT_URLCONF = "hrms_core.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

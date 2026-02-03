@@ -30,29 +30,39 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
                 country_code = "US"
             else:
                 country_code = loc_str
+    # Determine currency symbol from location
+    if hasattr(location, "currency"):
+        if location.currency == "USD":
+            currency_symbol = "$"
+        elif location.currency == "BDT":
+            currency_symbol = "৳"
+        elif location.currency == "INR":
+            currency_symbol = "₹"
+        else:
+            currency_symbol = location.currency + " "
 
-        # Determine currency symbol from location
-        if hasattr(location, "currency"):
-            if location.currency == "USD":
-                currency_symbol = "$"
-            elif location.currency == "BDT":
-                currency_symbol = "৳"
-            elif location.currency == "INR":
-                currency_symbol = "₹"
-            else:
-                currency_symbol = location.currency + " "
+    # Fetch company configuration
+    from companies.models import PayrollConfiguration
+
+    config = None
+    if location and hasattr(location, "company"):
+        config = PayrollConfiguration.objects.filter(company=location.company).first()
 
     def get_breakdown_logic(ctc_to_use, is_pf_enabled, country="IN"):
         """Helper to apply the specific calculation logic to a given CTC amount"""
 
         if country == "BD":
             # -------- Bangladesh (Dhaka) Logic --------
-            gross_monthly = round(ctc_to_use, 2)
-            basic = round(gross_monthly * 0.50, 2)
-            hra = round(gross_monthly * 0.25, 2)  # House Rent
-            medical = round(gross_monthly * 0.15, 2)
-            conveyance = round(gross_monthly * 0.10, 2)
+            basic_rate = float(config.bd_basic_percentage) / 100 if config else 0.50
+            hra_rate = float(config.bd_hra_percentage) / 100 if config else 0.25
+            med_rate = float(config.bd_medical_percentage) / 100 if config else 0.15
+            conv_rate = float(config.bd_conveyance_percentage) / 100 if config else 0.10
 
+            gross_monthly = round(ctc_to_use, 2)
+            basic = round(gross_monthly * basic_rate, 2)
+            hra = round(gross_monthly * hra_rate, 2)  # House Rent
+            medical = round(gross_monthly * med_rate, 2)
+            conveyance = round(gross_monthly * conv_rate, 2)
             lta = 0.00
             other_allowance = 0.00
 
@@ -81,23 +91,23 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
             }
         elif country == "US":
             # -------- US Logic (Simplified) --------
-            # Typical US breakdown might vary, but we'll use a standard percentage
+            basic_rate = float(config.us_basic_percentage) / 100 if config else 0.70
+            tax_rate = float(config.us_tax_percentage) / 100 if config else 0.15
+
             gross_monthly = round(ctc_to_use, 2)
-            basic = round(gross_monthly * 0.70, 2)
+            basic = round(gross_monthly * basic_rate, 2)
             hra = 0.00
             medical = round(gross_monthly * 0.15, 2)
             conveyance = 0.00
             lta = 0.00
-            other_allowance = round(gross_monthly * 0.15, 2)
-
+            other_allowance = round(gross_monthly - (basic + medical), 2)
             # Simplified US Tax/Social Security (placeholder, usually handles via withholdings)
             # 7.65% for FICA (Social Security + Medicare)
             employee_pf = round(gross_monthly * 0.0765, 2)
             employer_pf = employee_pf
             professional_tax = 0.00
-
-            # Total withholdings (Federal/State Tax placeholder - e.g. 20%)
-            income_tax = round(gross_monthly * 0.15, 2)
+            # Total withholdings (Federal/State Tax placeholder)
+            income_tax = round(gross_monthly * tax_rate, 2)
             net_salary = round(gross_monthly - employee_pf - income_tax, 2)
 
             return {
@@ -115,38 +125,53 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
             }
         else:
             # -------- India Logic (Default) --------
+            # Rates from config
+            b_pct = float(config.basic_percentage) / 100 if config else 0.50
+            h_pct = float(config.hra_percentage) / 100 if config else 0.20
+            l_pct = float(config.lta_percentage) / 100 if config else 0.10
+
+            pf_er_rate = float(config.pf_employer_rate) / 100 if config else 0.13
+            pf_ee_rate = float(config.pf_employee_rate) / 100 if config else 0.12
+            pf_ceil = float(config.pf_ceiling) if config else 15000.0
+
+            pt_thresh = float(config.pt_threshold) if config else 20000.0
+            pt_low = float(config.pt_amount_below) if config else 150.0
+            pt_high = float(config.pt_amount_above) if config else 200.0
+
             if is_pf_enabled:
                 # Step 1: Compute Gross from Monthly CTC
-                gross_case1 = ctc_to_use / 1.065  # When Basic < 15000
+                # Factor accounts for Employer PF being part of CTC
+                pf_factor = 1 + (pf_er_rate * b_pct)
+                gross_case1 = ctc_to_use / pf_factor
 
-                if gross_case1 < 30000:
+                if (gross_case1 * b_pct) < pf_ceil:
                     gross_monthly = round(gross_case1, 2)
-                    basic = round(gross_monthly * 0.50, 2)
-                    employer_pf = round(basic * 0.13, 2)
+                    basic = round(gross_monthly * b_pct, 2)
+                    employer_pf = round(basic * pf_er_rate, 2)
                 else:
-                    employer_pf = 1950.00
+                    employer_pf = round(pf_ceil * pf_er_rate, 2)
                     gross_monthly = round(ctc_to_use - employer_pf, 2)
-                    basic = round(gross_monthly * 0.50, 2)
+                    basic = round(gross_monthly * b_pct, 2)
 
                 # Employee PF
-                employee_pf = round(basic * 0.12, 2) if basic < 15000 else 1800.0
+                employee_pf = round(basic * pf_ee_rate, 2) if basic < pf_ceil else round(pf_ceil * pf_ee_rate, 2)
             else:
                 # -------- No PF --------
                 gross_monthly = round(ctc_to_use, 2)
-                basic = round(gross_monthly * 0.50, 2)
+                basic = round(gross_monthly * b_pct, 2)
                 employer_pf = 0.00
                 employee_pf = 0.00
 
             # -------- Allowances --------
-            hra = round(gross_monthly * 0.20, 2)
-            lta = round(gross_monthly * 0.10, 2)
+            hra = round(gross_monthly * h_pct, 2)
+            lta = round(gross_monthly * l_pct, 2)
             other_allowance = round(gross_monthly - (basic + hra + lta), 2)
 
             # -------- Net Salary --------
             net_before_pt = round(gross_monthly - employee_pf, 2)
 
             # Professional Tax (Only for India)
-            professional_tax = (150 if net_before_pt < 20000 else 200) if country == "IN" else 0.0
+            professional_tax = (pt_low if net_before_pt < pt_thresh else pt_high) if country == "IN" else 0.0
 
             # Net Take Home Salary
             net_salary = round(net_before_pt - professional_tax, 2)

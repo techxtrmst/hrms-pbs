@@ -12,11 +12,12 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from loguru import logger
 from openpyxl.styles import Alignment, Font, PatternFill
 
 from accounts.models import User
-from companies.models import Holiday
+from companies.models import Holiday, PayrollConfiguration
 from employees.models import (
     Attendance,
     Employee,
@@ -2032,7 +2033,20 @@ def employee_org_chart(request):
 @login_required
 @manager_required
 def attendance_analytics(request):
-    if not hasattr(request.user, "company") or not request.user.company:
+    company = None
+    if hasattr(request.user, "company") and request.user.company:
+        company = request.user.company
+    elif request.user.role == User.Role.SUPERADMIN:
+        selected_company_id = request.session.get("selected_company_id")
+        if selected_company_id:
+            from companies.models import Company
+
+            company = Company.objects.filter(id=selected_company_id).first()
+
+    if not company:
+        if request.user.role == User.Role.SUPERADMIN:
+            messages.warning(request, "Please select a company to view analytics.")
+            return redirect("superadmin:dashboard")
         messages.error(request, "Restricted access.")
         return redirect("dashboard")
 
@@ -2056,7 +2070,7 @@ def attendance_analytics(request):
         employees = Employee.objects.filter(manager=request.user) if manager_profile else Employee.objects.none()
     else:
         # Admin gets all company employees
-        employees = Employee.objects.filter(company=request.user.company)
+        employees = Employee.objects.filter(company=company)
 
     # Filter out employees who left before the current month
     # Show active employees OR employees who exited this month (or later)
@@ -2168,7 +2182,20 @@ def attendance_analytics(request):
 @login_required
 @manager_required
 def attendance_report(request):
-    if not hasattr(request.user, "company") or not request.user.company:
+    company = None
+    if hasattr(request.user, "company") and request.user.company:
+        company = request.user.company
+    elif request.user.role == User.Role.SUPERADMIN:
+        selected_company_id = request.session.get("selected_company_id")
+        if selected_company_id:
+            from companies.models import Company
+
+            company = Company.objects.filter(id=selected_company_id).first()
+
+    if not company:
+        if request.user.role == User.Role.SUPERADMIN:
+            messages.warning(request, "Please select a company to view reports.")
+            return redirect("superadmin:dashboard")
         messages.error(request, "Restricted access.")
         return redirect("dashboard")
 
@@ -2208,7 +2235,7 @@ def attendance_report(request):
         else:
             employees = Employee.objects.none()
     else:
-        employees = Employee.objects.filter(company=request.user.company).select_related("user", "manager", "location")
+        employees = Employee.objects.filter(company=company).select_related("user", "manager", "location")
 
     if location_id:
         employees = employees.filter(location_id=location_id)
@@ -2217,7 +2244,7 @@ def attendance_report(request):
     # Show active employees OR employees who exited on or after the start date
     employees = employees.filter(Q(is_active=True) | Q(exit_date__gte=start_date))
 
-    locations = Location.objects.filter(company=request.user.company, is_active=True)
+    locations = Location.objects.filter(company=company, is_active=True)
     employee_ids = employees.values_list("id", flat=True)
 
     # Get all attendance records for the period
@@ -2225,7 +2252,7 @@ def attendance_report(request):
 
     # Get all holidays for the period and company
     holidays = Holiday.objects.filter(
-        company=request.user.company,
+        company=company,
         date__gte=start_date,
         date__lte=end_date,
         is_active=True,
@@ -2937,11 +2964,22 @@ def leave_history(request):
 @admin_required
 def payroll_dashboard(request):
     """Admin Payroll Dashboard - Manage employee payslips"""
-    if not hasattr(request.user, "company") or not request.user.company:
+    company = None
+    if hasattr(request.user, "company") and request.user.company:
+        company = request.user.company
+    elif request.user.role == User.Role.SUPERADMIN:
+        selected_company_id = request.session.get("selected_company_id")
+        if selected_company_id:
+            from companies.models import Company
+
+            company = Company.objects.filter(id=selected_company_id).first()
+
+    if not company:
+        if request.user.role == User.Role.SUPERADMIN:
+            messages.warning(request, "Please select a company to manage payroll.")
+            return redirect("superadmin:dashboard")
         messages.error(request, "Restricted access.")
         return redirect("dashboard")
-
-    company = request.user.company
     today = timezone.localtime().date()
 
     # Month/Year selection
@@ -2984,6 +3022,76 @@ def payroll_dashboard(request):
     }
 
     return render(request, "core/payroll_dashboard.html", context)
+
+
+@login_required
+@admin_required
+def payroll_settings(request):
+    """View to manage company payroll configuration"""
+    company = None
+    if hasattr(request.user, "company") and request.user.company:
+        company = request.user.company
+    elif request.user.role == User.Role.SUPERADMIN:
+        selected_company_id = request.session.get("selected_company_id")
+        if selected_company_id:
+            from companies.models import Company
+
+            company = Company.objects.filter(id=selected_company_id).first()
+
+    if not company:
+        if request.user.role == User.Role.SUPERADMIN:
+            messages.warning(request, "Please select a company to configure payroll.")
+            return redirect("superadmin:dashboard")
+        messages.error(request, "Restricted access.")
+        return redirect("dashboard")
+
+    config, created = PayrollConfiguration.objects.get_or_create(company=company)
+
+    if request.method == "POST":
+        # Extract decimal values safely
+        def get_decimal(key, default):
+            val = request.POST.get(key)
+            if val is None or val == "":
+                return default
+            try:
+                return float(val)
+            except ValueError:
+                return default
+
+        # India Rates
+        config.pf_employer_rate = get_decimal("pf_employer_rate", config.pf_employer_rate)
+        config.pf_employee_rate = get_decimal("pf_employee_rate", config.pf_employee_rate)
+        config.pf_ceiling = get_decimal("pf_ceiling", config.pf_ceiling)
+        config.esi_employer_rate = get_decimal("esi_employer_rate", config.esi_employer_rate)
+        config.esi_employee_rate = get_decimal("esi_employee_rate", config.esi_employee_rate)
+        config.esi_ceiling = get_decimal("esi_ceiling", config.esi_ceiling)
+        config.pt_threshold = get_decimal("pt_threshold", config.pt_threshold)
+        config.pt_amount_below = get_decimal("pt_amount_below", config.pt_amount_below)
+        config.pt_amount_above = get_decimal("pt_amount_above", config.pt_amount_above)
+
+        # Salary Components
+        config.basic_percentage = get_decimal("basic_percentage", config.basic_percentage)
+        config.hra_percentage = get_decimal("hra_percentage", config.hra_percentage)
+        config.lta_percentage = get_decimal("lta_percentage", config.lta_percentage)
+        config.special_allowance_percentage = get_decimal(
+            "special_allowance_percentage", config.special_allowance_percentage
+        )
+
+        # BD Rates
+        config.bd_basic_percentage = get_decimal("bd_basic_percentage", config.bd_basic_percentage)
+        config.bd_hra_percentage = get_decimal("bd_hra_percentage", config.bd_hra_percentage)
+        config.bd_medical_percentage = get_decimal("bd_medical_percentage", config.bd_medical_percentage)
+        config.bd_conveyance_percentage = get_decimal("bd_conveyance_percentage", config.bd_conveyance_percentage)
+
+        # US Rates
+        config.us_basic_percentage = get_decimal("us_basic_percentage", config.us_basic_percentage)
+        config.us_tax_percentage = get_decimal("us_tax_percentage", config.us_tax_percentage)
+
+        config.save()
+        messages.success(request, f"Payroll configuration for {company.name} updated successfully.")
+        return redirect("payroll_settings")
+
+    return render(request, "core/payroll_settings.html", {"config": config, "company": company})
 
 
 @login_required
@@ -4021,3 +4129,96 @@ def get_notification_url(notification):
         return reverse("regularization_list")
 
     return "#"
+
+
+@csrf_exempt
+def biometric_sync_api(request):
+    """
+    Real-time API endpoint for Biometric Door/Attendance Devices
+    Supported devices: ZKTeco, Hikvision, etc. (Generic format)
+    """
+    import json
+    from datetime import datetime
+
+    from django.http import JsonResponse
+    from django.utils import timezone
+
+    from companies.models import BiometricDevice
+    from employees.models import Attendance, Employee
+
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "Only POST allowed"}, status=405)
+
+    try:
+        # Most devices send JSON or Form Data
+        if request.content_type == "application/json":
+            data = json.loads(request.body)
+        else:
+            data = request.POST
+
+        # Required fields: serial_number (of device), biometric_id (of employee), timestamp
+        device_sn = data.get("serial_number")
+        bio_id = data.get("biometric_id")
+        event_time_str = data.get("timestamp")  # Format: YYYY-MM-DD HH:MM:SS
+        event_type = data.get("event_type", "CHECK")  # CHECK, DOOR_OPEN
+
+        if not device_sn or not bio_id:
+            return JsonResponse({"status": "error", "message": "Missing device or employee ID"}, status=400)
+
+        # 1. Verify Device
+        device = BiometricDevice.objects.filter(serial_number=device_sn, is_active=True).first()
+        if not device:
+            return JsonResponse({"status": "error", "message": "Unregistered or inactive device"}, status=403)
+
+        # 2. Identify Employee
+        employee = Employee.objects.filter(biometric_id=bio_id, company=device.company).first()
+        if not employee:
+            return JsonResponse({"status": "error", "message": "Employee not found for this biometric ID"}, status=404)
+
+        # 3. Parse Timestamp
+        try:
+            event_time = timezone.make_aware(datetime.strptime(event_time_str, "%Y-%m-%d %H:%M:%S"))
+        except:
+            event_time = timezone.now()
+
+        # 4. Record Attendance or Access
+        date = event_time.date()
+        attendance, created = Attendance.objects.get_or_create(
+            employee=employee, date=date, defaults={"status": "PRESENT" if event_type == "CHECK" else "DOOR_OPEN"}
+        )
+
+        attendance.current_session_type = "BIOMETRIC"
+
+        if event_type == "CHECK":
+            # Logic for first-in/last-out
+            if not attendance.clock_in or event_time < attendance.clock_in:
+                attendance.clock_in = event_time
+                attendance.calculate_late_arrival()
+
+            if not attendance.clock_out or event_time > attendance.clock_out:
+                attendance.clock_out = event_time
+                attendance.calculate_early_departure()
+
+            attendance.status = "PRESENT"
+        else:
+            # Simple door access logs
+            if attendance.status == "ABSENT":
+                attendance.status = "DOOR_OPEN"
+
+        attendance.save()
+
+        # Update device last sync
+        device.last_sync = timezone.now()
+        device.save()
+
+        return JsonResponse(
+            {
+                "status": "success",
+                "message": f"Recorded {event_type} for {employee.user.get_full_name()} at {event_time}",
+                "employee": employee.user.get_full_name(),
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"Biometric Sync Error: {str(e)}")
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)

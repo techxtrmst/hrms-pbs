@@ -18,7 +18,11 @@ def role_required(allowed_roles):
             if not request.user.is_authenticated:
                 return redirect("login")
 
-            if request.user.role in allowed_roles or request.user.is_superuser:
+            if (
+                request.user.role == User.Role.SUPERADMIN
+                or request.user.role in allowed_roles
+                or request.user.is_superuser
+            ):
                 return view_func(request, *args, **kwargs)
             else:
                 messages.error(

@@ -395,6 +395,11 @@
                 <h1 class="page-title">Payroll Management</h1>
                 <p class="text-muted mb-0">Generate and manage employee monthly payslips</p>
             </div>
+            <div class="ms-4">
+                <a href="{% url 'payroll_settings' %}" class="btn btn-view">
+                    <i class="fas fa-cog me-2"></i>Settings
+                </a>
+            </div>
         </div>
 
         <form method="GET" class="filter-section">
@@ -869,7 +874,7 @@
         // PF checkbox change handler
         const pfCheckbox = document.getElementById('calc_pf_enabled');
         if (pfCheckbox) {
-            pfCheckbox.addEventListener('change', function() {
+            pfCheckbox.addEventListener('change', function () {
                 // If calculation results are visible, recalculate to update the display
                 const calcResults = document.getElementById('calcResults');
                 if (calcResults && calcResults.style.display !== 'none') {
