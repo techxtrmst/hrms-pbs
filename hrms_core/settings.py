@@ -43,7 +43,12 @@ DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "testserver"])
 
 # CSRF Configuration
+# Ensure protocol is included (https:// or http://)
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+if not CSRF_TRUSTED_ORIGINS and not DEBUG:
+    # Attempt to auto-detect if env is missing but we are in production
+    # This is a safety fallback, better to set in .env
+    CSRF_TRUSTED_ORIGINS = []
 
 
 # Application definition

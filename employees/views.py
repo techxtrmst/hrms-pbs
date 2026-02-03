@@ -1433,6 +1433,7 @@ def check_leave_balance(request):
 def approve_leave(request, pk):
     if request.method == "POST":
         leave_request = LeaveRequest.objects.get(pk=pk)
+        approval_type = request.POST.get("approval_type", "FULL")
 
         # Security check: Only Manager or Admin can approve
         user = request.user

@@ -79,24 +79,23 @@ class CompanyIsolationMiddleware:
         Identify company from the request domain
         Supports both primary domain and allowed domains
         """
-        host = request.get_host().split(":")[0]  # Remove port if present
+        host = request.get_host().split(":")[0].lower()
 
-        # Try to find company by primary domain
-        try:
-            company = Company.objects.filter(primary_domain__iexact=host, is_active=True).first()
-            if company:
-                return company
-        except Company.DoesNotExist:
-            pass
+        # Try to find company by primary domain (uses index, very fast)
+        company = Company.objects.filter(primary_domain__iexact=host, is_active=True).first()
+        if company:
+            return company
 
-        # Try to find by allowed domains
-        for company in Company.objects.filter(is_active=True):
+        # Fallback: Search in allowed_domains TextField (narrow search)
+        # Using __icontains is faster than looping over ALL companies in Python
+        candidate_companies = Company.objects.filter(allowed_domains__icontains=host, is_active=True)
+        for company in candidate_companies:
             if company.is_domain_allowed(host):
                 return company
 
         # For development: if localhost or 127.0.0.1, try to get from user's email domain
         if host in ["localhost", "127.0.0.1"]:
-            return None  # Will be determined by user's company
+            return None
 
         return None
 

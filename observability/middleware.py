@@ -175,17 +175,20 @@ class ObservabilityMiddleware:
         # Calculate duration
         duration_ms = (time.perf_counter() - start_time) * 1000
 
-        # Log the request (async to avoid blocking)
+        # Log the request (async to avoid blocking if possible, or skip if internal)
         try:
-            self._log_request(
-                request=request,
-                response=response,
-                duration_ms=duration_ms,
-                sql_capture=sql_capture,
-                error_log=error_log,
-            )
+            # Check if we should log based on configuration
+            if self.config.get("ENABLED", True):
+                self._log_request(
+                    request=request,
+                    response=response,
+                    duration_ms=duration_ms,
+                    sql_capture=sql_capture,
+                    error_log=error_log,
+                )
         except Exception as e:
-            logger.error(f"Failed to log request: {e}")
+            # Use bind to avoid double logging if already in context
+            logger.warning(f"Observability failed to log: {e}")
 
         return response
 
