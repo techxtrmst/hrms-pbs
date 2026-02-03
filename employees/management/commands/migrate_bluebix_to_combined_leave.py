@@ -1,11 +1,12 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.db.models import Q
 
 from employees.models import Employee
 
 
 class Command(BaseCommand):
-    help = "Migrate existing Bluebix employees to combined sick/casual leave system"
+    help = "Migrate existing Bluebix and Softstandard employees to combined sick/casual leave system"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -20,11 +21,13 @@ class Command(BaseCommand):
         if dry_run:
             self.stdout.write(self.style.WARNING("DRY RUN MODE - No changes will be made"))
 
-        self.stdout.write(self.style.SUCCESS("Starting Bluebix combined leave migration..."))
+        self.stdout.write(self.style.SUCCESS("Starting combined leave migration..."))
 
         try:
-            # Get all Bluebix employees
-            bluebix_employees = Employee.objects.filter(company__name__icontains="bluebix")
+            # Get all Bluebix and Softstandard employees
+            bluebix_employees = Employee.objects.filter(
+                Q(company__name__icontains="bluebix") | Q(company__name__icontains="softstandard")
+            )
 
             if not bluebix_employees.exists():
                 self.stdout.write(self.style.WARNING("No Bluebix employees found"))

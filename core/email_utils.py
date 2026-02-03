@@ -9,6 +9,7 @@ import environ
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.template.loader import render_to_string
+from django.utils import timezone
 
 env = environ.Env()
 logger = logging.getLogger(__name__)
@@ -342,6 +343,106 @@ def send_probation_completion_email(employee):
         return False
 
 
+def send_shift_change_notification(employee, old_shift, new_shift):
+    """
+    Send email notification to employee when their shift is changed
+
+    Args:
+        employee: Employee model instance
+        old_shift: Previous ShiftSchedule instance (can be None)
+        new_shift: New ShiftSchedule instance (can be None)
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    try:
+        # Check if employee has email
+        if not employee.user.email:
+            logger.warning(f"Employee {employee.user.get_full_name()} has no email address")
+            return False
+
+        company = employee.company
+
+        # Get company email connection
+        connection = get_company_email_connection(company)
+
+        # Determine from email
+        if company.hr_email and company.hr_email_name:
+            from_email = f"{company.hr_email_name} <{company.hr_email}>"
+        elif company.hr_email:
+            from_email = f"{company.name} HR <{company.hr_email}>"
+        else:
+            from_email = "Petabytz HR <hrms@petabytz.com>"
+
+        # Format shift information
+        def format_shift_info(shift):
+            if shift:
+                working_days = shift.working_days_list
+                return {
+                    "name": shift.name,
+                    "start_time": shift.start_time.strftime("%I:%M %p"),
+                    "end_time": shift.end_time.strftime("%I:%M %p"),
+                    "working_days": ", ".join(working_days),
+                    "grace_period": shift.grace_period_minutes,
+                    "lunch_break": f"{shift.lunch_break_start.strftime('%I:%M %p')} - {shift.lunch_break_end.strftime('%I:%M %p')}"
+                    if shift.lunch_break_start and shift.lunch_break_end
+                    else "Not specified",
+                }
+            return {
+                "name": "No Shift Assigned",
+                "start_time": "N/A",
+                "end_time": "N/A",
+                "working_days": "N/A",
+                "grace_period": "N/A",
+                "lunch_break": "N/A",
+            }
+
+        old_shift_info = format_shift_info(old_shift)
+        new_shift_info = format_shift_info(new_shift)
+
+        # Prepare context for email template
+        context = {
+            "employee_name": employee.user.get_full_name(),
+            "employee_id": employee.badge_id or "N/A",
+            "department": employee.department,
+            "designation": employee.designation,
+            "company_name": company.name,
+            "old_shift": old_shift_info,
+            "new_shift": new_shift_info,
+            "change_date": timezone.now().strftime("%d %B %Y at %I:%M %p"),
+        }
+
+        # Render HTML email
+        html_content = render_to_string("core/emails/shift_change_notification.html", context)
+
+        # Create email subject
+        if new_shift:
+            subject = f"🕒 Shift Assignment Updated - {new_shift.name}"
+        else:
+            subject = "🕒 Shift Assignment Removed"
+
+        # Send email to employee
+        email = EmailMultiAlternatives(
+            subject,
+            "",  # Plain text content (empty, using HTML)
+            from_email,
+            [employee.user.email],
+            connection=connection,
+        )
+        email.attach_alternative(html_content, "text/html")
+        email.send()
+
+        logger.info(f"Shift change notification sent to {employee.user.get_full_name()} ({employee.user.email})")
+        return True
+
+    except Exception as e:
+        logger.error(f"Failed to send shift change notification to {employee.user.get_full_name()}: {str(e)}")
+        import traceback
+
+        logger.error(f"Shift change notification traceback: {traceback.format_exc()}")
+        return False
+
+
 def send_leave_request_notification(leave_request):
     """
     Send leave request notification to company HR email and reporting manager
@@ -374,7 +475,7 @@ def send_leave_request_notification(leave_request):
                 # Try to parse string to date
                 try:
                     date_obj = datetime.strptime(date_obj, "%Y-%m-%d").date()
-                except (ValueError, TypeError):
+                except:
                     return date_obj  # Return as-is if parsing fails
             return date_obj.strftime(format_str) if hasattr(date_obj, "strftime") else str(date_obj)
 
@@ -383,7 +484,7 @@ def send_leave_request_notification(leave_request):
                 # Try to parse string to datetime
                 try:
                     dt_obj = datetime.fromisoformat(dt_obj.replace("Z", "+00:00"))
-                except (ValueError, TypeError):
+                except:
                     return dt_obj  # Return as-is if parsing fails
             return dt_obj.strftime(format_str) if hasattr(dt_obj, "strftime") else str(dt_obj)
 
@@ -619,7 +720,7 @@ def send_welcome_email_with_link(employee, domain):
         # Construct the link
         try:
             link = f"http://{domain}{reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})}"
-        except Exception:
+        except:
             # Fallback if URL name differs
             link = f"http://{domain}/accounts/reset/{uid}/{token}/"
 
@@ -632,7 +733,7 @@ def send_welcome_email_with_link(employee, domain):
 
         try:
             html_content = render_to_string("core/emails/welcome_email.html", context)
-        except Exception:
+        except:
             # Fallback Template
             html_content = f"<html><body><h2>Welcome to {employee.company.name}!</h2><p>Please activate your account: <a href='{link}'>{link}</a></p></body></html>"
 

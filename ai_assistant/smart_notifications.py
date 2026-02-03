@@ -88,32 +88,32 @@ class SmartNotifications:
             # Check if any balance is negative or near zero
             warnings = []
 
-            if balance.casual_leave_balance() < 0:
+            if balance.casual_leave_balance < 0:
                 warnings.append(
                     {
                         "type": "NEGATIVE_BALANCE",
                         "leave_type": "Casual Leave",
-                        "balance": balance.casual_leave_balance(),
-                        "message": f"Your Casual Leave balance is negative ({balance.casual_leave_balance()}). Future leaves will be LOP.",
+                        "balance": balance.casual_leave_balance,
+                        "message": f"Your Casual Leave balance is negative ({balance.casual_leave_balance}). Future leaves will be LOP.",
                     }
                 )
-            elif balance.casual_leave_balance() < 1:
+            elif balance.casual_leave_balance < 1:
                 warnings.append(
                     {
                         "type": "LOW_BALANCE",
                         "leave_type": "Casual Leave",
-                        "balance": balance.casual_leave_balance(),
-                        "message": f"Only {balance.casual_leave_balance()} Casual Leave remaining.",
+                        "balance": balance.casual_leave_balance,
+                        "message": f"Only {balance.casual_leave_balance} Casual Leave remaining.",
                     }
                 )
 
-            if balance.sick_leave_balance() < 0:
+            if balance.sick_leave_balance < 0:
                 warnings.append(
                     {
                         "type": "NEGATIVE_BALANCE",
                         "leave_type": "Sick Leave",
-                        "balance": balance.sick_leave_balance(),
-                        "message": f"Your Sick Leave balance is negative ({balance.sick_leave_balance()}). Future leaves will be LOP.",
+                        "balance": balance.sick_leave_balance,
+                        "message": f"Your Sick Leave balance is negative ({balance.sick_leave_balance}). Future leaves will be LOP.",
                     }
                 )
 
@@ -284,9 +284,8 @@ class SmartNotifications:
         try:
             balance = employee.leave_balance
             digest["summary"]["leave_balance"] = {
-                "casual": balance.casual_leave_balance(),
-                "sick": balance.sick_leave_balance(),
-                "earned": balance.earned_leave_balance(),
+                "casual": balance.casual_leave_balance,
+                "sick": balance.sick_leave_balance,
             }
         except Exception:
             digest["summary"]["leave_balance"] = None

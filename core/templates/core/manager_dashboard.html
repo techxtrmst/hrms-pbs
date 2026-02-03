@@ -210,6 +210,35 @@
             transform: translateY(0);
         }
     }
+
+    .btn-view-holidays {
+        background: var(--keka-primary);
+        color: white;
+        border: 2px solid white;
+        border-radius: 8px;
+        padding: 8px 20px;
+        font-size: 15px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 4px 12px rgba(91, 71, 251, 0.15);
+    }
+
+    .btn-view-holidays:hover {
+        background: #4834d4;
+        color: white;
+        border-color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(91, 71, 251, 0.25);
+        text-decoration: none;
+    }
+
+    .btn-view-holidays i {
+        font-size: 18px;
+    }
 </style>
 {% endblock %}
 
@@ -222,8 +251,19 @@
                 Welcome back, {{ manager.user.first_name }}! Here's what's happening with your team today.
             </p>
         </div>
-        <div style="font-size: 14px; color: var(--keka-text-secondary);">
-            {{ today|date:"l, F j, Y" }}
+        <div style="display: flex; align-items: center; gap: 24px;">
+            <a href="{% url 'employee_holidays' %}" class="btn-view-holidays">
+                <i class="far fa-calendar-alt"></i>
+                View Holidays
+            </a>
+            <div style="text-align: right;">
+                <div style="font-size: 16px; font-weight: 600; color: var(--keka-text-primary);">
+                    {{ today|date:"l" }}
+                </div>
+                <div style="font-size: 14px; color: var(--keka-text-secondary);">
+                    {{ today|date:"F j, Y" }}
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -410,7 +450,8 @@
                                             </div>
                                             <div>
                                                 <div class="small fw-bold text-muted text-uppercase"
-                                                    style="font-size: 0.6rem;">{{ announcement.created_at|date:"d M Y" }}</div>
+                                                    style="font-size: 0.6rem;">{{ announcement.created_at|date:"d M Y"
+                                                    }}</div>
                                                 <h6 class="fw-bold text-dark m-0 line-clamp-1"
                                                     style="font-size: 0.9rem;">{{ announcement.title }}</h6>
                                             </div>

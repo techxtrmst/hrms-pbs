@@ -375,6 +375,8 @@
     <!-- Form -->
     <form method="post" id="employeeForm" class="needs-validation" novalidate>
         {% csrf_token %}
+        <input type="hidden" name="ctc_change_reason" id="ctc_change_reason">
+        <input type="hidden" name="designation_change_reason" id="designation_change_reason">
 
         {% if form.non_field_errors %}
         <div class="alert alert-danger rounded-4">
@@ -623,17 +625,6 @@
 
             <div class="row g-3">
                 <div class="col-md-4">
-                    <label class="form-label">Department <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                        {% render_field form.department class="form-select" placeholder="Select Department" %}
-                        <button class="btn btn-outline-primary" type="button" onclick="openQuickAdd('department')"
-                            title="Add New Department">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                    </div>
-                    <div class="text-danger">{{ form.department.errors.0 }}</div>
-                </div>
-                <div class="col-md-4">
                     <label class="form-label">Designation <span class="text-danger">*</span></label>
                     <div class="input-group">
                         {% render_field form.designation class="form-select" placeholder="Select Designation" %}
@@ -643,6 +634,17 @@
                         </button>
                     </div>
                     <div class="text-danger">{{ form.designation.errors.0 }}</div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Department <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        {% render_field form.department class="form-select" placeholder="Select Department" %}
+                        <button class="btn btn-outline-primary" type="button" onclick="openQuickAdd('department')"
+                            title="Add New Department">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div class="text-danger">{{ form.department.errors.0 }}</div>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Location <span class="text-danger">*</span></label>
@@ -745,6 +747,115 @@
         </div>
     </div>
 </div>
+
+<!-- Reason for CTC Change Modal -->
+<div class="modal fade" id="ctcChangeModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 bg-light rounded-top-4">
+                <h5 class="modal-title fw-bold">Reason for CTC Change</h5>
+                <button type="button" class="btn-close" aria-label="Close" onclick="cancelCTCChange()"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted mb-3">You have modified the Annual CTC. Please specify the reason for this change.
+                </p>
+                <div class="mb-3">
+                    <label class="form-label fw-bold mb-2">Select Reason</label>
+                    <div class="d-flex flex-column gap-2">
+                        <div class="form-check p-3 border rounded">
+                            <input class="form-check-input" type="radio" name="ctcReasonOption" id="reasonPromotion"
+                                value="Promotion">
+                            <label class="form-check-label w-100" for="reasonPromotion"
+                                style="cursor: pointer;">Promotion</label>
+                        </div>
+                        <div class="form-check p-3 border rounded">
+                            <input class="form-check-input" type="radio" name="ctcReasonOption" id="reasonIncrement"
+                                value="Annual Increment">
+                            <label class="form-check-label w-100" for="reasonIncrement" style="cursor: pointer;">Annual
+                                Increment</label>
+                        </div>
+                        <div class="form-check p-3 border rounded">
+                            <input class="form-check-input" type="radio" name="ctcReasonOption" id="reasonCorrection"
+                                value="Correction">
+                            <label class="form-check-label w-100" for="reasonCorrection"
+                                style="cursor: pointer;">Correction</label>
+                        </div>
+                        <div class="form-check p-3 border rounded">
+                            <input class="form-check-input" type="radio" name="ctcReasonOption" id="reasonOther"
+                                value="Other">
+                            <label class="form-check-label w-100" for="reasonOther"
+                                style="cursor: pointer;">Other</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3 d-none" id="otherReasonContainer">
+                    <label class="form-label">Specify Reason</label>
+                    <input type="text" class="form-control" id="otherReasonInput" placeholder="Enter reason...">
+                </div>
+                <div id="ctcModalError" class="text-danger small mt-2 d-none">Please select a reason.</div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill" onclick="cancelCTCChange()">Cancel</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4" onclick="confirmCTCChange()">Save
+                    Reason</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reason for Designation Change Modal -->
+<div class="modal fade" id="designationChangeModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 bg-light rounded-top-4">
+                <h5 class="modal-title fw-bold">Designation Change</h5>
+                <button type="button" class="btn-close" aria-label="Close" onclick="cancelDesigChange()"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted mb-3">You have modified the Designation. Please specify the reason.</p>
+                <div class="mb-3">
+                    <label class="form-label fw-bold mb-2">Select Reason</label>
+                    <div class="d-flex flex-column gap-2">
+                        <div class="form-check p-3 border rounded">
+                            <input class="form-check-input" type="radio" name="desigReasonOption" id="desigPromotion"
+                                value="Promotion">
+                            <label class="form-check-label w-100" for="desigPromotion"
+                                style="cursor: pointer;">Promotion</label>
+                        </div>
+                        <div class="form-check p-3 border rounded">
+                            <input class="form-check-input" type="radio" name="desigReasonOption" id="desigCorrection"
+                                value="Correction">
+                            <label class="form-check-label w-100" for="desigCorrection"
+                                style="cursor: pointer;">Correction</label>
+                        </div>
+                        <div class="form-check p-3 border rounded">
+                            <input class="form-check-input" type="radio" name="desigReasonOption"
+                                id="desigReorganization" value="Reorganization">
+                            <label class="form-check-label w-100" for="desigReorganization"
+                                style="cursor: pointer;">Reorganization</label>
+                        </div>
+                        <div class="form-check p-3 border rounded">
+                            <input class="form-check-input" type="radio" name="desigReasonOption" id="desigOther"
+                                value="Other">
+                            <label class="form-check-label w-100" for="desigOther"
+                                style="cursor: pointer;">Other</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3 d-none" id="otherDesigReasonContainer">
+                    <label class="form-label">Specify Reason</label>
+                    <input type="text" class="form-control" id="otherDesigReasonInput" placeholder="Enter reason...">
+                </div>
+                <div id="desigModalError" class="text-danger small mt-2 d-none">Please select a reason.</div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill" onclick="cancelDesigChange()">Cancel</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4" onclick="confirmDesigChange()">Save
+                    Reason</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -794,6 +905,8 @@
                         const option = new Option(data.name, data.name);
                         selectElement.add(option);
                         selectElement.value = data.name;
+
+                        selectElement.dispatchEvent(new Event('change'));
 
                         // Flash success
                         selectElement.style.borderColor = '#10b981';
@@ -862,10 +975,9 @@
     });
 
     // Emergency Contacts Management
+    var contactCounter = 1;
     {% if form.instance.pk %}
-    let contactCounter = {{ form.instance.emergency_contacts.all| length }};
-    {% else %}
-    let contactCounter = 1;
+    contactCounter = {{ form.instance.emergency_contacts.all | length }};
     {% endif %}
 
     function addEmergencyContact() {
@@ -958,6 +1070,171 @@
                 handlePrimaryChange(this);
             });
         });
+
+        // CTC Change Logic
+        const ctcInput = document.getElementById('id_annual_ctc');
+        if (ctcInput) {
+            // Store initial value
+            ctcInput.dataset.initialValue = ctcInput.value;
+
+            // Initialize Modal
+            const ctcModalElement = document.getElementById('ctcChangeModal');
+            if (ctcModalElement) {
+                const ctcModal = new bootstrap.Modal(ctcModalElement);
+
+                // Track if change is confirmed
+                let isConfirmed = false;
+
+                ctcInput.addEventListener('change', function () {
+                    const initialVal = this.dataset.initialValue;
+                    const currentVal = this.value;
+
+                    if (initialVal !== currentVal) {
+                        isConfirmed = false; // Reset confirmation
+
+                        // Reset modal state
+                        document.querySelectorAll('input[name="ctcReasonOption"]').forEach(el => el.checked = false);
+                        document.getElementById('otherReasonInput').value = '';
+                        document.getElementById('otherReasonContainer').classList.add('d-none');
+                        document.getElementById('ctcModalError').classList.add('d-none');
+
+                        ctcModal.show();
+                    } else {
+                        // Reverted to original, clear reason
+                        document.getElementById('ctc_change_reason').value = '';
+                    }
+                });
+
+                // Radio button change handler for "Other"
+                document.querySelectorAll('input[name="ctcReasonOption"]').forEach(radio => {
+                    radio.addEventListener('change', function () {
+                        const otherContainer = document.getElementById('otherReasonContainer');
+                        if (this.value === 'Other') {
+                            otherContainer.classList.remove('d-none');
+                        } else {
+                            otherContainer.classList.add('d-none');
+                        }
+                    });
+                });
+
+                // Global functions for modal buttons
+                window.confirmCTCChange = function () {
+                    const selectedOption = document.querySelector('input[name="ctcReasonOption"]:checked');
+                    const errorDiv = document.getElementById('ctcModalError');
+
+                    if (!selectedOption) {
+                        errorDiv.textContent = 'Please select a reason.';
+                        errorDiv.classList.remove('d-none');
+                        return;
+                    }
+
+                    let reason = selectedOption.value;
+                    if (reason === 'Other') {
+                        const otherText = document.getElementById('otherReasonInput').value.trim();
+                        if (!otherText) {
+                            errorDiv.textContent = 'Please specify the reason.';
+                            errorDiv.classList.remove('d-none');
+                            return;
+                        }
+                        reason = `Other: ${otherText}`;
+                    }
+
+                    document.getElementById('ctc_change_reason').value = reason;
+                    isConfirmed = true;
+                    ctcModal.hide();
+
+                    // Flash the input to show success
+                    ctcInput.style.borderColor = '#10b981';
+                    setTimeout(() => {
+                        ctcInput.style.borderColor = ''; // return to CSS default (or validation state)
+                    }, 1000);
+                };
+
+                window.cancelCTCChange = function () {
+                    // Revert value
+                    ctcInput.value = ctcInput.dataset.initialValue;
+                    document.getElementById('ctc_change_reason').value = '';
+                    ctcModal.hide();
+                };
+            }
+        }
+
+        // Designation Change Logic
+        const desigInput = document.getElementById('id_designation');
+        if (desigInput) {
+            // Store initial value
+            desigInput.dataset.initialValue = desigInput.value;
+
+            // Initialize Modal
+            const desigModalElement = document.getElementById('designationChangeModal');
+            if (desigModalElement) {
+                const desigModal = new bootstrap.Modal(desigModalElement);
+
+                desigInput.addEventListener('change', function () {
+                    const initialVal = this.dataset.initialValue;
+                    const currentVal = this.value;
+
+                    if (initialVal !== currentVal && (initialVal || '').trim() !== '') {
+                        // Reset modal state
+                        document.querySelectorAll('input[name="desigReasonOption"]').forEach(el => el.checked = false);
+                        document.getElementById('otherDesigReasonInput').value = '';
+                        document.getElementById('otherDesigReasonContainer').classList.add('d-none');
+                        document.getElementById('desigModalError').classList.add('d-none');
+
+                        desigModal.show();
+                    } else {
+                        document.getElementById('designation_change_reason').value = '';
+                    }
+                });
+
+                // Radio button change handler for "Other"
+                document.querySelectorAll('input[name="desigReasonOption"]').forEach(radio => {
+                    radio.addEventListener('change', function () {
+                        const otherContainer = document.getElementById('otherDesigReasonContainer');
+                        if (this.value === 'Other') {
+                            otherContainer.classList.remove('d-none');
+                        } else {
+                            otherContainer.classList.add('d-none');
+                        }
+                    });
+                });
+
+                window.confirmDesigChange = function () {
+                    const selectedOption = document.querySelector('input[name="desigReasonOption"]:checked');
+                    const errorDiv = document.getElementById('desigModalError');
+
+                    if (!selectedOption) {
+                        errorDiv.textContent = 'Please select a reason.';
+                        errorDiv.classList.remove('d-none');
+                        return;
+                    }
+
+                    let reason = selectedOption.value;
+                    if (reason === 'Other') {
+                        const otherText = document.getElementById('otherDesigReasonInput').value.trim();
+                        if (!otherText) {
+                            errorDiv.textContent = 'Please specify the reason.';
+                            errorDiv.classList.remove('d-none');
+                            return;
+                        }
+                        reason = `Other: ${otherText}`;
+                    }
+
+                    document.getElementById('designation_change_reason').value = reason;
+                    desigModal.hide();
+
+                    // Flash success
+                    desigInput.style.borderColor = '#10b981';
+                };
+
+                window.cancelDesigChange = function () {
+                    // Revert value
+                    desigInput.value = desigInput.dataset.initialValue;
+                    document.getElementById('designation_change_reason').value = '';
+                    desigModal.hide();
+                };
+            }
+        }
     });
 </script>
 

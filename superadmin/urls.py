@@ -9,7 +9,9 @@ urlpatterns = [
     path("dashboard/", views.superadmin_dashboard, name="dashboard"),
     # Company context switching API
     path("api/switch-company/", views.switch_company_api, name="switch_company_api"),
+    path("api/test-biometric-sync/", views.test_biometric_sync_api, name="test_biometric_sync_api"),
     # Drill-down views
+    path("companies/create/", views.create_company_view, name="company_create"),
     path("companies/", views.company_list_view, name="companies"),
     path("employees/", views.employee_list_view, name="employees"),
     path("attendance/today/", views.attendance_today_view, name="attendance_today"),
@@ -28,4 +30,9 @@ urlpatterns = [
     ),
     # Export functionality
     path("export/<str:report_type>/", views.export_data_view, name="export_data"),
+    # Platform Settings
+    path("settings/", views.platform_settings, name="platform_settings"),
+    # New Integrations & Workflows
+    path("biometric/", views.biometric_integration_view, name="biometric_integration"),
+    path("workflows/", views.workflow_configuration_view, name="workflow_configuration"),
 ]
