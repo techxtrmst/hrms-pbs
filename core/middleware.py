@@ -1,12 +1,14 @@
 import threading
 import time
 import uuid
+
 import pytz
-from django.utils import timezone
-from django.shortcuts import redirect
 from django.http import HttpResponseForbidden
-from companies.models import Company
+from django.shortcuts import redirect
+from django.utils import timezone
 from loguru import logger
+
+from companies.models import Company
 
 _thread_locals = threading.local()
 
@@ -81,9 +83,7 @@ class CompanyIsolationMiddleware:
 
         # Try to find company by primary domain
         try:
-            company = Company.objects.filter(
-                primary_domain__iexact=host, is_active=True
-            ).first()
+            company = Company.objects.filter(primary_domain__iexact=host, is_active=True).first()
             if company:
                 return company
         except Company.DoesNotExist:
@@ -146,20 +146,12 @@ class CompanyIsolationMiddleware:
                 return response
 
             # Skip company validation for SUPERADMIN users (for non-admin paths)
-            is_superadmin = (
-                hasattr(request.user, "role")
-                and request.user.role == User.Role.SUPERADMIN
-            )
+            is_superadmin = hasattr(request.user, "role") and request.user.role == User.Role.SUPERADMIN
 
             user_company = request.user.company
 
             # Validate user belongs to the correct company (if domain company is identified)
-            if (
-                not is_superadmin
-                and domain_company
-                and user_company
-                and domain_company.id != user_company.id
-            ):
+            if not is_superadmin and domain_company and user_company and domain_company.id != user_company.id:
                 # User is trying to access wrong company's domain
                 return HttpResponseForbidden(
                     f"Access Denied: You are not authorized to access {domain_company.name}. "
@@ -173,8 +165,7 @@ class CompanyIsolationMiddleware:
             # Validate user has a company assigned (skip for SUPERADMIN)
             if not is_superadmin and not request.company:
                 return HttpResponseForbidden(
-                    "Access Denied: Your account is not associated with any company. "
-                    "Please contact your administrator."
+                    "Access Denied: Your account is not associated with any company. Please contact your administrator."
                 )
 
             # Force Password Change on First Login
@@ -194,6 +185,7 @@ class CompanyIsolationMiddleware:
 
         # Activate User Timezone
         from core.utils import get_user_timezone
+
         tz_name = get_user_timezone(request.user, request.company)
 
         try:
@@ -262,13 +254,7 @@ class LoggingMiddleware:
             duration = (time.time() - start_time) * 1000  # ms
 
             # Log access with status
-            log_level = (
-                "info"
-                if response.status_code < 400
-                else "warning"
-                if response.status_code < 500
-                else "error"
-            )
+            log_level = "info" if response.status_code < 400 else "warning" if response.status_code < 500 else "error"
 
             # Log access entry
             logger.bind(

@@ -1,8 +1,3 @@
-import calendar
-from decimal import Decimal
-from django.utils import timezone
-from .models import Payslip
-
 def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=True, location=None):
     """
     Calculates the payslip breakdown based on the user's provided logic.
@@ -19,7 +14,7 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
     country_code = "IN"
     currency_symbol = "₹"
     if location:
-        if hasattr(location, 'country_code') and location.country_code:
+        if hasattr(location, "country_code") and location.country_code:
             status_code = str(location.country_code).strip().upper()
             if status_code in ["BD", "BANGLADESH", "DHAKA"]:
                 country_code = "BD"
@@ -37,14 +32,14 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
                 country_code = loc_str
     # Determine currency symbol from location
     if hasattr(location, "currency"):
-            if location.currency == "USD":
-                currency_symbol = "$"
-            elif location.currency == "BDT":
-                currency_symbol = "৳"
-            elif location.currency == "INR":
-                currency_symbol = "₹"
-            else:
-                currency_symbol = location.currency + " "
+        if location.currency == "USD":
+            currency_symbol = "$"
+        elif location.currency == "BDT":
+            currency_symbol = "৳"
+        elif location.currency == "INR":
+            currency_symbol = "₹"
+        else:
+            currency_symbol = location.currency + " "
 
     # Fetch company configuration
     from companies.models import PayrollConfiguration
@@ -55,7 +50,7 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
 
     def get_breakdown_logic(ctc_to_use, is_pf_enabled, country="IN"):
         """Helper to apply the specific calculation logic to a given CTC amount"""
-        
+
         if country == "BD":
             # -------- Bangladesh (Dhaka) Logic --------
             basic_rate = float(config.bd_basic_percentage) / 100 if config else 0.50
@@ -70,17 +65,17 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
             conveyance = round(gross_monthly * conv_rate, 2)
             lta = 0.00
             other_allowance = 0.00
-            
+
             if is_pf_enabled:
-                employee_pf = round(basic * 0.10, 2) # Typical BD PF is 10%
+                employee_pf = round(basic * 0.10, 2)  # Typical BD PF is 10%
                 employer_pf = employee_pf
             else:
                 employee_pf = 0.00
                 employer_pf = 0.00
-                
-            professional_tax = 0.00 # No PT in BD
+
+            professional_tax = 0.00  # No PT in BD
             net_salary = round(gross_monthly - employee_pf, 2)
-            
+
             return {
                 "gross": gross_monthly,
                 "basic": basic,
@@ -92,7 +87,7 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
                 "employee_pf": employee_pf,
                 "employer_pf": employer_pf,
                 "professional_tax": professional_tax,
-                "net_salary": net_salary
+                "net_salary": net_salary,
             }
         elif country == "US":
             # -------- US Logic (Simplified) --------
@@ -114,7 +109,7 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
             # Total withholdings (Federal/State Tax placeholder)
             income_tax = round(gross_monthly * tax_rate, 2)
             net_salary = round(gross_monthly - employee_pf - income_tax, 2)
-            
+
             return {
                 "gross": gross_monthly,
                 "basic": basic,
@@ -125,8 +120,8 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
                 "other_allowance": other_allowance,
                 "employee_pf": employee_pf,
                 "employer_pf": employer_pf,
-                "professional_tax": income_tax, # Mapping Federal/State Tax to Professional Tax field
-                "net_salary": net_salary
+                "professional_tax": income_tax,  # Mapping Federal/State Tax to Professional Tax field
+                "net_salary": net_salary,
             }
         else:
             # -------- India Logic (Default) --------
@@ -159,9 +154,7 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
                     basic = round(gross_monthly * b_pct, 2)
 
                 # Employee PF
-                employee_pf = (
-                    round(basic * pf_ee_rate, 2) if basic < pf_ceil else round(pf_ceil * pf_ee_rate, 2)
-                )
+                employee_pf = round(basic * pf_ee_rate, 2) if basic < pf_ceil else round(pf_ceil * pf_ee_rate, 2)
             else:
                 # -------- No PF --------
                 gross_monthly = round(ctc_to_use, 2)
@@ -182,7 +175,7 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
 
             # Net Take Home Salary
             net_salary = round(net_before_pt - professional_tax, 2)
-            
+
             return {
                 "gross": gross_monthly,
                 "basic": basic,
@@ -194,20 +187,20 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
                 "professional_tax": professional_tax,
                 "net_salary": net_salary,
                 "medical": 0.00,
-                "conveyance": 0.00
+                "conveyance": 0.00,
             }
 
     # Monthly CTC (Full)
     full_monthly_ctc = round(annual_ctc / 12, 2)
     full_breakdown = get_breakdown_logic(full_monthly_ctc, pf_enabled, country_code)
-    
+
     # Prorated Monthly CTC based on worked days
     if total_days > 0:
         monthly_ctc = round(full_monthly_ctc * (worked_days / total_days), 2)
         prorated_breakdown = get_breakdown_logic(monthly_ctc, pf_enabled, country_code)
     else:
         monthly_ctc = 0.0
-        prorated_breakdown = {k: 0.0 for k in full_breakdown}
+        prorated_breakdown = dict.fromkeys(full_breakdown, 0.0)
 
     return {
         "monthly_ctc": monthly_ctc,
@@ -228,9 +221,8 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
         "total_days": total_days,
         "pf_enabled": pf_enabled,
         "country_code": country_code,
-        "currency_symbol": currency_symbol
+        "currency_symbol": currency_symbol,
     }
-
 
 
 def num2words_flexible(number, currency="Rupees"):
@@ -240,11 +232,22 @@ def num2words_flexible(number, currency="Rupees"):
     number = int(round(float(number)))
     if number == 0:
         return f"Zero {currency} only"
-    
+
     units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"]
-    teens = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"]
+    teens = [
+        "Ten",
+        "Eleven",
+        "Twelve",
+        "Thirteen",
+        "Fourteen",
+        "Fifteen",
+        "Sixteen",
+        "Seventeen",
+        "Eighteen",
+        "Nineteen",
+    ]
     tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
-    
+
     def convert_below_1000(n):
         res = ""
         if n >= 100:
@@ -262,7 +265,7 @@ def num2words_flexible(number, currency="Rupees"):
 
     res = ""
     temp_num = number
-    
+
     if currency == "Dollars":
         # International System (Millions/Billions)
         # Billions
@@ -295,8 +298,9 @@ def num2words_flexible(number, currency="Rupees"):
             temp_num %= 1000
         # Remaining
         res += convert_below_1000(temp_num)
-    
+
     return res.strip() + f" {currency} only"
+
 
 # Mantain alias for backward compatibility if needed, though we will update views
 def num2words_indian(number):

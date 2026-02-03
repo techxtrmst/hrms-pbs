@@ -1202,7 +1202,8 @@ def employee_profile(request):
 
     # Get work history
     from .models import WorkHistory
-    work_history = WorkHistory.objects.filter(employee=employee).order_by('-date', '-created_at')
+
+    work_history = WorkHistory.objects.filter(employee=employee).order_by("-date", "-created_at")
 
     return render(
         request,
@@ -1283,12 +1284,11 @@ class LeaveApplyView(LoginRequiredMixin, CreateView):
 
         # Multi-level Workflow Integration
         from core.models import ApprovalWorkflow
+
         workflow = ApprovalWorkflow.objects.filter(
-            company=employee.company, 
-            workflow_type="LEAVE", 
-            is_active=True
+            company=employee.company, workflow_type="LEAVE", is_active=True
         ).first()
-        
+
         if workflow:
             form.instance.workflow = workflow
             form.instance.current_step = 1
@@ -1456,21 +1456,28 @@ def approve_leave(request, pk):
             config = leave_request.workflow.levels_config
             curr_step = str(leave_request.current_step)
             step_config = config.get(curr_step, {})
-            
+
             # Check if user role matches step config
             required_role = step_config.get("role")
             if required_role and user.role != required_role:
                 # If specifically looking for MANAGER, it must be the direct manager
                 if required_role == "MANAGER" and not is_manager:
-                     return JsonResponse({"status": "error", "message": "Only the direct manager can approve this step."}, status=403)
+                    return JsonResponse(
+                        {"status": "error", "message": "Only the direct manager can approve this step."}, status=403
+                    )
                 elif user.role != required_role:
-                     return JsonResponse({"status": "error", "message": f"This step requires {required_role} approval."}, status=403)
+                    return JsonResponse(
+                        {"status": "error", "message": f"This step requires {required_role} approval."}, status=403
+                    )
 
             # Move to next step or finalize
             if leave_request.current_step < leave_request.workflow.levels:
                 leave_request.current_step += 1
                 leave_request.save()
-                messages.success(request, f"Approver level {curr_step} completed. Request moved to level {leave_request.current_step}.")
+                messages.success(
+                    request,
+                    f"Approver level {curr_step} completed. Request moved to level {leave_request.current_step}.",
+                )
                 return redirect("leave_requests")
             else:
                 # Final level reached, proceed to actual approval

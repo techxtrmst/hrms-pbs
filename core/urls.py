@@ -44,9 +44,6 @@ urlpatterns = [
     path("payroll/config/", views.payroll_settings, name="payroll_settings"),
     path("payroll/bulk-upload/", views.bulk_upload_payslips, name="bulk_payroll_upload"),
     path("payroll/download-template/", views.download_payslip_template, name="bulk_payroll_template"),
-
-
-
     # Config
     path("config/holidays/", views.holidays, name="holidays"),
     path(

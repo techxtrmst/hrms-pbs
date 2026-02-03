@@ -1,10 +1,9 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.db.models import Q
 
 from employees.models import Employee
 
-
-from django.db.models import Q
 
 class Command(BaseCommand):
     help = "Migrate existing Bluebix and Softstandard employees to combined sick/casual leave system"

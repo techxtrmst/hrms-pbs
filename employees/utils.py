@@ -1,12 +1,13 @@
 import logging
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
-from django.urls import reverse
-from django.core.mail import EmailMultiAlternatives
+
 from django.conf import settings
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
+from django.urls import reverse
+from django.utils.encoding import force_bytes
 from django.utils.html import strip_tags
+from django.utils.http import urlsafe_base64_encode
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +37,7 @@ def send_activation_email(user, request=None):
 
         # Construct activation link
         try:
-            reset_path = reverse(
-                "password_reset_confirm", kwargs={"uidb64": uid, "token": token}
-            )
+            reset_path = reverse("password_reset_confirm", kwargs={"uidb64": uid, "token": token})
 
             if request:
                 activation_link = request.build_absolute_uri(reset_path)
@@ -49,9 +48,7 @@ def send_activation_email(user, request=None):
 
             logger.info(f"Activation link generated: {activation_link}")
         except Exception as e:
-            logger.error(
-                f"Failed to generate activation link for {user.email}: {str(e)}"
-            )
+            logger.error(f"Failed to generate activation link for {user.email}: {str(e)}")
             return False
 
         # Prepare email content
@@ -68,9 +65,7 @@ def send_activation_email(user, request=None):
             }
 
             # Render HTML content
-            html_content = render_to_string(
-                "accounts/emails/activation_email.html", context
-            )
+            html_content = render_to_string("accounts/emails/activation_email.html", context)
             # Create text fallback
             text_content = strip_tags(html_content)
 
@@ -104,9 +99,7 @@ def send_activation_email(user, request=None):
             logger.info(f"Sending activation email to {user.email} from {from_email}")
             email.send(fail_silently=False)
 
-            logger.info(
-                f"✓ Activation email sent successfully to {user.email} for company {company_name}"
-            )
+            logger.info(f"✓ Activation email sent successfully to {user.email} for company {company_name}")
             return True
 
         except Exception as e:
@@ -118,9 +111,7 @@ def send_activation_email(user, request=None):
             return False
 
     except Exception as e:
-        logger.error(
-            f"Unexpected error in send_activation_email for {user.email}: {str(e)}"
-        )
+        logger.error(f"Unexpected error in send_activation_email for {user.email}: {str(e)}")
         import traceback
 
         logger.error(f"Traceback: {traceback.format_exc()}")
@@ -132,10 +123,11 @@ def send_designation_change_email(employee, old_designation, new_designation, re
     try:
         from django.core.mail import send_mail
         from django.utils import timezone
+
         from core.email_utils import get_hr_email_connection
 
         subject = f"Designation Update - {employee.user.get_full_name()}"
-        
+
         message = f"""Dear {employee.user.first_name},
 
 Your designation has been updated effectively from {timezone.now().date()}.
@@ -150,12 +142,12 @@ If you have any queries, please contact HR.
 Best Regards,
 HR Team
 """
-        
+
         from_email = "Petabytz HR <hrms@petabytz.com>"
         recipient_list = [employee.user.email]
-        
+
         logger.info(f"Sending designation change email to {employee.user.email}")
-        
+
         connection = get_hr_email_connection()
         send_mail(
             subject=subject,
@@ -163,7 +155,7 @@ HR Team
             from_email=from_email,
             recipient_list=recipient_list,
             connection=connection,
-            fail_silently=False
+            fail_silently=False,
         )
         return True
     except Exception as e:
@@ -176,10 +168,11 @@ def send_ctc_change_email(employee, old_ctc, new_ctc, reason):
     try:
         from django.core.mail import send_mail
         from django.utils import timezone
+
         from core.email_utils import get_hr_email_connection
 
         subject = f"CTC Revision - {employee.user.get_full_name()}"
-        
+
         message = f"""Dear {employee.user.first_name},
 
 Your Annual CTC has been revised effectively from {timezone.now().date()}.
@@ -194,12 +187,12 @@ If you have any queries, please contact HR.
 Best Regards,
 HR Team
 """
-        
+
         from_email = "Petabytz HR <hrms@petabytz.com>"
         recipient_list = [employee.user.email]
-        
+
         logger.info(f"Sending CTC change email to {employee.user.email}")
-        
+
         connection = get_hr_email_connection()
         send_mail(
             subject=subject,
@@ -207,7 +200,7 @@ HR Team
             from_email=from_email,
             recipient_list=recipient_list,
             connection=connection,
-            fail_silently=False
+            fail_silently=False,
         )
         return True
     except Exception as e:

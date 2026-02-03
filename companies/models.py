@@ -13,15 +13,11 @@ class Company(models.Model):
         ("BOTH", "India & Dhaka"),
     ]
 
-    name = models.CharField(
-        max_length=255, unique=True, help_text="Company name (e.g., Petabytz)"
-    )
+    name = models.CharField(max_length=255, unique=True, help_text="Company name (e.g., Petabytz)")
     slug = models.SlugField(max_length=255, unique=True, blank=True)
 
     # Domain configuration for multi-tenancy
-    primary_domain = models.CharField(
-        max_length=255, unique=True, help_text="Primary domain (e.g., petabytz.com)"
-    )
+    primary_domain = models.CharField(max_length=255, unique=True, help_text="Primary domain (e.g., petabytz.com)")
     allowed_domains = models.TextField(
         blank=True,
         null=True,
@@ -64,9 +60,7 @@ class Company(models.Model):
         help_text="Database schema name for this company",
     )
 
-    currency = models.CharField(
-        max_length=10, default="INR", help_text="Currency symbol (e.g., INR, USD)"
-    )
+    currency = models.CharField(max_length=10, default="INR", help_text="Currency symbol (e.g., INR, USD)")
 
     # Email Configuration for Birthday/Anniversary Notifications
     hr_email = models.EmailField(
@@ -143,18 +137,10 @@ class Location(models.Model):
     Location model for company-specific regional settings
     """
 
-    company = models.ForeignKey(
-        Company, on_delete=models.CASCADE, related_name="locations"
-    )
-    name = models.CharField(
-        max_length=255, help_text="Location name (e.g., India, US - East, Dhaka)"
-    )
-    country_code = models.CharField(
-        max_length=5, help_text="ISO Country Code (e.g., IN, US, BD)"
-    )
-    timezone = models.CharField(
-        max_length=100, default="Asia/Kolkata", help_text="Timezone for this location"
-    )
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="locations")
+    name = models.CharField(max_length=255, help_text="Location name (e.g., India, US - East, Dhaka)")
+    country_code = models.CharField(max_length=5, help_text="ISO Country Code (e.g., IN, US, BD)")
+    timezone = models.CharField(max_length=100, default="Asia/Kolkata", help_text="Timezone for this location")
     currency = models.CharField(
         max_length=10, default="INR", help_text="Currency symbol for this location (e.g., INR, USD)"
     )
@@ -173,17 +159,30 @@ class Location(models.Model):
     def save(self, *args, **kwargs):
         # Auto-populate currency and country code based on location name if not already set or if default
         name_upper = self.name.upper()
-        
+
         # India Cities - Force correct values if specific cities are detected
-        india_cities = ["HYDERABAD", "HYD", "INDORE", "BHOPAL", "VADODARA", "VADORA", "MUMBAI", "PUNE", "BANGALORE", "CHENNAI", "DELHI", "HYDERBAD"]
+        india_cities = [
+            "HYDERABAD",
+            "HYD",
+            "INDORE",
+            "BHOPAL",
+            "VADODARA",
+            "VADORA",
+            "MUMBAI",
+            "PUNE",
+            "BANGALORE",
+            "CHENNAI",
+            "DELHI",
+            "HYDERBAD",
+        ]
         if any(city in name_upper for city in india_cities):
             self.country_code = "IN"
             self.currency = "INR"
             if self.timezone == "Asia/Kolkata" or not self.timezone:
                 self.timezone = "Asia/Kolkata"
-        
+
         # Dhaka / Bangladesh
-        elif "DHAKA" in name_upper or "BANGLADESH" in name_upper or "BD" == name_upper:
+        elif "DHAKA" in name_upper or "BANGLADESH" in name_upper or name_upper == "BD":
             self.country_code = "BD"
             self.currency = "BDT"
             if self.timezone == "Asia/Kolkata" or not self.timezone or self.timezone == "Asia/Dhaka":
@@ -208,9 +207,7 @@ class Department(models.Model):
     Company-specific Departments
     """
 
-    company = models.ForeignKey(
-        Company, on_delete=models.CASCADE, related_name="departments"
-    )
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="departments")
     name = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -228,9 +225,7 @@ class Designation(models.Model):
     Company-specific Designations
     """
 
-    company = models.ForeignKey(
-        Company, on_delete=models.CASCADE, related_name="designations"
-    )
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="designations")
     name = models.CharField(max_length=100)
     department = models.ForeignKey(
         Department,
@@ -261,18 +256,14 @@ class Holiday(models.Model):
         ("RESTRICTED", "Restricted Holiday"),
     ]
 
-    company = models.ForeignKey(
-        Company, on_delete=models.CASCADE, related_name="holidays"
-    )
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="holidays")
     location = models.ForeignKey(
         Location,
         on_delete=models.CASCADE,
         related_name="holidays",
         help_text="Location where this holiday applies",
     )
-    name = models.CharField(
-        max_length=255, help_text="Holiday name (e.g., Diwali, Independence Day)"
-    )
+    name = models.CharField(max_length=255, help_text="Holiday name (e.g., Diwali, Independence Day)")
     date = models.DateField(help_text="Holiday date")
     holiday_type = models.CharField(
         max_length=20,
@@ -280,12 +271,8 @@ class Holiday(models.Model):
         default="MANDATORY",
         help_text="Type of holiday",
     )
-    description = models.TextField(
-        blank=True, null=True, help_text="Additional details about the holiday"
-    )
-    is_active = models.BooleanField(
-        default=True, help_text="Whether this holiday is currently active"
-    )
+    description = models.TextField(blank=True, null=True, help_text="Additional details about the holiday")
+    is_active = models.BooleanField(default=True, help_text="Whether this holiday is currently active")
 
     # Year field for easy filtering
     year = models.IntegerField(help_text="Year of the holiday")
@@ -293,9 +280,7 @@ class Holiday(models.Model):
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.CharField(
-        max_length=255, blank=True, null=True, help_text="Admin who created this"
-    )
+    created_by = models.CharField(max_length=255, blank=True, null=True, help_text="Admin who created this")
 
     class Meta:
         ordering = ["date"]
@@ -323,13 +308,9 @@ class ShiftTiming(models.Model):
     Model to store company-specific shift timings and breaks.
     """
 
-    company = models.OneToOneField(
-        Company, on_delete=models.CASCADE, related_name="shift_timing"
-    )
+    company = models.OneToOneField(Company, on_delete=models.CASCADE, related_name="shift_timing")
     duration = models.CharField(max_length=100, default="9:00 hrs")
-    morning_break = models.CharField(
-        max_length=255, default="15mins from 10:45 to 11:00"
-    )
+    morning_break = models.CharField(max_length=255, default="15mins from 10:45 to 11:00")
     lunch_break = models.CharField(max_length=255, default="45min from 1:00 to 1:45")
     evening_break = models.CharField(max_length=255, default="15mins from 4:00 to 4:30")
 
@@ -356,22 +337,14 @@ class ShiftSchedule(models.Model):
         ("NONE", "No Action (Just Track)"),
     ]
 
-    company = models.ForeignKey(
-        Company, on_delete=models.CASCADE, related_name="shifts"
-    )
-    name = models.CharField(
-        max_length=100, help_text="e.g., Morning Shift, Night Shift, General"
-    )
-    shift_type = models.CharField(
-        max_length=20, choices=SHIFT_TYPE_CHOICES, default="MORNING"
-    )
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="shifts")
+    name = models.CharField(max_length=100, help_text="e.g., Morning Shift, Night Shift, General")
+    shift_type = models.CharField(max_length=20, choices=SHIFT_TYPE_CHOICES, default="MORNING")
     start_time = models.TimeField(help_text="Shift start time")
     end_time = models.TimeField(help_text="Shift end time")
 
     # Grace period and late arrival settings
-    grace_period_minutes = models.IntegerField(
-        default=15, help_text="Grace period in minutes for late arrival"
-    )
+    grace_period_minutes = models.IntegerField(default=15, help_text="Grace period in minutes for late arrival")
     allowed_late_logins = models.IntegerField(
         default=5, help_text="Number of allowed late logins per month before reaction"
     )
@@ -387,12 +360,8 @@ class ShiftSchedule(models.Model):
     )
 
     # Break times
-    lunch_break_start = models.TimeField(
-        null=True, blank=True, help_text="Lunch break start time"
-    )
-    lunch_break_end = models.TimeField(
-        null=True, blank=True, help_text="Lunch break end time"
-    )
+    lunch_break_start = models.TimeField(null=True, blank=True, help_text="Lunch break start time")
+    lunch_break_end = models.TimeField(null=True, blank=True, help_text="Lunch break end time")
 
     # Working days
     monday = models.BooleanField(default=True)
@@ -469,15 +438,11 @@ class ShiftBreak(models.Model):
     Break times for a specific shift (e.g., Lunch, Tea, Dinner)
     """
 
-    shift = models.ForeignKey(
-        ShiftSchedule, on_delete=models.CASCADE, related_name="breaks"
-    )
+    shift = models.ForeignKey(ShiftSchedule, on_delete=models.CASCADE, related_name="breaks")
     name = models.CharField(max_length=100, help_text="e.g., Lunch Break, Tea Break")
     start_time = models.TimeField()
     end_time = models.TimeField()
-    duration_minutes = models.IntegerField(
-        help_text="Duration in minutes", blank=True, null=True
-    )
+    duration_minutes = models.IntegerField(help_text="Duration in minutes", blank=True, null=True)
 
     class Meta:
         ordering = ["start_time"]
@@ -519,9 +484,7 @@ class Announcement(models.Model):
     Model for company announcements with optional location targeting.
     """
 
-    company = models.ForeignKey(
-        Company, on_delete=models.CASCADE, related_name="announcements"
-    )
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="announcements")
     location = models.ForeignKey(
         Location,
         on_delete=models.CASCADE,
@@ -554,12 +517,8 @@ class LocationWeekOff(models.Model):
     Defines week-off configuration for a specific location.
     """
 
-    company = models.ForeignKey(
-        Company, on_delete=models.CASCADE, related_name="location_week_offs"
-    )
-    location = models.OneToOneField(
-        Location, on_delete=models.CASCADE, related_name="week_off_config"
-    )
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="location_week_offs")
+    location = models.OneToOneField(Location, on_delete=models.CASCADE, related_name="week_off_config")
 
     # Week off days (True = Week Off)
     monday = models.BooleanField(default=False)

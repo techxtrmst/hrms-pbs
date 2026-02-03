@@ -75,7 +75,7 @@ def announcement_configuration(request):
 
                             # Prepare content
                             content_html_formatted = content.replace(chr(10), "<br>")
-                            
+
                             # Determine Logo URL
                             company_logo_url = None
                             if company.logo:
@@ -228,7 +228,9 @@ def week_off_config(request):
         employees = Employee.objects.filter(company=company, location=selected_location)
 
         if selected_employee_id:
-            selected_employee = get_object_or_404(Employee, id=selected_employee_id, company=company, location=selected_location)
+            selected_employee = get_object_or_404(
+                Employee, id=selected_employee_id, company=company, location=selected_location
+            )
             # Use employee's week-off fields
             config = {
                 "monday": selected_employee.week_off_monday,
@@ -294,7 +296,7 @@ def week_off_config(request):
                     request,
                     f"Week-off configuration updated for {selected_location.name} and applied to {count} employees.",
                 )
-            
+
             redirect_url = f"{request.path}?location={selected_location.id}"
             if selected_employee:
                 redirect_url += f"&employee={selected_employee.id}"
@@ -335,6 +337,7 @@ def role_configuration(request):
 
     if not company and request.user.is_superuser:
         from .models import Company
+
         company = Company.objects.first()
         if company:
             messages.info(request, f"Viewing configuration for {company.name}")

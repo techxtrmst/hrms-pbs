@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Employee, EmergencyContact, Attendance, AttendanceSession
+
+from .models import Attendance, AttendanceSession, EmergencyContact, Employee
 
 
 class EmergencyContactInline(admin.TabularInline):
@@ -35,49 +36,56 @@ class EmployeeAdmin(admin.ModelAdmin):
         if obj.assigned_shift:
             return f"{obj.assigned_shift.name} ({obj.assigned_shift.start_time.strftime('%H:%M')} - {obj.assigned_shift.end_time.strftime('%H:%M')})"
         return "No Shift Assigned"
-    
+
     assigned_shift_display.short_description = "Assigned Shift"
-    
+
     fieldsets = (
-        ("User Information", {
-            "fields": ("user", "company", "badge_id")
-        }),
-        ("Job Details", {
-            "fields": ("department", "designation", "manager", "assigned_shift", "work_type", "date_of_joining", "location")
-        }),
-        ("Personal Information", {
-            "fields": ("mobile_number", "personal_email", "gender", "marital_status", "dob", "profile_picture"),
-            "classes": ("collapse",)
-        }),
-        ("Address", {
-            "fields": ("permanent_address", "current_address"),
-            "classes": ("collapse",)
-        }),
-        ("Financial Details", {
-            "fields": ("bank_name", "account_number", "ifsc_code", "uan", "pan_number", "pf_enabled", "annual_ctc"),
-            "classes": ("collapse",)
-        }),
-        ("System Fields", {
-            "fields": ("employment_status", "is_active", "profile_edited"),
-            "classes": ("collapse",)
-        }),
+        ("User Information", {"fields": ("user", "company", "badge_id")}),
+        (
+            "Job Details",
+            {
+                "fields": (
+                    "department",
+                    "designation",
+                    "manager",
+                    "assigned_shift",
+                    "work_type",
+                    "date_of_joining",
+                    "location",
+                )
+            },
+        ),
+        (
+            "Personal Information",
+            {
+                "fields": ("mobile_number", "personal_email", "gender", "marital_status", "dob", "profile_picture"),
+                "classes": ("collapse",),
+            },
+        ),
+        ("Address", {"fields": ("permanent_address", "current_address"), "classes": ("collapse",)}),
+        (
+            "Financial Details",
+            {
+                "fields": ("bank_name", "account_number", "ifsc_code", "uan", "pan_number", "pf_enabled", "annual_ctc"),
+                "classes": ("collapse",),
+            },
+        ),
+        ("System Fields", {"fields": ("employment_status", "is_active", "profile_edited"), "classes": ("collapse",)}),
     )
-    
+
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         """Filter assigned_shift choices based on company"""
         if db_field.name == "assigned_shift":
-            if hasattr(request, '_obj_'):
+            if hasattr(request, "_obj_"):
                 # Editing existing employee
                 kwargs["queryset"] = db_field.related_model.objects.filter(
                     company=request._obj_.company, is_active=True
                 )
             elif request.user.company:
                 # Creating new employee
-                kwargs["queryset"] = db_field.related_model.objects.filter(
-                    company=request.user.company, is_active=True
-                )
+                kwargs["queryset"] = db_field.related_model.objects.filter(company=request.user.company, is_active=True)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
-    
+
     def get_form(self, request, obj=None, **kwargs):
         """Store object in request for formfield_for_foreignkey"""
         request._obj_ = obj

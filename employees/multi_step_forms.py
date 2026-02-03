@@ -13,9 +13,7 @@ class PersonalInfoForm(forms.ModelForm):
     """Step 1: Personal Information"""
 
     email = forms.EmailField(required=True, label="Official Email")
-    personal_email = forms.EmailField(
-        required=False, label="Personal Email", help_text="For information only"
-    )
+    personal_email = forms.EmailField(required=False, label="Personal Email", help_text="For information only")
     first_name = forms.CharField(max_length=30, required=True, label="First Name")
     last_name = forms.CharField(max_length=30, required=True, label="Last Name")
 
@@ -249,6 +247,7 @@ class JobDetailsForm(forms.ModelForm):
 
 class FinanceDetailsForm(forms.ModelForm):
     """Step 3: Financial Details"""
+
     ctc_change_reason = forms.CharField(required=False, widget=forms.HiddenInput())
 
     class Meta:

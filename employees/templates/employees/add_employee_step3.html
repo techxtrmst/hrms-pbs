@@ -388,11 +388,11 @@
         if (ctcInput) {
             // Store initial value
             // For step 3, initial value might be empty. If it is empty, we set it to '0' or empty string.
-            // But if user types 100, then changes to 200, is that a "Change"? 
-            // The prompt implies "Whenever annual ctc will change". 
+            // But if user types 100, then changes to 200, is that a "Change"?
+            // The prompt implies "Whenever annual ctc will change".
             // If I am adding for the first time, valid initial is empty.
             // If I type 100 -> change. Trigger modal? No, because initial was empty.
-            // So we only trigger if initial value was NOT empty? 
+            // So we only trigger if initial value was NOT empty?
             // Or maybe trigger only if I leave the field and come back?
             // "whenever annual ctc will change" -> Usually implies modifying an EXISTING value.
 
@@ -409,7 +409,7 @@
 
                     // Only trigger if initial value was not empty (i.e. we are editing an existing value)
                     // OR if the user explicitly wants strictly "change".
-                    // Assuming for "Add Employee", we only care if they change it AFTER setting it? 
+                    // Assuming for "Add Employee", we only care if they change it AFTER setting it?
                     // No, that's annoying.
                     // Let's assume this feature is mainly for EDIT.
                     // But if I am in Step 3, and I pre-filled it (e.g. from previous session?), it has a value.

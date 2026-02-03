@@ -1032,7 +1032,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         // Balances
         let clBalance, slBalance;
-        
+
         {% if "bluebix" in user.employee_profile.company.name|lower or "softstandard" in user.employee_profile.company.name|lower %}
         const combinedBalance = parseFloat("{{ balance.combined_sick_casual_balance|default:0 }}");
         clBalance = combinedBalance;

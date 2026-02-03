@@ -331,35 +331,48 @@ class EmployeeUpdateForm(EmployeeCreationForm):
             reason = self.cleaned_data.get("ctc_change_reason")
             if reason:
                 from loguru import logger
-                logger.info(f"Employee {self.instance.user.email} CTC updated. New: {self.cleaned_data.get('annual_ctc')}, Reason: {reason}")
-                
+
+                logger.info(
+                    f"Employee {self.instance.user.email} CTC updated. New: {self.cleaned_data.get('annual_ctc')}, Reason: {reason}"
+                )
+
                 # Also log CTC change to WorkHistory
                 from .models import WorkHistory
+
                 WorkHistory.objects.create(
                     employee=employee,
                     title="CTC Change",
                     description=f"CTC updated to {self.cleaned_data.get('annual_ctc')}",
                     reason=reason,
                     event_type="CTC",
-                    previous_value=str(self.initial.get('annual_ctc')),
-                    new_value=str(self.cleaned_data.get('annual_ctc'))
+                    previous_value=str(self.initial.get("annual_ctc")),
+                    new_value=str(self.cleaned_data.get("annual_ctc")),
                 )
-                
+
                 # Send Email
                 from .utils import send_ctc_change_email
-                send_ctc_change_email(employee, self.initial.get('annual_ctc'), self.cleaned_data.get('annual_ctc'), reason)
+
+                send_ctc_change_email(
+                    employee, self.initial.get("annual_ctc"), self.cleaned_data.get("annual_ctc"), reason
+                )
             else:
                 from loguru import logger
+
                 logger.info(f"Employee {self.instance.user.email} CTC updated without specific reason provided.")
 
         # Handle Designation Change
-        if "designation" in self.cleaned_data and "designation" in self.initial and self.cleaned_data["designation"] != self.initial["designation"]:
+        if (
+            "designation" in self.cleaned_data
+            and "designation" in self.initial
+            and self.cleaned_data["designation"] != self.initial["designation"]
+        ):
             old_desig = self.initial.get("designation")
             new_desig = self.cleaned_data.get("designation")
             desig_reason = self.cleaned_data.get("designation_change_reason")
-            
+
             if desig_reason:
                 from .models import WorkHistory
+
                 WorkHistory.objects.create(
                     employee=employee,
                     title="Designation Change",
@@ -367,14 +380,16 @@ class EmployeeUpdateForm(EmployeeCreationForm):
                     reason=desig_reason,
                     event_type="DESIGNATION",
                     previous_value=str(old_desig),
-                    new_value=str(new_desig)
+                    new_value=str(new_desig),
                 )
-                
+
                 # Send Email
                 from .utils import send_designation_change_email
+
                 send_designation_change_email(employee, old_desig, new_desig, desig_reason)
-                
+
                 from loguru import logger
+
                 logger.info(f"Designation change logged and email sent for {employee.user.email}")
 
         if commit:

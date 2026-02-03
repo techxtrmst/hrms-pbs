@@ -1,4 +1,3 @@
-
 content = """{% extends "admin/base_site.html" %}
 
 {% load i18n admin_urls static admin_modify unfold %}
@@ -33,7 +32,7 @@ content = """{% extends "admin/base_site.html" %}
             {% include adminform.model_admin.change_form_outer_before_template %}
         {% endif %}
 
-        <form id="{{ opts.model_name }}_form" method="post" 
+        <form id="{{ opts.model_name }}_form" method="post"
             {% if form_url %}
                 action="{{ form_url }}"
             {% endif %}
@@ -134,6 +133,6 @@ content = """{% extends "admin/base_site.html" %}
 {% endblock %}
 """
 
-with open('templates/admin/change_form.html', 'w', encoding='utf-8') as f:
+with open("templates/admin/change_form.html", "w", encoding="utf-8") as f:
     f.write(content)
 print("Successfully wrote templates/admin/change_form.html")

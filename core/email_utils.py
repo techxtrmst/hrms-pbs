@@ -3,11 +3,12 @@ Utility functions for sending birthday and anniversary emails
 Supports company-specific email configuration
 """
 
+import logging
+
+import environ
+from django.conf import settings
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.template.loader import render_to_string
-from django.conf import settings
-import logging
-import environ
 from django.utils import timezone
 
 env = environ.Env()
@@ -26,9 +27,7 @@ def get_hr_email_connection():
         logger.warning(f"Could not reload .env file: {e}")
 
     # Use EMAIL_HOST_PASSWORD (standard Django env var) with fallback to PETABYTZ_HR_EMAIL_PASSWORD
-    password = env(
-        "EMAIL_HOST_PASSWORD", default=env("PETABYTZ_HR_EMAIL_PASSWORD", default="")
-    )
+    password = env("EMAIL_HOST_PASSWORD", default=env("PETABYTZ_HR_EMAIL_PASSWORD", default=""))
 
     return get_connection(
         backend="django.core.mail.backends.smtp.EmailBackend",
@@ -82,9 +81,7 @@ def send_birthday_email(employee):
     try:
         # Check if employee has email
         if not employee.user.email:
-            logger.warning(
-                f"Employee {employee.user.get_full_name()} has no email address"
-            )
+            logger.warning(f"Employee {employee.user.get_full_name()} has no email address")
             return False
 
         # MANDATORY: Use hrms@petabytz.com for all birthday emails
@@ -107,21 +104,15 @@ def send_birthday_email(employee):
         recipient_list = [employee.user.email]
 
         # Send email
-        email = EmailMultiAlternatives(
-            subject, "", from_email, recipient_list, connection=connection
-        )
+        email = EmailMultiAlternatives(subject, "", from_email, recipient_list, connection=connection)
         email.attach_alternative(html_content, "text/html")
         email.send()
 
-        logger.info(
-            f"Birthday email sent to {employee.user.get_full_name()} ({employee.user.email}) from {from_email}"
-        )
+        logger.info(f"Birthday email sent to {employee.user.get_full_name()} ({employee.user.email}) from {from_email}")
         return True
 
     except Exception as e:
-        logger.error(
-            f"Failed to send birthday email to {employee.user.get_full_name()}: {str(e)}"
-        )
+        logger.error(f"Failed to send birthday email to {employee.user.get_full_name()}: {str(e)}")
         return False
 
 
@@ -139,9 +130,7 @@ def send_anniversary_email(employee, years):
     try:
         # Check if employee has email
         if not employee.user.email:
-            logger.warning(
-                f"Employee {employee.user.get_full_name()} has no email address"
-            )
+            logger.warning(f"Employee {employee.user.get_full_name()} has no email address")
             return False
 
         # MANDATORY: Use hrms@petabytz.com for all anniversary emails
@@ -165,9 +154,7 @@ def send_anniversary_email(employee, years):
         recipient_list = [employee.user.email]
 
         # Send email
-        email = EmailMultiAlternatives(
-            subject, "", from_email, recipient_list, connection=connection
-        )
+        email = EmailMultiAlternatives(subject, "", from_email, recipient_list, connection=connection)
         email.attach_alternative(html_content, "text/html")
         email.send()
 
@@ -177,9 +164,7 @@ def send_anniversary_email(employee, years):
         return True
 
     except Exception as e:
-        logger.error(
-            f"Failed to send anniversary email to {employee.user.get_full_name()}: {str(e)}"
-        )
+        logger.error(f"Failed to send anniversary email to {employee.user.get_full_name()}: {str(e)}")
         return False
 
 
@@ -212,9 +197,7 @@ def send_birthday_announcement(employee, company_employees, recipient_list=None)
         }
 
         # Render HTML email
-        html_content = render_to_string(
-            "core/emails/birthday_announcement.html", context
-        )
+        html_content = render_to_string("core/emails/birthday_announcement.html", context)
 
         # Create email
         subject = f"🎂 {employee.user.first_name}'s Birthday Today!"
@@ -222,25 +205,17 @@ def send_birthday_announcement(employee, company_employees, recipient_list=None)
         # Get recipient list if not provided
         if recipient_list is None:
             # Get all employee emails (excluding the birthday person and those without email)
-            recipient_list = [
-                emp.user.email
-                for emp in company_employees
-                if emp.user.email and emp.id != employee.id
-            ]
+            recipient_list = [emp.user.email for emp in company_employees if emp.user.email and emp.id != employee.id]
 
         # Filter out empty emails just in case
         recipient_list = [email for email in recipient_list if email]
 
         if not recipient_list:
-            logger.warning(
-                f"No recipients found for birthday announcement of {employee.user.get_full_name()}"
-            )
+            logger.warning(f"No recipients found for birthday announcement of {employee.user.get_full_name()}")
             return 0
 
         # Send email
-        email = EmailMultiAlternatives(
-            subject, "", from_email, recipient_list, connection=connection
-        )
+        email = EmailMultiAlternatives(subject, "", from_email, recipient_list, connection=connection)
         email.attach_alternative(html_content, "text/html")
         email.send()
 
@@ -250,15 +225,11 @@ def send_birthday_announcement(employee, company_employees, recipient_list=None)
         return len(recipient_list)
 
     except Exception as e:
-        logger.error(
-            f"Failed to send birthday announcement for {employee.user.get_full_name()}: {str(e)}"
-        )
+        logger.error(f"Failed to send birthday announcement for {employee.user.get_full_name()}: {str(e)}")
         return 0
 
 
-def send_anniversary_announcement(
-    employee, years, company_employees, recipient_list=None
-):
+def send_anniversary_announcement(employee, years, company_employees, recipient_list=None):
     """
     Send work anniversary announcement to all employees in the company using hrms@petabytz.com
 
@@ -289,9 +260,7 @@ def send_anniversary_announcement(
         }
 
         # Render HTML email
-        html_content = render_to_string(
-            "core/emails/anniversary_announcement.html", context
-        )
+        html_content = render_to_string("core/emails/anniversary_announcement.html", context)
 
         # Create email
         subject = f"🏆 {employee.user.first_name}'s {years} Year Work Anniversary!"
@@ -299,25 +268,17 @@ def send_anniversary_announcement(
         # Get recipient list if not provided
         if recipient_list is None:
             # Get all employee emails (excluding the anniversary person and those without email)
-            recipient_list = [
-                emp.user.email
-                for emp in company_employees
-                if emp.user.email and emp.id != employee.id
-            ]
+            recipient_list = [emp.user.email for emp in company_employees if emp.user.email and emp.id != employee.id]
 
         # Filter out empty emails just in case
         recipient_list = [email for email in recipient_list if email]
 
         if not recipient_list:
-            logger.warning(
-                f"No recipients found for anniversary announcement of {employee.user.get_full_name()}"
-            )
+            logger.warning(f"No recipients found for anniversary announcement of {employee.user.get_full_name()}")
             return 0
 
         # Send email
-        email = EmailMultiAlternatives(
-            subject, "", from_email, recipient_list, connection=connection
-        )
+        email = EmailMultiAlternatives(subject, "", from_email, recipient_list, connection=connection)
         email.attach_alternative(html_content, "text/html")
         email.send()
 
@@ -327,9 +288,7 @@ def send_anniversary_announcement(
         return len(recipient_list)
 
     except Exception as e:
-        logger.error(
-            f"Failed to send anniversary announcement for {employee.user.get_full_name()}: {str(e)}"
-        )
+        logger.error(f"Failed to send anniversary announcement for {employee.user.get_full_name()}: {str(e)}")
         return 0
 
 
@@ -347,9 +306,7 @@ def send_probation_completion_email(employee):
     try:
         # Check if employee has email
         if not employee.user.email:
-            logger.warning(
-                f"Employee {employee.user.get_full_name()} has no email address"
-            )
+            logger.warning(f"Employee {employee.user.get_full_name()} has no email address")
             return False
 
         # MANDATORY: Use hrms@petabytz.com for all probation emails
@@ -365,18 +322,14 @@ def send_probation_completion_email(employee):
         }
 
         # Render HTML email
-        html_content = render_to_string(
-            "core/emails/probation_completion_email.html", context
-        )
+        html_content = render_to_string("core/emails/probation_completion_email.html", context)
 
         # Create email
         subject = f"🏆 Congratulations! Probation Period Completed - Welcome to {employee.company.name}!"
         recipient_list = [employee.user.email]
 
         # Send email
-        email = EmailMultiAlternatives(
-            subject, "", from_email, recipient_list, connection=connection
-        )
+        email = EmailMultiAlternatives(subject, "", from_email, recipient_list, connection=connection)
         email.attach_alternative(html_content, "text/html")
         email.send()
 
@@ -386,21 +339,19 @@ def send_probation_completion_email(employee):
         return True
 
     except Exception as e:
-        logger.error(
-            f"Failed to send probation completion email to {employee.user.get_full_name()}: {str(e)}"
-        )
+        logger.error(f"Failed to send probation completion email to {employee.user.get_full_name()}: {str(e)}")
         return False
 
 
 def send_shift_change_notification(employee, old_shift, new_shift):
     """
     Send email notification to employee when their shift is changed
-    
+
     Args:
         employee: Employee model instance
         old_shift: Previous ShiftSchedule instance (can be None)
         new_shift: New ShiftSchedule instance (can be None)
-    
+
     Returns:
         bool: True if email sent successfully, False otherwise
     """
@@ -411,10 +362,10 @@ def send_shift_change_notification(employee, old_shift, new_shift):
             return False
 
         company = employee.company
-        
+
         # Get company email connection
         connection = get_company_email_connection(company)
-        
+
         # Determine from email
         if company.hr_email and company.hr_email_name:
             from_email = f"{company.hr_email_name} <{company.hr_email}>"
@@ -428,20 +379,22 @@ def send_shift_change_notification(employee, old_shift, new_shift):
             if shift:
                 working_days = shift.working_days_list
                 return {
-                    'name': shift.name,
-                    'start_time': shift.start_time.strftime('%I:%M %p'),
-                    'end_time': shift.end_time.strftime('%I:%M %p'),
-                    'working_days': ', '.join(working_days),
-                    'grace_period': shift.grace_period_minutes,
-                    'lunch_break': f"{shift.lunch_break_start.strftime('%I:%M %p')} - {shift.lunch_break_end.strftime('%I:%M %p')}" if shift.lunch_break_start and shift.lunch_break_end else "Not specified"
+                    "name": shift.name,
+                    "start_time": shift.start_time.strftime("%I:%M %p"),
+                    "end_time": shift.end_time.strftime("%I:%M %p"),
+                    "working_days": ", ".join(working_days),
+                    "grace_period": shift.grace_period_minutes,
+                    "lunch_break": f"{shift.lunch_break_start.strftime('%I:%M %p')} - {shift.lunch_break_end.strftime('%I:%M %p')}"
+                    if shift.lunch_break_start and shift.lunch_break_end
+                    else "Not specified",
                 }
             return {
-                'name': 'No Shift Assigned',
-                'start_time': 'N/A',
-                'end_time': 'N/A',
-                'working_days': 'N/A',
-                'grace_period': 'N/A',
-                'lunch_break': 'N/A'
+                "name": "No Shift Assigned",
+                "start_time": "N/A",
+                "end_time": "N/A",
+                "working_days": "N/A",
+                "grace_period": "N/A",
+                "lunch_break": "N/A",
             }
 
         old_shift_info = format_shift_info(old_shift)
@@ -449,18 +402,18 @@ def send_shift_change_notification(employee, old_shift, new_shift):
 
         # Prepare context for email template
         context = {
-            'employee_name': employee.user.get_full_name(),
-            'employee_id': employee.badge_id or 'N/A',
-            'department': employee.department,
-            'designation': employee.designation,
-            'company_name': company.name,
-            'old_shift': old_shift_info,
-            'new_shift': new_shift_info,
-            'change_date': timezone.now().strftime('%d %B %Y at %I:%M %p'),
+            "employee_name": employee.user.get_full_name(),
+            "employee_id": employee.badge_id or "N/A",
+            "department": employee.department,
+            "designation": employee.designation,
+            "company_name": company.name,
+            "old_shift": old_shift_info,
+            "new_shift": new_shift_info,
+            "change_date": timezone.now().strftime("%d %B %Y at %I:%M %p"),
         }
 
         # Render HTML email
-        html_content = render_to_string('core/emails/shift_change_notification.html', context)
+        html_content = render_to_string("core/emails/shift_change_notification.html", context)
 
         # Create email subject
         if new_shift:
@@ -474,7 +427,7 @@ def send_shift_change_notification(employee, old_shift, new_shift):
             "",  # Plain text content (empty, using HTML)
             from_email,
             [employee.user.email],
-            connection=connection
+            connection=connection,
         )
         email.attach_alternative(html_content, "text/html")
         email.send()
@@ -485,6 +438,7 @@ def send_shift_change_notification(employee, old_shift, new_shift):
     except Exception as e:
         logger.error(f"Failed to send shift change notification to {employee.user.get_full_name()}: {str(e)}")
         import traceback
+
         logger.error(f"Shift change notification traceback: {traceback.format_exc()}")
         return False
 
@@ -523,11 +477,7 @@ def send_leave_request_notification(leave_request):
                     date_obj = datetime.strptime(date_obj, "%Y-%m-%d").date()
                 except:
                     return date_obj  # Return as-is if parsing fails
-            return (
-                date_obj.strftime(format_str)
-                if hasattr(date_obj, "strftime")
-                else str(date_obj)
-            )
+            return date_obj.strftime(format_str) if hasattr(date_obj, "strftime") else str(date_obj)
 
         def format_datetime(dt_obj, format_str="%d %B %Y at %I:%M %p"):
             if isinstance(dt_obj, str):
@@ -536,11 +486,7 @@ def send_leave_request_notification(leave_request):
                     dt_obj = datetime.fromisoformat(dt_obj.replace("Z", "+00:00"))
                 except:
                     return dt_obj  # Return as-is if parsing fails
-            return (
-                dt_obj.strftime(format_str)
-                if hasattr(dt_obj, "strftime")
-                else str(dt_obj)
-            )
+            return dt_obj.strftime(format_str) if hasattr(dt_obj, "strftime") else str(dt_obj)
 
         # Prepare context for email template
         context = {
@@ -563,9 +509,7 @@ def send_leave_request_notification(leave_request):
 
         # Render HTML email
         try:
-            html_content = render_to_string(
-                "core/emails/leave_request_notification.html", context
-            )
+            html_content = render_to_string("core/emails/leave_request_notification.html", context)
             logger.info(f"Template rendered successfully, length: {len(html_content)}")
         except Exception as e:
             logger.error(f"Failed to render email template: {str(e)}")
@@ -597,9 +541,7 @@ def send_leave_request_notification(leave_request):
 
         # Send to all recipients (company HR + manager)
         try:
-            email = EmailMultiAlternatives(
-                subject, "", from_email, recipients, connection=connection
-            )
+            email = EmailMultiAlternatives(subject, "", from_email, recipients, connection=connection)
             email.attach_alternative(html_content, "text/html")
             email.send()
             result["hr"] = True
@@ -685,20 +627,14 @@ def send_regularization_request_notification(regularization_request):
             else "Not specified",
             "reason": regularization_request.reason,
             "company_name": company.name,
-            "request_date": regularization_request.created_at.strftime(
-                "%d %B %Y at %I:%M %p"
-            ),
+            "request_date": regularization_request.created_at.strftime("%d %B %Y at %I:%M %p"),
         }
 
         # Render HTML email
-        html_content = render_to_string(
-            "core/emails/regularization_request_notification.html", context
-        )
+        html_content = render_to_string("core/emails/regularization_request_notification.html", context)
 
         # Create email subject
-        subject = (
-            f"⏰ Attendance Regularization Request from {employee.user.get_full_name()}"
-        )
+        subject = f"⏰ Attendance Regularization Request from {employee.user.get_full_name()}"
 
         # Build recipient list - Use company-specific HR email
         recipients = [company_hr_email]
@@ -712,9 +648,7 @@ def send_regularization_request_notification(regularization_request):
 
         # Send to all recipients (hrms@petabytz.com + manager)
         try:
-            email = EmailMultiAlternatives(
-                subject, "", from_email, recipients, connection=connection
-            )
+            email = EmailMultiAlternatives(subject, "", from_email, recipients, connection=connection)
             email.attach_alternative(html_content, "text/html")
             email.send()
             result["hr"] = True
@@ -739,9 +673,7 @@ def send_regularization_request_notification(regularization_request):
                 )
                 email.attach_alternative(html_content, "text/html")
                 email.send()
-                logger.info(
-                    f"Regularization acknowledgment sent to {employee.user.email}"
-                )
+                logger.info(f"Regularization acknowledgment sent to {employee.user.email}")
             except Exception as e:
                 logger.error(f"Failed to send regularization ack to employee: {e}")
 
@@ -778,9 +710,9 @@ def send_welcome_email_with_link(employee, domain):
 
         # Generate Reset Link
         from django.contrib.auth.tokens import default_token_generator
-        from django.utils.http import urlsafe_base64_encode
-        from django.utils.encoding import force_bytes
         from django.urls import reverse
+        from django.utils.encoding import force_bytes
+        from django.utils.http import urlsafe_base64_encode
 
         token = default_token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
@@ -808,9 +740,7 @@ def send_welcome_email_with_link(employee, domain):
         subject = f"Welcome to {employee.company.name} - Activate Your Account"
         recipient_list = [user.email]
 
-        email = EmailMultiAlternatives(
-            subject, "", from_email, recipient_list, connection=connection
-        )
+        email = EmailMultiAlternatives(subject, "", from_email, recipient_list, connection=connection)
         email.attach_alternative(html_content, "text/html")
         email.send()
 
@@ -859,9 +789,7 @@ def send_leave_rejection_notification(leave_request):
 
         # Render HTML email
         try:
-            html_content = render_to_string(
-                "core/emails/leave_rejection_notification.html", context
-            )
+            html_content = render_to_string("core/emails/leave_rejection_notification.html", context)
         except Exception as e:
             logger.error(f"Failed to render leave rejection template: {e}")
             # Fallback to simple HTML
@@ -879,9 +807,7 @@ def send_leave_rejection_notification(leave_request):
 
         subject = f"❌ Leave Request Rejected: {leave_request.get_leave_type_display()}"
 
-        email = EmailMultiAlternatives(
-            subject, "", from_email, [employee.user.email], connection=connection
-        )
+        email = EmailMultiAlternatives(subject, "", from_email, [employee.user.email], connection=connection)
         email.attach_alternative(html_content, "text/html")
         email.send()
 
@@ -932,9 +858,7 @@ def send_regularization_rejection_notification(reg_request):
 
         subject = f"❌ Regularization Rejected: {context['date']}"
 
-        email = EmailMultiAlternatives(
-            subject, "", from_email, [employee.user.email], connection=connection
-        )
+        email = EmailMultiAlternatives(subject, "", from_email, [employee.user.email], connection=connection)
         email.attach_alternative(html_content, "text/html")
         email.send()
         logger.info(f"Regularization rejection email sent to {employee.user.email}")
@@ -965,17 +889,13 @@ def send_leave_approval_notification(leave_request):
             "start_date": leave_request.start_date.strftime("%d %B %Y"),
             "end_date": leave_request.end_date.strftime("%d %B %Y"),
             "total_days": leave_request.total_days,
-            "approved_by": leave_request.approved_by.get_full_name()
-            if leave_request.approved_by
-            else "Manager",
+            "approved_by": leave_request.approved_by.get_full_name() if leave_request.approved_by else "Manager",
             "company_name": company.name,
         }
 
         # Render HTML email
         try:
-            html_content = render_to_string(
-                "core/emails/leave_approval_notification.html", context
-            )
+            html_content = render_to_string("core/emails/leave_approval_notification.html", context)
         except Exception as e:
             logger.error(f"Failed to render leave approval template: {e}")
             # Fallback to simple HTML if template fails
@@ -992,9 +912,7 @@ def send_leave_approval_notification(leave_request):
 
         subject = f"✅ Leave Request Approved: {context['leave_type']}"
 
-        email = EmailMultiAlternatives(
-            subject, "", from_email, [employee.user.email], connection=connection
-        )
+        email = EmailMultiAlternatives(subject, "", from_email, [employee.user.email], connection=connection)
         email.attach_alternative(html_content, "text/html")
         email.send()
         return True
@@ -1041,9 +959,7 @@ def send_regularization_approval_notification(reg_request):
 
         subject = f"✅ Regularization Approved: {context['date']}"
 
-        email = EmailMultiAlternatives(
-            subject, "", from_email, [employee.user.email], connection=connection
-        )
+        email = EmailMultiAlternatives(subject, "", from_email, [employee.user.email], connection=connection)
         email.attach_alternative(html_content, "text/html")
         email.send()
         return True

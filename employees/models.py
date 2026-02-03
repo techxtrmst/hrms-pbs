@@ -135,11 +135,7 @@ class Employee(models.Model):
         help_text="Whether employee is currently active in the organization",
     )
     biometric_id = models.CharField(
-        max_length=50, 
-        null=True, 
-        blank=True, 
-        unique=True,
-        help_text="ID as registered in the biometric machine"
+        max_length=50, null=True, blank=True, unique=True, help_text="ID as registered in the biometric machine"
     )
 
     # Week-off Configuration (Individual employee week-offs)
@@ -1644,20 +1640,20 @@ def invalidate_leave_balance_cache(sender, instance, **kwargs):
 
 class WorkHistory(models.Model):
     EVENT_TYPES = [
-        ('DESIGNATION', 'Designation Change'),
-        ('CTC', 'CTC Change'),
-        ('JOINING', 'Joined'),
-        ('PROBATION', 'Probation'),
-        ('OTHER', 'Other'),
+        ("DESIGNATION", "Designation Change"),
+        ("CTC", "CTC Change"),
+        ("JOINING", "Joined"),
+        ("PROBATION", "Probation"),
+        ("OTHER", "Other"),
     ]
 
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='work_history')
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="work_history")
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     reason = models.TextField(blank=True, null=True, help_text="Reason for the change")
     date = models.DateField(default=timezone.now)
-    event_type = models.CharField(max_length=20, choices=EVENT_TYPES, default='OTHER')
-    
+    event_type = models.CharField(max_length=20, choices=EVENT_TYPES, default="OTHER")
+
     # Optional: Track old and new values for changes
     previous_value = models.CharField(max_length=255, blank=True, null=True)
     new_value = models.CharField(max_length=255, blank=True, null=True)
@@ -1666,7 +1662,7 @@ class WorkHistory(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-date', '-created_at']
+        ordering = ["-date", "-created_at"]
         verbose_name_plural = "Work History"
 
     def __str__(self):

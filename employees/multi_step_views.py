@@ -1,9 +1,10 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import get_user_model
 from django.contrib import messages
-from .multi_step_forms import PersonalInfoForm, JobDetailsForm, FinanceDetailsForm
+from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect, render
+
 from .models import Employee
+from .multi_step_forms import FinanceDetailsForm, JobDetailsForm, PersonalInfoForm
 
 User = get_user_model()
 
@@ -53,25 +54,19 @@ def add_employee_step1(request):
                 "mobile_number": form.cleaned_data.get("mobile_number", ""),
                 "gender": form.cleaned_data.get("gender", ""),
                 "marital_status": form.cleaned_data.get("marital_status", ""),
-                "dob": str(form.cleaned_data.get("dob", ""))
-                if form.cleaned_data.get("dob")
-                else "",
+                "dob": str(form.cleaned_data.get("dob", "")) if form.cleaned_data.get("dob") else "",
                 "permanent_address": form.cleaned_data.get("permanent_address", ""),
                 "emergency_contact": form.cleaned_data.get("emergency_contact", ""),
                 "badge_id": form.cleaned_data["badge_id"],
                 "role": form.cleaned_data["role"],
                 "company_id": form.cleaned_data["company_selection"].id,
-                "location_id": form.cleaned_data["location"].id
-                if form.cleaned_data.get("location")
-                else None,
+                "location_id": form.cleaned_data["location"].id if form.cleaned_data.get("location") else None,
             }
 
             # Save emergency contacts to session
             request.session["employee_emergency_contacts"] = emergency_contacts
 
-            messages.success(
-                request, "Personal information saved! Now add job details."
-            )
+            messages.success(request, "Personal information saved! Now add job details.")
             return redirect("add_employee_step2")
     else:
         # Pre-fill from session if available
@@ -90,9 +85,7 @@ def add_employee_step1(request):
         # Calculate next sequence based on highest existing badge ID number
         try:
             # Get all badge IDs for the company
-            existing_ids = Employee.objects.filter(company=company).values_list(
-                "badge_id", flat=True
-            )
+            existing_ids = Employee.objects.filter(company=company).values_list("badge_id", flat=True)
 
             max_number = 0
             import re
@@ -177,16 +170,12 @@ def add_employee_step2(request):
                 if form.cleaned_data.get("date_of_joining")
                 else "",
             }
-            messages.success(
-                request, "Job details saved! Now add financial information."
-            )
+            messages.success(request, "Job details saved! Now add financial information.")
             return redirect("add_employee_step3")
     else:
         # Pre-fill from session if available
         initial_data = request.session.get("employee_job_data", {})
-        form = JobDetailsForm(
-            initial=initial_data, user=request.user, company_id=company_id
-        )
+        form = JobDetailsForm(initial=initial_data, user=request.user, company_id=company_id)
 
     return render(
         request,
@@ -199,10 +188,7 @@ def add_employee_step2(request):
 def add_employee_step3(request):
     """Step 3: Finance Details & Final Save"""
     # Check if previous steps are completed
-    if (
-        "employee_personal_data" not in request.session
-        or "employee_job_data" not in request.session
-    ):
+    if "employee_personal_data" not in request.session or "employee_job_data" not in request.session:
         messages.warning(request, "Please complete all previous steps.")
         return redirect("add_employee_step1")
 
@@ -268,9 +254,7 @@ def add_employee_step3(request):
                 personal_email=personal_data.get("personal_email"),
                 gender=personal_data.get("gender"),
                 marital_status=personal_data.get("marital_status"),
-                dob=datetime.strptime(personal_data["dob"], "%Y-%m-%d").date()
-                if personal_data.get("dob")
-                else None,
+                dob=datetime.strptime(personal_data["dob"], "%Y-%m-%d").date() if personal_data.get("dob") else None,
                 permanent_address=personal_data.get("permanent_address"),
                 emergency_contact=personal_data.get("emergency_contact"),
                 badge_id=badge_id,
@@ -282,9 +266,7 @@ def add_employee_step3(request):
                 work_type=job_data.get("work_type", "FT"),
                 shift_schedule=job_data.get("shift_schedule"),
                 assigned_shift_id=job_data.get("shift_schedule_id"),
-                date_of_joining=datetime.strptime(
-                    job_data["date_of_joining"], "%Y-%m-%d"
-                ).date()
+                date_of_joining=datetime.strptime(job_data["date_of_joining"], "%Y-%m-%d").date()
                 if job_data.get("date_of_joining")
                 else None,
                 # Finance
@@ -300,8 +282,11 @@ def add_employee_step3(request):
             ctc_reason = finance_data.get("ctc_change_reason")
             if ctc_reason:
                 import logging
+
                 logger = logging.getLogger(__name__)
-                logger.info(f"Employee {employee.user.email} created with CTC {finance_data.get('annual_ctc')}. Note: {ctc_reason}")
+                logger.info(
+                    f"Employee {employee.user.email} created with CTC {finance_data.get('annual_ctc')}. Note: {ctc_reason}"
+                )
 
             # Create Emergency Contacts
             emergency_contacts = request.session.get("employee_emergency_contacts", [])
@@ -318,14 +303,13 @@ def add_employee_step3(request):
                     )
 
             # Send Activation Email
-            from .utils import send_activation_email
             import logging
+
+            from .utils import send_activation_email
 
             logger = logging.getLogger(__name__)
 
-            logger.info(
-                f"Attempting to send activation email to {employee.user.email} for company {company.name}"
-            )
+            logger.info(f"Attempting to send activation email to {employee.user.email} for company {company.name}")
             email_sent = send_activation_email(user, request)
 
             # Clear session
@@ -339,16 +323,12 @@ def add_employee_step3(request):
             if email_sent:
                 msg += f" 📧 Activation email sent to {employee.user.email}."
                 messages.success(request, msg)
-                logger.info(
-                    f"Employee created and activation email sent successfully to {employee.user.email}"
-                )
+                logger.info(f"Employee created and activation email sent successfully to {employee.user.email}")
             else:
                 msg += " ⚠️ However, the activation email could not be sent. Please check email configuration."
                 msg += f" Temporary password: {password}"
                 messages.warning(request, msg)
-                logger.warning(
-                    f"Employee created but activation email failed for {employee.user.email}"
-                )
+                logger.warning(f"Employee created but activation email failed for {employee.user.email}")
 
             return redirect("employee_list")
     else:
@@ -362,24 +342,21 @@ def add_employee_step3(request):
     personal_data = request.session.get("employee_personal_data", {})
     if personal_data.get("location_id"):
         from companies.models import Location
+
         try:
             location = Location.objects.get(id=personal_data["location_id"])
         except Location.DoesNotExist:
             pass
     if personal_data.get("company_id"):
         from companies.models import Company
+
         try:
             company = Company.objects.get(id=personal_data["company_id"])
         except Company.DoesNotExist:
             pass
 
     return render(
-        request, 
-        "employees/add_employee_step3.html", 
-        {
-            "form": form, 
-            "step": 3, 
-            "employee_location": location,
-            "employee_company": company
-        }
+        request,
+        "employees/add_employee_step3.html",
+        {"form": form, "step": 3, "employee_location": location, "employee_company": company},
     )

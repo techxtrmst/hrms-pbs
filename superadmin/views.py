@@ -1,27 +1,28 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+import csv
+from datetime import datetime
+
 from django.contrib import messages
-from django.http import JsonResponse, HttpResponse
-from django.utils import timezone
-from django.db.models import Q, Count
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db.models import Count, Q
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
 from companies.models import Company
-from employees.models import Employee, Attendance, LeaveRequest
-from .decorators import superadmin_required, company_context_optional
+from employees.models import Attendance, Employee, LeaveRequest
+
+from .decorators import company_context_optional, superadmin_required
 from .utils import (
-    get_dashboard_metrics,
+    get_attendance_heatmap_data,
     get_attendance_today_data,
-    get_leaves_today_data,
+    get_company_summary,
+    get_dashboard_metrics,
     get_employee_lifecycle_data,
     get_leave_analytics,
-    get_attendance_heatmap_data,
-    get_company_summary,
+    get_leaves_today_data,
 )
-
-import csv
-from datetime import datetime
 
 
 @login_required
@@ -39,9 +40,7 @@ def superadmin_dashboard(request, selected_company=None, selected_company_id=Non
 
     # Get company overview for table
     company_overview = (
-        Company.objects.filter(is_active=True)
-        .annotate(employee_count=Count("employees"))
-        .order_by("name")
+        Company.objects.filter(is_active=True).annotate(employee_count=Count("employees")).order_by("name")
     )
 
     context = {
@@ -87,9 +86,7 @@ def switch_company_api(request):
                 }
             )
         except Company.DoesNotExist:
-            return JsonResponse(
-                {"success": False, "message": "Company not found"}, status=404
-            )
+            return JsonResponse({"success": False, "message": "Company not found"}, status=404)
 
     return JsonResponse({"success": False, "message": "Invalid request"}, status=400)
 
@@ -102,9 +99,7 @@ def company_list_view(request):
     """
     companies = Company.objects.annotate(
         employee_count=Count("employees"),
-        active_employee_count=Count(
-            "employees", filter=Q(employees__user__is_active=True)
-        ),
+        active_employee_count=Count("employees", filter=Q(employees__user__is_active=True)),
     ).order_by("name")
 
     # Search functionality
@@ -134,7 +129,7 @@ def employee_list_view(request, selected_company=None, selected_company_id=None)
     # Get filters from query params
     company_filter = request.GET.get("company_id")
     role_filter = request.GET.get("role")
-    
+
     if company_filter:
         try:
             selected_company_id = int(company_filter)
@@ -143,14 +138,12 @@ def employee_list_view(request, selected_company=None, selected_company_id=None)
             pass
 
     # Base queryset
-    employees = Employee.objects.select_related("user", "company", "manager").order_by(
-        "-date_of_joining"
-    )
+    employees = Employee.objects.select_related("user", "company", "manager").order_by("-date_of_joining")
 
     # Apply company filter
     if selected_company_id:
         employees = employees.filter(company_id=selected_company_id)
-        
+
     # Apply role filter
     if role_filter:
         if role_filter == "admin":
@@ -285,31 +278,33 @@ def company_monitor_dashboard(request, company_id):
 
     # Get leave analytics (Pass selected month/year)
     leave_analytics_raw = get_leave_analytics(company_id, months=selected_month, year=selected_year)
-    
+
     # Convert data to JSON for JavaScript
     import json
+
     from django.core.serializers.json import DjangoJSONEncoder
-    
+
     leave_analytics = {
         "distribution": json.dumps(leave_analytics_raw["distribution"], cls=DjangoJSONEncoder),
         "monthly_trends": json.dumps(leave_analytics_raw["monthly_trends"], cls=DjangoJSONEncoder),
-        "frequent_takers": leave_analytics_raw["frequent_takers"]
+        "frequent_takers": leave_analytics_raw["frequent_takers"],
     }
 
     # Get attendance heatmap (Pass selected month/year)
     heatmap_data_raw = get_attendance_heatmap_data(company_id, selected_year, selected_month)
-    
+
     # Serialize daily attendance data for JavaScript
     heatmap_data = {
         **heatmap_data_raw,
         "daily_attendance": json.dumps(heatmap_data_raw["daily_attendance"], cls=DjangoJSONEncoder),
-        "weekly_trends": json.dumps(heatmap_data_raw["weekly_trends"], cls=DjangoJSONEncoder)
+        "weekly_trends": json.dumps(heatmap_data_raw["weekly_trends"], cls=DjangoJSONEncoder),
     }
 
     # Context for filters
     import calendar
+
     month_list = [(i, calendar.month_name[i]) for i in range(1, 13)]
-    year_list = range(2024, now.year + 2) # Show a reasonable range
+    year_list = range(2024, now.year + 2)  # Show a reasonable range
 
     current_month_name = calendar.month_name[selected_month]
 
@@ -337,9 +332,7 @@ def export_data_view(request, report_type):
     Export data to CSV
     """
     response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = (
-        f'attachment; filename="{report_type}_{datetime.now().strftime("%Y%m%d")}.csv"'
-    )
+    response["Content-Disposition"] = f'attachment; filename="{report_type}_{datetime.now().strftime("%Y%m%d")}.csv"'
 
     writer = csv.writer(response)
 
@@ -370,23 +363,17 @@ def export_data_view(request, report_type):
                     emp.company.name,
                     emp.department,
                     emp.designation,
-                    emp.date_of_joining.strftime("%Y-%m-%d")
-                    if emp.date_of_joining
-                    else "",
+                    emp.date_of_joining.strftime("%Y-%m-%d") if emp.date_of_joining else "",
                     "Active" if emp.user.is_active else "Inactive",
                 ]
             )
 
     elif report_type == "attendance":
         # Export today's attendance
-        writer.writerow(
-            ["Employee", "Company", "Date", "Clock In", "Clock Out", "Status", "Hours"]
-        )
+        writer.writerow(["Employee", "Company", "Date", "Clock In", "Clock Out", "Status", "Hours"])
 
         today = timezone.localtime().date()
-        attendance = Attendance.objects.filter(date=today).select_related(
-            "employee__user", "employee__company"
-        )
+        attendance = Attendance.objects.filter(date=today).select_related("employee__user", "employee__company")
 
         company_id = request.GET.get("company_id")
         if company_id:
@@ -419,9 +406,7 @@ def export_data_view(request, report_type):
             ]
         )
 
-        leaves = LeaveRequest.objects.select_related(
-            "employee__user", "employee__company"
-        ).all()
+        leaves = LeaveRequest.objects.select_related("employee__user", "employee__company").all()
 
         company_id = request.GET.get("company_id")
         if company_id:
@@ -432,7 +417,13 @@ def export_data_view(request, report_type):
                 [
                     leave.employee.user.get_full_name(),
                     leave.employee.company.name,
-                    "SL" if leave.leave_type == "SL" else ("PL" if leave.leave_type == "CL" else ("LOP" if leave.leave_type == "UL" else leave.get_leave_type_display())),
+                    "SL"
+                    if leave.leave_type == "SL"
+                    else (
+                        "PL"
+                        if leave.leave_type == "CL"
+                        else ("LOP" if leave.leave_type == "UL" else leave.get_leave_type_display())
+                    ),
                     leave.start_date.strftime("%Y-%m-%d"),
                     leave.end_date.strftime("%Y-%m-%d"),
                     leave.total_days,
@@ -449,8 +440,9 @@ def employee_detail_view(request, employee_id):
     """
     Comprehensive employee detail view with all analytics and role management
     """
-    from .utils import get_employee_detailed_analytics
     from accounts.models import User
+
+    from .utils import get_employee_detailed_analytics
 
     # Get all employee analytics
     analytics = get_employee_detailed_analytics(employee_id)
@@ -466,11 +458,11 @@ def employee_detail_view(request, employee_id):
     if request.method == "POST" and "update_access" in request.POST:
         role = request.POST.get("role")
         is_active = request.POST.get("is_active") == "on"
-        
+
         if role:
             user.role = role
         user.is_active = is_active
-        
+
         # Django staff/superuser logic
         if role == User.Role.SUPERADMIN:
             user.is_staff = True
@@ -481,7 +473,7 @@ def employee_detail_view(request, employee_id):
         else:
             user.is_staff = False
             user.is_superuser = False
-            
+
         user.save()
         messages.success(request, f"Access configuration updated for {user.get_full_name()}")
         return redirect("superadmin:employee_detail", employee_id=employee_id)
@@ -493,7 +485,10 @@ def employee_detail_view(request, employee_id):
         user.set_password(temp_pass)
         user.must_change_password = True
         user.save()
-        messages.warning(request, f"Password has been reset to '{temp_pass}' for {user.get_full_name()}. They will be forced to change it on next login.")
+        messages.warning(
+            request,
+            f"Password has been reset to '{temp_pass}' for {user.get_full_name()}. They will be forced to change it on next login.",
+        )
         return redirect("superadmin:employee_detail", employee_id=employee_id)
 
     # Quick stats for cards
@@ -528,8 +523,10 @@ def platform_settings(request):
     Global system configuration view
     """
     import sys
+
     import django
     from django.conf import settings
+
     from core.models import GlobalConfiguration
 
     config = GlobalConfiguration.load()
@@ -543,17 +540,17 @@ def platform_settings(request):
 
         # Handle Modules
         elif "module_attendance" in request.POST or "save_modules" in request.POST:
-             config.module_attendance = request.POST.get("module_attendance") == "on"
-             config.module_payroll = request.POST.get("module_payroll") == "on"
-             config.module_ai = request.POST.get("module_ai") == "on"
-             messages.success(request, "Module configuration saved.")
+            config.module_attendance = request.POST.get("module_attendance") == "on"
+            config.module_payroll = request.POST.get("module_payroll") == "on"
+            config.module_ai = request.POST.get("module_ai") == "on"
+            messages.success(request, "Module configuration saved.")
 
         # Handle Localization
         elif "default_currency" in request.POST:
             config.default_currency = request.POST.get("default_currency")
             config.date_format = request.POST.get("date_format")
             messages.success(request, "Localization settings updated.")
-        
+
         config.save()
         return redirect("superadmin:platform_settings")
 
@@ -580,11 +577,11 @@ def create_company_view(request):
         domain = request.POST.get("domain")
         email_domain = request.POST.get("email_domain")
         location = request.POST.get("location")
-        
+
         if name and domain:
             time_zone = request.POST.get("timezone", "UTC")
             currency = request.POST.get("currency", "USD")
-            
+
             try:
                 Company.objects.create(
                     name=name,
@@ -593,14 +590,14 @@ def create_company_view(request):
                     location=location,
                     time_zone=time_zone,
                     currency=currency,
-                    is_active=True
+                    is_active=True,
                 )
                 messages.success(request, f"Organization '{name}' created successfully.")
                 return redirect("superadmin:companies")
             except Exception as e:
                 messages.error(request, f"Error creating organization: {str(e)}")
         else:
-             messages.error(request, "Name and Domain are required.")
+            messages.error(request, "Name and Domain are required.")
 
     return render(request, "superadmin/company_form.html")
 
@@ -649,7 +646,7 @@ def biometric_integration_view(request, selected_company=None, selected_company_
                     ip_address=ip,
                     port=port,
                     serial_number=sn,
-                    device_type=device_type
+                    device_type=device_type,
                 )
                 messages.success(request, f"Biometric device '{name}' added successfully.")
             except Exception as e:
@@ -701,7 +698,7 @@ def workflow_configuration_view(request, selected_company=None, selected_company
             wf_type = request.POST.get("workflow_type")
             name = request.POST.get("name")
             levels = int(request.POST.get("levels", 1))
-            
+
             # Simple config logic (can be expanded)
             config = {}
             for i in range(1, levels + 1):
@@ -709,11 +706,7 @@ def workflow_configuration_view(request, selected_company=None, selected_company
 
             try:
                 ApprovalWorkflow.objects.create(
-                    company_id=comp_id,
-                    workflow_type=wf_type,
-                    name=name,
-                    levels=levels,
-                    levels_config=config
+                    company_id=comp_id, workflow_type=wf_type, name=name, levels=levels, levels_config=config
                 )
                 messages.success(request, f"Workflow '{name}' created successfully.")
             except Exception as e:
@@ -742,10 +735,11 @@ def test_biometric_sync_api(request):
     Simulate a biometric device packet for testing purposes
     """
     import json
-    import requests
+
     from django.http import JsonResponse
-    from companies.models import BiometricDevice
     from django.urls import reverse
+
+    from companies.models import BiometricDevice
 
     device_id = request.POST.get("device_id")
     device = BiometricDevice.objects.get(id=device_id)
@@ -760,21 +754,22 @@ def test_biometric_sync_api(request):
         "serial_number": device.serial_number,
         "biometric_id": employee.biometric_id,
         "timestamp": timezone.localtime().strftime("%Y-%m-%d %H:%M:%S"),
-        "event_type": "CHECK"
+        "event_type": "CHECK",
     }
 
     # Internal call to the actual sync API to verify logic
     # In a real app, this would be an external hit, but here we can simulate logic
-    from core.views import biometric_sync_api
-    
-    # Mocking a request object 
+    # Mocking a request object
     from django.test import RequestFactory
+
+    from core.views import biometric_sync_api
+
     factory = RequestFactory()
     mock_request = factory.post(
-        reverse("biometric_sync_api"),
-        data=json.dumps(payload),
-        content_type="application/json"
+        reverse("biometric_sync_api"), data=json.dumps(payload), content_type="application/json"
     )
-    
+
     response = biometric_sync_api(mock_request)
-    return JsonResponse({"success": True, "message": f"Test signal sent for {employee.user.get_full_name()}. Check attendance logs!"})
+    return JsonResponse(
+        {"success": True, "message": f"Test signal sent for {employee.user.get_full_name()}. Check attendance logs!"}
+    )

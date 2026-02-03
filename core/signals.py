@@ -117,38 +117,41 @@ def notify_shift_change(sender, instance, created, **kwargs):
     """
     Send email notification and create system notification when employee shift is changed
     """
-    if not created and hasattr(instance, '_old_shift'):
+    if not created and hasattr(instance, "_old_shift"):
         old_shift = instance._old_shift
         new_shift = instance.assigned_shift
-        
+
         # Check if shift actually changed
         if old_shift != new_shift:
             from .email_utils import send_shift_change_notification
-            
+
             # Send email notification to employee
             try:
                 send_shift_change_notification(instance, old_shift, new_shift)
             except Exception as e:
                 import logging
+
                 logger = logging.getLogger(__name__)
-                logger.error(f"Failed to send shift change notification email for {instance.user.get_full_name()}: {str(e)}")
-            
+                logger.error(
+                    f"Failed to send shift change notification email for {instance.user.get_full_name()}: {str(e)}"
+                )
+
             # Create system notification for HR and managers
             try:
                 from django.contrib.contenttypes.models import ContentType
-                
+
                 recipients = []
-                
+
                 # Add manager if exists
                 if instance.manager:
                     recipients.append(instance.manager)
-                
+
                 # Add all company admins
                 company_admins = User.objects.filter(
                     company=instance.company, role=User.Role.COMPANY_ADMIN, is_active=True
                 )
                 recipients.extend(list(company_admins))
-                
+
                 # Add HR department users
                 hr_users = User.objects.filter(
                     company=instance.company,
@@ -156,19 +159,19 @@ def notify_shift_change(sender, instance, created, **kwargs):
                     is_active=True,
                 )
                 recipients.extend(list(hr_users))
-                
+
                 # Remove duplicates
                 recipients = list(set(recipients))
-                
+
                 # Create notification for each recipient
                 content_type = ContentType.objects.get_for_model(Employee)
-                
+
                 old_shift_name = old_shift.name if old_shift else "No Shift"
                 new_shift_name = new_shift.name if new_shift else "No Shift"
-                
+
                 for recipient in recipients:
                     message = f"Shift assignment changed for {instance.user.get_full_name()} from '{old_shift_name}' to '{new_shift_name}'"
-                    
+
                     Notification.objects.create(
                         recipient=recipient,
                         notification_type="SHIFT_CHANGE",
@@ -176,12 +179,15 @@ def notify_shift_change(sender, instance, created, **kwargs):
                         content_type=content_type,
                         object_id=instance.id,
                     )
-                    
+
             except Exception as e:
                 import logging
+
                 logger = logging.getLogger(__name__)
-                logger.error(f"Failed to create shift change system notification for {instance.user.get_full_name()}: {str(e)}")
-        
+                logger.error(
+                    f"Failed to create shift change system notification for {instance.user.get_full_name()}: {str(e)}"
+                )
+
         # Clean up the temporary attribute
-        if hasattr(instance, '_old_shift'):
-            delattr(instance, '_old_shift')
+        if hasattr(instance, "_old_shift"):
+            delattr(instance, "_old_shift")

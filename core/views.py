@@ -4159,11 +4159,13 @@ def biometric_sync_api(request):
     Supported devices: ZKTeco, Hikvision, etc. (Generic format)
     """
     import json
-    from django.http import JsonResponse
-    from employees.models import Employee, Attendance
-    from companies.models import BiometricDevice
-    from django.utils import timezone
     from datetime import datetime
+
+    from django.http import JsonResponse
+    from django.utils import timezone
+
+    from companies.models import BiometricDevice
+    from employees.models import Attendance, Employee
 
     if request.method != "POST":
         return JsonResponse({"status": "error", "message": "Only POST allowed"}, status=405)
@@ -4179,7 +4181,7 @@ def biometric_sync_api(request):
         device_sn = data.get("serial_number")
         bio_id = data.get("biometric_id")
         event_time_str = data.get("timestamp")  # Format: YYYY-MM-DD HH:MM:SS
-        event_type = data.get("event_type", "CHECK") # CHECK, DOOR_OPEN
+        event_type = data.get("event_type", "CHECK")  # CHECK, DOOR_OPEN
 
         if not device_sn or not bio_id:
             return JsonResponse({"status": "error", "message": "Missing device or employee ID"}, status=400)
@@ -4203,23 +4205,21 @@ def biometric_sync_api(request):
         # 4. Record Attendance or Access
         date = event_time.date()
         attendance, created = Attendance.objects.get_or_create(
-            employee=employee,
-            date=date,
-            defaults={"status": "PRESENT" if event_type == "CHECK" else "DOOR_OPEN"}
+            employee=employee, date=date, defaults={"status": "PRESENT" if event_type == "CHECK" else "DOOR_OPEN"}
         )
 
         attendance.current_session_type = "BIOMETRIC"
-        
+
         if event_type == "CHECK":
             # Logic for first-in/last-out
             if not attendance.clock_in or event_time < attendance.clock_in:
                 attendance.clock_in = event_time
                 attendance.calculate_late_arrival()
-            
+
             if not attendance.clock_out or event_time > attendance.clock_out:
                 attendance.clock_out = event_time
                 attendance.calculate_early_departure()
-            
+
             attendance.status = "PRESENT"
         else:
             # Simple door access logs
@@ -4227,16 +4227,18 @@ def biometric_sync_api(request):
                 attendance.status = "DOOR_OPEN"
 
         attendance.save()
-        
+
         # Update device last sync
         device.last_sync = timezone.now()
         device.save()
 
-        return JsonResponse({
-            "status": "success", 
-            "message": f"Recorded {event_type} for {employee.user.get_full_name()} at {event_time}",
-            "employee": employee.user.get_full_name()
-        })
+        return JsonResponse(
+            {
+                "status": "success",
+                "message": f"Recorded {event_type} for {employee.user.get_full_name()} at {event_time}",
+                "employee": employee.user.get_full_name(),
+            }
+        )
 
     except Exception as e:
         logger.error(f"Biometric Sync Error: {str(e)}")
