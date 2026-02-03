@@ -2132,13 +2132,51 @@
                                         <div class="timeline-dot-inner"></div>
                                     </div>
                                     <div class="timeline-content active-node">
-                                        <span class="timeline-date">Today</span>
+                                        <span class="timeline-date">Current</span>
                                         <div class="timeline-title text-primary">Current Role</div>
                                         <span class="badge bg-primary-soft text-primary mt-1">
                                             {{ employee.designation }}
                                         </span>
                                     </div>
                                 </div>
+
+                                <!-- Work History -->
+                                {% for event in work_history %}
+                                <div class="timeline-node">
+                                    <div class="timeline-dot active">
+                                        <div class="timeline-dot-inner"></div>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <span class="timeline-date">{{ event.date|date:"d M, Y" }}</span>
+                                        <div class="timeline-title d-flex align-items-center">
+                                            {{ event.title }}
+                                            {% if event.event_type == 'DESIGNATION' or event.event_type == 'CTC' %}
+                                            <span class="ms-2 badge bg-light text-dark fw-normal"
+                                                style="font-size: 0.7rem;">Update</span>
+                                            {% endif %}
+                                        </div>
+
+                                        {% if event.previous_value and event.new_value %}
+                                        <div class="mt-2 p-2 bg-light rounded-3 border-start border-primary border-3">
+                                            <div class="row g-0 align-items-center">
+                                                <div class="col text-muted small text-truncate">{{ event.previous_value }}</div>
+                                                <div class="col-auto px-2 text-primary small"><i
+                                                        class="fas fa-long-arrow-alt-right"></i></div>
+                                                <div class="col fw-bold small text-truncate">{{ event.new_value }}</div>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <div class="small text-muted">{{ event.description }}</div>
+                                        {% endif %}
+
+                                        {% if event.reason %}
+                                        <div class="small text-muted fst-italic mt-2" style="font-size: 0.75rem;">
+                                            <i class="fas fa-comment-dots me-1 text-primary-light"></i>Reason: {{ event.reason }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
 
                                 <!-- Probation Status (only show if completed) -->
                                 {% if probation_status == 'COMPLETED' or probation_status == 'COMPLETED_TODAY' %}
@@ -2564,8 +2602,7 @@
                                         <i class="fas fa-utensils text-orange me-2"></i>Lunch Break
                                     </div>
                                     <div class="shift-info-value">
-                                        {{ employee.assigned_shift.lunch_break_start|time:"H:i" }} - {{
-                                        employee.assigned_shift.lunch_break_end|time:"H:i" }}
+                                        {{ employee.assigned_shift.lunch_break_start|time:"H:i" }} - {{ employee.assigned_shift.lunch_break_end|time:"H:i" }}
                                     </div>
                                 </div>
                                 {% endif %}
@@ -2801,8 +2838,7 @@
                 <div class="alert alert-info mt-3">
                     <i class="fas fa-info-circle me-2"></i>
                     <strong>Current Assignment:</strong> {{ employee.assigned_shift.name }}
-                    ({{ employee.assigned_shift.start_time|time:"H:i" }} - {{
-                    employee.assigned_shift.end_time|time:"H:i" }})
+                    ({{ employee.assigned_shift.start_time|time:"H:i" }} - {{ employee.assigned_shift.end_time|time:"H:i" }})
                 </div>
                 {% else %}
                 <div class="alert alert-warning mt-3">
@@ -2938,8 +2974,8 @@
                 img.src = e.target.result;
                 img.className = 'doc-preview-img w-100 temp-preview';
 
-                var isBD = {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}true{% else %}false{% endif %};
-                var isUS = {% if employee.location.country_code == "US" or "US" in employee.location.name %}true{% else %}false{% endif %};
+                var isBD = {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}true{% else %} false{% endif %};
+            var isUS = {% if employee.location.country_code == "US" or "US" in employee.location.name %} true{% else %} false{% endif %};
 
         var label = document.createElement('div');
         label.className = 'fw-bold text-dark temp-label';

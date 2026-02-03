@@ -125,3 +125,91 @@ def send_activation_email(user, request=None):
 
         logger.error(f"Traceback: {traceback.format_exc()}")
         return False
+
+
+def send_designation_change_email(employee, old_designation, new_designation, reason):
+    """Notify employee about designation change"""
+    try:
+        from django.core.mail import send_mail
+        from django.utils import timezone
+        from core.email_utils import get_hr_email_connection
+
+        subject = f"Designation Update - {employee.user.get_full_name()}"
+        
+        message = f"""Dear {employee.user.first_name},
+
+Your designation has been updated effectively from {timezone.now().date()}.
+
+Previous Designation: {old_designation}
+New Designation: {new_designation}
+
+Reason for Change: {reason}
+
+If you have any queries, please contact HR.
+
+Best Regards,
+HR Team
+"""
+        
+        from_email = "Petabytz HR <hrms@petabytz.com>"
+        recipient_list = [employee.user.email]
+        
+        logger.info(f"Sending designation change email to {employee.user.email}")
+        
+        connection = get_hr_email_connection()
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=from_email,
+            recipient_list=recipient_list,
+            connection=connection,
+            fail_silently=False
+        )
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send designation change email: {e}")
+        return False
+
+
+def send_ctc_change_email(employee, old_ctc, new_ctc, reason):
+    """Notify employee about CTC change"""
+    try:
+        from django.core.mail import send_mail
+        from django.utils import timezone
+        from core.email_utils import get_hr_email_connection
+
+        subject = f"CTC Revision - {employee.user.get_full_name()}"
+        
+        message = f"""Dear {employee.user.first_name},
+
+Your Annual CTC has been revised effectively from {timezone.now().date()}.
+
+Previous CTC: {old_ctc}
+New CTC: {new_ctc}
+
+Reason for Change: {reason}
+
+If you have any queries, please contact HR.
+
+Best Regards,
+HR Team
+"""
+        
+        from_email = "Petabytz HR <hrms@petabytz.com>"
+        recipient_list = [employee.user.email]
+        
+        logger.info(f"Sending CTC change email to {employee.user.email}")
+        
+        connection = get_hr_email_connection()
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=from_email,
+            recipient_list=recipient_list,
+            connection=connection,
+            fail_silently=False
+        )
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send CTC change email: {e}")
+        return False

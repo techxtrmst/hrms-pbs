@@ -296,6 +296,13 @@ def add_employee_step3(request):
                 annual_ctc=finance_data.get("annual_ctc"),
             )
 
+            # Log CTC Change Reason (if provided during step 3)
+            ctc_reason = finance_data.get("ctc_change_reason")
+            if ctc_reason:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"Employee {employee.user.email} created with CTC {finance_data.get('annual_ctc')}. Note: {ctc_reason}")
+
             # Create Emergency Contacts
             emergency_contacts = request.session.get("employee_emergency_contacts", [])
             if emergency_contacts:

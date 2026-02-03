@@ -1,0 +1,124 @@
+{% extends "admin/base_site.html" %}
+
+{% load i18n admin_urls static admin_modify unfold %}
+
+{% block extrahead %}{{ block.super }}
+<script src="{% url 'admin:jsi18n' %}"></script>
+{{ media }}
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} app-{{ opts.app_label }} model-{{ opts.model_name }} change-form{% endblock %}
+
+
+{% block nav-global %}{% spaceless %}
+{% if change and not is_popup %}
+{% block object-tools-items %}
+    {% if has_delete_permission %}
+        <li><a href="delete/" class="deletelink">{% trans "Delete" %}</a></li>
+    {% endif %}
+    {% if has_change_permission %}
+        <li><a href="history/" class="historylink">{% trans "History" %}</a></li>
+    {% endif %}
+{% endblock %}
+{% endif %}
+{% endspaceless %}{% endblock %}
+
+{% block nav-global-side %}
+{% if has_add_permission %}
+    <a href="../add/" class="addlink">{% trans 'Add' %} {{ opts.verbose_name }}</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    {% block form_before %}{% endblock %}
+
+    {% if adminform.model_admin.change_form_outer_before_template %}
+    {% include adminform.model_admin.change_form_outer_before_template %}
+    {% endif %}
+
+    <form id="{{ opts.model_name }}_form" method="post" {% if form_url %}action="{{ form_url }}"{% endif %} {% if has_file_field %}enctype="multipart/form-data"{% endif %} {% if adminform.model_admin.conditional_fields %}x-data='{{ adminform|changeform_data }}'{% endif %} x-bind:action="activeTab && activeTab !== 'general' ? window.location.pathname + window.location.search + '#' + activeTab : window.location.pathname + window.location.search" {% if adminform.model_admin.warn_unsaved_form %}class="warn-unsaved-form"{% endif %} novalidate>
+        {% csrf_token %}
+
+        {% if adminform.model_admin.change_form_before_template %}
+        {% include adminform.model_admin.change_form_before_template %}
+        {% endif %}
+
+        {% block form_top %}{% endblock %}
+
+        <div class="flex flex-col gap-6">
+            {% if is_popup %}
+            <input type="hidden" name="{{ is_popup_var }}" value="1">
+            {% endif %}
+
+            {% if to_field %}
+            <input type="hidden" name="{{ to_field_var }}" value="{{ to_field }}">
+            {% endif %}
+
+            {% if errors or adminform.form.non_field_errors %}
+            <div class="errornote">
+                {% if errors %}
+                    {% blocktrans count counter=errors|length %}Please correct the error below.{% plural %}Please correct the errors below.{% endblocktrans %}
+                {% endif %}
+                {% for error in adminform.form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block field_sets %}
+            {% for fieldset in adminform %}
+                {% include 'admin/includes/fieldset.html' %}
+            {% endfor %}
+            {% endblock %}
+
+            {% block after_field_sets %}{% endblock %}
+
+            {% block inline_field_sets %}
+            {% for inline_admin_formset in inline_admin_formsets %}
+            {% if request.headers.hx_request %}
+            {% if inline_admin_formset.formset.get_pagination_key in request.GET %}
+            {% include inline_admin_formset.opts.template %}
+            {% endif %}
+            {% else %}
+            {% include inline_admin_formset.opts.template %}
+            {% endif %}
+            {% endfor %}
+            {% endblock %}
+
+            {% block after_related_objects %}{% endblock %}
+
+            {% block admin_change_form_document_ready %}
+            <script id="django-admin-form-add-constants" src="{% static 'admin/js/change_form.js' %}"{% if adminform and add %} data-model-name="{{ opts.model_name }}"{% endif %} async></script>
+            {% endblock %}
+
+            <!-- FIX: prepopulated_fields_js causes 'super' object has no attribute 'dicts' error in Python 3.14 / Django Context -->
+            {# {% prepopulated_fields_js %} #}
+        </div>
+
+        {% if adminform.model_admin.change_form_after_template %}
+        {% include adminform.model_admin.change_form_after_template %}
+        {% endif %}
+    </form>
+
+    {% if datasets %}
+    <div class="flex flex-col">
+        {% for dataset in datasets %}
+        {{ dataset.contents }}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if adminform.model_admin.change_form_outer_after_template %}
+    {% include adminform.model_admin.change_form_outer_after_template %}
+    {% endif %}
+
+    {% block form_after %}{% endblock %}
+</div>
+{% endblock %}
+
+{% block footer %}
+    {% block submit_buttons_bottom %}
+        {% include "admin/submit_line.html" %}
+    {% endblock %}
+{% endblock %}

@@ -1200,6 +1200,10 @@ def employee_profile(request):
 
         available_shifts = ShiftSchedule.objects.filter(company=request.user.company, is_active=True).order_by("name")
 
+    # Get work history
+    from .models import WorkHistory
+    work_history = WorkHistory.objects.filter(employee=employee).order_by('-date', '-created_at')
+
     return render(
         request,
         "employees/employee_profile.html",
@@ -1212,6 +1216,7 @@ def employee_profile(request):
             "probation_status": probation_status,
             "probation_date": probation_date,
             "available_shifts": available_shifts,
+            "work_history": work_history,
         },
     )
 
@@ -1275,6 +1280,20 @@ class LeaveApplyView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         employee = self.request.user.employee_profile
         form.instance.employee = employee
+
+        # Multi-level Workflow Integration
+        from core.models import ApprovalWorkflow
+        workflow = ApprovalWorkflow.objects.filter(
+            company=employee.company, 
+            workflow_type="LEAVE", 
+            is_active=True
+        ).first()
+        
+        if workflow:
+            form.instance.workflow = workflow
+            form.instance.current_step = 1
+            # Update approval_level based on first step config if needed
+            # For now, default to MANAGER as per existing logic but inside workflow
 
         # Server-side duplicate prevention: Check for recent duplicate submissions
         from datetime import timedelta
@@ -1432,12 +1451,30 @@ def approve_leave(request, pk):
         if not (is_admin or is_manager):
             return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
 
-        # Get approval type from POST data
-        approval_type = request.POST.get("approval_type", "FULL")
+        # Multi-level Workflow Integration
+        if leave_request.workflow:
+            config = leave_request.workflow.levels_config
+            curr_step = str(leave_request.current_step)
+            step_config = config.get(curr_step, {})
+            
+            # Check if user role matches step config
+            required_role = step_config.get("role")
+            if required_role and user.role != required_role:
+                # If specifically looking for MANAGER, it must be the direct manager
+                if required_role == "MANAGER" and not is_manager:
+                     return JsonResponse({"status": "error", "message": "Only the direct manager can approve this step."}, status=403)
+                elif user.role != required_role:
+                     return JsonResponse({"status": "error", "message": f"This step requires {required_role} approval."}, status=403)
 
-        # Validate approval type
-        if approval_type not in ["FULL", "WITH_LOP", "ONLY_AVAILABLE"]:
-            approval_type = "FULL"
+            # Move to next step or finalize
+            if leave_request.current_step < leave_request.workflow.levels:
+                leave_request.current_step += 1
+                leave_request.save()
+                messages.success(request, f"Approver level {curr_step} completed. Request moved to level {leave_request.current_step}.")
+                return redirect("leave_requests")
+            else:
+                # Final level reached, proceed to actual approval
+                pass
 
         # Use the new approval method from the model
         if leave_request.approve_leave(user, approval_type=approval_type):
@@ -3435,7 +3472,7 @@ def leave_configuration(request):
             "employees": employees,
             "months_ctx": months_ctx,
             "years_ctx": years_ctx,
-            "is_bluebix": company.name.lower() == "bluebix",
+            "is_bluebix": company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"],
         },
     )
 
@@ -3468,7 +3505,7 @@ def update_leave_balance(request, pk):
         combined_balance_desired = data.get("combined_sick_casual_allocated")  # For Bluebix combined leave
 
         # For Bluebix, handle combined sick/casual leave
-        if employee.company.name.lower() == "bluebix":
+        if employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]:
             # For Bluebix, use the combined field
             if combined_balance_desired is not None:
                 try:
@@ -3819,8 +3856,8 @@ def download_leave_template(request):
     ws = wb.active
     ws.title = "Leave Balance Template"
 
-    # Check if this is Bluebix company (combined leave system)
-    is_bluebix = user.company.name.lower() == "bluebix"
+    # Check if this is Bluebix or Softstandard company (combined leave system)
+    is_bluebix = user.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]
 
     # Define headers based on company type
     if is_bluebix:
@@ -3896,7 +3933,7 @@ def download_leave_template(request):
 
     if is_bluebix:
         instructions = [
-            "BULK LEAVE UPLOAD INSTRUCTIONS - BLUEBIX (COMBINED SICK/CASUAL LEAVE)",
+            "BULK LEAVE UPLOAD INSTRUCTIONS - BLUEBIX / SOFTSTANDARD (COMBINED SICK/CASUAL LEAVE)",
             "",
             "Required Columns:",
             "- employee_id: Employee badge ID (e.g., PBTHYD001)",
@@ -3907,8 +3944,8 @@ def download_leave_template(request):
             "- sick_casual_leave_used: Sick/casual leaves already used (default: 0)",
             "- carry_forward_leave: Leaves carried forward from previous year (default: 0)",
             "",
-            "Important Notes for Bluebix:",
-            "1. Bluebix uses a COMBINED sick/casual leave system",
+            "Important Notes for Bluebix / Softstandard:",
+            "1. This company uses a COMBINED sick/casual leave system",
             "2. Employees get 1 combined leave per month that can be used for either sick or casual leave",
             "3. Either employee_id OR employee_name must be provided",
             "4. All numeric values must be positive numbers",

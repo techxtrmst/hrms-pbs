@@ -34,10 +34,6 @@ class Command(BaseCommand):
                 issues.append(f"CL: {balance.casual_leave_balance}")
             if balance.sick_leave_balance < 0:
                 issues.append(f"SL: {balance.sick_leave_balance}")
-            if balance.earned_leave_balance < 0:
-                issues.append(f"EL: {balance.earned_leave_balance}")
-            if balance.comp_off_balance < 0:
-                issues.append(f"CO: {balance.comp_off_balance}")
 
             if issues:
                 self.stdout.write(
@@ -46,6 +42,7 @@ class Command(BaseCommand):
 
                 if not dry_run:
                     # Fix the negative balances
+<<<<<<< Updated upstream
                     old_lop = balance.unpaid_leave
                     if balance.fix_negative_balances():
                         new_lop = balance.unpaid_leave
@@ -56,6 +53,11 @@ class Command(BaseCommand):
                             )
                         )
                         fixed_count += 1
+=======
+                    balance.validate_and_save()
+                    self.stdout.write(self.style.SUCCESS(f"Validated and saved {employee_name}"))
+                    fixed_count += 1
+>>>>>>> Stashed changes
                 else:
                     self.stdout.write(
                         self.style.WARNING(

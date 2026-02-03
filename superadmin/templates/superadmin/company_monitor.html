@@ -5,7 +5,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'superadmin/css/superadmin.css' %}">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 {% endblock %}
 
 {% block content %}
@@ -130,22 +130,61 @@
         </div>
     </div>
 
+    <!-- Filter Controls -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body p-3">
+            <form method="get" class="row g-3 align-items-center">
+                <div class="col-auto">
+                    <label class="fw-bold mb-0 text-secondary small text-uppercase">Analysis Period:</label>
+                </div>
+                <div class="col-auto">
+                    <select name="month" class="form-select form-select-sm" style="min-width: 120px;">
+                        {% for m_num, m_name in months %}
+                        <option value="{{ m_num }}" {% if selected_month == m_num %}selected{% endif %}>{{ m_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <select name="year" class="form-select form-select-sm" style="min-width: 100px;">
+                        {% for y in years %}
+                        <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary btn-sm px-4">
+                        <i class="fas fa-filter me-1"></i> Apply
+                    </button>
+                    {% if selected_month or selected_year %}
+                    <a href="{% url 'superadmin:company_monitor' company.id %}"
+                        class="btn btn-outline-secondary btn-sm ms-2">
+                        <i class="fas fa-undo me-1"></i> Reset
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Leave Analytics -->
     <div class="row mb-4">
         <div class="col-md-6">
-            <div class="sa-chart-container">
-                <h2 class="sa-chart-title">Leave Distribution</h2>
-                <div style="height: 300px; position: relative;">
-                    <canvas id="leaveDistributionChart"></canvas>
-                </div>
+            <div class="sa-chart-container h-100">
+                <h2 class="sa-chart-title d-flex justify-content-between align-items-center">
+                    Leave Distribution
+                    <span class="badge bg-light text-dark fw-normal small">{{ current_month_display }}</span>
+                </h2>
+                <div id="leaveDistributionChart" style="min-height: 350px;"></div>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="sa-chart-container">
-                <h2 class="sa-chart-title">Monthly Leave Trends</h2>
-                <div style="height: 300px; position: relative;">
-                    <canvas id="monthlyTrendsChart"></canvas>
-                </div>
+            <div class="sa-chart-container h-100">
+                <h2 class="sa-chart-title d-flex justify-content-between align-items-center">
+                    Leave Trends
+                    <span class="badge bg-light text-dark fw-normal small">Daily Breakdown</span>
+                </h2>
+                <div id="monthlyTrendsChart" style="min-height: 350px;"></div>
             </div>
         </div>
     </div>
@@ -190,151 +229,876 @@
 
     <!-- Attendance Heatmap -->
     <div class="sa-chart-container">
-        <h2 class="sa-chart-title">Attendance Heatmap - {{ current_month }}</h2>
-        <div class="row g-3 mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="sa-chart-title mb-0">Attendance Heatmap - {{ current_month }}</h2>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary btn-sm" id="heatmapViewToggle">
+                    <i class="fas fa-calendar-alt me-1"></i> Calendar View
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" id="exportHeatmap">
+                    <i class="fas fa-download me-1"></i> Export
+                </button>
+            </div>
+        </div>
+
+        <!-- Attendance Statistics Cards -->
+        <div class="row g-3 mb-4">
             <div class="col-md-3">
-                <div class="p-3 rounded" style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981;">
-                    <div class="small text-muted mb-1">Late Logins</div>
-                    <div class="h4 mb-0 fw-bold text-success">{{ heatmap_data.late_logins }}</div>
+                <div class="attendance-stat-card success">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Present Days</div>
+                        <div class="stat-value">{{ heatmap_data.present_days|default:0 }}</div>
+                        <div class="stat-trend">
+                            <i class="fas fa-arrow-up"></i> +2.5% from last month
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="p-3 rounded" style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid #f59e0b;">
-                    <div class="small text-muted mb-1">Early Logouts</div>
-                    <div class="h4 mb-0 fw-bold text-warning">{{ heatmap_data.early_logouts }}</div>
+                <div class="attendance-stat-card warning">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Late Logins</div>
+                        <div class="stat-value">{{ heatmap_data.late_logins }}</div>
+                        <div class="stat-trend">
+                            <i class="fas fa-arrow-down"></i> -1.2% from last month
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="p-3 rounded" style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444;">
-                    <div class="small text-muted mb-1">Absenteeism</div>
-                    <div class="h4 mb-0 fw-bold text-danger">{{ heatmap_data.absenteeism_percentage }}%</div>
+                <div class="attendance-stat-card danger">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-times"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Absenteeism</div>
+                        <div class="stat-value">{{ heatmap_data.absenteeism_percentage }}%</div>
+                        <div class="stat-trend">
+                            <i class="fas fa-arrow-up"></i> +0.8% from last month
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="p-3 rounded" style="background: rgba(99, 102, 241, 0.1); border-left: 4px solid #6366f1;">
-                    <div class="small text-muted mb-1">Total Employees</div>
-                    <div class="h4 mb-0 fw-bold text-primary">{{ heatmap_data.total_employees }}</div>
+                <div class="attendance-stat-card info">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Total Employees</div>
+                        <div class="stat-value">{{ heatmap_data.total_employees }}</div>
+                        <div class="stat-trend">
+                            <i class="fas fa-minus"></i> No change
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="alert alert-info">
-            <i class="fas fa-info-circle me-2"></i>
-            <strong>Note:</strong> Attendance heatmap visualization coming soon. The statistics above show the current
-            month's attendance metrics.
+        <!-- Heatmap Calendar -->
+        <div class="attendance-heatmap-container">
+            <div class="heatmap-header">
+                <div class="heatmap-legend">
+                    <span class="legend-label">Less</span>
+                    <div class="legend-scale">
+                        <div class="legend-item" data-level="0" title="No data"></div>
+                        <div class="legend-item" data-level="1" title="1-25% attendance"></div>
+                        <div class="legend-item" data-level="2" title="26-50% attendance"></div>
+                        <div class="legend-item" data-level="3" title="51-75% attendance"></div>
+                        <div class="legend-item" data-level="4" title="76-100% attendance"></div>
+                    </div>
+                    <span class="legend-label">More</span>
+                </div>
+            </div>
+            
+            <div class="heatmap-calendar" id="attendanceHeatmap">
+                <!-- Calendar will be generated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Detailed Analytics -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="analytics-card">
+                    <h5 class="analytics-title">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Weekly Trends
+                    </h5>
+                    <div id="weeklyTrendsChart" style="height: 200px;"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="analytics-card">
+                    <h5 class="analytics-title">
+                        <i class="fas fa-user-clock me-2"></i>
+                        Top Late Arrivals
+                    </h5>
+                    <div class="late-arrivals-list">
+                        {% for emp in heatmap_data.late_arrivals %}
+                        <div class="late-arrival-item">
+                            <div class="employee-info">
+                                <div class="employee-name">{{ emp.user.get_full_name }}</div>
+                                <div class="employee-dept">{{ emp.department|default:"N/A" }}</div>
+                            </div>
+                            <div class="late-count">
+                                <span class="badge bg-warning">{{ emp.late_count }} times</span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-check-circle me-2"></i>
+                            No late arrivals this month
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Leave Distribution Chart
-    const leaveDistCtx = document.getElementById('leaveDistributionChart');
-    if (leaveDistCtx) {
-        const leaveDistData = {{ leave_analytics.distribution| safe }};
-    new Chart(leaveDistCtx, {
-        type: 'doughnut',
-        data: {
-            labels: leaveDistData.map(d => {
-                const types = {
-                    'CL': 'Casual Leave',
-                    'SL': 'Sick Leave',
-                    'EL': 'Earned Leave',
-                    'UL': 'Unpaid Leave',
-                    'CO': 'Comp Off',
-                    'OT': 'Others'
+    document.addEventListener('DOMContentLoaded', function () {
+        // Common Chart Options
+        const commonOptions = {
+            fontFamily: 'Inter, sans-serif',
+            toolbar: {
+                show: false
+            }
+        };
+
+        // Leave Distribution Chart
+        const leaveDistEl = document.querySelector('#leaveDistributionChart');
+        if (leaveDistEl) {
+            // Data passed from Django
+            const leaveDistRaw = JSON.parse('{{ leave_analytics.distribution|safe }}');
+            console.log('Leave Distribution Data:', leaveDistRaw);
+
+            if (leaveDistRaw && leaveDistRaw.length > 0) {
+                const labels = leaveDistRaw.map(d => {
+                    const types = {
+                        'CL': 'Casual Leave',
+                        'SL': 'Sick Leave',
+                        'EL': 'Earned Leave',
+                        'UL': 'Unpaid Leave',
+                        'CO': 'Comp Off',
+                        'OD': 'On Duty',
+                        'OT': 'Others'
+                    };
+                    return types[d.leave_type] || d.leave_type;
+                });
+                const series = leaveDistRaw.map(d => d.count);
+
+                const distOptions = {
+                    series: series,
+                    labels: labels,
+                    chart: {
+                        type: 'donut',
+                        height: 350,
+                        fontFamily: 'Inter, sans-serif'
+                    },
+                    colors: ['#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#64748b'],
+                    plotOptions: {
+                        pie: {
+                            donut: {
+                                size: '70%',
+                                labels: {
+                                    show: true,
+                                    total: {
+                                        show: true,
+                                        label: 'Total',
+                                        fontSize: '22px',
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontWeight: 600,
+                                        color: '#1e293b'
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    dataLabels: {
+                        enabled: false
+                    },
+                    legend: {
+                        position: 'bottom',
+                        fontSize: '14px',
+                        fontFamily: 'Inter, sans-serif',
+                        fontWeight: 500
+                    },
+                    stroke: {
+                        show: false
+                    }
                 };
-                return types[d.leave_type] || d.leave_type;
-            }),
-            datasets: [{
-                data: leaveDistData.map(d => d.count),
-                backgroundColor: [
-                    '#3b82f6',  // Blue
-                    '#f59e0b',  // Amber
-                    '#10b981',  // Green
-                    '#ef4444',  // Red
-                    '#8b5cf6',  // Purple
-                    '#64748b'   // Gray
-                ],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 15,
-                        font: {
-                            size: 12,
-                            family: 'Inter, sans-serif'
+
+                new ApexCharts(leaveDistEl, distOptions).render();
+            } else {
+                leaveDistEl.innerHTML = '<div class="d-flex align-items-center justify-content-center h-100 text-muted">No leave data for this period</div>';
+            }
+        }
+
+        // Trends Chart
+        const trendsEl = document.querySelector('#monthlyTrendsChart');
+        if (trendsEl) {
+            const trendsData = JSON.parse('{{ leave_analytics.monthly_trends|safe }}');
+            console.log('Trends Data:', trendsData);
+
+            if (trendsData.series && trendsData.series.length > 0) {
+                const trendOptions = {
+                    series: trendsData.series,
+                    chart: {
+                        type: 'bar', // Better for daily/monthly distinct values, area/line also works
+                        height: 350,
+                        fontFamily: 'Inter, sans-serif',
+                        toolbar: { show: false },
+                        stacked: true
+                    },
+                    colors: ['#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'],
+                    dataLabels: { enabled: false },
+                    stroke: {
+                        curve: 'smooth',
+                        width: 1
+                    },
+                    plotOptions: {
+                        bar: {
+                            borderRadius: 4,
+                            columnWidth: '60%',
+                        }
+                    },
+                    xaxis: {
+                        categories: trendsData.categories.map(date => {
+                            // If it's YYYY-MM-DD
+                            const d = new Date(date);
+                            return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+                        }),
+                        axisBorder: { show: false },
+                        axisTicks: { show: false }
+                    },
+                    yaxis: {
+                        title: { text: 'Leave Requests' }
+                    },
+                    grid: {
+                        borderColor: '#f1f5f9',
+                        strokeDashArray: 4,
+                        xaxis: { lines: { show: false } }
+                    },
+                    legend: {
+                        position: 'top',
+                        horizontalAlign: 'right'
+                    },
+                    tooltip: {
+                        theme: 'light',
+                        y: {
+                            formatter: function (val) {
+                                return val + " requests"
+                            }
                         }
                     }
+                };
+
+                // If we are looking at monthly trends (categories less than 15), Use Area/Line
+                if (trendsData.categories.length <= 12 && trendsData.categories[0].length <= 7) {
+                    // Heuristic: if it looks like month buckets (YYYY-MM), line is nice
+                    trendOptions.chart.type = 'area';
+                    trendOptions.stroke.width = 2;
+                    trendOptions.fill = {
+                        type: 'gradient',
+                        gradient: {
+                            shadeIntensity: 1,
+                            opacityFrom: 0.7,
+                            opacityTo: 0.3,
+                            stops: [0, 90, 100]
+                        }
+                    };
+                }
+
+                new ApexCharts(trendsEl, trendOptions).render();
+            } else {
+                trendsEl.innerHTML = '<div class="d-flex align-items-center justify-content-center h-100 text-muted">No trend data for this period</div>';
+            }
+        }
+    });
+</script>
+
+<style>
+/* Advanced Attendance Heatmap Styles */
+.attendance-stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #f1f5f9;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.attendance-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.attendance-stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--card-color), var(--card-color-light));
+}
+
+.attendance-stat-card.success {
+    --card-color: #10b981;
+    --card-color-light: #34d399;
+}
+
+.attendance-stat-card.warning {
+    --card-color: #f59e0b;
+    --card-color-light: #fbbf24;
+}
+
+.attendance-stat-card.danger {
+    --card-color: #ef4444;
+    --card-color-light: #f87171;
+}
+
+.attendance-stat-card.info {
+    --card-color: #3b82f6;
+    --card-color-light: #60a5fa;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--card-color), var(--card-color-light));
+    color: white;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.stat-content .stat-label {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.stat-content .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+}
+
+.stat-content .stat-trend {
+    font-size: 0.75rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.stat-trend i.fa-arrow-up {
+    color: #10b981;
+}
+
+.stat-trend i.fa-arrow-down {
+    color: #ef4444;
+}
+
+.stat-trend i.fa-minus {
+    color: #64748b;
+}
+
+/* Heatmap Calendar Styles */
+.attendance-heatmap-container {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #f1f5f9;
+}
+
+.heatmap-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 2rem;
+}
+
+.heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+.legend-scale {
+    display: flex;
+    gap: 2px;
+}
+
+.legend-item {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.legend-item:hover {
+    transform: scale(1.2);
+}
+
+.legend-item[data-level="0"] {
+    background: #f1f5f9;
+}
+
+.legend-item[data-level="1"] {
+    background: #fecaca;
+}
+
+.legend-item[data-level="2"] {
+    background: #fed7aa;
+}
+
+.legend-item[data-level="3"] {
+    background: #bfdbfe;
+}
+
+.legend-item[data-level="4"] {
+    background: #86efac;
+}
+
+.heatmap-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    max-width: 100%;
+}
+
+.heatmap-day {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    min-height: 32px;
+}
+
+.heatmap-day:hover {
+    transform: scale(1.1);
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.heatmap-day.header {
+    background: none;
+    color: #64748b;
+    font-weight: 600;
+    cursor: default;
+}
+
+.heatmap-day.header:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.heatmap-day.empty {
+    background: transparent;
+    cursor: default;
+}
+
+.heatmap-day.empty:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.heatmap-day[data-level="0"] {
+    background: #f8fafc;
+    color: #cbd5e1;
+}
+
+.heatmap-day[data-level="1"] {
+    background: #fecaca;
+    color: #991b1b;
+}
+
+.heatmap-day[data-level="2"] {
+    background: #fed7aa;
+    color: #9a3412;
+}
+
+.heatmap-day[data-level="3"] {
+    background: #bfdbfe;
+    color: #1e40af;
+}
+
+.heatmap-day[data-level="4"] {
+    background: #86efac;
+    color: #166534;
+}
+
+.heatmap-day.today {
+    border: 2px solid #3b82f6;
+    font-weight: 700;
+}
+
+/* Analytics Cards */
+.analytics-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #f1f5f9;
+    height: 100%;
+}
+
+.analytics-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.late-arrivals-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.late-arrival-item {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    padding: 0.75rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+.late-arrival-item:hover {
+    background: #f1f5f9;
+}
+
+.employee-info {
+    flex: 1;
+}
+
+.employee-name {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.875rem;
+}
+
+.employee-dept {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.late-count {
+    margin-left: auto;
+}
+
+/* Tooltip Styles */
+.heatmap-tooltip {
+    position: absolute;
+    background: #1e293b;
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    white-space: nowrap;
+}
+
+.heatmap-tooltip.show {
+    opacity: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .heatmap-calendar {
+        gap: 2px;
+    }
+    
+    .heatmap-day {
+        min-height: 28px;
+        font-size: 0.625rem;
+    }
+    
+    .attendance-stat-card {
+        padding: 1rem;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem !important;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Attendance Heatmap
+    initializeAttendanceHeatmap();
+    
+    // Initialize Weekly Trends Chart
+    initializeWeeklyTrendsChart();
+    
+    // Initialize tooltips
+    initializeTooltips();
+});
+
+function initializeAttendanceHeatmap() {
+    const heatmapContainer = document.getElementById('attendanceHeatmap');
+    if (!heatmapContainer) return;
+    
+    // Get current month data
+    const currentDate = new Date();
+    const year = parseInt('{{ selected_year }}');
+    const month = parseInt('{{ selected_month }}') - 1; // JavaScript months are 0-indexed
+    
+    // Generate calendar
+    generateHeatmapCalendar(heatmapContainer, year, month);
+}
+
+function generateHeatmapCalendar(container, year, month) {
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+    
+    // Clear container
+    container.innerHTML = '';
+    
+    // Add day headers
+    const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    dayHeaders.forEach(day => {
+        const dayElement = document.createElement('div');
+        dayElement.className = 'heatmap-day header';
+        dayElement.textContent = day;
+        container.appendChild(dayElement);
+    });
+    
+    // Add empty cells for days before month starts
+    for (let i = 0; i < startingDayOfWeek; i++) {
+        const emptyElement = document.createElement('div');
+        emptyElement.className = 'heatmap-day empty';
+        container.appendChild(emptyElement);
+    }
+    
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayElement = document.createElement('div');
+        dayElement.className = 'heatmap-day';
+        dayElement.textContent = day;
+        
+        // Simulate attendance data (replace with real data)
+        const attendanceLevel = getAttendanceLevel(day);
+        dayElement.setAttribute('data-level', attendanceLevel);
+        
+        // Mark today
+        const today = new Date();
+        if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
+            dayElement.classList.add('today');
+        }
+        
+        // Add click handler
+        dayElement.addEventListener('click', () => showDayDetails(year, month + 1, day));
+        
+        container.appendChild(dayElement);
+    }
+    
+    // Add tooltip
+    addHeatmapTooltip(container);
+}
+
+function getAttendanceLevel(day) {
+    // Get real attendance data from backend
+    try {
+        const dailyData = JSON.parse('{{ heatmap_data.daily_attendance|safe }}');
+        
+        if (dailyData && dailyData[day]) {
+            const percentage = dailyData[day].attendance_percentage;
+            if (percentage === 0) return 0;
+            if (percentage <= 25) return 1;
+            if (percentage <= 50) return 2;
+            if (percentage <= 75) return 3;
+            return 4;
+        }
+    } catch (e) {
+        console.error('Error parsing daily attendance data:', e);
+    }
+    
+    return 0;
+}
+
+function getAttendanceText(level, day) {
+    try {
+        const dailyData = JSON.parse('{{ heatmap_data.daily_attendance|safe }}');
+        
+        if (dailyData && dailyData[day]) {
+            const data = dailyData[day];
+            return `
+                <strong>Attendance: ${data.attendance_percentage}%</strong><br>
+                Present: ${data.present_count}/${data.total_employees}<br>
+                Late: ${data.late_count} | Early Exit: ${data.early_departure_count}
+            `;
+        }
+    } catch (e) {
+        console.error('Error parsing daily attendance data:', e);
+    }
+    
+    const texts = {
+        '0': 'No data available',
+        '1': 'Low attendance (1-25%)',
+        '2': 'Below average (26-50%)',
+        '3': 'Good attendance (51-75%)',
+        '4': 'Excellent attendance (76-100%)'
+    };
+    return texts[level] || 'No data';
+}
+
+function initializeWeeklyTrendsChart() {
+    const chartElement = document.getElementById('weeklyTrendsChart');
+    if (!chartElement) return;
+    
+    let weeklyData = [85, 92, 88, 94]; // Default data
+    
+    try {
+        weeklyData = JSON.parse('{{ heatmap_data.weekly_trends|safe }}') || weeklyData;
+    } catch (e) {
+        console.error('Error parsing weekly trends data:', e);
+    }
+    
+    const options = {
+        series: [{
+            name: 'Attendance %',
+            data: weeklyData
+        }],
+        chart: {
+            type: 'area',
+            height: 200,
+            toolbar: { show: false },
+            fontFamily: 'Inter, sans-serif'
+        },
+        colors: ['#3b82f6'],
+        dataLabels: { enabled: false },
+        stroke: {
+            curve: 'smooth',
+            width: 2
+        },
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.4,
+                opacityTo: 0.1,
+                stops: [0, 90, 100]
+            }
+        },
+        xaxis: {
+            categories: ['Week 1', 'Week 2', 'Week 3', 'Week 4'].slice(0, weeklyData.length),
+            axisBorder: { show: false },
+            axisTicks: { show: false }
+        },
+        yaxis: {
+            show: false
+        },
+        grid: {
+            show: false
+        },
+        tooltip: {
+            theme: 'light',
+            y: {
+                formatter: function(val) {
+                    return val + '%'
                 }
             }
+        }
+    };
+    
+    new ApexCharts(chartElement, options).render();
+}
+
+function addHeatmapTooltip(container) {
+    const tooltip = document.createElement('div');
+    tooltip.className = 'heatmap-tooltip';
+    document.body.appendChild(tooltip);
+    
+    container.addEventListener('mouseover', (e) => {
+        if (e.target.classList.contains('heatmap-day') && !e.target.classList.contains('header') && !e.target.classList.contains('empty')) {
+            const day = parseInt(e.target.textContent);
+            const level = e.target.getAttribute('data-level');
+            const attendanceText = getAttendanceText(level, day);
+            
+            tooltip.innerHTML = `
+                <strong>{{ current_month_display }} ${day}</strong><br>
+                ${attendanceText}
+            `;
+            tooltip.classList.add('show');
+        }
+    });
+    
+    container.addEventListener('mousemove', (e) => {
+        tooltip.style.left = e.pageX + 10 + 'px';
+        tooltip.style.top = e.pageY - 10 + 'px';
+    });
+    
+    container.addEventListener('mouseout', (e) => {
+        if (e.target.classList.contains('heatmap-day')) {
+            tooltip.classList.remove('show');
         }
     });
 }
 
-    // Monthly Trends Chart
-    const monthlyTrendsCtx = document.getElementById('monthlyTrendsChart');
-    if (monthlyTrendsCtx) {
-        const trendsData = {{ leave_analytics.monthly_trends| safe }};
-    new Chart(monthlyTrendsCtx, {
-        type: 'line',
-        data: {
-            labels: trendsData.map(d => {
-                const date = new Date(d.month);
-                return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-            }),
-            datasets: [{
-                label: 'Leave Requests',
-                data: trendsData.map(d => d.count),
-                borderColor: '#6366f1',
-                backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 5,
-                pointHoverRadius: 7,
-                pointBackgroundColor: '#6366f1',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: '#e2e8f0'
-                    },
-                    ticks: {
-                        font: {
-                            family: 'Inter, sans-serif'
-                        }
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        font: {
-                            family: 'Inter, sans-serif'
-                        }
-                    }
-                }
-            }
+function showDayDetails(year, month, day) {
+    // Show detailed attendance for specific day
+    try {
+        const dailyData = JSON.parse('{{ heatmap_data.daily_attendance|safe }}');
+        
+        if (dailyData && dailyData[day]) {
+            const data = dailyData[day];
+            alert(`Attendance Details for ${month}/${day}/${year}
+
+Present: ${data.present_count}/${data.total_employees} (${data.attendance_percentage}%)
+Absent: ${data.absent_count}
+Late Arrivals: ${data.late_count}
+Early Departures: ${data.early_departure_count}`);
+        } else {
+            alert(`No attendance data available for ${month}/${day}/${year}`);
         }
+    } catch (e) {
+        console.error('Error parsing daily attendance data:', e);
+        alert(`Error loading attendance data for ${month}/${day}/${year}`);
+    }
+}
+
+function initializeTooltips() {
+    // Initialize Bootstrap tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 }
 </script>

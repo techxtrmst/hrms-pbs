@@ -480,7 +480,8 @@
             <div class="stat-subtitle">Last 3 months</div>
             <div class="progress-compact">
                 <div class="progress-bar-compact"
-                    style="--bar-color: var(--primary); width: {{ quick_stats.attendance_percentage }}%"></div>
+                    style="--bar-color: var(--primary); width: calc({{ quick_stats.attendance_percentage|default:0 }} * 1%);">
+                </div>
             </div>
         </div>
 
@@ -490,7 +491,8 @@
             <div class="stat-subtitle">On-time arrivals</div>
             <div class="progress-compact">
                 <div class="progress-bar-compact"
-                    style="--bar-color: var(--success); width: {{ quick_stats.on_time_percentage }}%"></div>
+                    style="--bar-color: var(--success); width: calc({{ quick_stats.on_time_percentage|default:0 }} * 1%);">
+                </div>
             </div>
         </div>
 
@@ -535,6 +537,11 @@
         <li class="nav-item">
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#activity">
                 <i class="fas fa-history me-1"></i> Activity
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link text-primary fw-bold" data-bs-toggle="tab" data-bs-target="#access">
+                <i class="fas fa-user-shield me-1"></i> System Access
             </button>
         </li>
     </ul>
@@ -605,7 +612,7 @@
                             <div class="small text-muted mb-1">Compliance: {{ working_hours_compliance.compliance_percentage }}%</div>
                             <div class="progress-compact" style="height: 10px;">
                                 <div class="progress-bar-compact"
-                                    style="--bar-color: var(--success); width: {{ working_hours_compliance.compliance_percentage }}%">
+                                    style="--bar-color: var(--success); --p: {{ working_hours_compliance.compliance_percentage|default:0 }}%; width: var(--p);">
                                 </div>
                             </div>
                         </div>
@@ -706,7 +713,9 @@
                                                 {% elif att.status == 'NOT_LOGGED_IN' %}
                                                 <span class="status-badge warning">Not Login</span>
                                                 {% else %}
-                                                <span class="status-badge info">{{ att.status_display|default:att.get_status_display|default:att.status }}</span>
+                                                <span class="status-badge info">{{
+                                                    att.status_display|default:att.get_status_display|default:att.status
+                                                    }}</span>
                                                 {% endif %}
                                             </td>
                                             <td>
@@ -903,52 +912,164 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-    {% endblock %}
 
-    {% block extra_js %}
-    <script>
-        // Punctuality Chart
-        const ctx = document.getElementById('punctualityChart');
-        if (ctx) {
-            const data = {{ punctuality_analysis.clock_in_times| safe }};
+            <!-- Access Tab -->
+            <div class="tab-pane fade" id="access">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="content-card">
+                            <h3 class="text-primary"><i class="fas fa-user-shield"></i> Role & Permissions</h3>
+                            <p class="text-muted small mb-4">Manage this user's administrative access and
+                                platform role.</p>
 
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.map(d => d.date),
-                datasets: [{
-                    label: 'Clock-In Time',
-                    data: data.map(d => {
-                        const [hours, minutes] = d.time.split(':');
-                        return parseInt(hours) + parseInt(minutes) / 60;
-                    }),
-                    borderColor: '#5b47fb',
-                    backgroundColor: 'rgba(91, 71, 251, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 4,
-                    pointBackgroundColor: data.map(d =>
-                        d.is_late ? '#ef4444' : d.is_grace ? '#f59e0b' : '#10b981'
-                    ),
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                const hours = Math.floor(context.raw);
-                                const minutes = Math.round((context.raw - hours) * 60);
-                                return `Clock-In: ${hours}:${minutes.toString().padStart(2, '0')}`;
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="update_access" value="1">
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold small text-uppercase">System Role</label>
+                                    <select name="role" class="form-select border-0 bg-light">
+                                        {% for role_val, role_label in roles %}
+                                        <option value="{{ role_val }}" {% if employee.user.role == role_val %}selected{% endif %}>
+                                            {{ role_label }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text small">
+                                        <strong>Super Admin:</strong> Full system access.<br>
+                                        <strong>Company Admin:</strong> Manage their organization.<br>
+                                        <strong>Manager:</strong> Standard manager permissions.<br>
+                                        <strong>Employee:</strong> Standard user access.
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="is_active"
+                                            id="isActiveSwitch" {% if employee.user.is_active %}checked{% endif %}>
+                                        <label class="form-check-label fw-bold" for="isActiveSwitch">Account
+                                            Active</label>
+                                    </div>
+                                    <p class="text-muted small">If disabled, the user will not be able to log
+                                        in.</p>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary rounded-pill">
+                                        <i class="fas fa-save me-2"></i> Save Access Configuration
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="content-card border-warning">
+                            <h3 class="text-warning"><i class="fas fa-exclamation-triangle"></i> Advanced
+                                Actions</h3>
+                            <p class="text-muted small">Sensitive operations for this user account.</p>
+
+                            <div class="d-flex flex-column gap-3">
+                                <div class="p-3 bg-light rounded-3">
+                                    <div class="fw-bold small mb-1">Reset Password</div>
+                                    <p class="text-muted small mb-2">Force user to set a new password on next login.</p>
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="reset_password" value="1">
+                                        <button type="submit" class="btn btn-sm btn-outline-warning rounded-pill"
+                                            onclick="return confirm('Are you sure you want to reset this user\'s password?')">Trigger
+                                            Reset</button>
+                                    </form>
+                                </div>
+
+                                <div class="p-3 bg-light rounded-3">
+                                    <div class="fw-bold small mb-1">Audit Trail</div>
+                                    <p class="text-muted small mb-2">View all system changes made by this user.
+                                    </p>
+                                    <a href="{% url 'observability:request_list' %}?user={{ employee.user.id }}"
+                                        class="btn btn-sm btn-outline-primary rounded-pill">View Logs</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div><!-- .container-fluid -->
+                    {% endblock %}
+
+                    {% block extra_js %}
+                    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            const ctx = document.getElementById('punctualityChart');
+                            if (ctx) {
+                                const dataStr = '{{ punctuality_analysis.clock_in_times_json|safe|escapejs }}';
+                                if (dataStr && dataStr !== '[]') {
+                                    const rawData = JSON.parse(dataStr);
+
+                                    const initChart = () => {
+                                        if (window.myChart) window.myChart.destroy();
+                                        window.myChart = new Chart(ctx, {
+                                            type: 'line',
+                                            data: {
+                                                labels: rawData.map(d => d.date),
+                                                datasets: [{
+                                                    label: 'Clock-In Time',
+                                                    data: rawData.map(d => {
+                                                        const [hours, minutes] = d.time.split(':');
+                                                        return parseInt(hours) + parseInt(minutes) / 60;
+                                                    }),
+                                                    borderColor: '#5b47fb',
+                                                    backgroundColor: 'rgba(91, 71, 251, 0.1)',
+                                                    borderWidth: 2,
+                                                    fill: true,
+                                                    tension: 0.4,
+                                                    pointRadius: 4,
+                                                    pointBackgroundColor: rawData.map(d =>
+                                                        d.is_late ? '#ef4444' : d.is_grace ? '#f59e0b' : '#10b981'
+                                                    ),
+                                                    pointBorderColor: '#fff',
+                                                    pointBorderWidth: 2
+                                                }]
+                                            },
+                                            options: {
+                                                responsive: true,
+                                                maintainAspectRatio: false,
+                                                plugins: {
+                                                    legend: { display: false },
+                                                    tooltip: {
+                                                        callbacks: {
+                                                            label: function (context) {
+                                                                const hours = Math.floor(context.raw);
+                                                                const minutes = Math.round((context.raw - hours) * 60);
+                                                                return `Clock-In: ${hours}:${minutes.toString().padStart(2, '0')}`;
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                scales: {
+                                                    y: {
+                                                        ticks: {
+                                                            callback: function (value) {
+                                                                const hours = Math.floor(value);
+                                                                const minutes = Math.round((value - hours) * 60);
+                                                                return `${hours}:${minutes.toString().padStart(2, '0')}`;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        });
+                                    };
+
+                                    initChart();
+
+                                    const tabEl = document.querySelector('button[data-bs-target="#attendance"]');
+                                    if (tabEl) {
+                                        tabEl.addEventListener('shown.bs.tab', function () {
+                                            initChart();
+                                        });
+                                    }
+                                }
                             }
+<<<<<<< Updated upstream
                         }
                     }
                 },
@@ -973,3 +1094,8 @@
 
     </script>
     {% endblock %}
+=======
+                        });
+                    </script>
+                    {% endblock %}
+>>>>>>> Stashed changes

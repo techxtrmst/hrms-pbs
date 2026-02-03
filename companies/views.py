@@ -330,8 +330,14 @@ def role_configuration(request):
     company = None
     if hasattr(request.user, "company") and request.user.company:
         company = request.user.company
-    elif request.user.employee_profile and request.user.employee_profile.company:
+    elif hasattr(request.user, "employee_profile") and request.user.employee_profile.company:
         company = request.user.employee_profile.company
+
+    if not company and request.user.is_superuser:
+        from .models import Company
+        company = Company.objects.first()
+        if company:
+            messages.info(request, f"Viewing configuration for {company.name}")
 
     if not company:
         messages.error(request, "No company associated.")

@@ -1,0 +1,440 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Payroll Configuration | Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --keka-primary: #5b47fb;
+        --keka-bg: #f7f8fc;
+        --keka-border: #e8ecf4;
+        --keka-text-primary: #1e2139;
+        --keka-text-secondary: #6c7293;
+    }
+
+    .settings-container {
+        padding: 2rem;
+        background: var(--keka-bg);
+        min-height: calc(100vh - 60px);
+    }
+
+    .settings-header {
+        background: white;
+        padding: 24px 32px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--keka-text-primary);
+        margin: 0;
+    }
+
+    .config-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .nav-tabs-premium {
+        background: #f8fafc;
+        border-bottom: 1px solid var(--keka-border);
+        padding: 0 24px;
+    }
+
+    .nav-tabs-premium .nav-link {
+        border: none;
+        color: var(--keka-text-secondary);
+        font-weight: 600;
+        padding: 16px 20px;
+        font-size: 14px;
+        transition: all 0.2s;
+        border-bottom: 3px solid transparent;
+    }
+
+    .nav-tabs-premium .nav-link:hover {
+        color: var(--keka-primary);
+    }
+
+    .nav-tabs-premium .nav-link.active {
+        color: var(--keka-primary);
+        background: transparent;
+        border-bottom-color: var(--keka-primary);
+    }
+
+    .tab-content {
+        padding: 32px;
+    }
+
+    .form-section-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--keka-text-primary);
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .form-group-custom {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--keka-text-secondary);
+        margin-bottom: 8px;
+        font-size: 13px;
+        display: block;
+    }
+
+    .input-group-custom {
+        display: flex;
+        align-items: center;
+        border: 1.5px solid var(--keka-border);
+        border-radius: 8px;
+        overflow: hidden;
+        transition: all 0.2s;
+    }
+
+    .input-group-custom:focus-within {
+        border-color: var(--keka-primary);
+        box-shadow: 0 0 0 4px rgba(91, 71, 251, 0.1);
+    }
+
+    .input-group-addon {
+        background: #f8fafc;
+        padding: 10px 14px;
+        color: var(--keka-text-secondary);
+        font-size: 14px;
+        border-right: 1px solid var(--keka-border);
+        min-width: 45px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .input-group-addon-right {
+        border-right: none;
+        border-left: 1px solid var(--keka-border);
+    }
+
+    .form-control-custom {
+        border: none;
+        padding: 10px 14px;
+        flex: 1;
+        font-size: 14px;
+        color: var(--keka-text-primary);
+        font-weight: 500;
+    }
+
+    .form-control-custom:focus {
+        outline: none;
+    }
+
+    .save-bar {
+        background: white;
+        border-top: 1px solid var(--keka-border);
+        padding: 20px 32px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .btn-save {
+        background: var(--keka-primary);
+        color: white;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .btn-save:hover {
+        background: #4338ca;
+        transform: translateY(-1px);
+    }
+
+    .badge-country {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        background: #eef2ff;
+        color: var(--keka-primary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="settings-header">
+        <div>
+            <h1 class="page-title">Payroll Configuration</h1>
+            <p class="text-muted mb-0">Manage statutory rates and salary breakdown for <strong>{{ company.name }}</strong></p>
+        </div>
+        <div>
+            <a href="{% url 'payroll_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="config-card">
+            <!-- Tabs Navigation -->
+            <ul class="nav nav-tabs nav-tabs-premium" id="configTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" id="statutory-tab" data-bs-toggle="tab" data-bs-target="#statutory"
+                        type="button" role="tab">
+                        <i class="fas fa-balance-scale me-2"></i>Statutory Rules
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="components-tab" data-bs-toggle="tab" data-bs-target="#components"
+                        type="button" role="tab">
+                        <i class="fas fa-percentage me-2"></i>Salary Components
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="configTabsContent">
+                <!-- Statutory Rules Tab -->
+                <div class="tab-pane fade show active" id="statutory" role="tabpanel">
+                    <div class="row">
+                        <!-- PF Settings -->
+                        <div class="col-md-6 mb-4">
+                            <h6 class="form-section-title">
+                                <span class="badge-country">India</span> Provident Fund (PF)
+                            </h6>
+                            <div class="row">
+                                <div class="col-6 form-group-custom">
+                                    <label class="form-label">Employer Contribution</label>
+                                    <div class="input-group-custom">
+                                        <input type="number" step="0.01" name="pf_employer_rate"
+                                            class="form-control-custom" value="{{ config.pf_employer_rate }}">
+                                        <span class="input-group-addon input-group-addon-right">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 form-group-custom">
+                                    <label class="form-label">Employee Contribution</label>
+                                    <div class="input-group-custom">
+                                        <input type="number" step="0.01" name="pf_employee_rate"
+                                            class="form-control-custom" value="{{ config.pf_employee_rate }}">
+                                        <span class="input-group-addon input-group-addon-right">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-12 form-group-custom">
+                                    <label class="form-label">PF Wage Ceiling (Monthly)</label>
+                                    <div class="input-group-custom">
+                                        <span class="input-group-addon">₹</span>
+                                        <input type="number" step="1" name="pf_ceiling" class="form-control-custom"
+                                            value="{{ config.pf_ceiling }}">
+                                    </div>
+                                    <small class="text-muted">Standard is ₹15,000</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ESI Settings -->
+                        <div class="col-md-6 mb-4">
+                            <h6 class="form-section-title">
+                                <span class="badge-country">India</span> ESI (Health Insurance)
+                            </h6>
+                            <div class="row">
+                                <div class="col-6 form-group-custom">
+                                    <label class="form-label">Employer Contribution</label>
+                                    <div class="input-group-custom">
+                                        <input type="number" step="0.01" name="esi_employer_rate"
+                                            class="form-control-custom" value="{{ config.esi_employer_rate }}">
+                                        <span class="input-group-addon input-group-addon-right">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 form-group-custom">
+                                    <label class="form-label">Employee Contribution</label>
+                                    <div class="input-group-custom">
+                                        <input type="number" step="0.01" name="esi_employee_rate"
+                                            class="form-control-custom" value="{{ config.esi_employee_rate }}">
+                                        <span class="input-group-addon input-group-addon-right">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-12 form-group-custom">
+                                    <label class="form-label">ESI Gross Wage Ceiling</label>
+                                    <div class="input-group-custom">
+                                        <span class="input-group-addon">₹</span>
+                                        <input type="number" step="1" name="esi_ceiling" class="form-control-custom"
+                                            value="{{ config.esi_ceiling }}">
+                                    </div>
+                                    <small class="text-muted">Standard is ₹21,000</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Professional Tax -->
+                        <div class="col-md-12 mb-4">
+                            <h6 class="form-section-title">
+                                <span class="badge-country">India</span> Professional Tax (PT)
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-4 form-group-custom">
+                                    <label class="form-label">Income Threshold</label>
+                                    <div class="input-group-custom">
+                                        <span class="input-group-addon">₹</span>
+                                        <input type="number" step="1" name="pt_threshold" class="form-control-custom"
+                                            value="{{ config.pt_threshold }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4 form-group-custom">
+                                    <label class="form-label">PT (Below Threshold)</label>
+                                    <div class="input-group-custom">
+                                        <span class="input-group-addon">₹</span>
+                                        <input type="number" step="1" name="pt_amount_below" class="form-control-custom"
+                                            value="{{ config.pt_amount_below }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4 form-group-custom">
+                                    <label class="form-label">PT (Above Threshold)</label>
+                                    <div class="input-group-custom">
+                                        <span class="input-group-addon">₹</span>
+                                        <input type="number" step="1" name="pt_amount_above" class="form-control-custom"
+                                            value="{{ config.pt_amount_above }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Salary Components Tab -->
+                <div class="tab-pane fade" id="components" role="tabpanel">
+                    <div class="row">
+                        <!-- India Components -->
+                        <div class="col-md-6 mb-4">
+                            <h6 class="form-section-title">
+                                <span class="badge-country">India</span> Component Split (% of Gross)
+                            </h6>
+                            <div class="row">
+                                <div class="col-12 form-group-custom">
+                                    <label class="form-label">Basic Salary</label>
+                                    <div class="input-group-custom">
+                                        <input type="number" step="0.01" name="basic_percentage"
+                                            class="form-control-custom" value="{{ config.basic_percentage }}">
+                                        <span class="input-group-addon input-group-addon-right">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-12 form-group-custom">
+                                    <label class="form-label">House Rent Allowance (HRA)</label>
+                                    <div class="input-group-custom">
+                                        <input type="number" step="0.01" name="hra_percentage"
+                                            class="form-control-custom" value="{{ config.hra_percentage }}">
+                                        <span class="input-group-addon input-group-addon-right">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-12 form-group-custom">
+                                    <label class="form-label">Leave Travel Allowance (LTA)</label>
+                                    <div class="input-group-custom">
+                                        <input type="number" step="0.01" name="lta_percentage"
+                                            class="form-control-custom" value="{{ config.lta_percentage }}">
+                                        <span class="input-group-addon input-group-addon-right">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-12 form-group-custom">
+                                    <label class="form-label">Special Allowance (Residual)</label>
+                                    <div class="input-group-custom">
+                                        <input type="number" step="0.01" name="special_allowance_percentage"
+                                            class="form-control-custom"
+                                            value="{{ config.special_allowance_percentage }}">
+                                        <span class="input-group-addon input-group-addon-right">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bangladesh Components -->
+                        <div class="col-md-6 mb-4">
+                            <h6 class="form-section-title">
+                                <span class="badge-country">Bangladesh</span> Component Split
+                            </h6>
+                            <div class="row">
+                                <div class="col-6 form-group-custom">
+                                    <label class="form-label">Basic</label>
+                                    <div class="input-group-custom">
+                                        <input type="number" step="0.01" name="bd_basic_percentage"
+                                            class="form-control-custom" value="{{ config.bd_basic_percentage }}">
+                                        <span class="input-group-addon input-group-addon-right">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 form-group-custom">
+                                    <label class="form-label">HRA</label>
+                                    <div class="input-group-custom">
+                                        <input type="number" step="0.01" name="bd_hra_percentage"
+                                            class="form-control-custom" value="{{ config.bd_hra_percentage }}">
+                                        <span class="input-group-addon input-group-addon-right">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 form-group-custom">
+                                    <label class="form-label">Medical</label>
+                                    <div class="input-group-custom">
+                                        <input type="number" step="0.01" name="bd_medical_percentage"
+                                            class="form-control-custom" value="{{ config.bd_medical_percentage }}">
+                                        <span class="input-group-addon input-group-addon-right">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 form-group-custom">
+                                    <label class="form-label">Conveyance</label>
+                                    <div class="input-group-custom">
+                                        <input type="number" step="0.01" name="bd_conveyance_percentage"
+                                            class="form-control-custom" value="{{ config.bd_conveyance_percentage }}">
+                                        <span class="input-group-addon input-group-addon-right">%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h6 class="form-section-title mt-4">
+                                <span class="badge-country">USA</span> Component Split
+                            </h6>
+                            <div class="row">
+                                <div class="col-6 form-group-custom">
+                                    <label class="form-label">Base Salary</label>
+                                    <div class="input-group-custom">
+                                        <input type="number" step="0.01" name="us_basic_percentage"
+                                            class="form-control-custom" value="{{ config.us_basic_percentage }}">
+                                        <span class="input-group-addon input-group-addon-right">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 form-group-custom">
+                                    <label class="form-label">Tax Withholding</label>
+                                    <div class="input-group-custom">
+                                        <input type="number" step="0.01" name="us_tax_percentage"
+                                            class="form-control-custom" value="{{ config.us_tax_percentage }}">
+                                        <span class="input-group-addon input-group-addon-right">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="save-bar">
+                <button type="reset" class="btn btn-light border">Reset Changes</button>
+                <button type="submit" class="btn btn-save">
+                    <i class="fas fa-save me-2"></i>Save Configuration
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

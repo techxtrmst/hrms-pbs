@@ -960,16 +960,16 @@
                                 </h6>
                                 <div class="info-grid">
                                     <div class="info-item">
-                                        <div class="info-label">Employee ID</div>
-                                        <div class="info-value">{{ employee.badge_id|default:"-" }}</div>
-                                    </div>
-                                    <div class="info-item">
                                         <div class="info-label">Designation</div>
                                         <div class="info-value">{{ employee.designation|default:"-" }}</div>
                                     </div>
                                     <div class="info-item">
                                         <div class="info-label">Department</div>
                                         <div class="info-value">{{ employee.department|default:"-" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Employee ID</div>
+                                        <div class="info-value">{{ employee.badge_id|default:"-" }}</div>
                                     </div>
                                     <div class="info-item">
                                         <div class="info-label">Reporting Manager</div>
@@ -1097,7 +1097,8 @@
                                     <div class="info-label">
                                         <i class="fas fa-hourglass-half text-warning me-2"></i>Grace Period
                                     </div>
-                                    <div class="info-value">{{ employee.assigned_shift.grace_period_minutes }} minutes</div>
+                                    <div class="info-value">{{ employee.assigned_shift.grace_period_minutes }} minutes
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -1304,11 +1305,6 @@
                 <input type="hidden" name="section" value="job">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Employee ID</label>
-                        <input type="text" class="form-control" name="badge_id"
-                            value="{{ employee.badge_id|default:'' }}">
-                    </div>
-                    <div class="mb-3">
                         <label class="form-label">Designation</label>
                         <input type="text" class="form-control" name="designation"
                             value="{{ employee.designation|default:'' }}">
@@ -1317,6 +1313,11 @@
                         <label class="form-label">Department</label>
                         <input type="text" class="form-control" name="department"
                             value="{{ employee.department|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Employee ID</label>
+                        <input type="text" class="form-control" name="badge_id"
+                            value="{{ employee.badge_id|default:'' }}">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Work Type</label>

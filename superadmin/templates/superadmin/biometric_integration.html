@@ -1,0 +1,428 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Biometric Integration | SuperAdmin{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --sa-indigo: #4f46e5;
+        --sa-success: #10b981;
+        --sa-warning: #f59e0b;
+        --sa-danger: #ef4444;
+        --sa-bg: #f8fafc;
+    }
+
+    .biometric-container {
+        padding: 2rem;
+        background: var(--sa-bg);
+        min-height: calc(100vh - 60px);
+    }
+
+    .page-header {
+        background: white;
+        padding: 24px 32px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .device-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 24px;
+    }
+
+    .device-card {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        transition: transform 0.2s, box-shadow 0.2s;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .device-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .device-status {
+        position: absolute;
+        top: 24px;
+        right: 24px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+
+    .status-online {
+        background: var(--sa-success);
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+    }
+
+    .status-offline {
+        background: var(--sa-danger);
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2);
+    }
+
+    .device-icon {
+        width: 48px;
+        height: 48px;
+        background: #f1f5f9;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+        color: var(--sa-indigo);
+        font-size: 20px;
+    }
+
+    .device-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 4px;
+    }
+
+    .device-company {
+        font-size: 14px;
+        color: #64748b;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .device-info-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .device-info-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px dashed #f1f5f9;
+        font-size: 14px;
+    }
+
+    .device-info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        color: #64748b;
+    }
+
+    .info-value {
+        font-weight: 600;
+        color: #334155;
+    }
+
+    .device-actions {
+        margin-top: 20px;
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn-connect {
+        flex: 1;
+        background: var(--sa-indigo);
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-connect:hover {
+        background: #4338ca;
+        box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
+    }
+
+    .modal-content {
+        border-radius: 20px;
+        border: none;
+    }
+
+    .modal-header {
+        border-bottom: 1px solid #f1f5f9;
+        padding: 24px;
+    }
+
+    .modal-body {
+        padding: 32px;
+    }
+
+    .form-label-custom {
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .form-control-custom {
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 12px 16px;
+    }
+
+    .form-control-custom:focus {
+        border-color: var(--sa-indigo);
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px;
+        background: white;
+        border-radius: 20px;
+        border: 2px dashed #e2e8f0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="biometric-container">
+    <div class="page-header">
+        <div>
+            <h1 class="h3 fw-bold mb-1">Biometric Door Integration</h1>
+            <p class="text-muted mb-0">Manage hardware devices and attendance synchronization</p>
+        </div>
+        <div>
+            <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addDeviceModal">
+                <i class="fas fa-plus me-2"></i>Register New Device
+            </button>
+        </div>
+    </div>
+
+    {% if devices %}
+    <div class="device-grid">
+        {% for device in devices %}
+        <div class="device-card">
+            <div class="device-status {% if forloop.first %}status-online{% else %}status-offline{% endif %}"
+                title="{% if forloop.first %}Connected{% else %}Disconnected{% endif %}"></div>
+
+            <div class="device-icon">
+                <i class="fas fa-fingerprint"></i>
+            </div>
+
+            <h3 class="device-name">{{ device.name }}</h3>
+            <div class="device-company">
+                <i class="fas fa-building"></i> {{ device.company.name }}
+            </div>
+
+            <ul class="device-info-list">
+                <li class="device-info-item">
+                    <span class="info-label">Network IP</span>
+                    <span class="info-value">{{ device.ip_address }}</span>
+                </li>
+                <li class="device-info-item">
+                    <span class="info-label">Port</span>
+                    <span class="info-value">{{ device.port }}</span>
+                </li>
+                <li class="device-info-item">
+                    <span class="info-label">Serial Number</span>
+                    <span class="info-value">#{{ device.serial_number }}</span>
+                </li>
+                <li class="device-info-item">
+                    <span class="info-label">Device Protocol</span>
+                    <span class="info-value text-indigo fw-bold">{{ device.get_device_type_display }}</span>
+                </li>
+                <li class="device-info-item">
+                    <span class="info-label">Last Ping</span>
+                    <span class="info-value text-muted">{{ device.last_sync|default:"Never synced" }}</span>
+                </li>
+            </ul>
+
+            <div class="device-actions">
+                <button class="btn-connect" onclick="testConnection('{{ device.id }}', this)">
+                    <i class="fas fa-plug me-2"></i>Test Connection
+                </button>
+                <form method="POST" class="d-inline" onsubmit="return confirm('Remove this device?')">
+                    {% csrf_token %}
+                    <input type="hidden" name="device_id" value="{{ device.id }}">
+                    <button type="submit" name="delete_device" class="btn btn-outline-danger" title="Remove Device">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="mb-4">
+            <i class="fas fa-door-open fa-4x text-muted opacity-25"></i>
+        </div>
+        <h3>No devices detected</h3>
+        <p class="text-muted">Register your biometric door locks or attendance machines to begin real-time sync.</p>
+        <button class="btn btn-primary rounded-pill mt-3 px-4" data-bs-toggle="modal" data-bs-target="#addDeviceModal">
+            Add My First Device
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Info Section for Documentation -->
+    <div class="card mt-5 border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-3"><i class="fas fa-info-circle text-primary me-2"></i> How to connect your Door
+                Device?</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="text-muted">To connect your biometric device (ZKTECO, Hikvision, etc.) to the system:</p>
+                    <ol class="small text-muted">
+                        <li>Ensure the device is on the same local network (LAN) as the server, or has a <strong>Static
+                                Public IP</strong>.</li>
+                        <li>The default port for ZKTeco devices is <strong>4370</strong>.</li>
+                        <li>Enable <strong>TCP/IP</strong> communication in the device network settings.</li>
+                        <li>Enter the Serial Number exactly as printed on the device label.</li>
+                    </ol>
+                </div>
+                <div class="col-md-6">
+                    <p class="text-muted"><strong>Push Protocol (Real-time Integration):</strong></p>
+                    <p class="small text-muted">For real-time door opening and attendance, use the <strong>Push SDK
+                            API</strong>. Enter the following redirect URL in your device's "ADMS" or "Web Server"
+                        settings:</p>
+                    <div class="bg-light p-2 rounded border font-monospace small">
+                        https://your-domain.com/biometric/api/push/
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Device Modal -->
+<div class="modal fade" id="addDeviceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Register Biometric Device</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Company / Organization</label>
+                            <select name="company" class="form-select form-control-custom" required>
+                                {% for company in companies %}
+                                <option value="{{ company.id }}" {% if company.id == selected_company_id %}selected{% endif %}>{{ company.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Device Display Name</label>
+                            <input type="text" name="name" class="form-control form-control-custom"
+                                placeholder="e.g. Main Entrance Gate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Device Manufacturer</label>
+                            <select name="device_type" class="form-select form-control-custom" required>
+                                {% for type_code, type_name in device_types %}
+                                <option value="{{ type_code }}">{{ type_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Serial Number (Unique)</label>
+                            <input type="text" name="serial_number" class="form-control form-control-custom"
+                                placeholder="XN20240915..." required>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label-custom">Static IP Address / Hostname</label>
+                            <input type="text" name="ip_address" class="form-control form-control-custom"
+                                placeholder="192.168.1.201" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-custom">Communication Port</label>
+                            <input type="number" name="port" class="form-control form-control-custom" value="4370"
+                                required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label-custom">Physical Location (Optional)</label>
+                            <select name="location" class="form-select form-control-custom">
+                                <option value="">Global / Not specified</option>
+                                {% for loc in locations %}
+                                <option value="{{ loc.id }}">{{ loc.name }} ({{ loc.company.name }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4"
+                        data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" name="add_device" class="btn btn-primary rounded-pill px-4">Save &
+                        Register</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function testConnection(deviceId, btn) {
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Testing Logic...';
+        btn.disabled = true;
+        btn.classList.remove('btn-connect');
+        btn.classList.add('btn-secondary');
+
+        // Real API call to test synchronization
+        const formData = new FormData();
+        formData.append('device_id', deviceId);
+
+        fetch('{% url "superadmin:test_biometric_sync_api" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>' + data.message;
+                    btn.classList.remove('btn-secondary');
+                    btn.classList.add('btn-success');
+                } else {
+                    btn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>' + data.message;
+                    btn.classList.remove('btn-secondary');
+                    btn.classList.add('btn-warning');
+                }
+
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    btn.classList.remove('btn-success', 'btn-warning');
+                    btn.classList.add('btn-connect');
+                }, 5000);
+            })
+            .catch(err => {
+                btn.innerHTML = '<i class="fas fa-times me-2"></i>Network Error';
+                btn.classList.remove('btn-secondary');
+                btn.classList.add('btn-danger');
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    btn.classList.remove('btn-danger');
+                    btn.classList.add('btn-connect');
+                }, 3000);
+            });
+    }
+</script>
+{% endblock %}

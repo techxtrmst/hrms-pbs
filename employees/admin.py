@@ -17,6 +17,7 @@ class EmployeeAdmin(admin.ModelAdmin):
         "designation",
         "manager",
         "badge_id",
+        "assigned_shift_display",
     )
     list_filter = (
         "company",
@@ -24,9 +25,63 @@ class EmployeeAdmin(admin.ModelAdmin):
         "designation",
         "employment_status",
         "is_active",
+        "assigned_shift",
     )
     search_fields = ("user__email", "user__first_name", "user__last_name", "badge_id")
     inlines = [EmergencyContactInline]
+
+    def assigned_shift_display(self, obj):
+        """Display assigned shift information"""
+        if obj.assigned_shift:
+            return f"{obj.assigned_shift.name} ({obj.assigned_shift.start_time.strftime('%H:%M')} - {obj.assigned_shift.end_time.strftime('%H:%M')})"
+        return "No Shift Assigned"
+    
+    assigned_shift_display.short_description = "Assigned Shift"
+    
+    fieldsets = (
+        ("User Information", {
+            "fields": ("user", "company", "badge_id")
+        }),
+        ("Job Details", {
+            "fields": ("department", "designation", "manager", "assigned_shift", "work_type", "date_of_joining", "location")
+        }),
+        ("Personal Information", {
+            "fields": ("mobile_number", "personal_email", "gender", "marital_status", "dob", "profile_picture"),
+            "classes": ("collapse",)
+        }),
+        ("Address", {
+            "fields": ("permanent_address", "current_address"),
+            "classes": ("collapse",)
+        }),
+        ("Financial Details", {
+            "fields": ("bank_name", "account_number", "ifsc_code", "uan", "pan_number", "pf_enabled", "annual_ctc"),
+            "classes": ("collapse",)
+        }),
+        ("System Fields", {
+            "fields": ("employment_status", "is_active", "profile_edited"),
+            "classes": ("collapse",)
+        }),
+    )
+    
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """Filter assigned_shift choices based on company"""
+        if db_field.name == "assigned_shift":
+            if hasattr(request, '_obj_'):
+                # Editing existing employee
+                kwargs["queryset"] = db_field.related_model.objects.filter(
+                    company=request._obj_.company, is_active=True
+                )
+            elif request.user.company:
+                # Creating new employee
+                kwargs["queryset"] = db_field.related_model.objects.filter(
+                    company=request.user.company, is_active=True
+                )
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+    
+    def get_form(self, request, obj=None, **kwargs):
+        """Store object in request for formfield_for_foreignkey"""
+        request._obj_ = obj
+        return super().get_form(request, obj, **kwargs)
 
 
 @admin.register(EmergencyContact)

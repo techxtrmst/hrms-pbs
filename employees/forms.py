@@ -284,6 +284,9 @@ class LeaveApplicationForm(forms.ModelForm):
 
 
 class EmployeeUpdateForm(EmployeeCreationForm):
+    ctc_change_reason = forms.CharField(required=False, widget=forms.HiddenInput())
+    designation_change_reason = forms.CharField(required=False, widget=forms.HiddenInput())
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
@@ -322,6 +325,57 @@ class EmployeeUpdateForm(EmployeeCreationForm):
         if self.cleaned_data.get("company_selection"):
             user.company = self.cleaned_data["company_selection"]
             employee.company = self.cleaned_data["company_selection"]
+
+        # Log CTC Change Reason
+        if "annual_ctc" in self.changed_data:
+            reason = self.cleaned_data.get("ctc_change_reason")
+            if reason:
+                from loguru import logger
+                logger.info(f"Employee {self.instance.user.email} CTC updated. New: {self.cleaned_data.get('annual_ctc')}, Reason: {reason}")
+                
+                # Also log CTC change to WorkHistory
+                from .models import WorkHistory
+                WorkHistory.objects.create(
+                    employee=employee,
+                    title="CTC Change",
+                    description=f"CTC updated to {self.cleaned_data.get('annual_ctc')}",
+                    reason=reason,
+                    event_type="CTC",
+                    previous_value=str(self.initial.get('annual_ctc')),
+                    new_value=str(self.cleaned_data.get('annual_ctc'))
+                )
+                
+                # Send Email
+                from .utils import send_ctc_change_email
+                send_ctc_change_email(employee, self.initial.get('annual_ctc'), self.cleaned_data.get('annual_ctc'), reason)
+            else:
+                from loguru import logger
+                logger.info(f"Employee {self.instance.user.email} CTC updated without specific reason provided.")
+
+        # Handle Designation Change
+        if "designation" in self.cleaned_data and "designation" in self.initial and self.cleaned_data["designation"] != self.initial["designation"]:
+            old_desig = self.initial.get("designation")
+            new_desig = self.cleaned_data.get("designation")
+            desig_reason = self.cleaned_data.get("designation_change_reason")
+            
+            if desig_reason:
+                from .models import WorkHistory
+                WorkHistory.objects.create(
+                    employee=employee,
+                    title="Designation Change",
+                    description=f"Promoted/Changed from {old_desig} to {new_desig}",
+                    reason=desig_reason,
+                    event_type="DESIGNATION",
+                    previous_value=str(old_desig),
+                    new_value=str(new_desig)
+                )
+                
+                # Send Email
+                from .utils import send_designation_change_email
+                send_designation_change_email(employee, old_desig, new_desig, desig_reason)
+                
+                from loguru import logger
+                logger.info(f"Designation change logged and email sent for {employee.user.email}")
 
         if commit:
             user.save()
@@ -476,8 +530,8 @@ class BulkLeaveUploadForm(forms.Form):
 
             # Reset file pointer
             file.seek(0)
-            # Check if this is Bluebix company (combined leave system)
-            is_bluebix = company.name.lower() == "bluebix"
+            # Check if this is Bluebix or Softstandard (combined leave system)
+            is_bluebix = company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]
 
             # Validate required columns based on company type
             if is_bluebix:

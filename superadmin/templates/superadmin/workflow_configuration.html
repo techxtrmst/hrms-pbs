@@ -1,0 +1,305 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Workflow Approval Engine | SuperAdmin{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --wf-primary: #4f46e5;
+        --wf-bg: #f8fafc;
+        --wf-border: #e2e8f0;
+    }
+
+    .workflow-container {
+        padding: 2rem;
+        background: var(--wf-bg);
+        min-height: calc(100vh - 60px);
+    }
+
+    .page-header {
+        background: white;
+        padding: 24px 32px;
+        border-radius: 20px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .workflow-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .workflow-row {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        border: 1px solid var(--wf-border);
+        transition: all 0.2s;
+    }
+
+    .workflow-row:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+        border-color: var(--wf-primary);
+    }
+
+    .workflow-type-icon {
+        width: 56px;
+        height: 56px;
+        background: #f1f5f9;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--wf-primary);
+        font-size: 24px;
+    }
+
+    .workflow-main-info {
+        flex: 1;
+    }
+
+    .workflow-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 4px;
+    }
+
+    .workflow-meta {
+        font-size: 13px;
+        color: #64748b;
+        display: flex;
+        gap: 16px;
+    }
+
+    .workflow-visualizer {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 24px;
+        background: #f8fafc;
+        border-radius: 40px;
+        border: 1px solid #edf2f7;
+    }
+
+    .level-bubble {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: white;
+        border: 2px solid #cbd5e1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+        color: #475569;
+        position: relative;
+    }
+
+    .level-bubble.active {
+        border-color: var(--wf-primary);
+        color: var(--wf-primary);
+        background: #eef2ff;
+    }
+
+    .level-connector {
+        width: 20px;
+        height: 2px;
+        background: #cbd5e1;
+    }
+
+    .btn-config {
+        background: white;
+        border: 1px solid #e2e8f0;
+        padding: 10px 18px;
+        border-radius: 10px;
+        font-weight: 600;
+        color: #475569;
+        transition: all 0.2s;
+    }
+
+    .btn-config:hover {
+        background: #f1f5f9;
+        color: var(--wf-primary);
+    }
+
+    .modal-content {
+        border-radius: 20px;
+        border: none;
+    }
+
+    .form-control-custom {
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 12px 16px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="workflow-container">
+    <div class="page-header">
+        <div>
+            <h1 class="h3 fw-bold mb-1">Approval Engine Workflow</h1>
+            <p class="text-muted mb-0">Design multi-level hierarchical approval paths for all modules</p>
+        </div>
+        <div>
+            <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addWorkflowModal">
+                <i class="fas fa-plus me-2"></i>Design New Workflow
+            </button>
+        </div>
+    </div>
+
+    <div class="workflow-list">
+        {% for workflow in workflows %}
+        <div class="workflow-row">
+            <div class="workflow-type-icon">
+                {% if workflow.workflow_type == 'LEAVE' %}
+                <i class="fas fa-calendar-minus"></i>
+                {% elif workflow.workflow_type == 'ATTENDANCE' %}
+                <i class="fas fa-clock"></i>
+                {% elif workflow.workflow_type == 'EXPENSE' %}
+                <i class="fas fa-receipt"></i>
+                {% else %}
+                <i class="fas fa-project-diagram"></i>
+                {% endif %}
+            </div>
+
+            <div class="workflow-main-info">
+                <div class="workflow-name">{{ workflow.name }}</div>
+                <div class="workflow-meta">
+                    <span><i class="fas fa-building me-1"></i> {{ workflow.company.name }}</span>
+                    <span><i class="fas fa-tags me-1"></i> {{ workflow.get_workflow_type_display }}</span>
+                    <span><i class="fas fa-check-double me-1"></i> {{ workflow.levels }} Levels of Approval</span>
+                </div>
+            </div>
+
+            <div class="workflow-visualizer">
+                {% for i in "123456789"|make_list %}
+                {% if forloop.counter <= workflow.levels %} <div class="level-bubble active"
+                    title="Level {{ forloop.counter }} Approval">
+                    {{ forloop.counter }}
+            </div>
+            {% if forloop.counter < workflow.levels %} <div class="level-connector">
+        </div>
+        {% endif %}
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <button class="btn-config">
+        <i class="fas fa-edit me-2"></i>Configure Path
+    </button>
+</div>
+{% empty %}
+<div class="text-center py-5 bg-white rounded-4 border dashed">
+    <i class="fas fa-stream fa-3x text-muted mb-3 opacity-25"></i>
+    <h5>No workflows defined yet</h5>
+    <p class="text-muted">Define how requests circulate through your organization.</p>
+</div>
+{% endfor %}
+</div>
+
+<!-- Real-time Status Card -->
+<div class="card mt-4 border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-bold text-indigo"><i class="fas fa-pulse me-2"></i> Real-time Approval Monitoring</h6>
+    </div>
+    <div class="card-body">
+        <div class="d-flex align-items-center gap-4 text-center">
+            <div class="flex-grow-1 p-3 rounded-3 bg-light">
+                <div class="h3 fw-bold mb-0">--</div>
+                <small class="text-muted">Pending Today</small>
+            </div>
+            <div class="flex-grow-1 p-3 rounded-3 bg-light">
+                <div class="h3 fw-bold mb-0">--</div>
+                <small class="text-muted">Avg. Response Time</small>
+            </div>
+            <div class="flex-grow-1 p-3 rounded-3 bg-light">
+                <div class="h3 fw-bold mb-0">--</div>
+                <small class="text-muted">Bottle-necks Detected</small>
+            </div>
+        </div>
+        <div class="mt-4 text-center">
+            <button class="btn btn-outline-indigo btn-sm" onclick="simulateWorkflow()">
+                <i class="fas fa-vial me-2"></i>Run Workflow Simulation
+            </button>
+        </div>
+    </div>
+</div>
+</div>
+<!-- Add Workflow Modal -->
+<div class="modal fade" id="addWorkflowModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Design Approval Path</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Target Company</label>
+                        <select name="company" class="form-select form-control-custom" required>
+                            {% for comp in companies %}
+                            <option value="{{ comp.id }}" {% if comp.id == selected_company_id %}selected{% endif %}>{{ comp.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Workflow Title</label>
+                        <input type="text" name="name" class="form-control form-control-custom"
+                            placeholder="e.g. Standard Leave Policy" required>
+                    </div>
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Module Type</label>
+                            <select name="workflow_type" class="form-select form-control-custom" required>
+                                {% for type_code, type_name in workflow_types %}
+                                <option value="{{ type_code }}">{{ type_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Approval Levels</label>
+                            <input type="number" name="levels" class="form-control form-control-custom" value="1"
+                                min="1" max="5" required>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-warning-subtle rounded-3 border-warning border small text-warning-emphasis">
+                        <i class="fas fa-info-circle me-2"></i> After saving, you can customize specific users/roles for
+                        each designated level in the "Configure Path" settings.
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4"
+                        data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" name="add_workflow" class="btn btn-primary rounded-pill px-4">Initialize
+                        Workflow</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function simulateWorkflow() {
+        alert("Workflow Simulation Engine Started: Initializing dummy requests for active companies...");
+        // This is a UI-only simulation for now, can be linked to a real API if needed.
+    }
+</script>
+{% endblock %}

@@ -28,9 +28,7 @@
 
 /* Page Container */
 .superadmin-container {
-    background: var(--sa-bg-light);
-    min-height: 100vh;
-    padding: 2rem;
+    padding: 0;
 }
 
 /* Header Section */
@@ -230,14 +228,15 @@
 }
 
 .sa-table thead th {
-    padding: 1rem 1.5rem;
+    padding: 1.25rem 1.5rem;
     text-align: left;
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
     color: var(--sa-text-secondary);
     border-bottom: 2px solid var(--sa-border);
+    white-space: nowrap;
 }
 
 .sa-table tbody tr {
@@ -250,9 +249,9 @@
 }
 
 .sa-table tbody td {
-    padding: 1.25rem 1.5rem;
+    padding: 1rem 1.5rem;
     color: var(--sa-text-primary);
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
 }
 
 .sa-table tbody td:first-child {
@@ -391,6 +390,7 @@
         opacity: 0;
         transform: translateY(10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);

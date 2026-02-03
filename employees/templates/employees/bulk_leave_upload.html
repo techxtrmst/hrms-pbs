@@ -386,24 +386,26 @@
                             <label class="form-label" for="{{ form.upload_file.id_for_label }}">
                                 <i class="fas fa-file-excel me-2"></i>{{ form.upload_file.label }}
                             </label>
-                            <div class="file-upload-area" onclick="document.getElementById('{{ form.upload_file.id_for_label }}').click()">
+                            <div class="file-upload-area"
+                                onclick="document.getElementById('{{ form.upload_file.id_for_label }}').click()">
                                 <div class="upload-icon">
                                     <i class="fas fa-cloud-upload-alt"></i>
                                 </div>
                                 <div class="upload-text">Click to select file or drag and drop</div>
                                 <div class="upload-subtext">Supports .xlsx, .xls, and .csv files (max 5MB)</div>
-                                <input type="file" id="{{ form.upload_file.id_for_label }}" name="{{ form.upload_file.name }}"
-                                       accept=".xlsx,.xls,.csv" style="display: none;" onchange="updateFileName(this)">
+                                <input type="file" id="{{ form.upload_file.id_for_label }}"
+                                    name="{{ form.upload_file.name }}" accept=".xlsx,.xls,.csv" style="display: none;"
+                                    onchange="updateFileName(this)">
                             </div>
                             <div id="fileName" class="help-text" style="display: none;">
                                 <strong>Selected file:</strong> <span id="fileNameText"></span>
                             </div>
                             {% if form.upload_file.errors %}
-                                <div class="text-danger mt-2">
-                                    {% for error in form.upload_file.errors %}
-                                        <small>{{ error }}</small>
-                                    {% endfor %}
-                                </div>
+                            <div class="text-danger mt-2">
+                                {% for error in form.upload_file.errors %}
+                                <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
                             {% endif %}
                         </div>
 
@@ -417,30 +419,33 @@
                                     <input type="radio" name="update_mode" value="REPLACE" id="id_update_mode_0" {% if form.update_mode.value == 'REPLACE' or not form.update_mode.value %}checked{% endif %}>
                                     <div>
                                         <div class="radio-label">Replace Existing Balances</div>
-                                        <div class="radio-description">Completely replace all existing leave balances with uploaded values</div>
+                                        <div class="radio-description">Completely replace all existing leave balances
+                                            with uploaded values</div>
                                     </div>
                                 </div>
                                 <div class="radio-option" onclick="selectRadio('id_update_mode_1')">
                                     <input type="radio" name="update_mode" value="ADD" id="id_update_mode_1" {% if form.update_mode.value == 'ADD' %}checked{% endif %}>
                                     <div>
                                         <div class="radio-label">Add to Existing Balances</div>
-                                        <div class="radio-description">Add uploaded values to current balances (useful for bonus leaves)</div>
+                                        <div class="radio-description">Add uploaded values to current balances (useful
+                                            for bonus leaves)</div>
                                     </div>
                                 </div>
                                 <div class="radio-option" onclick="selectRadio('id_update_mode_2')">
                                     <input type="radio" name="update_mode" value="UPDATE_ONLY" id="id_update_mode_2" {% if form.update_mode.value == 'UPDATE_ONLY' %}checked{% endif %}>
                                     <div>
                                         <div class="radio-label">Update Only Specified Fields</div>
-                                        <div class="radio-description">Only update fields that have non-zero values in the upload file</div>
+                                        <div class="radio-description">Only update fields that have non-zero values in
+                                            the upload file</div>
                                     </div>
                                 </div>
                             </div>
                             {% if form.update_mode.errors %}
-                                <div class="text-danger mt-2">
-                                    {% for error in form.update_mode.errors %}
-                                        <small>{{ error }}</small>
-                                    {% endfor %}
-                                </div>
+                            <div class="text-danger mt-2">
+                                {% for error in form.update_mode.errors %}
+                                <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
                             {% endif %}
                         </div>
 
@@ -472,20 +477,28 @@
                             Upload Instructions
                         </div>
                         <ul class="instructions-list">
-                            {% if user.employee_profile.company.name|lower == "bluebix" %}
-                            <li><strong>Required Columns (Bluebix):</strong> employee_id, employee_name, sick_casual_leave_allocated</li>
+                            {% if "bluebix" in user.employee_profile.company.name|lower or "softstandard" in user.employee_profile.company.name|lower %}
+                            <li><strong>Required Columns (Bluebix):</strong> employee_id, employee_name,
+                                sick_casual_leave_allocated</li>
                             <li><strong>Optional Columns:</strong> sick_casual_leave_used, carry_forward_leave</li>
-                            <li><strong>Combined Leave System:</strong> Bluebix uses a single pool for sick/casual leave</li>
-                            <li><strong>Monthly Allocation:</strong> Employees typically get 1 combined leave per month</li>
+                            <li><strong>Combined Leave System:</strong> Bluebix uses a single pool for sick/casual leave
+                            </li>
+                            <li><strong>Monthly Allocation:</strong> Employees typically get 1 combined leave per month
+                            </li>
                             {% else %}
-                            <li><strong>Required Columns:</strong> employee_id, employee_name, casual_leave_allocated, sick_leave_allocated</li>
-                            <li><strong>Optional Columns:</strong> casual_leave_used, sick_leave_used, carry_forward_leave</li>
-                            <li><strong>Separate Leave System:</strong> Casual and sick leaves are managed separately</li>
+                            <li><strong>Required Columns:</strong> employee_id, employee_name, casual_leave_allocated,
+                                sick_leave_allocated</li>
+                            <li><strong>Optional Columns:</strong> casual_leave_used, sick_leave_used,
+                                carry_forward_leave</li>
+                            <li><strong>Separate Leave System:</strong> Casual and sick leaves are managed separately
+                            </li>
                             {% endif %}
-                            <li><strong>Employee Identification:</strong> Provide either employee_id (badge ID) or employee_name</li>
+                            <li><strong>Employee Identification:</strong> Provide either employee_id (badge ID) or
+                                employee_name</li>
                             <li><strong>File Formats:</strong> Excel (.xlsx, .xls) or CSV files supported</li>
                             <li><strong>File Size:</strong> Maximum 5MB file size allowed</li>
-                            <li><strong>Data Validation:</strong> All numeric values must be positive, used leaves cannot exceed allocated</li>
+                            <li><strong>Data Validation:</strong> All numeric values must be positive, used leaves
+                                cannot exceed allocated</li>
                         </ul>
                     </div>
                     {% endif %}
@@ -569,7 +582,7 @@
     }
 
     // Initialize selected radio option
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const checkedRadio = document.querySelector('input[name="{{ form.update_mode.name }}"]:checked');
         if (checkedRadio) {
             checkedRadio.closest('.radio-option').classList.add('selected');
@@ -579,7 +592,7 @@
     // Form submission with loading state
     const uploadForm = document.getElementById('uploadForm');
     if (uploadForm) {
-        uploadForm.addEventListener('submit', function(e) {
+        uploadForm.addEventListener('submit', function (e) {
             const submitBtn = this.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
 
