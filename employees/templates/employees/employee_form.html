@@ -445,6 +445,10 @@
                     {% render_field form.last_name class="form-control" placeholder="e.g. Doe" %}
                     <div class="text-danger">{{ form.last_name.errors.0 }}</div>
                 </div>
+                <div class="col-md-4" id="pseudo_name_container" style="display: none;">
+                    <label class="form-label">Pseudo Name</label>
+                    {% render_field form.pseudo_name class="form-control" placeholder="e.g. Johnny" %}
+                </div>
                 <div class="col-md-4">
                     <label class="form-label">Employee ID <span class="text-danger">*</span></label>
                     {% render_field form.badge_id class="form-control" placeholder="e.g. PBTHYD001" %}
@@ -1235,6 +1239,44 @@
                 };
             }
         }
+
+        // Pseudo Name Visibility Logic
+        const pseudoNameContainer = document.getElementById('pseudo_name_container');
+
+        function updatePseudoNameVisibility() {
+            if (!pseudoNameContainer) return;
+
+            const selectedCompanyLabel = document.querySelector('input[name="company_selection"]:checked + label');
+            if (selectedCompanyLabel) {
+                const companyName = selectedCompanyLabel.textContent.trim().toLowerCase();
+                if (companyName.includes('bluebix') || companyName.includes('softstandard')) {
+                    pseudoNameContainer.style.display = 'block';
+                } else {
+                    pseudoNameContainer.style.display = 'none';
+                }
+            } else {
+                // For cases where selection might be fixed/disabled
+                const firstRadio = document.querySelector('input[name="company_selection"]');
+                if (firstRadio) {
+                    const label = document.querySelector(`label[for="${firstRadio.id}"]`);
+                    if (label) {
+                        const companyName = label.textContent.trim().toLowerCase();
+                        if (companyName.includes('bluebix') || companyName.includes('softstandard')) {
+                            pseudoNameContainer.style.display = 'block';
+                        }
+                    }
+                }
+            }
+        }
+
+        // Add change listeners to company radio buttons
+        const companyRadios = document.querySelectorAll('input[name="company_selection"]');
+        companyRadios.forEach(radio => {
+            radio.addEventListener('change', updatePseudoNameVisibility);
+        });
+
+        // Initial check
+        updatePseudoNameVisibility();
     });
 </script>
 

@@ -3,7 +3,7 @@
  * Ultra-flexible design for all devices
  */
 
-(function() {
+(function () {
     'use strict';
 
     // Enhanced responsive behavior initialization
@@ -56,7 +56,7 @@
         const touchElements = document.querySelectorAll('.camera-btn, .nav-link, .btn, .doc-upload-box, .info-group, .address-box');
 
         touchElements.forEach(element => {
-            element.addEventListener('touchstart', function(e) {
+            element.addEventListener('touchstart', function (e) {
                 this.classList.add('touch-active');
 
                 // Add haptic feedback if supported
@@ -65,13 +65,13 @@
                 }
             }, { passive: true });
 
-            element.addEventListener('touchend', function() {
+            element.addEventListener('touchend', function () {
                 setTimeout(() => {
                     this.classList.remove('touch-active');
                 }, 150);
             }, { passive: true });
 
-            element.addEventListener('touchcancel', function() {
+            element.addEventListener('touchcancel', function () {
                 this.classList.remove('touch-active');
             }, { passive: true });
         });
@@ -212,7 +212,7 @@
 
         forms.forEach(form => {
             // Enhanced mobile form validation
-            form.addEventListener('submit', function(e) {
+            form.addEventListener('submit', function (e) {
                 const requiredFields = form.querySelectorAll('[required]');
                 let isValid = true;
                 let firstInvalidField = null;
@@ -251,7 +251,7 @@
             // Real-time validation feedback
             const inputs = form.querySelectorAll('input, select, textarea');
             inputs.forEach(input => {
-                input.addEventListener('blur', function() {
+                input.addEventListener('blur', function () {
                     if (this.hasAttribute('required') && !this.value.trim()) {
                         this.classList.add('is-invalid');
                     } else {
@@ -259,7 +259,7 @@
                     }
                 });
 
-                input.addEventListener('input', function() {
+                input.addEventListener('input', function () {
                     if (this.classList.contains('is-invalid') && this.value.trim()) {
                         this.classList.remove('is-invalid');
                     }
@@ -276,12 +276,12 @@
             // Add loading state
             img.classList.add('loading');
 
-            img.addEventListener('load', function() {
+            img.addEventListener('load', function () {
                 this.classList.remove('loading');
                 this.classList.add('loaded');
             });
 
-            img.addEventListener('error', function() {
+            img.addEventListener('error', function () {
                 this.classList.remove('loading');
                 this.classList.add('error');
 
@@ -415,7 +415,7 @@
             const box = input.closest('.doc-upload-box');
             const reader = new FileReader();
 
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 // Hide existing content
                 const placeholders = box.querySelectorAll('.text-muted, .doc-preview-img, .fw-bold.text-dark');
                 placeholders.forEach(el => el.style.display = 'none');
@@ -483,7 +483,7 @@
         element.appendChild(indicator);
 
         // Hide indicator when scrolled
-        element.addEventListener('scroll', function() {
+        element.addEventListener('scroll', function () {
             if (this.scrollLeft > 0) {
                 indicator.style.opacity = '0';
             } else {
@@ -515,7 +515,7 @@
     // Throttle utility function
     function throttle(func, limit) {
         let inThrottle;
-        return function() {
+        return function () {
             const args = arguments;
             const context = this;
             if (!inThrottle) {
@@ -545,8 +545,8 @@
         if ('PerformanceObserver' in window) {
             new PerformanceObserver((list) => {
                 for (const entry of list.getEntries()) {
-                    if (entry.duration > 50) {
-                        console.warn('Long task detected:', entry.duration + 'ms');
+                    if (entry.duration > 200) { // Increased threshold and made it a log instead of warn
+                        console.log('Performance: Long task detected:', entry.duration + 'ms');
                     }
                 }
             }).observe({ type: 'longtask', buffered: true });
@@ -570,7 +570,7 @@
         document.body.classList.add('page-loaded');
 
         // Handle orientation change with delay
-        window.addEventListener('orientationchange', function() {
+        window.addEventListener('orientationchange', function () {
             setTimeout(() => {
                 window.dispatchEvent(new Event('resize'));
                 initEnhancedResponsiveBehavior();

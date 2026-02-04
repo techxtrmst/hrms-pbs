@@ -57,6 +57,7 @@ class Employee(models.Model):
 
     # Job Profile
     designation = models.CharField(max_length=100)
+    pseudo_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Pseudo Name")
     department = models.CharField(max_length=100)
     WORK_TYPE_CHOICES = [
         ("FT", "Full Time"),
@@ -593,8 +594,8 @@ class Attendance(models.Model):
                     hours = 24
                     minutes = 0
 
-                # Show '+' if currently clocked in (active session)
-                is_active = self.is_currently_clocked_in
+                # Show '+' if currently clocked in (active session or direct clock_in without clock_out)
+                is_active = self.is_currently_clocked_in or (self.clock_in and not self.clock_out)
                 return f"{hours}:{minutes:02d}{'+' if is_active else ''}"
 
             return "0:00"
@@ -654,7 +655,7 @@ class Attendance(models.Model):
         AttendanceSession.objects.filter(employee=self.employee, date=self.date).order_by("session_number")
 
     def calculate_total_working_hours(self):
-        """Calculate total working hours from all completed sessions with 24-hour daily cap"""
+        """Calculate total working hours from sessions or direct clock times with 24-hour daily cap"""
         from decimal import Decimal
 
         sessions = AttendanceSession.objects.filter(
@@ -664,19 +665,39 @@ class Attendance(models.Model):
         )
 
         total_seconds = 0
-        for session in sessions:
-            if session.clock_in:
-                # Determine end time for this session (Night Shift Support: Remove midnight cap)
-                session_end = session.clock_out or timezone.now()
 
-                # Calculate session duration
-                if session_end > session.clock_in:
-                    duration = session_end - session.clock_in
-                    session_seconds = duration.total_seconds()
+        # If we have sessions, calculate from sessions
+        if sessions.exists():
+            for session in sessions:
+                if session.clock_in:
+                    # Determine end time for this session (Night Shift Support: Remove midnight cap)
+                    session_end = session.clock_out or timezone.now()
 
-                    # Ensure non-negative duration
-                    if session_seconds > 0:
-                        total_seconds += session_seconds
+                    # Calculate session duration
+                    if session_end > session.clock_in:
+                        duration = session_end - session.clock_in
+                        session_seconds = duration.total_seconds()
+
+                        # Ensure non-negative duration
+                        if session_seconds > 0:
+                            total_seconds += session_seconds
+        else:
+            # Fallback: Calculate from direct clock_in/clock_out (for regularized attendance)
+            if self.clock_in and self.clock_out:
+                duration = self.clock_out - self.clock_in
+                session_seconds = duration.total_seconds()
+
+                # Ensure non-negative duration
+                if session_seconds > 0:
+                    total_seconds = session_seconds
+            elif self.clock_in:
+                # If only clock_in exists (currently active), calculate up to now
+                duration = timezone.now() - self.clock_in
+                session_seconds = duration.total_seconds()
+
+                # Ensure non-negative duration
+                if session_seconds > 0:
+                    total_seconds = session_seconds
 
         # Cap total hours at 24 hours (86400 seconds) per day
         if total_seconds > 86400:
@@ -721,17 +742,41 @@ class Attendance(models.Model):
                 clock_out__isnull=False,
             )
 
-            # Calculate total hours from completed sessions
             total_seconds = 0
-            for session in completed_sessions:
-                duration = session.clock_out - session.clock_in
-                total_seconds += duration.total_seconds()
 
-            # Add current active session if exists
-            current_session = self.get_current_session()
-            if current_session and current_session.clock_in:
-                current_duration = timezone.now() - current_session.clock_in
-                total_seconds += current_duration.total_seconds()
+            # If we have sessions, calculate from sessions
+            if completed_sessions.exists():
+                # Calculate total hours from completed sessions
+                for session in completed_sessions:
+                    duration = session.clock_out - session.clock_in
+                    total_seconds += duration.total_seconds()
+
+                # Add current active session if exists
+                current_session = self.get_current_session()
+                if current_session and current_session.clock_in:
+                    current_duration = timezone.now() - current_session.clock_in
+                    total_seconds += current_duration.total_seconds()
+            else:
+                # Fallback: Calculate from direct clock_in/clock_out (for regularized attendance)
+                if self.clock_in and self.clock_out:
+                    duration = self.clock_out - self.clock_in
+                    total_seconds = duration.total_seconds()
+                elif self.clock_in:
+                    # If only clock_in exists (currently active), calculate up to now
+                    current_time = timezone.now()
+                    # Ensure we're comparing timezone-aware datetimes
+                    if timezone.is_naive(self.clock_in):
+                        # If clock_in is naive, assume it's in the same timezone as current time
+                        clock_in_aware = timezone.make_aware(self.clock_in)
+                    else:
+                        clock_in_aware = self.clock_in
+
+                    duration = current_time - clock_in_aware
+                    total_seconds = duration.total_seconds()
+
+            # Ensure non-negative duration
+            if total_seconds < 0:
+                total_seconds = 0
 
             # Convert to hours
             return round(total_seconds / 3600, 2)
@@ -958,6 +1003,10 @@ class LeaveBalance(models.Model):
     # Carry forward / Lapsed
     carry_forward_leave = models.FloatField(default=0.0, help_text="Leave carried from previous year")
     lapsed_leave = models.FloatField(default=0.0, help_text="Leave that expired")
+
+    # Tracking for automatic accruals
+    last_accrual_month = models.IntegerField(null=True, blank=True, help_text="Last month leaves were accrued")
+    last_accrual_year = models.IntegerField(null=True, blank=True, help_text="Last year leaves were accrued")
 
     updated_at = models.DateTimeField(auto_now=True)
 

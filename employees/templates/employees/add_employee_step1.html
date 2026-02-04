@@ -111,6 +111,10 @@
                 <div class="text-danger">{{ form.last_name.errors.0 }}</div>
                 {% endif %}
             </div>
+            <div class="col-md-4" id="pseudo_name_container" style="display: none;">
+                <label class="form-label">Pseudo Name</label>
+                {% render_field form.pseudo_name class="form-control" placeholder="e.g. Johnny" %}
+            </div>
             <div class="col-md-5">
                 <label class="form-label">Employee ID <span class="text-danger">*</span></label>
                 <!-- Hidden Actual Field -->
@@ -149,6 +153,7 @@
                     const locSelect = document.getElementById('id_location_code_select');
                     const numInput = document.getElementById('id_number_input');
                     const previewSpan = document.getElementById('preview_id');
+                    const pseudoNameContainer = document.getElementById('pseudo_name_container');
 
                     function updateId() {
                         const prefix = prefixSpan.textContent.trim();
@@ -160,12 +165,41 @@
                         previewSpan.textContent = fullId;
                     }
 
+                    function updatePseudoNameVisibility() {
+                        const selectedCompanyLabel = document.querySelector('input[name="company_selection"]:checked + label');
+                        if (selectedCompanyLabel) {
+                            const companyName = selectedCompanyLabel.textContent.trim().toLowerCase();
+                            if (companyName.includes('bluebix') || companyName.includes('softstandard')) {
+                                pseudoNameContainer.style.display = 'block';
+                            } else {
+                                pseudoNameContainer.style.display = 'none';
+                            }
+                        } else {
+                            // If only one company (fixed for admin)
+                            const firstRadio = document.querySelector('input[name="company_selection"]');
+                            if (firstRadio && firstRadio.disabled) {
+                                const label = document.querySelector(`label[for="${firstRadio.id}"]`);
+                                if (label) {
+                                    const companyName = label.textContent.trim().toLowerCase();
+                                    if (companyName.includes('bluebix') || companyName.includes('softstandard')) {
+                                        pseudoNameContainer.style.display = 'block';
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // Event Listeners
                     locSelect.addEventListener('change', updateId);
                     numInput.addEventListener('input', updateId);
 
+                    document.querySelectorAll('input[name="company_selection"]').forEach(radio => {
+                        radio.addEventListener('change', updatePseudoNameVisibility);
+                    });
+
                     // Initial Call
                     updateId();
+                    updatePseudoNameVisibility();
                 });
             </script>
 

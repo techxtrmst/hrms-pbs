@@ -49,6 +49,7 @@ class EmployeeCreationForm(forms.ModelForm):
             # Personal
             "first_name",
             "last_name",
+            "pseudo_name",
             "email",
             "personal_email",
             "mobile_number",

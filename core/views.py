@@ -38,6 +38,24 @@ from .models import PasswordResetOTP
 from .utils import save_pdf_to_model
 
 
+def service_worker(request):
+    """Serve the service worker file with correct MIME type and root scope capability"""
+    import os
+
+    from django.conf import settings
+    from django.http import HttpResponse
+
+    sw_path = os.path.join(settings.BASE_DIR, "static", "js", "sw.js")
+
+    try:
+        with open(sw_path, encoding="utf-8") as f:
+            content = f.read()
+        return HttpResponse(content, content_type="application/javascript")
+    except Exception as e:
+        logger.error(f"Error serving sw.js: {str(e)}")
+        return HttpResponse("Service Worker not found", status=404)
+
+
 @login_required
 def dashboard(request):
     """Role-based Dashboard - Different views for Admin, Manager, and Employee"""
@@ -296,8 +314,6 @@ def admin_dashboard(request):
             departments_map[normalized].append(dept)
 
     # Get sorted unique departments (normalized)
-    departments_list = sorted(departments_map.keys())
-
     department_performance = []
 
     # Optimized Department Performance Calculation
@@ -2113,20 +2129,12 @@ def attendance_analytics(request):
 
     # Optimized Attendance Stats (Avoid multiple DB hits)
     today_attendance = list(attendance_today)
-    today_attendance_count = len(today_attendance)
 
     late_arrivals_list = [att for att in today_attendance if att.is_late]
     late_arrivals_today = len(late_arrivals_list)
 
     early_departures_list = [att for att in today_attendance if att.is_early_departure]
     early_departures_today = len(early_departures_list)
-
-    on_duty_list = [att for att in today_attendance if att.status == "ON_DUTY"]
-    on_duty_count_today = len(on_duty_list)
-
-    on_time = today_attendance_count - late_arrivals_today
-    work_from_office = len([att for att in today_attendance if att.status in ["PRESENT", "ON_DUTY", "HALF_DAY"]])
-    remote_clockins = len([att for att in today_attendance if att.status == "WFH"])
 
     # Calculate percentages
     present_pct = (present_today / total_employees * 100) if total_employees > 0 else 0
@@ -4182,10 +4190,7 @@ def biometric_sync_api(request):
 
     try:
         # Most devices send JSON or Form Data
-        if request.content_type == "application/json":
-            data = json.loads(request.body)
-        else:
-            data = request.POST
+        data = json.loads(request.body) if request.content_type == "application/json" else request.POST
 
         # Required fields: serial_number (of device), biometric_id (of employee), timestamp
         device_sn = data.get("serial_number")
@@ -4209,7 +4214,7 @@ def biometric_sync_api(request):
         # 3. Parse Timestamp
         try:
             event_time = timezone.make_aware(datetime.strptime(event_time_str, "%Y-%m-%d %H:%M:%S"))
-        except:
+        except (ValueError, TypeError):
             event_time = timezone.now()
 
         # 4. Record Attendance or Access

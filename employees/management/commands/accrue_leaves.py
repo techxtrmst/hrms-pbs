@@ -13,6 +13,11 @@ class Command(BaseCommand):
         count = 0
 
         for employee in employees:
+            # Check if employee has completed probation period (3 months)
+            if not employee.is_probation_completed():
+                self.stdout.write(f"Skipping {employee}: Still in probation period.")
+                continue
+
             balance, created = LeaveBalance.objects.get_or_create(employee=employee)
 
             # Accrue 1 CL and 1 SL
