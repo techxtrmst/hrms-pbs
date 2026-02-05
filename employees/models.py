@@ -469,6 +469,14 @@ class Attendance(models.Model):
         grace_end_dt = shift_start_dt + timedelta(minutes=grace_minutes)
         clock_in_dt = local_clock_in  # Already aware and in local_tz
 
+        # Check if shift is flexible
+        if getattr(shift, "is_flexible", False):
+            self.is_late = False
+            self.is_grace_used = False
+            self.is_half_day_late = False
+            self.late_by_minutes = 0
+            return
+
         # Reset flags first
         self.is_late = False
         self.is_grace_used = False
@@ -570,6 +578,12 @@ class Attendance(models.Model):
 
         threshold_dt = shift_end_dt - timedelta(minutes=shift.early_departure_threshold_minutes)
         clock_out_dt = local_clock_out  # Already aware and in local_tz
+
+        # Check if shift is flexible
+        if getattr(shift, "is_flexible", False):
+            self.is_early_departure = False
+            self.early_departure_minutes = 0
+            return
 
         if clock_out_dt < threshold_dt:
             self.is_early_departure = True
@@ -812,6 +826,11 @@ class Attendance(models.Model):
 
         if not self.clock_in:
             return False
+
+        # If shift is flexible, consider it complete
+        shift = self.employee.assigned_shift
+        if shift and getattr(shift, "is_flexible", False):
+            return True
 
         # If already clocked out, check actual hours worked
         if self.clock_out:
@@ -1107,6 +1126,42 @@ class LeaveBalance(models.Model):
 
         self.save()
         return self
+
+    def fix_negative_balances(self):
+        """
+        Fix negative leave balances by moving them to LOP.
+        Returns the amount of LOP added.
+        """
+        lop_added = 0
+
+        # Determine if we're using combined or separate
+        is_combined = self.employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]
+
+        if is_combined:
+            surplus = self.combined_sick_casual_used - (self.combined_sick_casual_allocated + self.carry_forward_leave)
+            if surplus > 0:
+                self.combined_sick_casual_used -= surplus
+                self.unpaid_leave += surplus
+                lop_added += surplus
+        else:
+            # Check CL (including carry forward)
+            cl_surplus = self.casual_leave_used - (self.casual_leave_allocated + self.carry_forward_leave)
+            if cl_surplus > 0:
+                self.casual_leave_used -= cl_surplus
+                self.unpaid_leave += cl_surplus
+                lop_added += cl_surplus
+
+            # Check SL
+            sl_surplus = self.sick_leave_used - self.sick_leave_allocated
+            if sl_surplus > 0:
+                self.sick_leave_used -= sl_surplus
+                self.unpaid_leave += sl_surplus
+                lop_added += sl_surplus
+
+        if lop_added > 0:
+            self.save()
+
+        return lop_added
 
     @property
     def total_balance(self):

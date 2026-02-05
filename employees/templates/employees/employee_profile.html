@@ -1,4 +1,4 @@
-{% extends 'core/base.html' %}
+﻿{% extends 'core/base.html' %}
 {% load static %}
 
 {% block title %}My Profile | Petabytz{% endblock %}
@@ -247,21 +247,44 @@
         left: -50%;
         width: 200%;
         height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
         animation: float 6s ease-in-out infinite;
     }
 
     @keyframes gradientShift {
-        0%, 100% { background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); }
-        25% { background: linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #4facfe 100%); }
-        50% { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 50%, #667eea 100%); }
-        75% { background: linear-gradient(135deg, #764ba2 0%, #667eea 50%, #f093fb 100%); }
+
+        0%,
+        100% {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        }
+
+        25% {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #4facfe 100%);
+        }
+
+        50% {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 50%, #667eea 100%);
+        }
+
+        75% {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 50%, #f093fb 100%);
+        }
     }
 
     @keyframes float {
-        0%, 100% { transform: translate(0, 0) rotate(0deg); }
-        33% { transform: translate(30px, -30px) rotate(120deg); }
-        66% { transform: translate(-20px, 20px) rotate(240deg); }
+
+        0%,
+        100% {
+            transform: translate(0, 0) rotate(0deg);
+        }
+
+        33% {
+            transform: translate(30px, -30px) rotate(120deg);
+        }
+
+        66% {
+            transform: translate(-20px, 20px) rotate(240deg);
+        }
     }
 
     /* === PROFILE CARD === */
@@ -304,8 +327,15 @@
     }
 
     @keyframes cardGlow {
-        0% { opacity: 0.5; transform: scale(1); }
-        100% { opacity: 1; transform: scale(1.05); }
+        0% {
+            opacity: 0.5;
+            transform: scale(1);
+        }
+
+        100% {
+            opacity: 1;
+            transform: scale(1.05);
+        }
     }
 
     /* === PROFILE LAYOUT === */
@@ -385,13 +415,18 @@
         left: -50%;
         width: 200%;
         height: 200%;
-        background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%);
+        background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%);
         animation: shimmer 3s infinite;
     }
 
     @keyframes shimmer {
-        0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-        100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        0% {
+            transform: translateX(-100%) translateY(-100%) rotate(45deg);
+        }
+
+        100% {
+            transform: translateX(100%) translateY(100%) rotate(45deg);
+        }
     }
 
     .camera-btn {
@@ -483,6 +518,7 @@
             opacity: 0;
             transform: translateY(10px);
         }
+
         to {
             opacity: 0.7;
             transform: translateY(0);
@@ -548,8 +584,15 @@
     }
 
     @keyframes pulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-        50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+
+        0%,
+        100% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+        }
+
+        50% {
+            box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+        }
     }
 
     /* === NAVIGATION TABS === */
@@ -577,13 +620,18 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+        background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
         animation: tabShimmer 4s infinite;
     }
 
     @keyframes tabShimmer {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
+        0% {
+            transform: translateX(-100%);
+        }
+
+        100% {
+            transform: translateX(100%);
+        }
     }
 
     .nav-pills-custom .nav-link {
@@ -1358,6 +1406,7 @@
             opacity: 0;
             transform: translateY(-30px);
         }
+
         100% {
             opacity: 1;
             transform: translateY(0);
@@ -1369,6 +1418,7 @@
             opacity: 0;
             transform: translateX(-30px);
         }
+
         100% {
             opacity: 1;
             transform: translateX(0);
@@ -1380,6 +1430,7 @@
             opacity: 0;
             transform: translateX(30px);
         }
+
         100% {
             opacity: 1;
             transform: translateX(0);
@@ -1413,8 +1464,15 @@
     }
 
     @keyframes floatUpDown {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
+
+        0%,
+        100% {
+            transform: translateY(0px);
+        }
+
+        50% {
+            transform: translateY(-10px);
+        }
     }
 
     /* Glowing effect for active elements */
@@ -1442,8 +1500,13 @@
     }
 
     @keyframes rotateGlow {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
     }
 
     /* Particle effect for background */
@@ -1471,12 +1534,15 @@
             transform: translateY(100vh) rotate(0deg);
             opacity: 0;
         }
+
         10% {
             opacity: 1;
         }
+
         90% {
             opacity: 1;
         }
+
         100% {
             transform: translateY(-100px) rotate(360deg);
             opacity: 0;
@@ -1484,15 +1550,50 @@
     }
 
     /* Staggered animation delays for particles */
-    .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
-    .particle:nth-child(2) { left: 20%; animation-delay: 1s; }
-    .particle:nth-child(3) { left: 30%; animation-delay: 2s; }
-    .particle:nth-child(4) { left: 40%; animation-delay: 3s; }
-    .particle:nth-child(5) { left: 50%; animation-delay: 4s; }
-    .particle:nth-child(6) { left: 60%; animation-delay: 5s; }
-    .particle:nth-child(7) { left: 70%; animation-delay: 6s; }
-    .particle:nth-child(8) { left: 80%; animation-delay: 7s; }
-    .particle:nth-child(9) { left: 90%; animation-delay: 8s; }
+    .particle:nth-child(1) {
+        left: 10%;
+        animation-delay: 0s;
+    }
+
+    .particle:nth-child(2) {
+        left: 20%;
+        animation-delay: 1s;
+    }
+
+    .particle:nth-child(3) {
+        left: 30%;
+        animation-delay: 2s;
+    }
+
+    .particle:nth-child(4) {
+        left: 40%;
+        animation-delay: 3s;
+    }
+
+    .particle:nth-child(5) {
+        left: 50%;
+        animation-delay: 4s;
+    }
+
+    .particle:nth-child(6) {
+        left: 60%;
+        animation-delay: 5s;
+    }
+
+    .particle:nth-child(7) {
+        left: 70%;
+        animation-delay: 6s;
+    }
+
+    .particle:nth-child(8) {
+        left: 80%;
+        animation-delay: 7s;
+    }
+
+    .particle:nth-child(9) {
+        left: 90%;
+        animation-delay: 8s;
+    }
 
     .gradient-icon {
         background: linear-gradient(135deg, #6366f1, #8b5cf6);
@@ -2658,7 +2759,8 @@
     <div class="profile-card-main glow-effect">
         <div class="profile-layout">
             <div class="profile-avatar-section">
-                <div class="profile-avatar-wrapper floating" onclick="document.getElementById('profile_pic_input').click()"
+                <div class="profile-avatar-wrapper floating"
+                    onclick="document.getElementById('profile_pic_input').click()"
                     title="Click to change profile picture">
                     {% if employee.profile_picture %}
                     <img src="{{ employee.profile_picture.url }}" class="profile-avatar" alt="Profile">
@@ -2775,7 +2877,8 @@
                                         {% if event.previous_value and event.new_value %}
                                         <div class="mt-2 p-2 bg-light rounded-3 border-start border-primary border-3">
                                             <div class="row g-0 align-items-center">
-                                                <div class="col text-muted small text-truncate">{{ event.previous_value }}</div>
+                                                <div class="col text-muted small text-truncate">{{ event.previous_value
+                     }}</div>
                                                 <div class="col-auto px-2 text-primary small"><i
                                                         class="fas fa-long-arrow-alt-right"></i></div>
                                                 <div class="col fw-bold small text-truncate">{{ event.new_value }}</div>
@@ -3397,90 +3500,87 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" action="{% url 'employee_profile' %}"></form>
-            {% csrf_token %}
-            <input type="hidden" name="action" value="assign_shift">
-            <div class="modal-body">
-                <div class="mb-4">
-                    <label for="shiftSelect" class="form-label fw-bold">
-                        <i class="fas fa-list me-2 text-primary"></i>Select Shift
-                    </label>
-                    <select class="form-select" id="shiftSelect" name="assigned_shift" required>
-                        <option value="">Choose a shift...</option>
-                        {% for shift in available_shifts %}
-                        <option value="{{ shift.id }}" {% if employee.assigned_shift.id == shift.id %}selected{% endif %}
-                            data-start="{{ shift.start_time|time:'H:i' }}" data-end="{{ shift.end_time|time:'H:i' }}"
-                            data-grace="{{ shift.grace_period_minutes }}"
-                            data-working-days="{{ shift.working_days_list|join:', ' }}">
-                            {{ shift.name }} ({{ shift.start_time|time:"H:i" }} - {{ shift.end_time|time:"H:i" }})
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <div class="form-text">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Select the appropriate shift schedule for this employee
-                    </div>
-                </div>
-
-                <!-- Shift Preview -->
-                <div id="shiftPreview" class="shift-preview-card" style="display: none;">
-                    <div class="card border-primary">
-                        <div class="card-header bg-primary text-white">
-                            <h6 class="mb-0"><i class="fas fa-eye me-2"></i>Shift Preview</h6>
+            <form method="post" action="{% url 'employee_profile' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="assign_shift">
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <label for="shiftSelect" class="form-label fw-bold">
+                            <i class="fas fa-list me-2 text-primary"></i>Select Shift
+                        </label>
+                        <select class="form-select" id="shiftSelect" name="assigned_shift" required>
+                            <option value="">Choose a shift...</option>
+                            {% for shift in available_shifts %}
+                            <option value="{{ shift.id }}" {% if employee.assigned_shift.id == shift.id %}selected{% endif %} data-start="{{ shift.start_time|time:'H:i' }}" data-end="{{ shift.end_time|time:'H:i' }}" data-grace="{{ shift.grace_period_minutes }}" data-working-days="{{ shift.working_days_list|join:', ' }}">
+                                {{ shift.name }} ({{ shift.start_time|time:"H:i" }} - {{ shift.end_time|time:"H:i" }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Select the appropriate shift schedule for this employee
                         </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <div class="preview-item">
-                                        <div class="preview-label">
-                                            <i class="fas fa-clock text-success me-2"></i>Working Hours
+                    </div>
+
+                    <!-- Shift Preview -->
+                    <div id="shiftPreview" class="shift-preview-card" style="display: none;">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="fas fa-eye me-2"></i>Shift Preview</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="preview-item">
+                                            <div class="preview-label">
+                                                <i class="fas fa-clock text-success me-2"></i>Working Hours
+                                            </div>
+                                            <div class="preview-value" id="previewTiming">-</div>
                                         </div>
-                                        <div class="preview-value" id="previewTiming">-</div>
                                     </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="preview-item">
-                                        <div class="preview-label">
-                                            <i class="fas fa-hourglass-half text-warning me-2"></i>Grace Period
+                                    <div class="col-md-6">
+                                        <div class="preview-item">
+                                            <div class="preview-label">
+                                                <i class="fas fa-hourglass-half text-warning me-2"></i>Grace Period
+                                            </div>
+                                            <div class="preview-value" id="previewGrace">-</div>
                                         </div>
-                                        <div class="preview-value" id="previewGrace">-</div>
                                     </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="preview-item">
-                                        <div class="preview-label">
-                                            <i class="fas fa-calendar-week text-info me-2"></i>Working Days
+                                    <div class="col-12">
+                                        <div class="preview-item">
+                                            <div class="preview-label">
+                                                <i class="fas fa-calendar-week text-info me-2"></i>Working Days
+                                            </div>
+                                            <div class="preview-value" id="previewWorkingDays">-</div>
                                         </div>
-                                        <div class="preview-value" id="previewWorkingDays">-</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Current Assignment Info -->
-                {% if employee.assigned_shift %}
-                <div class="alert alert-info mt-3">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>Current Assignment:</strong> {{ employee.assigned_shift.name }}
-                    ({{ employee.assigned_shift.start_time|time:"H:i" }} - {{ employee.assigned_shift.end_time|time:"H:i" }})
+                    <!-- Current Assignment Info -->
+                    {% if employee.assigned_shift %}
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Current Assignment:</strong> {{ employee.assigned_shift.name }}
+                        ({{ employee.assigned_shift.start_time|time:"H:i" }} - {{ employee.assigned_shift.end_time|time:"H:i" }})
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>No Shift Assigned:</strong> This employee currently has no shift assignment.
+                    </div>
+                    {% endif %}
                 </div>
-                {% else %}
-                <div class="alert alert-warning mt-3">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>No Shift Assigned:</strong> This employee currently has no shift assignment.
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Assign Shift
+                    </button>
                 </div>
-                {% endif %}
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fas fa-times me-1"></i>Cancel
-                </button>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save me-1"></i>Assign Shift
-                </button>
-            </div>
             </form>
         </div>
     </div>
@@ -3826,8 +3926,13 @@
     }
 
     @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
     }
 
     /* Timeline visibility fixes */
@@ -3873,6 +3978,7 @@
 
     /* Mobile-specific improvements */
     @media (max-width: 767px) {
+
         /* Ensure proper touch targets */
         .nav-link,
         .btn,

@@ -23,45 +23,6 @@ def get_current_user():
     return getattr(_thread_locals, "user", None)
 
 
-def is_debug_mode_enabled(request):
-    """Check if debug mode is enabled for the current session."""
-    if not hasattr(request, "session"):
-        return False
-    return request.session.get(DebugModeMiddleware.DEBUG_SESSION_KEY, False)
-
-
-class DebugModeMiddleware:
-    """
-    Middleware to enable debug mode for the admin panel.
-
-    When ?debug=true is passed to any admin URL:
-    - Sets 'admin_debug_mode' in session to True
-    - Enables visibility of sensitive sections (observability, hijack)
-
-    When ?debug=false is passed:
-    - Removes the debug mode flag
-
-    This allows developers to access sensitive features without exposing
-    them to regular admin users.
-    """
-
-    DEBUG_SESSION_KEY = "admin_debug_mode"
-
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        if request.user and request.user.is_authenticated:
-            # Check for debug query parameter
-            debug_param = request.GET.get("debug")
-            if debug_param == "true":
-                request.session[self.DEBUG_SESSION_KEY] = True
-            elif debug_param == "false":
-                request.session.pop(self.DEBUG_SESSION_KEY, None)
-
-        return self.get_response(request)
-
-
 class CompanyIsolationMiddleware:
     """
     Multi-tenant middleware that:
@@ -287,3 +248,47 @@ class LoggingMiddleware:
         if x_forwarded_for:
             return x_forwarded_for.split(",")[0].strip()
         return request.META.get("REMOTE_ADDR", "")
+
+
+class DebugModeMiddleware:
+    """
+    Middleware to enable debug mode for the admin panel.
+
+    When ?debug=true is passed to any admin URL:
+    - Sets 'admin_debug_mode' in session to True
+    - Enables visibility of sensitive sections (observability, hijack)
+
+    When ?debug=false is passed:
+    - Removes the debug mode flag
+
+    This allows developers to access sensitive features without exposing
+    them to regular admin users.
+    """
+
+    DEBUG_SESSION_KEY = "admin_debug_mode"
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        # Check for debug parameter on admin pages
+        if request.path.startswith("/admin/") or request.path.startswith("/observability/"):
+            debug_param = request.GET.get("debug", "").lower()
+
+            if debug_param == "true":
+                request.session[self.DEBUG_SESSION_KEY] = True
+                request.session.modified = True
+                logger.info("Debug mode enabled for admin session", user=getattr(request.user, "email", "anonymous"))
+            elif debug_param == "false":
+                request.session.pop(self.DEBUG_SESSION_KEY, None)
+                request.session.modified = True
+                logger.info("Debug mode disabled for admin session", user=getattr(request.user, "email", "anonymous"))
+
+        return self.get_response(request)
+
+
+def is_debug_mode_enabled(request):
+    """Check if debug mode is enabled for the current session."""
+    if not hasattr(request, "session"):
+        return False
+    return request.session.get(DebugModeMiddleware.DEBUG_SESSION_KEY, False)
