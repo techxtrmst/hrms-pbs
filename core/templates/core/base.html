@@ -29,7 +29,7 @@
             /* Slate 400 */
             --text-hover: #f1f5f9;
             /* Slate 100 */
-            --active-bg: rgba(99, 102, 241, 0.1);
+            --active-bg: rgba(99, 102, 241, 0.12);
             --active-border: #6366f1;
         }
 
@@ -65,9 +65,17 @@
             align-items: center;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             margin-bottom: 10px;
-            background: rgba(15, 23, 42, 0.5);
-            /* Slight darkening */
-            backdrop-filter: blur(5px);
+            background: rgba(15, 23, 42, 0.3);
+            position: relative;
+        }
+
+        .brand-section img {
+            height: 42px;
+            width: auto;
+            max-width: 100%;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            object-fit: contain;
         }
 
         .brand-section h3 {
@@ -121,9 +129,9 @@
 
         .sidebar a.active {
             color: #fff;
-            background: linear-gradient(90deg, var(--active-bg) 0%, transparent 100%);
-            border-left-color: var(--active-border);
-            font-weight: 500;
+            background: rgba(99, 102, 241, 0.15);
+            border-left: 4px solid var(--active-border);
+            font-weight: 600;
         }
 
         .sidebar a i {
@@ -708,11 +716,15 @@
 
         /* Adjust brand section for mobile */
         .brand-section {
-            padding: 20px 24px;
+            padding: 16px 20px;
+        }
+
+        .brand-section img {
+            height: 32px !important;
         }
 
         .brand-section h3 {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
         }
 
         /* Adjust sidebar links for mobile */
@@ -1545,20 +1557,16 @@
         <div class="brand-section">
             {% if request.user.company %}
             {% if request.user.company.slug == 'softstandard' %}
-            <img src="https://softstandard.com/wp-content/uploads/2016/05/logo.jpg" alt="Softstandard Logo"
-                style="height: 48px; width: auto; max-width: 100%; border-radius: 4px;">
+            <img src="https://softstandard.com/wp-content/uploads/2016/05/logo.jpg" alt="Softstandard Logo">
             {% elif request.user.company.slug == 'bluebix' %}
             <img src="https://media.licdn.com/dms/image/v2/C510BAQF_jSPngDmYig/company-logo_200_200/company-logo_200_200/0/1630611564837?e=2147483647&v=beta&t=K0Ip6YC5bjvQcpJwIyTAbBV_01rzUJhP4bwlIDO8hPw"
-                alt="Bluebix Logo" style="height: 48px; width: auto; max-width: 100%; border-radius: 4px;">
+                alt="Bluebix Logo">
             {% elif request.user.company.slug == 'petabytz' %}
-            <img src="{% static 'img/petabytz_logo.jpg' %}" alt="PetaBytz Logo"
-                style="height: 48px; width: auto; max-width: 100%; border-radius: 4px;">
+            <img src="{% static 'img/petabytz_logo.jpg' %}" alt="PetaBytz Logo">
             {% elif request.user.company.logo %}
-            <img src="{{ request.user.company.logo.url }}" alt="{{ request.user.company.name }} Logo"
-                style="height: 48px; width: auto; max-width: 100%; border-radius: 4px;">
+            <img src="{{ request.user.company.logo.url }}" alt="{{ request.user.company.name }} Logo">
             {% else %}
-            <img src="{% static 'img/petabytz_logo.jpg' %}" alt="HRMS Logo"
-                style="height: 48px; width: auto; max-width: 100%; border-radius: 4px;">
+            <img src="{% static 'img/petabytz_logo.jpg' %}" alt="HRMS Logo">
             {% endif %}
             {% else %}
             <img src="{% static 'img/petabytz_logo.jpg' %}" alt="HRMS Logo"

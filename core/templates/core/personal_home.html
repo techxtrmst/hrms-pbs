@@ -2032,7 +2032,7 @@
                                 <div class="text-end">
                                     <div class="text-label" style="font-size: 0.65rem;">Total Today</div>
                                     <div class="fw-bold text-primary" id="total-today-display">
-                                        {{ attendance.total_working_hours|floatformat:1 }} hr
+                                        {% widthratio attendance.total_working_hours|default:0 9 100 %}%
                                     </div>
                                 </div>
                             </div>
@@ -2051,7 +2051,7 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <div class="fw-bold text-dark">
-                                        {{ attendance.total_working_hours|floatformat:1 }} hours
+                                        {% widthratio attendance.total_working_hours|default:0 9 100 %}%
                                     </div>
                                 </div>
                                 <div class="text-end">
@@ -2109,7 +2109,8 @@
                                     </div>
                                     {% if user.employee_profile.company.name|lower == "bluebix" %}
                                     <div class="weekly-stats-item">
-                                        <div class="text-value text-primary">{{ leave_balance.combined_sick_casual_balance|floatformat:1|default:"0" }}</div>
+                                        <div class="text-value text-primary">{{ leave_balance.combined_sick_casual_balance|floatformat:1|default:"0" }}
+                                        </div>
                                         <div class="text-label">Sick/Casual Available</div>
                                     </div>
                                     {% else %}
@@ -3142,11 +3143,12 @@
         const timerEl = document.getElementById('timer-display');
         if (timerEl) timerEl.innerText = formatted;
 
-        // Update Total Today display with cumulative hours
+        // Update Total Today display with cumulative hours -> Percentage (9h base)
         const totalHours = totalMs / (1000 * 60 * 60);
         const totalTodayEl = document.getElementById('total-today-display');
         if (totalTodayEl) {
-            totalTodayEl.innerText = totalHours.toFixed(1) + ' hr';
+            const percent = Math.round((totalHours / 9) * 100);
+            totalTodayEl.innerText = percent + '%';
         }
     }
     setInterval(updateDuration, 1000);

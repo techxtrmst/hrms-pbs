@@ -268,85 +268,97 @@
                 <table style="width: 100%; border-spacing: 0; border-collapse: collapse;">
                     <tr>
                         <td style="padding: 2px 0;">Basic</td>
-                        <td style="text-align: right; padding: 2px 0;">{{ payslip.basic|floatformat:2 }}</td>
+                        <td style="text-align: right; padding: 2px 0;">{{ basic_rounded|floatformat:2 }}</td>
                     </tr>
                     <tr>
                         <td style="padding: 2px 0;">HRA</td>
-                        <td style="text-align: right; padding: 2px 0;">{{ payslip.hra|floatformat:2 }}</td>
+                        <td style="text-align: right; padding: 2px 0;">{{ hra_rounded|floatformat:2 }}</td>
                     </tr>
                     <tr>
                         <td style="padding: 2px 0;">Conveyance Allowance</td>
-                        <td style="text-align: right; padding: 2px 0;">{{ payslip.conveyance_allowance|floatformat:2 }}</td>
+                        <td style="text-align: right; padding: 2px 0;">{{ conveyance_rounded|floatformat:2 }}</td>
                     </tr>
                     <tr>
                         <td style="padding: 2px 0;">Special Allowance</td>
-                        <td style="text-align: right; padding: 2px 0;">{{ payslip.special_allowance|floatformat:2 }}</td>
+                        <td style="text-align: right; padding: 2px 0;">{{ special_rounded|floatformat:2 }}</td>
                     </tr>
+                    {% if employer_pf_rounded > 0 %}
+                    {% endif %}
                     <tr style="font-weight: 700;">
-                        <td style="padding: 2px 0;">Total Earnings (A)</td>
-                        <td style="text-align: right; padding: 2px 0;">{{ payslip.gross_salary|floatformat:2 }}</td>
+                        <td style="padding: 2px 0;">Total Earnings (CTC)</td>
+                        <td style="text-align: right; padding: 2px 0;">{{ total_earnings_ctc|floatformat:2 }}</td>
                     </tr>
                 </table>
             </td>
 
             <td style="width: 50%; padding-left: 20px;">
                 {% if payslip.employee.pf_enabled %}
-                    <!-- PF Enabled: Show Contributions (B) and Taxes (C) -->
-                    {% if payslip.employee_pf > 0 %}
-                    <div class="label" style="font-weight: 700; color: #000;">CONTRIBUTIONS</div>
-                    <table style="width: 100%; margin-bottom: 0; border-spacing: 0; border-collapse: collapse;">
-                        <tr>
-                            <td style="padding: 2px 0;">PF Employee</td>
-                            <td style="text-align: right; padding: 2px 0;">{{ payslip.employee_pf|floatformat:2 }}</td>
-                        </tr>
-                        <tr style="font-weight: 700;">
-                            <td style="padding: 2px 0;">Total Contributions (B)</td>
-                            <td style="text-align: right; padding: 2px 0;">{{ payslip.employee_pf|floatformat:2 }}</td>
-                        </tr>
-                        {% if payslip.professional_tax > 0 %}
-                        <tr>
-                            <td colspan="2" style="padding: 0;">
-                                <div class="label" style="font-weight: 700; color: #000; margin: 0; padding: 0; line-height: 1;">TAXES & DEDUCTIONS</div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 2px 0;">Professional Tax</td>
-                            <td style="text-align: right; padding: 2px 0;">{{ payslip.professional_tax|floatformat:2 }}</td>
-                        </tr>
-                        <tr style="font-weight: 700;">
-                            <td style="padding: 2px 0;">Total Taxes & Deductions (C)</td>
-                            <td style="text-align: right; padding: 2px 0;">{{ payslip.professional_tax|floatformat:2 }}</td>
-                        </tr>
-                        {% endif %}
-                    </table>
-                    {% elif payslip.professional_tax > 0 %}
-                    <div class="label" style="font-weight: 700; color: #000;">TAXES & DEDUCTIONS</div>
-                    <table style="width: 100%;">
-                        <tr>
-                            <td>Professional Tax</td>
-                            <td style="text-align: right;">{{ payslip.professional_tax|floatformat:2 }}</td>
-                        </tr>
-                        <tr style="font-weight: 700;">
-                            <td>Total Taxes & Deductions (C)</td>
-                            <td style="text-align: right;">{{ payslip.professional_tax|floatformat:2 }}</td>
-                        </tr>
-                    </table>
+                <!-- PF Enabled: Show Contributions (B) and Taxes (C) -->
+                {% if employee_pf_rounded > 0 or employer_pf_rounded > 0 %}
+                <div class="label" style="font-weight: 700; color: #000;">CONTRIBUTIONS</div>
+                <table style="width: 100%; margin-bottom: 0; border-spacing: 0; border-collapse: collapse;">
+                    {% if employee_pf_rounded > 0 %}
+                    <tr>
+                        <td style="padding: 2px 0;">Employee PF</td>
+                        <td style="text-align: right; padding: 2px 0;">{{ employee_pf_rounded|floatformat:2 }}</td>
+                    </tr>
                     {% endif %}
+                    {% if employer_pf_rounded > 0 %}
+                    <tr>
+                        <td style="padding: 2px 0;">Employer PF</td>
+                        <td style="text-align: right; padding: 2px 0;">{{ employer_pf_rounded|floatformat:2 }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr style="font-weight: 700;">
+                        <td style="padding: 2px 0;">Total Contributions (B)</td>
+                        <td style="text-align: right; padding: 2px 0;">{{ total_contributions|floatformat:2 }}</td>
+                    </tr>
+                    {% if professional_tax_rounded > 0 %}
+                    <tr>
+                        <td colspan="2" style="padding: 0;">
+                            <div class="label"
+                                style="font-weight: 700; color: #000; margin: 0; padding: 0; line-height: 1;">TAXES &
+                                DEDUCTIONS</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 2px 0;">Professional Tax</td>
+                        <td style="text-align: right; padding: 2px 0;">{{ professional_tax_rounded|floatformat:2 }}</td>
+                    </tr>
+                    <tr style="font-weight: 700;">
+                        <td style="padding: 2px 0;">Total Taxes & Deductions (C)</td>
+                        <td style="text-align: right; padding: 2px 0;">{{ professional_tax_rounded|floatformat:2 }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+                {% elif professional_tax_rounded > 0 %}
+                <div class="label" style="font-weight: 700; color: #000;">TAXES & DEDUCTIONS</div>
+                <table style="width: 100%;">
+                    <tr>
+                        <td>Professional Tax</td>
+                        <td style="text-align: right;">{{ professional_tax_rounded|floatformat:2 }}</td>
+                    </tr>
+                    <tr style="font-weight: 700;">
+                        <td>Total Taxes & Deductions (C)</td>
+                        <td style="text-align: right;">{{ professional_tax_rounded|floatformat:2 }}</td>
+                    </tr>
+                </table>
+                {% endif %}
                 {% else %}
-                    <!-- PF Disabled: Show only Professional Tax as (B) -->
-                    {% if payslip.professional_tax > 0 %}
-                    <div class="label" style="font-weight: 700; color: #000;">TAXES & DEDUCTIONS</div>
-                    <table style="width: 100%;">
-                        <tr>
-                            <td>Professional Tax</td>
-                            <td style="text-align: right;">{{ payslip.professional_tax|floatformat:2 }}</td>
-                        </tr>
-                        <tr style="font-weight: 700;">
-                            <td>Total Taxes & Deductions (B)</td>
-                            <td style="text-align: right;">{{ payslip.professional_tax|floatformat:2 }}</td>
-                        </tr>
-                    </table>
-                    {% endif %}
+                <!-- PF Disabled: Show only Professional Tax as (B) -->
+                {% if professional_tax_rounded > 0 %}
+                <div class="label" style="font-weight: 700; color: #000;">TAXES & DEDUCTIONS</div>
+                <table style="width: 100%;">
+                    <tr>
+                        <td>Professional Tax</td>
+                        <td style="text-align: right;">{{ professional_tax_rounded|floatformat:2 }}</td>
+                    </tr>
+                    <tr style="font-weight: 700;">
+                        <td>Total Taxes & Deductions (B)</td>
+                        <td style="text-align: right;">{{ professional_tax_rounded|floatformat:2 }}</td>
+                    </tr>
+                </table>
+                {% endif %}
                 {% endif %}
             </td>
         </tr>
@@ -356,12 +368,13 @@
     <div class="net-box">
         <table class="net-table">
             <tr>
-                <td style="width: 70%;">Net Salary Payable {% if payslip.employee.pf_enabled %}{% if payslip.employee_pf > 0 and payslip.professional_tax > 0 %}( A - B - C ){% elif payslip.employee_pf > 0 %}( A - B ){% elif payslip.professional_tax > 0 %}( A - C ){% endif %}{% else %}{% if payslip.professional_tax > 0 %}( A - B ){% endif %}{% endif %}</td>
-                <td style="text-align: right;">{{ payslip.net_salary|floatformat:2 }}</td>
+                <td style="width: 70%;">Net Salary Payable ( A - B - C )</td>
+                <td style="text-align: right;">{{ net_salary_rounded|floatformat:2 }}</td>
             </tr>
             <tr>
                 <td style="width: 40%;">Net Salary in words</td>
-                <td style="text-align: right; width: 60%; font-size: 12px; line-height: 1; white-space: nowrap;"><strong>{{ net_salary_words }}</strong></td>
+                <td style="text-align: right; width: 60%; font-size: 12px; line-height: 1; white-space: nowrap;">
+                    <strong>{{ net_salary_words }}</strong></td>
             </tr>
         </table>
     </div>

@@ -692,26 +692,25 @@ def workflow_configuration_view(request, selected_company=None, selected_company
         workflows = workflows.filter(company_id=selected_company_id)
 
     # Handle workflow creation
-    if request.method == "POST":
-        if "add_workflow" in request.POST:
-            comp_id = request.POST.get("company") or selected_company_id
-            wf_type = request.POST.get("workflow_type")
-            name = request.POST.get("name")
-            levels = int(request.POST.get("levels", 1))
+    if request.method == "POST" and "add_workflow" in request.POST:
+        comp_id = request.POST.get("company") or selected_company_id
+        wf_type = request.POST.get("workflow_type")
+        name = request.POST.get("name")
+        levels = int(request.POST.get("levels", 1))
 
-            # Simple config logic (can be expanded)
-            config = {}
-            for i in range(1, levels + 1):
-                config[str(i)] = {"role": "MANAGER" if i == 1 else "COMPANY_ADMIN"}
+        # Simple config logic (can be expanded)
+        config = {}
+        for i in range(1, levels + 1):
+            config[str(i)] = {"role": "MANAGER" if i == 1 else "COMPANY_ADMIN"}
 
-            try:
-                ApprovalWorkflow.objects.create(
-                    company_id=comp_id, workflow_type=wf_type, name=name, levels=levels, levels_config=config
-                )
-                messages.success(request, f"Workflow '{name}' created successfully.")
-            except Exception as e:
-                messages.error(request, f"Error creating workflow: {str(e)}")
-            return redirect("superadmin:workflow_configuration")
+        try:
+            ApprovalWorkflow.objects.create(
+                company_id=comp_id, workflow_type=wf_type, name=name, levels=levels, levels_config=config
+            )
+            messages.success(request, f"Workflow '{name}' created successfully.")
+        except Exception as e:
+            messages.error(request, f"Error creating workflow: {str(e)}")
+        return redirect("superadmin:workflow_configuration")
 
     # Get companies for filter/form
     companies = Company.objects.filter(is_active=True).order_by("name")
@@ -769,7 +768,7 @@ def test_biometric_sync_api(request):
         reverse("biometric_sync_api"), data=json.dumps(payload), content_type="application/json"
     )
 
-    response = biometric_sync_api(mock_request)
+    biometric_sync_api(mock_request)
     return JsonResponse(
         {"success": True, "message": f"Test signal sent for {employee.user.get_full_name()}. Check attendance logs!"}
     )

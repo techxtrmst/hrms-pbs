@@ -1108,6 +1108,42 @@ class LeaveBalance(models.Model):
         self.save()
         return self
 
+    def fix_negative_balances(self):
+        """
+        Fix negative leave balances by moving them to LOP.
+        Returns the amount of LOP added.
+        """
+        lop_added = 0
+
+        # Determine if we're using combined or separate
+        is_combined = self.employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]
+
+        if is_combined:
+            surplus = self.combined_sick_casual_used - (self.combined_sick_casual_allocated + self.carry_forward_leave)
+            if surplus > 0:
+                self.combined_sick_casual_used -= surplus
+                self.unpaid_leave += surplus
+                lop_added += surplus
+        else:
+            # Check CL (including carry forward)
+            cl_surplus = self.casual_leave_used - (self.casual_leave_allocated + self.carry_forward_leave)
+            if cl_surplus > 0:
+                self.casual_leave_used -= cl_surplus
+                self.unpaid_leave += cl_surplus
+                lop_added += cl_surplus
+
+            # Check SL
+            sl_surplus = self.sick_leave_used - self.sick_leave_allocated
+            if sl_surplus > 0:
+                self.sick_leave_used -= sl_surplus
+                self.unpaid_leave += sl_surplus
+                lop_added += sl_surplus
+
+        if lop_added > 0:
+            self.save()
+
+        return lop_added
+
     @property
     def total_balance(self):
         # For Bluebix and Softstandard, return combined balance (but don't double count)
