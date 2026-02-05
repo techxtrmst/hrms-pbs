@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 # Check if PayslipGenerator is available
 try:
     from payslip_generator import PayslipGenerator
+
     PAYSLIP_GENERATOR_AVAILABLE = True
 except ImportError:
     PayslipGenerator = None
@@ -133,30 +134,30 @@ def generate_payslip_pdf_with_generator(payslip_instance, output_dir="media/pays
     Generate payslip PDF using the PayslipGenerator class from payslip_generator.py
     Falls back to Django template method if PayslipGenerator is not available.
     """
-    
+
     if not PAYSLIP_GENERATOR_AVAILABLE:
         logger.warning("PayslipGenerator not available, falling back to Django template method")
         return _generate_payslip_pdf_fallback(payslip_instance)
-    
+
     try:
         # Prepare employee data for PayslipGenerator
         employee = payslip_instance.employee
         company = employee.company
-        
+
         # Determine branding details
         company_name = company.name.upper()
         branding_name = "PETABYTZ TECHNOLOGY SERVICES PVT LTD"
-        
+
         if "SOFTSTANDARD" in company_name or "SOFT STANDARD" in company_name:
             branding_name = "SOFTSTANDARD SOLUTIONS"
         elif "BLUEBIX" in company_name:
             branding_name = "BLUEBIX TECHNOLOGY SERVICES PVT LTD"
-        
+
         # Get currency information
         currency = "INR"
         if employee.location:
             currency = employee.location.currency or "INR"
-        
+
         # Prepare earnings data
         earnings = []
         if payslip_instance.basic > 0:
@@ -171,70 +172,72 @@ def generate_payslip_pdf_with_generator(payslip_instance, output_dir="media/pays
             earnings.append({"name": "Conveyance Allowance", "amount": float(payslip_instance.conveyance_allowance)})
         if payslip_instance.special_allowance > 0:
             earnings.append({"name": "Special Allowance", "amount": float(payslip_instance.special_allowance)})
-        
+
         # Prepare deductions data
         deductions = []
         if payslip_instance.employee_pf > 0:
             deductions.append({"name": "PF Employee", "amount": float(payslip_instance.employee_pf)})
         if payslip_instance.professional_tax > 0:
             deductions.append({"name": "Professional Tax", "amount": float(payslip_instance.professional_tax)})
-        
+
         # Check if there are additional deduction fields (TDS, LOP, etc.)
-        if hasattr(payslip_instance, 'tds') and payslip_instance.tds > 0:
+        if hasattr(payslip_instance, "tds") and payslip_instance.tds > 0:
             deductions.append({"name": "TDS", "amount": float(payslip_instance.tds)})
-        if hasattr(payslip_instance, 'lop_deduction') and payslip_instance.lop_deduction > 0:
+        if hasattr(payslip_instance, "lop_deduction") and payslip_instance.lop_deduction > 0:
             deductions.append({"name": "LOP Deduction", "amount": float(payslip_instance.lop_deduction)})
-        
+
         # Prepare employee data dictionary
         employee_data = {
-            'name': employee.user.get_full_name(),
-            'employee_id': employee.badge_id or str(employee.id),
-            'date_joined': employee.date_of_joining.strftime('%d-%m-%Y') if employee.date_of_joining else 'N/A',
-            'department': employee.department or 'N/A',
-            'designation': employee.designation or 'N/A',
-            'payment_mode': 'Bank Transfer',
-            'bank_name': employee.bank_name or 'N/A',
-            'bank_ifsc': employee.ifsc_code or 'N/A',
-            'bank_account': employee.account_number or 'N/A',
-            'uan': employee.uan or 'N/A',
-            'pan_number': employee.pan_number or 'N/A',
-            'payable_units': '30 Days',  # This could be calculated based on worked days
-            'company_name': branding_name,
-            'company_address': company.address_line1 or '',
-            'company_city': company.city or '',
-            'company_state': company.state or '',
-            'currency': currency,
-            'earnings': earnings,
-            'deductions': deductions,
-            'location_obj': employee.location,  # Pass location object for currency info
+            "name": employee.user.get_full_name(),
+            "employee_id": employee.badge_id or str(employee.id),
+            "date_joined": employee.date_of_joining.strftime("%d-%m-%Y") if employee.date_of_joining else "N/A",
+            "department": employee.department or "N/A",
+            "designation": employee.designation or "N/A",
+            "payment_mode": "Bank Transfer",
+            "bank_name": employee.bank_name or "N/A",
+            "bank_ifsc": employee.ifsc_code or "N/A",
+            "bank_account": employee.account_number or "N/A",
+            "uan": employee.uan or "N/A",
+            "pan_number": employee.pan_number or "N/A",
+            "payable_units": "30 Days",  # This could be calculated based on worked days
+            "company_name": branding_name,
+            "company_address": company.address_line1 or "",
+            "company_city": company.city or "",
+            "company_state": company.state or "",
+            "currency": currency,
+            "earnings": earnings,
+            "deductions": deductions,
+            "location_obj": employee.location,  # Pass location object for currency info
         }
-        
+
         # Initialize PayslipGenerator
         generator = PayslipGenerator(output_dir=output_dir)
-        
+
         # Generate PDF
         month_str = payslip_instance.month.strftime("%B")
         year_str = payslip_instance.month.strftime("%Y")
-        
+
         pdf_path = generator.generate_payslip(employee_data, month_str, year_str)
-        
+
         # Save the generated PDF to the payslip model
-        with open(pdf_path, 'rb') as pdf_file:
+        with open(pdf_path, "rb") as pdf_file:
             pdf_content = pdf_file.read()
-            
+
         # Generate filename for the model
         month_str = payslip_instance.month.strftime("%B-%Y")
         emp_name = employee.user.get_full_name().replace(" ", "_")
         pdf_filename = f"{emp_name}-Payslip_{month_str}.pdf"
-        
+
         # Save to model
         payslip_instance.pdf_file.save(pdf_filename, ContentFile(pdf_content), save=True)
-        
+
         logger.info(f"Payslip generated successfully with PayslipGenerator for {employee.user.get_full_name()}")
         return True
-        
+
     except Exception as e:
-        logger.error(f"PayslipGenerator failed for {payslip_instance.employee.user.get_full_name()}: {e}", exc_info=True)
+        logger.error(
+            f"PayslipGenerator failed for {payslip_instance.employee.user.get_full_name()}: {e}", exc_info=True
+        )
         # Fall back to Django template method
         return _generate_payslip_pdf_fallback(payslip_instance)
 
