@@ -51,6 +51,7 @@ class EmployeeCreationForm(forms.ModelForm):
             "last_name",
             "email",
             "personal_email",
+            "bio",
             "mobile_number",
             "gender",
             "marital_status",
@@ -59,6 +60,7 @@ class EmployeeCreationForm(forms.ModelForm):
             "current_address",
             "emergency_contact",
             "badge_id",
+            "biometric_id",
             # Job
             "designation",
             "department",
@@ -80,6 +82,12 @@ class EmployeeCreationForm(forms.ModelForm):
             "date_of_joining": forms.DateInput(attrs={"type": "date"}),
             "permanent_address": forms.Textarea(attrs={"rows": 3}),
             "current_address": forms.Textarea(attrs={"rows": 3}),
+            "bio": forms.Textarea(
+                attrs={
+                    "rows": 4,
+                    "placeholder": "Tell us about yourself, your role, and what you're passionate about...",
+                }
+            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -169,6 +177,14 @@ class EmployeeCreationForm(forms.ModelForm):
             )
 
         return email
+
+    def clean_biometric_id(self):
+        biometric_id = self.cleaned_data.get("biometric_id")
+        if biometric_id:
+            # Check if biometric_id already exists
+            if Employee.objects.filter(biometric_id=biometric_id).exists():
+                raise ValidationError("An employee with this biometric ID already exists.")
+        return biometric_id
 
     def clean(self):
         cleaned_data = super().clean()
@@ -304,6 +320,14 @@ class EmployeeUpdateForm(EmployeeCreationForm):
         if self.instance.user and User.objects.filter(email=email).exclude(pk=self.instance.user.pk).exists():
             raise ValidationError("A user with this email address already exists. Please use a different email.")
         return email
+
+    def clean_biometric_id(self):
+        biometric_id = self.cleaned_data.get("biometric_id")
+        if biometric_id:
+            # Check if biometric_id already exists, excluding current instance
+            if Employee.objects.filter(biometric_id=biometric_id).exclude(pk=self.instance.pk).exists():
+                raise ValidationError("An employee with this biometric ID already exists.")
+        return biometric_id
 
     def save(self, commit=True):
         # We don't call super().save() because parent tries to create a NEW user

@@ -33,6 +33,7 @@ class EmployeeAdmin(ModelAdmin, ImportExportModelAdmin):
         "designation",
         "manager",
         "badge_id",
+        "biometric_id",
     )
     list_filter = (
         "company",
@@ -43,6 +44,50 @@ class EmployeeAdmin(ModelAdmin, ImportExportModelAdmin):
     )
     search_fields = ("user__email", "user__first_name", "user__last_name", "badge_id")
     inlines = [EmergencyContactInline]
+
+    fieldsets = (
+        ("User Information", {"fields": ("user", "company", "manager", "profile_picture")}),
+        (
+            "Personal Details",
+            {
+                "fields": (
+                    "bio",
+                    "mobile_number",
+                    "personal_email",
+                    "gender",
+                    "marital_status",
+                    "dob",
+                    "permanent_address",
+                    "current_address",
+                    "profile_edited",
+                )
+            },
+        ),
+        (
+            "Job Information",
+            {"fields": ("designation", "department", "work_type", "assigned_shift", "date_of_joining", "location")},
+        ),
+        ("Identification", {"fields": ("badge_id", "biometric_id")}),
+        (
+            "Financial Details",
+            {"fields": ("bank_name", "account_number", "ifsc_code", "uan", "pan_number", "pf_enabled", "annual_ctc")},
+        ),
+        ("Employment Status", {"fields": ("employment_status", "exit_date", "exit_note", "is_active")}),
+        (
+            "Week-off Configuration",
+            {
+                "fields": (
+                    "week_off_monday",
+                    "week_off_tuesday",
+                    "week_off_wednesday",
+                    "week_off_thursday",
+                    "week_off_friday",
+                    "week_off_saturday",
+                    "week_off_sunday",
+                )
+            },
+        ),
+    )
 
 
 @admin.register(EmergencyContact)

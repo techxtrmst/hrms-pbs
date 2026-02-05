@@ -4,579 +4,3615 @@
 {% block title %}My Profile | Petabytz{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/employee-profile-enhanced-responsive.css' %}">
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
     :root {
-        --primary-color: #5856d6;
-        --secondary-color: #a0aec0;
+        --primary-hue: 245;
+        --primary-color: hsl(var(--primary-hue), 80%, 60%);
+        --primary-dark: hsl(var(--primary-hue), 80%, 50%);
+        --primary-light: hsl(var(--primary-hue), 90%, 95%);
+        --secondary-color: #64748b;
         --success-color: #10b981;
-        --danger-color: #f87171;
-        --bg-light: #f3f4f6;
-        --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --bg-body: #f8fafc;
+        --card-bg: #ffffff;
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --shadow-custom: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+        --radius-lg: 1.25rem;
+        --radius-md: 0.75rem;
+        --vh: 1vh;
+    }
+
+    /* === GLOBAL RESET AND BASE STYLES === */
+    * {
+        box-sizing: border-box;
+    }
+
+    html {
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        height: 100% !important;
+        scroll-behavior: smooth !important;
     }
 
     body {
-        background-color: var(--bg-light);
+        background-color: var(--bg-body);
+        font-family: 'Inter', sans-serif;
+        color: #1e293b;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        min-height: 100vh !important;
+        height: auto !important;
+        position: relative !important;
+        line-height: 1.6;
     }
 
-    /* Banner & Header */
-    .profile-banner {
-        height: 160px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 0 0 0 0;
-        /* Full width feeling */
+    .container {
+        max-width: 100% !important;
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+        overflow: visible !important;
+        height: auto !important;
+    }
+
+    /* === REPORTING HIERARCHY CONTAINER FIX === */
+    .reporting-hierarchy-container {
+        min-height: 280px !important;
+        height: auto !important;
+        overflow: visible !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .reporting-hierarchy-container .content-card {
+        flex: 1 !important;
+        min-height: 280px !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    .reporting-hierarchy-container .card-body-clean {
+        flex: 1 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-height: 200px !important;
+    }
+
+    /* === TAB CONTENT === */
+    .tab-content {
+        margin-top: 2rem;
+        min-height: 500px;
+        overflow: visible !important;
+        height: auto !important;
+    }
+
+    .tab-pane {
+        overflow: visible !important;
+        height: auto !important;
+        min-height: 400px !important;
+        position: relative !important;
+    }
+
+    /* Force About tab to be visible when active */
+    .tab-pane.active,
+    .tab-pane.show {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    /* Ensure About tab content is always visible */
+    #about {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        height: auto !important;
+        min-height: 500px !important;
+        overflow: visible !important;
+    }
+
+    #about.tab-pane.fade.show.active {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
+    #about .content-area {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    #about .content-card {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        background: white !important;
+        min-height: 200px !important;
+    }
+
+    /* === JOB TAB VISIBILITY FIX === */
+    #job {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        height: auto !important;
+        min-height: 500px !important;
+        overflow: visible !important;
+    }
+
+    #job.tab-pane.fade:not(.show) {
+        display: none !important;
+    }
+
+    #job.tab-pane.fade.show {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
+    #job .card-grid {
+        display: grid !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        width: 100%;
+        min-height: 300px;
+    }
+
+    #job .content-card {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        background: white !important;
+        min-height: 250px !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    /* === PROFILE HERO SECTION === */
+    .profile-hero {
         position: relative;
-        margin-bottom: 60px;
-        /* Space for avatar overlap */
+        height: 200px;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        overflow: hidden;
+        border-bottom-left-radius: 2rem;
+        border-bottom-right-radius: 2rem;
     }
 
-    .header-content {
+    /* === PROFILE CARD === */
+    .profile-card-main {
+        margin-top: -3rem;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-custom);
+        padding: 2rem;
         position: relative;
-        padding-left: 30px;
-        padding-right: 30px;
-        margin-top: -120px;
-        /* Pull up into banner */
+        z-index: 10;
     }
 
-    .profile-card-header {
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: var(--card-shadow);
-        padding: 20px;
+    /* === PROFILE LAYOUT === */
+    .profile-layout {
+        display: flex;
+        align-items: end;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .profile-layout .col-lg-2 {
+        flex: 0 0 auto;
+    }
+
+    .profile-layout .col-lg-6 {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .profile-layout .col-lg-4 {
+        flex: 0 0 auto;
+        margin-left: auto;
+    }
+
+    /* === PROFILE AVATAR === */
+    .profile-avatar-wrapper {
         position: relative;
-    }
-
-    .avatar-wrapper {
-        position: absolute;
-        top: -50px;
-        left: 40px;
         width: 120px;
         height: 120px;
-        border-radius: 50%;
-        background: #fff;
-        padding: 4px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        z-index: 10;
-        cursor: pointer;
-        overflow: hidden;
+        margin: -4rem auto 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
     }
 
     .profile-avatar {
         width: 100%;
         height: 100%;
-        border-radius: 50%;
         object-fit: cover;
-        background-color: #e2e8f0;
+        border-radius: 50%;
+        border: 4px solid white;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        background-color: #cbd5e1;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 3.5rem;
-        color: #a0aec0;
+        overflow: hidden;
         position: relative;
     }
 
-    .avatar-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: opacity 0.2s;
+    .profile-avatar.placeholder {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
         color: white;
-        font-size: 1.5rem;
+        font-size: 2rem;
     }
 
-    .avatar-wrapper:hover .avatar-overlay {
-        opacity: 1;
-    }
-
-    .header-actions {
-        float: right;
-    }
-
-    .profile-info-main {
-        margin-left: 170px;
-        /* Space for avatar */
-        min-height: 80px;
-    }
-
-    .profile-name {
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: #2d3748;
-        margin-bottom: 4px;
-    }
-
-    .profile-designation {
-        color: #718096;
-        font-weight: 500;
-        font-size: 1.1rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .divider-vertical {
-        height: 40px;
-        width: 1px;
-        background: #e2e8f0;
-        margin: 0 20px;
-    }
-
-    .quick-stat {
-        text-align: center;
-        padding: 0 15px;
-    }
-
-    .qs-label {
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        color: #a0aec0;
-        font-weight: 700;
-        letter-spacing: 0.05em;
-    }
-
-    .qs-value {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #4a5568;
-        margin-top: 2px;
-    }
-
-    /* Tabs */
-    .keka-tabs {
-        display: flex;
-        gap: 30px;
-        margin-top: 30px;
-        border-bottom: 1px solid #e2e8f0;
-        margin-bottom: 30px;
-    }
-
-    .keka-tab {
-        padding: 12px 0;
-        font-weight: 600;
-        color: #718096;
-        border-bottom: 3px solid transparent;
-        cursor: pointer;
-        transition: all 0.2s;
-        font-size: 0.95rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .keka-tab:hover {
-        color: var(--primary-color);
-    }
-
-    .keka-tab.active {
-        color: var(--primary-color);
-        border-bottom-color: var(--primary-color);
-    }
-
-    /* Cards */
-    .keka-card {
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        padding: 25px;
-        margin-bottom: 25px;
-        transition: transform 0.2s;
-    }
-
-    .keka-card:hover {
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    }
-
-    .card-title-keka {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #2d3748;
-        margin-bottom: 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .field-label {
-        font-size: 0.75rem;
-        color: #718096;
-        margin-bottom: 4px;
-        font-weight: 500;
-    }
-
-    .field-value {
-        font-size: 0.95rem;
-        color: #1a202c;
-        font-weight: 600;
-        min-height: 24px;
-    }
-
-    /* File Upload */
-    .file-upload-card {
-        border: 2px dashed #cbd5e0;
-        border-radius: 12px;
-        padding: 20px;
-        text-align: center;
-        background: #f8fafc;
-        transition: all 0.2s;
-        cursor: pointer;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .file-upload-card:hover {
-        border-color: var(--primary-color);
-        background: #eff6ff;
-    }
-
-    .doc-preview {
-        width: 100%;
-        height: 150px;
-        object-fit: cover;
-        border-radius: 8px;
-        margin-bottom: 10px;
-    }
-
-    .btn-action-icon {
+    .camera-btn {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        background: #1e293b;
+        color: white;
         width: 32px;
         height: 32px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #fff;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        color: #718096;
-        transition: all 0.2s;
+        cursor: pointer;
+        border: 2px solid white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        transition: all 0.2s ease;
+        z-index: 10;
     }
 
-    .btn-action-icon:hover {
-        background: var(--danger-color);
-        color: #fff;
+    .camera-btn:hover {
+        background: #374151;
+        transform: scale(1.1);
+    }
+
+    /* === PROFILE INFO === */
+    .profile-name {
+        font-weight: 700;
+        font-size: 1.75rem;
+        color: #1e293b;
+        letter-spacing: -0.025em;
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .profile-role {
+        font-size: 0.95rem;
+        color: var(--secondary-color);
+        font-weight: 500;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+
+    /* === BADGES === */
+    .badge-soft {
+        padding: 0.35em 0.8em;
+        border-radius: 2rem;
+        font-weight: 600;
+        font-size: 0.75rem;
+        letter-spacing: 0.02em;
+    }
+
+    .badge-soft-primary {
+        background: var(--primary-light);
+        color: var(--primary-dark);
+    }
+
+    .badge-soft-success {
+        background: #d1fae5;
+        color: #059669;
+    }
+
+    /* === NAVIGATION TABS === */
+    .nav-pills-custom {
+        display: flex;
+        background: #f1f5f9;
+        padding: 0.35rem;
+        border-radius: 1rem;
+        gap: 0.25rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+
+    .nav-pills-custom .nav-link {
+        color: #64748b;
+        font-weight: 600;
+        font-size: 0.9rem;
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        transition: all 0.3s;
+        white-space: nowrap;
+        border: none;
+        background: transparent;
+        flex: 1;
+        text-align: center;
+        min-width: 0;
+    }
+
+    .nav-pills-custom .nav-link.active {
+        background: white;
+        color: var(--primary-color);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .nav-pills-custom .nav-link:hover {
+        background: rgba(255, 255, 255, 0.7);
+        color: var(--primary-color);
+    }
+
+    /* === CONTENT AREA AND LAYOUT === */
+    .content-area {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        width: 100%;
+        max-width: 100%;
+        overflow: visible;
+    }
+
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.5rem;
+        width: 100%;
+        overflow: visible;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .address-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .doc-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .contacts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .form-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .shift-details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .shift-info-item {
+        background: #f8fafc;
+        padding: 0.875rem 1rem;
+        border-radius: 0.75rem;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+    }
+
+    .shift-info-item:hover {
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .shift-info-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 0.375rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .shift-info-value {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #1e293b;
+        line-height: 1.4;
+    }
+
+    .content-card {
+        background: white;
+        border-radius: var(--radius-md);
+        border: 1px solid #f1f5f9;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+        height: auto;
+        min-height: 250px;
+        overflow: visible;
+        margin-bottom: 1.5rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .card-header-clean {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 600;
+        color: #334155;
+        background: #fff;
+        flex-wrap: wrap;
+        flex-shrink: 0;
+    }
+
+    .card-icon {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--primary-light);
+        color: var(--primary-dark);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+
+    .card-body-clean {
+        padding: 1.5rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 180px;
+    }
+
+    /* Optimized padding for Work Timeline card */
+    .content-card:has(.timeline-wrapper) .card-body-clean,
+    .timeline-wrapper .card-body-clean {
+        padding: 1rem 1.25rem;
+        min-height: 200px;
+    }
+
+    /* Tab content responsive styles */
+    @media (max-width: 991px) {
+        .tab-content {
+            margin-top: 2rem;
+        }
+
+        .row.g-4 {
+            --bs-gutter-x: 1rem;
+            --bs-gutter-y: 1rem;
+        }
+    }
+
+    @media (max-width: 767px) {
+        .tab-content {
+            margin-top: 1.5rem;
+        }
+
+        .content-card {
+            margin-bottom: 1rem;
+            border-radius: 0.75rem;
+        }
+
+        .card-header-clean {
+            padding: 1rem 1.25rem;
+            font-size: 0.9rem;
+        }
+
+        .card-body-clean {
+            padding: 1.25rem;
+        }
+
+        .card-icon {
+            width: 28px;
+            height: 28px;
+            font-size: 0.8rem;
+        }
+
+        /* Stack columns on mobile */
+        .col-lg-5,
+        .col-lg-7,
+        .col-md-6,
+        .col-md-12 {
+            flex: 0 0 100%;
+            max-width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        .row.g-4 {
+            --bs-gutter-x: 0.75rem;
+            --bs-gutter-y: 0.75rem;
+        }
+    }
+
+    @media (max-width: 575px) {
+        .card-header-clean {
+            padding: 0.875rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        .card-body-clean {
+            padding: 1rem;
+            min-height: 150px;
+        }
+
+        .card-icon {
+            width: 24px;
+            height: 24px;
+            font-size: 0.75rem;
+        }
+
+        .row.g-4 {
+            --bs-gutter-x: 0.5rem;
+            --bs-gutter-y: 0.5rem;
+        }
+
+        /* Reporting hierarchy mobile */
+        .reporting-manager-card {
+            padding: 1.25rem;
+            min-height: 160px;
+        }
+
+        .manager-avatar {
+            width: 60px;
+            height: 60px;
+            font-size: 1.4rem;
+        }
+
+        .manager-name {
+            font-size: 0.9rem;
+        }
+
+        .manager-title {
+            font-size: 0.75rem;
+        }
+
+        .manager-contact-btn {
+            padding: 0.375rem 1rem;
+            font-size: 0.75rem;
+        }
+
+        .no-manager-assigned {
+            padding: 1.25rem;
+            min-height: 160px;
+        }
+
+        .no-manager-icon {
+            width: 45px;
+            height: 45px;
+            font-size: 1.2rem;
+        }
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #94a3b8;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+
+    .info-value {
+        font-size: 0.95rem;
+        color: #1e293b;
+        font-weight: 500;
+        word-break: break-word;
+        line-height: 1.4;
+    }
+
+    .info-group {
+        background: #f8fafc;
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        height: 100%;
+        transition: 0.2s;
+        margin-bottom: 0.75rem;
+    }
+
+    .info-group:hover {
+        background: #fff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    /* Info sections responsive */
+    @media (max-width: 767px) {
+        .info-group {
+            padding: 0.625rem 0.875rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .info-label {
+            font-size: 0.7rem;
+            margin-bottom: 0.125rem;
+        }
+
+        .info-value {
+            font-size: 0.875rem;
+        }
+
+        /* Stack info columns */
+        .col-sm-6 {
+            flex: 0 0 100%;
+            max-width: 100%;
+            margin-bottom: 0.75rem;
+        }
+    }
+
+    @media (max-width: 575px) {
+        .info-group {
+            padding: 0.5rem 0.75rem;
+        }
+
+        .info-label {
+            font-size: 0.65rem;
+        }
+
+        .info-value {
+            font-size: 0.8rem;
+        }
+    }
+
+    /* Address boxes responsive */
+    .address-box {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        padding: 1.25rem;
+        border-radius: 1rem;
+        height: 100%;
+        margin-bottom: 1rem;
+    }
+
+    .address-header {
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1rem;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .address-text {
+        font-size: 0.95rem;
+        color: #334155;
+        line-height: 1.6;
+        margin: 0;
+        word-break: break-word;
+    }
+
+    @media (max-width: 767px) {
+        .address-box {
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .address-header {
+            font-size: 0.8rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .address-text {
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        /* Stack address columns */
+        .col-md-6 {
+            flex: 0 0 100%;
+            max-width: 100%;
+            margin-bottom: 1rem;
+        }
+    }
+
+    @media (max-width: 575px) {
+        .address-box {
+            padding: 0.875rem;
+        }
+
+        .address-header {
+            font-size: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .address-text {
+            font-size: 0.8rem;
+        }
+    }
+
+    /* === WORK TIMELINE OPTIMIZED STYLES === */
+    .timeline-wrapper {
+        position: relative;
+        padding: 1rem 0.75rem 1rem 2rem;
+        min-height: 200px;
+        overflow: visible;
+    }
+
+    .timeline-line {
+        position: absolute;
+        top: 1rem;
+        bottom: 1rem;
+        left: 18px;
+        width: 2px;
+        background: linear-gradient(to bottom, #e2e8f0 0%, #cbd5e1 100%);
+        border-radius: 1px;
+    }
+
+    .timeline-node {
+        position: relative;
+        padding-left: 2rem;
+        margin-bottom: 1.5rem;
+        min-height: 60px;
+    }
+
+    .timeline-node:last-child {
+        margin-bottom: 0.5rem;
+    }
+
+    .timeline-dot {
+        width: 16px;
+        height: 16px;
+        position: absolute;
+        top: 0.25rem;
+        left: 10px;
+        background: white;
+        border: 3px solid #cbd5e1;
+        border-radius: 50%;
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .timeline-dot.active {
+        border-color: var(--primary-color);
+        background: var(--primary-color);
+        box-shadow: 0 0 0 4px var(--primary-light), 0 2px 8px rgba(99, 102, 241, 0.2);
+    }
+
+    .timeline-dot-inner {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: #cbd5e1;
+        transition: all 0.3s ease;
+    }
+
+    .timeline-dot.active .timeline-dot-inner {
+        background: white;
+        width: 6px;
+        height: 6px;
+    }
+
+    .timeline-dot.pulsing {
+        animation: pulse-dot 2s infinite;
+    }
+
+    .timeline-dot.pulsing::after {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: -3px;
+        left: -3px;
+        border: 3px solid var(--primary-color);
+        border-radius: 50%;
+        animation: pulse-ring 2s infinite;
+        z-index: -1;
+    }
+
+    @keyframes pulse-ring {
+        0% {
+            transform: scale(1);
+            opacity: 0.8;
+        }
+
+        50% {
+            transform: scale(1.5);
+            opacity: 0.4;
+        }
+
+        100% {
+            transform: scale(2);
+            opacity: 0;
+        }
+    }
+
+    @keyframes pulse-dot {
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.1);
+        }
+    }
+
+    .timeline-content {
+        padding: 1rem 1.25rem;
+        background: #fff;
+        border-radius: 0.875rem;
+        border: 1px solid #f1f5f9;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        margin-left: 0.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .timeline-content::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, transparent 0%, var(--primary-color) 50%, transparent 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .timeline-content.active-node {
+        background: linear-gradient(135deg, #fcfaff 0%, #f8fafc 100%);
+        border-color: var(--primary-light);
+        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.12);
+        transform: translateX(2px);
+    }
+
+    .timeline-content.active-node::before {
+        opacity: 1;
+    }
+
+    .timeline-content:hover {
+        transform: translateX(2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    .timeline-date {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--secondary-color);
+        margin-bottom: 0.375rem;
+        display: block;
+        opacity: 0.8;
+    }
+
+    .timeline-title {
+        font-size: 1.05rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #1e293b;
+        line-height: 1.3;
+    }
+
+    .timeline-content .badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+
+    .timeline-content .small {
+        font-size: 0.8rem;
+        color: #64748b;
+        line-height: 1.4;
+        margin-top: 0.25rem;
+    }
+
+    .doc-upload-box {
+        border: 2px dashed #cbd5e1;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        text-align: center;
+        transition: 0.2s;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .doc-upload-box:hover {
+        border-color: var(--primary-color);
+        background: #f8fafc;
+    }
+
+    .doc-preview-img {
+        max-height: 120px;
+        object-fit: cover;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1rem;
+    }
+
+    .doc-status-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .fade-in-up {
+        opacity: 1; /* Make visible by default */
+        animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Ensure content is visible even if animation fails */
+    .content-area .fade-in-up {
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: block !important;
+    }
+
+    .gradient-icon {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white;
+        border: none;
+    }
+
+    .gradient-icon-2 {
+        background: linear-gradient(135deg, #3b82f6, #06b6d4);
+        color: white;
+        border: none;
+    }
+
+    .gradient-icon-3 {
+        background: linear-gradient(135deg, #f59e0b, #ea580c);
+        color: white;
+        border: none;
+    }
+
+    .info-group {
+        background: #f8fafc;
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        height: 100%;
+        transition: 0.2s;
+    }
+
+    .info-group:hover {
+        background: #fff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    .bg-primary-soft {
+        background-color: #e0e7ff;
+        color: #4338ca;
+    }
+
+    .address-box {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        padding: 1.25rem;
+        border-radius: 1rem;
+        height: 100%;
+    }
+
+    .address-header {
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1rem;
+        color: #475569;
+    }
+
+    .address-text {
+        font-size: 0.95rem;
+        color: #334155;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* Form responsive styles */
+    @media (max-width: 767px) {
+
+        .form-control,
+        .form-select {
+            font-size: 16px !important;
+            /* Prevents zoom on iOS */
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            min-height: 44px;
+        }
+
+        .form-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.375rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.875rem;
+            border-radius: 0.5rem;
+            min-height: 44px;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            min-height: 36px;
+        }
+
+        /* Form grid responsive */
+        .row.g-3>.col-md-6,
+        .row.g-3>.col-md-4 {
+            flex: 0 0 100%;
+            max-width: 100%;
+            margin-bottom: 0.75rem;
+        }
+
+        .row.g-2>.col-md-4 {
+            flex: 0 0 100%;
+            max-width: 100%;
+            margin-bottom: 0.5rem;
+        }
+    }
+
+    @media (max-width: 575px) {
+
+        .form-control,
+        .form-select {
+            padding: 0.625rem;
+            font-size: 16px !important;
+        }
+
+        .btn {
+            padding: 0.625rem 1.25rem;
+            font-size: 0.8rem;
+        }
+
+        .form-label {
+            font-size: 0.75rem;
+        }
+    }
+
+    /* Emergency contacts responsive */
+    @media (max-width: 767px) {
+        .border.rounded-3 {
+            padding: 1rem !important;
+            margin-bottom: 0.75rem;
+        }
+
+        .border.rounded-3 h6 {
+            font-size: 0.9rem;
+        }
+
+        .border.rounded-3 .small {
+            font-size: 0.8rem;
+        }
+
+        .border.rounded-3 .badge {
+            font-size: 0.65rem;
+            padding: 0.25rem 0.5rem;
+        }
+    }
+
+    @media (max-width: 575px) {
+        .border.rounded-3 {
+            padding: 0.875rem !important;
+        }
+
+        .border.rounded-3 h6 {
+            font-size: 0.85rem;
+        }
+
+        .border.rounded-3 .small {
+            font-size: 0.75rem;
+        }
+    }
+
+    /* Document upload responsive */
+    .doc-upload-box {
+        border: 2px dashed #cbd5e1;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        text-align: center;
+        transition: 0.2s;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .doc-upload-box:hover {
+        border-color: var(--primary-color);
+        background: #f8fafc;
+    }
+
+    .doc-preview-img {
+        max-height: 120px;
+        object-fit: cover;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1rem;
+        max-width: 100%;
+    }
+
+    .doc-status-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 10;
+    }
+
+    @media (max-width: 767px) {
+        .doc-upload-box {
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            min-height: 100px;
+        }
+
+        .doc-preview-img {
+            max-height: 100px;
+        }
+
+        .doc-status-badge {
+            top: 8px;
+            right: 8px;
+            font-size: 0.7rem;
+        }
+
+        /* Stack document columns */
+        .col-md-4 {
+            flex: 0 0 100%;
+            max-width: 100%;
+            margin-bottom: 1rem;
+        }
+    }
+
+    @media (max-width: 575px) {
+        .doc-upload-box {
+            padding: 1rem;
+            min-height: 80px;
+        }
+
+        .doc-preview-img {
+            max-height: 80px;
+        }
+
+        .doc-status-badge {
+            font-size: 0.65rem;
+            padding: 0.25rem 0.5rem;
+        }
+    }
+
+    /* Job tab responsive */
+    @media (max-width: 767px) {
+
+        /* Employment details responsive */
+        .col-sm-6 {
+            flex: 0 0 100%;
+            max-width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        /* Reporting hierarchy responsive */
+        .d-inline-flex {
+            width: 80px;
+            height: 80px;
+        }
+
+        .d-inline-flex span {
+            font-size: 1.5rem;
+        }
+    }
+
+    @media (max-width: 575px) {
+        .d-inline-flex {
+            width: 60px;
+            height: 60px;
+        }
+
+        .d-inline-flex span {
+            font-size: 1.2rem;
+        }
+    }
+
+    /* === TABLET RESPONSIVE (768px - 1023px) === */
+    @media (max-width: 1023px) and (min-width: 768px) {
+        .profile-hero {
+            height: 180px;
+        }
+
+        .profile-card-main {
+            margin-top: -2.5rem;
+            padding: 1.75rem;
+        }
+
+        .profile-avatar-wrapper {
+            width: 100px;
+            height: 100px;
+            margin: -3.5rem auto 1rem;
+        }
+
+        .profile-avatar.placeholder {
+            font-size: 1.8rem;
+        }
+
+        .camera-btn {
+            width: 28px;
+            height: 28px;
+        }
+
+        .profile-name {
+            font-size: 1.5rem;
+        }
+
+        .content-area,
+        .card-grid {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .info-grid {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+
+        .nav-pills-custom .nav-link {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        .profile-layout {
+            flex-direction: column;
+            text-align: center;
+            align-items: center;
+        }
+    }
+
+    /* === MOBILE RESPONSIVE (max-width: 767px) === */
+    @media (max-width: 767px) {
+        .container {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        .profile-hero {
+            height: 160px;
+        }
+
+        .profile-card-main {
+            margin-top: -2rem;
+            padding: 1.5rem 1rem;
+            border-radius: 1rem;
+        }
+
+        .profile-layout {
+            flex-direction: column;
+            text-align: center;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .profile-avatar-wrapper {
+            width: 90px;
+            height: 90px;
+            margin: -3rem auto 1rem;
+        }
+
+        .profile-avatar.placeholder {
+            font-size: 1.6rem;
+        }
+
+        .camera-btn {
+            width: 26px;
+            height: 26px;
+        }
+
+        .profile-name {
+            font-size: 1.3rem;
+        }
+
+        .profile-role {
+            font-size: 0.85rem;
+        }
+
+        /* Navigation */
+        .nav-pills-custom {
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            width: 100%;
+        }
+
+        .nav-pills-custom .nav-link {
+            padding: 0.6rem;
+            font-size: 0.85rem;
+            flex: none;
+            width: 100%;
+        }
+
+        /* Grids to single column */
+        .content-area,
+        .card-grid,
+        .info-grid,
+        .address-grid,
+        .doc-grid,
+        .contacts-grid,
+        .form-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .form-grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.75rem;
+        }
+
+        /* Cards */
+        .content-card {
+            margin-bottom: 1rem;
+            border-radius: 0.75rem;
+        }
+
+        .card-header-clean {
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .card-body-clean {
+            padding: 0.5;
+        }
+
+        /* Work Timeline specific mobile padding */
+        .content-card:has(.timeline-wrapper) .card-body-clean {
+            padding: 0.75rem 1rem;
+            min-height: 160px;
+        }
+
+        .card-icon {
+            width: 28px;
+            height: 28px;
+            font-size: 0.8rem;
+        }
+
+        /* Info sections */
+        .info-group {
+            padding: 0.625rem 0.875rem;
+        }
+
+        .info-label {
+            font-size: 0.7rem;
+        }
+
+        .info-value {
+            font-size: 0.875rem;
+        }
+
+        /* Address */
+        .address-box {
+            padding: 1rem;
+        }
+
+        .address-header {
+            font-size: 0.8rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .address-text {
+            font-size: 0.875rem;
+        }
+
+        /* Timeline - Mobile Optimized */
+        .timeline-wrapper {
+            padding: 0.75rem 0.5rem 0.75rem 1.75rem;
+            min-height: 180px;
+        }
+
+        .timeline-line {
+            left: 12px;
+            top: 0.75rem;
+            bottom: 0.75rem;
+        }
+
+        .timeline-dot {
+            width: 14px;
+            height: 14px;
+            left: 6px;
+            border-width: 2px;
+        }
+
+        .timeline-dot-inner {
+            width: 3px;
+            height: 3px;
+        }
+
+        .timeline-dot.active .timeline-dot-inner {
+            width: 4px;
+            height: 4px;
+        }
+
+        .timeline-node {
+            padding-left: 1.75rem;
+            margin-bottom: 1.25rem;
+            min-height: 50px;
+        }
+
+        .timeline-content {
+            padding: 0.875rem 1rem;
+            margin-left: 0.25rem;
+            border-radius: 0.75rem;
+        }
+
+        .timeline-title {
+            font-size: 0.95rem;
+            line-height: 1.3;
+        }
+
+        .timeline-date {
+            font-size: 0.65rem;
+            margin-bottom: 0.25rem;
+        }
+
+        /* Documents */
+        .doc-upload-box {
+            padding: 1.25rem;
+            min-height: 100px;
+        }
+
+        .doc-preview-img {
+            max-height: 100px;
+        }
+
+        /* Forms */
+        .form-control,
+        .form-select {
+            font-size: 16px;
+            /* Prevents zoom on iOS */
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            min-height: 44px;
+        }
+
+        .btn {
+            min-height: 44px;
+            padding: 0.75rem 1.5rem;
+        }
+
+        /* Reporting hierarchy */
+        .reporting-manager-card {
+            padding: 1.5rem;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .manager-avatar {
+            width: 70px;
+            height: 70px;
+            font-size: 1.6rem;
+            flex-shrink: 0;
+        }
+
+        .manager-name {
+            font-size: 1rem;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .manager-title {
+            font-size: 0.8rem;
+        }
+
+        .manager-contact-btn {
+            padding: 0.4rem 1.2rem;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
+        .no-manager-assigned {
+            padding: 1.5rem;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .no-manager-icon {
+            width: 50px;
+            height: 50px;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+    }
+
+    /* === SMALL MOBILE (max-width: 575px) === */
+    @media (max-width: 575px) {
+        .container {
+            padding-left: 8px;
+            padding-right: 8px;
+        }
+
+        .profile-hero {
+            height: 140px;
+        }
+
+        .profile-card-main {
+            margin-top: -1.5rem;
+            padding: 1.25rem 0.875rem;
+        }
+
+        .profile-avatar-wrapper {
+            width: 80px;
+            height: 80px;
+            margin: -2.5rem auto 0.75rem;
+        }
+
+        .profile-avatar.placeholder {
+            font-size: 1.4rem;
+        }
+
+        .camera-btn {
+            width: 24px;
+            height: 24px;
+        }
+
+        .profile-name {
+            font-size: 1.2rem;
+        }
+
+        .profile-role {
+            font-size: 0.8rem;
+        }
+
+        .nav-pills-custom .nav-link {
+            padding: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .form-grid-2 {
+            grid-template-columns: 1fr;
+        }
+
+        .card-header-clean {
+            padding: 0.875rem;
+            font-size: 0.85rem;
+        }
+
+        .card-body-clean {
+            padding: 1rem;
+        }
+
+        .card-icon {
+            width: 24px;
+            height: 24px;
+            font-size: 0.75rem;
+        }
+
+        .info-group {
+            padding: 0.5rem 0.75rem;
+        }
+
+        .info-label {
+            font-size: 0.65rem;
+        }
+
+        .info-value {
+            font-size: 0.8rem;
+        }
+
+        .address-box {
+            padding: 0.875rem;
+        }
+
+        .doc-upload-box {
+            padding: 1rem;
+            min-height: 80px;
+        }
+
+        .doc-preview-img {
+            max-height: 80px;
+        }
+
+        .shift-info-item {
+            padding: 0.625rem;
+        }
+    }
+
+    /* === EXTRA SMALL MOBILE (max-width: 400px) === */
+    @media (max-width: 400px) {
+        .container {
+            padding-left: 5px;
+            padding-right: 5px;
+        }
+
+        .profile-hero {
+            height: 120px;
+        }
+
+        .profile-card-main {
+            margin-top: -1rem;
+            padding: 1rem 0.75rem;
+            border-radius: 0.75rem;
+        }
+
+        .profile-avatar-wrapper {
+            width: 70px;
+            height: 70px;
+            margin: -2rem auto 0.5rem;
+        }
+
+        .profile-avatar.placeholder {
+            font-size: 1.2rem;
+        }
+
+        .camera-btn {
+            width: 22px;
+            height: 22px;
+        }
+
+        .profile-name {
+            font-size: 1.1rem;
+        }
+
+        .profile-role {
+            font-size: 0.75rem;
+        }
+
+        .nav-pills-custom .nav-link {
+            padding: 0.4rem 0.6rem;
+            font-size: 0.75rem;
+        }
+
+        .form-grid-2 {
+            grid-template-columns: 1fr;
+        }
+
+        .card-header-clean {
+            padding: 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .card-body-clean {
+            padding: 0.875rem;
+            min-height: 140px;
+        }
+
+        /* Work Timeline ultra-small mobile */
+        .content-card:has(.timeline-wrapper) .card-body-clean {
+            padding: 0.75rem 1rem;
+            min-height: 160px;
+        }
+
+        .timeline-wrapper {
+            padding: 0.5rem 0.25rem 0.5rem 1.5rem;
+            min-height: 140px;
+        }
+
+        .timeline-line {
+            left: 10px;
+            top: 0.5rem;
+            bottom: 0.5rem;
+            width: 1.5px;
+        }
+
+        .timeline-dot {
+            width: 12px;
+            height: 12px;
+            left: 4px;
+            border-width: 2px;
+        }
+
+        .timeline-dot-inner {
+            width: 2px;
+            height: 2px;
+        }
+
+        .timeline-dot.active .timeline-dot-inner {
+            width: 3px;
+            height: 3px;
+        }
+
+        .timeline-node {
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+            min-height: 45px;
+        }
+
+        .timeline-content {
+            padding: 0.75rem 0.875rem;
+            margin-left: 0.125rem;
+            border-radius: 0.625rem;
+        }
+
+        .timeline-title {
+            font-size: 0.9rem;
+            line-height: 1.25;
+            margin-bottom: 0.375rem;
+        }
+
+        .timeline-date {
+            font-size: 0.6rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .timeline-content .badge {
+            font-size: 0.65rem;
+            padding: 0.2rem 0.6rem;
+        }
+
+        .timeline-content .small {
+            font-size: 0.75rem;
+        }
+
+        .card-icon {
+            width: 22px;
+            height: 22px;
+            font-size: 0.7rem;
+        }
+
+        .info-group {
+            padding: 0.5rem 0.75rem;
+        }
+
+        .info-label {
+            font-size: 0.65rem;
+        }
+
+        .info-value {
+            font-size: 0.8rem;
+        }
+
+        .address-box {
+            padding: 0.875rem;
+        }
+
+        .doc-upload-box {
+            padding: 1rem;
+            min-height: 80px;
+        }
+
+        .doc-preview-img {
+            max-height: 80px;
+        }
+
+        .shift-info-item {
+            padding: 0.625rem;
+        }
+
+        /* Extra small reporting hierarchy */
+        .reporting-manager-card {
+            padding: 1rem;
+            min-height: 140px;
+        }
+
+        .manager-avatar {
+            width: 50px;
+            height: 50px;
+            font-size: 1.2rem;
+        }
+
+        .manager-name {
+            font-size: 0.85rem;
+        }
+
+        .manager-title {
+            font-size: 0.7rem;
+        }
+
+        .manager-contact-btn {
+            padding: 0.3rem 0.8rem;
+            font-size: 0.7rem;
+        }
+
+        .no-manager-assigned {
+            padding: 1rem;
+            min-height: 140px;
+        }
+
+        .no-manager-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1.1rem;
+        }
+
+        /* Extra small timeline */
+        .timeline-wrapper {
+            padding: 0.375rem 0.25rem 0.375rem 1.25rem;
+            min-height: 120px;
+        }
+
+        .timeline-line {
+            left: 8px;
+            top: 0.375rem;
+            bottom: 0.375rem;
+            width: 1px;
+        }
+
+        .timeline-dot {
+            width: 10px;
+            height: 10px;
+            left: 3px;
+            border-width: 1.5px;
+        }
+
+        .timeline-dot-inner {
+            width: 2px;
+            height: 2px;
+        }
+
+        .timeline-dot.active .timeline-dot-inner {
+            width: 2.5px;
+            height: 2.5px;
+        }
+
+        .timeline-node {
+            padding-left: 1.25rem;
+            margin-bottom: 0.875rem;
+            min-height: 40px;
+        }
+
+        .timeline-content {
+            padding: 0.625rem 0.75rem;
+            margin-left: 0.1rem;
+            border-radius: 0.5rem;
+        }
+
+        .timeline-title {
+            font-size: 0.85rem;
+            line-height: 1.2;
+            margin-bottom: 0.25rem;
+        }
+
+        .timeline-date {
+            font-size: 0.55rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .timeline-content .badge {
+            font-size: 0.6rem;
+            padding: 0.15rem 0.5rem;
+        }
+
+        .timeline-content .small {
+            font-size: 0.7rem;
+        }
+    }
+
+
+
+    /* === ACCESSIBILITY & PERFORMANCE === */
+    @media (prefers-reduced-motion: reduce) {
+
+        .fade-in-up,
+        .timeline-dot.pulsing::after,
+        * {
+            animation: none !important;
+            transition: none !important;
+        }
+    }
+
+    @media (prefers-contrast: high) {
+
+        .profile-card-main,
+        .content-card,
+        .info-group,
+        .address-box {
+            border: 2px solid #000;
+        }
+    }
+
+    /* === ABOUT SECTION STYLES === */
+    .about-content {
+        padding: 0.5rem 0;
+    }
+
+    .about-description {
+        background: #f8fafc;
+        padding: 1.5rem;
+        border-radius: 1rem;
+        border: 1px solid #e2e8f0;
+        height: 100%;
+    }
+
+    .about-description p {
+        font-size: 0.95rem;
+        line-height: 1.7;
+        color: #475569;
+        margin-bottom: 1.5rem;
+    }
+
+    .about-highlights {
+        margin-top: 1.5rem;
+    }
+
+    .highlight-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.875rem;
+        background: white;
+        border-radius: 0.75rem;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+        height: 100%;
+    }
+
+    .highlight-item:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transform: translateY(-1px);
+    }
+
+    .highlight-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f1f5f9;
+        border-radius: 0.5rem;
+        flex-shrink: 0;
+    }
+
+    .highlight-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .highlight-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.25rem;
+    }
+
+    .highlight-value {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1e293b;
+        word-break: break-word;
+    }
+
+    .about-stats {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        padding: 1.5rem;
+        border-radius: 1rem;
+        border: 1px solid #e2e8f0;
+        height: 100%;
+    }
+
+    .stats-grid {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 1rem;
+        background: white;
+        border-radius: 0.75rem;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+    }
+
+    .stat-item:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transform: translateY(-1px);
+    }
+
+    .stat-number {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        line-height: 1.2;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    /* === PERSONAL DETAILS SECTION === */
+    .personal-info-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 0.75rem;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+    }
+
+    .info-item:hover {
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .info-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.5rem;
+        flex-shrink: 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .info-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.25rem;
+    }
+
+    .info-value {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #1e293b;
+        word-break: break-word;
+    }
+
+    /* === CONTACT & LOCATION SECTION === */
+    .location-info {
+        text-align: center;
+    }
+
+    .location-main h6 {
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .arrangement-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+        color: #4338ca;
+        border-radius: 2rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .manager-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 0.75rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    .manager-avatar-small {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .manager-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .manager-name-small {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    .manager-role-small {
+        font-size: 0.75rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+    }
+
+    .contact-link {
+        font-size: 0.8rem;
+        color: #6366f1;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .contact-link:hover {
+        color: #4f46e5;
+        text-decoration: underline;
+    }
+
+    /* === SKILLS & INTERESTS SECTION === */
+    .highlight-card {
+        background: #f8fafc;
+        padding: 1.25rem;
+        border-radius: 0.75rem;
+        border: 1px solid #e2e8f0;
+        text-align: center;
+        height: 100%;
+        transition: all 0.2s ease;
+    }
+
+    .highlight-card:hover {
+        background: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transform: translateY(-2px);
+    }
+
+    .highlight-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .highlight-header i {
+        font-size: 1.5rem;
+    }
+
+    .highlight-header h6 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #374151;
+        margin: 0;
+    }
+
+    .experience-badge,
+    .department-badge {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        color: #92400e;
+        border-radius: 2rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .department-badge {
+        background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+        color: #1e40af;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .status-badge.active {
+        background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+        color: #065f46;
+    }
+
+    .status-badge.inactive {
+        background: linear-gradient(135deg, #fee2e2, #fecaca);
+        color: #991b1b;
+    }
+
+    /* Responsive styles for About section */
+    @media (max-width: 767px) {
+        .about-description,
+        .about-stats {
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .highlight-item {
+            padding: 0.75rem;
+        }
+
+        .highlight-icon {
+            width: 35px;
+            height: 35px;
+        }
+
+        .highlight-label {
+            font-size: 0.7rem;
+        }
+
+        .highlight-value {
+            font-size: 0.85rem;
+        }
+
+        .stat-item {
+            padding: 0.875rem;
+        }
+
+        .stat-number {
+            font-size: 1rem;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+        }
+
+        /* Personal info responsive */
+        .info-item {
+            padding: 0.875rem;
+            gap: 0.75rem;
+        }
+
+        .info-icon {
+            width: 35px;
+            height: 35px;
+        }
+
+        .info-label {
+            font-size: 0.7rem;
+        }
+
+        .info-value {
+            font-size: 0.85rem;
+        }
+
+        /* Manager info responsive */
+        .manager-avatar-small {
+            width: 45px;
+            height: 45px;
+            font-size: 1.1rem;
+        }
+
+        .manager-name-small {
+            font-size: 0.9rem;
+        }
+
+        .manager-role-small {
+            font-size: 0.7rem;
+        }
+
+        /* Highlight cards responsive */
+        .highlight-card {
+            padding: 1rem;
+        }
+
+        .highlight-header i {
+            font-size: 1.3rem;
+        }
+
+        .highlight-header h6 {
+            font-size: 0.85rem;
+        }
+
+        .experience-badge,
+        .department-badge,
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+        }
+    }
+
+    @media (max-width: 575px) {
+        .about-description,
+        .about-stats {
+            padding: 1rem;
+        }
+
+        .highlight-item {
+            padding: 0.625rem;
+            gap: 0.5rem;
+        }
+
+        .highlight-icon {
+            width: 30px;
+            height: 30px;
+        }
+
+        .highlight-label {
+            font-size: 0.65rem;
+        }
+
+        .highlight-value {
+            font-size: 0.8rem;
+        }
+
+        .stat-item {
+            padding: 0.75rem;
+        }
+
+        .stat-number {
+            font-size: 0.95rem;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+        }
+
+        /* Personal info mobile */
+        .info-item {
+            padding: 0.75rem;
+            gap: 0.625rem;
+        }
+
+        .info-icon {
+            width: 32px;
+            height: 32px;
+        }
+
+        .info-label {
+            font-size: 0.65rem;
+        }
+
+        .info-value {
+            font-size: 0.8rem;
+        }
+
+        /* Manager info mobile */
+        .manager-info {
+            padding: 0.875rem;
+            gap: 0.75rem;
+        }
+
+        .manager-avatar-small {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+
+        .manager-name-small {
+            font-size: 0.85rem;
+        }
+
+        .manager-role-small {
+            font-size: 0.65rem;
+        }
+
+        .contact-link {
+            font-size: 0.75rem;
+        }
+
+        /* Highlight cards mobile */
+        .highlight-card {
+            padding: 0.875rem;
+        }
+
+        .highlight-header {
+            gap: 0.375rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .highlight-header i {
+            font-size: 1.2rem;
+        }
+
+        .highlight-header h6 {
+            font-size: 0.8rem;
+        }
+
+        .experience-badge,
+        .department-badge,
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.375rem 0.75rem;
+        }
+
+        /* Location info mobile */
+        .location-main h6 {
+            font-size: 1rem;
+        }
+
+        .arrangement-badge {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+        }
+    }
+
+    /* === REPORTING HIERARCHY === */
+    .reporting-manager-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 1rem;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.2s ease;
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .reporting-manager-card:hover {
+        background: #fff;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        transform: translateY(-2px);
+    }
+
+    .manager-avatar {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        border: 4px solid white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        color: white;
+        font-size: 1.8rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .manager-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .manager-title {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 500;
+    }
+
+    .manager-contact-btn {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        border: none;
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 2rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-shrink: 0;
+    }
+
+    .manager-contact-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        color: white;
+    }
+
+    .no-manager-assigned {
+        background: #fef3c7;
+        border: 1px solid #fbbf24;
+        border-radius: 1rem;
+        padding: 2rem;
+        text-align: center;
+        color: #92400e;
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .no-manager-icon {
+        width: 60px;
+        height: 60px;
+        background: #fbbf24;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        color: white;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    /* === PRINT STYLES === */
+    @media print {
+        .profile-hero {
+            height: auto;
+            background: none !important;
+        }
+
+        .profile-card-main {
+            margin-top: 0;
+            box-shadow: none;
+        }
+
+        .camera-btn,
+        .nav-pills-custom,
+        .btn {
+            display: none !important;
+        }
+
+        .profile-avatar-wrapper {
+            position: static;
+            margin: 0 auto 1rem;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Full Width Gradient Banner -->
-<div class="profile-banner"></div>
+<div class="profile-hero"></div>
 
-<div class="container-fluid px-lg-5">
-    <div class="header-content">
-        <div class="profile-card-header">
-            <!-- Avatar -->
-            <div class="avatar-wrapper" onclick="document.getElementById('profile_pic_input').click()">
-                {% if employee.profile_picture %}
-                <img src="{{ employee.profile_picture.url }}" class="profile-avatar">
-                {% else %}
-                <div class="profile-avatar"><i class="fas fa-user"></i></div>
-                {% endif %}
-                <div class="avatar-overlay">
-                    <i class="fas fa-camera"></i>
+<div class="container pb-5">
+    <div class="profile-card-main">
+        <div class="profile-layout">
+            <div class="profile-avatar-section">
+                <div class="profile-avatar-wrapper" onclick="document.getElementById('profile_pic_input').click()"
+                    title="Click to change profile picture">
+                    {% if employee.profile_picture %}
+                    <img src="{{ employee.profile_picture.url }}" class="profile-avatar" alt="Profile">
+                    {% else %}
+                    <div class="profile-avatar placeholder d-flex align-items-center justify-content-center text-white">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    {% endif %}
+                    <div class="camera-btn"><i class="fas fa-camera"></i></div>
                 </div>
             </div>
 
-            <form id="avatar-form" method="post" enctype="multipart/form-data" class="d-none">
-                {% csrf_token %}
-                <input type="file" name="profile_picture" id="profile_pic_input" accept="image/*"
-                    onchange="document.getElementById('avatar-form').submit()">
-            </form>
-
-            <!-- Info & Stats -->
-            <div class="d-flex flex-wrap justify-content-between align-items-center profile-info-main">
-                <div>
-                    <h1 class="profile-name">{{ employee.user.get_full_name }}</h1>
-                    <div class="profile-designation">
-                        <i class="fas fa-briefcase text-primary"></i>
+            <div class="profile-info-section">
+                <h1 class="profile-name mb-1">
+                    {{ employee.user.get_full_name }}
+                </h1>
+                <div class="d-flex flex-wrap align-items-center justify-content-center gap-2 mb-3">
+                    <span class="profile-role"><i class="fas fa-briefcase me-1 text-muted"></i>
                         {{ employee.designation }}
-                        <span class="badge rounded-pill bg-light text-muted ms-2 fs-6 fw-normal px-2 border">{{ employee.get_work_type_display }}</span>
-                    </div>
+                    </span>
+                    <span class="text-muted">•</span>
+                    <span class="profile-role"><i class="fas fa-building me-1 text-muted"></i>
+                        {{ employee.department }}
+                    </span>
                 </div>
-
-                <div class="d-flex align-items-center mt-3 mt-md-0 d-none d-md-flex">
-                    <div class="quick-stat">
-                        <div class="qs-label">Department</div>
-                        <div class="qs-value">{{ employee.department }}</div>
+                <div class="d-flex gap-3 flex-wrap justify-content-center mb-3">
+                    <div class="badge-soft badge-soft-primary">
+                        {{ employee.get_work_type_display|default:"Full Time" }}
                     </div>
-                    <div class="divider-vertical"></div>
-                    <div class="quick-stat">
-                        <div class="qs-label">Employee ID</div>
-                        <div class="qs-value">#{{ employee.badge_id|default:"-" }}</div>
+                    <div class="d-flex align-items-center text-muted small"><i class="fas fa-id-badge me-1"></i>
+                        {{ employee.badge_id|default:"-" }}
                     </div>
-                    <div class="divider-vertical"></div>
-                    <div class="quick-stat">
-                        <div class="qs-label">Location</div>
-                        <div class="qs-value"><i class="fas fa-map-marker-alt text-danger me-1"></i>{{ employee.location.name|default:"Remote" }}</div>
-                    </div>
-                    <div class="divider-vertical"></div>
-                    <div class="quick-stat">
-                        <div class="qs-label">Status</div>
-                        <div class="qs-value text-success">Active</div>
+                    <div class="d-flex align-items-center text-muted small"><i class="fas fa-map-marker-alt me-1"></i>
+                        {{ employee.location.name|default:"Remote" }}
                     </div>
                 </div>
             </div>
 
-            <!-- Tabs -->
-            <div class="keka-tabs" id="profileTabs">
-                <div class="keka-tab active" onclick="switchTab('about')"><i class="far fa-user"></i> About</div>
-                <div class="keka-tab" onclick="switchTab('job')"><i class="fas fa-briefcase"></i> Job</div>
-                <div class="keka-tab" onclick="switchTab('documents')"><i class="far fa-folder-open"></i> Documents
+            <div class="profile-status-section">
+                <div class="d-inline-block text-center mb-3">
+                    <div class="small text-muted mb-1 text-uppercase fw-bold" style="font-size: 0.7rem;">Current Status
+                    </div>
+                    {% if employee.is_active %}
+                    <span class="badge bg-success rounded-pill px-3 py-2 shadow-sm"><i
+                            class="fas fa-check-circle me-1"></i> Active</span>
+                    {% else %}
+                    <span class="badge bg-danger rounded-pill px-3 py-2 shadow-sm"><i
+                            class="fas fa-times-circle me-1"></i> Inactive</span>
+                    {% endif %}
+                </div>
+
+                <div class="nav-container">
+                    <ul class="nav nav-pills-custom" id="profileTabs" role="tablist">
+                        <li class="nav-item"><button class="nav-link active" id="about-tab" data-bs-toggle="tab"
+                                data-bs-target="#about" type="button" role="tab">About</button></li>
+                        <li class="nav-item"><button class="nav-link" id="job-tab" data-bs-toggle="tab"
+                                data-bs-target="#job" type="button" role="tab">Job</button></li>
+                        <li class="nav-item"><button class="nav-link" id="docs-tab" data-bs-toggle="tab"
+                                data-bs-target="#docs" type="button" role="tab">Docs</button></li>
+                    </ul>
                 </div>
             </div>
         </div>
+        <input type="file" id="profile_pic_input" class="d-none" form="avatar-form" name="profile_picture"
+            accept="image/*" onchange="document.getElementById('avatar-form').submit()">
+        <form id="avatar-form" method="post" enctype="multipart/form-data" class="d-none">{% csrf_token %}</form>
     </div>
 
-    <!-- Tab Content Area -->
-    <div class="mt-4 pb-5">
+    <div class="tab-content mt-4" id="profileTabsContent">
 
-        <!-- About Tab -->
-        <div id="tab-about" class="tab-content-block">
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="keka-card h-100">
-                        <div class="card-title-keka">
-                            <span>Personal Information</span>
-                            <i class="fas fa-pen text-muted small" style="cursor: pointer;"></i>
+        <!-- ABOUT TAB -->
+        <div class="tab-pane fade show active" id="about" role="tabpanel" style="display: block !important; opacity: 1 !important; visibility: visible !important;">
+            <div class="content-area" style="display: block !important; opacity: 1 !important; visibility: visible !important;"></div>
+                <!-- About Me Section -->
+                <div class="about-section" style="display: block !important; opacity: 1 !important; visibility: visible !important;">
+                    <div class="content-card h-100" style="display: block !important; opacity: 1 !important; visibility: visible !important;"></div>
+                        <div class="card-header-clean">
+                            <div class="card-icon gradient-icon"><i class="fas fa-user-circle"></i></div>About Me
                         </div>
-                        <div class="vstack gap-3">
-                            <div>
-                                <div class="field-label">Mobile Number</div>
-                                <div class="field-value">{{ employee.mobile_number|default:"-" }}</div>
-                            </div>
-                            <div>
-                                <div class="field-label">Personal Email</div>
-                                <div class="field-value">{{ employee.user.email }}</div>
-                            </div>
-                            <div>
-                                <div class="field-label">Date of Birth</div>
-                                <div class="field-value">{{ employee.dob|date:"d M Y"|default:"-" }}</div>
-                            </div>
-                            <div>
-                                <div class="field-label">Gender</div>
-                                <div class="field-value">{{ employee.get_gender_display|default:"-" }}</div>
-                            </div>
-                            <div>
-                                <div class="field-label">Marital Status</div>
-                                <div class="field-value">{{ employee.get_marital_status_display|default:"-" }}</div>
+                        <div class="card-body-clean">
+                            <div class="about-content">
+                                <div class="row g-4">
+                                    <div class="col-md-8">
+                                        <div class="about-description">
+                                            <h6 class="text-primary mb-3">Professional Summary</h6>
+                                            <p class="text-muted mb-3" style="line-height: 1.6;">
+                                                {% if employee.bio %}
+                                                    {{ employee.bio|linebreaksbr }}
+                                                {% else %}
+                                                    I am {{ employee.user.get_full_name }}, working as {{ employee.designation }} in the {{ employee.department }} department at {{ employee.company.name|default:"Petabytz" }}.
+                                                    {% if employee.date_of_joining %}
+                                                        I joined the organization on {{ employee.date_of_joining|date:"F d, Y" }} and have been contributing to the team's success.
+                                                    {% endif %}
+                                                    I am passionate about my work and committed to delivering excellence in everything I do.
+                                                {% endif %}
+                                            </p>
+
+                                            <div class="about-highlights">
+                                                <h6 class="text-primary mb-3">Key Highlights</h6>
+                                                <div class="row g-3">
+                                                    <div class="col-sm-6">
+                                                        <div class="highlight-item">
+                                                            <div class="highlight-icon">
+                                                                <i class="fas fa-briefcase text-primary"></i>
+                                                            </div>
+                                                            <div class="highlight-content">
+                                                                <div class="highlight-label">Current Role</div>
+                                                                <div class="highlight-value">{{ employee.designation }}</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6">
+                                                        <div class="highlight-item">
+                                                            <div class="highlight-icon">
+                                                                <i class="fas fa-building text-success"></i>
+                                                            </div>
+                                                            <div class="highlight-content">
+                                                                <div class="highlight-label">Department</div>
+                                                                <div class="highlight-value">{{ employee.department }}</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6">
+                                                        <div class="highlight-item">
+                                                            <div class="highlight-icon">
+                                                                <i class="fas fa-calendar-alt text-info"></i>
+                                                            </div>
+                                                            <div class="highlight-content">
+                                                                <div class="highlight-label">Joined</div>
+                                                                <div class="highlight-value">{{ employee.date_of_joining|date:"M Y"|default:"--" }}</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6">
+                                                        <div class="highlight-item">
+                                                            <div class="highlight-icon">
+                                                                <i class="fas fa-map-marker-alt text-warning"></i>
+                                                            </div>
+                                                            <div class="highlight-content">
+                                                                <div class="highlight-label">Location</div>
+                                                                <div class="highlight-value">{{ employee.location.name|default:"Remote" }}</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <div class="about-stats">
+                                            <h6 class="text-primary mb-3">Quick Stats</h6>
+                                            <div class="stats-grid">
+                                                <div class="stat-item">
+                                                    <div class="stat-number text-primary">
+                                                        {% if employee.date_of_joining %}
+                                                            {{ employee.date_of_joining|timesince|truncatewords:1 }}
+                                                        {% else %}
+                                                            --
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="stat-label">Experience</div>
+                                                </div>
+
+                                                <div class="stat-item">
+                                                    <div class="stat-number text-success">
+                                                        {% if employee.is_active %}Active{% else %}Inactive{% endif %}
+                                                    </div>
+                                                    <div class="stat-label">Status</div>
+                                                </div>
+
+                                                <div class="stat-item">
+                                                    <div class="stat-number text-info">
+                                                        {{ employee.get_work_type_display|default:"Full Time" }}
+                                                    </div>
+                                                    <div class="stat-label">Work Type</div>
+                                                </div>
+
+                                                <div class="stat-item">
+                                                    <div class="stat-number text-warning">
+                                                        {{ employee.badge_id|default:"--" }}
+                                                    </div>
+                                                    <div class="stat-label">Badge ID</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-md-4">
-                    <div class="keka-card h-100">
-                        <div class="card-title-keka">Addresses</div>
-                        <div class="vstack gap-3">
-                            <div>
-                                <div class="field-label">Current Address</div>
-                                <div class="field-value">{{ employee.permanent_address|default:"Same as permanent" }}
+                <!-- Work Timeline -->
+                <div class="timeline-section" style="display: block !important; opacity: 1 !important; visibility: visible !important;">
+                    <div class="content-card h-100" style="display: block !important; opacity: 1 !important; visibility: visible !important;"></div>
+                        <div class="card-header-clean">
+                            <div class="card-icon gradient-icon-2"><i class="fas fa-history"></i></div>Work Timeline
+                        </div>
+                        <div class="card-body-clean">
+                            <div class="timeline-wrapper">
+                                <div class="timeline-line"></div>
+
+                                <!-- Present -->
+                                <div class="timeline-node">
+                                    <div class="timeline-dot pulsing">
+                                        <div class="timeline-dot-inner"></div>
+                                    </div>
+                                    <div class="timeline-content active-node">
+                                        <span class="timeline-date">Current</span>
+                                        <div class="timeline-title text-primary">Current Role</div>
+                                        <span class="badge bg-primary-soft text-primary mt-1">
+                                            {{ employee.designation }}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div>
-                                <div class="field-label">Permanent Address</div>
-                                <div class="field-value">{{ employee.permanent_address|default:"Not provided" }}</div>
+
+                                <!-- Work History -->
+                                {% for event in work_history %}
+                                <div class="timeline-node">
+                                    <div class="timeline-dot active">
+                                        <div class="timeline-dot-inner"></div>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <span class="timeline-date">{{ event.date|date:"d M, Y" }}</span>
+                                        <div class="timeline-title d-flex align-items-center">
+                                            {{ event.title }}
+                                            {% if event.event_type == 'DESIGNATION' or event.event_type == 'CTC' %}
+                                            <span class="ms-2 badge bg-light text-dark fw-normal"
+                                                style="font-size: 0.7rem;">Update</span>
+                                            {% endif %}
+                                        </div>
+
+                                        {% if event.previous_value and event.new_value %}
+                                        <div class="mt-2 p-2 bg-light rounded-3 border-start border-primary border-3">
+                                            <div class="row g-0 align-items-center">
+                                                <div class="col text-muted small text-truncate">{{ event.previous_value }}</div>
+                                                <div class="col-auto px-2 text-primary small"><i
+                                                        class="fas fa-long-arrow-alt-right"></i></div>
+                                                <div class="col fw-bold small text-truncate">{{ event.new_value }}</div>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <div class="small text-muted">{{ event.description }}</div>
+                                        {% endif %}
+
+                                        {% if event.reason %}
+                                        <div class="small text-muted fst-italic mt-2" style="font-size: 0.75rem;">
+                                            <i class="fas fa-comment-dots me-1 text-primary-light"></i>Reason: {{ event.reason }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+
+                                <!-- Probation Status (only show if completed) -->
+                                {% if probation_status == 'COMPLETED' or probation_status == 'COMPLETED_TODAY' %}
+                                <div class="timeline-node">
+                                    <div
+                                        class="timeline-dot {% if employee.employment_status == 'ACTIVE' %}active{% endif %}">
+                                        <div class="timeline-dot-inner"></div>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <span class="timeline-date">{{ probation_date|date:"d M, Y" }}</span>
+                                        <div class="timeline-title">
+                                            {% if probation_status == 'COMPLETED_TODAY' %}
+                                            <span class="text-success">🎉 Probation Completed</span>
+                                            {% else %}
+                                            Probation Completed
+                                            {% endif %}
+                                        </div>
+                                        <div class="small text-muted">Confirmed Employee</div>
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- Joined -->
+                                <div class="timeline-node">
+                                    <div class="timeline-dot active">
+                                        <div class="timeline-dot-inner"></div>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <span class="timeline-date">
+                                            {{ employee.date_of_joining|date:"d M, Y"|default:"-" }}
+                                        </span>
+                                        <div class="timeline-title">Joined Organization</div>
+                                        <div class="small text-muted">
+                                            {{ employee.designation }} • {{ employee.department }}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-md-4">
-                    <div class="keka-card h-100" style="background: linear-gradient(145deg, #ffffff 0%, #f7fafc 100%);">
-                        <div class="card-title-keka">Work Timeline</div>
-                        <div style="border-left: 2px solid #cbd5e0; padding-left: 20px; position: relative;">
-                            <div class="mb-4 position-relative">
-                                <div
-                                    style="width: 12px; height: 12px; border-radius: 50%; background: #5856d6; position: absolute; left: -27px; top: 5px; box-shadow: 0 0 0 4px #eef2ff;">
-                                </div>
-                                <div class="fw-bold text-dark">Joined Organization</div>
-                                <div class="small text-muted">{{ employee.date_of_joining|date:"d M, Y"|default:"-" }}
-                                </div>
-                                <div class="small text-primary mt-1">{{ employee.designation }}</div>
-                            </div>
+                <!-- Personal Details Summary -->
+                <div class="personal-details-section" style="display: block !important; opacity: 1 !important; visibility: visible !important;">
+                    <div class="content-card h-100" style="display: block !important; opacity: 1 !important; visibility: visible !important;">
+                        <div class="card-header-clean">
+                            <div class="card-icon gradient-icon-3"><i class="fas fa-id-card"></i></div>Personal Information
+                        </div>
+                        <div class="card-body-clean">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="personal-info-grid">
+                                        <div class="info-item">
+                                            <div class="info-icon">
+                                                <i class="fas fa-envelope text-primary"></i>
+                                            </div>
+                                            <div class="info-details">
+                                                <div class="info-label">Email Address</div>
+                                                <div class="info-value">{{ employee.user.email }}</div>
+                                            </div>
+                                        </div>
 
-                            <div class="position-relative">
-                                <div
-                                    style="width: 12px; height: 12px; border-radius: 50%; background: #68d391; position: absolute; left: -27px; top: 5px; box-shadow: 0 0 0 4px #f0fff4;">
+                                        <div class="info-item">
+                                            <div class="info-icon">
+                                                <i class="fas fa-phone text-success"></i>
+                                            </div>
+                                            <div class="info-details">
+                                                <div class="info-label">Mobile Number</div>
+                                                <div class="info-value">{{ employee.mobile_number|default:"Not provided" }}</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="info-item">
+                                            <div class="info-icon">
+                                                <i class="fas fa-birthday-cake text-warning"></i>
+                                            </div>
+                                            <div class="info-details">
+                                                <div class="info-label">Date of Birth</div>
+                                                <div class="info-value">{{ employee.dob|date:"F d, Y"|default:"Not provided" }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="fw-bold text-dark">Confirmed</div>
-                                <div class="small text-muted">Probation completed</div>
+
+                                <div class="col-md-6">
+                                    <div class="personal-info-grid">
+                                        <div class="info-item">
+                                            <div class="info-icon">
+                                                <i class="fas fa-venus-mars text-info"></i>
+                                            </div>
+                                            <div class="info-details">
+                                                <div class="info-label">Gender</div>
+                                                <div class="info-value">{{ employee.get_gender_display|default:"Not specified" }}</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="info-item">
+                                            <div class="info-icon">
+                                                <i class="fas fa-heart text-danger"></i>
+                                            </div>
+                                            <div class="info-details">
+                                                <div class="info-label">Marital Status</div>
+                                                <div class="info-value">{{ employee.get_marital_status_display|default:"Not specified" }}</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="info-item">
+                                            <div class="info-icon">
+                                                <i class="fas fa-id-badge text-secondary"></i>
+                                            </div>
+                                            <div class="info-details">
+                                                <div class="info-label">Employee ID</div>
+                                                <div class="info-value">{{ employee.badge_id|default:"Not assigned" }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Job Tab -->
-        <div id="tab-job" class="tab-content-block d-none">
-            <div class="row g-4">
-                <div class="col-md-8">
-                    <div class="keka-card">
-                        <div class="card-title-keka">Employment Details</div>
-                        <div class="row g-4">
-                            <div class="col-md-6">
-                                <div class="field-label">Employment Type</div>
-                                <div class="field-value">Full Time</div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="field-label">Work Shift</div>
-                                <div class="field-value">{{ employee.shift_schedule|default:"General Shift (09:00 - 18:00)" }}</div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="field-label">Joining Date</div>
-                                <div class="field-value">{{ employee.date_of_joining|date:"d M, Y" }}</div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="field-label">Probation Status</div>
-                                <div class="field-value text-success">Completed</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="keka-card">
-                        <div class="card-title-keka">Organization Hierarchy</div>
-                        <div class="d-flex align-items-center gap-3 p-3 rounded bg-light border">
-                            <div
-                                style="width: 50px; height: 50px; background: #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #718096;">
-                                {{ employee.manager.user.first_name|first|default:"?" }}
-                            </div>
-                            <div>
-                                <div class="small text-muted">Reporting Manager</div>
-                                <div class="fw-bold text-dark">{{ employee.manager.user.get_full_name|default:"Not Assigned" }}</div>
-                                <div class="small text-muted">{{ employee.manager.designation }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Documents Tab -->
-        <div id="tab-documents" class="tab-content-block d-none">
-            <div class="keka-card">
-                <div class="card-title-keka">Identity Documents</div>
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
+                <!-- Contact & Location -->
+                <div class="contact-location-section" style="display: block !important; opacity: 1 !important; visibility: visible !important;">
                     <div class="row g-4">
-                        <!-- Aadhar Front -->
-                        <div class="col-md-4">
-                            <div class="file-upload-card">
-                                <h6 class="mb-3 text-muted">Aadhar Front</h6>
-                                {% if id_proofs.aadhar_front %}
-                                <img src="{{ id_proofs.aadhar_front.url }}" class="doc-preview">
-                                {% if is_admin %}
-                                <div class="d-flex gap-2">
-                                    <label class="btn-action-icon" title="Change">
-                                        <i class="fas fa-pencil-alt"></i>
-                                        <input type="file" name="aadhar_front" style="display: none;">
-                                    </label>
-                                    <div class="form-check d-none">
-                                        <input type="checkbox" name="delete_aadhar_front" id="del_af_check">
+                        <div class="col-md-6">
+                            <div class="content-card h-100" style="display: block !important; opacity: 1 !important; visibility: visible !important;">
+                                <div class="card-header-clean">
+                                    <div class="card-icon" style="background: linear-gradient(135deg, #10b981, #059669); color: white;">
+                                        <i class="fas fa-map-marker-alt"></i>
                                     </div>
-                                    <button type="button" class="btn-action-icon"
-                                        onclick="document.getElementById('del_af_check').checked=true; this.closest('form').submit()">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    Work Location
                                 </div>
-                                {% else %}
-                                <div class="text-success small"><i class="fas fa-check-circle"></i> Verified</div>
-                                {% endif %}
-                                {% else %}
-                                <i class="fas fa-cloud-upload-alt fs-1 text-muted mb-3"></i>
-                                <input type="file" name="aadhar_front" class="form-control form-control-sm">
-                                {% endif %}
+                                <div class="card-body-clean">
+                                    <div class="location-info">
+                                        <div class="location-main">
+                                            <h6 class="text-primary mb-2">{{ employee.location.name|default:"Remote Work" }}</h6>
+                                            <p class="text-muted mb-3">
+                                                {% if employee.location %}
+                                                    {{ employee.location.address|default:"Address not specified" }}
+                                                {% else %}
+                                                    Working remotely from various locations
+                                                {% endif %}
+                                            </p>
+                                        </div>
+
+                                        <div class="work-arrangement">
+                                            <div class="arrangement-badge">
+                                                <i class="fas fa-laptop-house me-2"></i>
+                                                {{ employee.get_work_type_display|default:"Full Time" }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Aadhar Back -->
-                        <div class="col-md-4">
-                            <div class="file-upload-card">
-                                <h6 class="mb-3 text-muted">Aadhar Back</h6>
-                                {% if id_proofs.aadhar_back %}
-                                <img src="{{ id_proofs.aadhar_back.url }}" class="doc-preview">
-                                {% if is_admin %}
-                                <div class="d-flex gap-2">
-                                    <label class="btn-action-icon" title="Change">
-                                        <i class="fas fa-pencil-alt"></i>
-                                        <input type="file" name="aadhar_back" style="display: none;">
-                                    </label>
-                                    <div class="form-check d-none">
-                                        <input type="checkbox" name="delete_aadhar_back" id="del_ab_check">
+                        <div class="col-md-6">
+                            <div class="content-card h-100" style="display: block !important; opacity: 1 !important; visibility: visible !important;">
+                                <div class="card-header-clean">
+                                    <div class="card-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white;">
+                                        <i class="fas fa-users"></i>
                                     </div>
-                                    <button type="button" class="btn-action-icon"
-                                        onclick="document.getElementById('del_ab_check').checked=true; this.closest('form').submit()">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    Team & Reporting
                                 </div>
-                                {% else %}
-                                <div class="text-success small"><i class="fas fa-check-circle"></i> Verified</div>
-                                {% endif %}
-                                {% else %}
-                                <i class="fas fa-cloud-upload-alt fs-1 text-muted mb-3"></i>
-                                <input type="file" name="aadhar_back" class="form-control form-control-sm">
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <!-- PAN Card -->
-                        <div class="col-md-4">
-                            <div class="file-upload-card">
-                                <h6 class="mb-3 text-muted">PAN Card</h6>
-                                {% if id_proofs.pan_card %}
-                                <img src="{{ id_proofs.pan_card.url }}" class="doc-preview">
-                                {% if is_admin %}
-                                <div class="d-flex gap-2">
-                                    <label class="btn-action-icon" title="Change">
-                                        <i class="fas fa-pencil-alt"></i>
-                                        <input type="file" name="pan_card" style="display: none;">
-                                    </label>
-                                    <div class="form-check d-none">
-                                        <input type="checkbox" name="delete_pan_card" id="del_pc_check">
+                                <div class="card-body-clean">
+                                    <div class="team-info">
+                                        {% if employee.manager %}
+                                        <div class="manager-info">
+                                            <div class="manager-avatar-small">
+                                                {{ employee.manager.first_name|first|upper|default:"M" }}
+                                            </div>
+                                            <div class="manager-details">
+                                                <div class="manager-name-small">{{ employee.manager.get_full_name }}</div>
+                                                <div class="manager-role-small">Reporting Manager</div>
+                                                <a href="mailto:{{ employee.manager.email }}" class="contact-link">
+                                                    <i class="fas fa-envelope me-1"></i>Contact
+                                                </a>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <div class="no-manager-info">
+                                            <div class="text-center py-3">
+                                                <i class="fas fa-user-slash fa-2x text-muted mb-2"></i>
+                                                <p class="text-muted mb-0">No reporting manager assigned</p>
+                                                <small class="text-muted">Contact HR for assignment</small>
+                                            </div>
+                                        </div>
+                                        {% endif %}
                                     </div>
-                                    <button type="button" class="btn-action-icon"
-                                        onclick="document.getElementById('del_pc_check').checked=true; this.closest('form').submit()">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
                                 </div>
-                                {% else %}
-                                <div class="text-success small"><i class="fas fa-check-circle"></i> Verified</div>
-                                {% endif %}
-                                {% else %}
-                                <i class="fas fa-cloud-upload-alt fs-1 text-muted mb-3"></i>
-                                <input type="file" name="pan_card" class="form-control form-control-sm">
-                                {% endif %}
                             </div>
-                        </div>
-
-                        <div class="col-12 text-end mt-4">
-                            <button type="submit" class="btn btn-primary px-4 rounded-pill fw-bold">Save
-                                Changes</button>
                         </div>
                     </div>
-                </form>
-            </div>
-        </div>
+                </div>
 
+                <!-- Skills & Interests (Optional Enhancement) -->
+                <div class="skills-interests-section" style="display: block !important; opacity: 1 !important; visibility: visible !important;">
+                    <div class="content-card h-100" style="display: block !important; opacity: 1 !important; visibility: visible !important;">
+                        <div class="card-header-clean">
+                            <div class="card-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            Professional Highlights
+                        </div>
+                        <div class="card-body-clean">
+                            <div class="row g-4">
+                                <div class="col-md-4">
+                                    <div class="highlight-card">
+                                        <div class="highlight-header">
+                                            <i class="fas fa-trophy text-warning"></i>
+                                            <h6>Experience Level</h6>
+                                        </div>
+                                        <div class="highlight-content">
+                                            {% if employee.date_of_joining %}
+                                                <div class="experience-badge">
+                                                    {{ employee.date_of_joining|timesince|truncatewords:2 }}
+                                                </div>
+                                                <small class="text-muted">with {{ employee.company.name|default:"the company" }}</small>
+                                            {% else %}
+                                                <div class="experience-badge">New Joiner</div>
+                                                <small class="text-muted">Welcome to the team!</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="highlight-card">
+                                        <div class="highlight-header">
+                                            <i class="fas fa-cogs text-primary"></i>
+                                            <h6>Department</h6>
+                                        </div>
+                                        <div class="highlight-content">
+                                            <div class="department-badge">{{ employee.department }}</div>
+                                            <small class="text-muted">{{ employee.designation }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="highlight-card">
+                                        <div class="highlight-header">
+                                            <i class="fas fa-calendar-check text-success"></i>
+                                            <h6>Status</h6>
+                                        </div>
+                                        <div class="highlight-content">
+                                            {% if employee.is_active %}
+                                                <div class="status-badge active">
+                                                    <i class="fas fa-check-circle me-1"></i>Active
+                                                </div>
+                                                <small class="text-muted">Currently employed</small>
+                                            {% else %}
+                                                <div class="status-badge inactive">
+                                                    <i class="fas fa-pause-circle me-1"></i>Inactive
+                                                </div>
+                                                <small class="text-muted">Not currently active</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+
+
+                <!-- Current Assignment Info -->
+                {% if employee.assigned_shift %}
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Current Assignment:</strong> {{ employee.assigned_shift.name }}
+                    ({{ employee.assigned_shift.start_time|time:"H:i" }} - {{ employee.assigned_shift.end_time|time:"H:i" }})
+                </div>
+                {% else %}
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>No Shift Assigned:</strong> This employee currently has no shift assignment.
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-1"></i>Assign Shift
+                </button>
+            </div>
+            </form>
+        </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
+<script src="{% static 'js/employee-profile-enhanced-responsive.js' %}"></script>
 <script>
-    function switchTab(tabName) {
-        // Tabs
-        document.querySelectorAll('.keka-tab').forEach(t => t.classList.remove('active'));
-        event.currentTarget.classList.add('active');
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function () {
+        // Bootstrap tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
 
-        // Content
-        document.querySelectorAll('.tab-content-block').forEach(c => c.classList.add('d-none'));
-        document.getElementById('tab-' + tabName).classList.remove('d-none');
+        // Initialize responsive behavior
+        initResponsiveBehavior();
+
+        // Initialize shift configuration
+        initShiftConfiguration();
+
+        // Fix Job tab visibility
+        initJobTabFix();
+    });
+
+    // Initialize responsive behavior
+    function initResponsiveBehavior() {
+        // Handle viewport height for mobile browsers
+        function setVH() {
+            let vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+
+        setVH();
+        window.addEventListener('resize', setVH);
+        window.addEventListener('orientationchange', setVH);
+
+        // Fix timeline display issues
+        function fixTimelineDisplay() {
+            const timelineWrapper = document.querySelector('.timeline-wrapper');
+            if (timelineWrapper) {
+                timelineWrapper.style.display = 'block';
+                timelineWrapper.style.visibility = 'visible';
+                timelineWrapper.style.opacity = '1';
+
+                const timelineNodes = timelineWrapper.querySelectorAll('.timeline-node');
+                timelineNodes.forEach(node => {
+                    node.style.display = 'block';
+                    node.style.visibility = 'visible';
+                    node.style.opacity = '1';
+                });
+
+                const timelineContents = timelineWrapper.querySelectorAll('.timeline-content');
+                timelineContents.forEach(content => {
+                    content.style.display = 'block';
+                    content.style.visibility = 'visible';
+                    content.style.opacity = '1';
+                });
+            }
+        }
+
+        // Run timeline fix immediately and after delays
+        fixTimelineDisplay();
+        setTimeout(fixTimelineDisplay, 100);
+        setTimeout(fixTimelineDisplay, 500);
+
+        // Handle touch feedback for mobile
+        if ('ontouchstart' in window) {
+            document.body.classList.add('touch-device');
+
+            const touchElements = document.querySelectorAll('.camera-btn, .nav-link, .btn, .doc-upload-box');
+            touchElements.forEach(element => {
+                element.addEventListener('touchstart', function () {
+                    this.classList.add('touch-active');
+                });
+
+                element.addEventListener('touchend', function () {
+                    setTimeout(() => {
+                        this.classList.remove('touch-active');
+                    }, 150);
+                });
+            });
+        }
+
+        // Handle responsive navigation
+        function handleResponsiveNav() {
+            const navPills = document.querySelector('.nav-pills-custom');
+            if (!navPills) return;
+
+            if (window.innerWidth <= 767) {
+                navPills.classList.add('nav-mobile');
+            } else {
+                navPills.classList.remove('nav-mobile');
+            }
+        }
+
+        handleResponsiveNav();
+        window.addEventListener('resize', handleResponsiveNav);
     }
+
+    // Document preview function
+    function updateDocPreview(input) {
+        if (input.files && input.files[0]) {
+            var box = input.closest('.doc-upload-box');
+            var reader = new FileReader();
+
+            reader.onload = function (e) {
+                // Hide existing content
+                var placeholders = box.querySelectorAll('.text-muted, .doc-preview-img, .fw-bold.text-dark');
+                placeholders.forEach(el => el.style.display = 'none');
+
+                // Create preview
+                var img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'doc-preview-img w-100 temp-preview';
+
+                var isBD = {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}true{% else %} false{% endif %};
+            var isUS = {% if employee.location.country_code == "US" or "US" in employee.location.name %} true{% else %} false{% endif %};
+
+        var label = document.createElement('div');
+        label.className = 'fw-bold text-dark temp-label';
+        var nameMap = {
+            'aadhar_front': isBD ? 'NID Front' : (isUS ? 'State ID Front' : 'Aadhar Front'),
+            'aadhar_back': isBD ? 'NID Back' : (isUS ? 'State ID Back' : 'Aadhar Back'),
+            'pan_card': isBD ? 'TIN Card' : (isUS ? 'SSN Card' : 'PAN Card')
+        };
+        label.innerText = (nameMap[input.name] || 'Document') + ' (Selected)';
+
+        var badge = document.createElement('span');
+        badge.className = 'badge bg-info doc-status-badge';
+        badge.innerHTML = '<i class="fas fa-save"></i> Save Required';
+
+        box.insertBefore(badge, input);
+        box.insertBefore(img, input);
+        box.insertBefore(label, input);
+    }
+    reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // Initialize shift configuration functionality
+    function initShiftConfiguration() {
+        const shiftSelect = document.getElementById('shiftSelect');
+        const shiftPreview = document.getElementById('shiftPreview');
+
+        if (shiftSelect && shiftPreview) {
+            shiftSelect.addEventListener('change', function () {
+                const selectedOption = this.options[this.selectedIndex];
+
+                if (selectedOption.value) {
+                    shiftPreview.style.display = 'block';
+
+                    const startTime = selectedOption.getAttribute('data-start');
+                    const endTime = selectedOption.getAttribute('data-end');
+                    const gracePeriod = selectedOption.getAttribute('data-grace');
+                    const workingDays = selectedOption.getAttribute('data-working-days');
+
+                    document.getElementById('previewTiming').textContent = `${startTime} - ${endTime}`;
+                    document.getElementById('previewGrace').textContent = `${gracePeriod} minutes`;
+                    document.getElementById('previewWorkingDays').textContent = workingDays || 'Not specified';
+
+                    // Add animation
+                    shiftPreview.style.opacity = '0';
+                    setTimeout(() => {
+                        shiftPreview.style.transition = 'all 0.3s ease';
+                        shiftPreview.style.opacity = '1';
+                    }, 10);
+                } else {
+                    shiftPreview.style.display = 'none';
+                }
+            });
+
+            // Initialize preview if there's a selected value
+            if (shiftSelect.value) {
+                shiftSelect.dispatchEvent(new Event('change'));
+            }
+        }
+    }
+
+    // Fix tab visibility issues
+    function initTabVisibilityFix() {
+        function showContent(tabId) {
+            const tab = document.getElementById(tabId);
+            if (tab) {
+                tab.style.display = 'block';
+                tab.style.visibility = 'visible';
+                tab.style.opacity = '1';
+                tab.style.height = 'auto';
+                tab.style.overflow = 'visible';
+
+                const cardGrid = tab.querySelector('.card-grid, .doc-grid');
+                if (cardGrid) {
+                    cardGrid.style.display = cardGrid.classList.contains('doc-grid') ? 'grid' : 'grid';
+                    cardGrid.style.visibility = 'visible';
+                    cardGrid.style.opacity = '1';
+                }
+
+                const contentCards = tab.querySelectorAll('.content-card');
+                contentCards.forEach(card => {
+                    card.style.display = 'block';
+                    card.style.visibility = 'visible';
+                    card.style.opacity = '1';
+                });
+            }
+        }
+
+        // Force About tab to be visible on page load
+        function forceAboutTabVisible() {
+            const aboutTab = document.getElementById('about');
+            const aboutTabButton = document.getElementById('about-tab');
+
+            if (aboutTab && aboutTabButton) {
+                // Ensure About tab is marked as active
+                aboutTab.classList.add('show', 'active');
+                aboutTabButton.classList.add('active');
+
+                // Force display
+                aboutTab.style.display = 'block';
+                aboutTab.style.visibility = 'visible';
+                aboutTab.style.opacity = '1';
+
+                // Show all content within the About tab
+                showContent('about');
+            }
+        }
+
+        // Run immediately for active tab
+        forceAboutTabVisible();
+        showContent('about');
+        showContent('job');
+        showContent('docs');
+
+        // After delays
+        setTimeout(() => {
+            forceAboutTabVisible();
+            showContent('about');
+            showContent('job');
+            showContent('docs');
+
+            // Force show about tab content if it's the active tab
+            const aboutTab = document.getElementById('about');
+            if (aboutTab && aboutTab.classList.contains('active')) {
+                aboutTab.style.display = 'block';
+                aboutTab.style.visibility = 'visible';
+                aboutTab.style.opacity = '1';
+            }
+        }, 100);
+
+        // Handle tab clicks
+        ['about-tab', 'job-tab', 'docs-tab'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.addEventListener('click', function () {
+                    const targetId = this.getAttribute('data-bs-target').replace('#', '');
+
+                    // Special handling for About tab
+                    if (targetId === 'about') {
+                        setTimeout(() => {
+                            forceAboutTabVisible();
+                            showContent(targetId);
+                        }, 50);
+                    } else {
+                        setTimeout(() => showContent(targetId), 50);
+                    }
+                });
+            }
+        });
+    }
+
+    // Initialize everything when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        // Force About tab to be visible immediately
+        const aboutTab = document.getElementById('about');
+        if (aboutTab) {
+            aboutTab.style.display = 'block';
+            aboutTab.style.visibility = 'visible';
+            aboutTab.style.opacity = '1';
+            aboutTab.classList.add('show', 'active');
+
+            // Make all content within About tab visible
+            const aboutContent = aboutTab.querySelectorAll('.content-area, .content-card, .fade-in-up, .about-content, .about-description');
+            aboutContent.forEach(element => {
+                element.style.display = 'block';
+                element.style.visibility = 'visible';
+                element.style.opacity = '1';
+            });
+        }
+
+        // Ensure About tab button is active
+        const aboutTabButton = document.getElementById('about-tab');
+        if (aboutTabButton) {
+            aboutTabButton.classList.add('active');
+        }
+
+        initTabVisibilityFix();
+
+        // Additional fallback - force About tab visible after a short delay
+        setTimeout(() => {
+            const aboutTab = document.getElementById('about');
+            if (aboutTab) {
+                aboutTab.style.display = 'block';
+                aboutTab.style.visibility = 'visible';
+                aboutTab.style.opacity = '1';
+
+                // Force all child elements to be visible
+                const allElements = aboutTab.querySelectorAll('*');
+                allElements.forEach(el => {
+                    if (el.style.display === 'none' || el.style.visibility === 'hidden' || el.style.opacity === '0') {
+                        el.style.display = 'block';
+                        el.style.visibility = 'visible';
+                        el.style.opacity = '1';
+                    }
+                });
+            }
+        }, 100);
+
+        // Another fallback after 500ms
+        setTimeout(() => {
+            const aboutTab = document.getElementById('about');
+            if (aboutTab) {
+                aboutTab.style.display = 'block';
+                aboutTab.style.visibility = 'visible';
+                aboutTab.style.opacity = '1';
+            }
+        }, 500);
+    });
 </script>
+
+<style>
+    /* Additional responsive enhancements */
+    .touch-device .camera-btn.touch-active {
+        transform: scale(0.95);
+        background: rgba(30, 41, 59, 0.8);
+    }
+
+    .touch-device .nav-link.touch-active {
+        background: rgba(99, 102, 241, 0.1);
+    }
+
+    .touch-device .btn.touch-active {
+        transform: scale(0.98);
+    }
+
+    .nav-mobile {
+        flex-direction: column !important;
+        width: 100% !important;
+    }
+
+    .nav-mobile .nav-link {
+        width: 100% !important;
+        margin-bottom: 0.25rem !important;
+        text-align: center !important;
+    }
+
+    /* Timeline visibility fixes */
+    .timeline-wrapper,
+    .timeline-node,
+    .timeline-content,
+    .timeline-dot,
+    .timeline-line {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    .timeline-wrapper {
+        position: relative !important;
+        overflow: visible !important;
+        height: auto !important;
+        min-height: 200px !important;
+    }
+
+    .timeline-node {
+        position: relative !important;
+        overflow: visible !important;
+        height: auto !important;
+    }
+
+    .timeline-content {
+        position: relative !important;
+        overflow: visible !important;
+        height: auto !important;
+        z-index: 1 !important;
+    }
+
+    .timeline-dot {
+        position: absolute !important;
+        z-index: 3 !important;
+    }
+
+    .timeline-line {
+        position: absolute !important;
+        z-index: 2 !important;
+    }
+
+    /* Shift configuration styles */
+    .shift-preview-card {
+        margin-top: 1rem;
+        animation: fadeInUp 0.3s ease;
+    }
+
+    .preview-item {
+        background: #f8fafc;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    .preview-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 0.25rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .preview-value {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #1e293b;
+    }
+
+    .working-days-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .working-days-badges .badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+    }
+
+    /* Modal enhancements */
+    .modal-header {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        border-bottom: none;
+    }
+
+    .modal-header .btn-close {
+        filter: invert(1);
+    }
+
+    .text-orange {
+        color: #ea580c !important;
+    }
+</style>
 {% endblock %}
