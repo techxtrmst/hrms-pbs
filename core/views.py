@@ -4151,10 +4151,7 @@ def biometric_sync_api(request):
 
     try:
         # Most devices send JSON or Form Data
-        if request.content_type == "application/json":
-            data = json.loads(request.body)
-        else:
-            data = request.POST
+        data = json.loads(request.body) if request.content_type == "application/json" else request.POST
 
         # Required fields: serial_number (of device), biometric_id (of employee), timestamp
         device_sn = data.get("serial_number")
@@ -4178,7 +4175,7 @@ def biometric_sync_api(request):
         # 3. Parse Timestamp
         try:
             event_time = timezone.make_aware(datetime.strptime(event_time_str, "%Y-%m-%d %H:%M:%S"))
-        except:
+        except (ValueError, TypeError):
             event_time = timezone.now()
 
         # 4. Record Attendance or Access

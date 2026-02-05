@@ -75,7 +75,7 @@ class GlobalConfiguration(models.Model):
 
     def save(self, *args, **kwargs):
         self.pk = 1  # Ensure singleton
-        super(GlobalConfiguration, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     @classmethod
     def load(cls):
