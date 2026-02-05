@@ -8,7 +8,9 @@ import logging
 import environ
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives, get_connection
+from django.template import TemplateDoesNotExist, TemplateSyntaxError
 from django.template.loader import render_to_string
+from django.urls import NoReverseMatch
 from django.utils import timezone
 
 env = environ.Env()
@@ -416,10 +418,7 @@ def send_shift_change_notification(employee, old_shift, new_shift):
         html_content = render_to_string("core/emails/shift_change_notification.html", context)
 
         # Create email subject
-        if new_shift:
-            subject = f"🕒 Shift Assignment Updated - {new_shift.name}"
-        else:
-            subject = "🕒 Shift Assignment Removed"
+        subject = f"🕒 Shift Assignment Updated - {new_shift.name}" if new_shift else "🕒 Shift Assignment Removed"
 
         # Send email to employee
         email = EmailMultiAlternatives(
@@ -475,7 +474,7 @@ def send_leave_request_notification(leave_request):
                 # Try to parse string to date
                 try:
                     date_obj = datetime.strptime(date_obj, "%Y-%m-%d").date()
-                except:
+                except (ValueError, TypeError):
                     return date_obj  # Return as-is if parsing fails
             return date_obj.strftime(format_str) if hasattr(date_obj, "strftime") else str(date_obj)
 
@@ -484,7 +483,7 @@ def send_leave_request_notification(leave_request):
                 # Try to parse string to datetime
                 try:
                     dt_obj = datetime.fromisoformat(dt_obj.replace("Z", "+00:00"))
-                except:
+                except (ValueError, TypeError):
                     return dt_obj  # Return as-is if parsing fails
             return dt_obj.strftime(format_str) if hasattr(dt_obj, "strftime") else str(dt_obj)
 
@@ -720,7 +719,7 @@ def send_welcome_email_with_link(employee, domain):
         # Construct the link
         try:
             link = f"http://{domain}{reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})}"
-        except:
+        except (ImportError, NoReverseMatch):
             # Fallback if URL name differs
             link = f"http://{domain}/accounts/reset/{uid}/{token}/"
 
@@ -733,7 +732,7 @@ def send_welcome_email_with_link(employee, domain):
 
         try:
             html_content = render_to_string("core/emails/welcome_email.html", context)
-        except:
+        except (TemplateDoesNotExist, TemplateSyntaxError):
             # Fallback Template
             html_content = f"<html><body><h2>Welcome to {employee.company.name}!</h2><p>Please activate your account: <a href='{link}'>{link}</a></p></body></html>"
 
