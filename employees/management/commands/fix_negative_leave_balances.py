@@ -38,18 +38,15 @@ class Command(BaseCommand):
 
                 if not dry_run:
                     # Fix the negative balances
-<<<<<<< Updated upstream
                     old_lop = balance.unpaid_leave
                     if balance.fix_negative_balances():
                         new_lop = balance.unpaid_leave
                         lop_added = new_lop - old_lop
                         self.stdout.write(self.style.SUCCESS(f"Fixed {employee_name}: Added {lop_added} days to LOP"))
-                        fixed_count += 1
-=======
-                    balance.validate_and_save()
-                    self.stdout.write(self.style.SUCCESS(f"Validated and saved {employee_name}"))
+                    else:
+                        balance.validate_and_save()
+                        self.stdout.write(self.style.SUCCESS(f"Validated and saved {employee_name}"))
                     fixed_count += 1
->>>>>>> Stashed changes
                 else:
                     self.stdout.write(self.style.WARNING(f"Would fix negative balances for {employee_name}"))
                     fixed_count += 1

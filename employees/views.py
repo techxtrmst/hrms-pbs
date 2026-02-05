@@ -1443,6 +1443,8 @@ def check_leave_balance(request):
 
 @login_required
 def approve_leave(request, pk):
+    from django.contrib import messages
+
     if request.method == "POST":
         leave_request = LeaveRequest.objects.get(pk=pk)
         approval_type = request.POST.get("approval_type", "FULL")
