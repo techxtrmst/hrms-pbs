@@ -259,5 +259,6 @@ class FinanceDetailsForm(forms.ModelForm):
             "account_number",
             "ifsc_code",
             "uan",
+            "pan_number",
             "pf_enabled",
         ]

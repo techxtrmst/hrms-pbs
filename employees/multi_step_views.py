@@ -273,6 +273,7 @@ def add_employee_step3(request):
                 account_number=finance_data.get("account_number"),
                 ifsc_code=finance_data.get("ifsc_code"),
                 uan=finance_data.get("uan"),
+                pan_number=finance_data.get("pan_number"),
                 pf_enabled=finance_data.get("pf_enabled", False),
                 annual_ctc=finance_data.get("annual_ctc"),
             )
