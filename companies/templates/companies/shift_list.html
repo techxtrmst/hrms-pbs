@@ -27,6 +27,11 @@
                         class="badge {% if shift.shift_type == 'MORNING' %}bg-success{% elif shift.shift_type == 'AFTERNOON' %}bg-warning{% else %}bg-dark{% endif %}">
                         {{ shift.get_shift_type_display }}
                     </span>
+                    {% if shift.is_flexible %}
+                    <span class="badge bg-primary ms-1" title="Flexible Shift">
+                        <i class="fas fa-random me-1"></i> Flexible
+                    </span>
+                    {% endif %}
                 </div>
                 <div class="card-body">
                     <div class="mb-3">

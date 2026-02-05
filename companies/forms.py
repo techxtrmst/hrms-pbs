@@ -9,6 +9,7 @@ class ShiftScheduleForm(forms.ModelForm):
         fields = [
             "name",
             "shift_type",
+            "is_flexible",
             "start_time",
             "end_time",
             "grace_period_minutes",
@@ -18,6 +19,7 @@ class ShiftScheduleForm(forms.ModelForm):
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control", "placeholder": "e.g. Morning Shift"}),
             "shift_type": forms.Select(attrs={"class": "form-select"}),
+            "is_flexible": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "start_time": forms.TimeInput(attrs={"class": "form-control", "type": "time"}),
             "end_time": forms.TimeInput(attrs={"class": "form-control", "type": "time"}),
             "grace_period_minutes": forms.NumberInput(attrs={"class": "form-control"}),
