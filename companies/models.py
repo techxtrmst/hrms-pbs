@@ -533,3 +533,75 @@ class LocationWeekOff(models.Model):
 
     def __str__(self):
         return f"Week-Off Config - {self.location.name}"
+
+
+class PayrollConfiguration(models.Model):
+    """
+    Store company-specific payroll rules and statutory rates (PF, ESI, TDS, PT)
+    Allows manual adjustments when government regulations change.
+    """
+
+    company = models.OneToOneField(Company, on_delete=models.CASCADE, related_name="payroll_config")
+
+    # Statutory Rules - India (Default)
+    pf_employer_rate = models.DecimalField(max_digits=5, decimal_places=2, default=13.00, help_text="Employer PF %")
+    pf_employee_rate = models.DecimalField(max_digits=5, decimal_places=2, default=12.00, help_text="Employee PF %")
+    pf_ceiling = models.DecimalField(max_digits=12, decimal_places=2, default=15000.00, help_text="PF Wage Ceiling")
+
+    esi_employer_rate = models.DecimalField(max_digits=5, decimal_places=2, default=3.25, help_text="Employer ESI %")
+    esi_employee_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.75, help_text="Employee ESI %")
+    esi_ceiling = models.DecimalField(max_digits=12, decimal_places=2, default=21000.00, help_text="ESI Wage Ceiling")
+
+    # Professional Tax (PT) - Values vary by state but we provide a general config
+    pt_threshold = models.DecimalField(max_digits=12, decimal_places=2, default=20000.00)
+    pt_amount_below = models.DecimalField(max_digits=10, decimal_places=2, default=150.00)
+    pt_amount_above = models.DecimalField(max_digits=10, decimal_places=2, default=200.00)
+
+    # Salary Component Mapping (Percentages of Gross or CTC)
+    # Defaulting to current hardcoded values in payroll_utils.py
+    basic_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=50.00)
+    hra_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=20.00)
+    lta_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=10.00)
+    special_allowance_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=20.00)
+
+    # Bangladesh specific defaults
+    bd_basic_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=50.00)
+    bd_hra_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=25.00)
+    bd_medical_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=15.00)
+    bd_conveyance_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=10.00)
+
+    # US specific defaults
+    us_basic_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=70.00)
+    us_tax_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=15.00)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Payroll Config - {self.company.name}"
+
+
+class BiometricDevice(models.Model):
+    """
+    Configuration for Biometric Attendance/Door Devices
+    """
+
+    DEVICE_TYPES = [
+        ("ZKTECO", "ZKTeco / ESSL"),
+        ("ANVIZ", "Anviz"),
+        ("MATRIX", "Matrix COSEC"),
+        ("HIKVISION", "Hikvision"),
+        ("SUPREMA", "Suprema"),
+    ]
+
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="biometric_devices")
+    location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True, blank=True)
+    name = models.CharField(max_length=100, help_text="e.g. Main Door, Reception, Server Room")
+    device_type = models.CharField(max_length=50, choices=DEVICE_TYPES, default="ZKTECO")
+    ip_address = models.GenericIPAddressField(help_text="LAN IP of the device")
+    port = models.IntegerField(default=4370)
+    serial_number = models.CharField(max_length=100, unique=True)
+    is_active = models.BooleanField(default=True)
+    last_sync = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.ip_address})"

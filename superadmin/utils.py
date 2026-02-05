@@ -1,3 +1,4 @@
+import json
 from datetime import timedelta
 
 from django.db.models import Count, Q
@@ -143,41 +144,95 @@ def get_employee_lifecycle_data(company_id):
     return result
 
 
-def get_leave_analytics(company_id, months=6):
+def get_leave_analytics(company_id, months=None, year=None):
     """
-    Get leave analytics for a company over the last N months
+    Get leave analytics for a company.
+    If months/year provided, returns specific analytics for that month.
+    Else returns default overview (last 6 months).
     """
-    from django.db.models.functions import TruncMonth
+    import datetime
 
-    end_date = timezone.localtime().date()
-    start_date = end_date - timedelta(days=months * 30)
+    from django.db.models.functions import TruncDay, TruncMonth
+
+    # Handle parameter name change
+    month = months
+
+    target_date = timezone.localtime().date()
+    start_date = target_date - timedelta(days=6 * 30)
+
+    # Filter params for distribution
+    dist_filters = {"employee__company_id": company_id, "status": "APPROVED"}
+
+    # Filter params for trends
+    trend_filters = {"employee__company_id": company_id, "status": "APPROVED"}
+
+    if month and year:
+        # Specific month analysis
+        start_date = datetime.date(year, month, 1)
+        # Handle end of month logic logic
+        if month == 12:
+            end_date = datetime.date(year + 1, 1, 1) - timedelta(days=1)
+        else:
+            end_date = datetime.date(year, month + 1, 1) - timedelta(days=1)
+
+        # For distribution, we count leaves that overlap with this month
+        dist_filters["start_date__lte"] = end_date
+        dist_filters["end_date__gte"] = start_date
+
+        # For daily trends in this month
+        trend_filters["start_date__gte"] = start_date
+        trend_filters["start_date__lte"] = end_date
+    else:
+        # Default 6 month lookback
+        dist_filters["start_date__gte"] = start_date
+        trend_filters["start_date__gte"] = start_date
 
     # Leave type distribution
     leave_distribution = (
-        LeaveRequest.objects.filter(
-            employee__company_id=company_id,
-            status="APPROVED",
-            start_date__gte=start_date,
-        )
-        .values("leave_type")
-        .annotate(count=Count("id"))
-        .order_by("-count")
+        LeaveRequest.objects.filter(**dist_filters).values("leave_type").annotate(count=Count("id")).order_by("-count")
     )
 
-    # Monthly trends
-    monthly_trends = (
-        LeaveRequest.objects.filter(
-            employee__company_id=company_id,
-            status="APPROVED",
-            start_date__gte=start_date,
+    # Trends Analysis
+    if month and year:
+        # Daily breakdown for selected month
+        trends_data = (
+            LeaveRequest.objects.filter(**trend_filters)
+            .annotate(period=TruncDay("start_date"))
+            .values("period", "leave_type")
+            .annotate(count=Count("id"))
+            .order_by("period")
         )
-        .annotate(month=TruncMonth("start_date"))
-        .values("month")
-        .annotate(count=Count("id"))
-        .order_by("month")
-    )
+    else:
+        # Monthly breakdown for last 6 months
+        trends_data = (
+            LeaveRequest.objects.filter(**trend_filters)
+            .annotate(period=TruncMonth("start_date"))
+            .values("period", "leave_type")
+            .annotate(count=Count("id"))
+            .order_by("period")
+        )
 
-    # Frequent leave takers
+    # Process into chart format
+    periods = sorted(list(set(item["period"] for item in trends_data)))
+    leave_types = list(set(item["leave_type"] for item in trends_data))
+
+    series = []
+    for l_type in leave_types:
+        data = []
+        for period in periods:
+            # Find count for this type and period
+            match = next(
+                (item for item in trends_data if item["period"] == period and item["leave_type"] == l_type), None
+            )
+            data.append(match["count"] if match else 0)
+
+        # Map code to display name
+        display_name = dict(LeaveRequest.LEAVE_TYPES).get(l_type, l_type)
+        series.append({"name": display_name, "data": data})
+
+    chart_data = {"categories": [p.strftime("%Y-%m-%d") for p in periods], "series": series}
+
+    # Frequent leave takers (using same time window)
     frequent_takers = (
         Employee.objects.filter(company_id=company_id)
         .annotate(
@@ -186,6 +241,8 @@ def get_leave_analytics(company_id, months=6):
                 filter=Q(
                     leave_requests__status="APPROVED",
                     leave_requests__start_date__gte=start_date,
+                    # If end date is set (specific month), restrict to that
+                    **({"leave_requests__start_date__lte": end_date} if month and year else {}),
                 ),
             )
         )
@@ -195,68 +252,114 @@ def get_leave_analytics(company_id, months=6):
 
     return {
         "distribution": list(leave_distribution),
-        "monthly_trends": list(monthly_trends),
+        "monthly_trends": chart_data,
         "frequent_takers": frequent_takers,
     }
 
 
 def get_attendance_heatmap_data(company_id, year=None, month=None):
     """
-    Get attendance heatmap data for a specific month
+    Get comprehensive attendance heatmap data for a specific month
     """
     if not year or not month:
         now = timezone.localtime()
         year = now.year
         month = now.month
 
-    # Get all attendance records for the month
-    attendance_data = (
-        Attendance.objects.filter(employee__company_id=company_id, date__year=year, date__month=month)
-        .values("date")
-        .annotate(
+    # Get all attendance records for the month with daily breakdown
+    import calendar
+    from datetime import date, timedelta
+
+    # Get first and last day of month
+    first_day = date(year, month, 1)
+    last_day = date(year, month, calendar.monthrange(year, month)[1])
+
+    # Get daily attendance data
+    daily_attendance = {}
+    current_date = first_day
+
+    while current_date <= last_day:
+        day_attendance = Attendance.objects.filter(employee__company_id=company_id, date=current_date).aggregate(
+            total_records=Count("id"),
             present_count=Count("id", filter=Q(status="PRESENT")),
+            absent_count=Count("id", filter=Q(status="ABSENT")),
             late_count=Count("id", filter=Q(is_late=True)),
             early_departure_count=Count("id", filter=Q(is_early_departure=True)),
-            absent_count=Count("id", filter=Q(status="ABSENT")),
         )
-        .order_by("date")
+
+        # Calculate attendance percentage for the day
+        total_employees = Employee.objects.filter(company_id=company_id, is_active=True).count()
+        attendance_percentage = (day_attendance["present_count"] / total_employees * 100) if total_employees > 0 else 0
+
+        daily_attendance[current_date.day] = {
+            "date": current_date,
+            "attendance_percentage": round(attendance_percentage, 1),
+            "present_count": day_attendance["present_count"],
+            "absent_count": day_attendance["absent_count"],
+            "late_count": day_attendance["late_count"],
+            "early_departure_count": day_attendance["early_departure_count"],
+            "total_employees": total_employees,
+        }
+
+        current_date += timedelta(days=1)
+
+    # Calculate overall statistics
+    total_employees = Employee.objects.filter(company_id=company_id, is_active=True).count()
+
+    # Monthly totals
+    monthly_stats = Attendance.objects.filter(
+        employee__company_id=company_id, date__year=year, date__month=month
+    ).aggregate(
+        total_records=Count("id"),
+        present_days=Count("id", filter=Q(status="PRESENT")),
+        absent_days=Count("id", filter=Q(status="ABSENT")),
+        late_logins=Count("id", filter=Q(is_late=True)),
+        early_logouts=Count("id", filter=Q(is_early_departure=True)),
     )
 
-    # Calculate statistics
-    total_employees = Employee.objects.filter(company_id=company_id).count()
-    late_logins = Attendance.objects.filter(
-        employee__company_id=company_id,
-        date__year=year,
-        date__month=month,
-        is_late=True,
-    ).count()
+    # Calculate absenteeism percentage
+    working_days = len([d for d in daily_attendance.values() if d["date"].weekday() < 5])  # Mon-Fri
+    expected_attendance = total_employees * working_days
+    absenteeism_pct = (monthly_stats["absent_days"] / expected_attendance * 100) if expected_attendance > 0 else 0
 
-    early_logouts = Attendance.objects.filter(
-        employee__company_id=company_id,
-        date__year=year,
-        date__month=month,
-        is_early_departure=True,
-    ).count()
+    # Get top late arrivals
+    late_arrivals = (
+        Employee.objects.filter(company_id=company_id)
+        .annotate(
+            late_count=Count(
+                "attendances",
+                filter=Q(attendances__date__year=year, attendances__date__month=month, attendances__is_late=True),
+            )
+        )
+        .filter(late_count__gt=0)
+        .order_by("-late_count")[:5]
+    )
 
-    total_attendance_records = Attendance.objects.filter(
-        employee__company_id=company_id, date__year=year, date__month=month
-    ).count()
+    # Weekly trends (last 4 weeks)
+    weekly_trends = []
+    for week in range(4):
+        week_start = first_day + timedelta(weeks=week)
+        week_end = min(week_start + timedelta(days=6), last_day)
 
-    absent_records = Attendance.objects.filter(
-        employee__company_id=company_id,
-        date__year=year,
-        date__month=month,
-        status="ABSENT",
-    ).count()
+        week_attendance = Attendance.objects.filter(
+            employee__company_id=company_id, date__range=[week_start, week_end]
+        ).aggregate(present=Count("id", filter=Q(status="PRESENT")), total=Count("id"))
 
-    absenteeism_pct = (absent_records / total_attendance_records * 100) if total_attendance_records > 0 else 0
+        week_percentage = (
+            (week_attendance["present"] / week_attendance["total"] * 100) if week_attendance["total"] > 0 else 0
+        )
+        weekly_trends.append(round(week_percentage, 1))
 
     return {
-        "heatmap_data": list(attendance_data),
-        "late_logins": late_logins,
-        "early_logouts": early_logouts,
+        "daily_attendance": daily_attendance,
+        "present_days": monthly_stats["present_days"],
+        "late_logins": monthly_stats["late_logins"],
+        "early_logouts": monthly_stats["early_logouts"],
         "absenteeism_percentage": round(absenteeism_pct, 2),
         "total_employees": total_employees,
+        "late_arrivals": late_arrivals,
+        "weekly_trends": weekly_trends,
+        "working_days": working_days,
     }
 
 
@@ -383,10 +486,9 @@ def get_employee_leave_summary(employee):
         balances = {
             "CL": leave_balance.casual_leave_balance,
             "SL": leave_balance.sick_leave_balance,
-            "EL": leave_balance.earned_leave_balance,
         }
     except LeaveBalance.DoesNotExist:
-        balances = {"CL": 0, "SL": 0, "EL": 0}
+        balances = {"CL": 0, "SL": 0}
 
     # Get leave history
     current_year = timezone.localtime().year
@@ -440,9 +542,9 @@ def get_employee_attendance_stats(employee, months=3):
         employee=employee, status="APPROVED", start_date__lte=end_date, end_date__gte=start_date
     )
     leave_dates = set()
-    for leave in leaves:
-        curr = max(leave.start_date, start_date)
-        while curr <= min(leave.end_date, end_date):
+    for l in leaves:
+        curr = max(l.start_date, start_date)
+        while curr <= min(l.end_date, end_date):
             leave_dates.add(curr)
             curr += timedelta(days=1)
 
@@ -525,9 +627,9 @@ def get_employee_recent_attendance(employee, days=30):
         employee=employee, status="APPROVED", start_date__lte=end_date, end_date__gte=start_date
     )
     leave_dates = {}
-    for leave in leaves:
-        curr = max(leave.start_date, start_date)
-        while curr <= min(leave.end_date, end_date):
+    for l in leaves:
+        curr = max(l.start_date, start_date)
+        while curr <= min(l.end_date, end_date):
             leave_dates[curr] = "LEAVE"
             curr += timedelta(days=1)
 
@@ -604,6 +706,7 @@ def get_employee_punctuality_analysis(employee, days=30):
 
     return {
         "clock_in_times": clock_in_times,
+        "clock_in_times_json": json.dumps(clock_in_times),
         "late_count": late_count,
         "grace_count": grace_count,
         "on_time_count": on_time_count,

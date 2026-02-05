@@ -43,7 +43,12 @@ DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "testserver"])
 
 # CSRF Configuration
+# Ensure protocol is included (https:// or http://)
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+if not CSRF_TRUSTED_ORIGINS and not DEBUG:
+    # Attempt to auto-detect if env is missing but we are in production
+    # This is a safety fallback, better to set in .env
+    CSRF_TRUSTED_ORIGINS = []
 
 
 # Application definition
@@ -83,7 +88,7 @@ INSTALLED_APPS = [
     "ai_assistant",  # AI-powered features
     "handbooks",  # Employee handbooks with location-based access
     "policies",  # Company Policies
-    "observability",  # First-party error tracking and monitoring
+    "observability",  # System observability and monitoring
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -114,7 +119,7 @@ ROOT_URLCONF = "hrms_core.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

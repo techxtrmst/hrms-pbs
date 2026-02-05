@@ -9,11 +9,15 @@ class CoreConfig(AppConfig):
         """Called when Django starts - start the email scheduler service"""
         import os
 
+        # Only start scheduler in main process, not in reloader process
+        # In runserver, RUN_MAIN is 'true' only in the worker process.
+        # In production (gunicorn/etc), RUN_MAIN is usually not set.
+        import sys
+
         # Import signals to register them
         import core.signals  # noqa: F401
 
-        # Only start scheduler in main process, not in reloader process
-        if os.environ.get("RUN_MAIN") == "true" or os.environ.get("RUN_MAIN") is None:
+        if os.environ.get("RUN_MAIN") == "true" or (os.environ.get("RUN_MAIN") is None and "runserver" not in sys.argv):
             try:
                 from core.email_scheduler import email_scheduler
 

@@ -57,6 +57,7 @@ class Employee(models.Model):
 
     # Job Profile
     designation = models.CharField(max_length=100)
+    pseudo_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Pseudo Name")
     department = models.CharField(max_length=100)
     WORK_TYPE_CHOICES = [
         ("FT", "Full Time"),
@@ -133,6 +134,9 @@ class Employee(models.Model):
     is_active = models.BooleanField(
         default=True,
         help_text="Whether employee is currently active in the organization",
+    )
+    biometric_id = models.CharField(
+        max_length=50, null=True, blank=True, unique=True, help_text="ID as registered in the biometric machine"
     )
 
     # Week-off Configuration (Individual employee week-offs)
@@ -309,6 +313,7 @@ class Attendance(models.Model):
         ("WEEKLY_OFF", "Weekly Off"),
         ("HOLIDAY", "Holiday"),
         ("MISSING_PUNCH", "Missing Punch"),
+        ("DOOR_OPEN", "Door Access Only"),
     ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="ABSENT")
     location_in = models.CharField(max_length=255, null=True, blank=True)  # Lat,Long
@@ -374,8 +379,10 @@ class Attendance(models.Model):
         choices=[
             ("WEB", "Web"),
             ("REMOTE", "Remote"),
+            ("BIOMETRIC", "Biometric Device"),
+            ("MOBILE", "Mobile App"),
         ],
-        help_text="Current session type (WEB/REMOTE)",
+        help_text="Current session type (WEB/REMOTE/BIOMETRIC)",
     )
 
     class Meta:
@@ -587,8 +594,8 @@ class Attendance(models.Model):
                     hours = 24
                     minutes = 0
 
-                # Show '+' if currently clocked in (active session)
-                is_active = self.is_currently_clocked_in
+                # Show '+' if currently clocked in (active session or direct clock_in without clock_out)
+                is_active = self.is_currently_clocked_in or (self.clock_in and not self.clock_out)
                 return f"{hours}:{minutes:02d}{'+' if is_active else ''}"
 
             return "0:00"
@@ -648,7 +655,7 @@ class Attendance(models.Model):
         AttendanceSession.objects.filter(employee=self.employee, date=self.date).order_by("session_number")
 
     def calculate_total_working_hours(self):
-        """Calculate total working hours from all completed sessions with 24-hour daily cap"""
+        """Calculate total working hours from sessions or direct clock times with 24-hour daily cap"""
         from decimal import Decimal
 
         sessions = AttendanceSession.objects.filter(
@@ -658,19 +665,39 @@ class Attendance(models.Model):
         )
 
         total_seconds = 0
-        for session in sessions:
-            if session.clock_in:
-                # Determine end time for this session (Night Shift Support: Remove midnight cap)
-                session_end = session.clock_out or timezone.now()
 
-                # Calculate session duration
-                if session_end > session.clock_in:
-                    duration = session_end - session.clock_in
-                    session_seconds = duration.total_seconds()
+        # If we have sessions, calculate from sessions
+        if sessions.exists():
+            for session in sessions:
+                if session.clock_in:
+                    # Determine end time for this session (Night Shift Support: Remove midnight cap)
+                    session_end = session.clock_out or timezone.now()
 
-                    # Ensure non-negative duration
-                    if session_seconds > 0:
-                        total_seconds += session_seconds
+                    # Calculate session duration
+                    if session_end > session.clock_in:
+                        duration = session_end - session.clock_in
+                        session_seconds = duration.total_seconds()
+
+                        # Ensure non-negative duration
+                        if session_seconds > 0:
+                            total_seconds += session_seconds
+        else:
+            # Fallback: Calculate from direct clock_in/clock_out (for regularized attendance)
+            if self.clock_in and self.clock_out:
+                duration = self.clock_out - self.clock_in
+                session_seconds = duration.total_seconds()
+
+                # Ensure non-negative duration
+                if session_seconds > 0:
+                    total_seconds = session_seconds
+            elif self.clock_in:
+                # If only clock_in exists (currently active), calculate up to now
+                duration = timezone.now() - self.clock_in
+                session_seconds = duration.total_seconds()
+
+                # Ensure non-negative duration
+                if session_seconds > 0:
+                    total_seconds = session_seconds
 
         # Cap total hours at 24 hours (86400 seconds) per day
         if total_seconds > 86400:
@@ -715,17 +742,41 @@ class Attendance(models.Model):
                 clock_out__isnull=False,
             )
 
-            # Calculate total hours from completed sessions
             total_seconds = 0
-            for session in completed_sessions:
-                duration = session.clock_out - session.clock_in
-                total_seconds += duration.total_seconds()
 
-            # Add current active session if exists
-            current_session = self.get_current_session()
-            if current_session and current_session.clock_in:
-                current_duration = timezone.now() - current_session.clock_in
-                total_seconds += current_duration.total_seconds()
+            # If we have sessions, calculate from sessions
+            if completed_sessions.exists():
+                # Calculate total hours from completed sessions
+                for session in completed_sessions:
+                    duration = session.clock_out - session.clock_in
+                    total_seconds += duration.total_seconds()
+
+                # Add current active session if exists
+                current_session = self.get_current_session()
+                if current_session and current_session.clock_in:
+                    current_duration = timezone.now() - current_session.clock_in
+                    total_seconds += current_duration.total_seconds()
+            else:
+                # Fallback: Calculate from direct clock_in/clock_out (for regularized attendance)
+                if self.clock_in and self.clock_out:
+                    duration = self.clock_out - self.clock_in
+                    total_seconds = duration.total_seconds()
+                elif self.clock_in:
+                    # If only clock_in exists (currently active), calculate up to now
+                    current_time = timezone.now()
+                    # Ensure we're comparing timezone-aware datetimes
+                    if timezone.is_naive(self.clock_in):
+                        # If clock_in is naive, assume it's in the same timezone as current time
+                        clock_in_aware = timezone.make_aware(self.clock_in)
+                    else:
+                        clock_in_aware = self.clock_in
+
+                    duration = current_time - clock_in_aware
+                    total_seconds = duration.total_seconds()
+
+            # Ensure non-negative duration
+            if total_seconds < 0:
+                total_seconds = 0
 
             # Convert to hours
             return round(total_seconds / 3600, 2)
@@ -938,6 +989,12 @@ class LeaveBalance(models.Model):
     casual_leave_allocated = models.FloatField(default=12.0, help_text="Total CL allocated per year")
     sick_leave_allocated = models.FloatField(default=12.0, help_text="Total SL allocated per year")
 
+    # Combined Sick/Casual Leave for specific companies (like Bluebix)
+    combined_sick_casual_allocated = models.FloatField(
+        default=0.0, help_text="Combined SL/CL allocation for companies like Bluebix"
+    )
+    combined_sick_casual_used = models.FloatField(default=0.0, help_text="Combined SL/CL used")
+
     # Leave Used
     casual_leave_used = models.FloatField(default=0.0)
     sick_leave_used = models.FloatField(default=0.0)
@@ -947,18 +1004,41 @@ class LeaveBalance(models.Model):
     carry_forward_leave = models.FloatField(default=0.0, help_text="Leave carried from previous year")
     lapsed_leave = models.FloatField(default=0.0, help_text="Leave that expired")
 
+    # Tracking for automatic accruals
+    last_accrual_month = models.IntegerField(null=True, blank=True, help_text="Last month leaves were accrued")
+    last_accrual_year = models.IntegerField(null=True, blank=True, help_text="Last year leaves were accrued")
+
     updated_at = models.DateTimeField(auto_now=True)
 
     @property
     def casual_leave_balance(self):
+        # For Bluebix and Softstandard, use combined balance
+        if self.employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]:
+            return max(0, self.combined_sick_casual_allocated - self.combined_sick_casual_used)
         return max(0, self.casual_leave_allocated - self.casual_leave_used)
 
     @property
     def sick_leave_balance(self):
+        # For Bluebix and Softstandard, use combined balance
+        if self.employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]:
+            return max(0, self.combined_sick_casual_allocated - self.combined_sick_casual_used)
         return max(0, self.sick_leave_allocated - self.sick_leave_used)
+
+    @property
+    def combined_sick_casual_balance(self):
+        """Combined sick/casual leave balance for companies like Bluebix"""
+        return max(0, self.combined_sick_casual_allocated - self.combined_sick_casual_used)
 
     def get_available_balance(self, leave_type):
         """Get available balance for a specific leave type"""
+        # For Bluebix and Softstandard, both CL and SL use the same combined pool
+        if self.employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]:
+            if leave_type in ["CL", "SL"]:
+                return self.combined_sick_casual_balance
+            else:
+                return 0
+
+        # For other companies, use separate pools
         if leave_type == "CL":
             return self.casual_leave_balance
         elif leave_type == "SL":
@@ -991,12 +1071,20 @@ class LeaveBalance(models.Model):
 
     def apply_leave_deduction(self, leave_type, days_approved):
         """Deduct approved leave from balance"""
-        if leave_type == "CL":
-            self.casual_leave_used += days_approved
-        elif leave_type == "SL":
-            self.sick_leave_used += days_approved
-        elif leave_type == "UL":
-            self.unpaid_leave += days_approved
+        # For Bluebix and Softstandard, both CL and SL deduct from combined pool
+        if self.employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]:
+            if leave_type in ["CL", "SL"]:
+                self.combined_sick_casual_used += days_approved
+            elif leave_type == "UL":
+                self.unpaid_leave += days_approved
+        else:
+            # For other companies, use separate pools
+            if leave_type == "CL":
+                self.casual_leave_used += days_approved
+            elif leave_type == "SL":
+                self.sick_leave_used += days_approved
+            elif leave_type == "UL":
+                self.unpaid_leave += days_approved
         # OD (On Duty) and OT (Others) don't affect leave balance
 
         self.save()
@@ -1006,10 +1094,12 @@ class LeaveBalance(models.Model):
         # Ensure non-negative allocated leaves
         self.casual_leave_allocated = max(0, self.casual_leave_allocated)
         self.sick_leave_allocated = max(0, self.sick_leave_allocated)
+        self.combined_sick_casual_allocated = max(0, self.combined_sick_casual_allocated)
 
         # Ensure non-negative used leaves
         self.casual_leave_used = max(0, self.casual_leave_used)
         self.sick_leave_used = max(0, self.sick_leave_used)
+        self.combined_sick_casual_used = max(0, self.combined_sick_casual_used)
         self.unpaid_leave = max(0, self.unpaid_leave)
 
         # Ensure non-negative carry forward
@@ -1020,6 +1110,9 @@ class LeaveBalance(models.Model):
 
     @property
     def total_balance(self):
+        # For Bluebix and Softstandard, return combined balance (but don't double count)
+        if self.employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]:
+            return self.combined_sick_casual_balance
         return self.casual_leave_balance + self.sick_leave_balance
 
     @property
@@ -1065,6 +1158,8 @@ class LeaveRequest(models.Model):
     # Status and Approval
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="PENDING")
     approval_level = models.CharField(max_length=10, choices=APPROVAL_LEVEL_CHOICES, default="MANAGER")
+    current_step = models.PositiveIntegerField(default=1, help_text="Current step in the approval workflow")
+    workflow = models.ForeignKey("core.ApprovalWorkflow", on_delete=models.SET_NULL, null=True, blank=True)
 
     # Admin/Manager Actions
     approved_by = models.ForeignKey(
@@ -1526,3 +1621,34 @@ def invalidate_leave_balance_cache(sender, instance, **kwargs):
         cache.delete(cache_key)
 
     logger.info(f"Cache invalidated for employee {employee.user.get_full_name()} leave balance update")
+
+
+class WorkHistory(models.Model):
+    EVENT_TYPES = [
+        ("DESIGNATION", "Designation Change"),
+        ("CTC", "CTC Change"),
+        ("JOINING", "Joined"),
+        ("PROBATION", "Probation"),
+        ("OTHER", "Other"),
+    ]
+
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="work_history")
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    reason = models.TextField(blank=True, null=True, help_text="Reason for the change")
+    date = models.DateField(default=timezone.now)
+    event_type = models.CharField(max_length=20, choices=EVENT_TYPES, default="OTHER")
+
+    # Optional: Track old and new values for changes
+    previous_value = models.CharField(max_length=255, blank=True, null=True)
+    new_value = models.CharField(max_length=255, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-date", "-created_at"]
+        verbose_name_plural = "Work History"
+
+    def __str__(self):
+        return f"{self.title} - {self.employee.user.get_full_name()}"

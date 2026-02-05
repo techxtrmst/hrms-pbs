@@ -39,7 +39,7 @@
     }
 
     body {
-        background-color: var(--bg-body);
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
         font-family: 'Inter', sans-serif;
         color: #1e293b;
         overflow-x: hidden !important;
@@ -50,12 +50,56 @@
         line-height: 1.6;
     }
 
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background:
+            radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.1) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: -1;
+    }
+
     .container {
         max-width: 100% !important;
         padding-left: 15px !important;
         padding-right: 15px !important;
         overflow: visible !important;
         height: auto !important;
+        position: relative;
+    }
+
+    .container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="rgba(99,102,241,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)"/></svg>');
+        opacity: 0.3;
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    /* Mobile container adjustments */
+    @media (max-width: 767px) {
+        .container {
+            padding-left: 10px !important;
+            padding-right: 10px !important;
+        }
+    }
+
+    @media (max-width: 575px) {
+        .container {
+            padding-left: 8px !important;
+            padding-right: 8px !important;
+        }
     }
 
     /* === REPORTING HIERARCHY CONTAINER FIX === */
@@ -95,6 +139,14 @@
         height: auto !important;
         min-height: 400px !important;
         position: relative !important;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: all 0.3s ease;
+    }
+
+    .tab-pane.show.active {
+        opacity: 1 !important;
+        transform: translateY(0);
     }
 
     /* === JOB TAB VISIBILITY FIX === */
@@ -137,28 +189,123 @@
         overflow: visible !important;
     }
 
+    /* === DOCS TAB VISIBILITY FIX === */
+    #docs {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        height: auto !important;
+        min-height: 400px !important;
+        overflow: visible !important;
+    }
+
+    #docs.tab-pane.fade:not(.show) {
+        display: none !important;
+    }
+
+    #docs.tab-pane.fade.show {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
+    #docs .doc-grid {
+        display: grid !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        width: 100%;
+    }
+
     /* === PROFILE HERO SECTION === */
     .profile-hero {
         position: relative;
-        height: 200px;
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        height: 220px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
         overflow: hidden;
         border-bottom-left-radius: 2rem;
         border-bottom-right-radius: 2rem;
+        animation: gradientShift 8s ease-in-out infinite;
+    }
+
+    .profile-hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.15"/><circle cx="10" cy="60" r="0.8" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.6" fill="white" opacity="0.12"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .profile-hero::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes gradientShift {
+        0%, 100% { background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); }
+        25% { background: linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #4facfe 100%); }
+        50% { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 50%, #667eea 100%); }
+        75% { background: linear-gradient(135deg, #764ba2 0%, #667eea 50%, #f093fb 100%); }
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        33% { transform: translate(30px, -30px) rotate(120deg); }
+        66% { transform: translate(-20px, 20px) rotate(240deg); }
     }
 
     /* === PROFILE CARD === */
     .profile-card-main {
-        margin-top: -3rem;
+        margin-top: -3.5rem;
         background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
         border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-custom);
-        padding: 2rem;
+        box-shadow:
+            0 20px 40px rgba(0, 0, 0, 0.1),
+            0 8px 16px rgba(0, 0, 0, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        padding: 2.5rem;
         position: relative;
         z-index: 10;
+        overflow: hidden;
+    }
+
+    .profile-card-main::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+    }
+
+    .profile-card-main::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.03) 0%, transparent 70%);
+        animation: cardGlow 4s ease-in-out infinite alternate;
+    }
+
+    @keyframes cardGlow {
+        0% { opacity: 0.5; transform: scale(1); }
+        100% { opacity: 1; transform: scale(1.05); }
     }
 
     /* === PROFILE LAYOUT === */
@@ -186,9 +333,9 @@
     /* === PROFILE AVATAR === */
     .profile-avatar-wrapper {
         position: relative;
-        width: 120px;
-        height: 120px;
-        margin: -4rem auto 1.5rem;
+        width: 140px;
+        height: 140px;
+        margin: -5rem auto 1.5rem;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -200,119 +347,317 @@
         height: 100%;
         object-fit: cover;
         border-radius: 50%;
-        border: 4px solid white;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        border: 5px solid white;
+        box-shadow:
+            0 0 0 3px rgba(99, 102, 241, 0.3),
+            0 15px 35px rgba(0, 0, 0, 0.2),
+            0 5px 15px rgba(0, 0, 0, 0.1);
         background-color: #cbd5e1;
         display: flex;
         align-items: center;
         justify-content: center;
         overflow: hidden;
         position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .profile-avatar:hover {
+        transform: scale(1.05);
+        box-shadow:
+            0 0 0 3px rgba(99, 102, 241, 0.5),
+            0 20px 40px rgba(0, 0, 0, 0.25),
+            0 8px 20px rgba(0, 0, 0, 0.15);
     }
 
     .profile-avatar.placeholder {
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        font-size: 2rem;
+        font-size: 2.5rem;
+        font-weight: 600;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .profile-avatar.placeholder::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%);
+        animation: shimmer 3s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+        100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
     }
 
     .camera-btn {
         position: absolute;
-        bottom: 5px;
-        right: 5px;
-        background: #1e293b;
+        bottom: 8px;
+        right: 8px;
+        background: linear-gradient(135deg, #1e293b 0%, #374151 100%);
         color: white;
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        border: 2px solid white;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        transition: all 0.2s ease;
+        border: 3px solid white;
+        box-shadow:
+            0 4px 12px rgba(0, 0, 0, 0.2),
+            0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
         z-index: 10;
     }
 
     .camera-btn:hover {
-        background: #374151;
-        transform: scale(1.1);
+        background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+        transform: scale(1.1) rotate(5deg);
+        box-shadow:
+            0 6px 16px rgba(0, 0, 0, 0.25),
+            0 3px 6px rgba(0, 0, 0, 0.15);
     }
 
     /* === PROFILE INFO === */
     .profile-name {
-        font-weight: 700;
-        font-size: 1.75rem;
+        font-weight: 800;
+        font-size: 2rem;
         color: #1e293b;
         letter-spacing: -0.025em;
         text-align: center;
         margin-bottom: 0.5rem;
+        background: linear-gradient(135deg, #1e293b 0%, #4f46e5 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        position: relative;
+    }
+
+    .profile-name::after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, #4f46e5, transparent);
+        border-radius: 2px;
+    }
+
+    /* Style for pseudo name in parentheses */
+    .profile-name,
+    .info-value,
+    .req-name,
+    .manager-name,
+    h5,
+    h6 {
+        position: relative;
+    }
+
+    /* Add subtle styling to pseudo names in parentheses */
+    .profile-name:has-text("("),
+    .info-value:has-text("("),
+    .req-name:has-text("("),
+    .manager-name:has-text("("),
+    h5:has-text("("),
+    h6:has-text("(") {
+        font-style: normal;
+    }
+
+    /* Custom styling for parentheses content */
+    .pseudo-inline {
+        font-style: italic;
+        opacity: 0.8;
+        font-weight: 500 !important;
+        color: #6366f1 !important;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 0.7;
+            transform: translateY(0);
+        }
     }
 
     .profile-role {
-        font-size: 0.95rem;
+        font-size: 1rem;
         color: var(--secondary-color);
         font-weight: 500;
         text-align: center;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .profile-role i {
+        color: #6366f1;
+        font-size: 0.9rem;
     }
 
     /* === BADGES === */
     .badge-soft {
-        padding: 0.35em 0.8em;
+        padding: 0.5em 1em;
         border-radius: 2rem;
         font-weight: 600;
-        font-size: 0.75rem;
+        font-size: 0.8rem;
         letter-spacing: 0.02em;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .badge-soft::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.5s;
+    }
+
+    .badge-soft:hover::before {
+        left: 100%;
     }
 
     .badge-soft-primary {
-        background: var(--primary-light);
+        background: linear-gradient(135deg, var(--primary-light) 0%, rgba(99, 102, 241, 0.1) 100%);
         color: var(--primary-dark);
+        border: 1px solid rgba(99, 102, 241, 0.2);
     }
 
     .badge-soft-success {
-        background: #d1fae5;
+        background: linear-gradient(135deg, #d1fae5 0%, rgba(16, 185, 129, 0.1) 100%);
         color: #059669;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+        50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
     }
 
     /* === NAVIGATION TABS === */
     .nav-pills-custom {
         display: flex;
-        background: #f1f5f9;
-        padding: 0.35rem;
-        border-radius: 1rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        padding: 0.5rem;
+        border-radius: 1.5rem;
         gap: 0.25rem;
         justify-content: center;
         flex-wrap: wrap;
-        margin-top: 1rem;
+        margin-top: 2rem;
+        box-shadow:
+            0 4px 12px rgba(0, 0, 0, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .nav-pills-custom::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+        animation: tabShimmer 4s infinite;
+    }
+
+    @keyframes tabShimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
     }
 
     .nav-pills-custom .nav-link {
         color: #64748b;
-        font-weight: 600;
-        font-size: 0.9rem;
-        padding: 0.6rem 1.5rem;
-        border-radius: 0.75rem;
-        transition: all 0.3s;
+        font-weight: 700;
+        font-size: 0.95rem;
+        padding: 0.8rem 2rem;
+        border-radius: 1rem;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         white-space: nowrap;
         border: none;
         background: transparent;
         flex: 1;
         text-align: center;
         min-width: 0;
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .nav-pills-custom .nav-link::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        opacity: 0;
+        transition: all 0.4s ease;
+        z-index: -1;
+        border-radius: 1rem;
+    }
+
+    .nav-pills-custom .nav-link::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+        transition: all 0.4s ease;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+    }
+
+    .nav-pills-custom .nav-link:hover::after {
+        width: 100px;
+        height: 100px;
     }
 
     .nav-pills-custom .nav-link.active {
-        background: white;
-        color: var(--primary-color);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow:
+            0 8px 20px rgba(102, 126, 234, 0.3),
+            0 4px 8px rgba(102, 126, 234, 0.2);
+        transform: translateY(-2px) scale(1.02);
     }
 
-    .nav-pills-custom .nav-link:hover {
-        background: rgba(255, 255, 255, 0.7);
+    .nav-pills-custom .nav-link.active::before {
+        opacity: 1;
+    }
+
+    .nav-pills-custom .nav-link:hover:not(.active) {
+        background: rgba(255, 255, 255, 0.8);
         color: var(--primary-color);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .nav-pills-custom .nav-link:active {
+        transform: translateY(0) scale(0.98);
     }
 
     /* === CONTENT AREA AND LAYOUT === */
@@ -405,42 +750,88 @@
     }
 
     .content-card {
-        background: white;
+        background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);
         border-radius: var(--radius-md);
-        border: 1px solid #f1f5f9;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+        border: 1px solid rgba(241, 245, 249, 0.8);
+        box-shadow:
+            0 4px 20px rgba(0, 0, 0, 0.04),
+            0 1px 3px rgba(0, 0, 0, 0.02);
         height: auto;
         min-height: 250px;
         overflow: visible;
         margin-bottom: 1.5rem;
         display: flex;
         flex-direction: column;
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .content-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+        border-radius: var(--radius-md) var(--radius-md) 0 0;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .content-card:hover {
+        transform: translateY(-4px);
+        box-shadow:
+            0 12px 40px rgba(0, 0, 0, 0.08),
+            0 4px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .content-card:hover::before {
+        opacity: 1;
     }
 
     .card-header-clean {
-        padding: 1.25rem 1.5rem;
-        border-bottom: 1px solid #f1f5f9;
+        padding: 1.5rem 1.75rem;
+        border-bottom: 1px solid rgba(241, 245, 249, 0.8);
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        font-weight: 600;
+        gap: 1rem;
+        font-weight: 700;
         color: #334155;
-        background: #fff;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%);
         flex-wrap: wrap;
         flex-shrink: 0;
+        position: relative;
+    }
+
+    .card-header-clean::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 1.75rem;
+        right: 1.75rem;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.3), transparent);
     }
 
     .card-icon {
-        width: 32px;
-        height: 32px;
+        width: 40px;
+        height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: var(--primary-light);
+        background: linear-gradient(135deg, var(--primary-light) 0%, rgba(99, 102, 241, 0.1) 100%);
         color: var(--primary-dark);
-        border-radius: 8px;
-        font-size: 0.9rem;
+        border-radius: 12px;
+        font-size: 1rem;
         flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .card-icon:hover {
+        transform: scale(1.1) rotate(5deg);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
     }
 
     .card-body-clean {
@@ -572,35 +963,70 @@
     }
 
     .info-label {
-        font-size: 0.75rem;
+        font-size: 0.8rem;
         text-transform: uppercase;
-        color: #94a3b8;
-        font-weight: 600;
+        color: #6366f1;
+        font-weight: 700;
         letter-spacing: 0.05em;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.5rem;
         display: block;
+        position: relative;
+    }
+
+    .info-label::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 20px;
+        height: 2px;
+        background: linear-gradient(90deg, #6366f1, transparent);
+        border-radius: 1px;
     }
 
     .info-value {
-        font-size: 0.95rem;
+        font-size: 1rem;
         color: #1e293b;
-        font-weight: 500;
+        font-weight: 600;
         word-break: break-word;
-        line-height: 1.4;
+        line-height: 1.5;
     }
 
     .info-group {
-        background: #f8fafc;
-        padding: 0.75rem 1rem;
-        border-radius: 0.75rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        padding: 1rem 1.25rem;
+        border-radius: 1rem;
         height: 100%;
-        transition: 0.2s;
+        transition: all 0.3s ease;
         margin-bottom: 0.75rem;
+        border: 1px solid rgba(241, 245, 249, 0.8);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .info-group::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
     }
 
     .info-group:hover {
-        background: #fff;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        box-shadow:
+            0 8px 25px rgba(0, 0, 0, 0.06),
+            0 3px 10px rgba(0, 0, 0, 0.04);
+        transform: translateY(-2px);
+        border-color: rgba(99, 102, 241, 0.2);
+    }
+
+    .info-group:hover::before {
+        opacity: 1;
     }
 
     /* Info sections responsive */
@@ -926,22 +1352,147 @@
         right: 10px;
     }
 
-    @keyframes fadeInUp {
-        from {
+    /* === UNIQUE ANIMATIONS AND EFFECTS === */
+    @keyframes slideInFromTop {
+        0% {
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(-30px);
         }
-
-        to {
+        100% {
             opacity: 1;
             transform: translateY(0);
         }
     }
 
-    .fade-in-up {
-        opacity: 0;
-        animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    @keyframes slideInFromLeft {
+        0% {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+        100% {
+            opacity: 1;
+            transform: translateX(0);
+        }
     }
+
+    @keyframes slideInFromRight {
+        0% {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+        100% {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    /* Apply animations to different elements */
+    .profile-card-main {
+        animation: slideInFromTop 0.8s ease-out;
+    }
+
+    .content-card:nth-child(odd) {
+        animation: slideInFromLeft 0.6s ease-out;
+        animation-delay: 0.2s;
+        animation-fill-mode: both;
+    }
+
+    .content-card:nth-child(even) {
+        animation: slideInFromRight 0.6s ease-out;
+        animation-delay: 0.4s;
+        animation-fill-mode: both;
+    }
+
+    .nav-pills-custom {
+        animation: slideInFromTop 0.6s ease-out 0.6s both;
+    }
+
+    /* Floating elements effect */
+    .floating {
+        animation: floatUpDown 3s ease-in-out infinite;
+    }
+
+    @keyframes floatUpDown {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+
+    /* Glowing effect for active elements */
+    .glow-effect {
+        position: relative;
+    }
+
+    .glow-effect::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #667eea);
+        border-radius: inherit;
+        opacity: 0;
+        z-index: -1;
+        transition: opacity 0.3s ease;
+        animation: rotateGlow 4s linear infinite;
+    }
+
+    .glow-effect:hover::before {
+        opacity: 0.7;
+    }
+
+    @keyframes rotateGlow {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Particle effect for background */
+    .particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    .particle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: rgba(99, 102, 241, 0.3);
+        border-radius: 50%;
+        animation: particleFloat 8s infinite linear;
+    }
+
+    @keyframes particleFloat {
+        0% {
+            transform: translateY(100vh) rotate(0deg);
+            opacity: 0;
+        }
+        10% {
+            opacity: 1;
+        }
+        90% {
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(-100px) rotate(360deg);
+            opacity: 0;
+        }
+    }
+
+    /* Staggered animation delays for particles */
+    .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+    .particle:nth-child(2) { left: 20%; animation-delay: 1s; }
+    .particle:nth-child(3) { left: 30%; animation-delay: 2s; }
+    .particle:nth-child(4) { left: 40%; animation-delay: 3s; }
+    .particle:nth-child(5) { left: 50%; animation-delay: 4s; }
+    .particle:nth-child(6) { left: 60%; animation-delay: 5s; }
+    .particle:nth-child(7) { left: 70%; animation-delay: 6s; }
+    .particle:nth-child(8) { left: 80%; animation-delay: 7s; }
+    .particle:nth-child(9) { left: 90%; animation-delay: 8s; }
 
     .gradient-icon {
         background: linear-gradient(135deg, #6366f1, #8b5cf6);
@@ -1313,17 +1864,28 @@
 
         /* Navigation */
         .nav-pills-custom {
-            flex-direction: column;
-            gap: 0.5rem;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 0.25rem;
             padding: 0.5rem;
             width: 100%;
+            justify-content: center;
+            margin-top: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .nav-pills-custom .nav-link {
-            padding: 0.6rem;
+            padding: 0.6rem 1rem;
             font-size: 0.85rem;
-            flex: none;
-            width: 100%;
+            flex: 1;
+            min-width: 80px;
+            text-align: center;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .nav-pills-custom .nav-link:active {
+            transform: scale(0.98);
         }
 
         /* Grids to single column */
@@ -1355,7 +1917,7 @@
         }
 
         .card-body-clean {
-            padding: 0.5;
+            padding: 1.25rem;
         }
 
         /* Work Timeline specific mobile padding */
@@ -1520,6 +2082,47 @@
             height: 50px;
             font-size: 1.3rem;
             flex-shrink: 0;
+        }
+
+        /* Profile info section responsive */
+        .profile-info-section {
+            width: 100%;
+            text-align: center;
+        }
+
+        .profile-info-section .d-flex {
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .profile-status-section {
+            width: 100%;
+            text-align: center;
+        }
+
+        /* Badge responsive */
+        .badge-soft {
+            font-size: 0.7rem;
+            padding: 0.3rem 0.7rem;
+        }
+
+        /* Emergency contacts responsive */
+        .border.rounded-3 {
+            padding: 1rem !important;
+            margin-bottom: 0.75rem;
+        }
+
+        .border.rounded-3 h6 {
+            font-size: 0.9rem;
+        }
+
+        .border.rounded-3 .small {
+            font-size: 0.8rem;
+        }
+
+        .border.rounded-3 .badge {
+            font-size: 0.65rem;
+            padding: 0.25rem 0.5rem;
         }
     }
 
@@ -2038,11 +2641,24 @@
 {% block content %}
 <div class="profile-hero"></div>
 
+<!-- Particle Effect Background -->
+<div class="particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+</div>
+
 <div class="container pb-5">
-    <div class="profile-card-main">
+    <div class="profile-card-main glow-effect">
         <div class="profile-layout">
             <div class="profile-avatar-section">
-                <div class="profile-avatar-wrapper" onclick="document.getElementById('profile_pic_input').click()"
+                <div class="profile-avatar-wrapper floating" onclick="document.getElementById('profile_pic_input').click()"
                     title="Click to change profile picture">
                     {% if employee.profile_picture %}
                     <img src="{{ employee.profile_picture.url }}" class="profile-avatar" alt="Profile">
@@ -2057,7 +2673,7 @@
 
             <div class="profile-info-section">
                 <h1 class="profile-name mb-1">
-                    {{ employee.user.get_full_name }}
+                    {{ employee.user.get_full_name }}{% if employee.pseudo_name %} ({{ employee.pseudo_name|lower }}){% endif %}
                 </h1>
                 <div class="d-flex flex-wrap align-items-center justify-content-center gap-2 mb-3">
                     <span class="profile-role"><i class="fas fa-briefcase me-1 text-muted"></i>
@@ -2132,13 +2748,51 @@
                                         <div class="timeline-dot-inner"></div>
                                     </div>
                                     <div class="timeline-content active-node">
-                                        <span class="timeline-date">Today</span>
+                                        <span class="timeline-date">Current</span>
                                         <div class="timeline-title text-primary">Current Role</div>
                                         <span class="badge bg-primary-soft text-primary mt-1">
                                             {{ employee.designation }}
                                         </span>
                                     </div>
                                 </div>
+
+                                <!-- Work History -->
+                                {% for event in work_history %}
+                                <div class="timeline-node">
+                                    <div class="timeline-dot active">
+                                        <div class="timeline-dot-inner"></div>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <span class="timeline-date">{{ event.date|date:"d M, Y" }}</span>
+                                        <div class="timeline-title d-flex align-items-center">
+                                            {{ event.title }}
+                                            {% if event.event_type == 'DESIGNATION' or event.event_type == 'CTC' %}
+                                            <span class="ms-2 badge bg-light text-dark fw-normal"
+                                                style="font-size: 0.7rem;">Update</span>
+                                            {% endif %}
+                                        </div>
+
+                                        {% if event.previous_value and event.new_value %}
+                                        <div class="mt-2 p-2 bg-light rounded-3 border-start border-primary border-3">
+                                            <div class="row g-0 align-items-center">
+                                                <div class="col text-muted small text-truncate">{{ event.previous_value }}</div>
+                                                <div class="col-auto px-2 text-primary small"><i
+                                                        class="fas fa-long-arrow-alt-right"></i></div>
+                                                <div class="col fw-bold small text-truncate">{{ event.new_value }}</div>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <div class="small text-muted">{{ event.description }}</div>
+                                        {% endif %}
+
+                                        {% if event.reason %}
+                                        <div class="small text-muted fst-italic mt-2" style="font-size: 0.75rem;">
+                                            <i class="fas fa-comment-dots me-1 text-primary-light"></i>Reason: {{ event.reason }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
 
                                 <!-- Probation Status (only show if completed) -->
                                 {% if probation_status == 'COMPLETED' or probation_status == 'COMPLETED_TODAY' %}
@@ -2321,10 +2975,20 @@
                                         <div class="col-sm-6">
                                             <div class="info-group"><label class="info-label">Full Name</label>
                                                 <div class="info-value fw-bold">
-                                                    {{ employee.user.get_full_name }}
+                                                    {{ employee.user.get_full_name }}{% if employee.pseudo_name %} ({{ employee.pseudo_name|lower }}){% endif %}
                                                 </div>
                                             </div>
                                         </div>
+                                        {% if employee.pseudo_name and employee.company and 'bluebix' in employee.company.name|lower or 'softstandard' in employee.company.name|lower %}
+                                        <div class="col-sm-6">
+                                            <div class="info-group">
+                                                <label class="info-label">Pseudo Name</label>
+                                                <div class="info-value fw-bold">
+                                                    {{ employee.pseudo_name }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
                                         <div class="col-sm-6">
                                             <div class="info-group"><label class="info-label">Email</label>
                                                 <div class="info-value text-break">
@@ -2564,8 +3228,7 @@
                                         <i class="fas fa-utensils text-orange me-2"></i>Lunch Break
                                     </div>
                                     <div class="shift-info-value">
-                                        {{ employee.assigned_shift.lunch_break_start|time:"H:i" }} - {{
-                                        employee.assigned_shift.lunch_break_end|time:"H:i" }}
+                                        {{ employee.assigned_shift.lunch_break_start|time:"H:i" }} - {{ employee.assigned_shift.lunch_break_end|time:"H:i" }}
                                     </div>
                                 </div>
                                 {% endif %}
@@ -2596,7 +3259,7 @@
                                     {{ employee.manager.first_name|first|upper|default:"M" }}
                                 </div>
                                 <div class="manager-name">
-                                    {{ employee.manager.get_full_name }}
+                                    {{ employee.manager.get_full_name }}{% if employee.manager.employee and employee.manager.employee.pseudo_name %} ({{ employee.manager.employee.pseudo_name|lower }}){% endif %}
                                 </div>
                                 <div class="manager-title">Reporting Manager</div>
                                 <a href="mailto:{{ employee.manager.email }}" class="manager-contact-btn">
@@ -2801,8 +3464,7 @@
                 <div class="alert alert-info mt-3">
                     <i class="fas fa-info-circle me-2"></i>
                     <strong>Current Assignment:</strong> {{ employee.assigned_shift.name }}
-                    ({{ employee.assigned_shift.start_time|time:"H:i" }} - {{
-                    employee.assigned_shift.end_time|time:"H:i" }})
+                    ({{ employee.assigned_shift.start_time|time:"H:i" }} - {{ employee.assigned_shift.end_time|time:"H:i" }})
                 </div>
                 {% else %}
                 <div class="alert alert-warning mt-3">
@@ -2843,8 +3505,8 @@
         // Initialize shift configuration
         initShiftConfiguration();
 
-        // Fix Job tab visibility
-        initJobTabFix();
+        // Fix tab visibility issues
+        initTabVisibilityFix();
     });
 
     // Initialize responsive behavior
@@ -2858,6 +3520,29 @@
         setVH();
         window.addEventListener('resize', setVH);
         window.addEventListener('orientationchange', setVH);
+
+        // Style pseudo names in parentheses
+        function stylePseudoNames() {
+            const elements = document.querySelectorAll('.profile-name, .info-value, .req-name, .manager-name, h5, h6');
+            elements.forEach(element => {
+                const text = element.textContent || element.innerText;
+                if (text.includes('(') && text.includes(')')) {
+                    const regex = /^(.+?)\s*\((.+?)\)(.*)$/;
+                    const match = text.match(regex);
+                    if (match) {
+                        const [, beforeParen, insideParen, afterParen] = match;
+                        element.innerHTML = `${beforeParen.trim()} <span class="pseudo-inline">(${insideParen.trim()})</span>${afterParen}`;
+                    }
+                }
+            });
+        }
+
+        // Apply pseudo name styling
+        stylePseudoNames();
+
+        // Re-apply after dynamic content loads
+        setTimeout(stylePseudoNames, 500);
+        setTimeout(stylePseudoNames, 1000);
 
         // Fix timeline display issues
         function fixTimelineDisplay() {
@@ -2938,27 +3623,29 @@
                 img.src = e.target.result;
                 img.className = 'doc-preview-img w-100 temp-preview';
 
-                var isBD = {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}true{% else %}false{% endif %};
-                var isUS = {% if employee.location.country_code == "US" or "US" in employee.location.name %}true{% else %}false{% endif %};
+                var countryCode = "{{ employee.location.country_code|default:'' }}";
+                var locationName = "{{ employee.location.name|lower|default:'' }}";
+                var isBD = countryCode === "BD" || locationName.includes("dhaka");
+                var isUS = countryCode === "US" || locationName.includes("us");
 
-        var label = document.createElement('div');
-        label.className = 'fw-bold text-dark temp-label';
-        var nameMap = {
-            'aadhar_front': isBD ? 'NID Front' : (isUS ? 'State ID Front' : 'Aadhar Front'),
-            'aadhar_back': isBD ? 'NID Back' : (isUS ? 'State ID Back' : 'Aadhar Back'),
-            'pan_card': isBD ? 'TIN Card' : (isUS ? 'SSN Card' : 'PAN Card')
-        };
-        label.innerText = (nameMap[input.name] || 'Document') + ' (Selected)';
+                var label = document.createElement('div');
+                label.className = 'fw-bold text-dark temp-label';
+                var nameMap = {
+                    'aadhar_front': isBD ? 'NID Front' : (isUS ? 'State ID Front' : 'Aadhar Front'),
+                    'aadhar_back': isBD ? 'NID Back' : (isUS ? 'State ID Back' : 'Aadhar Back'),
+                    'pan_card': isBD ? 'TIN Card' : (isUS ? 'SSN Card' : 'PAN Card')
+                };
+                label.innerText = (nameMap[input.name] || 'Document') + ' (Selected)';
 
-        var badge = document.createElement('span');
-        badge.className = 'badge bg-info doc-status-badge';
-        badge.innerHTML = '<i class="fas fa-save"></i> Save Required';
+                var badge = document.createElement('span');
+                badge.className = 'badge bg-info doc-status-badge';
+                badge.innerHTML = '<i class="fas fa-save"></i> Save Required';
 
-        box.insertBefore(badge, input);
-        box.insertBefore(img, input);
-        box.insertBefore(label, input);
-    }
-    reader.readAsDataURL(input.files[0]);
+                box.insertBefore(badge, input);
+                box.insertBefore(img, input);
+                box.insertBefore(label, input);
+            }
+            reader.readAsDataURL(input.files[0]);
         }
     }
 
@@ -3014,7 +3701,7 @@
 
                 const cardGrid = tab.querySelector('.card-grid, .doc-grid');
                 if (cardGrid) {
-                    cardGrid.style.display = cardGrid.classList.contains('doc-grid') ? 'grid' : 'grid';
+                    cardGrid.style.display = 'grid';
                     cardGrid.style.visibility = 'visible';
                     cardGrid.style.opacity = '1';
                 }
@@ -3028,24 +3715,46 @@
             }
         }
 
-        // Run immediately for active tab
-        showContent('about');
-        showContent('job');
-        showContent('docs');
+        // Initialize Bootstrap tabs properly
+        const tabTriggerList = [].slice.call(document.querySelectorAll('#profileTabs button[data-bs-toggle="tab"]'));
+        tabTriggerList.forEach(function (tabTriggerEl) {
+            const tabTrigger = new bootstrap.Tab(tabTriggerEl);
 
-        // After delays
-        setTimeout(() => { showContent('about'); showContent('job'); showContent('docs'); }, 100);
+            tabTriggerEl.addEventListener('click', function (event) {
+                event.preventDefault();
+                tabTrigger.show();
 
-        // Handle tab clicks
-        ['about-tab', 'job-tab', 'docs-tab'].forEach(id => {
-            const btn = document.getElementById(id);
-            if (btn) {
-                btn.addEventListener('click', function () {
-                    const targetId = this.getAttribute('data-bs-target').replace('#', '');
-                    setTimeout(() => showContent(targetId), 50);
-                });
-            }
+                // Get target tab ID
+                const targetId = this.getAttribute('data-bs-target').replace('#', '');
+
+                // Show content after tab switch
+                setTimeout(() => {
+                    showContent(targetId);
+
+                    // Force layout recalculation
+                    const targetTab = document.getElementById(targetId);
+                    if (targetTab) {
+                        targetTab.style.display = 'none';
+                        targetTab.offsetHeight; // Trigger reflow
+                        targetTab.style.display = 'block';
+                    }
+                }, 50);
+            });
+
+            // Handle shown.bs.tab event
+            tabTriggerEl.addEventListener('shown.bs.tab', function (event) {
+                const targetId = event.target.getAttribute('data-bs-target').replace('#', '');
+                showContent(targetId);
+            });
         });
+
+        // Show initial content
+        showContent('about');
+        setTimeout(() => {
+            showContent('about');
+            showContent('job');
+            showContent('docs');
+        }, 100);
     }
 </script>
 
@@ -3058,6 +3767,7 @@
 
     .touch-device .nav-link.touch-active {
         background: rgba(99, 102, 241, 0.1);
+        transform: scale(0.98);
     }
 
     .touch-device .btn.touch-active {
@@ -3065,14 +3775,59 @@
     }
 
     .nav-mobile {
-        flex-direction: column !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
         width: 100% !important;
+        justify-content: center !important;
     }
 
     .nav-mobile .nav-link {
-        width: 100% !important;
+        flex: 1 !important;
+        min-width: 80px !important;
         margin-bottom: 0.25rem !important;
         text-align: center !important;
+    }
+
+    /* Tab content animations */
+    .tab-pane {
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .tab-pane:not(.show) {
+        opacity: 0;
+        transform: translateY(10px);
+        pointer-events: none;
+    }
+
+    .tab-pane.show.active {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+
+    /* Loading state for tabs */
+    .tab-loading {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .tab-loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        margin: -10px 0 0 -10px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
 
     /* Timeline visibility fixes */
@@ -3114,6 +3869,115 @@
     .timeline-line {
         position: absolute !important;
         z-index: 2 !important;
+    }
+
+    /* Mobile-specific improvements */
+    @media (max-width: 767px) {
+        /* Ensure proper touch targets */
+        .nav-link,
+        .btn,
+        .camera-btn,
+        .doc-upload-box {
+            min-height: 44px;
+            min-width: 44px;
+        }
+
+        /* Improve text readability */
+        .profile-name {
+            line-height: 1.2;
+            word-break: break-word;
+        }
+
+        .profile-role {
+            line-height: 1.3;
+        }
+
+        /* Better spacing for mobile */
+        .d-flex.gap-3 {
+            gap: 0.75rem !important;
+        }
+
+        .d-flex.gap-2 {
+            gap: 0.5rem !important;
+        }
+
+        /* Improve form elements */
+        .form-control,
+        .form-select {
+            border-radius: 0.5rem;
+            border: 2px solid #e2e8f0;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        /* Better button styling */
+        .btn {
+            border-radius: 0.5rem;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            border: none;
+        }
+
+        /* Improve card spacing */
+        .content-card {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Better timeline mobile layout */
+        .timeline-wrapper {
+            margin: 0 -0.5rem;
+            padding: 1rem 1rem 1rem 2rem;
+        }
+
+        .timeline-content {
+            margin-left: 0;
+            margin-right: 0.5rem;
+        }
+    }
+
+    /* Ultra-small mobile improvements */
+    @media (max-width: 400px) {
+        .nav-pills-custom {
+            flex-direction: column !important;
+            gap: 0.5rem !important;
+            padding: 0.75rem;
+        }
+
+        .nav-pills-custom .nav-link {
+            width: 100% !important;
+            flex: none !important;
+            padding: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .profile-layout {
+            gap: 0.75rem !important;
+        }
+
+        .d-flex.gap-3 {
+            gap: 0.5rem !important;
+            flex-direction: column !important;
+            align-items: center !important;
+        }
+
+        .badge-soft {
+            margin-bottom: 0.25rem;
+        }
+
+        .profile-name {
+            font-size: 1.2rem;
+        }
+
+        .profile-role {
+            font-size: 0.8rem;
+        }
     }
 
     /* Shift configuration styles */

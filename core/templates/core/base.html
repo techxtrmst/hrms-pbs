@@ -95,12 +95,12 @@
             letter-spacing: 1.5px;
             color: #64748b;
             /* Slate 500 */
-            padding: 16px 28px 8px;
+            padding: 12px 28px 4px;
             font-weight: 700;
         }
 
         .sidebar a {
-            padding: 12px 28px;
+            padding: 10px 28px;
             text-decoration: none;
             font-size: 0.95rem;
             color: var(--text-color);
@@ -109,7 +109,7 @@
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             border-left: 3px solid transparent;
             position: relative;
-            margin: 1px 0;
+            margin: 0;
         }
 
         .sidebar a:hover {
@@ -148,7 +148,7 @@
         /* Dropdown/Collapse Styling */
         .sidebar-dropdown-toggle {
             cursor: pointer;
-            padding: 8px 28px 8px 0;
+            padding: 4px 28px 4px 0;
             /* Align with title padding */
             text-decoration: none !important;
             transition: all 0.2s;
@@ -192,7 +192,7 @@
         }
 
         /* Ensure dropdown toggles for collapsed sections don't add extra space */
-        .sidebar .sidebar-dropdown-toggle + .collapse:not(.show) {
+        .sidebar .sidebar-dropdown-toggle+.collapse:not(.show) {
             margin-top: 0 !important;
             margin-bottom: 0 !important;
         }
@@ -205,7 +205,7 @@
         }
 
         .sub-menu {
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.1);
             margin: 0;
             padding: 0;
         }
@@ -317,11 +317,13 @@
         /* Main Content Adjustment */
         .content {
             margin-left: var(--sidebar-width);
+            width: calc(100% - var(--sidebar-width));
             padding: 30px;
             min-height: 100vh;
             background-color: #f8fafc;
             /* Slate 50 */
-            transition: margin-left 0.3s ease;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
         }
 
         /* Topbar Redesign - Enhanced for Desktop and Mobile */
@@ -348,7 +350,8 @@
             align-items: center;
             gap: 24px;
             flex: 1;
-            min-width: 0; /* Allow flex items to shrink */
+            min-width: 0;
+            /* Allow flex items to shrink */
         }
 
         .topbar .d-flex:last-child {
@@ -429,7 +432,7 @@
         }
 
         /* Responsive Design - Enhanced Topbar */
-        @media (max-width: 1200px) {
+        @media (max-width: 1199px) {
             :root {
                 --sidebar-width: 260px;
             }
@@ -445,7 +448,7 @@
             }
         }
 
-        @media (max-width: 992px) {
+        @media (max-width: 991px) {
             :root {
                 --sidebar-width: 240px;
             }
@@ -466,7 +469,7 @@
 
             /* Adjust search bar for tablets */
             #employeeSearchInput {
-                width: 240px;
+                width: 200px;
                 font-size: 13px;
             }
 
@@ -537,7 +540,8 @@
 
             .mobile-menu-toggle {
                 display: flex !important;
-                order: -1; /* Ensure it appears first */
+                order: -1;
+                /* Ensure it appears first */
                 margin-right: 8px;
             }
 
@@ -648,21 +652,13 @@
                 width: 100%;
             }
 
-            /* Aggressive spacing reset for mobile */
-            .sidebar * {
-                margin-top: 0 !important;
-                margin-bottom: 0 !important;
-            }
-
-            .sidebar > a,
-            .sidebar > .sidebar-dropdown-toggle {
-                margin: 0 !important;
+            .sidebar>a,
+            .sidebar>.sidebar-dropdown-toggle {
                 padding: 10px 24px !important;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             }
 
             .sidebar .sub-menu a {
-                margin: 0 !important;
                 padding: 8px 24px 8px 48px !important;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.03);
             }
@@ -688,81 +684,75 @@
                 height: 0 !important;
                 min-height: 0 !important;
                 max-height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
             }
 
-            /* Force any element with excessive height to be limited */
-            .sidebar * {
-                max-height: 50px !important;
+            /* Specific fix for any large height elements in sidebar */
+            .sidebar [style*="height"],
+            .sidebar [style*="height"] {
+                height: auto !important;
+                max-height: none;
             }
 
-            .sidebar .collapse.show {
-                max-height: none !important;
-            }
-
-            .sidebar .collapse.show * {
-                max-height: none !important;
-            }
-
-            /* Specific fix for any 250px height elements */
-            .sidebar [style*="height: 250px"],
-            .sidebar [style*="height:250px"] {
-                height: 20px !important;
-                max-height: 20px !important;
+            .sidebar .collapse:not(.show) [style*="height"] {
+                height: 0 !important;
+                display: none !important;
             }
         }
 
-            /* Hide desktop-only elements */
-            .d-none.d-md-block {
-                display: none !important;
-            }
+        /* Hide desktop-only elements */
+        .d-none.d-md-block {
+            display: none !important;
+        }
 
-            /* Adjust brand section for mobile */
-            .brand-section {
-                padding: 20px 24px;
-            }
+        /* Adjust brand section for mobile */
+        .brand-section {
+            padding: 20px 24px;
+        }
 
-            .brand-section h3 {
-                font-size: 1.2rem;
-            }
+        .brand-section h3 {
+            font-size: 1.2rem;
+        }
 
-            /* Adjust sidebar links for mobile */
-            .sidebar a {
-                padding: 12px 24px;
-                font-size: 0.9rem;
-                min-height: 44px;
-                display: flex;
-                align-items: center;
-                margin: 1px 0;
-            }
+        /* Adjust sidebar links for mobile */
+        .sidebar a {
+            padding: 12px 24px;
+            font-size: 0.9rem;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            margin: 1px 0;
+        }
 
-            .sidebar-section-title {
-                padding: 16px 24px 8px;
-                font-size: 0.65rem;
-            }
+        .sidebar-section-title {
+            padding: 16px 24px 8px;
+            font-size: 0.65rem;
+        }
 
-            /* Notification dropdown adjustments */
-            .notification-dropdown {
-                width: calc(100vw - 30px);
-                right: 15px;
-                left: 15px;
-            }
+        /* Notification dropdown adjustments */
+        .notification-dropdown {
+            width: calc(100vw - 30px);
+            right: 15px;
+            left: 15px;
+        }
 
-            /* Topbar user info adjustments - only hide on very small screens */
+        /* Topbar user info adjustments - only hide on very small screens */
 
-            .topbar .dropdown img {
-                width: 35px;
-                height: 35px;
-            }
+        .topbar .dropdown img {
+            width: 35px;
+            height: 35px;
+        }
 
-            /* Prevent body scroll when sidebar is open */
-            body.sidebar-open {
-                overflow: hidden;
-                position: fixed;
-                width: 100%;
-            }
+        /* Prevent body scroll when sidebar is open */
+        body.sidebar-open {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
         }
 
         @media (max-width: 576px) {
+
             /* Very Small Screens - Optimized Topbar */
             .topbar {
                 padding: 10px 12px;
@@ -1006,7 +996,8 @@
             flex-shrink: 0;
         }
 
-        .search-loading, .search-no-results {
+        .search-loading,
+        .search-no-results {
             padding: 24px 20px;
             text-align: center;
             color: #6c7293;
@@ -1026,8 +1017,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         /* Scrollbar Styling for Search Results */
@@ -1428,7 +1424,8 @@
             }
 
             #testSoundBtn {
-                display: none; /* Hide sound button on very small screens */
+                display: none;
+                /* Hide sound button on very small screens */
             }
 
             #markAllRead {
@@ -1633,13 +1630,11 @@
                 <a href="{% url 'org_chart' %}" class="{% if 'org-chart' in request.path %}active{% endif %}">
                     <i class="fas fa-sitemap"></i> Organisation
                 </a>
-
                 {% if user.role == 'COMPANY_ADMIN' %}
                 <a href="{% url 'add_employee_step1' %}" class="{% if 'add' in request.path %}active{% endif %}">
                     <i class="fas fa-user-plus"></i> Add Employee
                 </a>
                 {% endif %}
-
                 <a href="{% url 'employee_list' %}"
                     class="{% if 'employee_list' == request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-users"></i>
@@ -1649,7 +1644,6 @@
                     All Employees
                     {% endif %}
                 </a>
-
                 <a href="{% url 'attendance_analytics' %}"
                     class="{% if 'analytics' in request.path %}active{% endif %}">
                     <i class="fas fa-chart-line"></i> Analytics
@@ -1679,7 +1673,6 @@
                     class="{% if 'regularization/requests' in request.path %}active{% endif %}">
                     <i class="fas fa-check-double"></i> Regularization Requests
                 </a>
-
                 <a href="{% url 'leave_history' %}" class="{% if 'history' in request.path %}active{% endif %}">
                     <i class="fas fa-history"></i> Leave History
                 </a>
@@ -1873,8 +1866,8 @@
             {% if user.role == 'COMPANY_ADMIN' %}
             <div class="employee-search-container">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" id="employeeSearchInput" class="form-control"
-                    placeholder="Search employees..." autocomplete="off">
+                <input type="text" id="employeeSearchInput" class="form-control" placeholder="Search employees..."
+                    autocomplete="off">
                 <div id="searchResults" class="search-results"></div>
             </div>
             {% endif %}
@@ -1996,9 +1989,9 @@
     <script>
         // Mobile Navigation is handled by responsive.js
         // Fallback mobile navigation in case responsive.js fails to load
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Wait a bit to see if responsive.js loaded
-            setTimeout(function() {
+            setTimeout(function () {
                 const mobileToggle = document.getElementById('mobileMenuToggle');
                 const sidebar = document.querySelector('.sidebar');
                 const overlay = document.getElementById('sidebarOverlay');
@@ -2009,7 +2002,7 @@
                         console.log('Responsive.js not detected, using fallback mobile navigation');
 
                         // Simple fallback mobile navigation
-                        mobileToggle.addEventListener('click', function(e) {
+                        mobileToggle.addEventListener('click', function (e) {
                             e.preventDefault();
                             e.stopPropagation();
 
@@ -2032,7 +2025,7 @@
                             }
                         });
 
-                        overlay.addEventListener('click', function() {
+                        overlay.addEventListener('click', function () {
                             sidebar.classList.remove('show');
                             overlay.classList.remove('show');
                             document.body.classList.remove('sidebar-open');
@@ -2043,7 +2036,7 @@
                         // Prevent dropdown toggles from closing sidebar
                         const dropdownToggles = sidebar.querySelectorAll('[data-bs-toggle="collapse"]');
                         dropdownToggles.forEach(toggle => {
-                            toggle.addEventListener('click', function(e) {
+                            toggle.addEventListener('click', function (e) {
                                 e.stopPropagation();
                                 console.log('Dropdown toggle clicked, preventing sidebar close');
                             });
@@ -2171,14 +2164,16 @@
 
             // Service Worker Registration for better background persistence
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/static/js/sw.js')
+                navigator.serviceWorker.register('/sw.js')
                     .then(reg => {
                         console.log('Service Worker registered for background tracking');
                         // Request periodic sync if supported (requires PWA installation typically)
                         if ('periodicSync' in reg) {
                             reg.periodicSync.register('hourly-location-punch', {
                                 minInterval: 3600000 // 1 hour
-                            }).catch(err => console.log('Periodic Sync failed (expected if not installed):', err));
+                            }).catch(err => {
+                                // Silent catch for browsers/environments that don't support periodic sync
+                            });
                         }
                     })
                     .catch(err => console.warn('SW registration failed:', err));
@@ -2342,7 +2337,7 @@
             });
 
             // Handle escape key to close search
-            searchInput.addEventListener('keydown', function(e) {
+            searchInput.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape') {
                     hideSearchResults();
                     this.blur();
@@ -2350,7 +2345,7 @@
             });
 
             // Prevent form submission on enter
-            searchInput.addEventListener('keydown', function(e) {
+            searchInput.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                 }
@@ -2518,7 +2513,7 @@
         }
 
         // Handle window resize to adjust search behavior
-        window.addEventListener('resize', function() {
+        window.addEventListener('resize', function () {
             if (isSearchOpen) {
                 // Adjust search results position on resize
                 if (window.innerWidth <= 768) {
@@ -2679,31 +2674,9 @@
         });
 
         // Handle window resize to adjust notification position
-        window.addEventListener('resize', function() {
+        window.addEventListener('resize', function () {
             if (isDropdownOpen && window.innerWidth > 768) {
                 adjustNotificationPosition();
-            }
-        });
-
-        // Debug user info visibility - remove after testing
-        document.addEventListener('DOMContentLoaded', function() {
-            const userInfoSection = document.getElementById('userInfoSection');
-            const debugInfo = document.getElementById('debugInfo');
-
-            if (userInfoSection) {
-                console.log('User info section found:', userInfoSection);
-                console.log('Computed style:', window.getComputedStyle(userInfoSection));
-                console.log('Display:', window.getComputedStyle(userInfoSection).display);
-                console.log('Visibility:', window.getComputedStyle(userInfoSection).visibility);
-
-                // Show debug info on double-click
-                userInfoSection.addEventListener('dblclick', function() {
-                    if (debugInfo) {
-                        debugInfo.style.display = debugInfo.style.display === 'none' ? 'block' : 'none';
-                    }
-                });
-            } else {
-                console.error('User info section not found!');
             }
         });
 
@@ -2961,7 +2934,7 @@
     <!-- Employee Search Functionality -->
     <script>
         // Simple typing test with actual search
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             console.log('🔍 DOM loaded, setting up search...');
 
             const searchInput = document.getElementById('employeeSearchInput');
@@ -2971,7 +2944,7 @@
             if (searchInput && searchResults) {
                 console.log('✅ Search input and results found, adding event listener');
 
-                searchInput.addEventListener('input', function() {
+                searchInput.addEventListener('input', function () {
                     const query = this.value.trim();
                     console.log('⌨️ Typing detected:', query);
 
@@ -3062,7 +3035,7 @@
             }
 
             // Navigation function
-            window.navigateToEmployee = function(url) {
+            window.navigateToEmployee = function (url) {
                 console.log('🔗 Navigating to:', url);
                 searchResults.style.display = 'none';
                 searchResults.classList.remove('show');
@@ -3070,7 +3043,7 @@
             };
 
             // Close results when clicking outside
-            document.addEventListener('click', function(e) {
+            document.addEventListener('click', function (e) {
                 if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
                     searchResults.style.display = 'none';
                     searchResults.classList.remove('show');

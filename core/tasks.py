@@ -213,3 +213,20 @@ def cleanup_old_task_results(self, days=30):
     logger.info(f"Cleaned up {deleted_count} old task results older than {days} days")
 
     return {"deleted": deleted_count, "cutoff_days": days}
+
+
+@shared_task(bind=True, ignore_result=False)
+def run_monthly_leave_accrual(self):
+    """
+    Run the automated monthly leave accrual management command.
+    This task should be scheduled to run frequently (e.g., hourly)
+    to catch the start of the 1st of the month across different timezones.
+    """
+    from django.core.management import call_command
+
+    try:
+        call_command("accrue_monthly_leaves")
+        return {"status": "success", "message": "Monthly leave accrual command executed"}
+    except Exception as e:
+        logger.error(f"Error in run_monthly_leave_accrual task: {e}")
+        return {"status": "error", "message": str(e)}

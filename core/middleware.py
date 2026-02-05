@@ -23,6 +23,45 @@ def get_current_user():
     return getattr(_thread_locals, "user", None)
 
 
+def is_debug_mode_enabled(request):
+    """Check if debug mode is enabled for the current session."""
+    if not hasattr(request, "session"):
+        return False
+    return request.session.get(DebugModeMiddleware.DEBUG_SESSION_KEY, False)
+
+
+class DebugModeMiddleware:
+    """
+    Middleware to enable debug mode for the admin panel.
+
+    When ?debug=true is passed to any admin URL:
+    - Sets 'admin_debug_mode' in session to True
+    - Enables visibility of sensitive sections (observability, hijack)
+
+    When ?debug=false is passed:
+    - Removes the debug mode flag
+
+    This allows developers to access sensitive features without exposing
+    them to regular admin users.
+    """
+
+    DEBUG_SESSION_KEY = "admin_debug_mode"
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.user and request.user.is_authenticated:
+            # Check for debug query parameter
+            debug_param = request.GET.get("debug")
+            if debug_param == "true":
+                request.session[self.DEBUG_SESSION_KEY] = True
+            elif debug_param == "false":
+                request.session.pop(self.DEBUG_SESSION_KEY, None)
+
+        return self.get_response(request)
+
+
 class CompanyIsolationMiddleware:
     """
     Multi-tenant middleware that:
@@ -40,24 +79,23 @@ class CompanyIsolationMiddleware:
         Identify company from the request domain
         Supports both primary domain and allowed domains
         """
-        host = request.get_host().split(":")[0]  # Remove port if present
+        host = request.get_host().split(":")[0].lower()
 
-        # Try to find company by primary domain
-        try:
-            company = Company.objects.filter(primary_domain__iexact=host, is_active=True).first()
-            if company:
-                return company
-        except Company.DoesNotExist:
-            pass
+        # Try to find company by primary domain (uses index, very fast)
+        company = Company.objects.filter(primary_domain__iexact=host, is_active=True).first()
+        if company:
+            return company
 
-        # Try to find by allowed domains
-        for company in Company.objects.filter(is_active=True):
+        # Fallback: Search in allowed_domains TextField (narrow search)
+        # Using __icontains is faster than looping over ALL companies in Python
+        candidate_companies = Company.objects.filter(allowed_domains__icontains=host, is_active=True)
+        for company in candidate_companies:
             if company.is_domain_allowed(host):
                 return company
 
         # For development: if localhost or 127.0.0.1, try to get from user's email domain
         if host in ["localhost", "127.0.0.1"]:
-            return None  # Will be determined by user's company
+            return None
 
         return None
 

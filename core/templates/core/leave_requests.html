@@ -752,6 +752,14 @@
                 Current Leave Balance
             </div>
             <div class="balance-grid">
+                {% if leave.employee.company.name|lower == "bluebix" %}
+                <div class="balance-item">
+                    <div class="balance-label">Sick/Casual</div>
+                    <div class="balance-value balance-positive">
+                        {{ leave.employee.leave_balance.combined_sick_casual_balance }}
+                    </div>
+                </div>
+                {% else %}
                 <div class="balance-item">
                     <div class="balance-label">CL</div>
                     <div class="balance-value balance-positive">
@@ -764,6 +772,7 @@
                         {{ leave.employee.leave_balance.sick_leave_balance }}
                     </div>
                 </div>
+                {% endif %}
                 <div class="balance-item">
                     <div class="balance-label">LOP</div>
                     <div class="balance-value balance-negative">

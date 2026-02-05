@@ -38,6 +38,7 @@ class PersonalInfoForm(forms.ModelForm):
         fields = [
             "first_name",
             "last_name",
+            "pseudo_name",
             "email",
             "personal_email",
             "mobile_number",
@@ -247,6 +248,8 @@ class JobDetailsForm(forms.ModelForm):
 
 class FinanceDetailsForm(forms.ModelForm):
     """Step 3: Financial Details"""
+
+    ctc_change_reason = forms.CharField(required=False, widget=forms.HiddenInput())
 
     class Meta:
         model = Employee

@@ -10,7 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -137,6 +137,19 @@ class EmployeeListView(LoginRequiredMixin, ListView):
         context["active_count"] = all_employees.filter(is_active=True).count()
         context["inactive_count"] = all_employees.filter(is_active=False).count()
         context["selected_filter"] = self.request.GET.get("status", "active")
+
+        # Check if pseudo name should be shown (for Bluebix and Softstandard)
+        show_pseudo_name = False
+        if user.role == User.Role.COMPANY_ADMIN and user.company:
+            company_name = user.company.name.lower()
+            if "bluebix" in company_name or "softstandard" in company_name:
+                show_pseudo_name = True
+        elif user.role == User.Role.SUPERADMIN:
+            # For superadmins, check if any employee in the current queryset belongs to these companies
+            show_pseudo_name = employees.filter(
+                Q(company__name__icontains="bluebix") | Q(company__name__icontains="softstandard")
+            ).exists()
+        context["show_pseudo_name"] = show_pseudo_name
 
         return context
 
@@ -417,31 +430,31 @@ def clock_in(request):
 
             employee = request.user.employee_profile
 
-            # --- TIMEZONE RESOLUTION (Assigned Location First) ---
+            # --- TIMEZONE RESOLUTION (Assigned Work Location is Boss) ---
             from core.utils import get_user_timezone
 
+            # Get the official timezone assigned to the employee's work location
             user_timezone = get_user_timezone(request.user, getattr(request, "company", None))
 
-            # Only fallback to browser/coordinates if assigned location doesn't have a specific TZ
-            # (get_user_timezone returns "Asia/Kolkata" as a final fallback, so we check if coordinates can be more specific)
-            if not user_timezone or user_timezone == "Asia/Kolkata":
+            # Only use browser detected timezone if the employee has NO assigned location/timezone in the system
+            # This prevents a laptop set to 'USA' from overriding the official 'India' work location.
+            if not user_timezone:
                 detected_tz = data.get("timezone")
                 if not detected_tz:
                     detected_tz = detect_timezone_from_coordinates(lat, lng)
+                user_timezone = detected_tz or "Asia/Kolkata"
 
-                if detected_tz:
-                    user_timezone = detected_tz
-
-            # Calculate today based on the resolved timezone
+            # Calculate today's work date strictly based on the Official Timezone
             import pytz
 
             try:
                 tz = pytz.timezone(user_timezone)
                 today = timezone.now().astimezone(tz).date()
             except Exception:
-                # Fallback to server date if timezone is invalid
-                today = timezone.localdate()
+                # Absolute fallback to India if anything fails
                 user_timezone = "Asia/Kolkata"
+                tz = pytz.timezone(user_timezone)
+                today = timezone.now().astimezone(tz).date()
 
             # Check if employee is already clocked in for ANY date (Night Shift Support)
             active_attendance = Attendance.objects.filter(employee=employee, is_currently_clocked_in=True).first()
@@ -1192,6 +1205,11 @@ def employee_profile(request):
 
         available_shifts = ShiftSchedule.objects.filter(company=request.user.company, is_active=True).order_by("name")
 
+    # Get work history
+    from .models import WorkHistory
+
+    work_history = WorkHistory.objects.filter(employee=employee).order_by("-date", "-created_at")
+
     return render(
         request,
         "employees/employee_profile.html",
@@ -1204,6 +1222,7 @@ def employee_profile(request):
             "probation_status": probation_status,
             "probation_date": probation_date,
             "available_shifts": available_shifts,
+            "work_history": work_history,
         },
     )
 
@@ -1267,6 +1286,19 @@ class LeaveApplyView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         employee = self.request.user.employee_profile
         form.instance.employee = employee
+
+        # Multi-level Workflow Integration
+        from core.models import ApprovalWorkflow
+
+        workflow = ApprovalWorkflow.objects.filter(
+            company=employee.company, workflow_type="LEAVE", is_active=True
+        ).first()
+
+        if workflow:
+            form.instance.workflow = workflow
+            form.instance.current_step = 1
+            # Update approval_level based on first step config if needed
+            # For now, default to MANAGER as per existing logic but inside workflow
 
         # Server-side duplicate prevention: Check for recent duplicate submissions
         from datetime import timedelta
@@ -1413,6 +1445,7 @@ def check_leave_balance(request):
 def approve_leave(request, pk):
     if request.method == "POST":
         leave_request = LeaveRequest.objects.get(pk=pk)
+        approval_type = request.POST.get("approval_type", "FULL")
 
         # Security check: Only Manager or Admin can approve
         user = request.user
@@ -1424,12 +1457,37 @@ def approve_leave(request, pk):
         if not (is_admin or is_manager):
             return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
 
-        # Get approval type from POST data
-        approval_type = request.POST.get("approval_type", "FULL")
+        # Multi-level Workflow Integration
+        if leave_request.workflow:
+            config = leave_request.workflow.levels_config
+            curr_step = str(leave_request.current_step)
+            step_config = config.get(curr_step, {})
 
-        # Validate approval type
-        if approval_type not in ["FULL", "WITH_LOP", "ONLY_AVAILABLE"]:
-            approval_type = "FULL"
+            # Check if user role matches step config
+            required_role = step_config.get("role")
+            if required_role and user.role != required_role:
+                # If specifically looking for MANAGER, it must be the direct manager
+                if required_role == "MANAGER" and not is_manager:
+                    return JsonResponse(
+                        {"status": "error", "message": "Only the direct manager can approve this step."}, status=403
+                    )
+                elif user.role != required_role:
+                    return JsonResponse(
+                        {"status": "error", "message": f"This step requires {required_role} approval."}, status=403
+                    )
+
+            # Move to next step or finalize
+            if leave_request.current_step < leave_request.workflow.levels:
+                leave_request.current_step += 1
+                leave_request.save()
+                messages.success(
+                    request,
+                    f"Approver level {curr_step} completed. Request moved to level {leave_request.current_step}.",
+                )
+                return redirect("leave_requests")
+            else:
+                # Final level reached, proceed to actual approval
+                pass
 
         # Use the new approval method from the model
         if leave_request.approve_leave(user, approval_type=approval_type):
@@ -3013,6 +3071,9 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                             marital_status=str(row.get("marital_status", "S"))[0].upper(),
                             date_of_joining=doj,
                             dob=dob,
+                            pseudo_name=str(row.get("pseudo_name", "")).strip()
+                            if not pd.isna(row.get("pseudo_name"))
+                            else None,
                             annual_ctc=row.get("annual_ctc") if not pd.isna(row.get("annual_ctc")) else 0,
                         )
 
@@ -3053,12 +3114,12 @@ def download_sample_import_file(request):
     Downloads a sample Excel file for bulk employee import.
     """
     import pandas as pd
-    from django.http import HttpResponse
 
     # Define columns
     columns = [
         "First Name",
         "Last Name",
+        "Pseudo Name",
         "Email",
         "Designation",
         "Department",
@@ -3079,6 +3140,7 @@ def download_sample_import_file(request):
     dummy_data = {
         "First Name": "John",
         "Last Name": "Doe",
+        "Pseudo Name": "Johnny",
         "Email": "john.doe@example.com",
         "Designation": "Software Engineer",
         "Department": "IT",
@@ -3262,6 +3324,32 @@ def approve_regularization(request, pk):
         # Update status to Present if not already (or whatever logic user wants, implicitly if regulating, they were present)
         attendance.status = "PRESENT"
 
+        # Create or update AttendanceSession for consistency
+        if reg_request.check_in and reg_request.check_out:
+            # Check if there's already a session for this date
+            existing_session = AttendanceSession.objects.filter(
+                employee=reg_request.employee, date=reg_request.date
+            ).first()
+
+            if existing_session:
+                # Update existing session
+                existing_session.clock_in = attendance.clock_in
+                existing_session.clock_out = attendance.clock_out
+                existing_session.session_type = "WEB"  # Default to web for regularized entries
+                existing_session.save()
+            else:
+                # Create new session
+                AttendanceSession.objects.create(
+                    employee=reg_request.employee,
+                    date=reg_request.date,
+                    session_number=1,
+                    clock_in=attendance.clock_in,
+                    clock_out=attendance.clock_out,
+                    session_type="WEB",
+                    is_active=False,
+                    location_validated=True,  # Assume validated for regularized entries
+                )
+
         # Re-calc late/early
         attendance.calculate_late_arrival()
         attendance.calculate_early_departure()
@@ -3367,9 +3455,18 @@ def leave_configuration(request):
 
     # Manager sees team, Admin sees all
     if user.role == User.Role.MANAGER:
-        employees = Employee.objects.filter(manager=user)
+        all_employees = Employee.objects.filter(manager=user)
     else:
-        employees = Employee.objects.filter(company=company)
+        all_employees = Employee.objects.filter(company=company)
+
+    # Apply status filter
+    status_filter = request.GET.get("status", "active")
+    if status_filter == "active":
+        employees = all_employees.filter(is_active=True)
+    elif status_filter == "inactive":
+        employees = all_employees.filter(is_active=False)
+    else:
+        employees = all_employees
 
     # Prefetch leave balances to avoid N+1 queries and ensure fresh data
     employees = employees.select_related("user", "leave_balance").order_by("user__first_name")
@@ -3414,7 +3511,15 @@ def leave_configuration(request):
     return render(
         request,
         "employees/leave_configuration.html",
-        {"employees": employees, "months_ctx": months_ctx, "years_ctx": years_ctx},
+        {
+            "employees": employees,
+            "months_ctx": months_ctx,
+            "years_ctx": years_ctx,
+            "active_count": all_employees.filter(is_active=True).count(),
+            "inactive_count": all_employees.filter(is_active=False).count(),
+            "selected_status": status_filter,
+            "is_bluebix": company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"],
+        },
     )
 
 
@@ -3443,25 +3548,49 @@ def update_leave_balance(request, pk):
         data = json.loads(request.body)
         sick_balance_desired = data.get("sick_leave_allocated")  # This is actually the desired balance
         casual_balance_desired = data.get("casual_leave_allocated")  # This is actually the desired balance
+        combined_balance_desired = data.get("combined_sick_casual_allocated")  # For Bluebix combined leave
 
-        if sick_balance_desired is not None:
-            # Handle empty strings or invalid input gracefully
-            try:
-                desired_balance = float(sick_balance_desired)
-                # Calculate new allocation: desired_balance + current_used
-                new_allocation = desired_balance + balance.sick_leave_used
-                balance.sick_leave_allocated = new_allocation
-            except ValueError:
-                pass  # Ignore invalid
+        # For Bluebix, handle combined sick/casual leave
+        if employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]:
+            # For Bluebix, use the combined field
+            if combined_balance_desired is not None:
+                try:
+                    desired_balance = float(combined_balance_desired)
+                    # Calculate new allocation: desired_balance + current_used
+                    new_allocation = desired_balance + balance.combined_sick_casual_used
+                    balance.combined_sick_casual_allocated = new_allocation
+                except ValueError:
+                    pass  # Ignore invalid
+            # Also handle legacy sick/casual updates (for backward compatibility)
+            elif sick_balance_desired is not None or casual_balance_desired is not None:
+                try:
+                    # Use whichever value is provided (they should be the same for Bluebix)
+                    desired_balance = float(sick_balance_desired or casual_balance_desired or 0)
+                    # Calculate new allocation: desired_balance + current_used
+                    new_allocation = desired_balance + balance.combined_sick_casual_used
+                    balance.combined_sick_casual_allocated = new_allocation
+                except ValueError:
+                    pass  # Ignore invalid
+        else:
+            # For other companies, handle separate pools
+            if sick_balance_desired is not None:
+                # Handle empty strings or invalid input gracefully
+                try:
+                    desired_balance = float(sick_balance_desired)
+                    # Calculate new allocation: desired_balance + current_used
+                    new_allocation = desired_balance + balance.sick_leave_used
+                    balance.sick_leave_allocated = new_allocation
+                except ValueError:
+                    pass  # Ignore invalid
 
-        if casual_balance_desired is not None:
-            try:
-                desired_balance = float(casual_balance_desired)
-                # Calculate new allocation: desired_balance + current_used
-                new_allocation = desired_balance + balance.casual_leave_used
-                balance.casual_leave_allocated = new_allocation
-            except ValueError:
-                pass
+            if casual_balance_desired is not None:
+                try:
+                    desired_balance = float(casual_balance_desired)
+                    # Calculate new allocation: desired_balance + current_used
+                    new_allocation = desired_balance + balance.casual_leave_used
+                    balance.casual_leave_allocated = new_allocation
+                except ValueError:
+                    pass
 
         balance.save()
 
@@ -3586,41 +3715,75 @@ def bulk_leave_upload(request):
                                 f"CF: {data['carry_forward_leave']}"
                             )
 
-                            # Update based on mode
-                            if update_mode == "REPLACE":
-                                leave_balance.casual_leave_allocated = data["casual_leave_allocated"]
-                                leave_balance.sick_leave_allocated = data["sick_leave_allocated"]
-                                leave_balance.casual_leave_used = data["casual_leave_used"]
-                                leave_balance.sick_leave_used = data["sick_leave_used"]
-                                leave_balance.carry_forward_leave = data["carry_forward_leave"]
-
-                            elif update_mode == "ADD":
-                                leave_balance.casual_leave_allocated += data["casual_leave_allocated"]
-                                leave_balance.sick_leave_allocated += data["sick_leave_allocated"]
-                                leave_balance.casual_leave_used += data["casual_leave_used"]
-                                leave_balance.sick_leave_used += data["sick_leave_used"]
-                                leave_balance.carry_forward_leave += data["carry_forward_leave"]
-
-                            elif update_mode == "UPDATE_ONLY":
-                                # Only update non-zero values
-                                if data["casual_leave_allocated"] > 0:
-                                    leave_balance.casual_leave_allocated = data["casual_leave_allocated"]
-                                if data["sick_leave_allocated"] > 0:
-                                    leave_balance.sick_leave_allocated = data["sick_leave_allocated"]
-                                if data["casual_leave_used"] > 0:
-                                    leave_balance.casual_leave_used = data["casual_leave_used"]
-                                if data["sick_leave_used"] > 0:
-                                    leave_balance.sick_leave_used = data["sick_leave_used"]
-                                if data["carry_forward_leave"] > 0:
+                            # Update based on mode and company type
+                            if data.get("is_bluebix", False):
+                                # Bluebix: Handle combined sick/casual leave
+                                if update_mode == "REPLACE":
+                                    leave_balance.combined_sick_casual_allocated = data[
+                                        "combined_sick_casual_allocated"
+                                    ]
+                                    leave_balance.combined_sick_casual_used = data["combined_sick_casual_used"]
                                     leave_balance.carry_forward_leave = data["carry_forward_leave"]
 
-                            # Log the values before saving
-                            logger.info(
-                                f"Before save - {employee.user.get_full_name()}: "
-                                f"CL: {leave_balance.casual_leave_allocated}/{leave_balance.casual_leave_used}, "
-                                f"SL: {leave_balance.sick_leave_allocated}/{leave_balance.sick_leave_used}, "
-                                f"CF: {leave_balance.carry_forward_leave}"
-                            )
+                                elif update_mode == "ADD":
+                                    leave_balance.combined_sick_casual_allocated += data[
+                                        "combined_sick_casual_allocated"
+                                    ]
+                                    leave_balance.combined_sick_casual_used += data["combined_sick_casual_used"]
+                                    leave_balance.carry_forward_leave += data["carry_forward_leave"]
+
+                                elif update_mode == "UPDATE_ONLY":
+                                    # Only update non-zero values
+                                    if data["combined_sick_casual_allocated"] > 0:
+                                        leave_balance.combined_sick_casual_allocated = data[
+                                            "combined_sick_casual_allocated"
+                                        ]
+                                    if data["combined_sick_casual_used"] > 0:
+                                        leave_balance.combined_sick_casual_used = data["combined_sick_casual_used"]
+                                    if data["carry_forward_leave"] > 0:
+                                        leave_balance.carry_forward_leave = data["carry_forward_leave"]
+
+                                logger.info(
+                                    f"Bluebix bulk upload - {employee.user.get_full_name()}: "
+                                    f"Combined allocated: {leave_balance.combined_sick_casual_allocated}, "
+                                    f"Combined used: {leave_balance.combined_sick_casual_used}, "
+                                    f"CF: {leave_balance.carry_forward_leave}"
+                                )
+                            else:
+                                # Other companies: Handle separate casual and sick leave
+                                if update_mode == "REPLACE":
+                                    leave_balance.casual_leave_allocated = data["casual_leave_allocated"]
+                                    leave_balance.sick_leave_allocated = data["sick_leave_allocated"]
+                                    leave_balance.casual_leave_used = data["casual_leave_used"]
+                                    leave_balance.sick_leave_used = data["sick_leave_used"]
+                                    leave_balance.carry_forward_leave = data["carry_forward_leave"]
+
+                                elif update_mode == "ADD":
+                                    leave_balance.casual_leave_allocated += data["casual_leave_allocated"]
+                                    leave_balance.sick_leave_allocated += data["sick_leave_allocated"]
+                                    leave_balance.casual_leave_used += data["casual_leave_used"]
+                                    leave_balance.sick_leave_used += data["sick_leave_used"]
+                                    leave_balance.carry_forward_leave += data["carry_forward_leave"]
+
+                                elif update_mode == "UPDATE_ONLY":
+                                    # Only update non-zero values
+                                    if data["casual_leave_allocated"] > 0:
+                                        leave_balance.casual_leave_allocated = data["casual_leave_allocated"]
+                                    if data["sick_leave_allocated"] > 0:
+                                        leave_balance.sick_leave_allocated = data["sick_leave_allocated"]
+                                    if data["casual_leave_used"] > 0:
+                                        leave_balance.casual_leave_used = data["casual_leave_used"]
+                                    if data["sick_leave_used"] > 0:
+                                        leave_balance.sick_leave_used = data["sick_leave_used"]
+                                    if data["carry_forward_leave"] > 0:
+                                        leave_balance.carry_forward_leave = data["carry_forward_leave"]
+
+                                logger.info(
+                                    f"Standard bulk upload - {employee.user.get_full_name()}: "
+                                    f"CL: {leave_balance.casual_leave_allocated}/{leave_balance.casual_leave_used}, "
+                                    f"SL: {leave_balance.sick_leave_allocated}/{leave_balance.sick_leave_used}, "
+                                    f"CF: {leave_balance.carry_forward_leave}"
+                                )
 
                             # Save the updated leave balance with validation
                             leave_balance.validate_and_save()
@@ -3721,7 +3884,6 @@ def bulk_leave_upload(request):
 def download_leave_template(request):
     """Download Excel template for bulk leave upload"""
     from django.contrib import messages
-    from django.http import HttpResponse
 
     user = request.user
     if user.role not in [User.Role.COMPANY_ADMIN]:
@@ -3740,16 +3902,28 @@ def download_leave_template(request):
     ws = wb.active
     ws.title = "Leave Balance Template"
 
-    # Define headers
-    headers = [
-        "employee_id",
-        "employee_name",
-        "casual_leave_allocated",
-        "sick_leave_allocated",
-        "casual_leave_used",
-        "sick_leave_used",
-        "carry_forward_leave",
-    ]
+    # Check if this is Bluebix or Softstandard company (combined leave system)
+    is_bluebix = user.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]
+
+    # Define headers based on company type
+    if is_bluebix:
+        headers = [
+            "employee_id",
+            "employee_name",
+            "sick_casual_leave_allocated",
+            "sick_casual_leave_used",
+            "carry_forward_leave",
+        ]
+    else:
+        headers = [
+            "employee_id",
+            "employee_name",
+            "casual_leave_allocated",
+            "sick_leave_allocated",
+            "casual_leave_used",
+            "sick_leave_used",
+            "carry_forward_leave",
+        ]
 
     # Style for headers
     header_font = Font(bold=True, color="FFFFFF")
@@ -3773,47 +3947,90 @@ def download_leave_template(request):
         # Get current leave balance or defaults
         try:
             balance = employee.leave_balance
-            ws.cell(row=row, column=3, value=balance.casual_leave_allocated)
-            ws.cell(row=row, column=4, value=balance.sick_leave_allocated)
-            ws.cell(row=row, column=5, value=balance.casual_leave_used)
-            ws.cell(row=row, column=6, value=balance.sick_leave_used)
-            ws.cell(row=row, column=7, value=balance.carry_forward_leave)
+            if is_bluebix:
+                # Bluebix: Combined sick/casual leave
+                ws.cell(row=row, column=3, value=balance.combined_sick_casual_allocated)
+                ws.cell(row=row, column=4, value=balance.combined_sick_casual_used)
+                ws.cell(row=row, column=5, value=balance.carry_forward_leave)
+            else:
+                # Other companies: Separate casual and sick leave
+                ws.cell(row=row, column=3, value=balance.casual_leave_allocated)
+                ws.cell(row=row, column=4, value=balance.sick_leave_allocated)
+                ws.cell(row=row, column=5, value=balance.casual_leave_used)
+                ws.cell(row=row, column=6, value=balance.sick_leave_used)
+                ws.cell(row=row, column=7, value=balance.carry_forward_leave)
         except Exception:
             # Default values for new employees
-            ws.cell(row=row, column=3, value=12.0)  # Default CL
-            ws.cell(row=row, column=4, value=12.0)  # Default SL
-            ws.cell(row=row, column=5, value=0.0)  # Used CL
-            ws.cell(row=row, column=6, value=0.0)  # Used SL
-            ws.cell(row=row, column=7, value=0.0)  # Carry forward
+            if is_bluebix:
+                # Bluebix defaults: 1 combined sick/casual leave
+                ws.cell(row=row, column=3, value=1.0)  # Combined allocated
+                ws.cell(row=row, column=4, value=0.0)  # Combined used
+                ws.cell(row=row, column=5, value=0.0)  # Carry forward
+            else:
+                # Other companies defaults
+                ws.cell(row=row, column=3, value=12.0)  # Default CL
+                ws.cell(row=row, column=4, value=12.0)  # Default SL
+                ws.cell(row=row, column=5, value=0.0)  # Used CL
+                ws.cell(row=row, column=6, value=0.0)  # Used SL
+                ws.cell(row=row, column=7, value=0.0)  # Carry forward
 
     # Add instructions sheet
     instructions_ws = wb.create_sheet("Instructions")
-    instructions = [
-        "BULK LEAVE UPLOAD INSTRUCTIONS",
-        "",
-        "Required Columns:",
-        "- employee_id: Employee badge ID (e.g., PBTHYD001)",
-        "- employee_name: Full name of employee",
-        "- casual_leave_allocated: Total casual leaves allocated for the year",
-        "- sick_leave_allocated: Total sick leaves allocated for the year",
-        "",
-        "Optional Columns:",
-        "- casual_leave_used: Casual leaves already used (default: 0)",
-        "- sick_leave_used: Sick leaves already used (default: 0)",
-        "- carry_forward_leave: Leaves carried forward from previous year (default: 0)",
-        "",
-        "Important Notes:",
-        "1. Either employee_id OR employee_name must be provided",
-        "2. All numeric values must be positive numbers",
-        "3. Used leaves cannot exceed allocated leaves",
-        "4. File formats supported: .xlsx, .xls, .csv",
-        "5. Maximum file size: 5MB",
-        "",
-        "Update Modes:",
-        "- REPLACE: Completely replace existing leave balances",
-        "- ADD: Add values to existing balances",
-        "- UPDATE_ONLY: Update only non-zero values in the file",
-    ]
+
+    if is_bluebix:
+        instructions = [
+            "BULK LEAVE UPLOAD INSTRUCTIONS - BLUEBIX / SOFTSTANDARD (COMBINED SICK/CASUAL LEAVE)",
+            "",
+            "Required Columns:",
+            "- employee_id: Employee badge ID (e.g., PBTHYD001)",
+            "- employee_name: Full name of employee",
+            "- sick_casual_leave_allocated: Total sick/casual leaves allocated for the year",
+            "",
+            "Optional Columns:",
+            "- sick_casual_leave_used: Sick/casual leaves already used (default: 0)",
+            "- carry_forward_leave: Leaves carried forward from previous year (default: 0)",
+            "",
+            "Important Notes for Bluebix / Softstandard:",
+            "1. This company uses a COMBINED sick/casual leave system",
+            "2. Employees get 1 combined leave per month that can be used for either sick or casual leave",
+            "3. Either employee_id OR employee_name must be provided",
+            "4. All numeric values must be positive numbers",
+            "5. Used leaves cannot exceed allocated leaves",
+            "6. File formats supported: .xlsx, .xls, .csv",
+            "7. Maximum file size: 5MB",
+            "",
+            "Update Modes:",
+            "- REPLACE: Completely replace existing leave balances",
+            "- ADD: Add values to existing balances",
+            "- UPDATE_ONLY: Update only non-zero values in the file",
+        ]
+    else:
+        instructions = [
+            "BULK LEAVE UPLOAD INSTRUCTIONS - SEPARATE CASUAL & SICK LEAVE",
+            "",
+            "Required Columns:",
+            "- employee_id: Employee badge ID (e.g., PBTHYD001)",
+            "- employee_name: Full name of employee",
+            "- casual_leave_allocated: Total casual leaves allocated for the year",
+            "- sick_leave_allocated: Total sick leaves allocated for the year",
+            "",
+            "Optional Columns:",
+            "- casual_leave_used: Casual leaves already used (default: 0)",
+            "- sick_leave_used: Sick leaves already used (default: 0)",
+            "- carry_forward_leave: Leaves carried forward from previous year (default: 0)",
+            "",
+            "Important Notes:",
+            "1. Either employee_id OR employee_name must be provided",
+            "2. All numeric values must be positive numbers",
+            "3. Used leaves cannot exceed allocated leaves",
+            "4. File formats supported: .xlsx, .xls, .csv",
+            "5. Maximum file size: 5MB",
+            "",
+            "Update Modes:",
+            "- REPLACE: Completely replace existing leave balances",
+            "- ADD: Add values to existing balances",
+            "- UPDATE_ONLY: Update only non-zero values in the file",
+        ]
 
     for row, instruction in enumerate(instructions, 1):
         cell = instructions_ws.cell(row=row, column=1, value=instruction)
@@ -3836,11 +4053,16 @@ def download_leave_template(request):
             adjusted_width = min(max_length + 2, 50)
             ws_sheet.column_dimensions[column_letter].width = adjusted_width
 
-    # Create response
+    # Create response with company-specific filename
     response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    response["Content-Disposition"] = (
-        f'attachment; filename="leave_balance_template_{user.company.name.replace(" ", "_")}.xlsx"'
-    )
+
+    company_name = user.company.name.replace(" ", "_")
+    if is_bluebix:
+        filename = f"leave_balance_template_bluebix_combined_{company_name}.xlsx"
+    else:
+        filename = f"leave_balance_template_separate_{company_name}.xlsx"
+
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
     wb.save(response)
     return response

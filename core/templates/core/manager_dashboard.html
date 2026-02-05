@@ -210,6 +210,35 @@
             transform: translateY(0);
         }
     }
+
+    .btn-view-holidays {
+        background: var(--keka-primary);
+        color: white;
+        border: 2px solid white;
+        border-radius: 8px;
+        padding: 8px 20px;
+        font-size: 15px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 4px 12px rgba(91, 71, 251, 0.15);
+    }
+
+    .btn-view-holidays:hover {
+        background: #4834d4;
+        color: white;
+        border-color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(91, 71, 251, 0.25);
+        text-decoration: none;
+    }
+
+    .btn-view-holidays i {
+        font-size: 18px;
+    }
 </style>
 {% endblock %}
 
@@ -222,8 +251,19 @@
                 Welcome back, {{ manager.user.first_name }}! Here's what's happening with your team today.
             </p>
         </div>
-        <div style="font-size: 14px; color: var(--keka-text-secondary);">
-            {{ today|date:"l, F j, Y" }}
+        <div style="display: flex; align-items: center; gap: 24px;">
+            <a href="{% url 'employee_holidays' %}" class="btn-view-holidays">
+                <i class="far fa-calendar-alt"></i>
+                View Holidays
+            </a>
+            <div style="text-align: right;">
+                <div style="font-size: 16px; font-weight: 600; color: var(--keka-text-primary);">
+                    {{ today|date:"l" }}
+                </div>
+                <div style="font-size: 14px; color: var(--keka-text-secondary);">
+                    {{ today|date:"F j, Y" }}
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -266,7 +306,7 @@
                             <i class="fas fa-clock"></i>
                         </div>
                         <div class="req-info">
-                            <div class="req-name">{{ activity.employee.user.get_full_name }}</div>
+                            <div class="req-name">{{ activity.employee.user.get_full_name }}{% if activity.employee.pseudo_name %} ({{ activity.employee.pseudo_name|lower }}){% endif %}</div>
                             <div class="req-detail">
                                 Clocked in at {{ activity.clock_in|time:"H:i A" }}
                                 {% if activity.status == 'WFH' %} (WFH){% endif %}
@@ -295,7 +335,7 @@
                             {% endif %}
                         </div>
                         <div class="req-info">
-                            <div class="req-name">{{ member.user.get_full_name }}</div>
+                            <div class="req-name">{{ member.user.get_full_name }}{% if member.pseudo_name %} ({{ member.pseudo_name|lower }}){% endif %}</div>
                             <div class="req-detail">{{ member.designation|default:"Employee" }} • {{ member.location.name|default:"Main Office" }}</div>
                         </div>
                     </div>
@@ -350,7 +390,7 @@
                                         {% endif %}
                                     </div>
                                     <div class="req-info">
-                                        <div class="req-name">{{ leave.employee.user.get_full_name }}</div>
+                                        <div class="req-name">{{ leave.employee.user.get_full_name }}{% if leave.employee.pseudo_name %} ({{ leave.employee.pseudo_name|lower }}){% endif %}</div>
                                         <div class="req-detail text-primary fw-bold">{{ leave.get_leave_type_display }}
                                         </div>
                                     </div>
@@ -374,7 +414,7 @@
                                         <button type="submit" class="btn-sm btn-approve w-100">Approve</button>
                                     </form>
                                     <form method="post" action="{% url 'leave_requests' %}" style="flex:1;"
-                                        onsubmit="return handleReject(this, '{{ leave.employee.user.get_full_name }}', '{{ leave.id }}');">
+                                        onsubmit="return handleReject(this, '{{ leave.employee.user.get_full_name|escapejs }}', '{{ leave.id }}');">
                                         {% csrf_token %}
                                         <input type="hidden" name="leave_id" value="{{ leave.id }}">
                                         <input type="hidden" name="action" value="reject">
@@ -410,7 +450,8 @@
                                             </div>
                                             <div>
                                                 <div class="small fw-bold text-muted text-uppercase"
-                                                    style="font-size: 0.6rem;">{{ announcement.created_at|date:"d M Y" }}</div>
+                                                    style="font-size: 0.6rem;">{{ announcement.created_at|date:"d M Y"
+                                                    }}</div>
                                                 <h6 class="fw-bold text-dark m-0 line-clamp-1"
                                                     style="font-size: 0.9rem;">{{ announcement.title }}</h6>
                                             </div>
@@ -466,7 +507,7 @@
                                     </div>
                                     <div class="flex-grow-1 ms-3">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <h6 class="mb-0 fw-bold text-dark">{{ emp.user.get_full_name }}</h6>
+                                            <h6 class="mb-0 fw-bold text-dark">{{ emp.user.get_full_name }}{% if emp.pseudo_name %} ({{ emp.pseudo_name|lower }}){% endif %}</h6>
                                             <span
                                                 class="badge bg-soft-success text-success rounded-pill px-2">Today</span>
                                         </div>
@@ -495,7 +536,7 @@
                                         <i class="fas fa-medal"></i>
                                     </div>
                                     <div class="flex-grow-1 ms-3">
-                                        <h6 class="mb-0 fw-bold text-dark">{{ emp.user.get_full_name }}</h6>
+                                        <h6 class="mb-0 fw-bold text-dark">{{ emp.user.get_full_name }}{% if emp.pseudo_name %} ({{ emp.pseudo_name|lower }}){% endif %}</h6>
                                         <div class="text-muted small mt-1">{{ emp.years_of_service }} Years Celebration!
                                             🌟</div>
                                     </div>
@@ -584,7 +625,7 @@
                                 </div>
                                 <div class="flex-grow-1 ms-4">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h5 class="mb-0 fw-bold text-dark">{{ leave.employee.user.get_full_name }}</h5>
+                                        <h5 class="mb-0 fw-bold text-dark">{{ leave.employee.user.get_full_name }}{% if leave.employee.pseudo_name %} ({{ leave.employee.pseudo_name|lower }}){% endif %}</h5>
                                         <span class="badge bg-soft-primary text-primary">{{ leave.get_leave_type_display }}</span>
                                     </div>
                                     <div class="mb-3">
@@ -605,7 +646,7 @@
                                             <button type="submit" class="btn btn-success w-100">Approve Request</button>
                                         </form>
                                         <form method="post" action="{% url 'leave_requests' %}" style="flex:1;"
-                                            onsubmit="return handleReject(this, '{{ leave.employee.user.get_full_name }}', '{{ leave.id }}');">
+                                            onsubmit="return handleReject(this, '{{ leave.employee.user.get_full_name|escapejs }}', '{{ leave.id }}');">
                                             {% csrf_token %}
                                             <input type="hidden" name="leave_id" value="{{ leave.id }}">
                                             <input type="hidden" name="action" value="reject">
@@ -681,7 +722,7 @@
                                     <i class="fas fa-birthday-cake"></i>
                                     {% endif %}
                                 </div>
-                                <h5 class="fw-bold text-dark">{{ emp.user.get_full_name }}</h5>
+                                <h5 class="fw-bold text-dark">{{ emp.user.get_full_name }}{% if emp.pseudo_name %} ({{ emp.pseudo_name|lower }}){% endif %}</h5>
                                 <div class="text-success fw-bold mt-2">Happy Birthday Today! 🎉</div>
                             </div>
                         </div>
@@ -710,7 +751,7 @@
                                     <i class="fas fa-medal"></i>
                                     {% endif %}
                                 </div>
-                                <h5 class="fw-bold text-dark">{{ emp.user.get_full_name }}</h5>
+                                <h5 class="fw-bold text-dark">{{ emp.user.get_full_name }}{% if emp.pseudo_name %} ({{ emp.pseudo_name|lower }}){% endif %}</h5>
                                 <div class="text-muted mt-1">{{ emp.years_of_service }} Years of Service 🌟</div>
                                 <div class="mt-2 badge bg-soft-warning text-warning">{{ emp.date_of_joining|date:"d M Y" }}</div>
                             </div>

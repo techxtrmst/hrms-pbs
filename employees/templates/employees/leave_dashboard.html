@@ -615,6 +615,7 @@
     }
 
     @media (max-width: 400px) {
+
         /* Ultra small screens */
         .stat-card {
             padding: 0.75rem;
@@ -720,6 +721,30 @@
 
     <!-- Stats Cards -->
     <div class="stats-grid animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
+        {% if "bluebix" in user.employee_profile.company.name|lower or "softstandard" in user.employee_profile.company.name|lower %}
+        <!-- Combined Sick/Casual Leave for Bluebix -->
+        <div class="stat-card cl-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-icon-wrapper">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <div class="stat-value">{{ balance.combined_sick_casual_balance|floatformat:1 }}</div>
+                </div>
+            </div>
+            <div class="stat-label">
+                <span>Sick/Casual Leave</span>
+                <span>Days Available</span>
+            </div>
+            <div class="progress-track">
+                <!-- Calculating percentage for visual bar (Assuming 12 is max) -->
+                <div class="progress-bar-custom cl-bar"
+                    style="width: {% widthratio balance.combined_sick_casual_balance 12 100 %}%"></div>
+            </div>
+        </div>
+        {% else %}
         <!-- Casual Leave -->
         <div class="stat-card cl-card">
             <div class="d-flex justify-content-between align-items-start">
@@ -764,6 +789,7 @@
                     style="width: {% widthratio balance.sick_leave_balance 12 100 %}%"></div>
             </div>
         </div>
+        {% endif %}
 
         <!-- Unpaid Leave Indicator (Optional visual) -->
         <div class="stat-card" style="border-left: 4px solid #94a3b8;">
@@ -906,7 +932,8 @@
                     <div class="row g-4">
                         <!-- Leave Type -->
                         <div class="col-12">
-                            <label class="form-label-custom">Select Leave Type <span class="text-danger">*</span></label>
+                            <label class="form-label-custom">Select Leave Type <span
+                                    class="text-danger">*</span></label>
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <input type="radio" class="btn-check" name="leave_type" id="type_cl" value="CL"
@@ -977,8 +1004,8 @@
                         <div class="col-12">
                             <label class="form-label-custom">Reason for Leave <span class="text-danger">*</span></label>
                             <textarea name="reason" id="reasonInput" class="form-control rounded-3" rows="3"
-                                placeholder="Please describe why you are requesting this leave..."
-                                style="resize: none;" required></textarea>
+                                placeholder="Please describe why you are requesting this leave..." style="resize: none;"
+                                required></textarea>
                         </div>
                     </div>
                 </div>
@@ -1004,8 +1031,16 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // Balances
-        const clBalance = parseFloat("{{ balance.casual_leave_balance|default:0 }}");
-        const slBalance = parseFloat("{{ balance.sick_leave_balance|default:0 }}");
+        let clBalance, slBalance;
+
+        {% if "bluebix" in user.employee_profile.company.name|lower or "softstandard" in user.employee_profile.company.name|lower %}
+        const combinedBalance = parseFloat("{{ balance.combined_sick_casual_balance|default:0 }}");
+        clBalance = combinedBalance;
+        slBalance = combinedBalance;
+        {% else %}
+        clBalance = parseFloat("{{ balance.casual_leave_balance|default:0 }}");
+        slBalance = parseFloat("{{ balance.sick_leave_balance|default:0 }}");
+        {% endif %}
 
         // Elements
         const clRadio = document.getElementById('type_cl');

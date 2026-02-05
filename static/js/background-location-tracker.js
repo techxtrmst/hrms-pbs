@@ -33,8 +33,8 @@ class BackgroundLocationTracker {
         }
 
         try {
-            // Register service worker
-            const registration = await navigator.serviceWorker.register('/static/js/sw.js', {
+            // Register service worker from root to allow root scope
+            const registration = await navigator.serviceWorker.register('/sw.js', {
                 scope: '/'
             });
 
@@ -223,7 +223,7 @@ class BackgroundLocationTracker {
 window.backgroundLocationTracker = new BackgroundLocationTracker();
 
 // Auto-initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', async function () {
     const tracker = window.backgroundLocationTracker;
 
     // Initialize the tracker
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 // Handle page visibility changes
-document.addEventListener('visibilitychange', function() {
+document.addEventListener('visibilitychange', function () {
     if (!document.hidden) {
         // Page became visible - check tracking status
         if (window.backgroundLocationTracker) {
@@ -260,32 +260,32 @@ document.addEventListener('visibilitychange', function() {
 });
 
 // Handle before unload
-window.addEventListener('beforeunload', function() {
+window.addEventListener('beforeunload', function () {
     // Don't stop tracking when page unloads - that's the point of background tracking!
     console.log('Page unloading, background tracking will continue...');
 });
 
 // Expose functions for manual control
-window.startBackgroundLocationTracking = function(employeeId, clockInTime) {
+window.startBackgroundLocationTracking = function (employeeId, clockInTime) {
     if (window.backgroundLocationTracker) {
         return window.backgroundLocationTracker.startTracking(employeeId, clockInTime);
     }
     return false;
 };
 
-window.stopBackgroundLocationTracking = function() {
+window.stopBackgroundLocationTracking = function () {
     if (window.backgroundLocationTracker) {
         return window.backgroundLocationTracker.stopTracking();
     }
 };
 
-window.syncLocationNow = function() {
+window.syncLocationNow = function () {
     if (window.backgroundLocationTracker) {
         return window.backgroundLocationTracker.syncLocationNow();
     }
 };
 
-window.getLocationTrackingStatus = function() {
+window.getLocationTrackingStatus = function () {
     if (window.backgroundLocationTracker) {
         return window.backgroundLocationTracker.getStatus();
     }

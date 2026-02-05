@@ -12,11 +12,12 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from loguru import logger
 from openpyxl.styles import Alignment, Font, PatternFill
 
 from accounts.models import User
-from companies.models import Holiday
+from companies.models import Holiday, PayrollConfiguration
 from employees.models import (
     Attendance,
     Employee,
@@ -34,7 +35,25 @@ from .error_handling import (
 )
 from .forms import ForgotPasswordForm, OTPVerificationForm, ResetPasswordForm
 from .models import PasswordResetOTP
-from .utils import generate_payslip_pdf_with_generator, save_pdf_to_model
+from .utils import save_pdf_to_model
+
+
+def service_worker(request):
+    """Serve the service worker file with correct MIME type and root scope capability"""
+    import os
+
+    from django.conf import settings
+    from django.http import HttpResponse
+
+    sw_path = os.path.join(settings.BASE_DIR, "static", "js", "sw.js")
+
+    try:
+        with open(sw_path, encoding="utf-8") as f:
+            content = f.read()
+        return HttpResponse(content, content_type="application/javascript")
+    except Exception as e:
+        logger.error(f"Error serving sw.js: {str(e)}")
+        return HttpResponse("Service Worker not found", status=404)
 
 
 @login_required
@@ -201,7 +220,6 @@ def admin_dashboard(request):
         else:
             return render(request, "core/dashboard.html", {"title": "Dashboard"})
 
-    from datetime import time as dt_time
     from datetime import timedelta
 
     from companies.models import Holiday, Location
@@ -237,9 +255,6 @@ def admin_dashboard(request):
     on_time = 0
     work_from_office = 0
     remote_clockins = 0
-
-    # Define office start time (9:00 AM)
-    dt_time(9, 0)
 
     import pytz
 
@@ -299,23 +314,30 @@ def admin_dashboard(request):
             departments_map[normalized].append(dept)
 
     # Get sorted unique departments (normalized)
-    departments_list = sorted(departments_map.keys())
-
     department_performance = []
 
-    for normalized_dept in departments_list:
-        # Get all original department names that map to this normalized name
-        original_dept_names = departments_map[normalized_dept]
+    # Optimized Department Performance Calculation
+    department_performance = []
 
-        # Filter employees by any of the original department names
-        dept_emps = employees.filter(department__in=original_dept_names)
-        dept_total = dept_emps.count()
+    # Map employees to departments for total counts
+    dept_total_counts = {}
+    for emp in employees:
+        dept_name = emp.department.strip() if emp.department else "N/A"
+        dept_total_counts[dept_name] = dept_total_counts.get(dept_name, 0) + 1
 
-        # Count present (any positive attendance status) using original names
-        dept_present = today_attendance.filter(
-            employee__department__in=original_dept_names,
-            status__in=["PRESENT", "WFH", "ON_DUTY", "HALF_DAY"],
-        ).count()
+    # Map attendance to departments for present counts
+    dept_present_counts = {}
+    for att in today_attendance:
+        dept_name = att.employee.department.strip() if att.employee.department else "N/A"
+        if att.status in ["PRESENT", "WFH", "ON_DUTY", "HALF_DAY"]:
+            dept_present_counts[dept_name] = dept_present_counts.get(dept_name, 0) + 1
+
+    # Combine results
+    all_dept_names = sorted(set(list(dept_total_counts.keys()) + list(dept_present_counts.keys())))
+
+    for dept_name in all_dept_names:
+        dept_total = dept_total_counts.get(dept_name, 0)
+        dept_present = dept_present_counts.get(dept_name, 0)
 
         percentage = 0
         if dept_total > 0:
@@ -323,7 +345,7 @@ def admin_dashboard(request):
 
         department_performance.append(
             {
-                "name": normalized_dept,
+                "name": dept_name,
                 "present": dept_present,
                 "total": dept_total,
                 "percentage": round(percentage, 1),
@@ -376,60 +398,85 @@ def admin_dashboard(request):
     # Get employees for calendar view (show all active employees)
     calendar_employees = employees
 
+    # --- Optimized Calendar Data Fetching ---
+    month_attendance = Attendance.objects.filter(
+        employee__company=company, date__range=[month_start, month_end]
+    ).select_related("employee", "employee__user")
+
+    if location_id:
+        month_attendance = month_attendance.filter(employee__location_id=location_id)
+
+    # Cache attendance by (employee_id, day)
+    attendance_cache = {}
+    for att in month_attendance:
+        attendance_cache[(att.employee_id, att.date.day)] = att
+
+    # Fetch all approved leaves for the company this month
+    all_leaves = LeaveRequest.objects.filter(
+        employee__company=company, status="APPROVED", start_date__lte=month_end, end_date__gte=month_start
+    )
+    if location_id:
+        all_leaves = all_leaves.filter(employee__location_id=location_id)
+
+    # Cache leaves by employee_id -> list of (start, end, type)
+    leave_cache = {}
+    for lreq in all_leaves:
+        if lreq.employee_id not in leave_cache:
+            leave_cache[lreq.employee_id] = []
+        leave_cache[lreq.employee_id].append((lreq.start_date, lreq.end_date, lreq.leave_type))
+
+    # Fetch all holidays for the company this month
+    all_holidays = Holiday.objects.filter(company=company, date__range=[month_start, month_end], is_active=True)
+    # Cache holidays by (location_id or None, date)
+    holiday_cache = {}
+    for h in all_holidays:
+        loc_id = h.location_id
+        if loc_id not in holiday_cache:
+            holiday_cache[loc_id] = {}
+        holiday_cache[loc_id][h.date] = h.name
+
     # Build calendar data for each employee
     employee_calendar_data = []
+
+    # Pre-calculate timezones for all employees to avoid repeated calls
+    from core.utils import get_user_timezone
+
     for emp in calendar_employees:
         emp_data = {"employee": emp, "days": []}
 
-        # Get attendance for the selected month
-        month_attendance = Attendance.objects.filter(employee=emp, date__range=[month_start, month_end])
-
-        # Prepare timezone for calendar entries
+        # Determine employee timezone
         tz_name = get_user_timezone(emp.user, company)
         emp_tz = pytz.timezone(tz_name)
 
-        att_map = {}
-        for att in month_attendance:
-            if att.clock_in:
-                att.display_clock_in = att.clock_in.astimezone(emp_tz)
-            if att.clock_out:
-                att.display_clock_out = att.clock_out.astimezone(emp_tz)
-            att_map[att.date.day] = att
-
-        # Sick Leave Map
-        # Find approved SL requests that overlap with this month
-        sick_leaves = LeaveRequest.objects.filter(
-            employee=emp,
-            status="APPROVED",
-            leave_type="SL",
-            start_date__lte=month_end,
-            end_date__gte=month_start,
-        )
-
-        # Create a set of dates that are sick leaves
-        sick_leave_dates = set()
-        for sl in sick_leaves:
-            # Intersection of leave range and month range
-            s = max(sl.start_date, month_start)
-            e = min(sl.end_date, month_end)
-            curr = s
-            while curr <= e:
-                sick_leave_dates.add(curr.day)
-                curr += timedelta(days=1)
+        # Get leaves for this employee
+        emp_leaves = leave_cache.get(emp.id, [])
+        emp_sick_leave_days = set()
+        for sdate, edate, ltype in emp_leaves:
+            if ltype == "SL":
+                s = max(sdate, month_start)
+                e = min(edate, month_end)
+                curr = s
+                while curr <= e:
+                    emp_sick_leave_days.add(curr.day)
+                    curr += timedelta(days=1)
 
         for day in range(1, num_days + 1):
             day_date = date(current_year, current_month, day)
-            att = att_map.get(day)
+            att = attendance_cache.get((emp.id, day))
 
             status_class = ""
             if att:
+                if att.clock_in:
+                    att.display_clock_in = att.clock_in.astimezone(emp_tz)
+                if att.clock_out:
+                    att.display_clock_out = att.clock_out.astimezone(emp_tz)
+
                 if att.status == "WFH":
                     status_class = "wfh"
                 elif att.status == "WEEKLY_OFF":
                     status_class = "weekly-off"
                 elif att.status == "LEAVE":
-                    # Check if it is sick leave
-                    status_class = "sick-leave" if day in sick_leave_dates else "paid-leave"
+                    status_class = "sick-leave" if day in emp_sick_leave_days else "paid-leave"
                 elif att.status == "ABSENT":
                     status_class = "no-attendance"
                 elif att.status == "HOLIDAY":
@@ -437,31 +484,28 @@ def admin_dashboard(request):
                 elif att.status in ["PRESENT", "ON_DUTY", "HALF_DAY"]:
                     status_class = "present"
                 else:
-                    status_class = "present"  # Default for any other status with clock-in
+                    status_class = "present"
             else:
-                # No attendance record - determine what it should be
                 if day_date > today:
                     status_class = "future"
                 else:
-                    # Check if it's a holiday for this employee's location
-                    is_holiday = Holiday.objects.filter(
-                        company=emp.company,
-                        location=emp.location,
-                        date=day_date,
-                        is_active=True,
-                    ).exists()
+                    # Check holidays (Global or specific location)
+                    is_holiday = False
+                    if (
+                        None in holiday_cache
+                        and day_date in holiday_cache[None]
+                        or emp.location_id in holiday_cache
+                        and day_date in holiday_cache[emp.location_id]
+                    ):
+                        is_holiday = True
 
                     if is_holiday:
                         status_class = "holiday"
-                    # Check if it's a weekly off for this employee
                     elif emp.is_week_off(day_date):
                         status_class = "weekly-off"
                     else:
-                        # No record and not holiday/weekoff = absent
                         status_class = "no-attendance"
 
-            # Debug print to force reload
-            # print(f"Adding day {day} for {emp}")
             emp_data["days"].append({"day": day, "status": status_class, "date": day_date, "record": att})
 
         employee_calendar_data.append(emp_data)
@@ -473,24 +517,23 @@ def admin_dashboard(request):
     # --- Announcements Data (Next 30 Days) ---
     future_date = today + timedelta(days=30)
 
-    # 1. Upcoming Birthdays
+    # 1. Upcoming Birthdays & Anniversaries (Optimized loop)
     upcoming_birthdays = []
+    upcoming_anniversaries = []
 
     for emp in employees:
+        # Birthday calculation
         if emp.dob:
-            # Create birthday for current year
             try:
                 this_year_bday = emp.dob.replace(year=today.year)
             except ValueError:
-                # Leap year edge case (Feb 29 on non-leap year -> Feb 28 or Mar 1)
-                this_year_bday = emp.dob.replace(year=today.year, day=28)
+                this_year_bday = emp.dob.replace(year=today.year, month=2, day=28)
 
-            # If birthday passed this year, check next year
             if this_year_bday < today:
                 try:
                     next_birthday = emp.dob.replace(year=today.year + 1)
                 except ValueError:
-                    next_birthday = emp.dob.replace(year=today.year + 1, day=28)
+                    next_birthday = emp.dob.replace(year=today.year + 1, month=2, day=28)
             else:
                 next_birthday = this_year_bday
 
@@ -506,28 +549,20 @@ def admin_dashboard(request):
                     }
                 )
 
-    # Sort by nearest date
-    upcoming_birthdays.sort(key=lambda x: x["days_left"])
-
-    # 2. Work Anniversaries
-    upcoming_anniversaries = []
-    for emp in employees:
+        # Anniversary calculation
         if emp.date_of_joining:
-            # Calculate years completed
             years_completed = today.year - emp.date_of_joining.year
-
-            # Anniv for current year
             try:
                 this_year_anniv = emp.date_of_joining.replace(year=today.year)
             except ValueError:
-                this_year_anniv = emp.date_of_joining.replace(year=today.year, day=28)
+                this_year_anniv = emp.date_of_joining.replace(year=today.year, month=2, day=28)
 
             if this_year_anniv < today:
                 try:
                     next_anniv = emp.date_of_joining.replace(year=today.year + 1)
-                    years_completed += 1  # It will be next year's anniversary
+                    years_completed += 1
                 except ValueError:
-                    next_anniv = emp.date_of_joining.replace(year=today.year + 1, day=28)
+                    next_anniv = emp.date_of_joining.replace(year=today.year + 1, month=2, day=28)
                     years_completed += 1
             else:
                 next_anniv = this_year_anniv
@@ -859,7 +894,6 @@ def employee_dashboard(request):
     week_total = 0  # Expected work days
 
     for item in week_history:
-        item.date if isinstance(item, Attendance) else item["date"]
         status = item.status if isinstance(item, Attendance) else item["status"]
 
         if status == "PRESENT":
@@ -923,23 +957,24 @@ def employee_dashboard(request):
     announcements = Announcement.objects.filter(company=employee.company, is_active=True).order_by("-created_at")[:5]
 
     # 2. Upcoming Birthdays & Anniversaries
+    # Optimized Anniversary/Birthday Calculation for Employees
     future_date = today + timedelta(days=30)
     upcoming_birthdays = []
     upcoming_anniversaries = []
 
     for emp in company_employees:
-        # Birthday
+        # Birthday calculation
         if emp.dob:
             try:
                 this_year_bday = emp.dob.replace(year=today.year)
             except ValueError:
-                this_year_bday = emp.dob.replace(year=today.year, day=28)
+                this_year_bday = emp.dob.replace(year=today.year, month=2, day=28)
 
             if this_year_bday < today:
                 try:
                     next_birthday = emp.dob.replace(year=today.year + 1)
                 except ValueError:
-                    next_birthday = emp.dob.replace(year=today.year + 1, day=28)
+                    next_birthday = emp.dob.replace(year=today.year + 1, month=2, day=28)
             else:
                 next_birthday = this_year_bday
 
@@ -955,20 +990,20 @@ def employee_dashboard(request):
                     }
                 )
 
-        # Work Anniversary
+        # Anniversary calculation
         if emp.date_of_joining:
             years_completed = today.year - emp.date_of_joining.year
             try:
                 this_year_anniv = emp.date_of_joining.replace(year=today.year)
             except ValueError:
-                this_year_anniv = emp.date_of_joining.replace(year=today.year, day=28)
+                this_year_anniv = emp.date_of_joining.replace(year=today.year, month=2, day=28)
 
             if this_year_anniv < today:
                 try:
                     next_anniv = emp.date_of_joining.replace(year=today.year + 1)
                     years_completed += 1
                 except ValueError:
-                    next_anniv = emp.date_of_joining.replace(year=today.year + 1, day=28)
+                    next_anniv = emp.date_of_joining.replace(year=today.year + 1, month=2, day=28)
                     years_completed += 1
             else:
                 next_anniv = this_year_anniv
@@ -2037,7 +2072,20 @@ def employee_org_chart(request):
 @login_required
 @manager_required
 def attendance_analytics(request):
-    if not hasattr(request.user, "company") or not request.user.company:
+    company = None
+    if hasattr(request.user, "company") and request.user.company:
+        company = request.user.company
+    elif request.user.role == User.Role.SUPERADMIN:
+        selected_company_id = request.session.get("selected_company_id")
+        if selected_company_id:
+            from companies.models import Company
+
+            company = Company.objects.filter(id=selected_company_id).first()
+
+    if not company:
+        if request.user.role == User.Role.SUPERADMIN:
+            messages.warning(request, "Please select a company to view analytics.")
+            return redirect("superadmin:dashboard")
         messages.error(request, "Restricted access.")
         return redirect("dashboard")
 
@@ -2061,7 +2109,7 @@ def attendance_analytics(request):
         employees = Employee.objects.filter(manager=request.user) if manager_profile else Employee.objects.none()
     else:
         # Admin gets all company employees
-        employees = Employee.objects.filter(company=request.user.company)
+        employees = Employee.objects.filter(company=company)
 
     # Filter out employees who left before the current month
     # Show active employees OR employees who exited this month (or later)
@@ -2079,15 +2127,14 @@ def attendance_analytics(request):
     wfh_today = attendance_today.filter(status="WFH").count()
     on_duty_today = attendance_today.filter(status="ON_DUTY").count()
 
-    # Calculate late arrivals and early departures for today
-    late_arrivals_today = 0
-    early_departures_today = 0
+    # Optimized Attendance Stats (Avoid multiple DB hits)
+    today_attendance = list(attendance_today)
 
-    for att in attendance_today:
-        if att.is_late:
-            late_arrivals_today += 1
-        if att.is_early_departure:
-            early_departures_today += 1
+    late_arrivals_list = [att for att in today_attendance if att.is_late]
+    late_arrivals_today = len(late_arrivals_list)
+
+    early_departures_list = [att for att in today_attendance if att.is_early_departure]
+    early_departures_today = len(early_departures_list)
 
     # Calculate percentages
     present_pct = (present_today / total_employees * 100) if total_employees > 0 else 0
@@ -2173,7 +2220,20 @@ def attendance_analytics(request):
 @login_required
 @manager_required
 def attendance_report(request):
-    if not hasattr(request.user, "company") or not request.user.company:
+    company = None
+    if hasattr(request.user, "company") and request.user.company:
+        company = request.user.company
+    elif request.user.role == User.Role.SUPERADMIN:
+        selected_company_id = request.session.get("selected_company_id")
+        if selected_company_id:
+            from companies.models import Company
+
+            company = Company.objects.filter(id=selected_company_id).first()
+
+    if not company:
+        if request.user.role == User.Role.SUPERADMIN:
+            messages.warning(request, "Please select a company to view reports.")
+            return redirect("superadmin:dashboard")
         messages.error(request, "Restricted access.")
         return redirect("dashboard")
 
@@ -2213,7 +2273,7 @@ def attendance_report(request):
         else:
             employees = Employee.objects.none()
     else:
-        employees = Employee.objects.filter(company=request.user.company).select_related("user", "manager", "location")
+        employees = Employee.objects.filter(company=company).select_related("user", "manager", "location")
 
     if location_id:
         employees = employees.filter(location_id=location_id)
@@ -2222,7 +2282,7 @@ def attendance_report(request):
     # Show active employees OR employees who exited on or after the start date
     employees = employees.filter(Q(is_active=True) | Q(exit_date__gte=start_date))
 
-    locations = Location.objects.filter(company=request.user.company, is_active=True)
+    locations = Location.objects.filter(company=company, is_active=True)
     employee_ids = employees.values_list("id", flat=True)
 
     # Get all attendance records for the period
@@ -2230,7 +2290,7 @@ def attendance_report(request):
 
     # Get all holidays for the period and company
     holidays = Holiday.objects.filter(
-        company=request.user.company,
+        company=company,
         date__gte=start_date,
         date__lte=end_date,
         is_active=True,
@@ -2711,6 +2771,7 @@ def leave_requests(request):
         leave_id = request.POST.get("leave_id")
 
         admin_comment = request.POST.get("admin_comment", "")
+        approval_type = request.POST.get("approval_type", "FULL")
 
         try:
             leave_request = LeaveRequest.objects.get(id=leave_id, employee__company=request.user.company)
@@ -2721,7 +2782,7 @@ def leave_requests(request):
                 # Only transition and deduct if this wasn't already approved
                 if prev_status != "APPROVED":
                     # Use the model's approve_leave method to handle all balance updates properly
-                    if leave_request.approve_leave(request.user, approval_type="FULL"):
+                    if leave_request.approve_leave(request.user, approval_type=approval_type):
                         leave_request.admin_comment = admin_comment
                         leave_request.save()
 
@@ -2942,11 +3003,22 @@ def leave_history(request):
 @admin_required
 def payroll_dashboard(request):
     """Admin Payroll Dashboard - Manage employee payslips"""
-    if not hasattr(request.user, "company") or not request.user.company:
+    company = None
+    if hasattr(request.user, "company") and request.user.company:
+        company = request.user.company
+    elif request.user.role == User.Role.SUPERADMIN:
+        selected_company_id = request.session.get("selected_company_id")
+        if selected_company_id:
+            from companies.models import Company
+
+            company = Company.objects.filter(id=selected_company_id).first()
+
+    if not company:
+        if request.user.role == User.Role.SUPERADMIN:
+            messages.warning(request, "Please select a company to manage payroll.")
+            return redirect("superadmin:dashboard")
         messages.error(request, "Restricted access.")
         return redirect("dashboard")
-
-    company = request.user.company
     today = timezone.localtime().date()
 
     # Month/Year selection
@@ -2957,9 +3029,6 @@ def payroll_dashboard(request):
     employees = Employee.objects.filter(company=company, is_active=True).select_related("user")
 
     # Get payslips for the selected month/year
-    # month_date is used for filtering. We use the first of the month.
-    date(selected_year, selected_month, 1)
-
     existing_payslips = Payslip.objects.filter(
         employee__company=company, month__month=selected_month, month__year=selected_year
     )
@@ -2992,6 +3061,76 @@ def payroll_dashboard(request):
     }
 
     return render(request, "core/payroll_dashboard.html", context)
+
+
+@login_required
+@admin_required
+def payroll_settings(request):
+    """View to manage company payroll configuration"""
+    company = None
+    if hasattr(request.user, "company") and request.user.company:
+        company = request.user.company
+    elif request.user.role == User.Role.SUPERADMIN:
+        selected_company_id = request.session.get("selected_company_id")
+        if selected_company_id:
+            from companies.models import Company
+
+            company = Company.objects.filter(id=selected_company_id).first()
+
+    if not company:
+        if request.user.role == User.Role.SUPERADMIN:
+            messages.warning(request, "Please select a company to configure payroll.")
+            return redirect("superadmin:dashboard")
+        messages.error(request, "Restricted access.")
+        return redirect("dashboard")
+
+    config, created = PayrollConfiguration.objects.get_or_create(company=company)
+
+    if request.method == "POST":
+        # Extract decimal values safely
+        def get_decimal(key, default):
+            val = request.POST.get(key)
+            if val is None or val == "":
+                return default
+            try:
+                return float(val)
+            except ValueError:
+                return default
+
+        # India Rates
+        config.pf_employer_rate = get_decimal("pf_employer_rate", config.pf_employer_rate)
+        config.pf_employee_rate = get_decimal("pf_employee_rate", config.pf_employee_rate)
+        config.pf_ceiling = get_decimal("pf_ceiling", config.pf_ceiling)
+        config.esi_employer_rate = get_decimal("esi_employer_rate", config.esi_employer_rate)
+        config.esi_employee_rate = get_decimal("esi_employee_rate", config.esi_employee_rate)
+        config.esi_ceiling = get_decimal("esi_ceiling", config.esi_ceiling)
+        config.pt_threshold = get_decimal("pt_threshold", config.pt_threshold)
+        config.pt_amount_below = get_decimal("pt_amount_below", config.pt_amount_below)
+        config.pt_amount_above = get_decimal("pt_amount_above", config.pt_amount_above)
+
+        # Salary Components
+        config.basic_percentage = get_decimal("basic_percentage", config.basic_percentage)
+        config.hra_percentage = get_decimal("hra_percentage", config.hra_percentage)
+        config.lta_percentage = get_decimal("lta_percentage", config.lta_percentage)
+        config.special_allowance_percentage = get_decimal(
+            "special_allowance_percentage", config.special_allowance_percentage
+        )
+
+        # BD Rates
+        config.bd_basic_percentage = get_decimal("bd_basic_percentage", config.bd_basic_percentage)
+        config.bd_hra_percentage = get_decimal("bd_hra_percentage", config.bd_hra_percentage)
+        config.bd_medical_percentage = get_decimal("bd_medical_percentage", config.bd_medical_percentage)
+        config.bd_conveyance_percentage = get_decimal("bd_conveyance_percentage", config.bd_conveyance_percentage)
+
+        # US Rates
+        config.us_basic_percentage = get_decimal("us_basic_percentage", config.us_basic_percentage)
+        config.us_tax_percentage = get_decimal("us_tax_percentage", config.us_tax_percentage)
+
+        config.save()
+        messages.success(request, f"Payroll configuration for {company.name} updated successfully.")
+        return redirect("payroll_settings")
+
+    return render(request, "core/payroll_settings.html", {"config": config, "company": company})
 
 
 @login_required
@@ -3116,8 +3255,14 @@ def process_payslip_generation(request):
             payslip.lta = breakdown["lta"]
             payslip.other_allowance = breakdown["other_allowance"]
             # Map location specific allowances
-            payslip.conveyance_allowance = breakdown.get("conveyance", 0.0)
-            payslip.special_allowance = breakdown.get("medical", 0.0)
+            # For India: lta -> conveyance_allowance, other_allowance -> special_allowance
+            # For other countries: conveyance -> conveyance_allowance, medical -> special_allowance
+            if breakdown.get("country_code", "IN") == "IN":
+                payslip.conveyance_allowance = breakdown.get("lta", 0.0)
+                payslip.special_allowance = breakdown.get("other_allowance", 0.0)
+            else:
+                payslip.conveyance_allowance = breakdown.get("conveyance", 0.0)
+                payslip.special_allowance = breakdown.get("medical", 0.0)
             payslip.monthly_gross = breakdown["full_monthly_gross"]
             payslip.gross_salary = breakdown["gross_monthly"]
             payslip.employee_pf = breakdown["employee_pf"]
@@ -3130,8 +3275,10 @@ def process_payslip_generation(request):
 
             # Generate PDF
             # Determine currency name for words
+            currency = "INR"  # Default currency
             currency_name = "Rupees"
             if employee.location:
+                currency = employee.location.currency or "INR"
                 if employee.location.country_code == "BD" or employee.location.currency == "BDT":
                     currency_name = "Taka"
                 elif employee.location.country_code == "US" or employee.location.currency == "USD":
@@ -3166,29 +3313,13 @@ def process_payslip_generation(request):
                 "company": employee.company,
                 "branding": branding,
                 "net_salary_words": num2words_flexible(payslip.net_salary, currency_name),
+                "currency": currency,
             }
 
-            # Use new PayslipGenerator instead of template-based approach
-            try:
-                success = generate_payslip_pdf_with_generator(payslip)
-                if success:
-                    messages.success(
-                        request, f"Payslip for {employee.user.get_full_name()} generated successfully with WeasyPrint."
-                    )
-                else:
-                    # Fallback to old method if new generator fails
-                    filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
-                    save_pdf_to_model(payslip, "employees/payslip_pdf.html", context, filename)
-                    messages.success(
-                        request, f"Payslip for {employee.user.get_full_name()} generated successfully (fallback)."
-                    )
-            except ImportError:
-                # WeasyPrint not available, use fallback method
-                filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
-                save_pdf_to_model(payslip, "employees/payslip_pdf.html", context, filename)
-                messages.success(
-                    request, f"Payslip for {employee.user.get_full_name()} generated successfully (fallback method)."
-                )
+            # Generate PDF using template-based approach (no WeasyPrint)
+            filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
+            save_pdf_to_model(payslip, "employees/payslip_pdf.html", context, filename)
+            messages.success(request, f"Payslip for {employee.user.get_full_name()} generated successfully.")
         except Exception as e:
             messages.error(request, f"Error generating payslip: {str(e)}")
 
@@ -3405,8 +3536,15 @@ def bulk_upload_payslips(request):
                     payslip.hra = breakdown["hra"]
                     payslip.lta = breakdown["lta"]
                     payslip.other_allowance = breakdown["other_allowance"]
-                    payslip.conveyance_allowance = breakdown.get("conveyance", 0.0)
-                    payslip.special_allowance = breakdown.get("medical", 0.0)
+                    # Map location specific allowances
+                    # For India: lta -> conveyance_allowance, other_allowance -> special_allowance
+                    # For other countries: conveyance -> conveyance_allowance, medical -> special_allowance
+                    if breakdown.get("country_code", "IN") == "IN":
+                        payslip.conveyance_allowance = breakdown.get("lta", 0.0)
+                        payslip.special_allowance = breakdown.get("other_allowance", 0.0)
+                    else:
+                        payslip.conveyance_allowance = breakdown.get("conveyance", 0.0)
+                        payslip.special_allowance = breakdown.get("medical", 0.0)
                     payslip.monthly_gross = breakdown["full_monthly_gross"]
                     payslip.gross_salary = breakdown["gross_monthly"]
                     payslip.employee_pf = breakdown["employee_pf"]
@@ -3418,8 +3556,10 @@ def bulk_upload_payslips(request):
                     payslip.save()
 
                     # Generate PDF
+                    currency = "INR"  # Default currency
                     currency_name = "Rupees"
                     if employee.location:
+                        currency = employee.location.currency or "INR"
                         if employee.location.country_code == "BD" or employee.location.currency == "BDT":
                             currency_name = "Taka"
                         elif employee.location.country_code == "US" or employee.location.currency == "USD":
@@ -3452,19 +3592,12 @@ def bulk_upload_payslips(request):
                         "company": employee.company,
                         "branding": branding,
                         "net_salary_words": num2words_flexible(payslip.net_salary, currency_name),
+                        "currency": currency,
                     }
 
-                    # Use new PayslipGenerator instead of template-based approach
-                    try:
-                        success = generate_payslip_pdf_with_generator(payslip)
-                        if not success:
-                            # Fallback to old method if new generator fails
-                            filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
-                            save_pdf_to_model(payslip, "employees/payslip_pdf.html", context, filename)
-                    except ImportError:
-                        # WeasyPrint not available, use fallback method
-                        filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
-                        save_pdf_to_model(payslip, "employees/payslip_pdf.html", context, filename)
+                    # Generate PDF using template-based approach (no WeasyPrint)
+                    filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
+                    save_pdf_to_model(payslip, "employees/payslip_pdf.html", context, filename)
 
                     success_count += 1
                 except Employee.DoesNotExist:
@@ -4035,3 +4168,93 @@ def get_notification_url(notification):
         return reverse("regularization_list")
 
     return "#"
+
+
+@csrf_exempt
+def biometric_sync_api(request):
+    """
+    Real-time API endpoint for Biometric Door/Attendance Devices
+    Supported devices: ZKTeco, Hikvision, etc. (Generic format)
+    """
+    import json
+    from datetime import datetime
+
+    from django.http import JsonResponse
+    from django.utils import timezone
+
+    from companies.models import BiometricDevice
+    from employees.models import Attendance, Employee
+
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "Only POST allowed"}, status=405)
+
+    try:
+        # Most devices send JSON or Form Data
+        data = json.loads(request.body) if request.content_type == "application/json" else request.POST
+
+        # Required fields: serial_number (of device), biometric_id (of employee), timestamp
+        device_sn = data.get("serial_number")
+        bio_id = data.get("biometric_id")
+        event_time_str = data.get("timestamp")  # Format: YYYY-MM-DD HH:MM:SS
+        event_type = data.get("event_type", "CHECK")  # CHECK, DOOR_OPEN
+
+        if not device_sn or not bio_id:
+            return JsonResponse({"status": "error", "message": "Missing device or employee ID"}, status=400)
+
+        # 1. Verify Device
+        device = BiometricDevice.objects.filter(serial_number=device_sn, is_active=True).first()
+        if not device:
+            return JsonResponse({"status": "error", "message": "Unregistered or inactive device"}, status=403)
+
+        # 2. Identify Employee
+        employee = Employee.objects.filter(biometric_id=bio_id, company=device.company).first()
+        if not employee:
+            return JsonResponse({"status": "error", "message": "Employee not found for this biometric ID"}, status=404)
+
+        # 3. Parse Timestamp
+        try:
+            event_time = timezone.make_aware(datetime.strptime(event_time_str, "%Y-%m-%d %H:%M:%S"))
+        except (ValueError, TypeError):
+            event_time = timezone.now()
+
+        # 4. Record Attendance or Access
+        date = event_time.date()
+        attendance, created = Attendance.objects.get_or_create(
+            employee=employee, date=date, defaults={"status": "PRESENT" if event_type == "CHECK" else "DOOR_OPEN"}
+        )
+
+        attendance.current_session_type = "BIOMETRIC"
+
+        if event_type == "CHECK":
+            # Logic for first-in/last-out
+            if not attendance.clock_in or event_time < attendance.clock_in:
+                attendance.clock_in = event_time
+                attendance.calculate_late_arrival()
+
+            if not attendance.clock_out or event_time > attendance.clock_out:
+                attendance.clock_out = event_time
+                attendance.calculate_early_departure()
+
+            attendance.status = "PRESENT"
+        else:
+            # Simple door access logs
+            if attendance.status == "ABSENT":
+                attendance.status = "DOOR_OPEN"
+
+        attendance.save()
+
+        # Update device last sync
+        device.last_sync = timezone.now()
+        device.save()
+
+        return JsonResponse(
+            {
+                "status": "success",
+                "message": f"Recorded {event_type} for {employee.user.get_full_name()} at {event_time}",
+                "employee": employee.user.get_full_name(),
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"Biometric Sync Error: {str(e)}")
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
