@@ -401,7 +401,7 @@ class EmployeeUpdateForm(EmployeeCreationForm):
 class EmployeeBulkImportForm(forms.Form):
     import_file = forms.FileField(
         label="Upload Excel File",
-        help_text="Upload .xlsx file containing employee details. Required columns: First Name, Last Name, Email, Designation, Department, Date of Joining (YYYY-MM-DD), Date of Birth (YYYY-MM-DD).",
+        help_text="Upload .xlsx file containing employee details. Required columns: First Name, Last Name, Email, Designation, Department, Date of Joining (YYYY-MM-DD), Date of Birth (YYYY-MM-DD), Reporting Manager Name.",
     )
 
     def clean_import_file(self):

@@ -362,6 +362,13 @@ def role_configuration(request):
             # Note: Cascade delete might delete designations if linked, or set null.
             messages.success(request, "Department deleted.")
 
+        elif action == "edit_department":
+            dept_id = request.POST.get("id")
+            name = request.POST.get("name")
+            if dept_id and name:
+                Department.objects.filter(id=dept_id, company=company).update(name=name)
+                messages.success(request, f"Department updated to '{name}'.")
+
         elif action == "add_designation":
             name = request.POST.get("name")
             dept_id = request.POST.get("department_id")
@@ -376,6 +383,17 @@ def role_configuration(request):
             desig_id = request.POST.get("id")
             Designation.objects.filter(id=desig_id, company=company).delete()
             messages.success(request, "Designation deleted.")
+
+        elif action == "edit_designation":
+            desig_id = request.POST.get("id")
+            name = request.POST.get("name")
+            dept_id = request.POST.get("department_id")
+            if desig_id and name:
+                dept = None
+                if dept_id:
+                    dept = Department.objects.filter(id=dept_id, company=company).first()
+                Designation.objects.filter(id=desig_id, company=company).update(name=name, department=dept)
+                messages.success(request, f"Designation updated to '{name}'.")
 
         return redirect("role_configuration")
 

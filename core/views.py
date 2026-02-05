@@ -3279,12 +3279,15 @@ def process_payslip_generation(request):
             currency_name = "Rupees"
             if employee.location:
                 currency = employee.location.currency or "INR"
-                if employee.location.country_code == "BD" or employee.location.currency == "BDT":
+                # For India, use "Rupees" instead of "INR" for words to avoid redundancy
+                if employee.location.country_code == "IN" or currency == "INR":
+                    currency_name = "Rupees"
+                elif employee.location.country_code == "BD" or currency == "BDT":
                     currency_name = "Taka"
-                elif employee.location.country_code == "US" or employee.location.currency == "USD":
+                elif employee.location.country_code == "US" or currency == "USD":
                     currency_name = "Dollars"
-                elif employee.location.currency:
-                    currency_name = employee.location.currency
+                else:
+                    currency_name = currency
 
             # Prepare branding info
             cname_upper = employee.company.name.upper()
@@ -3308,12 +3311,24 @@ def process_payslip_generation(request):
                     addr += f" {loc.postal_code}"
                 branding["address"] = addr
 
+            # Ensure all values in context are rounded as per user request
             context = {
                 "payslip": payslip,
                 "company": employee.company,
                 "branding": branding,
-                "net_salary_words": num2words_flexible(payslip.net_salary, currency_name),
+                "net_salary_words": num2words_flexible(round(payslip.net_salary or 0), currency_name),
                 "currency": currency,
+                # Explicitly pass rounded values for display
+                "basic_rounded": round(payslip.basic or 0),
+                "hra_rounded": round(payslip.hra or 0),
+                "conveyance_rounded": round(payslip.conveyance_allowance or 0),
+                "special_rounded": round(payslip.special_allowance or 0),
+                "employer_pf_rounded": round(payslip.employer_pf or 0),
+                "employee_pf_rounded": round(payslip.employee_pf or 0),
+                "professional_tax_rounded": round(payslip.professional_tax or 0),
+                "total_earnings_ctc": round((payslip.gross_salary or 0) + (payslip.employer_pf or 0)),
+                "total_contributions": round((payslip.employee_pf or 0) + (payslip.employer_pf or 0)),
+                "net_salary_rounded": round(payslip.net_salary or 0),
             }
 
             # Generate PDF using template-based approach (no WeasyPrint)
@@ -3560,12 +3575,15 @@ def bulk_upload_payslips(request):
                     currency_name = "Rupees"
                     if employee.location:
                         currency = employee.location.currency or "INR"
-                        if employee.location.country_code == "BD" or employee.location.currency == "BDT":
+                        # For India, use "Rupees" instead of "INR" for words to avoid redundancy
+                        if employee.location.country_code == "IN" or currency == "INR":
+                            currency_name = "Rupees"
+                        elif employee.location.country_code == "BD" or currency == "BDT":
                             currency_name = "Taka"
-                        elif employee.location.country_code == "US" or employee.location.currency == "USD":
+                        elif employee.location.country_code == "US" or currency == "USD":
                             currency_name = "Dollars"
-                        elif employee.location.currency:
-                            currency_name = employee.location.currency
+                        else:
+                            currency_name = currency
 
                     cname_upper = employee.company.name.upper()
                     branding = {
@@ -3587,12 +3605,24 @@ def bulk_upload_payslips(request):
                             addr += f" {loc.postal_code}"
                         branding["address"] = addr
 
+                    # Ensure all values in context are rounded as per user request
                     context = {
                         "payslip": payslip,
                         "company": employee.company,
                         "branding": branding,
-                        "net_salary_words": num2words_flexible(payslip.net_salary, currency_name),
+                        "net_salary_words": num2words_flexible(round(payslip.net_salary or 0), currency_name),
                         "currency": currency,
+                        # Explicitly pass rounded values for display
+                        "basic_rounded": round(payslip.basic or 0),
+                        "hra_rounded": round(payslip.hra or 0),
+                        "conveyance_rounded": round(payslip.conveyance_allowance or 0),
+                        "special_rounded": round(payslip.special_allowance or 0),
+                        "employer_pf_rounded": round(payslip.employer_pf or 0),
+                        "employee_pf_rounded": round(payslip.employee_pf or 0),
+                        "professional_tax_rounded": round(payslip.professional_tax or 0),
+                        "total_earnings_ctc": round((payslip.gross_salary or 0) + (payslip.employer_pf or 0)),
+                        "total_contributions": round((payslip.employee_pf or 0) + (payslip.employer_pf or 0)),
+                        "net_salary_rounded": round(payslip.net_salary or 0),
                     }
 
                     # Generate PDF using template-based approach (no WeasyPrint)

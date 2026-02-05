@@ -1044,8 +1044,6 @@ def employee_profile(request):
 
         if action == "update_profile":
             if employee.profile_edited:
-                from django.contrib import messages
-
                 messages.error(request, "You have already edited your profile once.")
                 return redirect("employee_profile")
 
@@ -1090,21 +1088,15 @@ def employee_profile(request):
                 employee.profile_edited = True
                 employee.save(update_fields=["profile_edited"])
 
-                from django.contrib import messages
-
                 messages.success(request, "Profile updated successfully.")
                 return redirect("employee_profile")
             except Exception as e:
-                from django.contrib import messages
-
                 messages.error(request, f"Error updating profile: {str(e)}")
                 return redirect("employee_profile")
 
         elif action == "assign_shift":
             # Only allow Company Admins to assign shifts
             if request.user.role != User.Role.COMPANY_ADMIN and not request.user.is_superuser:
-                from django.contrib import messages
-
                 messages.error(request, "You don't have permission to assign shifts.")
                 return redirect("employee_profile")
 
@@ -1546,8 +1538,6 @@ def approve_leave(request, pk):
             email_thread.start()
 
             # Show success message immediately
-            from django.contrib import messages
-
             approval_msg = {
                 "FULL": "Leave approved successfully (Full Balance).",
                 "WITH_LOP": "Leave approved with LOP for excess days.",
@@ -1734,8 +1724,6 @@ def employee_detail(request, pk):
             if action == "assign_shift":
                 # Only allow Company Admins to assign shifts
                 if not is_admin:
-                    from django.contrib import messages
-
                     messages.error(request, "You don't have permission to assign shifts.")
                     return redirect("employee_detail", pk=pk)
 
@@ -1749,8 +1737,6 @@ def employee_detail(request, pk):
                         employee.assigned_shift = shift
                         employee.save(update_fields=["assigned_shift"])
 
-                        from django.contrib import messages
-
                         messages.success(
                             request,
                             f"Shift assignment updated from '{old_shift_name}' to '{shift.name}' for {employee.user.get_full_name()}.",
@@ -1761,8 +1747,6 @@ def employee_detail(request, pk):
                         employee.assigned_shift = None
                         employee.save(update_fields=["assigned_shift"])
 
-                        from django.contrib import messages
-
                         messages.success(
                             request,
                             f"Shift assignment removed from {employee.user.get_full_name()}. Previous shift: '{old_shift_name}'.",
@@ -1771,13 +1755,9 @@ def employee_detail(request, pk):
                     return redirect("employee_detail", pk=pk)
 
                 except ShiftSchedule.DoesNotExist:
-                    from django.contrib import messages
-
                     messages.error(request, "Selected shift not found.")
                     return redirect("employee_detail", pk=pk)
                 except Exception as e:
-                    from django.contrib import messages
-
                     messages.error(request, f"Error assigning shift: {str(e)}")
                     return redirect("employee_detail", pk=pk)
 
@@ -2962,6 +2942,7 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                 "department",
                 "date_of_joining",
                 "date_of_birth",
+                "reporting_manager_name",
             ]
             missing_columns = [col for col in required_columns if col not in df.columns]
 
@@ -3044,6 +3025,44 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                         if not location:
                             location = Location.objects.filter(company=self.request.user.company).first()
 
+                        # 4.5 Reporting Manager
+                        manager_name = str(row.get("reporting_manager_name", "")).strip()
+                        if not manager_name:
+                            raise ValueError("Reporting Manager Name is mandatory")
+
+                        # Find manager user
+                        from django.db.models import Value
+                        from django.db.models.functions import Concat
+
+                        manager_user = (
+                            User.objects.annotate(full_name=Concat("first_name", Value(" "), "last_name"))
+                            .filter(
+                                company=self.request.user.company,
+                                full_name__iexact=manager_name,
+                            )
+                            .first()
+                        )
+
+                        if not manager_user:
+                            # Try approximate match (split first/last)
+                            parts = manager_name.split()
+                            if len(parts) >= 2:
+                                manager_user = User.objects.filter(
+                                    company=self.request.user.company,
+                                    first_name__iexact=parts[0],
+                                    last_name__iexact=" ".join(parts[1:]),
+                                ).first()
+
+                        if not manager_user:
+                            raise ValueError(
+                                f"Reporting Manager '{manager_name}' not found. Please ensure exact name match."
+                            )
+
+                        if not hasattr(manager_user, "employee_profile"):
+                            raise ValueError(f"User '{manager_name}' found but has no employee profile.")
+
+                        manager_employee = manager_user.employee_profile
+
                         # 5. Create Employee
                         badge_id = str(row.get("badge_id", ""))
                         if badge_id == "nan":
@@ -3064,6 +3083,7 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                         Employee.objects.create(
                             user=user,
                             company=self.request.user.company,
+                            manager=manager_employee,
                             designation=desig_name,
                             department=dept_name,
                             location=location,
@@ -3122,6 +3142,7 @@ def download_sample_import_file(request):
         "First Name",
         "Last Name",
         "Pseudo Name",
+        "Reporting Manager Name",
         "Email",
         "Designation",
         "Department",
@@ -3143,6 +3164,7 @@ def download_sample_import_file(request):
         "First Name": "John",
         "Last Name": "Doe",
         "Pseudo Name": "Johnny",
+        "Reporting Manager Name": "Petabytz Admin",
         "Email": "john.doe@example.com",
         "Designation": "Software Engineer",
         "Department": "IT",
@@ -4286,20 +4308,13 @@ def employee_id_card(request):
     View to display the employee's ID card.
     """
     try:
-        from django.shortcuts import redirect
-
         if hasattr(request.user, "employee_profile"):
             employee = request.user.employee_profile
         else:
-            from django.contrib import messages
-
             messages.error(request, "Employee profile not found.")
             return redirect("dashboard")
 
     except Exception:
-        from django.contrib import messages
-        from django.shortcuts import redirect
-
         messages.error(request, "Employee profile not found.")
         return redirect("dashboard")
 

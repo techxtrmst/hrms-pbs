@@ -58,23 +58,23 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
             med_rate = float(config.bd_medical_percentage) / 100 if config else 0.15
             conv_rate = float(config.bd_conveyance_percentage) / 100 if config else 0.10
 
-            gross_monthly = round(ctc_to_use, 2)
-            basic = round(gross_monthly * basic_rate, 2)
-            hra = round(gross_monthly * hra_rate, 2)  # House Rent
-            medical = round(gross_monthly * med_rate, 2)
-            conveyance = round(gross_monthly * conv_rate, 2)
+            gross_monthly = float(round(ctc_to_use))
+            basic = float(round(gross_monthly * basic_rate))
+            hra = float(round(gross_monthly * hra_rate))  # House Rent
+            medical = float(round(gross_monthly * med_rate))
+            conveyance = float(round(gross_monthly * conv_rate))
             lta = 0.00
             other_allowance = 0.00
 
             if is_pf_enabled:
-                employee_pf = round(basic * 0.10, 2)  # Typical BD PF is 10%
+                employee_pf = float(round(basic * 0.10))  # Typical BD PF is 10%
                 employer_pf = employee_pf
             else:
                 employee_pf = 0.00
                 employer_pf = 0.00
 
             professional_tax = 0.00  # No PT in BD
-            net_salary = round(gross_monthly - employee_pf, 2)
+            net_salary = float(round(gross_monthly - employee_pf))
 
             return {
                 "gross": gross_monthly,
@@ -94,21 +94,21 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
             basic_rate = float(config.us_basic_percentage) / 100 if config else 0.70
             tax_rate = float(config.us_tax_percentage) / 100 if config else 0.15
 
-            gross_monthly = round(ctc_to_use, 2)
-            basic = round(gross_monthly * basic_rate, 2)
+            gross_monthly = float(round(ctc_to_use))
+            basic = float(round(gross_monthly * basic_rate))
             hra = 0.00
-            medical = round(gross_monthly * 0.15, 2)
+            medical = float(round(gross_monthly * 0.15))
             conveyance = 0.00
             lta = 0.00
-            other_allowance = round(gross_monthly - (basic + medical), 2)
+            other_allowance = float(round(gross_monthly - (basic + medical)))
             # Simplified US Tax/Social Security (placeholder, usually handles via withholdings)
             # 7.65% for FICA (Social Security + Medicare)
-            employee_pf = round(gross_monthly * 0.0765, 2)
+            employee_pf = float(round(gross_monthly * 0.0765))
             employer_pf = employee_pf
             professional_tax = 0.00
             # Total withholdings (Federal/State Tax placeholder)
-            income_tax = round(gross_monthly * tax_rate, 2)
-            net_salary = round(gross_monthly - employee_pf - income_tax, 2)
+            income_tax = float(round(gross_monthly * tax_rate))
+            net_salary = float(round(gross_monthly - employee_pf - income_tax))
 
             return {
                 "gross": gross_monthly,
@@ -145,36 +145,40 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
                 gross_case1 = ctc_to_use / pf_factor
 
                 if (gross_case1 * b_pct) < pf_ceil:
-                    gross_monthly = round(gross_case1, 2)
-                    basic = round(gross_monthly * b_pct, 2)
-                    employer_pf = round(basic * pf_er_rate, 2)
+                    # Calculate basic from the fractional gross to maintain precision
+                    basic = float(round(gross_case1 * b_pct))
+                    employer_pf = float(round(basic * pf_er_rate))
+                    # Derive gross_monthly from CTC to ensure they always add up perfectly
+                    gross_monthly = float(ctc_to_use - employer_pf)
                 else:
-                    employer_pf = round(pf_ceil * pf_er_rate, 2)
-                    gross_monthly = round(ctc_to_use - employer_pf, 2)
-                    basic = round(gross_monthly * b_pct, 2)
+                    employer_pf = float(round(pf_ceil * pf_er_rate))
+                    gross_monthly = float(round(ctc_to_use - employer_pf))
+                    basic = float(round(gross_monthly * b_pct))
 
                 # Employee PF
-                employee_pf = round(basic * pf_ee_rate, 2) if basic < pf_ceil else round(pf_ceil * pf_ee_rate, 2)
+                employee_pf = (
+                    float(round(basic * pf_ee_rate)) if basic < pf_ceil else float(round(pf_ceil * pf_ee_rate))
+                )
             else:
                 # -------- No PF --------
-                gross_monthly = round(ctc_to_use, 2)
-                basic = round(gross_monthly * b_pct, 2)
+                gross_monthly = float(round(ctc_to_use))
+                basic = float(round(gross_monthly * b_pct))
                 employer_pf = 0.00
                 employee_pf = 0.00
 
             # -------- Allowances --------
-            hra = round(gross_monthly * h_pct, 2)
-            lta = round(gross_monthly * l_pct, 2)
-            other_allowance = round(gross_monthly - (basic + hra + lta), 2)
+            hra = float(round(gross_monthly * h_pct))
+            lta = float(round(gross_monthly * l_pct))
+            other_allowance = float(round(gross_monthly - (basic + hra + lta)))
 
             # -------- Net Salary --------
-            net_before_pt = round(gross_monthly - employee_pf, 2)
+            net_before_pt = float(round(gross_monthly - employee_pf))
 
             # Professional Tax (Only for India)
             professional_tax = (pt_low if net_before_pt < pt_thresh else pt_high) if country == "IN" else 0.0
 
             # Net Take Home Salary
-            net_salary = round(net_before_pt - professional_tax, 2)
+            net_salary = float(round(net_before_pt - professional_tax))
 
             return {
                 "gross": gross_monthly,
@@ -191,12 +195,12 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
             }
 
     # Monthly CTC (Full)
-    full_monthly_ctc = round(annual_ctc / 12, 2)
+    full_monthly_ctc = float(round(annual_ctc / 12))
     full_breakdown = get_breakdown_logic(full_monthly_ctc, pf_enabled, country_code)
 
     # Prorated Monthly CTC based on worked days
     if total_days > 0:
-        monthly_ctc = round(full_monthly_ctc * (worked_days / total_days), 2)
+        monthly_ctc = float(round(full_monthly_ctc * (worked_days / total_days)))
         prorated_breakdown = get_breakdown_logic(monthly_ctc, pf_enabled, country_code)
     else:
         monthly_ctc = 0.0
