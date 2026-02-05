@@ -473,15 +473,14 @@ def clock_in(request):
                 attendance.save(update_fields=["user_timezone"])
 
             # Check if employee can clock in
-            if not attendance.can_clock_in():
-                if attendance.is_currently_clocked_in:
-                    return JsonResponse(
-                        {
-                            "status": "error",
-                            "message": "You are already clocked in. Please clock out first.",
-                            "already_clocked_in": True,
-                        }
-                    )
+            if not attendance.can_clock_in() and attendance.is_currently_clocked_in:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "You are already clocked in. Please clock out first.",
+                        "already_clocked_in": True,
+                    }
+                )
 
             # Determine session type and status
             session_type = "WEB" if clock_in_type == "office" else "REMOTE"
@@ -1039,6 +1038,7 @@ def employee_profile(request):
 
             try:
                 # Personal Details
+                employee.bio = request.POST.get("bio", "")
                 employee.mobile_number = request.POST.get("mobile_number")
                 dob_str = request.POST.get("dob")
                 if dob_str:
@@ -1476,6 +1476,9 @@ def approve_leave(request, pk):
                 # Final level reached, proceed to actual approval
                 pass
 
+        # Get approval type from request, default to FULL
+        approval_type = request.POST.get("approval_type", "FULL")
+
         # Use the new approval method from the model
         if leave_request.approve_leave(user, approval_type=approval_type):
             # Update Attendance Records
@@ -1531,8 +1534,6 @@ def approve_leave(request, pk):
             email_thread.start()
 
             # Show success message immediately
-            from django.contrib import messages
-
             approval_msg = {
                 "FULL": "Leave approved successfully (Full Balance).",
                 "WITH_LOP": "Leave approved with LOP for excess days.",
@@ -3408,6 +3409,9 @@ def leave_configuration(request):
         return redirect("dashboard")
 
     company = user.company
+    if not company:
+        messages.error(request, "No company assigned to your account. Please contact administrator.")
+        return redirect("dashboard")
 
     # Manager sees team, Admin sees all
     if user.role == User.Role.MANAGER:
@@ -3415,21 +3419,43 @@ def leave_configuration(request):
     else:
         employees = Employee.objects.filter(company=company)
 
-    # Prefetch leave balances to avoid N+1 queries and ensure fresh data
-    employees = employees.select_related("user", "leave_balance").order_by("user__first_name")
+    # First get employees without select_related to avoid issues with missing leave_balance
+    employees = employees.select_related("user").order_by("user__first_name")
 
-    # Ensure all employees have leave balance records and refresh from DB
-    from django.core.exceptions import ObjectDoesNotExist
+    # Ensure all employees have leave balance records
 
     for employee in employees:
         try:
-            # Force refresh from database to get latest data
-            employee.refresh_from_db()
-            leave_balance = employee.leave_balance
-            leave_balance.refresh_from_db()
-        except ObjectDoesNotExist:
+            # Try to get or create leave balance
+            leave_balance, created = LeaveBalance.objects.get_or_create(
+                employee=employee,
+                defaults={
+                    "casual_leave_allocated": 0.0,
+                    "sick_leave_allocated": 0.0,
+                    "combined_sick_casual_allocated": 0.0,
+                },
+            )
+        except Exception:
             # Create with 0 leaves for new employees (probation period)
-            LeaveBalance.objects.create(employee=employee, casual_leave_allocated=0.0, sick_leave_allocated=0.0)
+            LeaveBalance.objects.create(
+                employee=employee,
+                casual_leave_allocated=0.0,
+                sick_leave_allocated=0.0,
+                combined_sick_casual_allocated=0.0,
+            )
+
+    # Now prefetch leave balances after ensuring they exist
+    employees = employees.select_related("user", "leave_balance")
+
+    # Convert to list to avoid issues with multiple evaluations
+    employees = list(employees)
+
+    # Add a message for debugging if no employees found
+    if not employees:
+        if user.role == User.Role.MANAGER:
+            messages.info(request, "No employees are assigned to you as their manager.")
+        else:
+            messages.info(request, f"No employees found in company '{company.name}'. Please add employees first.")
 
     # Context for Accrual Modal (Safe from template syntax errors)
     import calendar

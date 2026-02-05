@@ -27,6 +27,9 @@ class Command(BaseCommand):
                         balance.combined_sick_casual_allocated += 1.0
                         # Don't allocate to separate pools
                     elif "petabytz" in company_name:
+                        # For Petabytz: Custom allocation logic
+                        balance.casual_leave_allocated += 1.0
+                        balance.sick_leave_allocated += 1.0
                     else:
                         # Default fallback
                         balance.casual_leave_allocated += 1.0

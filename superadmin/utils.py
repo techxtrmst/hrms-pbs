@@ -213,8 +213,8 @@ def get_leave_analytics(company_id, months=None, year=None):
         )
 
     # Process into chart format
-    periods = sorted(list(set(item["period"] for item in trends_data)))
-    leave_types = list(set(item["leave_type"] for item in trends_data))
+    periods = sorted({item["period"] for item in trends_data})
+    leave_types = list({item["leave_type"] for item in trends_data})
 
     series = []
     for l_type in leave_types:
@@ -542,9 +542,9 @@ def get_employee_attendance_stats(employee, months=3):
         employee=employee, status="APPROVED", start_date__lte=end_date, end_date__gte=start_date
     )
     leave_dates = set()
-    for l in leaves:
-        curr = max(l.start_date, start_date)
-        while curr <= min(l.end_date, end_date):
+    for leave in leaves:
+        curr = max(leave.start_date, start_date)
+        while curr <= min(leave.end_date, end_date):
             leave_dates.add(curr)
             curr += timedelta(days=1)
 
@@ -627,9 +627,9 @@ def get_employee_recent_attendance(employee, days=30):
         employee=employee, status="APPROVED", start_date__lte=end_date, end_date__gte=start_date
     )
     leave_dates = {}
-    for l in leaves:
-        curr = max(l.start_date, start_date)
-        while curr <= min(l.end_date, end_date):
+    for leave in leaves:
+        curr = max(leave.start_date, start_date)
+        while curr <= min(leave.end_date, end_date):
             leave_dates[curr] = "LEAVE"
             curr += timedelta(days=1)
 
