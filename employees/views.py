@@ -473,15 +473,14 @@ def clock_in(request):
                 attendance.save(update_fields=["user_timezone"])
 
             # Check if employee can clock in
-            if not attendance.can_clock_in():
-                if attendance.is_currently_clocked_in:
-                    return JsonResponse(
-                        {
-                            "status": "error",
-                            "message": "You are already clocked in. Please clock out first.",
-                            "already_clocked_in": True,
-                        }
-                    )
+            if not attendance.can_clock_in() and attendance.is_currently_clocked_in:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "You are already clocked in. Please clock out first.",
+                        "already_clocked_in": True,
+                    }
+                )
 
             # Determine session type and status
             session_type = "WEB" if clock_in_type == "office" else "REMOTE"
@@ -1477,6 +1476,9 @@ def approve_leave(request, pk):
                 # Final level reached, proceed to actual approval
                 pass
 
+        # Get approval type from request, default to FULL
+        approval_type = request.POST.get("approval_type", "FULL")
+
         # Use the new approval method from the model
         if leave_request.approve_leave(user, approval_type=approval_type):
             # Update Attendance Records
@@ -1532,8 +1534,6 @@ def approve_leave(request, pk):
             email_thread.start()
 
             # Show success message immediately
-            from django.contrib import messages
-
             approval_msg = {
                 "FULL": "Leave approved successfully (Full Balance).",
                 "WITH_LOP": "Leave approved with LOP for excess days.",

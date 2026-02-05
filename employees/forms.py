@@ -180,10 +180,8 @@ class EmployeeCreationForm(forms.ModelForm):
 
     def clean_biometric_id(self):
         biometric_id = self.cleaned_data.get("biometric_id")
-        if biometric_id:
-            # Check if biometric_id already exists
-            if Employee.objects.filter(biometric_id=biometric_id).exists():
-                raise ValidationError("An employee with this biometric ID already exists.")
+        if biometric_id and Employee.objects.filter(biometric_id=biometric_id).exists():
+            raise ValidationError("An employee with this biometric ID already exists.")
         return biometric_id
 
     def clean(self):
@@ -323,10 +321,8 @@ class EmployeeUpdateForm(EmployeeCreationForm):
 
     def clean_biometric_id(self):
         biometric_id = self.cleaned_data.get("biometric_id")
-        if biometric_id:
-            # Check if biometric_id already exists, excluding current instance
-            if Employee.objects.filter(biometric_id=biometric_id).exclude(pk=self.instance.pk).exists():
-                raise ValidationError("An employee with this biometric ID already exists.")
+        if biometric_id and Employee.objects.filter(biometric_id=biometric_id).exclude(pk=self.instance.pk).exists():
+            raise ValidationError("An employee with this biometric ID already exists.")
         return biometric_id
 
     def save(self, commit=True):
