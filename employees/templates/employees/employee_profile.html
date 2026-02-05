@@ -2775,8 +2775,7 @@
 
             <div class="profile-info-section">
                 <h1 class="profile-name mb-1">
-                    {{ employee.user.get_full_name }}{% if employee.pseudo_name %} ({{ employee.pseudo_name|lower }}){%
-                    endif %}
+                    {{ employee.user.get_full_name }}{% if employee.pseudo_name %} ({{ employee.pseudo_name|lower }}){% endif %}
                 </h1>
                 <div class="d-flex flex-wrap align-items-center justify-content-center gap-2 mb-3">
                     <span class="profile-role"><i class="fas fa-briefcase me-1 text-muted"></i>
@@ -2879,7 +2878,7 @@
                                         <div class="mt-2 p-2 bg-light rounded-3 border-start border-primary border-3">
                                             <div class="row g-0 align-items-center">
                                                 <div class="col text-muted small text-truncate">{{ event.previous_value
-                                                    }}</div>
+                     }}</div>
                                                 <div class="col-auto px-2 text-primary small"><i
                                                         class="fas fa-long-arrow-alt-right"></i></div>
                                                 <div class="col fw-bold small text-truncate">{{ event.new_value }}</div>
@@ -2891,8 +2890,7 @@
 
                                         {% if event.reason %}
                                         <div class="small text-muted fst-italic mt-2" style="font-size: 0.75rem;">
-                                            <i class="fas fa-comment-dots me-1 text-primary-light"></i>Reason: {{
-                                            event.reason }}
+                                            <i class="fas fa-comment-dots me-1 text-primary-light"></i>Reason: {{ event.reason }}
                                         </div>
                                         {% endif %}
                                     </div>
@@ -2975,11 +2973,11 @@
                                         <label class="form-label small fw-bold text-muted">Gender</label>
                                         <select name="gender" class="form-select" required>
                                             <option value="">Select Gender</option>
-                                            <option value="M" {% if employee.gender=='M' %}selected{% endif %}>Male
+                                            <option value="M" {% if employee.gender == 'M' %}selected{% endif %}>Male
                                             </option>
-                                            <option value="F" {% if employee.gender=='F' %}selected{% endif %}>Female
+                                            <option value="F" {% if employee.gender == 'F' %}selected{% endif %}>Female
                                             </option>
-                                            <option value="O" {% if employee.gender=='O' %}selected{% endif %}>Other
+                                            <option value="O" {% if employee.gender == 'O' %}selected{% endif %}>Other
                                             </option>
                                         </select>
                                     </div>
@@ -2987,13 +2985,13 @@
                                         <label class="form-label small fw-bold text-muted">Marital Status</label>
                                         <select name="marital_status" class="form-select" required>
                                             <option value="">Select Status</option>
-                                            <option value="S" {% if employee.marital_status=='S' %}selected{% endif %}>
+                                            <option value="S" {% if employee.marital_status == 'S' %}selected{% endif %}>
                                                 Single</option>
-                                            <option value="M" {% if employee.marital_status=='M' %}selected{% endif %}>
+                                            <option value="M" {% if employee.marital_status == 'M' %}selected{% endif %}>
                                                 Married</option>
-                                            <option value="D" {% if employee.marital_status=='D' %}selected{% endif %}>
+                                            <option value="D" {% if employee.marital_status == 'D' %}selected{% endif %}>
                                                 Divorced</option>
-                                            <option value="W" {% if employee.marital_status=='W' %}selected{% endif %}>
+                                            <option value="W" {% if employee.marital_status == 'W' %}selected{% endif %}>
                                                 Widowed</option>
                                         </select>
                                     </div>
@@ -3080,13 +3078,11 @@
                                         <div class="col-sm-6">
                                             <div class="info-group"><label class="info-label">Full Name</label>
                                                 <div class="info-value fw-bold">
-                                                    {{ employee.user.get_full_name }}{% if employee.pseudo_name %} ({{
-                                                    employee.pseudo_name|lower }}){% endif %}
+                                                    {{ employee.user.get_full_name }}{% if employee.pseudo_name %} ({{ employee.pseudo_name|lower }}){% endif %}
                                                 </div>
                                             </div>
                                         </div>
-                                        {% if employee.pseudo_name and employee.company and 'bluebix' in
-                                        employee.company.name|lower or 'softstandard' in employee.company.name|lower %}
+                                        {% if employee.pseudo_name and employee.company and 'bluebix' in employee.company.name|lower or 'softstandard' in employee.company.name|lower %}
                                         <div class="col-sm-6">
                                             <div class="info-group">
                                                 <label class="info-label">Pseudo Name</label>
@@ -3296,8 +3292,7 @@
                                         <i class="fas fa-clock text-success me-2"></i>Timing
                                     </div>
                                     <div class="shift-info-value">
-                                        {{ employee.assigned_shift.start_time|time:"H:i" }} - {{
-                                        employee.assigned_shift.end_time|time:"H:i" }}
+                                        {{ employee.assigned_shift.start_time|time:"H:i" }} - {{ employee.assigned_shift.end_time|time:"H:i" }}
                                     </div>
                                 </div>
                                 <div class="shift-info-item">
@@ -3330,15 +3325,13 @@
                                         </div>
                                     </div>
                                 </div>
-                                {% if employee.assigned_shift.lunch_break_start and
-                                employee.assigned_shift.lunch_break_end %}
+                                {% if employee.assigned_shift.lunch_break_start and employee.assigned_shift.lunch_break_end %}
                                 <div class="shift-info-item">
                                     <div class="shift-info-label">
                                         <i class="fas fa-utensils text-orange me-2"></i>Lunch Break
                                     </div>
                                     <div class="shift-info-value">
-                                        {{ employee.assigned_shift.lunch_break_start|time:"H:i" }} - {{
-                                        employee.assigned_shift.lunch_break_end|time:"H:i" }}
+                                        {{ employee.assigned_shift.lunch_break_start|time:"H:i" }} - {{ employee.assigned_shift.lunch_break_end|time:"H:i" }}
                                     </div>
                                 </div>
                                 {% endif %}
@@ -3369,9 +3362,7 @@
                                     {{ employee.manager.first_name|first|upper|default:"M" }}
                                 </div>
                                 <div class="manager-name">
-                                    {{ employee.manager.get_full_name }}{% if employee.manager.employee and
-                                    employee.manager.employee.pseudo_name %} ({{
-                                    employee.manager.employee.pseudo_name|lower }}){% endif %}
+                                    {{ employee.manager.get_full_name }}{% if employee.manager.employee and employee.manager.employee.pseudo_name %} ({{ employee.manager.employee.pseudo_name|lower }}){% endif %}
                                 </div>
                                 <div class="manager-title">Reporting Manager</div>
                                 <a href="mailto:{{ employee.manager.email }}" class="manager-contact-btn">
@@ -3411,19 +3402,13 @@
                                     <span class="badge bg-success doc-status-badge"><i class="fas fa-check"></i></span>
                                     <img src="{{ id_proofs.aadhar_front.url }}" class="doc-preview-img w-100">
                                     <div class="fw-bold text-dark">
-                                        {% if employee.location.country_code == "BD" or "Dhaka" in
-                                        employee.location.name %}NID Front{% elif employee.location.country_code == "US"
-                                        or "US" in employee.location.name %}State ID Front{% else %}Aadhar Front{% endif
-                                        %}
+                                        {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Front{% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID Front{% else %}Aadhar Front{% endif %}
                                     </div>
                                     {% else %}
                                     <div class="py-4 text-muted"><i
                                             class="fas fa-id-card display-4 mb-3 opacity-50"></i>
                                         <div class="fw-bold">
-                                            {% if employee.location.country_code == "BD" or "Dhaka" in
-                                            employee.location.name %}NID Front{% elif employee.location.country_code ==
-                                            "US" or "US" in employee.location.name %}State ID Front{% else %}Aadhar
-                                            Front{% endif %}
+                                            {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Front{% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID Front{% else %}Aadhar Front{% endif %}
                                         </div>
                                         <div class="small">Click to upload</div>
                                     </div>
@@ -3444,19 +3429,13 @@
                                     <span class="badge bg-success doc-status-badge"><i class="fas fa-check"></i></span>
                                     <img src="{{ id_proofs.aadhar_back.url }}" class="doc-preview-img w-100">
                                     <div class="fw-bold text-dark">
-                                        {% if employee.location.country_code == "BD" or "Dhaka" in
-                                        employee.location.name %}NID Back{% elif employee.location.country_code == "US"
-                                        or "US" in employee.location.name %}State ID Back{% else %}Aadhar Back{% endif
-                                        %}
+                                        {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Back{% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID Back{% else %}Aadhar Back{% endif %}
                                     </div>
                                     {% else %}
                                     <div class="py-4 text-muted"><i
                                             class="fas fa-id-card display-4 mb-3 opacity-50"></i>
                                         <div class="fw-bold">
-                                            {% if employee.location.country_code == "BD" or "Dhaka" in
-                                            employee.location.name %}NID Back{% elif employee.location.country_code ==
-                                            "US" or "US" in employee.location.name %}State ID Back{% else %}Aadhar
-                                            Back{% endif %}
+                                            {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Back{% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID Back{% else %}Aadhar Back{% endif %}
                                         </div>
                                         <div class="small">Click to upload</div>
                                     </div>
@@ -3477,18 +3456,13 @@
                                     <span class="badge bg-success doc-status-badge"><i class="fas fa-check"></i></span>
                                     <img src="{{ id_proofs.pan_card.url }}" class="doc-preview-img w-100">
                                     <div class="fw-bold text-dark">
-                                        {% if employee.location.country_code == "BD" or "Dhaka" in
-                                        employee.location.name %}TIN Card{% elif employee.location.country_code == "US"
-                                        or "US" in employee.location.name %}SSN Card{% else %}PAN Card{% endif %}
+                                        {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}TIN Card{% elif employee.location.country_code == "US" or "US" in employee.location.name %}SSN Card{% else %}PAN Card{% endif %}
                                     </div>
                                     {% else %}
                                     <div class="py-4 text-muted"><i
                                             class="fas fa-address-card display-4 mb-3 opacity-50"></i>
                                         <div class="fw-bold">
-                                            {% if employee.location.country_code == "BD" or "Dhaka" in
-                                            employee.location.name %}TIN Card{% elif employee.location.country_code ==
-                                            "US" or "US" in employee.location.name %}SSN Card{% else %}PAN Card{% endif
-                                            %}
+                                            {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}TIN Card{% elif employee.location.country_code == "US" or "US" in employee.location.name %}SSN Card{% else %}PAN Card{% endif %}
                                         </div>
                                         <div class="small">Click to upload</div>
                                     </div>
@@ -3537,10 +3511,7 @@
                         <select class="form-select" id="shiftSelect" name="assigned_shift" required>
                             <option value="">Choose a shift...</option>
                             {% for shift in available_shifts %}
-                            <option value="{{ shift.id }}" {% if employee.assigned_shift.id==shift.id %}selected{% endif
-                                %} data-start="{{ shift.start_time|time:'H:i' }}"
-                                data-end="{{ shift.end_time|time:'H:i' }}" data-grace="{{ shift.grace_period_minutes }}"
-                                data-working-days="{{ shift.working_days_list|join:', ' }}">
+                            <option value="{{ shift.id }}" {% if employee.assigned_shift.id == shift.id %}selected{% endif %} data-start="{{ shift.start_time|time:'H:i' }}" data-end="{{ shift.end_time|time:'H:i' }}" data-grace="{{ shift.grace_period_minutes }}" data-working-days="{{ shift.working_days_list|join:', ' }}">
                                 {{ shift.name }} ({{ shift.start_time|time:"H:i" }} - {{ shift.end_time|time:"H:i" }})
                             </option>
                             {% endfor %}
@@ -3593,8 +3564,7 @@
                     <div class="alert alert-info mt-3">
                         <i class="fas fa-info-circle me-2"></i>
                         <strong>Current Assignment:</strong> {{ employee.assigned_shift.name }}
-                        ({{ employee.assigned_shift.start_time|time:"H:i" }} - {{
-                        employee.assigned_shift.end_time|time:"H:i" }})
+                        ({{ employee.assigned_shift.start_time|time:"H:i" }} - {{ employee.assigned_shift.end_time|time:"H:i" }})
                     </div>
                     {% else %}
                     <div class="alert alert-warning mt-3">
