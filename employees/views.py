@@ -138,6 +138,19 @@ class EmployeeListView(LoginRequiredMixin, ListView):
         context["inactive_count"] = all_employees.filter(is_active=False).count()
         context["selected_filter"] = self.request.GET.get("status", "active")
 
+        # Check if pseudo name should be shown (for Bluebix and Softstandard)
+        show_pseudo_name = False
+        if user.role == User.Role.COMPANY_ADMIN and user.company:
+            company_name = user.company.name.lower()
+            if "bluebix" in company_name or "softstandard" in company_name:
+                show_pseudo_name = True
+        elif user.role == User.Role.SUPERADMIN:
+            # For superadmins, check if any employee in the current queryset belongs to these companies
+            show_pseudo_name = employees.filter(
+                Q(company__name__icontains="bluebix") | Q(company__name__icontains="softstandard")
+            ).exists()
+        context["show_pseudo_name"] = show_pseudo_name
+
         return context
 
 
@@ -473,15 +486,14 @@ def clock_in(request):
                 attendance.save(update_fields=["user_timezone"])
 
             # Check if employee can clock in
-            if not attendance.can_clock_in():
-                if attendance.is_currently_clocked_in:
-                    return JsonResponse(
-                        {
-                            "status": "error",
-                            "message": "You are already clocked in. Please clock out first.",
-                            "already_clocked_in": True,
-                        }
-                    )
+            if not attendance.can_clock_in() and attendance.is_currently_clocked_in:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "You are already clocked in. Please clock out first.",
+                        "already_clocked_in": True,
+                    }
+                )
 
             # Determine session type and status
             session_type = "WEB" if clock_in_type == "office" else "REMOTE"
@@ -1433,6 +1445,7 @@ def check_leave_balance(request):
 def approve_leave(request, pk):
     if request.method == "POST":
         leave_request = LeaveRequest.objects.get(pk=pk)
+        approval_type = request.POST.get("approval_type", "FULL")
 
         # Security check: Only Manager or Admin can approve
         user = request.user
@@ -3058,6 +3071,9 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                             marital_status=str(row.get("marital_status", "S"))[0].upper(),
                             date_of_joining=doj,
                             dob=dob,
+                            pseudo_name=str(row.get("pseudo_name", "")).strip()
+                            if not pd.isna(row.get("pseudo_name"))
+                            else None,
                             annual_ctc=row.get("annual_ctc") if not pd.isna(row.get("annual_ctc")) else 0,
                         )
 
@@ -3103,6 +3119,7 @@ def download_sample_import_file(request):
     columns = [
         "First Name",
         "Last Name",
+        "Pseudo Name",
         "Email",
         "Designation",
         "Department",
@@ -3123,6 +3140,7 @@ def download_sample_import_file(request):
     dummy_data = {
         "First Name": "John",
         "Last Name": "Doe",
+        "Pseudo Name": "Johnny",
         "Email": "john.doe@example.com",
         "Designation": "Software Engineer",
         "Department": "IT",
@@ -3306,6 +3324,32 @@ def approve_regularization(request, pk):
         # Update status to Present if not already (or whatever logic user wants, implicitly if regulating, they were present)
         attendance.status = "PRESENT"
 
+        # Create or update AttendanceSession for consistency
+        if reg_request.check_in and reg_request.check_out:
+            # Check if there's already a session for this date
+            existing_session = AttendanceSession.objects.filter(
+                employee=reg_request.employee, date=reg_request.date
+            ).first()
+
+            if existing_session:
+                # Update existing session
+                existing_session.clock_in = attendance.clock_in
+                existing_session.clock_out = attendance.clock_out
+                existing_session.session_type = "WEB"  # Default to web for regularized entries
+                existing_session.save()
+            else:
+                # Create new session
+                AttendanceSession.objects.create(
+                    employee=reg_request.employee,
+                    date=reg_request.date,
+                    session_number=1,
+                    clock_in=attendance.clock_in,
+                    clock_out=attendance.clock_out,
+                    session_type="WEB",
+                    is_active=False,
+                    location_validated=True,  # Assume validated for regularized entries
+                )
+
         # Re-calc late/early
         attendance.calculate_late_arrival()
         attendance.calculate_early_departure()
@@ -3411,9 +3455,18 @@ def leave_configuration(request):
 
     # Manager sees team, Admin sees all
     if user.role == User.Role.MANAGER:
-        employees = Employee.objects.filter(manager=user)
+        all_employees = Employee.objects.filter(manager=user)
     else:
-        employees = Employee.objects.filter(company=company)
+        all_employees = Employee.objects.filter(company=company)
+
+    # Apply status filter
+    status_filter = request.GET.get("status", "active")
+    if status_filter == "active":
+        employees = all_employees.filter(is_active=True)
+    elif status_filter == "inactive":
+        employees = all_employees.filter(is_active=False)
+    else:
+        employees = all_employees
 
     # Prefetch leave balances to avoid N+1 queries and ensure fresh data
     employees = employees.select_related("user", "leave_balance").order_by("user__first_name")
@@ -3462,6 +3515,9 @@ def leave_configuration(request):
             "employees": employees,
             "months_ctx": months_ctx,
             "years_ctx": years_ctx,
+            "active_count": all_employees.filter(is_active=True).count(),
+            "inactive_count": all_employees.filter(is_active=False).count(),
+            "selected_status": status_filter,
             "is_bluebix": company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"],
         },
     )

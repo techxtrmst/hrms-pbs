@@ -8,6 +8,7 @@ from .attendance_reports import attendance_late_early_report
 
 urlpatterns = [
     path("", views.dashboard, name="dashboard"),
+    path("sw.js", views.service_worker, name="service_worker"),
     # Me
     path("me/profile/", views.my_profile, name="my_profile"),
     path("me/home/", views.personal_home, name="personal_home"),

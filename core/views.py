@@ -38,6 +38,24 @@ from .models import PasswordResetOTP
 from .utils import save_pdf_to_model
 
 
+def service_worker(request):
+    """Serve the service worker file with correct MIME type and root scope capability"""
+    import os
+
+    from django.conf import settings
+    from django.http import HttpResponse
+
+    sw_path = os.path.join(settings.BASE_DIR, "static", "js", "sw.js")
+
+    try:
+        with open(sw_path, encoding="utf-8") as f:
+            content = f.read()
+        return HttpResponse(content, content_type="application/javascript")
+    except Exception as e:
+        logger.error(f"Error serving sw.js: {str(e)}")
+        return HttpResponse("Service Worker not found", status=404)
+
+
 @login_required
 def dashboard(request):
     """Role-based Dashboard - Different views for Admin, Manager, and Employee"""
@@ -296,23 +314,30 @@ def admin_dashboard(request):
             departments_map[normalized].append(dept)
 
     # Get sorted unique departments (normalized)
-    departments_list = sorted(departments_map.keys())
-
     department_performance = []
 
-    for normalized_dept in departments_list:
-        # Get all original department names that map to this normalized name
-        original_dept_names = departments_map[normalized_dept]
+    # Optimized Department Performance Calculation
+    department_performance = []
 
-        # Filter employees by any of the original department names
-        dept_emps = employees.filter(department__in=original_dept_names)
-        dept_total = dept_emps.count()
+    # Map employees to departments for total counts
+    dept_total_counts = {}
+    for emp in employees:
+        dept_name = emp.department.strip() if emp.department else "N/A"
+        dept_total_counts[dept_name] = dept_total_counts.get(dept_name, 0) + 1
 
-        # Count present (any positive attendance status) using original names
-        dept_present = today_attendance.filter(
-            employee__department__in=original_dept_names,
-            status__in=["PRESENT", "WFH", "ON_DUTY", "HALF_DAY"],
-        ).count()
+    # Map attendance to departments for present counts
+    dept_present_counts = {}
+    for att in today_attendance:
+        dept_name = att.employee.department.strip() if att.employee.department else "N/A"
+        if att.status in ["PRESENT", "WFH", "ON_DUTY", "HALF_DAY"]:
+            dept_present_counts[dept_name] = dept_present_counts.get(dept_name, 0) + 1
+
+    # Combine results
+    all_dept_names = sorted(set(list(dept_total_counts.keys()) + list(dept_present_counts.keys())))
+
+    for dept_name in all_dept_names:
+        dept_total = dept_total_counts.get(dept_name, 0)
+        dept_present = dept_present_counts.get(dept_name, 0)
 
         percentage = 0
         if dept_total > 0:
@@ -320,7 +345,7 @@ def admin_dashboard(request):
 
         department_performance.append(
             {
-                "name": normalized_dept,
+                "name": dept_name,
                 "present": dept_present,
                 "total": dept_total,
                 "percentage": round(percentage, 1),
@@ -373,60 +398,85 @@ def admin_dashboard(request):
     # Get employees for calendar view (show all active employees)
     calendar_employees = employees
 
+    # --- Optimized Calendar Data Fetching ---
+    month_attendance = Attendance.objects.filter(
+        employee__company=company, date__range=[month_start, month_end]
+    ).select_related("employee", "employee__user")
+
+    if location_id:
+        month_attendance = month_attendance.filter(employee__location_id=location_id)
+
+    # Cache attendance by (employee_id, day)
+    attendance_cache = {}
+    for att in month_attendance:
+        attendance_cache[(att.employee_id, att.date.day)] = att
+
+    # Fetch all approved leaves for the company this month
+    all_leaves = LeaveRequest.objects.filter(
+        employee__company=company, status="APPROVED", start_date__lte=month_end, end_date__gte=month_start
+    )
+    if location_id:
+        all_leaves = all_leaves.filter(employee__location_id=location_id)
+
+    # Cache leaves by employee_id -> list of (start, end, type)
+    leave_cache = {}
+    for lreq in all_leaves:
+        if lreq.employee_id not in leave_cache:
+            leave_cache[lreq.employee_id] = []
+        leave_cache[lreq.employee_id].append((lreq.start_date, lreq.end_date, lreq.leave_type))
+
+    # Fetch all holidays for the company this month
+    all_holidays = Holiday.objects.filter(company=company, date__range=[month_start, month_end], is_active=True)
+    # Cache holidays by (location_id or None, date)
+    holiday_cache = {}
+    for h in all_holidays:
+        loc_id = h.location_id
+        if loc_id not in holiday_cache:
+            holiday_cache[loc_id] = {}
+        holiday_cache[loc_id][h.date] = h.name
+
     # Build calendar data for each employee
     employee_calendar_data = []
+
+    # Pre-calculate timezones for all employees to avoid repeated calls
+    from core.utils import get_user_timezone
+
     for emp in calendar_employees:
         emp_data = {"employee": emp, "days": []}
 
-        # Get attendance for the selected month
-        month_attendance = Attendance.objects.filter(employee=emp, date__range=[month_start, month_end])
-
-        # Prepare timezone for calendar entries
+        # Determine employee timezone
         tz_name = get_user_timezone(emp.user, company)
         emp_tz = pytz.timezone(tz_name)
 
-        att_map = {}
-        for att in month_attendance:
-            if att.clock_in:
-                att.display_clock_in = att.clock_in.astimezone(emp_tz)
-            if att.clock_out:
-                att.display_clock_out = att.clock_out.astimezone(emp_tz)
-            att_map[att.date.day] = att
-
-        # Sick Leave Map
-        # Find approved SL requests that overlap with this month
-        sick_leaves = LeaveRequest.objects.filter(
-            employee=emp,
-            status="APPROVED",
-            leave_type="SL",
-            start_date__lte=month_end,
-            end_date__gte=month_start,
-        )
-
-        # Create a set of dates that are sick leaves
-        sick_leave_dates = set()
-        for sl in sick_leaves:
-            # Intersection of leave range and month range
-            s = max(sl.start_date, month_start)
-            e = min(sl.end_date, month_end)
-            curr = s
-            while curr <= e:
-                sick_leave_dates.add(curr.day)
-                curr += timedelta(days=1)
+        # Get leaves for this employee
+        emp_leaves = leave_cache.get(emp.id, [])
+        emp_sick_leave_days = set()
+        for sdate, edate, ltype in emp_leaves:
+            if ltype == "SL":
+                s = max(sdate, month_start)
+                e = min(edate, month_end)
+                curr = s
+                while curr <= e:
+                    emp_sick_leave_days.add(curr.day)
+                    curr += timedelta(days=1)
 
         for day in range(1, num_days + 1):
             day_date = date(current_year, current_month, day)
-            att = att_map.get(day)
+            att = attendance_cache.get((emp.id, day))
 
             status_class = ""
             if att:
+                if att.clock_in:
+                    att.display_clock_in = att.clock_in.astimezone(emp_tz)
+                if att.clock_out:
+                    att.display_clock_out = att.clock_out.astimezone(emp_tz)
+
                 if att.status == "WFH":
                     status_class = "wfh"
                 elif att.status == "WEEKLY_OFF":
                     status_class = "weekly-off"
                 elif att.status == "LEAVE":
-                    # Check if it is sick leave
-                    status_class = "sick-leave" if day in sick_leave_dates else "paid-leave"
+                    status_class = "sick-leave" if day in emp_sick_leave_days else "paid-leave"
                 elif att.status == "ABSENT":
                     status_class = "no-attendance"
                 elif att.status == "HOLIDAY":
@@ -434,31 +484,28 @@ def admin_dashboard(request):
                 elif att.status in ["PRESENT", "ON_DUTY", "HALF_DAY"]:
                     status_class = "present"
                 else:
-                    status_class = "present"  # Default for any other status with clock-in
+                    status_class = "present"
             else:
-                # No attendance record - determine what it should be
                 if day_date > today:
                     status_class = "future"
                 else:
-                    # Check if it's a holiday for this employee's location
-                    is_holiday = Holiday.objects.filter(
-                        company=emp.company,
-                        location=emp.location,
-                        date=day_date,
-                        is_active=True,
-                    ).exists()
+                    # Check holidays (Global or specific location)
+                    is_holiday = False
+                    if (
+                        None in holiday_cache
+                        and day_date in holiday_cache[None]
+                        or emp.location_id in holiday_cache
+                        and day_date in holiday_cache[emp.location_id]
+                    ):
+                        is_holiday = True
 
                     if is_holiday:
                         status_class = "holiday"
-                    # Check if it's a weekly off for this employee
                     elif emp.is_week_off(day_date):
                         status_class = "weekly-off"
                     else:
-                        # No record and not holiday/weekoff = absent
                         status_class = "no-attendance"
 
-            # Debug print to force reload
-            # print(f"Adding day {day} for {emp}")
             emp_data["days"].append({"day": day, "status": status_class, "date": day_date, "record": att})
 
         employee_calendar_data.append(emp_data)
@@ -470,24 +517,23 @@ def admin_dashboard(request):
     # --- Announcements Data (Next 30 Days) ---
     future_date = today + timedelta(days=30)
 
-    # 1. Upcoming Birthdays
+    # 1. Upcoming Birthdays & Anniversaries (Optimized loop)
     upcoming_birthdays = []
+    upcoming_anniversaries = []
 
     for emp in employees:
+        # Birthday calculation
         if emp.dob:
-            # Create birthday for current year
             try:
                 this_year_bday = emp.dob.replace(year=today.year)
             except ValueError:
-                # Leap year edge case (Feb 29 on non-leap year -> Feb 28 or Mar 1)
-                this_year_bday = emp.dob.replace(year=today.year, day=28)
+                this_year_bday = emp.dob.replace(year=today.year, month=2, day=28)
 
-            # If birthday passed this year, check next year
             if this_year_bday < today:
                 try:
                     next_birthday = emp.dob.replace(year=today.year + 1)
                 except ValueError:
-                    next_birthday = emp.dob.replace(year=today.year + 1, day=28)
+                    next_birthday = emp.dob.replace(year=today.year + 1, month=2, day=28)
             else:
                 next_birthday = this_year_bday
 
@@ -503,28 +549,20 @@ def admin_dashboard(request):
                     }
                 )
 
-    # Sort by nearest date
-    upcoming_birthdays.sort(key=lambda x: x["days_left"])
-
-    # 2. Work Anniversaries
-    upcoming_anniversaries = []
-    for emp in employees:
+        # Anniversary calculation
         if emp.date_of_joining:
-            # Calculate years completed
             years_completed = today.year - emp.date_of_joining.year
-
-            # Anniv for current year
             try:
                 this_year_anniv = emp.date_of_joining.replace(year=today.year)
             except ValueError:
-                this_year_anniv = emp.date_of_joining.replace(year=today.year, day=28)
+                this_year_anniv = emp.date_of_joining.replace(year=today.year, month=2, day=28)
 
             if this_year_anniv < today:
                 try:
                     next_anniv = emp.date_of_joining.replace(year=today.year + 1)
-                    years_completed += 1  # It will be next year's anniversary
+                    years_completed += 1
                 except ValueError:
-                    next_anniv = emp.date_of_joining.replace(year=today.year + 1, day=28)
+                    next_anniv = emp.date_of_joining.replace(year=today.year + 1, month=2, day=28)
                     years_completed += 1
             else:
                 next_anniv = this_year_anniv
@@ -919,23 +957,24 @@ def employee_dashboard(request):
     announcements = Announcement.objects.filter(company=employee.company, is_active=True).order_by("-created_at")[:5]
 
     # 2. Upcoming Birthdays & Anniversaries
+    # Optimized Anniversary/Birthday Calculation for Employees
     future_date = today + timedelta(days=30)
     upcoming_birthdays = []
     upcoming_anniversaries = []
 
     for emp in company_employees:
-        # Birthday
+        # Birthday calculation
         if emp.dob:
             try:
                 this_year_bday = emp.dob.replace(year=today.year)
             except ValueError:
-                this_year_bday = emp.dob.replace(year=today.year, day=28)
+                this_year_bday = emp.dob.replace(year=today.year, month=2, day=28)
 
             if this_year_bday < today:
                 try:
                     next_birthday = emp.dob.replace(year=today.year + 1)
                 except ValueError:
-                    next_birthday = emp.dob.replace(year=today.year + 1, day=28)
+                    next_birthday = emp.dob.replace(year=today.year + 1, month=2, day=28)
             else:
                 next_birthday = this_year_bday
 
@@ -951,20 +990,20 @@ def employee_dashboard(request):
                     }
                 )
 
-        # Work Anniversary
+        # Anniversary calculation
         if emp.date_of_joining:
             years_completed = today.year - emp.date_of_joining.year
             try:
                 this_year_anniv = emp.date_of_joining.replace(year=today.year)
             except ValueError:
-                this_year_anniv = emp.date_of_joining.replace(year=today.year, day=28)
+                this_year_anniv = emp.date_of_joining.replace(year=today.year, month=2, day=28)
 
             if this_year_anniv < today:
                 try:
                     next_anniv = emp.date_of_joining.replace(year=today.year + 1)
                     years_completed += 1
                 except ValueError:
-                    next_anniv = emp.date_of_joining.replace(year=today.year + 1, day=28)
+                    next_anniv = emp.date_of_joining.replace(year=today.year + 1, month=2, day=28)
                     years_completed += 1
             else:
                 next_anniv = this_year_anniv
@@ -2088,15 +2127,14 @@ def attendance_analytics(request):
     wfh_today = attendance_today.filter(status="WFH").count()
     on_duty_today = attendance_today.filter(status="ON_DUTY").count()
 
-    # Calculate late arrivals and early departures for today
-    late_arrivals_today = 0
-    early_departures_today = 0
+    # Optimized Attendance Stats (Avoid multiple DB hits)
+    today_attendance = list(attendance_today)
 
-    for att in attendance_today:
-        if att.is_late:
-            late_arrivals_today += 1
-        if att.is_early_departure:
-            early_departures_today += 1
+    late_arrivals_list = [att for att in today_attendance if att.is_late]
+    late_arrivals_today = len(late_arrivals_list)
+
+    early_departures_list = [att for att in today_attendance if att.is_early_departure]
+    early_departures_today = len(early_departures_list)
 
     # Calculate percentages
     present_pct = (present_today / total_employees * 100) if total_employees > 0 else 0
@@ -2733,6 +2771,7 @@ def leave_requests(request):
         leave_id = request.POST.get("leave_id")
 
         admin_comment = request.POST.get("admin_comment", "")
+        approval_type = request.POST.get("approval_type", "FULL")
 
         try:
             leave_request = LeaveRequest.objects.get(id=leave_id, employee__company=request.user.company)
@@ -2743,7 +2782,7 @@ def leave_requests(request):
                 # Only transition and deduct if this wasn't already approved
                 if prev_status != "APPROVED":
                     # Use the model's approve_leave method to handle all balance updates properly
-                    if leave_request.approve_leave(request.user, approval_type="FULL"):
+                    if leave_request.approve_leave(request.user, approval_type=approval_type):
                         leave_request.admin_comment = admin_comment
                         leave_request.save()
 
@@ -4151,10 +4190,7 @@ def biometric_sync_api(request):
 
     try:
         # Most devices send JSON or Form Data
-        if request.content_type == "application/json":
-            data = json.loads(request.body)
-        else:
-            data = request.POST
+        data = json.loads(request.body) if request.content_type == "application/json" else request.POST
 
         # Required fields: serial_number (of device), biometric_id (of employee), timestamp
         device_sn = data.get("serial_number")
@@ -4178,7 +4214,7 @@ def biometric_sync_api(request):
         # 3. Parse Timestamp
         try:
             event_time = timezone.make_aware(datetime.strptime(event_time_str, "%Y-%m-%d %H:%M:%S"))
-        except:
+        except (ValueError, TypeError):
             event_time = timezone.now()
 
         # 4. Record Attendance or Access

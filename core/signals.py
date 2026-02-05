@@ -96,6 +96,30 @@ def create_regularization_request_notification(sender, instance, created, **kwar
             )
 
 
+@receiver(post_save, sender=RegularizationRequest)
+def handle_regularization_approval(sender, instance, created, **kwargs):
+    """
+    Handle post-approval tasks for regularization requests
+    """
+    # Only process if this is an update (not creation) and status is APPROVED
+    if not created and instance.status == "APPROVED":
+        try:
+            # Get or create attendance record for the regularized date
+            from employees.models import Attendance
+
+            attendance, _ = Attendance.objects.get_or_create(employee=instance.employee, date=instance.date)
+
+            # Recalculate working hours to ensure they're up to date
+            attendance.calculate_total_working_hours()
+            attendance.save(update_fields=["total_working_hours"])
+
+        except Exception as e:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error handling regularization approval for {instance.id}: {str(e)}")
+
+
 @receiver(pre_save, sender=Employee)
 def track_shift_changes(sender, instance, **kwargs):
     """

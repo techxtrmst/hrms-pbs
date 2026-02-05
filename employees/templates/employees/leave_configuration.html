@@ -31,13 +31,12 @@
 
     /* Page Layout */
     .config-container {
-        padding: 2rem;
-        max-width: 1400px;
-        margin: 0 auto;
+        padding: 1.5rem;
+        max-width: 100%;
+        margin: 0;
         width: 100%;
         box-sizing: border-box;
-        overflow-x: hidden;
-        /* Prevent horizontal overflow */
+        overflow-x: visible;
     }
 
     /* Header Section */
@@ -242,6 +241,37 @@
         background: #94a3b8;
     }
 
+    /* Filter Active Styles */
+    .stat-badge.active-filter {
+        background: var(--primary-brand) !important;
+        color: white !important;
+        border-color: var(--primary-brand) !important;
+    }
+
+    .stat-badge.active-filter i {
+        color: white !important;
+    }
+
+    .stat-badge.inactive-filter {
+        background: #f59e0b !important;
+        color: white !important;
+        border-color: #f59e0b !important;
+    }
+
+    .stat-badge.inactive-filter i {
+        color: white !important;
+    }
+
+    .stat-badge.all-filter {
+        background: #6366f1 !important;
+        color: white !important;
+        border-color: #6366f1 !important;
+    }
+
+    .stat-badge.all-filter i {
+        color: white !important;
+    }
+
     /* Scroll indicator for when content overflows */
     .desktop-table-wrapper::after {
         content: '';
@@ -275,19 +305,18 @@
     .employee-card {
         background: white;
         border-radius: var(--radius-md);
-        padding: 1rem 1.5rem;
+        padding: 1rem 1.25rem;
         display: grid;
-        grid-template-columns: minmax(180px, 1.5fr) minmax(80px, 0.7fr) minmax(200px, 2.5fr) minmax(200px, 2.5fr) minmax(60px, 0.8fr);
+        grid-template-columns: minmax(150px, 1.2fr) minmax(70px, 0.6fr) minmax(180px, 2fr) minmax(180px, 2fr) minmax(50px, 0.7fr);
         align-items: center;
-        gap: 1rem;
+        gap: 0.75rem;
         box-shadow: var(--shadow-soft);
         border: 1px solid transparent;
         transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         animation: slideUp 0.4s ease-out forwards;
         opacity: 0;
         width: 100%;
-        min-width: 800px;
-        /* Minimum width to prevent cramping */
+        min-width: 720px;
         box-sizing: border-box;
     }
 
@@ -306,16 +335,15 @@
     /* Column Styles */
     .col-header {
         display: grid;
-        grid-template-columns: minmax(180px, 1.5fr) minmax(80px, 0.7fr) minmax(200px, 2.5fr) minmax(200px, 2.5fr) minmax(60px, 0.8fr);
-        padding: 0 1.5rem 1rem;
-        gap: 1rem;
+        grid-template-columns: minmax(150px, 1.2fr) minmax(70px, 0.6fr) minmax(180px, 2fr) minmax(180px, 2fr) minmax(50px, 0.7fr);
+        padding: 0 1.25rem 1rem;
+        gap: 0.75rem;
         font-size: 0.75rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         color: var(--text-muted);
         font-weight: 700;
-        min-width: 800px;
-        /* Match employee card minimum width */
+        min-width: 720px;
     }
 
     /* Bluebix specific header layout */
@@ -1705,10 +1733,23 @@
                     Manage employee leave allocations.
                 </p>
                 <div class="header-stats">
-                    <div class="stat-badge">
-                        <i class="fas fa-users"></i> <span class="d-none d-sm-inline">{{ employees|length }}
-                            Active</span><span class="d-sm-none">{{ employees|length }}</span>
-                    </div>
+                    <a href="?status=active"
+                        class="stat-badge {% if selected_status == 'active' %}active-filter{% endif %}"
+                        title="Show Active Employees">
+                        <i class="fas fa-user-check"></i> <span class="d-none d-sm-inline">{{ active_count }}
+                            Active</span><span class="d-sm-none">{{ active_count }}</span>
+                    </a>
+                    <a href="?status=inactive"
+                        class="stat-badge {% if selected_status == 'inactive' %}inactive-filter{% endif %}"
+                        title="Show Ex-Employees">
+                        <i class="fas fa-user-slash"></i> <span class="d-none d-sm-inline">{{ inactive_count }}
+                            Ex-Employees</span><span class="d-sm-none">{{ inactive_count }}</span>
+                    </a>
+                    <a href="?status=all" class="stat-badge {% if selected_status == 'all' %}all-filter{% endif %}"
+                        title="Show All Records">
+                        <i class="fas fa-users"></i> <span class="d-none d-sm-inline">Show All</span><span
+                            class="d-sm-none">All</span>
+                    </a>
                     <a href="#" class="stat-badge" data-bs-toggle="modal" data-bs-target="#accrualModal"
                         title="Click to select month">
                         <i class="fas fa-calendar-alt"></i> <span class="d-none d-sm-inline">Select Period</span><span
@@ -1776,7 +1817,7 @@
                         </div>
                         {% endif %}
                         <div>
-                            <h6 class="mb-0 fw-bold text-dark" title="{{ employee.user.get_full_name }}">{{ employee.user.get_full_name }}</h6>
+                            <h6 class="mb-0 fw-bold text-dark" title="{{ employee.user.get_full_name }}">{{ employee.user.get_full_name }}{% if employee.pseudo_name %} ({{ employee.pseudo_name|lower }}){% endif %}</h6>
                             <small class="text-muted" title="{{ employee.user.email }}">{{ employee.user.email }}</small>
                         </div>
                     </div>
@@ -1888,7 +1929,7 @@
                             </div>
                             {% endif %}
                             <div>
-                                <h6 class="mb-0 fw-bold text-dark" title="{{ employee.user.get_full_name }}">{{ employee.user.get_full_name }}</h6>
+                                <h6 class="mb-0 fw-bold text-dark" title="{{ employee.user.get_full_name }}">{{ employee.user.get_full_name }}{% if employee.pseudo_name %} ({{ employee.pseudo_name|lower }}){% endif %}</h6>
                                 <small class="text-muted" title="{{ employee.user.email }}">{{ employee.user.email }}</small>
                                 <div class="mt-1">
                                     <span class="badge-dept"

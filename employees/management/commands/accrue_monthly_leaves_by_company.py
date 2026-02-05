@@ -96,6 +96,15 @@ class Command(BaseCommand):
             company_updated = 0
 
             for employee in employees:
+                # Check if employee has completed probation period (3 months)
+                if not employee.is_probation_completed():
+                    if dry_run:
+                        self.stdout.write(
+                            self.style.WARNING(f"   ⏩ Skipping {employee.user.get_full_name()} - Still in probation")
+                        )
+                    company_updated += 0  # Just for clarity
+                    continue
+
                 # Get or create leave balance
                 leave_balance, created = LeaveBalance.objects.get_or_create(
                     employee=employee,
