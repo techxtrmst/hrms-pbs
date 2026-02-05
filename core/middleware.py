@@ -249,6 +249,7 @@ class LoggingMiddleware:
             return x_forwarded_for.split(",")[0].strip()
         return request.META.get("REMOTE_ADDR", "")
 
+
 class DebugModeMiddleware:
     """
     Middleware to enable debug mode for the admin panel.
@@ -291,4 +292,3 @@ def is_debug_mode_enabled(request):
     if not hasattr(request, "session"):
         return False
     return request.session.get(DebugModeMiddleware.DEBUG_SESSION_KEY, False)
-

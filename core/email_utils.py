@@ -8,9 +8,7 @@ import logging
 import environ
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives, get_connection
-from django.template import TemplateDoesNotExist, TemplateSyntaxError
 from django.template.loader import render_to_string
-from django.urls import NoReverseMatch
 from django.utils import timezone
 
 env = environ.Env()
