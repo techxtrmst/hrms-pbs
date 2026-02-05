@@ -759,8 +759,9 @@ def clock_out(request):
                     # Calculate cumulative working hours from all sessions including current one
                     worked_hours = attendance.get_cumulative_working_hours_including_current()
                     expected_hours = attendance.get_shift_duration_hours()
+                    shift = employee.assigned_shift
 
-                    if worked_hours < expected_hours:
+                    if worked_hours < expected_hours and not (shift and getattr(shift, "is_flexible", False)):
                         completion_percentage = (worked_hours / expected_hours) * 100
                         remaining_hours = expected_hours - worked_hours
 

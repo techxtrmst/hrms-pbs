@@ -372,6 +372,9 @@ class ShiftSchedule(models.Model):
     saturday = models.BooleanField(default=False)
     sunday = models.BooleanField(default=False)
 
+    is_flexible = models.BooleanField(
+        default=False, help_text="Allow flexible clock-in/out without late/early penalties"
+    )
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

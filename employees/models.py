@@ -469,6 +469,14 @@ class Attendance(models.Model):
         grace_end_dt = shift_start_dt + timedelta(minutes=grace_minutes)
         clock_in_dt = local_clock_in  # Already aware and in local_tz
 
+        # Check if shift is flexible
+        if getattr(shift, "is_flexible", False):
+            self.is_late = False
+            self.is_grace_used = False
+            self.is_half_day_late = False
+            self.late_by_minutes = 0
+            return
+
         # Reset flags first
         self.is_late = False
         self.is_grace_used = False
@@ -570,6 +578,12 @@ class Attendance(models.Model):
 
         threshold_dt = shift_end_dt - timedelta(minutes=shift.early_departure_threshold_minutes)
         clock_out_dt = local_clock_out  # Already aware and in local_tz
+
+        # Check if shift is flexible
+        if getattr(shift, "is_flexible", False):
+            self.is_early_departure = False
+            self.early_departure_minutes = 0
+            return
 
         if clock_out_dt < threshold_dt:
             self.is_early_departure = True
@@ -812,6 +826,11 @@ class Attendance(models.Model):
 
         if not self.clock_in:
             return False
+
+        # If shift is flexible, consider it complete
+        shift = self.employee.assigned_shift
+        if shift and getattr(shift, "is_flexible", False):
+            return True
 
         # If already clocked out, check actual hours worked
         if self.clock_out:
