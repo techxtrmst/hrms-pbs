@@ -107,7 +107,7 @@ class EmployeeListView(LoginRequiredMixin, ListView):
             queryset = queryset.filter(employment_status="TERMINATED")
         # 'all' shows everyone
 
-        return queryset.select_related("user", "company", "manager")
+        return queryset.select_related("user", "company", "manager", "location")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

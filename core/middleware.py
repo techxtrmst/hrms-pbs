@@ -217,17 +217,23 @@ class LoggingMiddleware:
             duration = (time.time() - start_time) * 1000  # ms
 
             # Log access with status
-            log_level = "info" if response.status_code < 400 else "warning" if response.status_code < 500 else "error"
+            try:
+                log_level = (
+                    "info" if response.status_code < 400 else "warning" if response.status_code < 500 else "error"
+                )
 
-            # Log access entry
-            logger.bind(
-                access_log=True,
-                status=response.status_code,
-                duration=f"{duration:.2f}",
-            ).log(
-                log_level.upper(),
-                f"{request.method} {request.path} - {response.status_code}",
-            )
+                # Log access entry
+                logger.bind(
+                    access_log=True,
+                    status=response.status_code,
+                    duration=f"{duration:.2f}",
+                ).log(
+                    log_level.upper(),
+                    f"{request.method} {request.path} - {response.status_code}",
+                )
+            except Exception:
+                # Observability should not crash the request
+                pass
 
             return response
 
