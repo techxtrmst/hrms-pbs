@@ -2961,7 +2961,7 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                 try:
                     with transaction.atomic():
                         # 1. Basic Data
-                        email = str(row.get("email", "")).strip()
+                        email = str(row.get("email", "")).strip().lower()
                         if not email:
                             raise ValueError("Email is required")
 

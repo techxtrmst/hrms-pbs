@@ -75,6 +75,8 @@ class PersonalInfoForm(forms.ModelForm):
 
     def clean_email(self):
         email = self.cleaned_data.get("email")
+        if email:
+            email = email.lower()
         if User.objects.filter(email=email).exists():
             raise ValidationError("A user with this email address already exists. Please use a different email.")
 
