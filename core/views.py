@@ -99,7 +99,11 @@ def manager_dashboard(request):
 
     # Get direct reports (Team)
     # Filter out exited employees (keep if active or exit date is today/future)
-    team_members = Employee.objects.filter(manager=request.user).filter(Q(is_active=True) | Q(exit_date__gte=today))
+    team_members = (
+        Employee.objects.filter(manager=request.user)
+        .filter(Q(is_active=True) | Q(exit_date__gte=today))
+        .select_related("user", "location", "assigned_shift")
+    )
 
     team_ids = team_members.values_list("id", flat=True)
 
@@ -110,7 +114,7 @@ def manager_dashboard(request):
     # Today's Attendance for Team
 
     team_attendance = Attendance.objects.filter(employee__in=team_ids, date=today).select_related(
-        "employee", "employee__user"
+        "employee", "employee__user", "employee__location"
     )
 
     present_count = team_attendance.filter(status="PRESENT").count()
@@ -154,8 +158,10 @@ def manager_dashboard(request):
     # 5. Celebrations
     # 5. Celebrations
     # Filter company employees for celebrations (exclude exited)
-    company_employees = Employee.objects.filter(company=manager_profile.company).filter(
-        Q(is_active=True) | Q(exit_date__gte=today)
+    company_employees = (
+        Employee.objects.filter(company=manager_profile.company)
+        .filter(Q(is_active=True) | Q(exit_date__gte=today))
+        .select_related("user")
     )
 
     # Birthdays
@@ -230,7 +236,7 @@ def admin_dashboard(request):
     # Get all employees for the company
     company = request.user.company
     location_id = request.GET.get("location")
-    employees = Employee.objects.filter(company=company)
+    employees = Employee.objects.filter(company=company).select_related("user", "location", "assigned_shift")
 
     if location_id:
         employees = employees.filter(location_id=location_id)
@@ -579,6 +585,8 @@ def admin_dashboard(request):
                     }
                 )
 
+    # Sort birthdays and anniversaries by days_left (ascending order)
+    upcoming_birthdays.sort(key=lambda x: x["days_left"])
     upcoming_anniversaries.sort(key=lambda x: x["days_left"])
 
     # 3. Announcements
@@ -951,7 +959,7 @@ def employee_dashboard(request):
     from companies.models import Announcement, Holiday
 
     # Get all company employees for celebrations
-    company_employees = Employee.objects.filter(company=employee.company, is_active=True)
+    company_employees = Employee.objects.filter(company=employee.company, is_active=True).select_related("user")
 
     # 1. Announcements
     announcements = Announcement.objects.filter(company=employee.company, is_active=True).order_by("-created_at")[:5]
@@ -1230,7 +1238,7 @@ def personal_home(request):
         month_end = today.replace(day=last_day)
 
         # Celebrations - Birthdays this month (all dates in current month)
-        company_employees = Employee.objects.filter(company=employee.company)
+        company_employees = Employee.objects.filter(company=employee.company).select_related("user")
         birthdays = company_employees.filter(dob__month=current_month).order_by("dob__day")
         context["birthdays"] = birthdays
 
