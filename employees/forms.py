@@ -156,6 +156,8 @@ class EmployeeCreationForm(forms.ModelForm):
 
     def clean_email(self):
         email = self.cleaned_data.get("email")
+        if email:
+            email = email.lower()
         if User.objects.filter(email=email).exists():
             raise ValidationError("A user with this email address already exists. Please use a different email.")
 
@@ -302,6 +304,8 @@ class EmployeeUpdateForm(EmployeeCreationForm):
 
     def clean_email(self):
         email = self.cleaned_data.get("email")
+        if email:
+            email = email.lower()
         # Check uniqueness excluding current user
         if self.instance.user and User.objects.filter(email=email).exclude(pk=self.instance.user.pk).exists():
             raise ValidationError("A user with this email address already exists. Please use a different email.")

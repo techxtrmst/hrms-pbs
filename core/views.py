@@ -8,6 +8,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.db.models.functions import Lower
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -236,7 +237,11 @@ def admin_dashboard(request):
     # Get all employees for the company
     company = request.user.company
     location_id = request.GET.get("location")
-    employees = Employee.objects.filter(company=company).select_related("user", "location", "assigned_shift")
+    employees = (
+        Employee.objects.filter(company=company)
+        .select_related("user", "location", "assigned_shift")
+        .order_by(Lower("user__first_name"), Lower("user__last_name"))
+    )
 
     if location_id:
         employees = employees.filter(location_id=location_id)
@@ -604,11 +609,10 @@ def admin_dashboard(request):
         Holiday.objects.filter(
             company=request.user.company,
             date__gte=today,
-            date__lte=future_date,
             is_active=True,
         )
         .select_related("location")
-        .order_by("date")
+        .order_by("date")[:5]
     )
 
     # Context updates
@@ -1036,11 +1040,10 @@ def employee_dashboard(request):
         Holiday.objects.filter(
             company=employee.company,
             date__gte=today,
-            date__lte=future_date,
             is_active=True,
         )
         .select_related("location")
-        .order_by("date")
+        .order_by("date")[:5]
     )
 
     context = {
@@ -1262,12 +1265,11 @@ def personal_home(request):
         upcoming_holidays = (
             Holiday.objects.filter(
                 company=employee.company,
-                date__gte=month_start,
-                date__lte=month_end,
+                date__gte=today,
                 is_active=True,
             )
             .filter(Q(location__isnull=True) | Q(location=employee.location))
-            .order_by("date")
+            .order_by("date")[:5]
         )
         context["upcoming_holidays"] = upcoming_holidays
 
