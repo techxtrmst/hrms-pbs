@@ -508,9 +508,18 @@ class Attendance(models.Model):
                         # We still mark grace used as they essentially used the time
                         self.is_grace_used = True
                     elif shift.grace_exceeded_action == "LOP":
-                        self.is_half_day_late = True  # Using same flag but status might be different?
-                        if self.status not in ["ON_DUTY", "WFH", "LEAVE"]:
-                            self.status = "ABSENT"  # Or specific LOP status
+                        # Send email notification for LOP alert (without changing status)
+                        try:
+                            from .utils import send_lop_notification_email
+
+                            # grace_count is excluding today, so current count is grace_count + 1
+                            send_lop_notification_email(self.employee, grace_count + 1)
+                        except Exception as e:
+                            import logging
+
+                            logger = logging.getLogger(__name__)
+                            logger.error(f"Failed to trigger LOP email: {e}")
+
                         self.is_grace_used = True
                     else:
                         # NONE or tracking only

@@ -1463,7 +1463,7 @@
                                     {% endif %}
                                 </div>
                                 <div>
-                                    <div>{{ employee.user.get_full_name }}{% if employee.pseudo_name %} ({{ employee.pseudo_name|lower }}){% endif %}
+                                    <div>{{ employee.user.get_full_name }}{% if employee.pseudo_name %} ({{ employee.pseudo_name }}){% endif %}
                                         {% if not employee.is_active %}
                                         <span class="status-badge-inactive">{{ employee.get_employment_status_display }}</span>
                                         {% endif %}
@@ -1482,7 +1482,7 @@
                         {% if show_pseudo_name %}
                         <td>{{ employee.pseudo_name|default:"-" }}</td>
                         {% endif %}
-                        <td>{{ employee.manager.get_full_name|default:"-" }}{% if employee.manager.employee and employee.manager.employee.pseudo_name %} ({{ employee.manager.employee.pseudo_name|lower }}){% endif %}</td>
+                        <td>{{ employee.manager.get_full_name|default:"-" }}{% if employee.manager.employee and employee.manager.employee.pseudo_name %} ({{ employee.manager.employee.pseudo_name }}){% endif %}</td>
                         {% if user.role == 'COMPANY_ADMIN' %}
                         <td>
                             <div class="action-buttons">

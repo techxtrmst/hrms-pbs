@@ -206,3 +206,47 @@ HR Team
     except Exception as e:
         logger.error(f"Failed to send CTC change email: {e}")
         return False
+
+
+def send_lop_notification_email(employee, late_count):
+    """Notify employee about LOP due to late clock-ins"""
+    try:
+        from django.core.mail import send_mail
+        from django.utils import timezone
+
+        from core.email_utils import get_hr_email_connection
+
+        subject = f"Attendance Alert: LOP Marked - {employee.user.get_full_name()}"
+
+        message = f"""Dear {employee.user.first_name},
+
+This is to inform you that you have been marked as LOP (Loss of Pay) for today, {timezone.now().date()}, because you have more than 5 late clock-ins.
+
+You have been late {late_count} times in the current period. As per company policy, exceeding 5 late clock-ins results in an automatic LOP for the day.
+
+Please ensure timely attendance in the future to avoid further penalties.
+
+If you believe this is an error, please contact your manager or the HR department immediately.
+
+Best Regards,
+Petabytz HR Team
+"""
+
+        from_email = "Petabytz HR <hrms@petabytz.com>"
+        recipient_list = [employee.user.email]
+
+        logger.info(f"Sending LOP notification email to {employee.user.email}")
+
+        connection = get_hr_email_connection()
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=from_email,
+            recipient_list=recipient_list,
+            connection=connection,
+            fail_silently=False,
+        )
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send LOP notification email: {e}")
+        return False

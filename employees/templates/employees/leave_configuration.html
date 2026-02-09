@@ -300,6 +300,7 @@
         .desktop-layout {
             display: none !important;
         }
+
         .mobile-layout {
             display: block !important;
         }
@@ -309,6 +310,7 @@
         .desktop-layout {
             display: block !important;
         }
+
         .mobile-layout {
             display: none !important;
         }
@@ -333,7 +335,8 @@
         border: 1px solid transparent;
         transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         animation: slideUp 0.4s ease-out forwards;
-        opacity: 1; /* Changed from 0 to 1 to ensure visibility */
+        opacity: 1;
+        /* Changed from 0 to 1 to ensure visibility */
         width: 100%;
         min-width: 720px;
         box-sizing: border-box;
@@ -760,26 +763,85 @@
     }
 
     /* Animation delay using data attributes */
-    .employee-card[data-animation-delay="1"] { animation-delay: 100ms; }
-    .employee-card[data-animation-delay="2"] { animation-delay: 200ms; }
-    .employee-card[data-animation-delay="3"] { animation-delay: 300ms; }
-    .employee-card[data-animation-delay="4"] { animation-delay: 400ms; }
-    .employee-card[data-animation-delay="5"] { animation-delay: 500ms; }
-    .employee-card[data-animation-delay="6"] { animation-delay: 600ms; }
-    .employee-card[data-animation-delay="7"] { animation-delay: 700ms; }
-    .employee-card[data-animation-delay="8"] { animation-delay: 800ms; }
-    .employee-card[data-animation-delay="9"] { animation-delay: 900ms; }
-    .employee-card[data-animation-delay="10"] { animation-delay: 1000ms; }
-    .employee-card[data-animation-delay="11"] { animation-delay: 1100ms; }
-    .employee-card[data-animation-delay="12"] { animation-delay: 1200ms; }
-    .employee-card[data-animation-delay="13"] { animation-delay: 1300ms; }
-    .employee-card[data-animation-delay="14"] { animation-delay: 1400ms; }
-    .employee-card[data-animation-delay="15"] { animation-delay: 1500ms; }
-    .employee-card[data-animation-delay="16"] { animation-delay: 1600ms; }
-    .employee-card[data-animation-delay="17"] { animation-delay: 1700ms; }
-    .employee-card[data-animation-delay="18"] { animation-delay: 1800ms; }
-    .employee-card[data-animation-delay="19"] { animation-delay: 1900ms; }
-    .employee-card[data-animation-delay="20"] { animation-delay: 2000ms; }
+    .employee-card[data-animation-delay="1"] {
+        animation-delay: 100ms;
+    }
+
+    .employee-card[data-animation-delay="2"] {
+        animation-delay: 200ms;
+    }
+
+    .employee-card[data-animation-delay="3"] {
+        animation-delay: 300ms;
+    }
+
+    .employee-card[data-animation-delay="4"] {
+        animation-delay: 400ms;
+    }
+
+    .employee-card[data-animation-delay="5"] {
+        animation-delay: 500ms;
+    }
+
+    .employee-card[data-animation-delay="6"] {
+        animation-delay: 600ms;
+    }
+
+    .employee-card[data-animation-delay="7"] {
+        animation-delay: 700ms;
+    }
+
+    .employee-card[data-animation-delay="8"] {
+        animation-delay: 800ms;
+    }
+
+    .employee-card[data-animation-delay="9"] {
+        animation-delay: 900ms;
+    }
+
+    .employee-card[data-animation-delay="10"] {
+        animation-delay: 1000ms;
+    }
+
+    .employee-card[data-animation-delay="11"] {
+        animation-delay: 1100ms;
+    }
+
+    .employee-card[data-animation-delay="12"] {
+        animation-delay: 1200ms;
+    }
+
+    .employee-card[data-animation-delay="13"] {
+        animation-delay: 1300ms;
+    }
+
+    .employee-card[data-animation-delay="14"] {
+        animation-delay: 1400ms;
+    }
+
+    .employee-card[data-animation-delay="15"] {
+        animation-delay: 1500ms;
+    }
+
+    .employee-card[data-animation-delay="16"] {
+        animation-delay: 1600ms;
+    }
+
+    .employee-card[data-animation-delay="17"] {
+        animation-delay: 1700ms;
+    }
+
+    .employee-card[data-animation-delay="18"] {
+        animation-delay: 1800ms;
+    }
+
+    .employee-card[data-animation-delay="19"] {
+        animation-delay: 1900ms;
+    }
+
+    .employee-card[data-animation-delay="20"] {
+        animation-delay: 2000ms;
+    }
 
     /* Fallback for any employee cards without specific animation delays */
     .employee-card:not([data-animation-delay]) {
@@ -1764,7 +1826,7 @@
 
 {% block content %}
 <div data-is-bluebix="{% if is_bluebix %}true{% else %}false{% endif %}" data-csrf-token="{{ csrf_token }}">
-<div class="config-container"></div>
+    <div class="config-container"></div>
 
     <!-- Header -->
     <div class="header-card">
@@ -1863,7 +1925,7 @@
                         </div>
                         {% endif %}
                         <div>
-                            <h6 class="mb-0 fw-bold text-dark" title="{{ employee.user.get_full_name }}">{{ employee.user.get_full_name }}{% if employee.pseudo_name %} ({{ employee.pseudo_name|lower }}){% endif %}</h6>
+                            <h6 class="mb-0 fw-bold text-dark" title="{{ employee.user.get_full_name }}">{{ employee.user.get_full_name }}{% if employee.pseudo_name %} ({{ employee.pseudo_name }}){% endif %}</h6>
                             <small class="text-muted" title="{{ employee.user.email }}">{{ employee.user.email }}</small>
                         </div>
                     </div>
@@ -1879,10 +1941,14 @@
                         <div class="leave-stat-row">
                             <span class="leave-stat-label">Allocated:</span>
                             <div class="control-wrapper">
-                                <button class="control-btn" data-action="modify" data-target="combined_val_{{ employee.id }}" data-delta="-0.5" data-type="bluebix">-</button>
+                                <button class="control-btn" data-action="modify"
+                                    data-target="combined_val_{{ employee.id }}" data-delta="-0.5"
+                                    data-type="bluebix">-</button>
                                 <input type="number" id="combined_val_{{ employee.id }}" class="control-input"
                                     value="{{ employee.leave_balance.combined_sick_casual_allocated }}" step="0.5">
-                                <button class="control-btn" data-action="modify" data-target="combined_val_{{ employee.id }}" data-delta="0.5" data-type="bluebix">+</button>
+                                <button class="control-btn" data-action="modify"
+                                    data-target="combined_val_{{ employee.id }}" data-delta="0.5"
+                                    data-type="bluebix">+</button>
                             </div>
                         </div>
                         <div class="leave-stat-row">
@@ -1903,10 +1969,14 @@
                         <div class="leave-stat-row">
                             <span class="leave-stat-label">Allocated:</span>
                             <div class="control-wrapper">
-                                <button class="control-btn" data-action="modify" data-target="sick_val_{{ employee.id }}" data-delta="-0.5" data-type="regular">-</button>
+                                <button class="control-btn" data-action="modify"
+                                    data-target="sick_val_{{ employee.id }}" data-delta="-0.5"
+                                    data-type="regular">-</button>
                                 <input type="number" id="sick_val_{{ employee.id }}" class="control-input"
                                     value="{{ employee.leave_balance.sick_leave_allocated }}" step="0.5">
-                                <button class="control-btn" data-action="modify" data-target="sick_val_{{ employee.id }}" data-delta="0.5" data-type="regular">+</button>
+                                <button class="control-btn" data-action="modify"
+                                    data-target="sick_val_{{ employee.id }}" data-delta="0.5"
+                                    data-type="regular">+</button>
                             </div>
                         </div>
                         <div class="leave-stat-row">
@@ -1924,10 +1994,14 @@
                         <div class="leave-stat-row">
                             <span class="leave-stat-label">Allocated:</span>
                             <div class="control-wrapper">
-                                <button class="control-btn" data-action="modify" data-target="casual_val_{{ employee.id }}" data-delta="-0.5" data-type="regular">-</button>
+                                <button class="control-btn" data-action="modify"
+                                    data-target="casual_val_{{ employee.id }}" data-delta="-0.5"
+                                    data-type="regular">-</button>
                                 <input type="number" id="casual_val_{{ employee.id }}" class="control-input"
                                     value="{{ employee.leave_balance.casual_leave_allocated }}" step="0.5">
-                                <button class="control-btn" data-action="modify" data-target="casual_val_{{ employee.id }}" data-delta="0.5" data-type="regular">+</button>
+                                <button class="control-btn" data-action="modify"
+                                    data-target="casual_val_{{ employee.id }}" data-delta="0.5"
+                                    data-type="regular">+</button>
                             </div>
                         </div>
                         <div class="leave-stat-row">
@@ -1943,7 +2017,8 @@
 
                     <!-- Actions -->
                     <div class="d-flex justify-content-center">
-                        <button class="btn-save-row" data-action="save" data-employee-id="{{ employee.id }}" title="Save Changes">
+                        <button class="btn-save-row" data-action="save" data-employee-id="{{ employee.id }}"
+                            title="Save Changes">
                             <i class="fas fa-check"></i>
                         </button>
                     </div>
@@ -1969,7 +2044,7 @@
                             </div>
                             {% endif %}
                             <div>
-                                <h6 class="mb-0 fw-bold text-dark" title="{{ employee.user.get_full_name }}">{{ employee.user.get_full_name }}{% if employee.pseudo_name %} ({{ employee.pseudo_name|lower }}){% endif %}</h6>
+                                <h6 class="mb-0 fw-bold text-dark" title="{{ employee.user.get_full_name }}">{{ employee.user.get_full_name }}{% if employee.pseudo_name %} ({{ employee.pseudo_name }}){% endif %}</h6>
                                 <small class="text-muted" title="{{ employee.user.email }}">{{ employee.user.email }}</small>
                                 <div class="mt-1">
                                     <span class="badge-dept"
@@ -1979,7 +2054,8 @@
                         </div>
                     </div>
                     <div class="mobile-card-actions">
-                        <button class="btn-save-row" data-action="save" data-employee-id="{{ employee.id }}" title="Save Changes">
+                        <button class="btn-save-row" data-action="save" data-employee-id="{{ employee.id }}"
+                            title="Save Changes">
                             <i class="fas fa-check"></i>
                         </button>
                     </div>
@@ -2004,10 +2080,14 @@
                         </div>
                         <div class="mobile-leave-control">
                             <div class="control-wrapper">
-                                <button class="control-btn" data-action="modify" data-target="mobile_combined_val_{{ employee.id }}" data-delta="-0.5" data-type="bluebix">-</button>
+                                <button class="control-btn" data-action="modify"
+                                    data-target="mobile_combined_val_{{ employee.id }}" data-delta="-0.5"
+                                    data-type="bluebix">-</button>
                                 <input type="number" id="mobile_combined_val_{{ employee.id }}" class="control-input"
                                     value="{{ employee.leave_balance.combined_sick_casual_allocated }}" step="0.5">
-                                <button class="control-btn" data-action="modify" data-target="mobile_combined_val_{{ employee.id }}" data-delta="0.5" data-type="bluebix">+</button>
+                                <button class="control-btn" data-action="modify"
+                                    data-target="mobile_combined_val_{{ employee.id }}" data-delta="0.5"
+                                    data-type="bluebix">+</button>
                             </div>
                         </div>
                     </div>
@@ -2029,10 +2109,14 @@
                         </div>
                         <div class="mobile-leave-control">
                             <div class="control-wrapper">
-                                <button class="control-btn" data-action="modify" data-target="mobile_sick_val_{{ employee.id }}" data-delta="-0.5" data-type="regular">-</button>
+                                <button class="control-btn" data-action="modify"
+                                    data-target="mobile_sick_val_{{ employee.id }}" data-delta="-0.5"
+                                    data-type="regular">-</button>
                                 <input type="number" id="mobile_sick_val_{{ employee.id }}" class="control-input"
                                     value="{{ employee.leave_balance.sick_leave_allocated }}" step="0.5">
-                                <button class="control-btn" data-action="modify" data-target="mobile_sick_val_{{ employee.id }}" data-delta="0.5" data-type="regular">+</button>
+                                <button class="control-btn" data-action="modify"
+                                    data-target="mobile_sick_val_{{ employee.id }}" data-delta="0.5"
+                                    data-type="regular">+</button>
                             </div>
                         </div>
                     </div>
@@ -2054,10 +2138,14 @@
                         </div>
                         <div class="mobile-leave-control">
                             <div class="control-wrapper">
-                                <button class="control-btn" data-action="modify" data-target="mobile_casual_val_{{ employee.id }}" data-delta="-0.5" data-type="regular">-</button>
+                                <button class="control-btn" data-action="modify"
+                                    data-target="mobile_casual_val_{{ employee.id }}" data-delta="-0.5"
+                                    data-type="regular">-</button>
                                 <input type="number" id="mobile_casual_val_{{ employee.id }}" class="control-input"
                                     value="{{ employee.leave_balance.casual_leave_allocated }}" step="0.5">
-                                <button class="control-btn" data-action="modify" data-target="mobile_casual_val_{{ employee.id }}" data-delta="0.5" data-type="regular">+</button>
+                                <button class="control-btn" data-action="modify"
+                                    data-target="mobile_casual_val_{{ employee.id }}" data-delta="0.5"
+                                    data-type="regular">+</button>
                             </div>
                         </div>
                     </div>
@@ -2240,7 +2328,7 @@
     // Setup event delegation for data attributes
     function setupEventDelegation() {
         // Handle control button clicks
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             if (e.target.matches('[data-action="modify"]')) {
                 const target = e.target.getAttribute('data-target');
                 const delta = parseFloat(e.target.getAttribute('data-delta'));

@@ -3060,6 +3060,31 @@
             });
         });
     </script>
+
+    <!-- Monitoring Heartbeat -->
+    {% if user.is_authenticated and user.employee_profile %}
+    <script>
+        (function () {
+            const employeeId = "{{ user.employee_profile.id }}";
+            const trackingServer = "http://localhost:8001/api/v1/web/heartbeat";
+
+            function sendHeartbeat() {
+                // Check if connection is available
+                fetch(`${trackingServer}/${employeeId}`, {
+                    method: 'POST',
+                    mode: 'cors'
+                })
+                    .then(res => res.json())
+                    .then(data => console.log("Monitoring: Heartbeat active", data))
+                    .catch(err => console.log("Monitoring: Backend offline (check tracking server)"));
+            }
+
+            // Pulse every 30 seconds
+            sendHeartbeat();
+            setInterval(sendHeartbeat, 30000);
+        })();
+    </script>
+    {% endif %}
 </body>
 
 </html>

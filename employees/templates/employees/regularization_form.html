@@ -234,7 +234,8 @@
                         <label class="form-label-modern">Missing Date <span class="text-danger">*</span></label>
                         {{ form.date }}
                         {% if form.date.errors %}
-                        <div class="text-danger small mt-1 ms-2"><i class="fas fa-exclamation-circle me-1"></i>{{ form.date.errors.0 }}</div>
+                        <div class="text-danger small mt-1 ms-2"><i class="fas fa-exclamation-circle me-1"></i>{{
+                            form.date.errors.0 }}</div>
                         {% endif %}
                     </div>
 
@@ -269,7 +270,8 @@
 
                     <!-- Reason -->
                     <div class="form-group-modern mt-2">
-                        <label class="form-label-modern">Reason for Correction <span class="text-danger">*</span></label>
+                        <label class="form-label-modern">Reason for Correction <span
+                                class="text-danger">*</span></label>
                         {{ form.reason }}
                         {% if form.reason.errors %}
                         <div class="text-danger small mt-1 ms-2">{{ form.reason.errors.0 }}</div>
@@ -379,7 +381,7 @@
         const loadingText = document.getElementById('loadingText');
         let isSubmitting = false;
 
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', function (e) {
             if (isSubmitting) {
                 e.preventDefault();
                 return false;
@@ -422,8 +424,13 @@
                 const start = new Date("2000-01-01 " + checkIn.value);
                 const end = new Date("2000-01-01 " + checkOut.value);
 
-                if (end > start) {
-                    const diff = end - start;
+                let diff = end - start;
+                if (diff < 0) {
+                    // Handle night shift (crosses midnight)
+                    diff += 24 * 60 * 60 * 1000;
+                }
+
+                if (diff >= 0) {
                     const hours = Math.floor(diff / 1000 / 60 / 60);
                     const minutes = Math.floor((diff / 1000 / 60) % 60);
 
@@ -431,11 +438,6 @@
                     pill.classList.add('visible');
                     pill.style.background = '#e0e7ff';
                     pill.style.color = '#4338ca';
-                } else {
-                    durationText.innerText = "Invalid Time";
-                    pill.classList.add('visible');
-                    pill.style.background = '#fee2e2';
-                    pill.style.color = '#ef4444';
                 }
             } else {
                 pill.classList.remove('visible');
