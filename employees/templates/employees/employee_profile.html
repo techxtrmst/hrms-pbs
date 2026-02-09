@@ -429,8 +429,15 @@
     }
 
     @keyframes pulse-dot {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.1); }
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.1);
+        }
     }
 
     .timeline-content {
@@ -872,8 +879,16 @@
 
             <!-- Personal Details -->
             <div class="content-card">
-                <div class="card-header-clean">
-                    <div class="card-icon gradient-icon-2"><i class="fas fa-user"></i></div>Personal Details
+                <div class="card-header-clean d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="card-icon gradient-icon-2"><i class="fas fa-user"></i></div>Personal Details
+                    </div>
+                    {% if not employee.profile_edited or is_admin %}
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                        data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                        <i class="fas fa-edit me-1"></i> Edit
+                    </button>
+                    {% endif %}
                 </div>
                 <div class="card-body-clean">
                     <div class="row g-3">
@@ -885,9 +900,23 @@
                             </div>
                         </div>
                         <div class="col-sm-6">
-                            <div class="info-group"><label class="info-label">Email</label>
+                            <div class="info-group"><label class="info-label">Pseudo Name</label>
+                                <div class="info-value">
+                                    {{ employee.pseudo_name|default:"--" }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="info-group"><label class="info-label">Email (Official)</label>
                                 <div class="info-value text-break">
                                     {{ employee.user.email }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="info-group"><label class="info-label">Email (Personal)</label>
+                                <div class="info-value text-break">
+                                    {{ employee.personal_email|default:"--" }}
                                 </div>
                             </div>
                         </div>
@@ -925,15 +954,23 @@
 
             <!-- Address Book -->
             <div class="content-card">
-                <div class="card-header-clean">
-                    <div class="card-icon gradient-icon-3"><i class="fas fa-map-marker-alt"></i></div>Address Book
+                <div class="card-header-clean d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="card-icon gradient-icon-3"><i class="fas fa-map-marker-alt"></i></div>Address Book
+                    </div>
+                    {% if not employee.profile_edited or is_admin %}
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                        data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                        <i class="fas fa-edit me-1"></i> Edit
+                    </button>
+                    {% endif %}
                 </div>
                 <div class="card-body-clean">
                     <div class="row g-4">
                         <div class="col-md-6">
                             <div class="address-box">
-                                <div class="address-header"><i
-                                        class="fas fa-home me-2 text-primary"></i> Current Address</div>
+                                <div class="address-header"><i class="fas fa-home me-2 text-primary"></i> Current
+                                    Address</div>
                                 <p class="address-text">
                                     {{ employee.current_address|default:"Not Provided"|linebreaksbr }}
                                 </p>
@@ -941,8 +978,8 @@
                         </div>
                         <div class="col-md-6">
                             <div class="address-box">
-                                <div class="address-header"><i
-                                        class="fas fa-building me-2 text-secondary"></i> Permanent
+                                <div class="address-header"><i class="fas fa-building me-2 text-secondary"></i>
+                                    Permanent
                                     Address</div>
                                 <p class="address-text">
                                     {{ employee.permanent_address|default:"-"|linebreaksbr }}</p>
@@ -954,28 +991,34 @@
 
             <!-- Emergency Contacts -->
             <div class="content-card">
-                <div class="card-header-clean">
-                    <div class="card-icon"
-                        style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white;">
-                        <i class="fas fa-phone-alt"></i>
+                <div class="card-header-clean d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="card-icon"
+                            style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white;">
+                            <i class="fas fa-phone-alt"></i>
+                        </div>
+                        Emergency Contacts
                     </div>
-                    Emergency Contacts
+                    {% if not employee.profile_edited or is_admin %}
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                        data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                        <i class="fas fa-edit me-1"></i> Edit
+                    </button>
+                    {% endif %}
                 </div>
                 <div class="card-body-clean">
                     {% if emergency_contacts %}
                     <div class="row g-3">
                         {% for contact in emergency_contacts %}
                         <div class="col-md-6">
-                            <div class="border rounded-3 p-3 h-100"
-                                style="background: #f8fafc; transition: all 0.3s;">
+                            <div class="border rounded-3 p-3 h-100" style="background: #f8fafc; transition: all 0.3s;">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <h6 class="mb-0 fw-bold text-dark">
                                         <i class="fas fa-user-circle me-2 text-primary"></i>
                                         {{ contact.name }}
                                     </h6>
                                     {% if contact.is_primary %}
-                                    <span class="badge bg-success"
-                                        style="font-size: 0.7rem;">Primary</span>
+                                    <span class="badge bg-success" style="font-size: 0.7rem;">Primary</span>
                                     {% endif %}
                                 </div>
                                 <div class="small text-muted mb-1">
@@ -1086,13 +1129,20 @@
                                 <label class="info-label">Working Days</label>
                                 <div class="info-value">
                                     <div class="working-days-badges">
-                                        {% if employee.assigned_shift.monday %}<span class="badge bg-primary me-1">Mon</span>{% endif %}
-                                        {% if employee.assigned_shift.tuesday %}<span class="badge bg-primary me-1">Tue</span>{% endif %}
-                                        {% if employee.assigned_shift.wednesday %}<span class="badge bg-primary me-1">Wed</span>{% endif %}
-                                        {% if employee.assigned_shift.thursday %}<span class="badge bg-primary me-1">Thu</span>{% endif %}
-                                        {% if employee.assigned_shift.friday %}<span class="badge bg-primary me-1">Fri</span>{% endif %}
-                                        {% if employee.assigned_shift.saturday %}<span class="badge bg-secondary me-1">Sat</span>{% endif %}
-                                        {% if employee.assigned_shift.sunday %}<span class="badge bg-secondary me-1">Sun</span>{% endif %}
+                                        {% if employee.assigned_shift.monday %}<span
+                                            class="badge bg-primary me-1">Mon</span>{% endif %}
+                                        {% if employee.assigned_shift.tuesday %}<span
+                                            class="badge bg-primary me-1">Tue</span>{% endif %}
+                                        {% if employee.assigned_shift.wednesday %}<span
+                                            class="badge bg-primary me-1">Wed</span>{% endif %}
+                                        {% if employee.assigned_shift.thursday %}<span
+                                            class="badge bg-primary me-1">Thu</span>{% endif %}
+                                        {% if employee.assigned_shift.friday %}<span
+                                            class="badge bg-primary me-1">Fri</span>{% endif %}
+                                        {% if employee.assigned_shift.saturday %}<span
+                                            class="badge bg-secondary me-1">Sat</span>{% endif %}
+                                        {% if employee.assigned_shift.sunday %}<span
+                                            class="badge bg-secondary me-1">Sun</span>{% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -1152,11 +1202,13 @@
                             <!-- Aadhar/NID/State ID Front -->
                             <div class="col-md-4">
                                 <div class="doc-upload-box text-center p-4 border-2 border-dashed rounded-3"
-                                     style="border-color: #cbd5e1; cursor: pointer; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;"
-                                     onclick="this.querySelector('input').click()">
+                                    style="border-color: #cbd5e1; cursor: pointer; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;"
+                                    onclick="this.querySelector('input').click()">
                                     {% if id_proofs.aadhar_front %}
-                                    <span class="badge bg-success position-absolute top-0 end-0 m-2"><i class="fas fa-check"></i></span>
-                                    <img src="{{ id_proofs.aadhar_front.url }}" class="img-fluid rounded mb-3" style="max-height: 120px;">
+                                    <span class="badge bg-success position-absolute top-0 end-0 m-2"><i
+                                            class="fas fa-check"></i></span>
+                                    <img src="{{ id_proofs.aadhar_front.url }}" class="img-fluid rounded mb-3"
+                                        style="max-height: 120px;">
                                     <div class="fw-bold text-dark">
                                         {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Front{% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID Front{% else %}Aadhar Front{% endif %}
                                     </div>
@@ -1174,11 +1226,13 @@
                             <!-- Aadhar/NID/State ID Back -->
                             <div class="col-md-4">
                                 <div class="doc-upload-box text-center p-4 border-2 border-dashed rounded-3"
-                                     style="border-color: #cbd5e1; cursor: pointer; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;"
-                                     onclick="this.querySelector('input').click()">
+                                    style="border-color: #cbd5e1; cursor: pointer; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;"
+                                    onclick="this.querySelector('input').click()">
                                     {% if id_proofs.aadhar_back %}
-                                    <span class="badge bg-success position-absolute top-0 end-0 m-2"><i class="fas fa-check"></i></span>
-                                    <img src="{{ id_proofs.aadhar_back.url }}" class="img-fluid rounded mb-3" style="max-height: 120px;">
+                                    <span class="badge bg-success position-absolute top-0 end-0 m-2"><i
+                                            class="fas fa-check"></i></span>
+                                    <img src="{{ id_proofs.aadhar_back.url }}" class="img-fluid rounded mb-3"
+                                        style="max-height: 120px;">
                                     <div class="fw-bold text-dark">
                                         {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Back{% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID Back{% else %}Aadhar Back{% endif %}
                                     </div>
@@ -1196,11 +1250,13 @@
                             <!-- PAN/TIN/SSN Card -->
                             <div class="col-md-4">
                                 <div class="doc-upload-box text-center p-4 border-2 border-dashed rounded-3"
-                                     style="border-color: #cbd5e1; cursor: pointer; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;"
-                                     onclick="this.querySelector('input').click()">
+                                    style="border-color: #cbd5e1; cursor: pointer; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;"
+                                    onclick="this.querySelector('input').click()">
                                     {% if id_proofs.pan_card %}
-                                    <span class="badge bg-success position-absolute top-0 end-0 m-2"><i class="fas fa-check"></i></span>
-                                    <img src="{{ id_proofs.pan_card.url }}" class="img-fluid rounded mb-3" style="max-height: 120px;">
+                                    <span class="badge bg-success position-absolute top-0 end-0 m-2"><i
+                                            class="fas fa-check"></i></span>
+                                    <img src="{{ id_proofs.pan_card.url }}" class="img-fluid rounded mb-3"
+                                        style="max-height: 120px;">
                                     <div class="fw-bold text-dark">
                                         {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}TIN Card{% elif employee.location.country_code == "US" or "US" in employee.location.name %}SSN Card{% else %}PAN Card{% endif %}
                                     </div>
@@ -1229,6 +1285,149 @@
 
     </div>
 </div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 1.25rem;">
+            <div class="modal-header bg-primary text-white border-0 py-3"
+                style="border-top-left-radius: 1.25rem; border-top-right-radius: 1.25rem;">
+                <h5 class="modal-title fw-bold" id="editProfileModalLabel">
+                    <i class="fas fa-user-edit me-2"></i> Edit Personal Information
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_profile">
+                <div class="modal-body p-4">
+                    <div class="alert alert-info border-0 shadow-sm mb-4" style="border-radius: 0.75rem;">
+                        <i class="fas fa-info-circle me-2"></i> Profile details can only be edited once. Please ensure
+                        all information is correct.
+                    </div>
+
+                    <h6 class="fw-bold text-primary mb-3"><i class="fas fa-address-card me-2"></i> Basic Information
+                    </h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Pseudo Name</label>
+                            <input type="text" name="pseudo_name" class="form-control rounded-3"
+                                value="{{ employee.pseudo_name|default:'' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Personal Email</label>
+                            <input type="email" name="personal_email" class="form-control rounded-3"
+                                value="{{ employee.personal_email|default:'' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Mobile Number</label>
+                            <input type="text" name="mobile_number" class="form-control rounded-3"
+                                value="{{ employee.mobile_number|default:'' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Date of Birth</label>
+                            <input type="date" name="dob" class="form-control rounded-3"
+                                value="{{ employee.dob|date:'Y-m-d' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Gender</label>
+                            <select name="gender" class="form-select rounded-3">
+                                <option value="">Select Gender</option>
+                                <option value="M" {% if employee.gender == 'M' %}selected{% endif %}>Male</option>
+                                <option value="F" {% if employee.gender == 'F' %}selected{% endif %}>Female</option>
+                                <option value="O" {% if employee.gender == 'O' %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Marital Status</label>
+                            <select name="marital_status" class="form-select rounded-3">
+                                <option value="">Select Status</option>
+                                <option value="S" {% if employee.marital_status == 'S' %}selected{% endif %}>Single
+                                </option>
+                                <option value="M" {% if employee.marital_status == 'M' %}selected{% endif %}>Married
+                                </option>
+                                <option value="D" {% if employee.marital_status == 'D' %}selected{% endif %}>Divorced
+                                </option>
+                                <option value="W" {% if employee.marital_status == 'W' %}selected{% endif %}>Widowed
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-primary mb-3"><i class="fas fa-map-marked-alt me-2"></i> Address Details
+                    </h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Current Address</label>
+                            <textarea name="current_address" class="form-control rounded-3"
+                                rows="3">{{ employee.current_address|default:'' }}</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Permanent Address</label>
+                            <textarea name="permanent_address" class="form-control rounded-3"
+                                rows="3">{{ employee.permanent_address|default:'' }}</textarea>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-primary mb-3"><i class="fas fa-phone-alt me-2"></i> Emergency Contacts</h6>
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <div class="p-3 border rounded-3 bg-light">
+                                <small class="fw-bold text-primary d-block mb-2">Contact 1 (Primary)</small>
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <input type="text" name="contact_name_1" placeholder="Name"
+                                            class="form-control form-control-sm"
+                                            value="{% for contact in emergency_contacts %}{% if contact.is_primary %}{{ contact.name }}{% endif %}{% endfor %}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" name="contact_phone_1" placeholder="Phone"
+                                            class="form-control form-control-sm"
+                                            value="{% for contact in emergency_contacts %}{% if contact.is_primary %}{{ contact.phone_number }}{% endif %}{% endfor %}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" name="contact_rel_1" placeholder="Relationship"
+                                            class="form-control form-control-sm"
+                                            value="{% for contact in emergency_contacts %}{% if contact.is_primary %}{{ contact.relationship }}{% endif %}{% endfor %}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12 mt-3">
+                            <div class="p-3 border rounded-3 bg-light">
+                                <small class="fw-bold text-muted d-block mb-2">Contact 2 (Secondary)</small>
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <input type="text" name="contact_name_2" placeholder="Name"
+                                            class="form-control form-control-sm"
+                                            value="{% for contact in emergency_contacts %}{% if not contact.is_primary %}{{ contact.name }}{% endif %}{% endfor %}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" name="contact_phone_2" placeholder="Phone"
+                                            class="form-control form-control-sm"
+                                            value="{% for contact in emergency_contacts %}{% if not contact.is_primary %}{{ contact.phone_number }}{% endif %}{% endfor %}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" name="contact_rel_2" placeholder="Relationship"
+                                            class="form-control form-control-sm"
+                                            value="{% for contact in emergency_contacts %}{% if not contact.is_primary %}{{ contact.relationship }}{% endif %}{% endfor %}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4"
+                        data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-5 shadow-sm fw-bold">Update
+                        Profile</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -1243,7 +1442,7 @@
         // Handle tab switching
         const tabButtons = document.querySelectorAll('[data-bs-toggle="tab"]');
         tabButtons.forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function () {
                 // Remove active class from all tabs and buttons
                 document.querySelectorAll('.tab-pane').forEach(pane => {
                     pane.classList.remove('show', 'active');
@@ -1266,12 +1465,12 @@
 
         // Document upload preview
         document.querySelectorAll('input[type="file"]').forEach(input => {
-            input.addEventListener('change', function() {
+            input.addEventListener('change', function () {
                 if (this.files && this.files[0]) {
                     const reader = new FileReader();
                     const uploadBox = this.closest('.doc-upload-box');
 
-                    reader.onload = function(e) {
+                    reader.onload = function (e) {
                         uploadBox.innerHTML = `
                             <span class="badge bg-info position-absolute top-0 end-0 m-2">
                                 <i class="fas fa-save"></i> Save Required

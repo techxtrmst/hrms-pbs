@@ -63,6 +63,7 @@ def add_employee_step1(request):
                 "role": form.cleaned_data["role"],
                 "company_id": form.cleaned_data["company_selection"].id,
                 "location_id": form.cleaned_data["location"].id if form.cleaned_data.get("location") else None,
+                "pseudo_name": form.cleaned_data.get("pseudo_name", ""),
             }
 
             # Save emergency contacts to session
@@ -258,6 +259,7 @@ def add_employee_step3(request):
                 emergency_contact=personal_data.get("emergency_contact"),
                 badge_id=badge_id,
                 location_id=personal_data.get("location_id"),
+                pseudo_name=personal_data.get("pseudo_name"),
                 # Job
                 designation=job_data["designation"],
                 department=job_data["department"],

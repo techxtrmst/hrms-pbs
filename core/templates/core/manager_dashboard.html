@@ -306,7 +306,7 @@
                             <i class="fas fa-clock"></i>
                         </div>
                         <div class="req-info">
-                            <div class="req-name">{{ activity.employee.user.get_full_name }}{% if activity.employee.pseudo_name %} ({{ activity.employee.pseudo_name|lower }}){% endif %}</div>
+                            <div class="req-name">{{ activity.employee.user.get_full_name }}{% if activity.employee.pseudo_name %} ({{ activity.employee.pseudo_name }}){% endif %}</div>
                             <div class="req-detail">
                                 Clocked in at {{ activity.clock_in|time:"H:i A" }}
                                 {% if activity.status == 'WFH' %} (WFH){% endif %}
@@ -335,7 +335,7 @@
                             {% endif %}
                         </div>
                         <div class="req-info">
-                            <div class="req-name">{{ member.user.get_full_name }}{% if member.pseudo_name %} ({{ member.pseudo_name|lower }}){% endif %}</div>
+                            <div class="req-name">{{ member.user.get_full_name }}{% if member.pseudo_name %} ({{ member.pseudo_name }}){% endif %}</div>
                             <div class="req-detail">{{ member.designation|default:"Employee" }} • {{ member.location.name|default:"Main Office" }}</div>
                         </div>
                     </div>
@@ -390,7 +390,8 @@
                                         {% endif %}
                                     </div>
                                     <div class="req-info">
-                                        <div class="req-name">{{ leave.employee.user.get_full_name }}{% if leave.employee.pseudo_name %} ({{ leave.employee.pseudo_name|lower }}){% endif %}</div>
+                                        <div class="req-name">{{ leave.employee.user.get_full_name }}{% if leave.employee.pseudo_name %} ({{ leave.employee.pseudo_name }}){% endif %}
+                                        </div>
                                         <div class="req-detail text-primary fw-bold">{{ leave.get_leave_type_display }}
                                         </div>
                                     </div>
@@ -507,7 +508,7 @@
                                     </div>
                                     <div class="flex-grow-1 ms-3">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <h6 class="mb-0 fw-bold text-dark">{{ emp.user.get_full_name }}{% if emp.pseudo_name %} ({{ emp.pseudo_name|lower }}){% endif %}</h6>
+                                            <h6 class="mb-0 fw-bold text-dark">{{ emp.user.get_full_name }}{% if emp.pseudo_name %} ({{ emp.pseudo_name }}){% endif %}</h6>
                                             <span
                                                 class="badge bg-soft-success text-success rounded-pill px-2">Today</span>
                                         </div>
@@ -536,7 +537,7 @@
                                         <i class="fas fa-medal"></i>
                                     </div>
                                     <div class="flex-grow-1 ms-3">
-                                        <h6 class="mb-0 fw-bold text-dark">{{ emp.user.get_full_name }}{% if emp.pseudo_name %} ({{ emp.pseudo_name|lower }}){% endif %}</h6>
+                                        <h6 class="mb-0 fw-bold text-dark">{{ emp.user.get_full_name }}{% if emp.pseudo_name %} ({{ emp.pseudo_name }}){% endif %}</h6>
                                         <div class="text-muted small mt-1">{{ emp.years_of_service }} Years Celebration!
                                             🌟</div>
                                     </div>
@@ -625,7 +626,8 @@
                                 </div>
                                 <div class="flex-grow-1 ms-4">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h5 class="mb-0 fw-bold text-dark">{{ leave.employee.user.get_full_name }}{% if leave.employee.pseudo_name %} ({{ leave.employee.pseudo_name|lower }}){% endif %}</h5>
+                                        <h5 class="mb-0 fw-bold text-dark">{{ leave.employee.user.get_full_name }}{% if leave.employee.pseudo_name %} ({{ leave.employee.pseudo_name }}){% endif %}
+                                        </h5>
                                         <span class="badge bg-soft-primary text-primary">{{ leave.get_leave_type_display }}</span>
                                     </div>
                                     <div class="mb-3">
@@ -722,7 +724,7 @@
                                     <i class="fas fa-birthday-cake"></i>
                                     {% endif %}
                                 </div>
-                                <h5 class="fw-bold text-dark">{{ emp.user.get_full_name }}{% if emp.pseudo_name %} ({{ emp.pseudo_name|lower }}){% endif %}</h5>
+                                <h5 class="fw-bold text-dark">{{ emp.user.get_full_name }}{% if emp.pseudo_name %} ({{ emp.pseudo_name }}){% endif %}</h5>
                                 <div class="text-success fw-bold mt-2">Happy Birthday Today! 🎉</div>
                             </div>
                         </div>
@@ -751,7 +753,7 @@
                                     <i class="fas fa-medal"></i>
                                     {% endif %}
                                 </div>
-                                <h5 class="fw-bold text-dark">{{ emp.user.get_full_name }}{% if emp.pseudo_name %} ({{ emp.pseudo_name|lower }}){% endif %}</h5>
+                                <h5 class="fw-bold text-dark">{{ emp.user.get_full_name }}{% if emp.pseudo_name %} ({{ emp.pseudo_name }}){% endif %}</h5>
                                 <div class="text-muted mt-1">{{ emp.years_of_service }} Years of Service 🌟</div>
                                 <div class="mt-2 badge bg-soft-warning text-warning">{{ emp.date_of_joining|date:"d M Y" }}</div>
                             </div>
