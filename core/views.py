@@ -590,6 +590,8 @@ def admin_dashboard(request):
                     }
                 )
 
+    # Sort birthdays and anniversaries by days_left (ascending order)
+    upcoming_birthdays.sort(key=lambda x: x["days_left"])
     upcoming_anniversaries.sort(key=lambda x: x["days_left"])
 
     # 3. Announcements

@@ -450,8 +450,10 @@ class RegularizationRequestForm(forms.ModelForm):
         check_in = cleaned_data.get("check_in")
         check_out = cleaned_data.get("check_out")
 
-        if check_in and check_out and check_in >= check_out:
-            raise ValidationError("Check-out time must be after check-in time.")
+        if check_in and check_out:
+            # Handle night shift: if check_out < check_in, it means they clocked out the next day.
+            # We don't need a strict check here anymore, as night shifts are supported.
+            pass
 
         return cleaned_data
 

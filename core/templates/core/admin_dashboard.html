@@ -1647,6 +1647,652 @@
         padding: 4px 8px;
         border-radius: 6px;
     }
+
+    /* === NEW MODERN ANNOUNCEMENT STYLES === */
+
+    /* Up Next Section */
+    .up-next-section {
+        margin-bottom: 24px;
+        padding: 20px;
+        background: linear-gradient(135deg, rgba(91, 71, 251, 0.05), rgba(155, 125, 255, 0.05));
+        border-radius: 16px;
+        border: 2px solid rgba(91, 71, 251, 0.1);
+    }
+
+    .up-next-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--keka-primary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 16px;
+        background: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        box-shadow: 0 2px 8px rgba(91, 71, 251, 0.15);
+    }
+
+    .up-next-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: all 0.3s ease;
+    }
+
+    .up-next-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .up-next-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--keka-primary), var(--keka-purple));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 22px;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(91, 71, 251, 0.3);
+    }
+
+    .up-next-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .up-next-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--keka-text-primary);
+        margin-bottom: 6px;
+    }
+
+    .up-next-meta {
+        font-size: 14px;
+        color: var(--keka-text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .up-next-date {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+    }
+
+    /* Badge Styles */
+    .badge-today,
+    .badge-tomorrow,
+    .badge-upcoming,
+    .badge-years,
+    .badge-holiday {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .badge-today {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+    }
+
+    .badge-tomorrow {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+    }
+
+    .badge-upcoming {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+    }
+
+    .badge-years {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: white;
+    }
+
+    .badge-holiday {
+        background: linear-gradient(135deg, #ec4899, #db2777);
+        color: white;
+    }
+
+    /* Mini Badges */
+    .badge-mini {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .badge-today-mini {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .badge-tomorrow-mini {
+        background: #fed7aa;
+        color: #92400e;
+    }
+
+    .badge-upcoming-mini {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .badge-date-mini {
+        background: #f3e8ff;
+        color: #6b21a8;
+    }
+
+    /* Modern Announcement Item */
+    .announcement-item-modern {
+        display: flex;
+        align-items: center;
+        padding: 16px;
+        border: 1.5px solid var(--keka-border);
+        border-radius: 12px;
+        margin-bottom: 12px;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    .announcement-item-modern:hover {
+        border-color: var(--keka-primary);
+        box-shadow: 0 4px 16px rgba(91, 71, 251, 0.1);
+        transform: translateX(4px);
+    }
+
+    .announcement-item-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .announcement-icon-modern {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .announcement-icon-modern.birthday-icon {
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        color: white;
+    }
+
+    .announcement-icon-modern.anniversary-icon {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: white;
+    }
+
+    .announcement-icon-modern.holiday-icon {
+        background: linear-gradient(135deg, #ec4899, #db2777);
+        color: white;
+    }
+
+    .announcement-details-modern {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .announcement-name-modern {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--keka-text-primary);
+        margin-bottom: 4px;
+    }
+
+    .announcement-meta-modern {
+        font-size: 13px;
+        color: var(--keka-text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .announcement-date-modern {
+        flex-shrink: 0;
+        margin-left: auto;
+    }
+
+    /* Other Upcoming Section Title */
+    .section-subtitle {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--keka-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 16px;
+        margin-top: 24px;
+        padding-left: 4px;
+        border-left: 3px solid var(--keka-primary);
+        padding-left: 12px;
+    }
+
+    /* Additional Missing Classes */
+    .up-next-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 24px;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+    }
+
+    .anniversary-icon-bg {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3) !important;
+    }
+
+    .holiday-icon-bg {
+        background: linear-gradient(135deg, #ec4899, #db2777) !important;
+        box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3) !important;
+    }
+
+    .up-next-info {
+        font-size: 14px;
+        color: var(--keka-text-secondary);
+        margin-bottom: 12px;
+    }
+
+    .announcement-text-modern {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--keka-text-primary);
+        margin-bottom: 4px;
+    }
+
+    .announcement-subtext-modern {
+        font-size: 13px;
+        color: var(--keka-text-secondary);
+    }
+
+    .upcoming-list-section {
+        margin-top: 24px;
+    }
+
+    .upcoming-list-header {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--keka-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 16px;
+        padding-left: 12px;
+        border-left: 3px solid var(--keka-primary);
+    }
+
+    /* === MODERN COMPACT EVENT CARDS === */
+
+    .events-list-modern {
+        padding: 16px;
+    }
+
+    /* Compact Event Item */
+    .event-item-compact {
+        background: white;
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border: 1px solid var(--keka-border);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .event-item-compact::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: transparent;
+        transition: all 0.3s ease;
+    }
+
+    .event-item-compact:hover {
+        border-color: var(--keka-primary);
+        box-shadow: 0 4px 12px rgba(91, 71, 251, 0.1);
+        transform: translateX(4px);
+    }
+
+    .event-item-compact:hover::before {
+        background: var(--keka-primary);
+    }
+
+    /* TODAY Highlight */
+    .event-today-highlight {
+        background: linear-gradient(135deg, #fef3c7 0%, #fef9e7 100%);
+        border: 2px solid #fbbf24;
+        box-shadow: 0 4px 16px rgba(251, 191, 36, 0.2);
+    }
+
+    .event-today-highlight::before {
+        background: linear-gradient(180deg, #fbbf24, #f59e0b);
+        width: 4px;
+    }
+
+    .event-today-highlight:hover {
+        box-shadow: 0 6px 20px rgba(251, 191, 36, 0.3);
+    }
+
+    /* Avatar Wrapper */
+    .event-avatar-wrapper {
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .event-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        position: relative;
+    }
+
+    .birthday-avatar {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+    }
+
+    .anniversary-avatar {
+        background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+    }
+
+    .holiday-avatar {
+        background: linear-gradient(135deg, #fce7f3, #fbcfe8);
+    }
+
+    .avatar-emoji {
+        animation: gentle-bounce 2s ease-in-out infinite;
+    }
+
+    @keyframes gentle-bounce {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-3px);
+        }
+    }
+
+    .today-badge-mini {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        font-size: 8px;
+        font-weight: 800;
+        padding: 3px 6px;
+        border-radius: 8px;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);
+        animation: pulse-badge 2s infinite;
+    }
+
+    @keyframes pulse-badge {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.1);
+        }
+    }
+
+    /* Event Info */
+    .event-info-compact {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .event-name-compact {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--keka-text-primary);
+        margin: 0 0 4px 0;
+        line-height: 1.3;
+    }
+
+    .event-meta-compact {
+        font-size: 12px;
+        color: var(--keka-text-secondary);
+        margin: 0 0 4px 0;
+        line-height: 1.4;
+    }
+
+    .years-tag {
+        display: inline-block;
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: white;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 10px;
+        margin-top: 2px;
+    }
+
+    /* Event Badge Wrapper */
+    .event-badge-wrapper {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .days-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 16px;
+        white-space: nowrap;
+    }
+
+    .birthday-badge {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        color: #92400e;
+    }
+
+    .anniversary-badge {
+        background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+        color: #5b21b6;
+    }
+
+    .holiday-badge {
+        background: linear-gradient(135deg, #fce7f3, #fbcfe8);
+        color: #9f1239;
+    }
+
+    /* Celebration Emojis for TODAY */
+    .celebration-emojis {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .emoji-small {
+        font-size: 18px;
+        display: inline-block;
+        animation: emoji-dance 1.5s ease-in-out infinite;
+    }
+
+    .emoji-small:nth-child(1) {
+        animation-delay: 0s;
+    }
+
+    .emoji-small:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .emoji-small:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    .emoji-small:nth-child(4) {
+        animation-delay: 0.6s;
+    }
+
+    @keyframes emoji-dance {
+        0%, 100% {
+            transform: translateY(0) rotate(0deg);
+        }
+        25% {
+            transform: translateY(-4px) rotate(-5deg);
+        }
+        75% {
+            transform: translateY(-2px) rotate(5deg);
+        }
+    }
+
+    /* Empty State */
+    .empty-state-compact {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 50px 20px;
+        text-align: center;
+        color: var(--keka-text-secondary);
+    }
+
+    .empty-icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+        opacity: 0.3;
+        animation: gentle-bounce 2s ease-in-out infinite;
+    }
+
+    .empty-state-compact p {
+        font-size: 14px;
+        margin: 0;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .events-list-modern {
+            padding: 12px;
+        }
+
+        .event-item-compact {
+            padding: 12px 14px;
+            gap: 12px;
+        }
+
+        .event-avatar {
+            width: 42px;
+            height: 42px;
+            font-size: 20px;
+        }
+
+        .event-name-compact {
+            font-size: 14px;
+        }
+
+        .event-meta-compact {
+            font-size: 11px;
+        }
+
+        .celebration-emojis {
+            gap: 4px;
+        }
+
+        .emoji-small {
+            font-size: 16px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .events-list-modern {
+            padding: 10px;
+        }
+
+        .event-item-compact {
+            padding: 10px 12px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .event-avatar {
+            width: 38px;
+            height: 38px;
+            font-size: 18px;
+        }
+
+        .event-name-compact {
+            font-size: 13px;
+        }
+
+        .event-meta-compact {
+            font-size: 10px;
+        }
+
+        .years-tag {
+            font-size: 9px;
+            padding: 2px 6px;
+        }
+
+        .days-badge {
+            font-size: 10px;
+            padding: 4px 10px;
+        }
+
+        .event-badge-wrapper {
+            width: 100%;
+            justify-content: flex-end;
+            margin-top: 4px;
+        }
+
+        .celebration-emojis {
+            gap: 3px;
+        }
+
+        .emoji-small {
+            font-size: 14px;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -1807,33 +2453,43 @@
                     <!-- 1. Birthdays Content -->
                     <div id="tab-birthdays" class="tab-content fade-in" style="display: none;">
                         {% if upcoming_birthdays %}
-                        {% for birthday in upcoming_birthdays %}
-                        <div class="announcement-item">
-                            <div class="announcement-item-header">
-                                <div class="announcement-icon" style="background: #fef3c7; color: #f59e0b;">
-                                    <i class="fas fa-birthday-cake"></i>
-                                </div>
-                                <div class="announcement-details">
-                                    <div class="announcement-text">{{ birthday.employee.user.get_full_name }}</div>
-                                    <div class="announcement-subtext">
-                                        {{ birthday.employee.designation|default:"N/A" }} • {{ birthday.employee.department|default:"N/A" }}
+                        <div class="events-list-modern">
+                            {% for birthday in upcoming_birthdays %}
+                            <div class="event-item-compact {% if birthday.is_today %}event-today-highlight{% endif %}">
+                                <div class="event-avatar-wrapper">
+                                    <div class="event-avatar birthday-avatar">
+                                        <span class="avatar-emoji">🎂</span>
                                     </div>
+                                    {% if birthday.is_today %}
+                                    <span class="today-badge-mini">TODAY</span>
+                                    {% endif %}
+                                </div>
+                                <div class="event-info-compact">
+                                    <h4 class="event-name-compact">{{ birthday.employee.user.get_full_name }}</h4>
+                                    <p class="event-meta-compact">
+                                        {{ birthday.employee.designation|default:"N/A" }} • {{ birthday.employee.department|default:"N/A" }}
+                                    </p>
+                                </div>
+                                <div class="event-badge-wrapper">
+                                    {% if birthday.is_today %}
+                                    <div class="celebration-emojis">
+                                        <span class="emoji-small">🎉</span>
+                                        <span class="emoji-small">🎁</span>
+                                        <span class="emoji-small">🎈</span>
+                                        <span class="emoji-small">✨</span>
+                                    </div>
+                                    {% else %}
+                                    <span class="days-badge birthday-badge">
+                                        {% if birthday.days_left == 1 %}Tomorrow{% else %}{{ birthday.days_left }} days{% endif %}
+                                    </span>
+                                    {% endif %}
                                 </div>
                             </div>
-                            <div class="announcement-date">
-                                {% if birthday.is_today %}
-                                Today!
-                                {% elif birthday.days_left == 1 %}
-                                Tomorrow
-                                {% else %}
-                                in {{ birthday.days_left }} days
-                                {% endif %}
-                            </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
                         {% else %}
-                        <div class="empty-state">
-                            <i class="fas fa-birthday-cake"></i>
+                        <div class="empty-state-compact">
+                            <span class="empty-icon">🎂</span>
                             <p>No upcoming birthdays</p>
                         </div>
                         {% endif %}
@@ -1842,33 +2498,44 @@
                     <!-- 2. Work Anniversaries Content -->
                     <div id="tab-anniv" class="tab-content fade-in" style="display: none;">
                         {% if upcoming_anniversaries %}
-                        {% for anniversary in upcoming_anniversaries %}
-                        <div class="announcement-item">
-                            <div class="announcement-item-header">
-                                <div class="announcement-icon" style="background: #e0e7ff; color: #6366f1;">
-                                    <i class="fas fa-award"></i>
-                                </div>
-                                <div class="announcement-details">
-                                    <div class="announcement-text">{{ anniversary.employee.user.get_full_name }}</div>
-                                    <div class="announcement-subtext">
-                                        {{ anniversary.employee.designation|default:"N/A" }} • {{ anniversary.employee.department|default:"N/A" }} • {{ anniversary.years }} year{{ anniversary.years|pluralize }}
+                        <div class="events-list-modern">
+                            {% for anniversary in upcoming_anniversaries %}
+                            <div class="event-item-compact {% if anniversary.is_today %}event-today-highlight{% endif %}">
+                                <div class="event-avatar-wrapper">
+                                    <div class="event-avatar anniversary-avatar">
+                                        <span class="avatar-emoji">🏆</span>
                                     </div>
+                                    {% if anniversary.is_today %}
+                                    <span class="today-badge-mini">TODAY</span>
+                                    {% endif %}
+                                </div>
+                                <div class="event-info-compact">
+                                    <h4 class="event-name-compact">{{ anniversary.employee.user.get_full_name }}</h4>
+                                    <p class="event-meta-compact">
+                                        {{ anniversary.employee.designation|default:"N/A" }} • {{ anniversary.employee.department|default:"N/A" }}
+                                    </p>
+                                    <span class="years-tag">{{ anniversary.years }} Year{{ anniversary.years|pluralize }}</span>
+                                </div>
+                                <div class="event-badge-wrapper">
+                                    {% if anniversary.is_today %}
+                                    <div class="celebration-emojis">
+                                        <span class="emoji-small">🎊</span>
+                                        <span class="emoji-small">🌟</span>
+                                        <span class="emoji-small">💼</span>
+                                        <span class="emoji-small">✨</span>
+                                    </div>
+                                    {% else %}
+                                    <span class="days-badge anniversary-badge">
+                                        {% if anniversary.days_left == 1 %}Tomorrow{% else %}{{ anniversary.days_left }} days{% endif %}
+                                    </span>
+                                    {% endif %}
                                 </div>
                             </div>
-                            <div class="announcement-date">
-                                {% if anniversary.is_today %}
-                                Today!
-                                {% elif anniversary.days_left == 1 %}
-                                Tomorrow
-                                {% else %}
-                                in {{ anniversary.days_left }} days
-                                {% endif %}
-                            </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
                         {% else %}
-                        <div class="empty-state">
-                            <i class="fas fa-award"></i>
+                        <div class="empty-state-compact">
+                            <span class="empty-icon">🏆</span>
                             <p>No upcoming work anniversaries</p>
                         </div>
                         {% endif %}
@@ -1877,27 +2544,41 @@
                     <!-- 3. Holidays Content -->
                     <div id="tab-holidays" class="tab-content fade-in" style="display: none;">
                         {% if upcoming_holidays %}
-                        {% for holiday in upcoming_holidays %}
-                        <div class="announcement-item">
-                            <div class="announcement-item-header">
-                                <div class="announcement-icon" style="background: #d1fae5; color: #059669;">
-                                    <i class="fas fa-umbrella-beach"></i>
-                                </div>
-                                <div class="announcement-details">
-                                    <div class="announcement-text">{{ holiday.name }}</div>
-                                    <div class="announcement-subtext">
-                                        {{ holiday.get_location_display }} • {{ holiday.get_holiday_type_display }}
+                        <div class="events-list-modern">
+                            {% for holiday in upcoming_holidays %}
+                            <div class="event-item-compact {% if holiday.date == today %}event-today-highlight{% endif %}">
+                                <div class="event-avatar-wrapper">
+                                    <div class="event-avatar holiday-avatar">
+                                        <span class="avatar-emoji">🏖️</span>
                                     </div>
+                                    {% if holiday.date == today %}
+                                    <span class="today-badge-mini">TODAY</span>
+                                    {% endif %}
+                                </div>
+                                <div class="event-info-compact">
+                                    <h4 class="event-name-compact">{{ holiday.name }}</h4>
+                                    <p class="event-meta-compact">
+                                        {{ holiday.get_location_display }} • {{ holiday.get_holiday_type_display }}
+                                    </p>
+                                </div>
+                                <div class="event-badge-wrapper">
+                                    {% if holiday.date == today %}
+                                    <div class="celebration-emojis">
+                                        <span class="emoji-small">🎉</span>
+                                        <span class="emoji-small">🌴</span>
+                                        <span class="emoji-small">☀️</span>
+                                        <span class="emoji-small">✨</span>
+                                    </div>
+                                    {% else %}
+                                    <span class="days-badge holiday-badge">{{ holiday.date|date:"M d" }}</span>
+                                    {% endif %}
                                 </div>
                             </div>
-                            <div class="announcement-date">
-                                {{ holiday.date|date:"D, d M" }}
-                            </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
                         {% else %}
-                        <div class="empty-state">
-                            <i class="fas fa-umbrella-beach"></i>
+                        <div class="empty-state-compact">
+                            <span class="empty-icon">🏖️</span>
                             <p>No upcoming holidays</p>
                         </div>
                         {% endif %}
@@ -2591,6 +3272,35 @@
 
         // Animate progress bars after a short delay
         setTimeout(animateProgressBars, 500);
+
+        // Initialize AOS (Animate On Scroll) for event cards
+        // Simple fade-up animation for normal cards
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe all normal event cards
+        document.querySelectorAll('.event-card-normal').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(card);
+        });
+
+        // Add stagger effect to event cards
+        document.querySelectorAll('.event-card-normal').forEach((card, index) => {
+            card.style.transitionDelay = `${index * 0.1}s`;
+        });
     });
 
 </script>

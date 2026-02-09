@@ -1044,13 +1044,16 @@ def employee_profile(request):
         action = request.POST.get("action")
 
         if action == "update_profile":
-            if employee.profile_edited:
+            is_admin = request.user.role == User.Role.COMPANY_ADMIN
+            if employee.profile_edited and not is_admin:
                 messages.error(request, "You have already edited your profile once.")
                 return redirect("employee_profile")
 
             try:
                 # Personal Details
                 employee.mobile_number = request.POST.get("mobile_number")
+                employee.personal_email = request.POST.get("personal_email")
+                employee.pseudo_name = request.POST.get("pseudo_name")
                 dob_str = request.POST.get("dob")
                 if dob_str:
                     employee.dob = dob_str
@@ -1436,6 +1439,8 @@ def check_leave_balance(request):
 
 @login_required
 def approve_leave(request, pk):
+    from django.contrib import messages
+
     if request.method == "POST":
         leave_request = LeaveRequest.objects.get(pk=pk)
         approval_type = request.POST.get("approval_type", "FULL")

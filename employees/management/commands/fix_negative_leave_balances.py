@@ -54,6 +54,7 @@ class Command(BaseCommand):
                     if lop_added > 0:
                         self.stdout.write(self.style.SUCCESS(f"Fixed {employee_name}: Added {lop_added} days to LOP"))
                         fixed_count += 1
+
                 else:
                     self.stdout.write(self.style.WARNING(f"Would fix negative balances for {employee_name}"))
                     fixed_count += 1
