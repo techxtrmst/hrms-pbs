@@ -116,7 +116,7 @@ def add_employee_step1(request):
             email_placeholder = "e.g. john.doe@petabytz.com"
         elif "softstandard" in c_name:
             company_prefix = "SSS"
-            email_placeholder = "e.g. john.doe@softstandard.com"
+            email_placeholder = "e.g. john.doe@softstandard.com (or @rmindstech.com, @trainingforce.tech)"
         elif "bluebix" in c_name:
             company_prefix = "BBS"
             email_placeholder = "e.g. john.doe@bluebixinc.com"

@@ -153,6 +153,7 @@ def manager_dashboard(request):
     announcements = (
         Announcement.objects.filter(company=manager_profile.company, is_active=True)
         .filter(Q(location__isnull=True) | Q(location=manager_profile.location))
+        .exclude(title__startswith="Resignation Alert:")
         .order_by("-created_at")[:5]
     )
 
@@ -600,6 +601,7 @@ def admin_dashboard(request):
     announcements = (
         Announcement.objects.filter(company=request.user.company, is_active=True)
         .select_related("location")
+        .exclude(title__startswith="Resignation Alert:")
         .order_by("-created_at")[:10]
     )
 
@@ -966,7 +968,11 @@ def employee_dashboard(request):
     company_employees = Employee.objects.filter(company=employee.company, is_active=True).select_related("user")
 
     # 1. Announcements
-    announcements = Announcement.objects.filter(company=employee.company, is_active=True).order_by("-created_at")[:5]
+    announcements = (
+        Announcement.objects.filter(company=employee.company, is_active=True)
+        .exclude(title__startswith="Resignation Alert:")
+        .order_by("-created_at")[:5]
+    )
 
     # 2. Upcoming Birthdays & Anniversaries
     # Optimized Anniversary/Birthday Calculation for Employees
@@ -1237,8 +1243,8 @@ def personal_home(request):
         from calendar import monthrange
 
         _, last_day = monthrange(current_year, current_month)
-        month_start = today.replace(day=1)
-        month_end = today.replace(day=last_day)
+        today.replace(day=1)
+        today.replace(day=last_day)
 
         # Celebrations - Birthdays this month (all dates in current month)
         company_employees = Employee.objects.filter(company=employee.company).select_related("user")

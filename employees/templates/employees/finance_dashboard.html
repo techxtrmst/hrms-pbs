@@ -410,6 +410,44 @@
         max-width: 300px;
         margin: 0 auto;
     }
+
+    /* Visibility Toggle */
+    .sensitive-data-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+
+    .fin-value.sensitive {
+        filter: blur(8px);
+        transition: filter 0.3s ease;
+        user-select: none;
+        cursor: pointer;
+    }
+
+    .fin-value.sensitive.show {
+        filter: blur(0);
+        user-select: text;
+    }
+
+    .visibility-toggle {
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, 0.75);
+        cursor: pointer;
+        padding: 4px;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .visibility-toggle:hover {
+        color: white;
+        transform: scale(1.1);
+    }
 </style>
 {% endblock %}
 
@@ -429,15 +467,25 @@
             <div class="fin-card-grid">
                 <div class="fin-item">
                     <span class="fin-label">UAN Number</span>
-                    <span class="fin-value">{{ employee.uan|default:"Not Set" }}</span>
+                    <div class="sensitive-data-container">
+                        <span class="fin-value sensitive" onclick="toggleSensitiveData(this)">{{ employee.uan|default:"Not Set" }}</span>
+                        <button class="visibility-toggle" onclick="toggleSensitiveData(this)" title="Toggle Visibility">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="fin-item">
                     <span class="fin-label">Annual CTC</span>
-                    <span class="fin-value">
-                        {% with curr=employee.location.currency|default:employee.company.currency|default:"INR" %}
-                        {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{ employee.annual_ctc|default:"0" }}
-                        {% endwith %}
-                    </span>
+                    <div class="sensitive-data-container">
+                        <span class="fin-value sensitive" onclick="toggleSensitiveData(this)">
+                            {% with curr=employee.location.currency|default:employee.company.currency|default:"INR" %}
+                            {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{ employee.annual_ctc|default:"0" }}
+                            {% endwith %}
+                        </span>
+                        <button class="visibility-toggle" onclick="toggleSensitiveData(this)" title="Toggle Visibility">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="fin-item">
                     <span class="fin-label">Work Location</span>
@@ -602,6 +650,22 @@
             });
         });
     });
+
+    function toggleSensitiveData(element) {
+        const container = element.closest('.sensitive-data-container');
+        const valueSpan = container.querySelector('.fin-value.sensitive');
+        const icon = container.querySelector('.visibility-toggle i');
+
+        if (valueSpan.classList.contains('show')) {
+            valueSpan.classList.remove('show');
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        } else {
+            valueSpan.classList.add('show');
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        }
+    }
 </script>
 {% endblock %}
 {% endblock %}

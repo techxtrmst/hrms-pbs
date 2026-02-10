@@ -11,10 +11,9 @@ from django.contrib.auth.views import (
 )
 from django.urls import reverse_lazy
 
-logger = logging.getLogger(__name__)
-
-
 from .forms import LoginForm
+
+logger = logging.getLogger(__name__)
 
 
 class CustomLoginView(LoginView):
@@ -89,8 +88,6 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
         user.save(update_fields=["must_change_password"])
 
         # Add success message
-        from django.contrib import messages
-
         messages.success(
             self.request,
             "Password reset successful! Please log in with your new password.",

@@ -112,8 +112,10 @@ class Company(models.Model):
                 domains.append(d_lower)
         if "bluebix" in self.name.lower() and "bluebixinc.com" not in domains:
             domains.append("bluebixinc.com")
-        if "softstandard" in self.name.lower() and "oppora.ai" not in domains:
-            domains.append("oppora.ai")
+        if "softstandard" in self.name.lower():
+            for d in ["oppora.ai", "rmindstech.com", "trainingforce.tech"]:
+                if d not in domains:
+                    domains.append(d)
         return domains
 
     def is_email_domain_allowed(self, email):

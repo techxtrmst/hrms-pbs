@@ -2070,8 +2070,6 @@ def employee_exit_action(request, pk):
             try:
                 from django.core.mail import send_mail
 
-                from companies.models import Announcement
-
                 # 1. Recipients
                 recipients = []
 
@@ -2116,20 +2114,6 @@ def employee_exit_action(request, pk):
                         recipients,
                         fail_silently=True,
                     )
-
-                # --- Dashboard Announcement ---
-                # Note: Announcements are visible to specific locations or company-wide.
-                # Since we want it on the dashboard, we create a targeted announcement.
-                # Limitation: Standard Announcement model is public.
-                try:
-                    Announcement.objects.create(
-                        company=employee.company,
-                        title=f"Resignation Alert: {employee.user.get_full_name()}",
-                        content=f"Resignation submitted by {employee.user.get_full_name()} on {submission_date.strftime('%Y-%m-%d')}. Pending Approval.",
-                        location=employee.location,  # Target to same location at least
-                    )
-                except Exception as e:
-                    logger.error(f"Error creating announcement: {e}")
 
             except Exception as e:
                 logger.error(f"Error in resignation notification: {e}")
