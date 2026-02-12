@@ -116,10 +116,10 @@ def add_employee_step1(request):
             email_placeholder = "e.g. john.doe@petabytz.com"
         elif "softstandard" in c_name:
             company_prefix = "SSS"
-            email_placeholder = "e.g. john.doe@softstandard.com (or @rmindstech.com, @trainingforce.tech)"
+            email_placeholder = "e.g. john.doe@softstandard.com, @contrivainc.com, @getfulltimejob.com"
         elif "bluebix" in c_name:
             company_prefix = "BBS"
-            email_placeholder = "e.g. john.doe@bluebixinc.com"
+            email_placeholder = "e.g. john.doe@bluebixinc.com, @bluebixhealth.com"
         else:
             company_prefix = request.user.company.name[:3].upper()
             domain = c_name.replace(" ", "") + ".com"
@@ -277,6 +277,7 @@ def add_employee_step3(request):
                 uan=finance_data.get("uan"),
                 pan_number=finance_data.get("pan_number"),
                 pf_enabled=finance_data.get("pf_enabled", False),
+                is_activity_tracking_enabled=finance_data.get("is_activity_tracking_enabled", True),
                 annual_ctc=finance_data.get("annual_ctc"),
             )
 

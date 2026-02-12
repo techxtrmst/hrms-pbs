@@ -29,8 +29,8 @@ class Command(BaseCommand):
                 "name": "Bluebix",
                 "slug": "bluebix",
                 "primary_domain": "bluebix.com",
-                "allowed_domains": "bluebix.com,www.bluebix.com,bluebixinc.com",
-                "email_domain": "bluebixinc.com",
+                "allowed_domains": "bluebix.com,www.bluebix.com,bluebixinc.com,bluebixhealth.com",
+                "email_domain": "bluebixinc.com,bluebixhealth.com",
                 "location": "US",
                 "contact_email": "admin@bluebixinc.com",
                 "city": "New York",
@@ -41,8 +41,8 @@ class Command(BaseCommand):
                 "name": "Softstandard",
                 "slug": "softstandard",
                 "primary_domain": "softstandard.com",
-                "allowed_domains": "softstandard.com,www.softstandard.com,rmindstech.com,oppora.ai,trainingforce.tech",
-                "email_domain": "softstandard.com,rmindstech.com,oppora.ai,trainingforce.tech",
+                "allowed_domains": "softstandard.com,www.softstandard.com,rmindstech.com,oppora.ai,trainingforce.tech,contrivainc.com,getfulltimejob.com",
+                "email_domain": "softstandard.com,rmindstech.com,oppora.ai,trainingforce.tech,contrivainc.com,getfulltimejob.com",
                 "location": "BOTH",
                 "contact_email": "admin@softstandard.com",
                 "city": "Multiple Locations",
@@ -55,13 +55,13 @@ class Command(BaseCommand):
             company, created = Company.objects.update_or_create(slug=company_data["slug"], defaults=company_data)
 
             if created:
-                self.stdout.write(self.style.SUCCESS(f"✓ Created company: {company.name} ({company.primary_domain})"))
+                self.stdout.write(self.style.SUCCESS(f"[CREATED] Company: {company.name} ({company.primary_domain})"))
             else:
-                self.stdout.write(self.style.WARNING(f"✓ Updated company: {company.name} ({company.primary_domain})"))
+                self.stdout.write(self.style.WARNING(f"[UPDATED] Company: {company.name} ({company.primary_domain})"))
 
         self.stdout.write(
             self.style.SUCCESS(
-                "\n✓ Multi-tenant setup complete!\n"
+                "\n[SUCCESS] Multi-tenant setup complete!\n"
                 "Companies created:\n"
                 "  1. Petabytz (India) - petabytz.com\n"
                 "  2. Bluebix (United States) - bluebix.com\n"

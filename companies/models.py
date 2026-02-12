@@ -110,10 +110,12 @@ class Company(models.Model):
             d_lower = d.lower()
             if d_lower not in domains:
                 domains.append(d_lower)
-        if "bluebix" in self.name.lower() and "bluebixinc.com" not in domains:
-            domains.append("bluebixinc.com")
+        if "bluebix" in self.name.lower():
+            for d in ["bluebixinc.com", "bluebixhealth.com"]:
+                if d not in domains:
+                    domains.append(d)
         if "softstandard" in self.name.lower():
-            for d in ["oppora.ai", "rmindstech.com", "trainingforce.tech"]:
+            for d in ["oppora.ai", "rmindstech.com", "trainingforce.tech", "contrivainc.com", "getfulltimejob.com"]:
                 if d not in domains:
                     domains.append(d)
         return domains
