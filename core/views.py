@@ -157,10 +157,9 @@ def manager_dashboard(request):
         .order_by("-created_at")[:5]
     )
 
-    company_employees = (
-        Employee.objects.filter(company=manager_profile.company, is_active=True, employment_status="ACTIVE")
-        .select_related("user")
-    )
+    company_employees = Employee.objects.filter(
+        company=manager_profile.company, is_active=True, employment_status="ACTIVE"
+    ).select_related("user")
 
     # Birthdays
     birthdays = company_employees.filter(dob__month=today.month, dob__day=today.day)
@@ -961,7 +960,9 @@ def employee_dashboard(request):
     from companies.models import Announcement, Holiday
 
     # Get all company employees for celebrations
-    company_employees = Employee.objects.filter(company=employee.company, is_active=True, employment_status="ACTIVE").select_related("user")
+    company_employees = Employee.objects.filter(
+        company=employee.company, is_active=True, employment_status="ACTIVE"
+    ).select_related("user")
 
     # 1. Announcements
     announcements = (

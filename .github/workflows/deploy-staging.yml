@@ -117,6 +117,7 @@ jobs:
           host: ${{ secrets.STAGING_SSH_HOST }}
           username: ${{ secrets.STAGING_SSH_USERNAME }}
           password: ${{ secrets.STAGING_SSH_PASSWORD }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT }}
           command_timeout: 2m
           script: |
@@ -139,6 +140,7 @@ jobs:
           host: ${{ secrets.STAGING_SSH_HOST }}
           username: ${{ secrets.STAGING_SSH_USERNAME }}
           password: ${{ secrets.STAGING_SSH_PASSWORD }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT }}
           command_timeout: 10m
           script: |
@@ -284,6 +286,7 @@ jobs:
           host: ${{ secrets.STAGING_SSH_HOST }}
           username: ${{ secrets.STAGING_SSH_USERNAME }}
           password: ${{ secrets.STAGING_SSH_PASSWORD }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT }}
           source: "backend-staging-config.tar.gz,backend-staging-config.tar.gz.sha256"
           target: "/tmp/"
@@ -294,6 +297,7 @@ jobs:
           host: ${{ secrets.STAGING_SSH_HOST }}
           username: ${{ secrets.STAGING_SSH_USERNAME }}
           password: ${{ secrets.STAGING_SSH_PASSWORD }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT }}
           command_timeout: 20m
           script: |
@@ -633,6 +637,7 @@ jobs:
           host: ${{ secrets.STAGING_SSH_HOST }}
           username: ${{ secrets.STAGING_SSH_USERNAME }}
           password: ${{ secrets.STAGING_SSH_PASSWORD }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT }}
           command_timeout: 10m
           script: |
@@ -782,6 +787,7 @@ jobs:
           host: ${{ secrets.STAGING_SSH_HOST }}
           username: ${{ secrets.STAGING_SSH_USERNAME }}
           password: ${{ secrets.STAGING_SSH_PASSWORD }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT }}
           command_timeout: 2m
           script: |
@@ -854,6 +860,7 @@ jobs:
           host: ${{ secrets.STAGING_SSH_HOST }}
           username: ${{ secrets.STAGING_SSH_USERNAME }}
           password: ${{ secrets.STAGING_SSH_PASSWORD }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT }}
           source: "/tmp/deployment-diagnostics.json"
           target: "."

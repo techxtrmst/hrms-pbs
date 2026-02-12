@@ -70,7 +70,9 @@ class Command(BaseCommand):
         probation_emails_sent = 0
 
         # Get all active employees with their locations
-        all_employees = Employee.objects.select_related("user", "company", "location").filter(user__is_active=True)
+        all_employees = Employee.objects.select_related("user", "company", "location").filter(
+            is_active=True, user__is_active=True, employment_status="ACTIVE"
+        )
 
         # Group employees by company for announcements
         companies = {}
