@@ -70,8 +70,12 @@ class Command(BaseCommand):
         probation_emails_sent = 0
 
         # Get all active employees with their locations
-        all_employees = Employee.objects.select_related("user", "company", "location").filter(
-            is_active=True, user__is_active=True, employment_status="ACTIVE"
+        from django.db.models import Q
+
+        all_employees = (
+            Employee.objects.select_related("user", "company", "location")
+            .filter(is_active=True, user__is_active=True, employment_status="ACTIVE")
+            .filter(Q(exit_date__isnull=True) | Q(exit_date__gt=timezone.now().date()))
         )
 
         # Group employees by company for announcements

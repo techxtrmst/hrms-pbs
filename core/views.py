@@ -157,9 +157,11 @@ def manager_dashboard(request):
         .order_by("-created_at")[:5]
     )
 
-    company_employees = Employee.objects.filter(
-        company=manager_profile.company, is_active=True, employment_status="ACTIVE"
-    ).select_related("user")
+    company_employees = (
+        Employee.objects.filter(company=manager_profile.company, is_active=True, employment_status="ACTIVE")
+        .filter(Q(exit_date__isnull=True) | Q(exit_date__gt=today))
+        .select_related("user")
+    )
 
     # Birthdays
     birthdays = company_employees.filter(dob__month=today.month, dob__day=today.day)
@@ -528,7 +530,9 @@ def admin_dashboard(request):
     upcoming_birthdays = []
     upcoming_anniversaries = []
 
-    for emp in employees.filter(is_active=True, employment_status="ACTIVE"):
+    for emp in employees.filter(is_active=True, employment_status="ACTIVE").filter(
+        Q(exit_date__isnull=True) | Q(exit_date__gt=today)
+    ):
         # Birthday calculation
         if emp.dob:
             try:
@@ -960,9 +964,11 @@ def employee_dashboard(request):
     from companies.models import Announcement, Holiday
 
     # Get all company employees for celebrations
-    company_employees = Employee.objects.filter(
-        company=employee.company, is_active=True, employment_status="ACTIVE"
-    ).select_related("user")
+    company_employees = (
+        Employee.objects.filter(company=employee.company, is_active=True, employment_status="ACTIVE")
+        .filter(Q(exit_date__isnull=True) | Q(exit_date__gt=today))
+        .select_related("user")
+    )
 
     # 1. Announcements
     announcements = (
@@ -1244,9 +1250,11 @@ def personal_home(request):
         today.replace(day=last_day)
 
         # Celebrations - Birthdays this month (all dates in current month) - Only Active Employees
-        company_employees = Employee.objects.filter(
-            company=employee.company, is_active=True, employment_status="ACTIVE"
-        ).select_related("user")
+        company_employees = (
+            Employee.objects.filter(company=employee.company, is_active=True, employment_status="ACTIVE")
+            .filter(Q(exit_date__isnull=True) | Q(exit_date__gt=today))
+            .select_related("user")
+        )
         birthdays = company_employees.filter(dob__month=current_month).order_by("dob__day")
         context["birthdays"] = birthdays
 
