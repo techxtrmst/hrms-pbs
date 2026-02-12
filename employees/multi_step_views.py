@@ -119,7 +119,7 @@ def add_employee_step1(request):
             email_placeholder = "e.g. john.doe@softstandard.com, @bluebixinc.com, @contrivainc.com, @getfulltimejob.com"
         elif "bluebix" in c_name:
             company_prefix = "BBS"
-            email_placeholder = "e.g. john.doe@bluebixinc.com, @bluebixhealth.com"
+            email_placeholder = "e.g. john.doe@bluebix.com, @bluebixhealth.com"
         else:
             company_prefix = request.user.company.name[:3].upper()
             domain = c_name.replace(" ", "") + ".com"
