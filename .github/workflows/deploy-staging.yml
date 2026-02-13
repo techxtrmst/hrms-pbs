@@ -116,7 +116,6 @@ jobs:
         with:
           host: ${{ secrets.STAGING_SSH_HOST }}
           username: ${{ secrets.STAGING_SSH_USERNAME }}
-          password: ${{ secrets.STAGING_SSH_PASSWORD }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT }}
           command_timeout: 2m
@@ -139,7 +138,6 @@ jobs:
         with:
           host: ${{ secrets.STAGING_SSH_HOST }}
           username: ${{ secrets.STAGING_SSH_USERNAME }}
-          password: ${{ secrets.STAGING_SSH_PASSWORD }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT }}
           command_timeout: 10m
@@ -285,7 +283,6 @@ jobs:
         with:
           host: ${{ secrets.STAGING_SSH_HOST }}
           username: ${{ secrets.STAGING_SSH_USERNAME }}
-          password: ${{ secrets.STAGING_SSH_PASSWORD }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT }}
           source: "backend-staging-config.tar.gz,backend-staging-config.tar.gz.sha256"
@@ -296,7 +293,6 @@ jobs:
         with:
           host: ${{ secrets.STAGING_SSH_HOST }}
           username: ${{ secrets.STAGING_SSH_USERNAME }}
-          password: ${{ secrets.STAGING_SSH_PASSWORD }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT }}
           command_timeout: 20m
@@ -636,7 +632,6 @@ jobs:
         with:
           host: ${{ secrets.STAGING_SSH_HOST }}
           username: ${{ secrets.STAGING_SSH_USERNAME }}
-          password: ${{ secrets.STAGING_SSH_PASSWORD }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT }}
           command_timeout: 10m
