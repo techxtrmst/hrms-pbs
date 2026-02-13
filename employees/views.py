@@ -2913,9 +2913,16 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
         try:
             # Read Excel
             try:
-                df = pd.read_excel(file)
+                df = pd.read_excel(file, engine="openpyxl")
             except Exception as e:
-                messages.error(self.request, f"Error reading Excel file: {str(e)}")
+                messages.error(
+                    self.request, f"Error reading Excel file: {str(e)}. Please ensure the file is a valid .xlsx file."
+                )
+                return self.form_invalid(form)
+
+            # Check if file is empty
+            if df.empty:
+                messages.error(self.request, "The uploaded file is empty. Please add employee data and try again.")
                 return self.form_invalid(form)
 
             # Normalize columns
@@ -2937,11 +2944,12 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
             if missing_columns:
                 messages.error(
                     self.request,
-                    f"Missing required columns: {', '.join(missing_columns)}",
+                    f"Missing required columns: {', '.join([c.replace('_', ' ').title() for c in missing_columns])}. Please download the sample file for reference.",
                 )
                 return self.form_invalid(form)
 
             success_count = 0
+            skipped_count = 0
             errors = []
 
             for index, row in df.iterrows():
@@ -2949,24 +2957,41 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                     with transaction.atomic():
                         # 1. Basic Data
                         email = str(row.get("email", "")).strip().lower()
-                        if not email:
+                        if not email or email == "nan":
                             raise ValueError("Email is required")
+
+                        # Validate email format
+                        import re
+
+                        email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+                        if not re.match(email_pattern, email):
+                            raise ValueError(f"Invalid email format: {email}")
 
                         # Check if user already exists
                         user = User.objects.filter(email=email).first()
                         if user:
                             # Check if the user already has an employee profile (is a real employee)
                             if hasattr(user, "employee_profile"):
-                                raise ValueError(f"User with email {email} already exists")
+                                skipped_count += 1
+                                errors.append(f"Row {index + 2} ({email}): Employee already exists - SKIPPED")
+                                continue
                             else:
                                 # User exists but no employee profile (Zombie record) -> Reuse it
                                 user.first_name = str(row.get("first_name", "")).strip()
                                 user.last_name = str(row.get("last_name", "")).strip()
+                                user.role = "EMPLOYEE"
+                                user.company = self.request.user.company
                                 user.save()
                         else:
                             # 2. Create New User
                             first_name = str(row.get("first_name", "")).strip()
                             last_name = str(row.get("last_name", "")).strip()
+
+                            if not first_name:
+                                raise ValueError("First Name is required")
+                            if not last_name:
+                                raise ValueError("Last Name is required")
+
                             user = User.objects.create_user(
                                 username=email,
                                 email=email,
@@ -2981,29 +3006,35 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
 
                         # 3. Parse Dates
                         doj = row.get("date_of_joining")
-                        if pd.isna(doj):
+                        if pd.isna(doj) or str(doj).strip() == "":
                             raise ValueError("Date of Joining is mandatory")
                         elif hasattr(doj, "date"):
                             doj = doj.date()
                         else:
                             # Try parsing string
-                            doj = pd.to_datetime(doj).date()
+                            try:
+                                doj = pd.to_datetime(doj).date()
+                            except Exception:
+                                raise ValueError("Invalid Date of Joining format. Use YYYY-MM-DD format.")
 
                         dob = row.get("date_of_birth")
-                        if pd.isna(dob):
+                        if pd.isna(dob) or str(dob).strip() == "":
                             raise ValueError("Date of Birth is mandatory")
                         elif hasattr(dob, "date"):
                             dob = dob.date()
                         else:
                             # Try parsing string
-                            dob = pd.to_datetime(dob).date()
+                            try:
+                                dob = pd.to_datetime(dob).date()
+                            except Exception:
+                                raise ValueError("Invalid Date of Birth format. Use YYYY-MM-DD format.")
 
                         # 4. Parse Location
                         from companies.models import Location
 
                         location_name = str(row.get("location", "")).strip()
                         location = None
-                        if location_name:
+                        if location_name and location_name != "nan":
                             location = Location.objects.filter(
                                 company=self.request.user.company,
                                 name__iexact=location_name,
@@ -3013,9 +3044,14 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                         if not location:
                             location = Location.objects.filter(company=self.request.user.company).first()
 
+                        if not location:
+                            raise ValueError(
+                                "No location found for this company. Please create at least one location first."
+                            )
+
                         # 4.5 Reporting Manager
                         manager_name = str(row.get("reporting_manager_name", "")).strip()
-                        if not manager_name:
+                        if not manager_name or manager_name == "nan":
                             raise ValueError("Reporting Manager Name is mandatory")
 
                         # Find manager user
@@ -3043,20 +3079,22 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
 
                         if not manager_user:
                             raise ValueError(
-                                f"Reporting Manager '{manager_name}' not found. Please ensure exact name match."
+                                f"Reporting Manager '{manager_name}' not found. Please ensure the manager exists and the name matches exactly."
                             )
-
-                        if not hasattr(manager_user, "employee_profile"):
-                            raise ValueError(f"User '{manager_name}' found but has no employee profile.")
-
-                        manager_employee = manager_user.employee_profile
 
                         # 5. Create Employee
                         badge_id = str(row.get("badge_id", ""))
-                        if badge_id == "nan":
+                        if badge_id == "nan" or badge_id == "":
                             badge_id = None
                         elif badge_id.endswith(".0"):
                             badge_id = badge_id[:-2]  # 101.0 -> 101
+
+                        # Check for duplicate badge_id
+                        if (
+                            badge_id
+                            and Employee.objects.filter(badge_id=badge_id, company=self.request.user.company).exists()
+                        ):
+                            raise ValueError(f"Badge ID '{badge_id}' already exists. Please use a unique Badge ID.")
 
                         # Sync Department & Designation with Role Configuration
                         from companies.models import Department, Designation
@@ -3064,57 +3102,106 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                         dept_name = str(row.get("department", "General")).strip().title()
                         desig_name = str(row.get("designation", "Employee")).strip().title()
 
+                        if dept_name == "Nan":
+                            dept_name = "General"
+                        if desig_name == "Nan":
+                            desig_name = "Employee"
+
                         # Ensure they exist in Role Config (prevents duplicates)
                         Department.objects.get_or_create(company=self.request.user.company, name=dept_name)
                         Designation.objects.get_or_create(company=self.request.user.company, name=desig_name)
 
+                        # Parse gender and marital status
+                        gender = str(row.get("gender", "M")).strip().upper()
+                        if gender not in ["M", "F", "O"]:
+                            gender = "M"
+
+                        marital_status = str(row.get("marital_status", "S")).strip().upper()
+                        if marital_status not in ["S", "M", "D", "W"]:
+                            marital_status = "S"
+
+                        # Parse mobile number
+                        mobile = str(row.get("mobile", "")).strip()
+                        if mobile == "nan" or mobile == "":
+                            mobile = None
+
+                        # Parse pseudo name
+                        pseudo_name = str(row.get("pseudo_name", "")).strip()
+                        if pseudo_name == "nan" or pseudo_name == "":
+                            pseudo_name = None
+
+                        # Parse annual CTC
+                        annual_ctc = row.get("annual_ctc")
+                        if pd.isna(annual_ctc) or annual_ctc == "":
+                            annual_ctc = 0
+                        else:
+                            try:
+                                annual_ctc = float(annual_ctc)
+                            except (ValueError, TypeError):
+                                annual_ctc = 0
+
                         Employee.objects.create(
                             user=user,
                             company=self.request.user.company,
-                            manager=manager_employee,
+                            manager=manager_user,
                             designation=desig_name,
                             department=dept_name,
                             location=location,
                             badge_id=badge_id,
-                            mobile_number=str(row.get("mobile", "")) if not pd.isna(row.get("mobile")) else None,
-                            gender=str(row.get("gender", "M"))[0].upper(),
-                            marital_status=str(row.get("marital_status", "S"))[0].upper(),
+                            mobile_number=mobile,
+                            gender=gender[0] if gender else "M",
+                            marital_status=marital_status[0] if marital_status else "S",
                             date_of_joining=doj,
                             dob=dob,
-                            pseudo_name=str(row.get("pseudo_name", "")).strip()
-                            if not pd.isna(row.get("pseudo_name"))
-                            else None,
-                            annual_ctc=row.get("annual_ctc") if not pd.isna(row.get("annual_ctc")) else 0,
+                            pseudo_name=pseudo_name,
+                            annual_ctc=annual_ctc,
+                            is_activity_tracking_enabled=True,  # Enable activity tracking by default
                         )
 
                         # 6. Create Leave Balance (handled by signal)
                         # LeaveBalance.objects.create(...) - REMOVED to avoid duplicate key error
 
                         # 7. Send Activation Email
-                        send_activation_email(user, self.request)
+                        try:
+                            send_activation_email(user, self.request)
+                        except Exception as email_error:
+                            # Don't fail the import if email fails
+                            errors.append(
+                                f"Row {index + 2} ({email}): Employee created but activation email failed - {str(email_error)}"
+                            )
 
                         success_count += 1
 
                 except Exception as e:
                     errors.append(f"Row {index + 2} ({row.get('email', 'Unknown')}): {str(e)}")
 
+            # Prepare success message
             if success_count > 0:
-                messages.success(
-                    self.request,
-                    f"Successfully created {success_count} employees. Activation emails sent.",
-                )
+                success_msg = f"Successfully created {success_count} employee(s)."
+                if skipped_count > 0:
+                    success_msg += f" Skipped {skipped_count} existing employee(s)."
+                messages.success(self.request, success_msg)
 
             if errors:
-                # Show first 5 errors
-                error_msg = "Errors occurred:<br>" + "<br>".join(errors[:5])
-                if len(errors) > 5:
-                    error_msg += f"<br>...and {len(errors) - 5} more."
+                # Show first 10 errors
+                error_msg = "<strong>Import completed with errors:</strong><br><ul>"
+                for error in errors[:10]:
+                    error_msg += f"<li>{error}</li>"
+                error_msg += "</ul>"
+                if len(errors) > 10:
+                    error_msg += f"<p><em>...and {len(errors) - 10} more error(s).</em></p>"
                 messages.warning(self.request, error_msg)
+
+            if success_count == 0 and not errors:
+                messages.warning(self.request, "No employees were imported. Please check your file and try again.")
 
             return super().form_valid(form)
 
         except Exception as e:
-            messages.error(self.request, f"System Error: {str(e)}")
+            import traceback
+
+            traceback.print_exc()
+            messages.error(self.request, f"System Error: {str(e)}. Please contact support if the issue persists.")
             return self.form_invalid(form)
 
 
