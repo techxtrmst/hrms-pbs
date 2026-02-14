@@ -50,11 +50,37 @@ Write-Host "📡 Setting SSH Configuration..." -ForegroundColor Cyan
 if ($envVars['STAGING_SSH_HOST']) {
     gh secret set STAGING_SSH_HOST --repo $REPO --body $envVars['STAGING_SSH_HOST']
     gh secret set STAGING_SSH_USERNAME --repo $REPO --body $envVars['STAGING_SSH_USERNAME']
-    gh secret set STAGING_SSH_PASSWORD --repo $REPO --body $envVars['STAGING_SSH_PASSWORD']
     gh secret set STAGING_SSH_PORT --repo $REPO --body $envVars['STAGING_SSH_PORT']
     gh secret set STAGING_DEPLOY_PATH --repo $REPO --body $envVars['STAGING_DEPLOY_PATH']
     gh secret set STAGING_BACKUP_PATH --repo $REPO --body $envVars['STAGING_BACKUP_PATH']
-    Write-Host "✅ SSH configuration set from .env.staging" -ForegroundColor Green
+
+    # Support SSH key upload from file path (recommended) or inline value
+    if ($envVars['STAGING_SSH_KEY_PATH'] -and $envVars['STAGING_SSH_KEY_PATH'].Trim() -ne '') {
+        $keyPath = $envVars['STAGING_SSH_KEY_PATH'].Trim()
+        if (-not [System.IO.Path]::IsPathRooted($keyPath)) {
+            $keyPath = Join-Path $PSScriptRoot $keyPath
+        }
+
+        if (Test-Path $keyPath) {
+            Get-Content $keyPath -Raw | gh secret set STAGING_SSH_KEY --repo $REPO
+            Write-Host "✅ STAGING_SSH_KEY set from STAGING_SSH_KEY_PATH" -ForegroundColor Green
+        } else {
+            Write-Host "⚠️ STAGING_SSH_KEY_PATH was set but file was not found: $keyPath" -ForegroundColor Yellow
+        }
+    } elseif ($envVars['STAGING_SSH_KEY'] -and $envVars['STAGING_SSH_KEY'].Trim() -ne '') {
+        gh secret set STAGING_SSH_KEY --repo $REPO --body $envVars['STAGING_SSH_KEY']
+        Write-Host "✅ STAGING_SSH_KEY set from inline STAGING_SSH_KEY value" -ForegroundColor Green
+    } else {
+        Write-Host "⚠️ STAGING_SSH_KEY not provided. Set STAGING_SSH_KEY_PATH in .env.staging (recommended)." -ForegroundColor Yellow
+    }
+
+    # Password auth is optional when using SSH keys, but can be set for fallback/debugging.
+    if ($envVars['STAGING_SSH_PASSWORD'] -and $envVars['STAGING_SSH_PASSWORD'].Trim() -ne '') {
+        gh secret set STAGING_SSH_PASSWORD --repo $REPO --body $envVars['STAGING_SSH_PASSWORD']
+        Write-Host "ℹ️ STAGING_SSH_PASSWORD also configured (optional fallback)" -ForegroundColor Cyan
+    }
+
+    Write-Host "✅ SSH host/user/port/deploy settings configured" -ForegroundColor Green
 } else {
     Write-Host "⚠️ SSH configuration not found in .env.staging - skipping" -ForegroundColor Yellow
 }

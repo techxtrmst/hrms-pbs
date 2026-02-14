@@ -59,6 +59,8 @@ def main():
         "STAGING_SSH_HOST",
         "STAGING_SSH_USERNAME",
         "STAGING_SSH_PASSWORD",
+        "STAGING_SSH_KEY",
+        "STAGING_SSH_KEY_PATH",
         "STAGING_SSH_PORT",
         "STAGING_DEPLOY_PATH",
         "STAGING_BACKUP_PATH",
