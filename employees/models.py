@@ -139,11 +139,6 @@ class Employee(models.Model):
         max_length=50, null=True, blank=True, unique=True, help_text="ID as registered in the biometric machine"
     )
 
-    # Activity Tracking
-    is_activity_tracking_enabled = models.BooleanField(
-        default=True, help_text="Enable activity tracking for this employee"
-    )
-
     # Week-off Configuration (Individual employee week-offs)
     week_off_monday = models.BooleanField(default=False, help_text="Monday is week-off")
     week_off_tuesday = models.BooleanField(default=False, help_text="Tuesday is week-off")

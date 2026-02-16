@@ -111,7 +111,7 @@ class Company(models.Model):
             if d_lower not in domains:
                 domains.append(d_lower)
         if "bluebix" in self.name.lower() and "softstandard" not in self.name.lower():
-            for d in ["bluebixhealth.com"]:
+            for d in ["bluebixhealth.com", "bluebixinc.com"]:
                 if d not in domains:
                     domains.append(d)
         if "softstandard" in self.name.lower():

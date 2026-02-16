@@ -3155,7 +3155,6 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                             dob=dob,
                             pseudo_name=pseudo_name,
                             annual_ctc=annual_ctc,
-                            is_activity_tracking_enabled=True,  # Enable activity tracking by default
                         )
 
                         # 6. Create Leave Balance (handled by signal)
