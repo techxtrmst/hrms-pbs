@@ -32,15 +32,25 @@ def superadmin_dashboard(request, selected_company=None, selected_company_id=Non
     """
     Main SuperAdmin dashboard with company context switching
     """
+    from django.utils import timezone
+
+    today = timezone.localtime().date()
+
     # Get all companies for dropdown
     companies = Company.objects.filter(is_active=True).order_by("name")
 
     # Get metrics based on selected company context
     metrics = get_dashboard_metrics(selected_company_id)
 
-    # Get company overview for table
+    # Get company overview for table - exclude employees whose exit_date is in the past
     company_overview = (
-        Company.objects.filter(is_active=True).annotate(employee_count=Count("employees")).order_by("name")
+        Company.objects.filter(is_active=True)
+        .annotate(
+            employee_count=Count(
+                "employees", filter=Q(employees__exit_date__isnull=True) | Q(employees__exit_date__gte=today)
+            )
+        )
+        .order_by("name")
     )
 
     context = {
@@ -97,9 +107,19 @@ def company_list_view(request):
     """
     Detailed company list view
     """
+    from django.utils import timezone
+
+    today = timezone.localtime().date()
+
     companies = Company.objects.annotate(
-        employee_count=Count("employees"),
-        active_employee_count=Count("employees", filter=Q(employees__user__is_active=True)),
+        employee_count=Count(
+            "employees", filter=Q(employees__exit_date__isnull=True) | Q(employees__exit_date__gte=today)
+        ),
+        active_employee_count=Count(
+            "employees",
+            filter=Q(employees__user__is_active=True)
+            & (Q(employees__exit_date__isnull=True) | Q(employees__exit_date__gte=today)),
+        ),
     ).order_by("name")
 
     # Search functionality
@@ -137,8 +157,16 @@ def employee_list_view(request, selected_company=None, selected_company_id=None)
         except (ValueError, Company.DoesNotExist):
             pass
 
-    # Base queryset
-    employees = Employee.objects.select_related("user", "company", "manager").order_by("-date_of_joining")
+    # Base queryset - exclude employees whose exit_date is in the past
+    from django.utils import timezone
+
+    today = timezone.localtime().date()
+
+    employees = (
+        Employee.objects.filter(Q(exit_date__isnull=True) | Q(exit_date__gte=today))
+        .select_related("user", "company", "manager")
+        .order_by("-date_of_joining")
+    )
 
     # Apply company filter
     if selected_company_id:

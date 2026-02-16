@@ -297,18 +297,10 @@
                 {% if employee_pf_rounded > 0 or employer_pf_rounded > 0 %}
                 <div class="label" style="font-weight: 700; color: #000;">CONTRIBUTIONS</div>
                 <table style="width: 100%; margin-bottom: 0; border-spacing: 0; border-collapse: collapse;">
-                    {% if employee_pf_rounded > 0 %}
                     <tr>
-                        <td style="padding: 2px 0;">Employee PF</td>
-                        <td style="text-align: right; padding: 2px 0;">{{ employee_pf_rounded|floatformat:2 }}</td>
+                        <td style="padding: 2px 0;">Provident Fund</td>
+                        <td style="text-align: right; padding: 2px 0;">{{ total_contributions|floatformat:2 }}</td>
                     </tr>
-                    {% endif %}
-                    {% if employer_pf_rounded > 0 %}
-                    <tr>
-                        <td style="padding: 2px 0;">Employer PF</td>
-                        <td style="text-align: right; padding: 2px 0;">{{ employer_pf_rounded|floatformat:2 }}</td>
-                    </tr>
-                    {% endif %}
                     <tr style="font-weight: 700;">
                         <td style="padding: 2px 0;">Total Contributions (B)</td>
                         <td style="text-align: right; padding: 2px 0;">{{ total_contributions|floatformat:2 }}</td>

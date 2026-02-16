@@ -3470,10 +3470,12 @@ def download_payslip_template(request):
 
     ws.auto_filter.ref = f"A2:{get_column_letter(len(headers))}2"
 
-    # Optionally add sample data from active employees
-    employees = Employee.objects.filter(company=request.user.company, is_active=True).select_related(
-        "user", "location"
-    )[:5]
+    # Add all active employees with their complete details
+    employees = (
+        Employee.objects.filter(company=request.user.company, is_active=True)
+        .select_related("user", "location")
+        .order_by("badge_id")
+    )
     for row_num, emp in enumerate(employees, 3):
         # Employee Number - with red font (Col 1)
         cell = ws.cell(row=row_num, column=1, value=emp.badge_id)

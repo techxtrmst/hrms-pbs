@@ -609,8 +609,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="small text-muted mb-1">Compliance: {{
-                                working_hours_compliance.compliance_percentage }}%</div>
+                            <div class="small text-muted mb-1">Compliance: {{ working_hours_compliance.compliance_percentage }}%</div>
                             <div class="progress-compact" style="height: 10px;">
                                 <div class="progress-bar-compact"
                                     style="--bar-color: var(--success); --p: {{ working_hours_compliance.compliance_percentage|default:0 }}%; width: var(--p);">
@@ -931,8 +930,7 @@
                                     <label class="form-label fw-bold small text-uppercase">System Role</label>
                                     <select name="role" class="form-select border-0 bg-light">
                                         {% for role_val, role_label in roles %}
-                                        <option value="{{ role_val }}" {% if employee.user.role==role_val %}selected{%
-                                            endif %}>
+                                        <option value="{{ role_val }}" {% if employee.user.role == role_val %}selected{% endif %}>
                                             {{ role_label }}
                                         </option>
                                         {% endfor %}
@@ -993,85 +991,89 @@
                                 </div>
                             </div>
                         </div>
-                    </div><!-- .container-fluid -->
-                    {% endblock %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
-                    {% block extra_js %}
-                    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-                    <script>
-                        document.addEventListener('DOMContentLoaded', function () {
-                            const ctx = document.getElementById('punctualityChart');
-                            if (ctx) {
-                                const dataStr = '{{ punctuality_analysis.clock_in_times_json|safe|escapejs }}';
-                                if (dataStr && dataStr !== '[]') {
-                                    const rawData = JSON.parse(dataStr);
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('punctualityChart');
+        if (ctx) {
+            const dataStr = '{{ punctuality_analysis.clock_in_times_json|safe|escapejs }}';
+            if (dataStr && dataStr !== '[]') {
+                const rawData = JSON.parse(dataStr);
 
-                                    const initChart = () => {
-                                        if (window.myChart) window.myChart.destroy();
-                                        window.myChart = new Chart(ctx, {
-                                            type: 'line',
-                                            data: {
-                                                labels: rawData.map(d => d.date),
-                                                datasets: [{
-                                                    label: 'Clock-In Time',
-                                                    data: rawData.map(d => {
-                                                        const [hours, minutes] = d.time.split(':');
-                                                        return parseInt(hours) + parseInt(minutes) / 60;
-                                                    }),
-                                                    borderColor: '#5b47fb',
-                                                    backgroundColor: 'rgba(91, 71, 251, 0.1)',
-                                                    borderWidth: 2,
-                                                    fill: true,
-                                                    tension: 0.4,
-                                                    pointRadius: 4,
-                                                    pointBackgroundColor: rawData.map(d =>
-                                                        d.is_late ? '#ef4444' : d.is_grace ? '#f59e0b' : '#10b981'
-                                                    ),
-                                                    pointBorderColor: '#fff',
-                                                    pointBorderWidth: 2
-                                                }]
-                                            },
-                                            options: {
-                                                responsive: true,
-                                                maintainAspectRatio: false,
-                                                plugins: {
-                                                    legend: { display: false },
-                                                    tooltip: {
-                                                        callbacks: {
-                                                            label: function (context) {
-                                                                const hours = Math.floor(context.raw);
-                                                                const minutes = Math.round((context.raw - hours) * 60);
-                                                                return `Clock-In: ${hours}:${minutes.toString().padStart(2, '0')}`;
-                                                            }
-                                                        }
-                                                    }
-                                                },
-                                                scales: {
-                                                    y: {
-                                                        ticks: {
-                                                            callback: function (value) {
-                                                                const hours = Math.floor(value);
-                                                                const minutes = Math.round((value - hours) * 60);
-                                                                return `${hours}:${minutes.toString().padStart(2, '0')}`;
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        });
-                                    };
-
-                                    initChart();
-
-                                    const tabEl = document.querySelector('button[data-bs-target="#attendance"]');
-                                    if (tabEl) {
-                                        tabEl.addEventListener('shown.bs.tab', function () {
-                                            initChart();
-                                        });
+                const initChart = () => {
+                    if (window.myChart) window.myChart.destroy();
+                    window.myChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: rawData.map(d => d.date),
+                            datasets: [{
+                                label: 'Clock-In Time',
+                                data: rawData.map(d => {
+                                    const [hours, minutes] = d.time.split(':');
+                                    return parseInt(hours) + parseInt(minutes) / 60;
+                                }),
+                                borderColor: '#5b47fb',
+                                backgroundColor: 'rgba(91, 71, 251, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 4,
+                                pointBackgroundColor: rawData.map(d =>
+                                    d.is_late ? '#ef4444' : d.is_grace ? '#f59e0b' : '#10b981'
+                                ),
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            const hours = Math.floor(context.raw);
+                                            const minutes = Math.round((context.raw - hours) * 60);
+                                            return `Clock-In: ${hours}:${minutes.toString().padStart(2, '0')}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    ticks: {
+                                        callback: function (value) {
+                                            const hours = Math.floor(value);
+                                            const minutes = Math.round((value - hours) * 60);
+                                            return `${hours}:${minutes.toString().padStart(2, '0')}`;
+                                        }
                                     }
                                 }
                             }
                         }
                     });
-                    </script>
-                    {% endblock %}
+                };
+
+                initChart();
+
+                const tabEl = document.querySelector('button[data-bs-target="#attendance"]');
+                if (tabEl) {
+                    tabEl.addEventListener('shown.bs.tab', function () {
+                        initChart();
+                    });
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

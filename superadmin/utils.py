@@ -41,7 +41,8 @@ def get_dashboard_metrics(company_id=None):
     total_companies = Company.objects.filter(is_active=True).count()
 
     # Total Employees (filtered by company if selected)
-    employees_qs = Employee.objects.all()
+    # Exclude employees whose exit_date is in the past
+    employees_qs = Employee.objects.filter(Q(exit_date__isnull=True) | Q(exit_date__gte=today))
     if company_id:
         employees_qs = employees_qs.filter(company_id=company_id)
     total_employees = employees_qs.count()
@@ -107,9 +108,12 @@ def get_employee_lifecycle_data(company_id):
     Get employee lifecycle analytics for a specific company
     Returns list of dicts with employee stats
     """
+    today = timezone.localtime().date()
 
+    # Exclude employees whose exit_date is in the past
     employees = (
         Employee.objects.filter(company_id=company_id)
+        .filter(Q(exit_date__isnull=True) | Q(exit_date__gte=today))
         .select_related("user")
         .prefetch_related("attendances", "leave_requests")
     )
@@ -235,6 +239,7 @@ def get_leave_analytics(company_id, months=None, year=None):
     # Frequent leave takers (using same time window)
     frequent_takers = (
         Employee.objects.filter(company_id=company_id)
+        .filter(Q(exit_date__isnull=True) | Q(exit_date__gte=start_date))
         .annotate(
             leave_count=Count(
                 "leave_requests",
@@ -288,7 +293,11 @@ def get_attendance_heatmap_data(company_id, year=None, month=None):
         )
 
         # Calculate attendance percentage for the day
-        total_employees = Employee.objects.filter(company_id=company_id, is_active=True).count()
+        total_employees = (
+            Employee.objects.filter(company_id=company_id, is_active=True)
+            .filter(Q(exit_date__isnull=True) | Q(exit_date__gte=current_date))
+            .count()
+        )
         attendance_percentage = (day_attendance["present_count"] / total_employees * 100) if total_employees > 0 else 0
 
         daily_attendance[current_date.day] = {
@@ -304,7 +313,11 @@ def get_attendance_heatmap_data(company_id, year=None, month=None):
         current_date += timedelta(days=1)
 
     # Calculate overall statistics
-    total_employees = Employee.objects.filter(company_id=company_id, is_active=True).count()
+    total_employees = (
+        Employee.objects.filter(company_id=company_id, is_active=True)
+        .filter(Q(exit_date__isnull=True) | Q(exit_date__gte=first_day))
+        .count()
+    )
 
     # Monthly totals
     monthly_stats = Attendance.objects.filter(
@@ -325,6 +338,7 @@ def get_attendance_heatmap_data(company_id, year=None, month=None):
     # Get top late arrivals
     late_arrivals = (
         Employee.objects.filter(company_id=company_id)
+        .filter(Q(exit_date__isnull=True) | Q(exit_date__gte=first_day))
         .annotate(
             late_count=Count(
                 "attendances",
@@ -367,11 +381,24 @@ def get_company_summary(company_id):
     """
     Get comprehensive summary for a company
     """
-    company = Company.objects.get(id=company_id)
+    from django.utils import timezone
 
-    # Employee counts
-    total_employees = Employee.objects.filter(company_id=company_id).count()
-    active_employees = Employee.objects.filter(company_id=company_id, user__is_active=True).count()
+    company = Company.objects.get(id=company_id)
+    today = timezone.localtime().date()
+
+    # Employee counts - exclude employees whose exit_date is in the past
+    total_employees = (
+        Employee.objects.filter(company_id=company_id)
+        .filter(Q(exit_date__isnull=True) | Q(exit_date__gte=today))
+        .count()
+    )
+
+    active_employees = (
+        Employee.objects.filter(company_id=company_id, user__is_active=True)
+        .filter(Q(exit_date__isnull=True) | Q(exit_date__gte=today))
+        .count()
+    )
+
     inactive_employees = total_employees - active_employees
 
     # Locations

@@ -431,6 +431,17 @@
         user-select: text;
     }
 
+    .net-salary-value.sensitive {
+        filter: blur(6px);
+        transition: filter 0.3s ease;
+        user-select: none;
+    }
+
+    .net-salary-value.sensitive.show {
+        filter: blur(0);
+        user-select: text;
+    }
+
     .visibility-toggle {
         background: transparent;
         border: none;
@@ -538,11 +549,16 @@
                                 </td>
                                 <td class="text-muted">{{ slip.generated_at|date:"M d, Y" }}</td>
                                 <td>
-                                    <div class="salary-badge">
+                                    <div class="salary-badge" style="position: relative; display: inline-flex; align-items: center; gap: 0.5rem;">
                                         <i class="fas fa-check-circle"></i>
-                                        {% with curr=slip.employee.location.currency|default:slip.employee.company.currency|default:"INR" %}
-                                        {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{ slip.net_salary }}
-                                        {% endwith %}
+                                        <span class="net-salary-value sensitive" onclick="toggleNetSalary(this)" style="cursor: pointer;">
+                                            {% with curr=slip.employee.location.currency|default:slip.employee.company.currency|default:"INR" %}
+                                            {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{ slip.net_salary }}
+                                            {% endwith %}
+                                        </span>
+                                        <button class="visibility-toggle" onclick="toggleNetSalary(this)" title="Toggle Visibility" style="background: transparent; border: none; color: #166534; cursor: pointer; padding: 2px; font-size: 0.75rem;">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
                                     </div>
                                 </td>
                                 <td class="text-end">
@@ -583,11 +599,16 @@
 
                     <div class="payslip-info-item">
                         <span class="info-label">Net Salary</span>
-                        <span class="info-value">
-                            {% with curr=slip.employee.location.currency|default:slip.employee.company.currency|default:"INR" %}
-                            {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{ slip.net_salary }}
-                            {% endwith %}
-                        </span>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="info-value net-salary-value sensitive" onclick="toggleNetSalary(this)" style="cursor: pointer;">
+                                {% with curr=slip.employee.location.currency|default:slip.employee.company.currency|default:"INR" %}
+                                {% if curr == "USD" %}${% elif curr == "BDT" %}৳{% else %}₹{% endif %}{{ slip.net_salary }}
+                                {% endwith %}
+                            </span>
+                            <button class="visibility-toggle" onclick="toggleNetSalary(this)" title="Toggle Visibility" style="background: transparent; border: none; color: #64748b; cursor: pointer; padding: 2px; font-size: 0.75rem;">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -664,6 +685,26 @@
             valueSpan.classList.add('show');
             icon.classList.remove('fa-eye');
             icon.classList.add('fa-eye-slash');
+        }
+    }
+
+    function toggleNetSalary(element) {
+        // Find the closest parent that contains both the value and the button
+        const parent = element.closest('div');
+        const valueSpan = parent.querySelector('.net-salary-value.sensitive');
+        const button = parent.querySelector('.visibility-toggle');
+        const icon = button ? button.querySelector('i') : null;
+
+        if (valueSpan && icon) {
+            if (valueSpan.classList.contains('show')) {
+                valueSpan.classList.remove('show');
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            } else {
+                valueSpan.classList.add('show');
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            }
         }
     }
 </script>
