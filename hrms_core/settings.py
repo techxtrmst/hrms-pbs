@@ -190,6 +190,15 @@ USE_I18N = True
 
 USE_TZ = True
 
+# =============================================================================
+# Session Configuration (Prevent JSON parse errors from session timeouts)
+# =============================================================================
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 7 days (in seconds)
+SESSION_SAVE_EVERY_REQUEST = True  # Keep session alive during user activity
+SESSION_COOKIE_HTTPONLY = True  # Security: prevent JavaScript access to session cookie
+SESSION_COOKIE_SECURE = not DEBUG  # Use secure cookies in production (HTTPS only)
+SESSION_COOKIE_SAMESITE = "Lax"  # CSRF protection
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/

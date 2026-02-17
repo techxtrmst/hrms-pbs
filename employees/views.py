@@ -27,6 +27,7 @@ from core.error_handling import (
     safe_parse_location,
     safe_queryset_filter,
 )
+from core.utils import normalize_timezone
 
 from .forms import (
     EmployeeBulkImportForm,
@@ -1883,9 +1884,7 @@ def employee_detail(request, pk):
         map_data = []
         if map_attendance:
             # Determine timezone
-            import pytz
-
-            tz_name = employee.location.timezone if employee.location else "Asia/Kolkata"
+            tz_name = normalize_timezone(employee.location.timezone if employee.location else None)
             local_tz = pytz.timezone(tz_name)
 
             def format_local_time(dt):
@@ -1916,11 +1915,24 @@ def employee_detail(request, pk):
             )
 
             for log in logs:
+                try:
+                    lat = float(log.latitude)
+                    lng = float(log.longitude)
+                except (TypeError, ValueError):
+                    logger.warning(
+                        "Skipping invalid location log coordinates",
+                        employee_id=employee.id,
+                        log_id=log.id,
+                        latitude=log.latitude,
+                        longitude=log.longitude,
+                    )
+                    continue
+
                 title = "Location Punch" if log.log_type == "HOURLY" else "Movement Log"
                 map_data.append(
                     {
-                        "lat": float(log.latitude),
-                        "lng": float(log.longitude),
+                        "lat": lat,
+                        "lng": lng,
                         "title": f"{title} ({format_local_time(log.timestamp)})",
                         "type": "log",
                         "log_type": log.log_type,
@@ -3155,7 +3167,6 @@ class BulkEmployeeImportView(LoginRequiredMixin, CompanyAdminRequiredMixin, Form
                             dob=dob,
                             pseudo_name=pseudo_name,
                             annual_ctc=annual_ctc,
-                            is_activity_tracking_enabled=True,  # Enable activity tracking by default
                         )
 
                         # 6. Create Leave Balance (handled by signal)

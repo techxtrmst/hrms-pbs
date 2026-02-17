@@ -594,11 +594,11 @@
                             Gross, Net Pay, Payable Days, and all payroll components</p>
 
                         <div class="border-dashed p-4 rounded-3 text-muted position-relative" style="cursor: pointer;"
-                            onclick="document.getElementById('xlsx_file').click()">
+                            id="dropZone" onclick="document.getElementById('xlsx_file').click()">
                             <i class="fas fa-cloud-upload-alt fa-2x mb-2 text-primary"></i>
                             <p class="mb-0 fw-600">Drop Excel file or click</p>
-                            <input type="file" name="excel_file" id="xlsx_file" class="position-absolute"
-                                style="opacity: 0; inset: 0; cursor: pointer;" onchange="this.form.submit()">
+                            <input type="file" name="excel_file" id="xlsx_file" accept=".xlsx,.xls"
+                                style="display: none;" onchange="handleFileSelect(this)">
                         </div>
                     </form>
                 </div>
@@ -758,6 +758,64 @@
 </div>
 
 <script>
+    // Handle file selection and drag-and-drop
+    function handleFileSelect(input) {
+        if (input.files && input.files.length > 0) {
+            document.getElementById('bulkUploadForm').submit();
+        }
+    }
+
+    // Setup drag and drop
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('xlsx_file');
+
+        if (dropZone && fileInput) {
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+
+            // Highlight drop zone when item is dragged over it
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, unhighlight, false);
+            });
+
+            // Handle dropped files
+            dropZone.addEventListener('drop', handleDrop, false);
+        }
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function highlight(e) {
+            dropZone.classList.add('border-primary');
+            dropZone.style.backgroundColor = '#f0f8ff';
+        }
+
+        function unhighlight(e) {
+            dropZone.classList.remove('border-primary');
+            dropZone.style.backgroundColor = '';
+        }
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect(fileInput);
+            }
+        }
+    });
+
     function handleEmployeeSelect(select) {
         const option = select.options[select.selectedIndex];
         if (option) {

@@ -277,7 +277,6 @@ def add_employee_step3(request):
                 uan=finance_data.get("uan"),
                 pan_number=finance_data.get("pan_number"),
                 pf_enabled=finance_data.get("pf_enabled", False),
-                is_activity_tracking_enabled=True,  # Default to True for new employees
                 annual_ctc=finance_data.get("annual_ctc"),
             )
 
