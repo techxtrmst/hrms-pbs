@@ -3,7 +3,11 @@ import contextlib
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
+from django.db import models
+from django.db.models import Count
 from django.shortcuts import redirect, render
+
+from companies.models import Company
 
 from .models import Employee
 from .multi_step_forms import FinanceDetailsForm, JobDetailsForm, PersonalInfoForm
@@ -12,10 +16,81 @@ User = get_user_model()
 
 
 @login_required
+def add_employee_step0(request):
+    """Step 0: Company & Location Selection"""
+    if request.method == "POST":
+        company_id = request.POST.get("company_id")
+        location_id = request.POST.get("location_id")
+
+        if not company_id or not location_id:
+            messages.error(request, "Please select both company and location.")
+            return redirect("add_employee_step0")
+
+        # Save to session
+        request.session["employee_company_location"] = {
+            "company_id": int(company_id),
+            "location_id": int(location_id),
+        }
+
+        messages.success(request, "Company and location selected! Now add personal information.")
+        return redirect("add_employee_step1")
+
+    # Get companies based on user role
+    if (
+        request.user.is_superuser
+        or request.user.role == User.Role.SUPERADMIN
+        or request.user.role == User.Role.COMPANY_ADMIN
+    ):
+        # Superadmin and Company Admin can see all active companies
+        companies = (
+            Company.objects.filter(is_active=True)
+            .annotate(
+                employee_count=Count("employees", distinct=True),
+                location_count=Count("locations", filter=models.Q(locations__is_active=True), distinct=True),
+            )
+            .order_by("name")
+        )
+    else:
+        messages.error(request, "You don't have permission to add employees.")
+        return redirect("employee_list")
+
+    # Check if company/location already selected in session
+    selected_company_id = None
+    company_location_data = request.session.get("employee_company_location", {})
+    if company_location_data:
+        selected_company_id = company_location_data.get("company_id")
+
+    return render(
+        request,
+        "employees/add_employee_step0.html",
+        {
+            "companies": companies,
+            "selected_company_id": selected_company_id,
+        },
+    )
+
+
+@login_required
 def add_employee_step1(request):
     """Step 1: Personal Information"""
+    # Check if step 0 is completed
+    if "employee_company_location" not in request.session:
+        messages.warning(request, "Please select company and location first.")
+        return redirect("add_employee_step0")
+
+    # Import models at the beginning
+    from companies.models import Location
+
+    company_location_data = request.session["employee_company_location"]
+    company_id = company_location_data.get("company_id")
+    location_id = company_location_data.get("location_id")
+
+    # Get company and location objects early
+    company = Company.objects.get(id=company_id)
+    location = Location.objects.get(id=location_id)
+
     if request.method == "POST":
-        form = PersonalInfoForm(request.POST, user=request.user)
+        form = PersonalInfoForm(request.POST, user=request.user, company_id=company_id, location_id=location_id)
         if form.is_valid():
             # Collect emergency contacts from POST data
             emergency_contacts = []
@@ -61,8 +136,8 @@ def add_employee_step1(request):
                 "emergency_contact": form.cleaned_data.get("emergency_contact", ""),
                 "badge_id": form.cleaned_data["badge_id"],
                 "role": form.cleaned_data["role"],
-                "company_id": form.cleaned_data["company_selection"].id,
-                "location_id": form.cleaned_data["location"].id if form.cleaned_data.get("location") else None,
+                "company_id": company_id,
+                "location_id": location_id,
                 "pseudo_name": form.cleaned_data.get("pseudo_name", ""),
             }
 
@@ -74,56 +149,64 @@ def add_employee_step1(request):
     else:
         # Pre-fill from session if available
         initial_data = request.session.get("employee_personal_data", {})
-        form = PersonalInfoForm(initial=initial_data, user=request.user)
+        form = PersonalInfoForm(initial=initial_data, user=request.user, company_id=company_id, location_id=location_id)
 
     # Calculate Company Prefix and Context
     company_prefix = "EMP"
     email_placeholder = "e.g. john.doe@gmail.com"
     next_sequence_placeholder = "001"
+    location_code = "XXX"
 
-    if request.user.company:
-        c_name = request.user.company.name.lower()
-        company = request.user.company
+    c_name = company.name.lower()
 
-        # Calculate next sequence based on highest existing badge ID number
-        try:
-            # Get all badge IDs for the company
-            existing_ids = Employee.objects.filter(company=company).values_list("badge_id", flat=True)
+    # Calculate next sequence based on highest existing badge ID number
+    try:
+        # Get all badge IDs for the company
+        existing_ids = Employee.objects.filter(company=company).values_list("badge_id", flat=True)
 
-            max_number = 0
-            import re
+        max_number = 0
+        import re
 
-            for bid in existing_ids:
-                if bid:
-                    # Extract all matches of digits
-                    numbers = re.findall(r"\d+", bid)
-                    if numbers:
-                        # Take the last group of digits as the ID number (usually at the end)
-                        try:
-                            num = int(numbers[-1])
-                            if num > max_number:
-                                max_number = num
-                        except ValueError:
-                            continue
+        for bid in existing_ids:
+            if bid:
+                # Extract all matches of digits
+                numbers = re.findall(r"\d+", bid)
+                if numbers:
+                    # Take the last group of digits as the ID number (usually at the end)
+                    try:
+                        num = int(numbers[-1])
+                        if num > max_number:
+                            max_number = num
+                    except ValueError:
+                        continue
 
-            next_sequence_placeholder = f"{max_number + 1:03d}"
-        except Exception:
-            # Fallback to 001 if any error occurs
-            next_sequence_placeholder = "001"
+        next_sequence_placeholder = f"{max_number + 1:03d}"
+    except Exception:
+        # Fallback to 001 if any error occurs
+        next_sequence_placeholder = "001"
 
-        if "petabytz" in c_name or "petabytes" in c_name:
-            company_prefix = "PBT"
-            email_placeholder = "e.g. john.doe@petabytz.com"
-        elif "softstandard" in c_name:
-            company_prefix = "SSS"
-            email_placeholder = "e.g. john.doe@softstandard.com, @bluebixinc.com, @contrivainc.com, @getfulltimejob.com"
-        elif "bluebix" in c_name:
-            company_prefix = "BBS"
-            email_placeholder = "e.g. john.doe@bluebix.com, @bluebixhealth.com"
-        else:
-            company_prefix = request.user.company.name[:3].upper()
-            domain = c_name.replace(" ", "") + ".com"
-            email_placeholder = f"e.g. john.doe@{domain}"
+    if "petabytz" in c_name or "petabytes" in c_name:
+        company_prefix = "PBT"
+        email_placeholder = "e.g. john.doe@petabytz.com"
+    elif "softstandard" in c_name:
+        company_prefix = "SSS"
+        email_placeholder = "e.g. john.doe@softstandard.com, @bluebixinc.com, @contrivainc.com, @getfulltimejob.com"
+    elif "bluebix" in c_name:
+        company_prefix = "BBS"
+        email_placeholder = "e.g. john.doe@bluebix.com, @bluebixhealth.com"
+    else:
+        company_prefix = company.name[:3].upper()
+        domain = c_name.replace(" ", "") + ".com"
+        email_placeholder = f"e.g. john.doe@{domain}"
+
+    # Determine location code
+    # Special handling for India location - use HYD
+    if location.name and "india" in location.name.lower():
+        location_code = "HYD"
+    elif location.city:
+        location_code = location.city[:3].upper()
+    else:
+        location_code = location.name[:3].upper() if location.name else "LOC"
 
     return render(
         request,
@@ -132,8 +215,11 @@ def add_employee_step1(request):
             "form": form,
             "step": 1,
             "company_prefix": company_prefix,
+            "location_code": location_code,
             "next_sequence": next_sequence_placeholder,
             "email_placeholder": email_placeholder,
+            "company": company,
+            "location": location,
         },
     )
 

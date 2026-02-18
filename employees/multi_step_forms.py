@@ -57,9 +57,32 @@ class PersonalInfoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user", None)
+        self.company_id = kwargs.pop("company_id", None)
+        self.location_id = kwargs.pop("location_id", None)
         super().__init__(*args, **kwargs)
 
-        # Company Isolation Logic
+        # If company_id and location_id are provided, use them (from step 0)
+        if self.company_id and self.location_id:
+            from companies.models import Location
+
+            self.company = Company.objects.get(id=self.company_id)
+            location = Location.objects.get(id=self.location_id)
+
+            # Set company and location
+            self.fields["company_selection"].queryset = Company.objects.filter(pk=self.company.id)
+            self.fields["company_selection"].initial = self.company
+            self.fields["company_selection"].widget = forms.HiddenInput()
+
+            self.fields["location"].queryset = Location.objects.filter(pk=location.id)
+            self.fields["location"].initial = location
+            self.fields["location"].widget = forms.HiddenInput()
+
+            return
+
+        # Store company for validation
+        self.company = None
+
+        # Company Isolation Logic (fallback for old flow)
         if self.user and self.user.role == User.Role.COMPANY_ADMIN:
             self.fields["company_selection"].queryset = Company.objects.filter(pk=self.user.company.id)
             self.fields["company_selection"].initial = self.user.company
@@ -80,9 +103,17 @@ class PersonalInfoForm(forms.ModelForm):
         if User.objects.filter(email=email).exists():
             raise ValidationError("A user with this email address already exists. Please use a different email.")
 
-        # Domain Validation
-        company = self.cleaned_data.get("company_selection")
-        if not company and self.user and self.user.company:
+        # Domain Validation - use the company from step 0 if available
+        company = None
+
+        # Priority 1: Use company from step 0 (self.company set in __init__)
+        if hasattr(self, "company") and self.company:
+            company = self.company
+        # Priority 2: Use company from form selection
+        elif self.cleaned_data.get("company_selection"):
+            company = self.cleaned_data.get("company_selection")
+        # Priority 3: Use logged-in user's company (fallback)
+        elif self.user and self.user.company:
             company = self.user.company
 
         if company and not company.is_email_domain_allowed(email):
@@ -96,7 +127,12 @@ class PersonalInfoForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
 
-        # Manually handle company due to disabled field
+        # If company was set from step 0, use that
+        if hasattr(self, "company") and self.company:
+            cleaned_data["company_selection"] = self.company
+            return cleaned_data
+
+        # Manually handle company due to disabled field (old flow)
         if self.user and self.user.role == User.Role.COMPANY_ADMIN:
             cleaned_data["company_selection"] = self.user.company
 

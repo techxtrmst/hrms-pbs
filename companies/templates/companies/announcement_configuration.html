@@ -969,7 +969,7 @@
             </h2>
         </div>
 
-        <form method="POST" action="{% url 'announcement_configuration' %}" enctype="multipart/form-data">
+        <form method="POST" action="{% url 'companies:announcement_configuration' %}" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="hidden" name="action" value="create">
 
@@ -1136,7 +1136,7 @@
             <button class="btn-close" onclick="closeEditModal()">&times;</button>
         </div>
 
-        <form method="POST" action="{% url 'announcement_configuration' %}" enctype="multipart/form-data">
+        <form method="POST" action="{% url 'companies:announcement_configuration' %}" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="announcement_id" id="edit_announcement_id">

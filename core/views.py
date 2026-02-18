@@ -309,6 +309,46 @@ def admin_dashboard(request):
     early_departures = len(early_departures_list)
     on_duty_count = len(on_duty_list)
 
+    # --- Missed Clock-in Logic ---
+    # Get employees who should be working today but haven't clocked in
+    missed_clockin_list = []
+
+    # Get all employee IDs who have attendance today
+    clocked_in_employee_ids = set(today_attendance.values_list("employee_id", flat=True))
+
+    # Filter employees who should be working today
+    for emp in employees:
+        # Skip if employee already has attendance record
+        if emp.id in clocked_in_employee_ids:
+            continue
+
+        # Check if today is a week off for this employee
+        if emp.is_week_off(today):
+            continue
+
+        # Check if employee is on approved leave today
+        is_on_leave = LeaveRequest.objects.filter(
+            employee=emp, status="APPROVED", start_date__lte=today, end_date__gte=today
+        ).exists()
+
+        if is_on_leave:
+            continue
+
+        # Check if today is a holiday for this employee's location
+        is_holiday = (
+            Holiday.objects.filter(company=company, date=today, is_active=True)
+            .filter(Q(location=emp.location) | Q(location__isnull=True))
+            .exists()
+        )
+
+        if is_holiday:
+            continue
+
+        # If we reach here, employee should be working but hasn't clocked in
+        missed_clockin_list.append(emp)
+
+    missed_clockin = len(missed_clockin_list)
+
     # --- Department Performance Logic ---
     # Get distinct departments with improved deduplication
     departments_raw = employees.values_list("department", flat=True).distinct()
@@ -625,9 +665,11 @@ def admin_dashboard(request):
         "late_arrivals": late_arrivals,
         "early_departures": early_departures,
         "on_duty_count": on_duty_count,
+        "missed_clockin": missed_clockin,
         "late_arrivals_list": late_arrivals_list,
         "early_departures_list": early_departures_list,
         "on_duty_list": on_duty_list,
+        "missed_clockin_list": missed_clockin_list,
         "department_performance": department_performance,
         "on_time": on_time,
         "work_from_office": work_from_office,

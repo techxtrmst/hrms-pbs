@@ -402,7 +402,7 @@
         if (!name) return alert('Please enter a name');
 
         try {
-            const response = await fetch("{% url 'quick_add_designation' %}", {
+            const response = await fetch("{% url 'companies:quick_add_designation' %}", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -447,7 +447,7 @@
         if (!name) return alert('Please enter a name');
 
         try {
-            const response = await fetch("{% url 'quick_add_department' %}", {
+            const response = await fetch("{% url 'companies:quick_add_department' %}", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -492,7 +492,7 @@
         if (!name || !start || !end) return alert('Please fill all fields');
 
         try {
-            const response = await fetch("{% url 'quick_add_shift' %}", {
+            const response = await fetch("{% url 'companies:quick_add_shift' %}", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

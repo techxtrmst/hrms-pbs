@@ -103,18 +103,31 @@ class Company(models.Model):
 
     def get_allowed_email_domains_list(self):
         """Returns list of allowed email domains"""
-        domains = [d.strip().lower() for d in self.email_domain.split(",")]
-        # Also include allowed_domains that look like they could be email domains
-        access_domains = self.get_allowed_domains_list()
-        for d in access_domains:
-            d_lower = d.lower()
-            if d_lower not in domains:
-                domains.append(d_lower)
-        if "bluebix" in self.name.lower() and "softstandard" not in self.name.lower():
-            for d in ["bluebixhealth.com", "bluebixinc.com"]:
+        # First, check if there are any EmailDomain entries for this company
+        email_domain_entries = self.email_domains.filter(is_active=True)
+
+        if email_domain_entries.exists():
+            # Use the new EmailDomain model
+            domains = [ed.domain.lower() for ed in email_domain_entries]
+        else:
+            # Fallback to old email_domain field for backward compatibility
+            domains = [d.strip().lower() for d in self.email_domain.split(",")]
+            # Also include allowed_domains that look like they could be email domains
+            access_domains = self.get_allowed_domains_list()
+            for d in access_domains:
+                d_lower = d.lower()
+                if d_lower not in domains:
+                    domains.append(d_lower)
+
+        # Legacy company-specific domains (keep for backward compatibility)
+        company_name_lower = self.name.lower()
+
+        if "bluebix" in company_name_lower:
+            for d in ["bluebixhealth.com", "bluebixinc.com", "bluebix.com"]:
                 if d not in domains:
                     domains.append(d)
-        if "softstandard" in self.name.lower():
+
+        if "softstandard" in company_name_lower:
             for d in [
                 "bluebixinc.com",
                 "oppora.ai",
@@ -619,3 +632,54 @@ class BiometricDevice(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.ip_address})"
+
+
+class EmailDomain(models.Model):
+    """
+    Model for managing allowed email domains for employee creation
+    """
+
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="email_domains")
+    domain = models.CharField(max_length=255, help_text="Email domain (e.g., petabytz.com, example.org)")
+    is_primary = models.BooleanField(default=False, help_text="Mark as primary domain for the company")
+    is_active = models.BooleanField(default=True)
+    description = models.CharField(
+        max_length=255, blank=True, null=True, help_text="Optional description for this domain"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.CharField(max_length=255, blank=True, null=True, help_text="Admin who added this domain")
+
+    class Meta:
+        unique_together = ["company", "domain"]
+        ordering = ["-is_primary", "domain"]
+        verbose_name = "Email Domain"
+        verbose_name_plural = "Email Domains"
+
+    def __str__(self):
+        primary_tag = " (Primary)" if self.is_primary else ""
+        return f"{self.domain}{primary_tag}"
+
+    def save(self, *args, **kwargs):
+        # Normalize domain to lowercase
+        self.domain = self.domain.lower().strip()
+
+        # If this is being set as primary, unset other primary domains
+        if self.is_primary:
+            EmailDomain.objects.filter(company=self.company, is_primary=True).exclude(pk=self.pk).update(
+                is_primary=False
+            )
+
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        import re
+
+        from django.core.exceptions import ValidationError
+
+        # Validate domain format
+        domain_pattern = (
+            r"^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+        )
+        if not re.match(domain_pattern, self.domain):
+            raise ValidationError({"domain": "Invalid domain format"})

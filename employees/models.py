@@ -219,11 +219,14 @@ class Employee(models.Model):
             location_name = self.location.name.upper()
 
             # Determine prefix based on location
-            if "HYDERABAD" in location_name or "HYD" in location_name:
+            # Check for India or Hyderabad locations
+            if "HYDERABAD" in location_name or "HYD" in location_name or "INDIA" in location_name:
                 if self.company.name.upper() in ["PETABYTZ", "PETABYTES"]:
                     prefix = "PBTHYD"
                 elif self.company.name.upper() in ["SOFTSTANDARD", "SOFT STANDARD"]:
                     prefix = "SSSHYD"
+                elif "BLUEBIX" in self.company.name.upper():
+                    prefix = "BBSHYD"
                 else:
                     # Default prefix for other companies in Hyderabad
                     prefix = "EMPHYD"

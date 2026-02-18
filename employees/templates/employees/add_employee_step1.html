@@ -60,8 +60,23 @@
             <i class="fas fa-building me-2 text-primary"></i>Organization Details
         </h2>
 
+        <h2 class="section-title mt-5">
+            <i class="fas fa-building me-2 text-primary"></i>Selected Company & Location
+        </h2>
+
+        <div class="alert alert-info">
+            <div class="row">
+                <div class="col-md-6">
+                    <strong><i class="fas fa-building me-2"></i>Company:</strong> {{ company.name }}
+                </div>
+                <div class="col-md-6">
+                    <strong><i class="fas fa-map-marker-alt me-2"></i>Location:</strong> {{ location.name }}, {{ location.city }}
+                </div>
+            </div>
+        </div>
+
         {% if form.company_selection.field.widget.attrs.disabled %}
-        <div class="mb-4">
+        <div class="mb-4" style="display: none;">
             <label class="form-label">Company</label>
             <div class="company-selector">
                 {% for radio in form.company_selection %}
@@ -126,21 +141,23 @@
                         {{ company_prefix }}
                     </span>
 
-                    <!-- Location Code -->
-                    <select class="form-select" id="id_location_code_select"
-                        style="max-width: 110px; background-color: #f8f9fa;">
-                        <option value="HYD">HYD</option>
-                        <option value="US">US</option>
-                        <option value="DHAKA">DHAKA</option>
-                    </select>
+                    <!-- Location Code - Now Clickable -->
+                    <span class="input-group-text bg-light fw-bold text-success" id="id_location_display"
+                          style="cursor: pointer; user-select: none;"
+                          data-bs-toggle="modal"
+                          data-bs-target="#locationModal"
+                          title="Click to change location">
+                        {{ location_code }}
+                        <i class="fas fa-edit ms-2" style="font-size: 0.8rem;"></i>
+                    </span>
 
                     <!-- Number -->
                     <input type="text" class="form-control" id="id_number_input" placeholder="{{ next_sequence }}"
-                        maxlength="6">
+                        value="{{ next_sequence }}" maxlength="6">
                 </div>
 
 
-                <small class="text-muted">Auto-generated format: <span id="preview_id">...</span></small>
+                <small class="text-muted">Format: <span id="preview_id">{{ company_prefix }}-{{ location_code }}-{{ next_sequence }}</span></small>
                 {% if form.badge_id.errors %}
                 <div class="text-danger">{{ form.badge_id.errors.0 }}</div>
                 {% endif %}
@@ -150,52 +167,156 @@
                 document.addEventListener('DOMContentLoaded', function () {
                     const realInput = document.getElementById('real_badge_id');
                     const prefixSpan = document.getElementById('id_prefix_display');
-                    const locSelect = document.getElementById('id_location_code_select');
+                    const locSpan = document.getElementById('id_location_display');
                     const numInput = document.getElementById('id_number_input');
                     const previewSpan = document.getElementById('preview_id');
                     const pseudoNameContainer = document.getElementById('pseudo_name_container');
+                    const locationField = document.getElementById('location_field') || document.querySelector('select[name="location"]') || document.querySelector('input[name="location"]');
+                    const companyId = {{ company.id }};
+
+                    console.log('Location field:', locationField);
+                    console.log('Company ID:', companyId);
 
                     function updateId() {
-                        const prefix = prefixSpan.textContent.trim();
-                        const loc = locSelect.value;
+                        const prefix = prefixSpan.textContent.trim().replace(/<i.*<\/i>/g, '').trim();
+                        const loc = locSpan.textContent.trim().replace(/<i.*<\/i>/g, '').trim();
                         const num = numInput.value.trim();
 
-                        const fullId = prefix + loc + num;
+                        const fullId = prefix + '-' + loc + '-' + num;
                         realInput.value = fullId;
                         previewSpan.textContent = fullId;
                     }
 
                     function updatePseudoNameVisibility() {
-                        const selectedCompanyLabel = document.querySelector('input[name="company_selection"]:checked + label');
-                        if (selectedCompanyLabel) {
-                            const companyName = selectedCompanyLabel.textContent.trim().toLowerCase();
-                            if (companyName.includes('bluebix') || companyName.includes('softstandard')) {
-                                pseudoNameContainer.style.display = 'block';
-                            } else {
-                                pseudoNameContainer.style.display = 'none';
-                            }
+                        // Check company name from the displayed company info
+                        const companyName = "{{ company.name }}".toLowerCase();
+                        if (companyName.includes('bluebix') || companyName.includes('softstandard')) {
+                            pseudoNameContainer.style.display = 'block';
                         } else {
-                            // If only one company (fixed for admin)
-                            const firstRadio = document.querySelector('input[name="company_selection"]');
-                            if (firstRadio && firstRadio.disabled) {
-                                const label = document.querySelector(`label[for="${firstRadio.id}"]`);
-                                if (label) {
-                                    const companyName = label.textContent.trim().toLowerCase();
-                                    if (companyName.includes('bluebix') || companyName.includes('softstandard')) {
-                                        pseudoNameContainer.style.display = 'block';
-                                    }
-                                }
-                            }
+                            pseudoNameContainer.style.display = 'none';
                         }
                     }
 
-                    // Event Listeners
-                    locSelect.addEventListener('change', updateId);
-                    numInput.addEventListener('input', updateId);
+                    // Load locations when modal opens
+                    const locationModal = document.getElementById('locationModal');
+                    if (locationModal) {
+                        locationModal.addEventListener('show.bs.modal', async function () {
+                            await loadLocationsForModal(companyId);
+                        });
+                    }
 
-                    document.querySelectorAll('input[name="company_selection"]').forEach(radio => {
-                        radio.addEventListener('change', updatePseudoNameVisibility);
-                    });
+                    async function loadLocationsForModal(companyId) {
+                        const locationGrid = document.getElementById('modal-location-grid');
+                        locationGrid.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+
+                        try {
+                            const response = await fetch(`/api/companies/${companyId}/locations/`);
+
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+
+                            const data = await response.json();
+                            locationGrid.innerHTML = '';
+
+                            if (data.locations && data.locations.length > 0) {
+                                data.locations.forEach(location => {
+                                    // Determine icon based on location name
+                                    let icon = 'fa-map-marker-alt';
+                                    const locationName = location.name.toLowerCase();
+                                    if (locationName.includes('india') || locationName.includes('hyd') || locationName.includes('delhi') || locationName.includes('mumbai')) {
+                                        icon = 'fa-flag';
+                                    } else if (locationName.includes('us') || locationName.includes('america')) {
+                                        icon = 'fa-flag-usa';
+                                    } else if (locationName.includes('dhaka') || locationName.includes('bangladesh')) {
+                                        icon = 'fa-globe-asia';
+                                    }
+
+                                    const locationDiv = document.createElement('div');
+                                    locationDiv.className = 'location-option-modal';
+                                    locationDiv.setAttribute('data-location-id', location.id);
+                                    locationDiv.setAttribute('data-location-name', location.name);
+
+                                    // Check if this is the currently selected location
+                                    if (locationField && location.id == locationField.value) {
+                                        locationDiv.classList.add('selected');
+                                    }
+
+                                    locationDiv.innerHTML = `
+                                        <div class="location-icon-modal">
+                                            <i class="fas ${icon}"></i>
+                                        </div>
+                                        <div class="location-name-modal">${location.name}</div>
+                                        <div class="location-code-modal">${location.city || ''} ${location.country_code || ''}</div>
+                                    `;
+
+                                    locationDiv.addEventListener('click', function() {
+                                        selectLocationFromModal(location.id, location.name, companyId);
+                                    });
+
+                                    locationGrid.appendChild(locationDiv);
+                                });
+                            } else {
+                                locationGrid.innerHTML = '<p class="text-muted text-center">No active locations found.</p>';
+                            }
+                        } catch (error) {
+                            console.error('Error loading locations:', error);
+                            locationGrid.innerHTML = `
+                                <div class="alert alert-danger mb-0">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Error loading locations. Please refresh the page and try again.
+                                    <br><small>Error: ${error.message}</small>
+                                </div>
+                            `;
+                        }
+                    }
+
+                    async function selectLocationFromModal(locationId, locationName, companyId) {
+                        // Update the hidden location field
+                        if (locationField) {
+                            locationField.value = locationId;
+                        }
+
+                        // Fetch the new location code
+                        try {
+                            const response = await fetch(`/api/companies/${companyId}/employee-id-format/?location_id=${locationId}`);
+
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+
+                            const data = await response.json();
+
+                            // Update the location code display
+                            locSpan.innerHTML = data.location_code + ' <i class="fas fa-edit ms-2" style="font-size: 0.8rem;"></i>';
+
+                            // Update the employee ID
+                            updateId();
+
+                            // Update the "Selected Company & Location" alert
+                            const locationDisplay = document.querySelector('.alert-info .col-md-6:last-child');
+                            if (locationDisplay) {
+                                locationDisplay.innerHTML = `<strong><i class="fas fa-map-marker-alt me-2"></i>Location:</strong> ${locationName}`;
+                            }
+
+                            // Close the modal
+                            if (locationModal) {
+                                const modal = bootstrap.Modal.getInstance(locationModal);
+                                if (modal) {
+                                    modal.hide();
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error updating location:', error);
+                            alert('Error updating location. Please try again.\nError: ' + error.message);
+                        }
+                    }
+
+                    // Make selectLocationFromModal available globally
+                    window.selectLocationFromModal = selectLocationFromModal;
+
+                    // Event Listeners
+                    numInput.addEventListener('input', updateId);
 
                     // Initial Call
                     updateId();
@@ -231,13 +352,9 @@
                 <label class="form-label">Date of Birth</label>
                 {% render_field form.dob class="form-control" %}
             </div>
-            <div class="col-md-4">
-                <label class="form-label">Work Location <span class="text-danger">*</span></label>
-                {% render_field form.location class="form-select" %}
-                {% if form.location.errors %}
-                <div class="text-danger">{{ form.location.errors.0 }}</div>
-                {% endif %}
-            </div>
+
+            <!-- Hidden location field - already selected in step 0 -->
+            {% render_field form.location class="d-none" id="location_field" %}
 
             <div class="col-md-12">
                 <label class="form-label">Permanent Address</label>
@@ -296,6 +413,26 @@
             </button>
         </div>
     </form>
+</div>
+
+<!-- Location Selection Modal -->
+<div class="modal fade" id="locationModal" tabindex="-1" aria-labelledby="locationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="locationModalLabel">
+                    <i class="fas fa-map-marker-alt me-2"></i>Select Work Location
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3">Choose the primary work location for this employee</p>
+                <div id="modal-location-grid" class="location-grid">
+                    <!-- Locations will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -405,6 +542,112 @@
     .btn-outline-primary:hover {
         background-color: #5b5fc7;
         color: white;
+    }
+
+    /* Location Modal Styles */
+    .location-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 0.85rem;
+    }
+
+    .location-option-modal {
+        position: relative;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem 0.75rem;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: white;
+        text-align: center;
+        overflow: hidden;
+    }
+
+    .location-option-modal::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+
+    .location-option-modal:hover {
+        border-color: #667eea;
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+    }
+
+    .location-option-modal:hover::before {
+        transform: scaleX(1);
+    }
+
+    .location-option-modal.selected {
+        border-color: #667eea;
+        background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+        transform: translateY(-4px);
+    }
+
+    .location-option-modal.selected::before {
+        transform: scaleX(1);
+    }
+
+    .location-option-modal.selected::after {
+        content: '✓';
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        width: 22px;
+        height: 22px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.7rem;
+    }
+
+    .location-icon-modal {
+        width: 48px;
+        height: 48px;
+        margin: 0 auto 0.75rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+        transition: transform 0.3s ease;
+    }
+
+    .location-option-modal:hover .location-icon-modal {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    .location-name-modal {
+        font-weight: 700;
+        color: #1e293b;
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .location-code-modal {
+        font-size: 0.75rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    #id_location_display:hover {
+        background-color: #e0e7ff !important;
+        transform: scale(1.02);
+        transition: all 0.2s ease;
     }
 </style>
 {% endblock %}

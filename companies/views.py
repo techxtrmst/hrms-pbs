@@ -609,3 +609,148 @@ def quick_add_shift(request):
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
     return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
+
+
+@login_required
+@admin_required
+def domain_configuration(request):
+    """
+    Email Domain Configuration View - Admin can manage allowed email domains
+    """
+    # Get Company
+    company = None
+    if hasattr(request.user, "company") and request.user.company:
+        company = request.user.company
+    elif request.user.employee_profile and request.user.employee_profile.company:
+        company = request.user.employee_profile.company
+
+    if not company:
+        messages.error(request, "No company associated.")
+        return redirect("dashboard")
+
+    from .models import EmailDomain
+
+    # Handle POST requests (Create/Update/Delete)
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        if action == "create":
+            domain = request.POST.get("domain", "").strip().lower()
+            description = request.POST.get("description", "").strip()
+            is_primary = request.POST.get("is_primary") == "on"
+
+            if not domain:
+                messages.error(request, "Domain is required.")
+            else:
+                # Validate domain format
+                import re
+
+                domain_pattern = (
+                    r"^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+                )
+
+                if not re.match(domain_pattern, domain):
+                    messages.error(request, "Invalid domain format. Please enter a valid domain (e.g., example.com)")
+                else:
+                    # Check if domain already exists
+                    if EmailDomain.objects.filter(company=company, domain=domain).exists():
+                        messages.error(request, f"Domain '{domain}' already exists.")
+                    else:
+                        EmailDomain.objects.create(
+                            company=company,
+                            domain=domain,
+                            description=description,
+                            is_primary=is_primary,
+                            created_by=request.user.get_full_name(),
+                        )
+                        messages.success(request, f"Domain '{domain}' added successfully!")
+
+        elif action == "update":
+            domain_id = request.POST.get("domain_id")
+            domain_obj = get_object_or_404(EmailDomain, id=domain_id, company=company)
+
+            domain_obj.description = request.POST.get("description", "").strip()
+            domain_obj.is_primary = request.POST.get("is_primary") == "on"
+            domain_obj.is_active = request.POST.get("is_active") == "on"
+            domain_obj.save()
+
+            messages.success(request, f"Domain '{domain_obj.domain}' updated successfully!")
+
+        elif action == "delete":
+            domain_id = request.POST.get("domain_id")
+            domain_obj = get_object_or_404(EmailDomain, id=domain_id, company=company)
+
+            # Check if there are employees using this domain
+            from employees.models import Employee
+
+            employees_count = Employee.objects.filter(
+                company=company, user__email__iendswith=f"@{domain_obj.domain}"
+            ).count()
+
+            if employees_count > 0:
+                messages.warning(
+                    request,
+                    f"Cannot delete domain '{domain_obj.domain}'. {employees_count} employee(s) are using this domain.",
+                )
+            else:
+                domain_name = domain_obj.domain
+                domain_obj.delete()
+                messages.success(request, f"Domain '{domain_name}' deleted successfully!")
+
+        elif action == "toggle_status":
+            domain_id = request.POST.get("domain_id")
+            domain_obj = get_object_or_404(EmailDomain, id=domain_id, company=company)
+            domain_obj.is_active = not domain_obj.is_active
+            domain_obj.save()
+
+            status = "activated" if domain_obj.is_active else "deactivated"
+            messages.success(request, f"Domain '{domain_obj.domain}' {status} successfully!")
+
+        return redirect("companies:domain_configuration")
+
+    # Get all email domains for this company
+    email_domains = EmailDomain.objects.filter(company=company).order_by("-is_primary", "domain")
+
+    # Get legacy domains from the old email_domain field
+    legacy_domains = []
+    if company.email_domain:
+        legacy_domain_list = [d.strip().lower() for d in company.email_domain.split(",")]
+        for legacy_domain in legacy_domain_list:
+            # Check if this legacy domain is already in EmailDomain model
+            if not email_domains.filter(domain=legacy_domain).exists():
+                legacy_domains.append(legacy_domain)
+
+    # Get employee count per domain
+    from employees.models import Employee
+
+    domain_stats = []
+    for domain in email_domains:
+        employee_count = Employee.objects.filter(company=company, user__email__iendswith=f"@{domain.domain}").count()
+        domain_stats.append({"domain": domain, "employee_count": employee_count, "is_legacy": False})
+
+    # Add legacy domains to stats
+    for legacy_domain in legacy_domains:
+        employee_count = Employee.objects.filter(company=company, user__email__iendswith=f"@{legacy_domain}").count()
+        domain_stats.append(
+            {
+                "domain": {
+                    "domain": legacy_domain,
+                    "description": "Legacy domain from old configuration",
+                    "is_primary": False,
+                    "is_active": True,
+                    "id": None,
+                },
+                "employee_count": employee_count,
+                "is_legacy": True,
+            }
+        )
+
+    context = {
+        "title": "Domain Configuration",
+        "company": company,
+        "domain_stats": domain_stats,
+        "total_domains": email_domains.count() + len(legacy_domains),
+        "legacy_domains_count": len(legacy_domains),
+    }
+
+    return render(request, "companies/domain_configuration.html", context)
