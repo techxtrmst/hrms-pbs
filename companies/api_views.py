@@ -110,6 +110,9 @@ def get_employee_id_format(request, company_id):
                 # Special handling for India location - use HYD
                 if location.name and "india" in location.name.lower():
                     location_code = "HYD"
+                # Special handling for Dhaka location - use DHAKA
+                elif location.name and ("dhaka" in location.name.lower() or "bangladesh" in location.name.lower()):
+                    location_code = "DHAKA"
                 elif location.city:
                     location_code = location.city[:3].upper()
                 else:
