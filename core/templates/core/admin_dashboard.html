@@ -2362,6 +2362,21 @@
                             <i class="fas fa-briefcase text-info"></i>
                         </div>
                     </div>
+
+                    <!-- Missed Clock-in -->
+                    <div class="p-3 rounded-3 d-flex justify-content-between align-items-center insight-card"
+                        onclick="showInsightDetails('Missed Clock-in', 'missed')"
+                        style="background: #fee2e2; border: 1px solid #fecaca; cursor: pointer;">
+                        <div>
+                            <div class="h3 fw-bold mb-1 text-danger">{{ missed_clockin }}</div>
+                            <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.7rem;">Missed Clock-in
+                            </div>
+                        </div>
+                        <div
+                            style="width: 40px; height: 40px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-user-clock text-danger"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2817,6 +2832,19 @@
                         time: "{% if att.local_clock_in_time %}{{ att.local_clock_in_time|time:'h:i A' }}{% else %}N/A{% endif %}",
                             id: "{{ att.employee.id }}",
                                 initials: "{{ att.employee.user.first_name|first }}{{ att.employee.user.last_name|first }}"
+    } {% if not forloop.last %}, {% endif %}
+    {% endfor %}
+        ],
+    missed: [
+        {% for emp in missed_clockin_list %}
+    {
+        name: "{{ emp.user.get_full_name }}",
+            designation: "{{ emp.designation|default:'N/A' }}",
+                dept: "{{ emp.department|default:'N/A' }}",
+                    location: "{{ emp.location.name|default:'N/A' }}",
+                        time: "No Clock-in",
+                            id: "{{ emp.id }}",
+                                initials: "{{ emp.user.first_name|first }}{{ emp.user.last_name|first }}"
     } {% if not forloop.last %}, {% endif %}
     {% endfor %}
         ]

@@ -3,6 +3,8 @@ from django.urls import path
 from . import views
 from .shift_views import shift_create, shift_delete, shift_edit, shift_list
 
+app_name = "companies"
+
 urlpatterns = [
     path("shifts/", shift_list, name="shift_list"),
     path("shifts/create/", shift_create, name="shift_create"),
@@ -10,6 +12,7 @@ urlpatterns = [
     path("shifts/<int:pk>/delete/", shift_delete, name="shift_delete"),
     path("week-off-config/", views.week_off_config, name="week_off_config"),
     path("role-configuration/", views.role_configuration, name="role_configuration"),
+    path("domain-configuration/", views.domain_configuration, name="domain_configuration"),
     path(
         "announcement-configuration/",
         views.announcement_configuration,

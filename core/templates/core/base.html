@@ -1640,7 +1640,7 @@
                     <i class="fas fa-sitemap"></i> Organisation
                 </a>
                 {% if user.role == 'COMPANY_ADMIN' %}
-                <a href="{% url 'add_employee_step1' %}" class="{% if 'add' in request.path %}active{% endif %}">
+                <a href="{% url 'add_employee_step0' %}" class="{% if 'add' in request.path %}active{% endif %}">
                     <i class="fas fa-user-plus"></i> Add Employee
                 </a>
                 {% endif %}
@@ -1720,17 +1720,20 @@
         </a>
         <div class="collapse {% if 'config' in request.path %}show{% endif %}" id="menuConfig">
             <div class="sub-menu">
-                <a href="{% url 'shift_list' %}" class="{% if 'shifts' in request.path %}active{% endif %}">
+                <a href="{% url 'companies:shift_list' %}" class="{% if 'shifts' in request.path %}active{% endif %}">
                     <i class="fas fa-clock"></i> Shift Settings
                 </a>
-                <a href="{% url 'week_off_config' %}"
+                <a href="{% url 'companies:week_off_config' %}"
                     class="{% if 'week-off-config' in request.path %}active{% endif %}">
                     <i class="fas fa-calendar-week"></i> Week-Off Config
                 </a>
                 <a href="{% url 'holidays' %}" class="{% if 'holidays' in request.path %}active{% endif %}">
                     <i class="fas fa-umbrella-beach"></i> Holidays
                 </a>
-                <a href="{% url 'role_configuration' %}"
+                <a href="{% url 'companies:domain_configuration' %}" class="{% if 'domain-configuration' in request.path %}active{% endif %}">
+                    <i class="fas fa-globe"></i> Domain Configuration
+                </a>
+                <a href="{% url 'companies:role_configuration' %}"
                     class="{% if 'role-config' in request.path %}active{% endif %}">
                     <i class="fas fa-user-tag"></i> Role Configuration
                 </a>
@@ -1746,7 +1749,7 @@
                     class="{% if 'policies/admin' in request.path %}active{% endif %}">
                     <i class="fas fa-file-contract"></i> Policies
                 </a>
-                <a href="{% url 'announcement_configuration' %}"
+                <a href="{% url 'companies:announcement_configuration' %}"
                     class="{% if 'announcement-configuration' in request.path %}active{% endif %}">
                     <i class="fas fa-bullhorn"></i> Announcements
                 </a>

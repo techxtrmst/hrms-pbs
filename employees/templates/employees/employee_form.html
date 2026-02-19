@@ -892,7 +892,7 @@
             return;
         }
 
-        const url = currentAddType === 'department' ? '{% url "quick_add_department" %}' : '{% url "quick_add_designation" %}';
+        const url = currentAddType === 'department' ? '{% url "companies:quick_add_department" %}' : '{% url "companies:quick_add_designation" %}';
 
         fetch(url, {
             method: 'POST',

@@ -1,7 +1,7 @@
 from django.urls import path
 
 from . import inline_views, location_tracking_views, views
-from .multi_step_views import add_employee_step1, add_employee_step2, add_employee_step3
+from .multi_step_views import add_employee_step0, add_employee_step1, add_employee_step2, add_employee_step3
 
 urlpatterns = [
     path("", views.EmployeeListView.as_view(), name="employee_list"),
@@ -13,6 +13,7 @@ urlpatterns = [
         name="download_sample_import_file",
     ),
     # Multi-step employee creation
+    path("add/step0/", add_employee_step0, name="add_employee_step0"),
     path("add/step1/", add_employee_step1, name="add_employee_step1"),
     path("add/step2/", add_employee_step2, name="add_employee_step2"),
     path("add/step3/", add_employee_step3, name="add_employee_step3"),

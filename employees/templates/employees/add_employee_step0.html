@@ -1,0 +1,594 @@
+{% extends 'core/base.html' %}
+{% load widget_tweaks %}
+{% load static %}
+
+{% block title %}Add Employee - Company Selection{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/add-employee-responsive.css' %}">
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    .page-subtitle {
+        font-size: 0.9rem;
+        color: #64748b;
+    }
+
+    .progress-stepper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 2rem 0;
+        padding: 1.5rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e2e8f0;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+    }
+
+    .step.active .step-circle {
+        background: #5b5fc7;
+        color: white;
+    }
+
+    .step-label {
+        font-size: 0.8rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .step.active .step-label {
+        color: #5b5fc7;
+        font-weight: 600;
+    }
+
+    .step-divider {
+        width: 80px;
+        height: 2px;
+        background: #e2e8f0;
+        margin: 0 1rem;
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: #1e293b;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .section-title i {
+        color: #5b5fc7;
+    }
+
+    .company-card {
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: white;
+    }
+
+    .company-card:hover {
+        border-color: #5b5fc7;
+        box-shadow: 0 2px 8px rgba(91, 95, 199, 0.1);
+    }
+
+    .company-card.selected {
+        border-color: #5b5fc7;
+        background: #f8f9ff;
+    }
+
+    .company-card input[type="radio"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: #5b5fc7;
+    }
+
+    .company-info {
+        flex: 1;
+    }
+
+    .company-name {
+        font-weight: 600;
+        font-size: 1rem;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+    }
+
+    .company-badge {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        background: #10b981;
+        color: white;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-left: 0.5rem;
+    }
+
+    .company-meta {
+        font-size: 0.85rem;
+        color: #64748b;
+        display: flex;
+        gap: 1.5rem;
+    }
+
+    .company-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .company-meta-item i {
+        color: #5b5fc7;
+    }
+
+    .location-selector {
+        margin-top: 1.5rem;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .location-selector p {
+        font-size: 0.9rem;
+        color: #64748b;
+        margin-bottom: 1rem;
+    }
+
+    .location-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+
+    .location-option {
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.25rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: white;
+        text-align: center;
+    }
+
+    .location-option:hover {
+        border-color: #5b5fc7;
+        box-shadow: 0 2px 8px rgba(91, 95, 199, 0.1);
+    }
+
+    .location-option.selected {
+        border-color: #5b5fc7;
+        background: #f8f9ff;
+    }
+
+    .location-option input[type="radio"] {
+        display: none;
+    }
+
+    .location-icon {
+        width: 48px;
+        height: 48px;
+        margin: 0 auto 0.75rem;
+        background: #5b5fc7;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    .location-name {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .location-code {
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+
+    .policy-preview {
+        margin-top: 1.5rem;
+        padding: 1.25rem;
+        background: #fffbeb;
+        border-left: 4px solid #f59e0b;
+        border-radius: 8px;
+    }
+
+    .policy-preview h6 {
+        font-weight: 600;
+        color: #92400e;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .policy-item {
+        display: flex;
+        align-items: start;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+        font-size: 0.85rem;
+        color: #78350f;
+    }
+
+    .policy-item i {
+        margin-top: 0.2rem;
+        color: #f59e0b;
+    }
+
+    .btn-next {
+        background: #5b5fc7;
+        color: white;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        border-radius: 8px;
+        border: none;
+        transition: all 0.2s ease;
+    }
+
+    .btn-next:hover {
+        background: #4a4fb3;
+    }
+
+    .btn-next:disabled {
+        background: #cbd5e1;
+        cursor: not-allowed;
+    }
+
+    .btn-back {
+        background: white;
+        border: 1px solid #e2e8f0;
+        color: #64748b;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .btn-back:hover {
+        background: #f8f9fa;
+        border-color: #cbd5e1;
+        color: #64748b;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .progress-stepper {
+            padding: 1rem;
+        }
+
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            font-size: 0.85rem;
+        }
+
+        .step-label {
+            font-size: 0.7rem;
+        }
+
+        .step-divider {
+            width: 40px;
+            margin: 0 0.5rem;
+        }
+
+        .form-card {
+            padding: 1.5rem;
+        }
+
+        .location-grid {
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .company-meta {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="page-title mb-0">Add New Employee</h1>
+                <p class="text-muted mb-0">Step 0 of 3: Select Company & Location</p>
+            </div>
+            <a href="{% url 'employee_list' %}" class="btn btn-back">
+                <i class="fas fa-arrow-left me-2"></i>Cancel
+            </a>
+        </div>
+    </div>
+
+    <!-- Progress Stepper -->
+    <div class="progress-stepper">
+        <div class="step active">
+            <div class="step-circle">0</div>
+            <div class="step-label">Company & Location</div>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step">
+            <div class="step-circle">1</div>
+            <div class="step-label">Personal Info</div>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step">
+            <div class="step-circle">2</div>
+            <div class="step-label">Job Details</div>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step">
+            <div class="step-circle">3</div>
+            <div class="step-label">Finance & Save</div>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Form -->
+    <form method="post" class="form-card" id="companyLocationForm">
+        {% csrf_token %}
+
+        <h2 class="section-title">
+            <i class="fas fa-building me-2 text-primary"></i>Select Company
+        </h2>
+
+        <div id="company-list">
+            {% for company in companies %}
+            <div class="company-card" data-company-id="{{ company.id }}" onclick="selectCompany({{ company.id }})">
+                <div class="d-flex align-items-center gap-3">
+                    <input type="radio" name="company_id" value="{{ company.id }}" id="company_{{ company.id }}"
+                           {% if selected_company_id == company.id %}checked{% endif %}>
+                    <div class="company-info">
+                        <div class="company-name">
+                            {{ company.name }}
+                            <span class="company-badge">Active</span>
+                        </div>
+                        <div class="company-meta">
+                            <div class="company-meta-item">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>{{ company.location_count }} Location{{ company.location_count|pluralize }}</span>
+                            </div>
+                            {% if company.employee_count %}
+                            <div class="company-meta-item">
+                                <i class="fas fa-users"></i>
+                                <span>{{ company.employee_count }} Employee{{ company.employee_count|pluralize }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                No companies available. Please contact your administrator.
+            </div>
+            {% endfor %}
+        </div>
+
+        <div id="location-section" style="display: none;">
+            <h2 class="section-title mt-4">
+                <i class="fas fa-map-marker-alt me-2 text-primary"></i>Select Work Location
+            </h2>
+
+            <div class="location-selector">
+                <p class="mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Choose the primary work location for this employee
+                </p>
+                <div class="location-grid" id="location-grid">
+                    <!-- Locations will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <div id="policy-section" style="display: none;">
+            <!-- Policy preview will be loaded dynamically -->
+        </div>
+
+        <div class="text-end mt-4">
+            <button type="submit" class="btn btn-next" id="nextBtn" disabled>
+                Next: Personal Information <i class="fas fa-arrow-right ms-2"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+let selectedCompanyId = null;
+let selectedLocationId = null;
+
+function selectCompany(companyId) {
+    selectedCompanyId = companyId;
+
+    // Update UI
+    document.querySelectorAll('.company-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    document.querySelector(`[data-company-id="${companyId}"]`).classList.add('selected');
+    document.getElementById(`company_${companyId}`).checked = true;
+
+    // Load locations
+    loadLocations(companyId);
+
+    // Show location section
+    document.getElementById('location-section').style.display = 'block';
+
+    // Hide policy section until location is selected
+    document.getElementById('policy-section').style.display = 'none';
+    document.getElementById('nextBtn').disabled = true;
+}
+
+async function loadLocations(companyId) {
+    try {
+        const response = await fetch(`/api/companies/${companyId}/locations/`);
+        const data = await response.json();
+
+        const locationGrid = document.getElementById('location-grid');
+        locationGrid.innerHTML = '';
+
+        if (data.locations && data.locations.length > 0) {
+            data.locations.forEach(location => {
+                // Determine icon based on location name
+                let icon = 'fa-map-marker-alt';
+                const locationName = location.name.toLowerCase();
+                if (locationName.includes('india') || locationName.includes('hyd') || locationName.includes('delhi') || locationName.includes('mumbai')) {
+                    icon = 'fa-flag';
+                } else if (locationName.includes('us') || locationName.includes('america')) {
+                    icon = 'fa-flag-usa';
+                } else if (locationName.includes('dhaka') || locationName.includes('bangladesh')) {
+                    icon = 'fa-globe-asia';
+                }
+
+                const locationDiv = document.createElement('div');
+                locationDiv.className = 'location-option';
+                locationDiv.setAttribute('data-location-id', location.id);
+                locationDiv.onclick = () => selectLocation(location.id, companyId);
+
+                locationDiv.innerHTML = `
+                    <input type="radio" name="location_id" value="${location.id}" id="location_${location.id}">
+                    <div class="location-icon">
+                        <i class="fas ${icon}"></i>
+                    </div>
+                    <div class="location-name">${location.name}</div>
+                    <div class="location-code">${location.city || ''} ${location.country_code || ''}</div>
+                `;
+
+                locationGrid.appendChild(locationDiv);
+            });
+        } else {
+            locationGrid.innerHTML = '<p class="text-muted">No active locations found for this company.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading locations:', error);
+        document.getElementById('location-grid').innerHTML = '<p class="text-danger">Error loading locations</p>';
+    }
+}
+
+async function selectLocation(locationId, companyId) {
+    selectedLocationId = locationId;
+
+    // Update UI
+    document.querySelectorAll('.location-option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
+    document.querySelector(`[data-location-id="${locationId}"]`).classList.add('selected');
+    document.getElementById(`location_${locationId}`).checked = true;
+
+    // Load policy preview
+    await loadPolicyPreview(companyId, locationId);
+
+    // Enable next button
+    document.getElementById('nextBtn').disabled = false;
+}
+
+async function loadPolicyPreview(companyId, locationId) {
+    try {
+        const response = await fetch(`/api/companies/${companyId}/policies/?location_id=${locationId}`);
+        const data = await response.json();
+
+        const policySection = document.getElementById('policy-section');
+        policySection.style.display = 'block';
+
+        let policyHtml = `
+            <div class="policy-preview">
+                <h6><i class="fas fa-info-circle me-2"></i>Applicable Policies for Selected Location</h6>
+        `;
+
+        if (data.policies && data.policies.length > 0) {
+            data.policies.forEach(policy => {
+                policyHtml += `
+                    <div class="policy-item">
+                        <i class="fas fa-check-circle"></i>
+                        <span>${policy}</span>
+                    </div>
+                `;
+            });
+        } else {
+            policyHtml += '<p class="text-muted mb-0" style="font-size: 0.8rem;">Standard company policies apply</p>';
+        }
+
+        policyHtml += '</div>';
+        policySection.innerHTML = policyHtml;
+    } catch (error) {
+        console.error('Error loading policies:', error);
+    }
+}
+
+// Initialize if company is pre-selected
+document.addEventListener('DOMContentLoaded', function() {
+    const selectedCompany = document.querySelector('input[name="company_id"]:checked');
+    if (selectedCompany) {
+        selectCompany(parseInt(selectedCompany.value));
+    }
+});
+</script>
+{% endblock %}

@@ -489,14 +489,14 @@
             <ul class="sa-hub-list">
                 <li><a href="{% url 'superadmin:employees' %}?role=admin"><i class="fas fa-check-circle"></i> Create
                         Admins, HR Admins, Managers</a></li>
-                <li><a href="{% url 'role_configuration' %}"><i class="fas fa-check-circle"></i> Define custom roles &
+                <li><a href="{% url 'companies:role_configuration' %}"><i class="fas fa-check-circle"></i> Define custom roles &
                         permissions</a></li>
-                <li><a href="{% url 'role_configuration' %}"><i class="fas fa-check-circle"></i> Multi-tenant Access
+                <li><a href="{% url 'companies:role_configuration' %}"><i class="fas fa-check-circle"></i> Multi-tenant Access
                         Control (RBAC)</a></li>
                 <li><a href="{% url 'superadmin:employees' %}"><i class="fas fa-check-circle"></i> User Impersonation
                         for Support</a></li>
             </ul>
-            <a href="{% url 'role_configuration' %}" class="sa-hub-action">Configure Roles <i
+            <a href="{% url 'companies:role_configuration' %}" class="sa-hub-action">Configure Roles <i
                     class="fas fa-arrow-right"></i></a>
         </div>
 
@@ -527,9 +527,9 @@
                 <h3>4. Attendance & Leave Ops</h3>
             </div>
             <ul class="sa-hub-list">
-                <li><a href="{% url 'shift_list' %}"><i class="fas fa-check-circle"></i> Global attendance rules &
+                <li><a href="{% url 'companies:shift_list' %}"><i class="fas fa-check-circle"></i> Global attendance rules &
                         shifts</a></li>
-                <li><a href="{% url 'shift_list' %}"><i class="fas fa-check-circle"></i> Shift & Roster templates</a>
+                <li><a href="{% url 'companies:shift_list' %}"><i class="fas fa-check-circle"></i> Shift & Roster templates</a>
                 </li>
                 <li><a href="{% url 'company_leaves' %}"><i class="fas fa-check-circle"></i> Leave policy creation &
                         mapping</a></li>
@@ -587,7 +587,7 @@
                 <h3>7. Workflow & Approval Engine</h3>
             </div>
             <ul class="sa-hub-list">
-                <li><a href="{% url 'role_configuration' %}"><i class="fas fa-check-circle"></i> Define multi-level
+                <li><a href="{% url 'companies:role_configuration' %}"><i class="fas fa-check-circle"></i> Define multi-level
                         hierarchies</a></li>
                 <li><a href="{% url 'leave_requests' %}"><i class="fas fa-check-circle"></i> Workflow overrides for
                         emergencies</a></li>

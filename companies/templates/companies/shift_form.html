@@ -246,7 +246,7 @@
             <h1 class="page-title mb-2">{% if form.instance.pk %}Edit{% else %}Create{% endif %} Shift</h1>
             <p class="text-muted mb-0">Define working hours, grace periods, and break schedules.</p>
         </div>
-        <a href="{% url 'shift_list' %}" class="btn-action btn-back shadow-sm">
+        <a href="{% url 'companies:shift_list' %}" class="btn-action btn-back shadow-sm">
             <i class="fas fa-arrow-left me-2"></i> Back
         </a>
     </div>
