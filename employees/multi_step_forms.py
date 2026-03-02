@@ -203,16 +203,16 @@ class JobDetailsForm(forms.ModelForm):
             self.company = None
 
         if self.company:
-            # Filter managers by company
-            if self.user and self.user.is_superuser:
-                # Superadmin sees all eligible managers from all companies
-                self.fields["manager_selection"].queryset = Employee.objects.exclude(
-                    user__role=User.Role.EMPLOYEE
-                ).select_related("company", "user")
-            else:
-                self.fields["manager_selection"].queryset = Employee.objects.filter(company=self.company).exclude(
-                    user__role=User.Role.EMPLOYEE
-                )
+            # Allow cross-company manager assignment
+            # Show all eligible managers from all companies
+            self.fields["manager_selection"].queryset = Employee.objects.exclude(
+                user__role=User.Role.EMPLOYEE
+            ).select_related("company", "user")
+
+            # Customize label to show manager name, role, and company
+            self.fields["manager_selection"].label_from_instance = lambda obj: (
+                f"{obj.user.get_full_name()} ({obj.user.get_role_display()}) - {obj.company.name}"
+            )
 
             # Populate Dynamic Fields
             from companies.models import Department, Designation

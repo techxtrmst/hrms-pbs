@@ -3732,6 +3732,7 @@ def run_monthly_accrual(request):
         year = request.POST.get("year")
 
         period_msg = ""
+        month_name = ""
         if month and year:
             try:
                 month_name = calendar.month_name[int(month)]
@@ -3744,13 +3745,22 @@ def run_monthly_accrual(request):
                     error=str(e),
                 )
 
-        # Run the command
-        call_command("accrue_monthly_leaves")
+        # Use force_monthly_accrual command for manual runs (bypasses date check)
+        if month and year:
+            call_command("force_monthly_accrual", month=int(month), year=int(year))
+        else:
+            # If no month/year specified, use current month
+            from django.utils import timezone
+
+            now = timezone.now()
+            call_command("force_monthly_accrual", month=now.month, year=now.year)
+            month_name = calendar.month_name[now.month]
+            period_msg = f"for {month_name} {now.year}"
 
         success_msg = (
-            f"Monthly accrual processed {period_msg}: +1 Sick and +1 Casual leave added to all employees."
+            f"Monthly accrual processed {period_msg}: +1 Sick and +1 Casual leave added to eligible employees."
             if period_msg
-            else "Monthly accrual processed: +1 Sick and +1 Casual leave added to all employees."
+            else "Monthly accrual processed: +1 Sick and +1 Casual leave added to eligible employees."
         )
 
         messages.success(request, success_msg)

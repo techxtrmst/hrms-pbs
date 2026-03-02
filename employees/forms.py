@@ -98,18 +98,19 @@ class EmployeeCreationForm(forms.ModelForm):
 
         # Filtering Managers: Only show managers from the same company
         if self.user and self.user.company:
-            # Find Users in this company who are 'MANAGER' or 'COMPANY_ADMIN' role
-            # Also include SUPERADMIN users
-            company_managers = User.objects.filter(
-                company=self.user.company,
+            # Allow cross-company manager assignment
+            # Show managers and admins from ALL companies
+            all_managers = User.objects.filter(
                 role__in=[User.Role.MANAGER, User.Role.COMPANY_ADMIN],
             )
             super_admins = User.objects.filter(role=User.Role.SUPERADMIN)
 
-            self.fields["manager"].queryset = company_managers | super_admins
+            self.fields["manager"].queryset = all_managers | super_admins
 
-            # Customize label to show name and role
-            self.fields["manager"].label_from_instance = lambda obj: f"{obj.get_full_name()} ({obj.get_role_display()})"
+            # Customize label to show name, role, and company for clarity
+            self.fields["manager"].label_from_instance = lambda obj: (
+                f"{obj.get_full_name()} ({obj.get_role_display()}) - {obj.company.name if obj.company else 'N/A'}"
+            )
 
             # Filtering Locations: Only show locations from the same company
             from companies.models import Location
