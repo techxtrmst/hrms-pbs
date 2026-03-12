@@ -33,6 +33,7 @@ urlpatterns = [
     path("ai/", include("ai_assistant.urls")),  # AI-powered features
     path("handbooks/", include("handbooks.urls", namespace="handbooks")),  # Employee Handbooks
     path("policies/", include("policies.urls", namespace="policies")),  # Company Policies
+    path("activity-tracking/", include("activity_monitoring.urls")),  # Screen time activity tracking
     path("accounts/", include("django.contrib.auth.urls")),  # For password reset etc if needed
 ]
 

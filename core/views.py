@@ -1181,6 +1181,7 @@ def personal_home(request):
     context = {}
     if hasattr(request.user, "employee_profile"):
         employee = request.user.employee_profile
+        context["employee"] = employee
         today = timezone.localdate()
 
         # Resolve correct timezone using central utility

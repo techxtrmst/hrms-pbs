@@ -1129,20 +1129,13 @@
                                 <label class="info-label">Working Days</label>
                                 <div class="info-value">
                                     <div class="working-days-badges">
-                                        {% if employee.assigned_shift.monday %}<span
-                                            class="badge bg-primary me-1">Mon</span>{% endif %}
-                                        {% if employee.assigned_shift.tuesday %}<span
-                                            class="badge bg-primary me-1">Tue</span>{% endif %}
-                                        {% if employee.assigned_shift.wednesday %}<span
-                                            class="badge bg-primary me-1">Wed</span>{% endif %}
-                                        {% if employee.assigned_shift.thursday %}<span
-                                            class="badge bg-primary me-1">Thu</span>{% endif %}
-                                        {% if employee.assigned_shift.friday %}<span
-                                            class="badge bg-primary me-1">Fri</span>{% endif %}
-                                        {% if employee.assigned_shift.saturday %}<span
-                                            class="badge bg-secondary me-1">Sat</span>{% endif %}
-                                        {% if employee.assigned_shift.sunday %}<span
-                                            class="badge bg-secondary me-1">Sun</span>{% endif %}
+                                        {% if not employee.week_off_monday %}<span class="badge bg-primary me-1">Mon</span>{% endif %}
+                                        {% if not employee.week_off_tuesday %}<span class="badge bg-primary me-1">Tue</span>{% endif %}
+                                        {% if not employee.week_off_wednesday %}<span class="badge bg-primary me-1">Wed</span>{% endif %}
+                                        {% if not employee.week_off_thursday %}<span class="badge bg-primary me-1">Thu</span>{% endif %}
+                                        {% if not employee.week_off_friday %}<span class="badge bg-primary me-1">Fri</span>{% endif %}
+                                        {% if not employee.week_off_saturday %}<span class="badge bg-primary me-1">Sat</span>{% endif %}
+                                        {% if not employee.week_off_sunday %}<span class="badge bg-primary me-1">Sun</span>{% endif %}
                                     </div>
                                 </div>
                             </div>

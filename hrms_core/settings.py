@@ -89,6 +89,8 @@ INSTALLED_APPS = [
     "handbooks",  # Employee handbooks with location-based access
     "policies",  # Company Policies
     "observability",  # System observability and monitoring
+    "finance_portal",  # Centralized finance portal for cross-company payroll
+    "activity_monitoring",  # Screen time and browser activity tracking
 ]
 
 AUTHENTICATION_BACKENDS = [

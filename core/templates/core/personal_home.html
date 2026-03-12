@@ -2675,8 +2675,7 @@
                                             {% elif att.status == 'NOT_LOGGED_IN' %}
                                             <span class="status-badge status-not-login">Not Login</span>
                                             {% else %}
-                                            <span class="status-badge status-absent">{{
-                                                att.status_display|default:att.status }}</span>
+                                            <span class="status-badge status-absent">{{ att.status_display|default:att.status }}</span>
                                             {% endif %}
                                         </td>
                                         <td>
@@ -2712,13 +2711,13 @@
                     <div class="card-body-clean">
                         <div class="text-label mb-3">This Week</div>
                         <div class="week-days">
-                            <div class="day-badge">S</div>
-                            <div class="day-badge active">M</div>
-                            <div class="day-badge active">T</div>
-                            <div class="day-badge active">W</div>
-                            <div class="day-badge active">T</div>
-                            <div class="day-badge active">F</div>
-                            <div class="day-badge">S</div>
+                            <div class="day-badge {% if not employee.week_off_sunday %}active{% endif %}">S</div>
+                            <div class="day-badge {% if not employee.week_off_monday %}active{% endif %}">M</div>
+                            <div class="day-badge {% if not employee.week_off_tuesday %}active{% endif %}">T</div>
+                            <div class="day-badge {% if not employee.week_off_wednesday %}active{% endif %}">W</div>
+                            <div class="day-badge {% if not employee.week_off_thursday %}active{% endif %}">T</div>
+                            <div class="day-badge {% if not employee.week_off_friday %}active{% endif %}">F</div>
+                            <div class="day-badge {% if not employee.week_off_saturday %}active{% endif %}">S</div>
                         </div>
                     </div>
                 </div>

@@ -1,0 +1,1183 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Activity Intelligence | HRMS{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --accent-teal: #38B2AC;
+        --accent-orange: #ED8936;
+        --card-bg: rgba(255, 255, 255, 0.95);
+        --bg-soft: #F7FAFC;
+    }
+
+    body {
+        font-family: 'Outfit', sans-serif;
+        background-color: var(--bg-soft);
+        background-image:
+            radial-gradient(circle at 10% 20%, rgba(56, 178, 172, 0.05) 0%, transparent 40%),
+            radial-gradient(circle at 90% 80%, rgba(102, 126, 234, 0.05) 0%, transparent 40%);
+    }
+
+    .glass-header {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(15px);
+        border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-weight: 800;
+        font-size: 2.2rem;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -1px;
+    }
+
+    .stat-card {
+        background: var(--card-bg);
+        border-radius: 20px;
+        padding: 1.5rem;
+        border: 1px solid rgba(226, 232, 240, 0.6);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+        height: 100%;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+        border-color: rgba(56, 178, 172, 0.4);
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: #718096;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #1A202C;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+
+    .activity-tag {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .tag-productive {
+        background: #E6FFFA;
+        color: #2C7A7B;
+    }
+
+    .tag-unproductive {
+        background: #FFF5F5;
+        color: #C53030;
+    }
+
+    .top-app-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 0.75rem;
+        background: #F8FAFC;
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+    }
+
+    .top-app-item:hover {
+        background: white;
+        border-color: #E2E8F0;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .app-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--primary-gradient);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        margin-right: 1rem;
+        font-weight: 700;
+    }
+
+    .bg-soft-primary {
+        background-color: #EBF4FF;
+        color: #3182CE;
+    }
+
+    .bg-soft-success {
+        background-color: #F0FFF4;
+        color: #38A169;
+    }
+
+    .bg-soft-warning {
+        background-color: #FFFFF0;
+        color: #D69E2E;
+    }
+
+    .text-teal {
+        color: var(--accent-teal);
+    }
+
+    .search-log {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .search-item {
+        padding: 0.75rem;
+        border-left: 3px solid var(--accent-teal);
+        background: white;
+        margin-bottom: 0.5rem;
+        border-radius: 0 8px 8px 0;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #CBD5E0;
+        border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #A0AEC0;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #CBD5E0;
+        border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #A0AEC0;
+    }
+
+    .live-indicator {
+        width: 8px;
+        height: 8px;
+        background: #48BB78;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+        box-shadow: 0 0 8px #48BB78;
+        animation: pulse-live 2s infinite;
+    }
+
+    @keyframes pulse-live {
+        0% {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 0 rgba(72, 187, 120, 0.7);
+        }
+
+        70% {
+            transform: scale(1);
+            box-shadow: 0 0 0 10px rgba(72, 187, 120, 0);
+        }
+
+        100% {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 0 rgba(72, 187, 120, 0);
+        }
+    }
+
+    .bg-light-danger {
+        background-color: #FFF5F5 !important;
+    }
+
+    /* Premium Metrics Blocks */
+    .metric-container {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .metric-card-main {
+        grid-column: span 3;
+        position: relative;
+        overflow: hidden;
+        border-radius: 24px;
+        padding: 1.75rem;
+        background: white;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .metric-card-main:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+    }
+
+    .metric-card-trend {
+        grid-column: span 6;
+        border-radius: 24px;
+        padding: 1.75rem;
+        background: white;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    .metric-icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .productive-box {
+        background: linear-gradient(135deg, #38B2AC 0%, #319795 100%);
+        color: white;
+        box-shadow: 0 8px 15px -3px rgba(56, 178, 172, 0.3);
+    }
+
+    .idle-box {
+        background: linear-gradient(135deg, #718096 0%, #4A5568 100%);
+        color: white;
+        box-shadow: 0 8px 15px -3px rgba(113, 128, 150, 0.3);
+    }
+
+    .metric-value-large {
+        font-size: 2.75rem;
+        font-weight: 800;
+        letter-spacing: -1px;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+
+    .metric-label-new {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.4rem 0.8rem;
+        border-radius: 100px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-top: 1.25rem;
+    }
+
+    .status-badge-active {
+        background: #E6FFFA;
+        color: #2C7A7B;
+    }
+
+    .status-badge-offline {
+        background: #F7FAFC;
+        color: #718096;
+    }
+
+    .metric-decoration {
+        position: absolute;
+        top: -10%;
+        right: -10%;
+        width: 150px;
+        height: 150px;
+        background: currentColor;
+        opacity: 0.03;
+        border-radius: 50%;
+        pointer-events: none;
+    }
+
+    @media (max-width: 1200px) {
+        .metric-card-main {
+            grid-column: span 6;
+        }
+
+        .metric-card-trend {
+            grid-column: span 12;
+            margin-top: 1rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .metric-card-main {
+            grid-column: span 12;
+        }
+    }
+
+    /* Premium Secondary Blocks */
+    .secondary-card {
+        background: white;
+        border-radius: 24px;
+        padding: 1.75rem;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04);
+        height: 100%;
+    }
+
+    .app-row {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border-radius: 16px;
+        background: #F8FAFC;
+        margin-bottom: 0.75rem;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+    }
+
+    .app-row:hover {
+        background: white;
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border-color: rgba(56, 178, 172, 0.2);
+    }
+
+    .activity-timeline {
+        position: relative;
+        padding-left: 20px;
+    }
+
+    .activity-timeline::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, #38B2AC, transparent);
+    }
+
+    .activity-node {
+        position: relative;
+        padding-bottom: 1.5rem;
+    }
+
+    .activity-node::after {
+        content: '';
+        position: absolute;
+        left: -24px;
+        top: 4px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #38B2AC;
+        border: 2px solid white;
+        box-shadow: 0 0 0 4px rgba(56, 178, 172, 0.1);
+    }
+
+    .glass-pill {
+        background: rgba(56, 178, 172, 0.1);
+        color: #2C7A7B;
+        padding: 2px 10px;
+        border-radius: 100px;
+        font-size: 0.7rem;
+        font-weight: 700;
+    }
+
+    /* Premium Table Styles */
+    .security-card {
+        background: white;
+        border-radius: 24px;
+        padding: 2rem;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04);
+        border-left: 6px solid #E53E3E;
+    }
+
+    .security-table thead th {
+        background: #F8FAFC;
+        border: none;
+        color: #64748B;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1rem;
+    }
+
+    .security-table tbody tr {
+        border-bottom: 1px solid #F1F5F9;
+        transition: all 0.2s ease;
+    }
+
+    .security-table tbody tr:hover {
+        background-color: #FAFBFC;
+    }
+
+    .alert-badge {
+        padding: 6px 14px;
+        border-radius: 100px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .bg-alert-danger {
+        background: #FFF5F5;
+        color: #C53030;
+    }
+
+    .bg-alert-warning {
+        background: #FFFBEB;
+        color: #B45309;
+    }
+
+    .bg-alert-info {
+        background: #EFF6FF;
+        color: #1D4ED8;
+    }
+
+    .bg-alert-secondary {
+        background: #F8FAFC;
+        color: #64748B;
+    }
+
+    .event-description {
+        font-weight: 600;
+        color: #1E293B;
+        font-size: 0.9rem;
+    }
+
+    .event-details {
+        font-size: 0.8rem;
+        color: #64748B;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Premium Header & Banner */
+    .glass-header-new {
+        background: white;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+        padding: 1.25rem 0;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+    }
+
+    .btn-premium-outline {
+        background: white;
+        border: 1.5px solid #E2E8F0;
+        color: #475569;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    .btn-premium-outline:hover {
+        background: #F8FAFC;
+        border-color: #38B2AC;
+        color: #38B2AC;
+        transform: translateY(-1px);
+    }
+
+    .btn-premium-primary {
+        background: var(--primary-gradient);
+        border: none;
+        color: white;
+        font-weight: 700;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        transition: all 0.3s ease;
+    }
+
+    .btn-premium-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+    }
+
+    .setup-banner-premium {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 30px;
+        padding: 2.5rem;
+        position: relative;
+        overflow: hidden;
+        border: none;
+        box-shadow: 0 20px 40px -10px rgba(118, 75, 162, 0.3);
+    }
+
+    .setup-banner-premium::before {
+        content: '';
+        position: absolute;
+        width: 300px;
+        height: 300px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        top: -150px;
+        right: -100px;
+    }
+
+    .setup-banner-premium::after {
+        content: '\f135';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        position: absolute;
+        font-size: 12rem;
+        color: rgba(255, 255, 255, 0.05);
+        bottom: -2rem;
+        right: 1rem;
+        transform: rotate(-15deg);
+    }
+
+    .banner-icon-circle {
+        width: 70px;
+        height: 70px;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        border-radius: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin-right: 1.5rem;
+    }
+
+    .btn-banner-action {
+        background: white;
+        color: #764ba2;
+        padding: 1rem 2.5rem;
+        border-radius: 18px;
+        font-weight: 800;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-banner-action:hover {
+        background: #F8FAFC;
+        transform: scale(1.05);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        color: #667eea;
+    }
+</style>
+
+{% endblock %}
+
+{% block content %}
+<div class="glass-header-new">
+    <div class="container-fluid px-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="productive-box d-flex align-items-center justify-content-center shadow-sm"
+                        style="width: 48px; height: 48px; border-radius: 12px;">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div>
+                        <h1 class="page-title mb-0" style="font-size: 1.5rem;">Activity Intelligence</h1>
+                        <p class="text-muted mb-0 small fw-500">Real-time productivity insights for <span
+                                class="text-teal fw-700">{{ selected_employee.user.get_full_name|default:request.user.get_full_name }}</span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                <div class="d-flex gap-3 justify-content-md-end align-items-center">
+                    {% if employees_list and user.role != 'EMPLOYEE' %}
+                    <div class="position-relative">
+                        <i class="fas fa-user-friends position-absolute text-muted"
+                            style="left: 15px; top: 50%; transform: translateY(-50%); z-index: 10;"></i>
+                        <select class="form-select rounded-pill border shadow-sm ps-5 pe-4 py-2 fw-600"
+                            style="font-size: 0.9rem; background-color: #F8FAFC;"
+                            onchange="window.location.href='?employee_id='+this.value">
+                            <option value="">Switch Member...</option>
+                            {% for emp in employees_list %}
+                            <option value="{{ emp.id }}" {% if emp.id == selected_employee.id %}selected{% endif %}>{{ emp.user.get_full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    <a href="{% url 'download-agent' %}" class="btn btn-premium-outline rounded-pill px-4 py-2"
+                        id="mainDownloadBtn">
+                        <i class="fas fa-cloud-download-alt me-2"></i> Agent
+                    </a>
+                    {% if user.role != 'EMPLOYEE' %}
+                    <button class="btn btn-premium-primary rounded-pill px-4 py-2">
+                        <i class="fas fa-file-export me-2"></i> Export
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid py-4">
+    <!-- Setup Banner -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="setup-banner-premium">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-4">
+                    <div class="d-flex align-items-center">
+                        <div class="banner-icon-circle text-white">
+                            <i class="fas fa-rocket"></i>
+                        </div>
+                        <div class="text-white">
+                            <h2 class="fw-800 mb-1" id="setupBannerTitle" style="letter-spacing: -0.5px;">Setup
+                                Workspace Monitoring</h2>
+                            <p class="mb-0 opacity-90 fw-500" id="setupBannerText"
+                                style="max-width: 600px; font-size: 1.05rem;">
+                                Activate real-time productivity intelligence by deploying the tracker on your local
+                                system.
+                                Secure, silent, and always active.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <a href="{% url 'download-agent' %}" class="btn btn-banner-action shadow-lg">
+                            <i class="fas fa-microchip me-2"></i> Deploy Sysbooster
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="container-fluid pb-5">
+    {% if user.role != 'EMPLOYEE' and employees_list %}
+    <!-- Admin/Manager Team Status -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0">Team Tracking Status</h5>
+                    <span class="badge bg-soft-primary text-primary rounded-pill px-3">{{ employees_list.count }} Total Members</span>
+                </div>
+                <div class="table-responsive" style="max-height:420px; overflow-y:auto; overflow-x:auto; border-radius:12px; scrollbar-width:thin; scrollbar-color:#6366F1 #F1F5F9;">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light" style="position:sticky; top:0; z-index:2; background:#F8FAFC;">
+                            <tr>
+                                <th>Member</th>
+                                <th>Status</th>
+                                <th>Last Sync</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for emp in employees_list %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="app-icon me-3">{{ emp.user.first_name|slice:":1"|upper }}</div>
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ emp.user.get_full_name }}</div>
+                                            <div class="small text-muted">{{ emp.designation }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if emp.tracking_status == 'Online' %}
+                                    <span class="badge bg-success rounded-pill px-3">
+                                        <i class="fas fa-circle me-1" style="font-size: 8px;"></i> Online
+                                    </span>
+                                    {% elif emp.tracking_status == 'Offline' %}
+                                    <span class="badge bg-secondary rounded-pill px-3">Offline</span>
+                                    {% else %}
+                                    <span class="badge bg-light text-muted rounded-pill px-3">Never Synced</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted small">
+                                    {% if emp.last_sync %}
+                                    {{ emp.last_sync|timesince }} ago
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="?employee_id={{ emp.id }}"
+                                        class="btn btn-sm btn-outline-primary rounded-pill px-3">View Detailed Logs</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if user.role != 'EMPLOYEE' %}
+        <!-- Unique Metrics Section -->
+        <div class="metric-container" style="margin-top: 2.5rem;">
+            <!-- Productive Time Block -->
+            <div class="metric-card-main">
+                <div class="metric-decoration text-teal"></div>
+                <div>
+                    <div class="metric-icon-box productive-box">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div class="metric-label-new">Work Intensity</div>
+                    <div class="metric-value-large text-teal" id="productive-hours-val">{{ productive_hours }}h</div>
+                    <p class="text-muted small mb-0">Productive focused time</p>
+                </div>
+                <div>
+                    {% if is_online %}
+                    <div class="status-badge status-badge-active">
+                        <span class="live-indicator me-2"></span> LIVE TRACKING
+                    </div>
+                    {% else %}
+                    <div class="status-badge status-badge-offline">
+                        <i class="fas fa-moon me-2"></i> AGENT INACTIVE
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Idle Time Block -->
+            <div class="metric-card-main">
+                <div class="metric-decoration text-secondary"></div>
+                <div>
+                    <div class="metric-icon-box idle-box">
+                        <i class="fas fa-coffee"></i>
+                    </div>
+                    <div class="metric-label-new">Break / Idle</div>
+                    <div class="metric-value-large text-secondary" id="unproductive-hours-val">{{ unproductive_hours }}h
+                    </div>
+                    <p class="text-muted small mb-0">Time away or idle</p>
+                </div>
+                <div>
+                    <div class="status-badge status-badge-offline">
+                        <i class="fas fa-history me-2"></i> LAST SYNC: {{ last_sync|date:"H:i"|default:"Never" }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Productivity Trend Block -->
+            <div class="metric-card-trend">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h6 class="fw-bold mb-0">Daily Performance Flow</h6>
+                        <p class="text-muted small mb-0">Hourly breakdown for {{ selected_date|date:"F d, Y" }}</p>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-light border rounded-pill px-3 dropdown-toggle shadow-sm" type="button" data-bs-toggle="dropdown">
+                            <i class="far fa-calendar-alt me-1 text-muted"></i>
+                            {% if selected_date == today_date %}Today{% elif selected_date == yesterday_date %}Yesterday{% else %}{{ selected_date|date:"d M" }}{% endif %}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-lg mt-2 p-2" style="min-width: 200px;">
+                            <li><a class="dropdown-item py-2 px-3 rounded" href="?{% if selected_employee.id %}employee_id={{ selected_employee.id }}&{% endif %}date={{ today_date|date:'Y-m-d' }}">
+                                <i class="fas fa-calendar-day me-2 text-primary"></i>Today</a></li>
+                            <li><a class="dropdown-item py-2 px-3 rounded" href="?{% if selected_employee.id %}employee_id={{ selected_employee.id }}&{% endif %}date={{ yesterday_date|date:'Y-m-d' }}">
+                                <i class="fas fa-history me-2 text-secondary"></i>Yesterday</a></li>
+                            <li><hr class="dropdown-divider mx-n2"></li>
+                            <li class="px-3 py-2">
+                                <label class="small text-muted mb-1 d-block">Pick Specific Date</label>
+                                <input type="date" class="form-control form-control-sm border-0 bg-light rounded"
+                                       value="{{ selected_date|date:'Y-m-d' }}"
+                                       onchange="window.location.href='?{% if selected_employee.id %}employee_id={{ selected_employee.id }}&{% endif %}date=' + this.value">
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="chart-container" style="height: 180px;">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <!-- Top Apps -->
+            <div class="col-md-6">
+                <div class="secondary-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h5 class="fw-bold mb-0">Daily Toolset</h5>
+                            <p class="text-muted small mb-0">Applications you spend the most time in</p>
+                        </div>
+                        <a href="{% url 'app-activity-detail' %}{% if selected_employee.id != request.user.employee_profile.id %}?employee_id={{ selected_employee.id }}{% endif %}"
+                           class="btn btn-sm btn-light rounded-pill px-3 fw-600">
+                            <i class="fas fa-external-link-alt me-1"></i> View All
+                        </a>
+                    </div>
+                    <div class="app-list-container">
+                        {% for app in top_apps %}
+                        <div class="app-row">
+                            <div class="app-icon me-3"
+                                style="width: 44px; height: 44px; border-radius: 12px; font-size: 1.1rem;">
+                                {{ app.app_name|slice:":1"|upper }}
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold text-dark mb-0 line-height-1">{{ app.app_name }}</div>
+                                <span class="glass-pill">Active Tool</span>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-800 text-teal">{{ app.hours }}h</div>
+                                <div class="small text-muted" style="font-size: 0.7rem;">Time Spent</div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-5">
+                            <img src="https://cdni.iconscout.com/illustration/premium/thumb/no-data-found-8867280-7265556.png"
+                                style="width: 120px; opacity: 0.5;">
+                            <p class="text-muted small mt-3">No application data synced yet.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Browser searches -->
+            <div class="col-md-6">
+                <div class="secondary-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h5 class="fw-bold mb-0">URLs</h5>
+                            <p class="text-muted small mb-0">Live feed of your digital exploration</p>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="date" id="urlDatePicker"
+                                value=""
+                                class="form-control form-control-sm rounded-pill border px-3"
+                                style="font-family: 'Outfit', sans-serif; font-size: 0.8rem; width: auto; cursor: pointer;">
+                            <a id="urlViewAllBtn"
+                               href="{% url 'browser-activity-detail' %}{% if selected_employee.id != request.user.employee_profile.id %}?employee_id={{ selected_employee.id }}{% endif %}"
+                               class="btn btn-sm btn-light rounded-pill px-3 fw-600 text-nowrap">
+                                <i class="fas fa-external-link-alt me-1"></i> View All
+                            </a>
+                        </div>
+                    </div>
+                    <div class="search-log activity-timeline" id="recent-activity-log">
+                        {% for item in recent_activity %}
+                        <div class="activity-node">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div style="max-width: 80%;">
+                                    <div class="fw-bold text-dark small" style="letter-spacing: -0.2px;">
+                                        {% if item.search_query %}
+                                        <span class="text-primary"><i class="fab fa-google me-1"></i> {{ item.search_query }}</span>
+                                        {% else %}
+                                        {{ item.title|default:item.url|truncatechars:60 }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-muted mt-1" style="font-size: 0.7rem; word-break: break-all;">
+                                        {{ item.url|truncatechars:70 }}
+                                    </div>
+                                </div>
+                                <span class="badge bg-light text-muted rounded-pill fw-normal"
+                                    style="font-size: 0.65rem;">
+                                    {{ item.timestamp|date:"H:i A" }}
+                                </span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-globe-americas fa-3x text-light mb-3"></i>
+                            <p class="text-muted small">Your web activity will appear here in real-time.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="security-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="productive-box"
+                                style="width: 40px; height: 40px; border-radius: 12px; background: #E53E3E;">
+                                <i class="fas fa-shield-alt text-white"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-0">Guardian Logs</h5>
+                                <p class="text-muted small mb-0">Real-time security surveillance & system events</p>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-light text-dark rounded-pill px-3 py-2 fw-600 border">Last 25
+                                events</span>
+                            <span class="badge bg-danger rounded-pill px-3 py-2 shadow-sm">
+                                <i class="fas fa-circle me-1" style="font-size:7px;"></i> PROTECTION ACTIVE
+                            </span>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table security-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-3">Alert Type</th>
+                                    {% if employees_list %}<th>Employee</th>{% endif %}
+                                    <th>Description</th>
+                                    <th>Details</th>
+                                    <th class="text-end pe-3">Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="system-events-log">
+                                {% for event in system_events %}
+                                <tr class="{% if event.event_type == 'FILE_TRANSFER' %}bg-light-danger{% endif %}">
+                                    <td class="ps-3">
+                                        <span class="alert-badge
+                                    {% if event.event_type == 'FILE_TRANSFER' %}bg-alert-danger
+                                    {% elif event.event_type == 'USB_INSERT' %}bg-alert-warning
+                                    {% elif event.event_type == 'USB_REMOVE' %}bg-alert-secondary
+                                    {% else %}bg-alert-info{% endif %}">
+                                            {% if event.event_type == 'FILE_TRANSFER' %}<i class="fas fa-exclamation-triangle"></i>
+                                            {% elif event.event_type == 'USB_INSERT' %}<i class="fas fa-plug"></i>
+                                            {% else %}<i class="fas fa-info-circle"></i>{% endif %}
+                                            {{ event.get_event_type_display }}
+                                        </span>
+                                    </td>
+                                    {% if employees_list %}
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="app-icon me-2"
+                                                style="width:28px;height:28px;font-size:0.65rem; background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0;">
+                                                {{ event.employee.user.first_name|slice:":1"|upper }}
+                                            </div>
+                                            <span class="small fw-bold text-dark">{{ event.employee.user.get_full_name }}</span>
+                                        </div>
+                                    </td>
+                                    {% endif %}
+                                    <td>
+                                        <span class="event-description">
+                                            {{ event.description }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="event-details">
+                                            {% if event.event_type == 'FILE_TRANSFER' %}
+                                            <i class="fas fa-file-export text-danger"></i>
+                                            <strong>{{ event.metadata.file }}</strong>
+                                            {% elif event.event_type == 'USB_INSERT' %}
+                                            <i class="fas fa-hdd text-warning"></i> {{ event.metadata.name|default:"External Device" }}
+                                            {% else %}
+                                            <i class="fas fa-microchip text-muted"></i> {{ event.metadata.name|default:"System Event" }}
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <span class="text-muted fw-bold small">{{ event.timestamp|date:"M d, H:i" }}</span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5">
+                                        <div class="mb-3">
+                                            <i class="fas fa-shield-check fa-3x text-success opacity-25"></i>
+                                        </div>
+                                        <h6 class="text-muted fw-bold">No security alerts detected</h6>
+                                        <p class="text-muted small mb-0">System is currently secure and monitoring for
+                                            threats.</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div> <!-- Close container-fluid pb-5 -->
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const platform = navigator.platform.toLowerCase();
+            const bannerText = document.querySelector('#setupBannerText');
+            const bannerTitle = document.querySelector('#setupBannerTitle');
+
+            if (platform.includes('win')) {
+                bannerTitle.innerHTML = '🚀 Setup Sysbooster for Windows';
+                bannerText.innerHTML = 'Download the Sysbooster, then double-click to run.';
+            } else if (platform.includes('mac')) {
+                bannerTitle.innerHTML = '🚀 Setup Sysbooster for macOS';
+                bannerText.innerHTML = 'Download the Sysbooster, then run it from your terminal or double-click.';
+            }
+
+            // Date picker -> View All URL wiring
+            const urlDatePicker = document.getElementById('urlDatePicker');
+            const urlViewAllBtn = document.getElementById('urlViewAllBtn');
+            if (urlDatePicker && urlViewAllBtn) {
+                // Set today's date as default
+                const today = new Date().toISOString().split('T')[0];
+                urlDatePicker.value = today;
+                urlDatePicker.max = today;
+
+                function updateViewAllUrl() {
+                    const selectedDate = urlDatePicker.value;
+                    const baseUrl = urlViewAllBtn.getAttribute('data-base-url') || urlViewAllBtn.href.split('?')[0];
+                    urlViewAllBtn.setAttribute('data-base-url', baseUrl);
+                    const params = new URLSearchParams(window.location.search);
+                    let newHref = baseUrl + '?date=' + selectedDate;
+                    if (params.has('employee_id')) {
+                        newHref += '&employee_id=' + params.get('employee_id');
+                    }
+                    urlViewAllBtn.href = newHref;
+                }
+                urlDatePicker.addEventListener('change', updateViewAllUrl);
+                updateViewAllUrl(); // Set on load
+            }
+        });
+
+        // Auto-refresh data every 30 seconds for real-time feel
+        {% if user.role != 'EMPLOYEE' %}
+        setInterval(function () {
+            console.log("Syncing live data...");
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    // Update Metrics Container (contains hours and status badges)
+                    const newMetrics = doc.querySelector('.metric-container');
+                    const oldMetrics = document.querySelector('.metric-container');
+                    if (newMetrics && oldMetrics) {
+                        // Update only if content changed to avoid flickering
+                        if (newMetrics.innerHTML !== oldMetrics.innerHTML) {
+                            oldMetrics.innerHTML = newMetrics.innerHTML;
+                        }
+                    }
+
+                    // Update Web Activity
+                    const recentLog = doc.getElementById('recent-activity-log');
+                    const oldRecentLog = document.getElementById('recent-activity-log');
+                    if (recentLog && oldRecentLog) oldRecentLog.innerHTML = recentLog.innerHTML;
+
+                    // Update Top Apps if possible
+                    const newApps = doc.querySelector('.top-app-item')?.parentElement;
+                    const oldApps = document.querySelector('.top-app-item')?.parentElement;
+                    if (oldApps && newApps) oldApps.innerHTML = newApps.innerHTML;
+
+                    // Update System Events
+                    const newEvents = doc.getElementById('system-events-log');
+                    const oldEvents = document.getElementById('system-events-log');
+                    if (newEvents && oldEvents) oldEvents.innerHTML = newEvents.innerHTML;
+                });
+        }, 30000);
+        {% endif %}
+    </script>
+
+    {% if user.role != 'EMPLOYEE' %}
+    {{ trend_data|json_script:"trend-data" }}
+    {% endif %}
+    {% endblock %}
+
+    {% block extra_js %}
+    {% if user.role != 'EMPLOYEE' %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const trendDataElem = document.getElementById('trend-data');
+            if (!trendDataElem) return;
+
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            const trendData = JSON.parse(trendDataElem.textContent);
+
+            new Chart(ctx, {
+                // ... (rest of the chart config)
+                type: 'line',
+                data: {
+                    labels: trendData.map(d => d.label),
+                    datasets: [{
+                        label: 'Productivity',
+                        data: trendData.map(d => d.productive),
+                        borderColor: '#38B2AC',
+                        backgroundColor: 'rgba(56, 178, 172, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 0,
+                        pointHoverRadius: 5
+                    }, {
+                        label: 'Idle Time',
+                        data: trendData.map(d => d.unproductive),
+                        borderColor: '#CBD5E0',
+                        backgroundColor: 'rgba(203, 213, 224, 0.05)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: { size: 14, weight: 'bold', family: 'Outfit' },
+                            bodyFont: { size: 13, family: 'Outfit' },
+                            cornerRadius: 10,
+                            displayColors: true
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0, 0, 0, 0.03)', drawBorder: false },
+                            ticks: {
+                                callback: value => value + 'h',
+                                font: { size: 11 }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 8,
+                                font: { size: 11 }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+    {% endif %}
+    {% endblock %}

@@ -29,6 +29,7 @@ repos:
       - id: check-added-large-files
         name: Check for large files
         args: ["--maxkb=1000"]
+        exclude: '\.exe$'
       - id: check-merge-conflict
         name: Check for merge conflicts
       - id: check-json

@@ -1,4 +1,4 @@
-﻿{% load static %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -1618,6 +1618,9 @@
         <a href="{% url 'employee_org_chart' %}" class="{% if 'org-chart' in request.path %}active{% endif %}">
             <i class="fas fa-sitemap"></i> <span>Organisation</span>
         </a>
+        <a href="{% url 'activity-dashboard' %}" class="{% if 'activity-tracking' in request.path %}active{% endif %}">
+            <i class="fas fa-desktop"></i> <span>Activity Intelligence</span>
+        </a>
         {% endif %}
 
         <!-- Employees / Team (Collapsible) -->
@@ -1730,7 +1733,8 @@
                 <a href="{% url 'holidays' %}" class="{% if 'holidays' in request.path %}active{% endif %}">
                     <i class="fas fa-umbrella-beach"></i> Holidays
                 </a>
-                <a href="{% url 'companies:domain_configuration' %}" class="{% if 'domain-configuration' in request.path %}active{% endif %}">
+                <a href="{% url 'companies:domain_configuration' %}"
+                    class="{% if 'domain-configuration' in request.path %}active{% endif %}">
                     <i class="fas fa-globe"></i> Domain Configuration
                 </a>
                 <a href="{% url 'companies:role_configuration' %}"
@@ -3069,13 +3073,15 @@
     <script>
         (function () {
             const employeeId = "{{ user.employee_profile.id }}";
-            const trackingServer = "http://localhost:8001/api/v1/web/heartbeat";
+            const trackingServer = "/activity-tracking/api/heartbeat";
 
             function sendHeartbeat() {
                 // Check if connection is available
-                fetch(`${trackingServer}/${employeeId}`, {
+                fetch(`${trackingServer}/${employeeId}/`, {
                     method: 'POST',
-                    mode: 'cors'
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
                 })
                     .then(res => res.json())
                     .then(data => console.log("Monitoring: Heartbeat active", data))
