@@ -7,7 +7,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Sum
 from django.http import HttpResponse
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
+from loguru import logger
 from rest_framework import permissions, status, views
 from rest_framework.response import Response
 
@@ -25,59 +27,73 @@ class ActivityIngestView(views.APIView):
     authentication_classes = []  # Allow custom token auth
     permission_classes = [permissions.AllowAny]
 
+    @csrf_exempt
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
     def post(self, request, *args, **kwargs):
-        auth_header = request.headers.get("Authorization", "")
-        if not auth_header.startswith("Token "):
-            return Response({"error": "No token provided"}, status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            auth_header = request.headers.get("Authorization", "")
+            logger.info(f"Activity sync request received. Auth header present: {bool(auth_header)}")
 
-        token_str = auth_header.split(" ")[1]
-        device = EmployeeDevice.objects.filter(token=token_str, is_active=True).first()
-        if not device:
-            return Response({"error": "Invalid or inactive token"}, status=status.HTTP_401_UNAUTHORIZED)
+            if not auth_header.startswith("Token "):
+                logger.warning("No token provided in Authorization header")
+                return Response({"error": "No token provided"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        employee = device.employee
-        serializer = ActivityBatchSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            token_str = auth_header.split(" ")[1]
+            device = EmployeeDevice.objects.filter(token=token_str, is_active=True).first()
 
-        data = serializer.validated_data
+            if not device:
+                logger.warning("Invalid or inactive token provided")
+                return Response({"error": "Invalid or inactive token"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        # Update device last seen
-        device.last_seen = timezone.now()
-        device.save(update_fields=["last_seen"])
+            logger.info(f"Valid device found for employee: {device.employee.user.get_full_name()}")
+            employee = device.employee
+            serializer = ActivityBatchSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # 1. Get or create an active session
-        session = ActivitySession.objects.filter(employee=employee, end_time__isnull=True).first()
-        if not session:
-            session = ActivitySession.objects.create(employee=employee)
+            data = serializer.validated_data
 
-        # 2. Bulk create App Activities
-        app_list = [AppActivity(employee=employee, session=session, **d) for d in data.get("app_activities", [])]
-        if app_list:
-            AppActivity.objects.bulk_create(app_list)
+            # Update device last seen
+            device.last_seen = timezone.now()
+            device.save(update_fields=["last_seen"])
 
-        # 3. Bulk create Browser Activities
-        browser_list = [
-            BrowserActivity(employee=employee, session=session, **d) for d in data.get("browser_activities", [])
-        ]
-        if browser_list:
-            BrowserActivity.objects.bulk_create(browser_list)
+            # 1. Get or create an active session
+            session = ActivitySession.objects.filter(employee=employee, end_time__isnull=True).first()
+            if not session:
+                session = ActivitySession.objects.create(employee=employee)
 
-        # 4. Bulk create System Events (USB, etc)
-        event_list = [SystemEvent(employee=employee, **d) for d in data.get("system_events", [])]
-        if event_list:
-            SystemEvent.objects.bulk_create(event_list)
+            # 2. Bulk create App Activities
+            app_list = [AppActivity(employee=employee, session=session, **d) for d in data.get("app_activities", [])]
+            if app_list:
+                AppActivity.objects.bulk_create(app_list)
 
-        # 5. Record Activity Pulse
-        pulse = ActivityPulse.objects.create(
-            employee=employee, is_idle=data.get("is_idle", False), idle_duration_seconds=data.get("idle_seconds", 0)
-        )
+            # 3. Bulk create Browser Activities
+            browser_list = [
+                BrowserActivity(employee=employee, session=session, **d) for d in data.get("browser_activities", [])
+            ]
+            if browser_list:
+                BrowserActivity.objects.bulk_create(browser_list)
 
-        from loguru import logger
+            # 4. Bulk create System Events (USB, etc)
+            event_list = [SystemEvent(employee=employee, **d) for d in data.get("system_events", [])]
+            if event_list:
+                SystemEvent.objects.bulk_create(event_list)
 
-        logger.info(f"Sync Success for {employee.user.get_full_name()} at {pulse.timestamp}")
+            # 5. Record Activity Pulse
+            pulse = ActivityPulse.objects.create(
+                employee=employee, is_idle=data.get("is_idle", False), idle_duration_seconds=data.get("idle_seconds", 0)
+            )
 
-        return Response({"status": "success"}, status=status.HTTP_201_CREATED)
+            logger.info(f"✅ Sync Success for {employee.user.get_full_name()} at {pulse.timestamp}")
+            logger.debug(f"Synced: {len(app_list)} apps, {len(browser_list)} browser, {len(event_list)} events")
+
+            return Response({"status": "success"}, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            logger.error(f"Activity sync error: {str(e)}", exc_info=True)
+            return Response({"error": "Internal server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class HeartbeatView(views.APIView):

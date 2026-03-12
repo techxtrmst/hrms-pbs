@@ -311,8 +311,28 @@ def sync_data(app_data, browser_data, system_events=None, is_idle=False, idle_se
     headers = {"Authorization": f"Token {API_TOKEN}", "Content-Type": "application/json"}
     try:
         resp = requests.post(SERVER_URL, json=payload, headers=headers, timeout=15)
-        return resp.status_code == 201
-    except Exception:
+
+        # Log the response for debugging
+        if resp.status_code == 201:
+            return True
+        else:
+            # Write error to a log file for debugging
+            error_log = os.path.join(BASE_DIR, "sync_errors.log")
+            with open(error_log, "a") as f:
+                f.write(f"{datetime.now()}: Status {resp.status_code}, Response: {resp.text}\n")
+            return False
+    except requests.exceptions.ConnectionError as e:
+        # Network connection error
+        error_log = os.path.join(BASE_DIR, "sync_errors.log")
+        with open(error_log, "a") as f:
+            f.write(f"{datetime.now()}: Connection Error - {str(e)}\n")
+            f.write(f"  Server URL: {SERVER_URL}\n")
+        return False
+    except Exception as e:
+        # Other errors
+        error_log = os.path.join(BASE_DIR, "sync_errors.log")
+        with open(error_log, "a") as f:
+            f.write(f"{datetime.now()}: Error - {str(e)}\n")
         return False
 
 

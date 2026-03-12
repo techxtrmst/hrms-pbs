@@ -74,6 +74,8 @@ EXCLUDE_PATTERNS = [
     r"^verify_.*\.py$",
     r"^fix_.*\.py$",
     r"^payslip_generator\.py$",
+    # Exclude diagnostic scripts in activity_monitoring
+    r"activity_monitoring/agent_src/test_connection\.py$",
 ]
 
 
