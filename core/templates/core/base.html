@@ -3076,16 +3076,27 @@
             const trackingServer = "/activity-tracking/api/heartbeat";
 
             function sendHeartbeat() {
-                // Check if connection is available
                 fetch(`${trackingServer}/${employeeId}/`, {
                     method: 'POST',
                     headers: {
+                        'Content-Type': 'application/json',
                         'X-CSRFToken': '{{ csrf_token }}'
-                    }
+                    },
+                    credentials: 'same-origin'
                 })
-                    .then(res => res.json())
-                    .then(data => console.log("Monitoring: Heartbeat active", data))
-                    .catch(err => console.log("Monitoring: Backend offline (check tracking server)"));
+                    .then(res => {
+                        if (!res.ok) {
+                            console.warn(`Monitoring: Heartbeat failed (${res.status})`);
+                            return null;
+                        }
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (data) {
+                            console.log("Monitoring: Heartbeat active", data);
+                        }
+                    })
+                    .catch(err => console.log("Monitoring: Backend offline", err.message));
             }
 
             // Pulse every 30 seconds

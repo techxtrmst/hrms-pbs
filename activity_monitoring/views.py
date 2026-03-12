@@ -101,20 +101,37 @@ class HeartbeatView(views.APIView):
     Lightweight heartbeat endpoint for web-based activity tracking.
     """
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]  # Allow authenticated users via session
+
+    @csrf_exempt
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
 
     def post(self, request, employee_id, *args, **kwargs):
         try:
+            # Check if user is authenticated
+            if not request.user.is_authenticated:
+                logger.warning("Heartbeat: Unauthenticated request")
+                return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+
             employee = Employee.objects.get(id=employee_id)
+
+            # Verify user can only send heartbeat for themselves
+            if request.user.employee_profile.id != employee.id:
+                logger.warning(f"Heartbeat: User {request.user.id} tried to send for employee {employee_id}")
+                return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
             # Simple pulse recording
             ActivityPulse.objects.create(employee=employee, is_idle=False, idle_duration_seconds=0)
 
+            logger.debug(f"Heartbeat recorded for {employee.user.get_full_name()}")
             return Response({"status": "pulse_recorded"}, status=status.HTTP_200_OK)
         except Employee.DoesNotExist:
+            logger.warning(f"Heartbeat: Employee {employee_id} not found")
             return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Heartbeat error: {str(e)}", exc_info=True)
+            return Response({"error": "Internal server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class ActivityDashboardView(LoginRequiredMixin, TemplateView):
