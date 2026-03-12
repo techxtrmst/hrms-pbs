@@ -33,21 +33,40 @@ class ActivityIngestView(views.APIView):
 
     def post(self, request, *args, **kwargs):
         try:
-            auth_header = request.headers.get("Authorization", "")
-            logger.info(f"Activity sync request received. Auth header present: {bool(auth_header)}")
+            # Log the request for debugging
+            logger.info(f"Activity sync request from {request.META.get('REMOTE_ADDR')}")
 
-            if not auth_header.startswith("Token "):
-                logger.warning("No token provided in Authorization header")
+            auth_header = request.headers.get("Authorization", "")
+            if not auth_header:
+                # Try alternate header names
+                auth_header = request.META.get("HTTP_AUTHORIZATION", "")
+
+            logger.info(
+                f"Auth header present: {bool(auth_header)}, starts with Token: {auth_header.startswith('Token ') if auth_header else False}"
+            )
+
+            if not auth_header or not auth_header.startswith("Token "):
+                logger.warning(f"No valid token in request. Headers: {dict(request.headers)}")
                 return Response({"error": "No token provided"}, status=status.HTTP_401_UNAUTHORIZED)
 
-            token_str = auth_header.split(" ")[1]
+            token_str = auth_header.split(" ")[1] if len(auth_header.split(" ")) > 1 else ""
+            if not token_str:
+                logger.warning("Token string is empty after split")
+                return Response({"error": "Invalid token format"}, status=status.HTTP_401_UNAUTHORIZED)
+
+            logger.info(f"Looking up device with token (first 10 chars): {token_str[:10]}...")
             device = EmployeeDevice.objects.filter(token=token_str, is_active=True).first()
 
             if not device:
-                logger.warning("Invalid or inactive token provided")
+                logger.warning("No active device found for token. Checking if token exists at all...")
+                any_device = EmployeeDevice.objects.filter(token=token_str).first()
+                if any_device:
+                    logger.warning(f"Device exists but is_active={any_device.is_active}")
+                else:
+                    logger.warning("Token doesn't match any device in database")
                 return Response({"error": "Invalid or inactive token"}, status=status.HTTP_401_UNAUTHORIZED)
 
-            logger.info(f"Valid device found for employee: {device.employee.user.get_full_name()}")
+            logger.info(f"✅ Valid device found for employee: {device.employee.user.get_full_name()}")
             employee = device.employee
             serializer = ActivityBatchSerializer(data=request.data)
             if not serializer.is_valid():
