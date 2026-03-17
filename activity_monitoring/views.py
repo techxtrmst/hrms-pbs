@@ -85,33 +85,52 @@ class ActivityIngestView(views.APIView):
             if not session:
                 session = ActivitySession.objects.create(employee=employee)
 
-            # Limit batch sizes to prevent "Request Too Large" errors
-            app_list = [
-                AppActivity(employee=employee, session=session, **d) for d in data.get("app_activities", [])[:100]
-            ]
+            # 2. Process Activities
+            app_activities = data.get("app_activities", [])
+            browser_activities = data.get("browser_activities", [])
+            event_activities = data.get("system_events", [])
+
+            local_tz = timezone.get_current_timezone()
+
+            def make_aware_if_naive(dt):
+                if dt and timezone.is_naive(dt):
+                    return timezone.make_aware(dt, local_tz)
+                return dt
+
+            app_list = []
+            for d in app_activities[:100]:
+                d["start_time"] = make_aware_if_naive(d.get("start_time"))
+                d["end_time"] = make_aware_if_naive(d.get("end_time"))
+                app_list.append(AppActivity(employee=employee, session=session, **d))
+
             if app_list:
                 AppActivity.objects.bulk_create(app_list)
 
-            browser_list = [
-                BrowserActivity(employee=employee, session=session, **d)
-                for d in data.get("browser_activities", [])[:100]
-            ]
+            browser_list = []
+            for d in browser_activities[:100]:
+                d["timestamp"] = make_aware_if_naive(d.get("timestamp"))
+                browser_list.append(BrowserActivity(employee=employee, session=session, **d))
+
             if browser_list:
                 BrowserActivity.objects.bulk_create(browser_list)
 
-            event_list = [SystemEvent(employee=employee, **d) for d in data.get("system_events", [])[:50]]
+            event_list = []
+            for d in event_activities[:50]:
+                d["timestamp"] = make_aware_if_naive(d.get("timestamp"))
+                event_list.append(SystemEvent(employee=employee, **d))
+
             if event_list:
                 SystemEvent.objects.bulk_create(event_list)
 
+            # 3. Record Activity Pulse
             pulse = ActivityPulse.objects.create(
                 employee=employee, is_idle=data.get("is_idle", False), idle_duration_seconds=data.get("idle_seconds", 0)
             )
 
             logger.info(
                 f"✅ Sync Success for {employee.user.get_full_name()} "
-                f"(Device: {device.device_name}, Pulse ID: {pulse.id})"
+                f"(Device: {device.device_name}, Records: {len(app_list)} apps)"
             )
-            logger.debug(f"Payload: {len(app_list)} apps, {len(browser_list)} browser, {len(event_list)} events")
             return Response({"status": "success", "pulse_id": pulse.id}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
@@ -204,16 +223,28 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
         productive_time = today_apps.filter(is_productive=True).aggregate(total=Sum("duration"))["total"] or timedelta(
             0
         )
-        context["productive_hours"] = round(productive_time.total_seconds() / 3600, 1)
 
-        # 1.1 Idle Time (Selected Date) - Sum of pulse idle durations
-        idle_total = (
+        # 1.1 Idle Time (Selected Date)
+        idle_total_seconds = (
             ActivityPulse.objects.filter(employee_id__in=account_ids, timestamp__date=today, is_idle=True).aggregate(
                 total=Sum("idle_duration_seconds")
             )["total"]
             or 0
         )
-        context["unproductive_hours"] = round(idle_total / 3600, 1)
+        idle_time = timedelta(seconds=idle_total_seconds)
+
+        # Precision display (using minutes if < 1 hour to avoid 0.0h)
+        def format_duration(dur):
+            total_seconds = dur.total_seconds()
+            if total_seconds == 0:
+                return "0.0"
+            if total_seconds < 3600:
+                # Show as 0.1h etc or handle minutes
+                return round(max(0.1, total_seconds / 3600), 1)
+            return round(total_seconds / 3600, 1)
+
+        context["productive_hours"] = format_duration(productive_time)
+        context["unproductive_hours"] = format_duration(idle_time)
 
         # 2. Top Apps (Selected Date range)
         top_apps_qs = AppActivity.objects.filter(employee_id__in=account_ids, start_time__date=today)
