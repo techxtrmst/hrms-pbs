@@ -1412,7 +1412,7 @@
             <option value="terminated" {% if selected_filter == 'terminated' %}selected{% endif %}>Terminated</option>
         </select>
 
-        {% if user.role == 'COMPANY_ADMIN' %}
+        {% if user.role == "COMPANY_ADMIN" or user.role == "EMPLOYEE_MANAGER" %}
         <a href="{% url 'employee_bulk_import' %}" class="btn-add-employee"
             style="background: white; color: #4338ca; border: 1px solid #e0e7ff; margin-right: 8px;">
             <i class="fas fa-file-import"></i>
@@ -1440,7 +1440,7 @@
                         <th>Pseudo Name</th>
                         {% endif %}
                         <th>Manager</th>
-                        {% if user.role == 'COMPANY_ADMIN' %}
+                        {% if user.role == "COMPANY_ADMIN" or user.role == "EMPLOYEE_MANAGER" %}
                         <th>Actions</th>
                         {% endif %}
                     </tr>
@@ -1483,7 +1483,7 @@
                         <td>{{ employee.pseudo_name|default:"-" }}</td>
                         {% endif %}
                         <td>{{ employee.manager.get_full_name|default:"-" }}{% if employee.manager.employee and employee.manager.employee.pseudo_name %} ({{ employee.manager.employee.pseudo_name }}){% endif %}</td>
-                        {% if user.role == 'COMPANY_ADMIN' %}
+                        {% if user.role == "COMPANY_ADMIN" or user.role == "EMPLOYEE_MANAGER" %}
                         <td>
                             <div class="action-buttons">
                                 <a href="{% url 'employee_detail' employee.pk %}" class="btn-action btn-edit"

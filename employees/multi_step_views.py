@@ -40,6 +40,7 @@ def add_employee_step0(request):
         request.user.is_superuser
         or request.user.role == User.Role.SUPERADMIN
         or request.user.role == User.Role.COMPANY_ADMIN
+        or request.user.role == User.Role.EMPLOYEE_MANAGER
     ):
         # Superadmin and Company Admin can see all active companies
         companies = (

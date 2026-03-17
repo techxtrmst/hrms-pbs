@@ -3025,6 +3025,7 @@ def download_attendance(request):
 
 
 @login_required
+@manager_required
 def leave_requests(request):
     """Admin view for managing leave requests"""
 

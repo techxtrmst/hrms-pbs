@@ -21,6 +21,7 @@ class PersonalInfoForm(forms.ModelForm):
     ROLE_CHOICES = [
         ("EMPLOYEE", "Employee"),
         ("MANAGER", "Manager"),
+        ("EMPLOYEE_MANAGER", "HR"),
         ("COMPANY_ADMIN", "Admin"),
     ]
     role = forms.ChoiceField(choices=ROLE_CHOICES, widget=forms.RadioSelect, initial="EMPLOYEE", label="Role")
@@ -83,7 +84,7 @@ class PersonalInfoForm(forms.ModelForm):
         self.company = None
 
         # Company Isolation Logic (fallback for old flow)
-        if self.user and self.user.role == User.Role.COMPANY_ADMIN:
+        if self.user and self.user.role in [User.Role.COMPANY_ADMIN, User.Role.EMPLOYEE_MANAGER]:
             self.fields["company_selection"].queryset = Company.objects.filter(pk=self.user.company.id)
             self.fields["company_selection"].initial = self.user.company
             self.fields["company_selection"].widget.attrs["disabled"] = "disabled"
@@ -133,7 +134,7 @@ class PersonalInfoForm(forms.ModelForm):
             return cleaned_data
 
         # Manually handle company due to disabled field (old flow)
-        if self.user and self.user.role == User.Role.COMPANY_ADMIN:
+        if self.user and self.user.role in [User.Role.COMPANY_ADMIN, User.Role.EMPLOYEE_MANAGER]:
             cleaned_data["company_selection"] = self.user.company
 
         if not cleaned_data.get("company_selection"):
@@ -196,7 +197,7 @@ class JobDetailsForm(forms.ModelForm):
             from companies.models import Company, Department, Designation
 
             self.company = Company.objects.get(id=company_id)
-        elif self.user and self.user.role == User.Role.COMPANY_ADMIN:
+        elif self.user and self.user.role in [User.Role.COMPANY_ADMIN, User.Role.EMPLOYEE_MANAGER]:
             # Fallback to user's company if not provided explicitly
             self.company = self.user.company
         else:

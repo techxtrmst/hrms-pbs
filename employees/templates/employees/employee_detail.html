@@ -670,7 +670,7 @@
             <div class="h5 mb-0">{{ current_month }} {{ current_year }}</div>
         </div>
 
-        {% if user.role == 'COMPANY_ADMIN' or user.role == 'SUPERADMIN' %}
+        {% if user.role == 'COMPANY_ADMIN' or user.role == 'SUPERADMIN' or user.role == 'EMPLOYEE_MANAGER' %}
         <a href="{% url 'employee_id_proofs' employee.pk %}" class="btn-id-proof">
             <i class="fas fa-id-card"></i> ID Proofs
         </a>
@@ -1169,7 +1169,7 @@
                     </div>
 
                     <!-- Financial Details (Visible to Admins only) -->
-                    {% if user.role == 'COMPANY_ADMIN' or user.role == 'SUPERADMIN' %}
+                    {% if user.role == 'COMPANY_ADMIN' or user.role == 'SUPERADMIN' or user.role == 'EMPLOYEE_MANAGER' %}
                     <div>
                         <h6 class="section-title"><i class="fas fa-file-invoice-dollar"></i> Financial & Compliance Info
                             <a href="#" data-bs-toggle="modal" data-bs-target="#editFinancialModal"

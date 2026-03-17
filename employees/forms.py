@@ -29,6 +29,7 @@ class EmployeeCreationForm(forms.ModelForm):
     ROLE_CHOICES = [
         ("EMPLOYEE", "Employee"),
         ("MANAGER", "Manager"),
+        ("EMPLOYEE_MANAGER", "HR"),
         # Admin role is usually assigned not chosen here, but implementing as requested
         ("COMPANY_ADMIN", "Admin"),
     ]
@@ -89,7 +90,7 @@ class EmployeeCreationForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         # Company Isolation Logic
-        if self.user and self.user.role == User.Role.COMPANY_ADMIN:
+        if self.user and self.user.role in [User.Role.COMPANY_ADMIN, User.Role.EMPLOYEE_MANAGER]:
             # Lock company to admin's company
             self.fields["company_selection"].queryset = Company.objects.filter(pk=self.user.company.id)
             self.fields["company_selection"].initial = self.user.company
@@ -179,7 +180,7 @@ class EmployeeCreationForm(forms.ModelForm):
         cleaned_data = super().clean()
 
         # Manually handle company due to disabled field
-        if self.user and self.user.role == User.Role.COMPANY_ADMIN:
+        if self.user and self.user.role in [User.Role.COMPANY_ADMIN, User.Role.EMPLOYEE_MANAGER]:
             cleaned_data["company_selection"] = self.user.company
 
         if not cleaned_data.get("company_selection"):
