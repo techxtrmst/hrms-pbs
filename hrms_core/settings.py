@@ -524,6 +524,38 @@ def navigation_callback(request):
                 },
             ],
         },
+        {
+            "title": _("Activity Monitoring"),
+            "separator": True,
+            "collapsible": True,
+            "items": [
+                {
+                    "title": _("Activity Dashboard"),
+                    "icon": "analytics",
+                    "link": reverse_lazy("activity_dashboard"),
+                },
+                {
+                    "title": _("Employee Devices"),
+                    "icon": "devices",
+                    "link": reverse_lazy("admin:activity_monitoring_employeedevice_changelist"),
+                },
+                {
+                    "title": _("App Activities"),
+                    "icon": "app_registration",
+                    "link": reverse_lazy("admin:activity_monitoring_appactivity_changelist"),
+                },
+                {
+                    "title": _("Browser Logs"),
+                    "icon": "history",
+                    "link": reverse_lazy("admin:activity_monitoring_browseractivity_changelist"),
+                },
+                {
+                    "title": _("Security Events"),
+                    "icon": "security",
+                    "link": reverse_lazy("admin:activity_monitoring_systemevent_changelist"),
+                },
+            ],
+        },
     ]
 
     # Add sensitive sections only in debug mode

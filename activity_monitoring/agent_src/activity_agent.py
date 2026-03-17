@@ -415,14 +415,28 @@ def main():
                         }
                     )
 
+            # Limit local batches to prevent memory overflow if server is down
+            if len(batch_apps) > 500:
+                batch_apps = batch_apps[-500:]
+            if len(batch_browser) > 500:
+                batch_browser = batch_browser[-500:]
+            if len(batch_events) > 200:
+                batch_events = batch_events[-200:]
+
             # Sync every 60 seconds
-            if time.time() - last_sync > 60 and sync_data(
-                batch_apps, batch_browser, batch_events, is_idle=is_idle, idle_seconds=int(idle_seconds)
-            ):
-                batch_apps = []
-                batch_browser = []
-                batch_events = []
-                last_sync = time.time()
+            if time.time() - last_sync > 60:
+                success = sync_data(
+                    batch_apps, batch_browser, batch_events, is_idle=is_idle, idle_seconds=int(idle_seconds)
+                )
+                if success:
+                    batch_apps = []
+                    batch_browser = []
+                    batch_events = []
+                    last_sync = time.time()
+                else:
+                    # If sync failed, we wait another 30s before trying again
+                    # This prevents spamming a failing server
+                    time.sleep(30)
 
         except Exception:
             time.sleep(10)  # avoid hard-crash loop

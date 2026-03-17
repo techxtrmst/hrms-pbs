@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from loguru import logger
-from rest_framework import permissions, status, views
+from rest_framework import authentication, permissions, status, views
 from rest_framework.response import Response
 
 from employees.models import Employee
@@ -24,7 +24,7 @@ class ActivityIngestView(views.APIView):
     API endpoint for the Desktop Agent or Extension to sync activity data.
     """
 
-    authentication_classes = []  # Allow custom token auth
+    authentication_classes = []  # Strictly manual token validation
     permission_classes = [permissions.AllowAny]
 
     @csrf_exempt
@@ -83,31 +83,35 @@ class ActivityIngestView(views.APIView):
             if not session:
                 session = ActivitySession.objects.create(employee=employee)
 
-            # 2. Bulk create App Activities
-            app_list = [AppActivity(employee=employee, session=session, **d) for d in data.get("app_activities", [])]
+            # Limit batch sizes to prevent "Request Too Large" errors
+            app_list = [
+                AppActivity(employee=employee, session=session, **d) for d in data.get("app_activities", [])[:100]
+            ]
             if app_list:
                 AppActivity.objects.bulk_create(app_list)
 
-            # 3. Bulk create Browser Activities
             browser_list = [
-                BrowserActivity(employee=employee, session=session, **d) for d in data.get("browser_activities", [])
+                BrowserActivity(employee=employee, session=session, **d)
+                for d in data.get("browser_activities", [])[:100]
             ]
             if browser_list:
                 BrowserActivity.objects.bulk_create(browser_list)
 
-            # 4. Bulk create System Events (USB, etc)
-            event_list = [SystemEvent(employee=employee, **d) for d in data.get("system_events", [])]
+            event_list = [SystemEvent(employee=employee, **d) for d in data.get("system_events", [])[:50]]
             if event_list:
                 SystemEvent.objects.bulk_create(event_list)
 
-            # 5. Record Activity Pulse
+            # Record Activity Pulse
             pulse = ActivityPulse.objects.create(
                 employee=employee, is_idle=data.get("is_idle", False), idle_duration_seconds=data.get("idle_seconds", 0)
             )
 
-            logger.info(f"✅ Sync Success for {employee.user.get_full_name()} at {pulse.timestamp}")
-            logger.debug(f"Synced: {len(app_list)} apps, {len(browser_list)} browser, {len(event_list)} events")
+            # Update device last seen
+            device.last_seen = timezone.now()
+            device.save(update_fields=["last_seen"])
 
+            logger.info(f"✅ Sync Success for {employee.user.get_full_name()} at {pulse.timestamp}")
+            logger.debug(f"Payload: {len(app_list)} apps, {len(browser_list)} browser, {len(event_list)} events")
             return Response({"status": "success"}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
@@ -120,7 +124,8 @@ class HeartbeatView(views.APIView):
     Lightweight heartbeat endpoint for web-based activity tracking.
     """
 
-    permission_classes = [permissions.AllowAny]  # Allow authenticated users via session
+    authentication_classes = [authentication.SessionAuthentication, authentication.BasicAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
 
     @csrf_exempt
     def dispatch(self, *args, **kwargs):
