@@ -283,10 +283,14 @@ class EmployeeDeleteView(LoginRequiredMixin, CompanyAdminRequiredMixin, DeleteVi
 
             # 2. Delete Leave related data
             employee.leave_requests.all().delete()
-            employee.leave_balances.all().delete()
+            if hasattr(employee, "leave_balance"):
+                employee.leave_balance.delete()
 
-            # 3. Delete Regularization and Emergency Contacts
+            # 3. Delete Regularization, Exit Initiatives, Payslips, and Work History
             employee.regularization_requests.all().delete()
+            employee.exit_initiatives.all().delete()
+            employee.payslips.all().delete()
+            employee.work_history.all().delete()
             employee.emergency_contacts.all().delete()
 
             # 4. Delete ID Proofs (Optional/Best Effort)
