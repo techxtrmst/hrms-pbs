@@ -275,46 +275,29 @@ class EmployeeDeleteView(LoginRequiredMixin, CompanyAdminRequiredMixin, DeleteVi
 
             # Delete all related data in the correct order to avoid foreign key constraints
 
-            # 1. Delete Attendance Sessions and Location Logs
-            if hasattr(employee, "attendances"):
-                for attendance in employee.attendances.all():
-                    # Delete session location logs
-                    if hasattr(attendance, "sessions"):
-                        for session in attendance.sessions.all():
-                            # Delete session-specific location logs
-                            if hasattr(session, "location_logs"):
-                                session.location_logs.all().delete()
-                            session.delete()
-                    attendance.delete()
+            # 1. Delete Attendance related data
+            # Use querysets to delete in bulk for efficiency
+            employee.attendances.all().delete()
+            employee.attendance_sessions.all().delete()
+            employee.location_logs.all().delete()
 
-            # 2. Delete Location Logs (general)
-            if hasattr(employee, "location_logs"):
-                employee.location_logs.all().delete()
+            # 2. Delete Leave related data
+            employee.leave_requests.all().delete()
+            employee.leave_balances.all().delete()
 
-            # 3. Delete Leave Requests
-            if hasattr(employee, "leave_requests"):
-                employee.leave_requests.all().delete()
+            # 3. Delete Regularization and Emergency Contacts
+            employee.regularization_requests.all().delete()
+            employee.emergency_contacts.all().delete()
 
-            # 4. Delete Leave Balances
-            if hasattr(employee, "leave_balances"):
-                employee.leave_balances.all().delete()
-
-            # 5. Delete Regularization Requests
-            if hasattr(employee, "regularization_requests"):
-                employee.regularization_requests.all().delete()
-
-            # 6. Delete Emergency Contacts
-            if hasattr(employee, "emergency_contacts"):
-                employee.emergency_contacts.all().delete()
-
-            # 7. Delete ID Proofs
+            # 4. Delete ID Proofs (Optional/Best Effort)
             if hasattr(employee, "id_proofs"):
                 try:
-                    employee.id_proofs.delete()
+                    with transaction.atomic():
+                        employee.id_proofs.delete()
                 except Exception as e:
                     logger.warning(f"Error deleting ID proofs: {e}")
 
-            # 8. Delete the User account (this will cascade delete the Employee due to CASCADE)
+            # 5. Delete the User account (this will cascade delete the Employee due to CASCADE)
             user = employee.user
             if user:
                 # RAW SQL Cleanup for legacy tracker data that blocks user deletion
@@ -322,16 +305,16 @@ class EmployeeDeleteView(LoginRequiredMixin, CompanyAdminRequiredMixin, DeleteVi
                 # which has a foreign key to accounts_user that prevents deletion.
                 from django.db import connection
 
-                with connection.cursor() as cursor:
-                    try:
+                try:
+                    with transaction.atomic(), connection.cursor() as cursor:
                         cursor.execute("DELETE FROM activity_tracker_activitylog WHERE employee_id = %s", [user.id])
                         logger.info(f"Cleared legacy activity logs for user {user.id}")
-                    except Exception as e:
-                        # Table might not exist or have different structure, ignore if it fails
-                        logger.debug(f"Legacy activity log cleanup skipped or failed: {e}")
+                except Exception as e:
+                    # Table might not exist or have different structure, ignore if it fails
+                    logger.debug(f"Legacy activity log cleanup skipped or failed: {e}")
 
                 user_email = user.email
-                user.delete()  # This will also delete the employee due to CASCADE
+                user.delete()  # This will also delete the employee profile due to CASCADE
                 logger.info(f"Successfully deleted user account: {user_email}")
             else:
                 # If no user exists, delete employee directly
