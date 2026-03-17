@@ -103,18 +103,16 @@ class ActivityIngestView(views.APIView):
             if event_list:
                 SystemEvent.objects.bulk_create(event_list)
 
-            # Record Activity Pulse
             pulse = ActivityPulse.objects.create(
                 employee=employee, is_idle=data.get("is_idle", False), idle_duration_seconds=data.get("idle_seconds", 0)
             )
 
-            # Update device last seen
-            device.last_seen = timezone.now()
-            device.save(update_fields=["last_seen"])
-
-            logger.info(f"✅ Sync Success for {employee.user.get_full_name()} at {pulse.timestamp}")
+            logger.info(
+                f"✅ Sync Success for {employee.user.get_full_name()} "
+                f"(Device: {device.device_name}, Pulse ID: {pulse.id})"
+            )
             logger.debug(f"Payload: {len(app_list)} apps, {len(browser_list)} browser, {len(event_list)} events")
-            return Response({"status": "success"}, status=status.HTTP_201_CREATED)
+            return Response({"status": "success", "pulse_id": pulse.id}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
             logger.error(f"Activity sync error: {str(e)}", exc_info=True)
@@ -190,18 +188,16 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
                 # Expecting YYYY-MM-DD
                 today = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
             except (ValueError, TypeError):
-                today = timezone.now().date()
+                today = timezone.localdate()
         else:
-            today = timezone.now().date()
+            today = timezone.localdate()
 
         context["selected_date"] = today
-        context["today_date"] = timezone.now().date()
-        context["yesterday_date"] = timezone.now().date() - timedelta(days=1)
-        # Determine target employee ID(s) - handle duplicates with same email prefix
-        all_accounts = Employee.objects.filter(
-            user__email__icontains=employee.user.email.split("@")[0], company=employee.company
-        )
-        account_ids = list(all_accounts.values_list("id", flat=True))
+        context["today_date"] = timezone.localdate()
+        context["yesterday_date"] = timezone.localdate() - timedelta(days=1)
+
+        # Precise account identification
+        account_ids = [employee.id]
 
         # 1. Total productive vs unproductive time (Selected Date)
         today_apps = AppActivity.objects.filter(employee_id__in=account_ids, start_time__date=today)
@@ -310,9 +306,8 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
             # Enrich employees with tracking status
             now = timezone.now()
             for emp in employees:
-                # Aggregate pulse across all accounts with same email for status check
-                emp_emails = Employee.objects.filter(user__email__icontains=emp.user.email.split("@")[0])
-                latest_pulse = ActivityPulse.objects.filter(employee__in=emp_emails).order_by("-timestamp").first()
+                # Use precise employee ID for status check (no fuzzy email prefix match)
+                latest_pulse = ActivityPulse.objects.filter(employee_id=emp.id).order_by("-timestamp").first()
                 if latest_pulse:
                     is_active = (now - latest_pulse.timestamp) < timedelta(minutes=10)
                     emp.tracking_status = "Online" if is_active else "Offline"
@@ -323,8 +318,8 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
 
             context["employees_list"] = employees
 
-        # 6. Selected Employee Status
-        latest_pulse = ActivityPulse.objects.filter(employee_id__in=account_ids).order_by("-timestamp").first()
+        # 6. Selected Employee Status (Precise match)
+        latest_pulse = ActivityPulse.objects.filter(employee_id=employee.id).order_by("-timestamp").first()
         if latest_pulse:
             is_active = (timezone.now() - latest_pulse.timestamp) < timedelta(minutes=10)
             context["is_online"] = is_active
@@ -368,9 +363,9 @@ class BrowserActivityDetailView(LoginRequiredMixin, TemplateView):
             try:
                 selected_date = datetime.strptime(date_str, "%Y-%m-%d").date()
             except ValueError:
-                selected_date = timezone.now().date()
+                selected_date = timezone.localdate()
         else:
-            selected_date = timezone.now().date()
+            selected_date = timezone.localdate()
 
         activity_qs = BrowserActivity.objects.filter(employee=employee, timestamp__date=selected_date).order_by(
             "-timestamp"
@@ -420,9 +415,9 @@ class AppActivityDetailView(LoginRequiredMixin, TemplateView):
         # ── Date Filter ───────────────────────────────────────────
         date_str = self.request.GET.get("date")
         try:
-            selected_date = datetime.strptime(date_str, "%Y-%m-%d").date() if date_str else timezone.now().date()
+            selected_date = datetime.strptime(date_str, "%Y-%m-%d").date() if date_str else timezone.localdate()
         except ValueError:
-            selected_date = timezone.now().date()
+            selected_date = timezone.localdate()
 
         # ── Fetch raw records ordered by time ────────────────────
         raw_qs = AppActivity.objects.filter(employee=employee, start_time__date=selected_date).order_by("start_time")
