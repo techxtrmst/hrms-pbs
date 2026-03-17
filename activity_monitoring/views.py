@@ -70,6 +70,8 @@ class ActivityIngestView(views.APIView):
             employee = device.employee
             serializer = ActivityBatchSerializer(data=request.data)
             if not serializer.is_valid():
+                logger.warning(f"Activity sync validation failed: {serializer.errors}")
+                logger.debug(f"Payload was: {str(request.data)[:500]}...")
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
             data = serializer.validated_data
@@ -195,9 +197,14 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
         context["selected_date"] = today
         context["today_date"] = timezone.now().date()
         context["yesterday_date"] = timezone.now().date() - timedelta(days=1)
+        # Determine target employee ID(s) - handle duplicates with same email prefix
+        all_accounts = Employee.objects.filter(
+            user__email__icontains=employee.user.email.split("@")[0], company=employee.company
+        )
+        account_ids = list(all_accounts.values_list("id", flat=True))
 
         # 1. Total productive vs unproductive time (Selected Date)
-        today_apps = AppActivity.objects.filter(employee=employee, start_time__date=today)
+        today_apps = AppActivity.objects.filter(employee_id__in=account_ids, start_time__date=today)
         productive_time = today_apps.filter(is_productive=True).aggregate(total=Sum("duration"))["total"] or timedelta(
             0
         )
@@ -205,7 +212,7 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
 
         # 1.1 Idle Time (Selected Date) - Sum of pulse idle durations
         idle_total = (
-            ActivityPulse.objects.filter(employee=employee, timestamp__date=today, is_idle=True).aggregate(
+            ActivityPulse.objects.filter(employee_id__in=account_ids, timestamp__date=today, is_idle=True).aggregate(
                 total=Sum("idle_duration_seconds")
             )["total"]
             or 0
@@ -213,21 +220,27 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
         context["unproductive_hours"] = round(idle_total / 3600, 1)
 
         # 2. Top Apps (Selected Date range)
+        top_apps_qs = AppActivity.objects.filter(employee_id__in=account_ids, start_time__date=today)
+        if not top_apps_qs.exists() and today == timezone.now().date():
+            # Fallback: if today is selected and empty, show last 24 hours to avoid blank screen
+            top_apps_qs = AppActivity.objects.filter(
+                employee_id__in=account_ids, start_time__gte=timezone.now() - timedelta(days=1)
+            )
+
         top_apps = (
-            AppActivity.objects.filter(employee=employee, start_time__date=today)
-            .values("app_name")
-            .annotate(total_duration=Sum("duration"))
-            .order_by("-total_duration")[:5]
+            top_apps_qs.values("app_name").annotate(total_duration=Sum("duration")).order_by("-total_duration")[:5]
         )
 
         # Convert duration to hours for display
         for app in top_apps:
-            app["hours"] = round(app["total_duration"].total_seconds() / 3600, 1)
+            app["hours"] = round(app["total_duration"].total_seconds() / 3600, 1) if app["total_duration"] else 0
 
         context["top_apps"] = top_apps
 
         # 3. Recent Activity (Searches + URLs)
-        context["recent_activity"] = BrowserActivity.objects.filter(employee=employee).order_by("-timestamp")[:15]
+        context["recent_activity"] = BrowserActivity.objects.filter(employee_id__in=account_ids).order_by("-timestamp")[
+            :15
+        ]
 
         # 3b. System Events (USB / File Transfer security alerts)
         from .models import SystemEvent
@@ -250,7 +263,7 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
             )
         else:
             context["system_events"] = (
-                SystemEvent.objects.filter(employee=employee)
+                SystemEvent.objects.filter(employee_id__in=account_ids)
                 .select_related("employee__user")
                 .order_by("-timestamp")[:25]
             )
@@ -262,7 +275,7 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
             hour_end = hour_start + timedelta(hours=1)
 
             stats = AppActivity.objects.filter(
-                employee=employee, start_time__gte=hour_start, start_time__lt=hour_end
+                employee_id__in=account_ids, start_time__gte=hour_start, start_time__lt=hour_end
             ).aggregate(
                 prod=Sum("duration", filter=Q(is_productive=True)),
                 unprod=Sum("duration", filter=Q(is_productive=False)),
@@ -271,7 +284,7 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
             # Add idle time into unproductive for the hour
             hour_idle = (
                 ActivityPulse.objects.filter(
-                    employee=employee, timestamp__gte=hour_start, timestamp__lt=hour_end, is_idle=True
+                    employee_id__in=account_ids, timestamp__gte=hour_start, timestamp__lt=hour_end, is_idle=True
                 ).aggregate(total=Sum("idle_duration_seconds"))["total"]
                 or 0
             )
@@ -297,7 +310,9 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
             # Enrich employees with tracking status
             now = timezone.now()
             for emp in employees:
-                latest_pulse = ActivityPulse.objects.filter(employee=emp).order_by("-timestamp").first()
+                # Aggregate pulse across all accounts with same email for status check
+                emp_emails = Employee.objects.filter(user__email__icontains=emp.user.email.split("@")[0])
+                latest_pulse = ActivityPulse.objects.filter(employee__in=emp_emails).order_by("-timestamp").first()
                 if latest_pulse:
                     is_active = (now - latest_pulse.timestamp) < timedelta(minutes=10)
                     emp.tracking_status = "Online" if is_active else "Offline"
@@ -309,7 +324,7 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
             context["employees_list"] = employees
 
         # 6. Selected Employee Status
-        latest_pulse = ActivityPulse.objects.filter(employee=employee).order_by("-timestamp").first()
+        latest_pulse = ActivityPulse.objects.filter(employee_id__in=account_ids).order_by("-timestamp").first()
         if latest_pulse:
             is_active = (timezone.now() - latest_pulse.timestamp) < timedelta(minutes=10)
             context["is_online"] = is_active
