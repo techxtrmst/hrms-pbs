@@ -535,7 +535,7 @@ def navigation_callback(request):
                 {
                     "title": _("Activity Dashboard"),
                     "icon": "analytics",
-                    "link": reverse_lazy("activity_dashboard"),
+                    "link": reverse_lazy("activity-dashboard"),
                 },
                 {
                     "title": _("Employee Devices"),
