@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils import timezone
 from django.utils.html import format_html
 from unfold.admin import ModelAdmin
 
@@ -26,19 +27,29 @@ class EmployeeDeviceAdmin(ModelAdmin):
     search_fields = ["employee__user__first_name", "employee__user__last_name", "device_name"]
 
     def last_sync_error_display(self, obj):
-        if not obj.last_sync_error:
-            return format_html('<span style="color: #10b981; font-weight: bold;">● Healthy (Synced)</span>')
-        return format_html(
-            '<span style="color: #ef4444; font-weight: bold;" title="{}">● Error (Check Logs)</span>',
-            obj.last_sync_error[:200],
-        )
+        # 1. Check for hard sync errors
+        if obj.last_sync_error:
+            return format_html(
+                '<span style="color: #ef4444; font-weight: bold;" title="{}">● Error (Broken)</span>',
+                obj.last_sync_error[:200],
+            )
+
+        # 2. Check for "Real-time" Online status (Synced within last 15 mins)
+        if obj.last_seen:
+            diff = (timezone.now() - obj.last_seen).total_seconds()
+            if diff < 900:  # 15 minutes
+                return format_html('<span style="color: #10b981; font-weight: bold;">● Syncing (Online)</span>')
+            else:
+                return format_html('<span style="color: #94a3b8; font-weight: bold;">● Offline</span>')
+
+        return format_html('<span style="color: #64748b;">● Initializing...</span>')
 
     last_sync_error_display.short_description = "Sync Health"
 
     def last_seen_display(self, obj):
         if not obj.last_seen:
             return "Never"
-        return obj.last_seen.strftime("%Y-%m-%d %H:%M")
+        return timezone.localtime(obj.last_seen).strftime("%Y-%m-%d %H:%M")
 
     last_seen_display.short_description = "Last Contact"
 

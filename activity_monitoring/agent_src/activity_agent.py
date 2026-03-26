@@ -403,7 +403,7 @@ def main():
                 "event_type": "USB_INSERT",
                 "description": f"Hardware present at startup: {name}",
                 "metadata": {"device_id": dev_id, "name": name, "startup": True},
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.utcnow().isoformat(),
             }
         )
 
@@ -417,7 +417,7 @@ def main():
 
             # 1. Active window
             app_name, title, search_query, domain = get_active_window_info()
-            start_time = datetime.now().isoformat()
+            start_time = datetime.utcnow().isoformat()
 
             # 2. USB device changes
             usb_events, current_usb_ids = track_usb_devices(current_usb_ids)
@@ -428,7 +428,7 @@ def main():
             batch_events.extend(file_events)
 
             time.sleep(10)
-            end_time = datetime.now().isoformat()
+            end_time = datetime.utcnow().isoformat()
 
             if not is_idle:
                 batch_apps.append(
