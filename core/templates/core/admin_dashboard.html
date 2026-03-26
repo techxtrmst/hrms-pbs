@@ -1497,10 +1497,13 @@
 
     /* Landscape orientation adjustments */
     @media (max-width: 896px) and (orientation: landscape) {
-        .announcements-card {
-            min-height: 200px;
-            max-height: 280px;
-        }
+    .announcement-hero-image {
+        width: 100%;
+        max-height: 400px;
+        object-fit: cover;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
 
         .announcements-header {
             padding: 12px;
@@ -2473,7 +2476,11 @@
                             <div class="event-item-compact {% if birthday.is_today %}event-today-highlight{% endif %}">
                                 <div class="event-avatar-wrapper">
                                     <div class="event-avatar birthday-avatar">
+                                        {% if birthday.employee.profile_picture %}
+                                        <img src="{{ birthday.employee.profile_picture.url }}" alt="{{ birthday.employee.user.get_full_name }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                                        {% else %}
                                         <span class="avatar-emoji">🎂</span>
+                                        {% endif %}
                                     </div>
                                     {% if birthday.is_today %}
                                     <span class="today-badge-mini">TODAY</span>
@@ -2518,7 +2525,11 @@
                             <div class="event-item-compact {% if anniversary.is_today %}event-today-highlight{% endif %}">
                                 <div class="event-avatar-wrapper">
                                     <div class="event-avatar anniversary-avatar">
+                                        {% if anniversary.employee.profile_picture %}
+                                        <img src="{{ anniversary.employee.profile_picture.url }}" alt="{{ anniversary.employee.user.get_full_name }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                                        {% else %}
                                         <span class="avatar-emoji">🏆</span>
+                                        {% endif %}
                                     </div>
                                     {% if anniversary.is_today %}
                                     <span class="today-badge-mini">TODAY</span>
