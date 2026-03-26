@@ -33,6 +33,12 @@ class SystemEventSerializer(serializers.ModelSerializer):
         fields = ["event_type", "description", "metadata", "timestamp"]
 
 
+class ActivityScreenshotSerializer(serializers.Serializer):
+    image_base64 = serializers.CharField()
+    timestamp = serializers.DateTimeField(required=False)
+    window_name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+
 class ActivityBatchSerializer(serializers.Serializer):
     """
     Handles batched activity data from the agent for smoothness.
@@ -41,5 +47,6 @@ class ActivityBatchSerializer(serializers.Serializer):
     app_activities = AppActivitySerializer(many=True, required=False)
     browser_activities = BrowserActivitySerializer(many=True, required=False)
     system_events = SystemEventSerializer(many=True, required=False)
+    screenshots = ActivityScreenshotSerializer(many=True, required=False)
     is_idle = serializers.BooleanField(default=False)
     idle_seconds = serializers.IntegerField(default=0)

@@ -99,6 +99,10 @@ class EmployeeDevice(models.Model):
     last_seen = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
 
+    # Troubleshooting fields
+    last_sync_error = models.TextField(blank=True, null=True)
+    agent_version = models.CharField(max_length=50, blank=True, null=True)
+
     def __str__(self):
         return f"{self.employee.user.get_full_name()} - {self.device_name or 'Default Device'}"
 
@@ -127,3 +131,23 @@ class SystemEvent(models.Model):
 
     def __str__(self):
         return f"{self.event_type} - {self.employee.user.username}"
+
+
+class ActivityScreenshot(models.Model):
+    """
+    Periodic screenshots captured by the Desktop Agent (TeamLogger style).
+    """
+
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="screenshots")
+    session = models.ForeignKey(
+        ActivitySession, on_delete=models.CASCADE, related_name="screenshots", null=True, blank=True
+    )
+    image = models.ImageField(upload_to="activity_screenshots/%Y/%m/%d/")
+    timestamp = models.DateTimeField(auto_now_add=True)
+    metadata = models.JSONField(default=dict, blank=True)  # Store active window name at capture time
+
+    class Meta:
+        ordering = ["-timestamp"]
+
+    def __str__(self):
+        return f"Screenshot: {self.employee.user.get_full_name()} at {self.timestamp}"

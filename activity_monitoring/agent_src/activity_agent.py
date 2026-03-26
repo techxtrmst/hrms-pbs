@@ -144,12 +144,43 @@ def get_active_window_info():
             if any(k in title_lower for k in private_keywords):
                 app_name += " [PRIVATE]"
 
-            url = get_browser_url(app_name)
-            search_query, domain = parse_search_query(title, app_name, url)
-            return app_name, title, search_query, url or domain
+            return app_name, title
         except Exception:
             pass
-    return "Unknown", "Unknown", None, None
+    return "Unknown", "Unknown"
+
+
+def capture_screenshot():
+    """Capture screen and return as base64 encoded JPG."""
+    if sys.platform != "win32":
+        return None
+    try:
+        from io import BytesIO
+
+        from PIL import ImageGrab
+
+        # Capture full screen
+        screenshot = ImageGrab.grab()
+
+        # Convert to RGB if necessary
+        if screenshot.mode in ("RGBA", "P"):
+            screenshot = screenshot.convert("RGB")
+
+        # Resize to 720p to save bandwidth while keeping detail
+        screenshot.thumbnail((1280, 720))
+
+        buffered = BytesIO()
+        screenshot.save(buffered, format="JPEG", quality=40)  # High compression for speed
+
+        import base64
+
+        return base64.b64encode(buffered.getvalue()).decode("utf-8")
+    except Exception as e:
+        # Don't fail the agent if capture fails
+        error_log = os.path.join(BASE_DIR, "sync_errors.log")
+        with open(error_log, "a") as f:
+            f.write(f"{datetime.now()}: Screenshot failed - {str(e)}\n")
+        return None
 
 
 def get_idle_time():
@@ -352,7 +383,13 @@ def main():
     batch_apps = []
     batch_browser = []
     batch_events = []
+    batch_screenshots = []
     last_sync = time.time()
+
+    # Next screenshot time initialized to NOW for immediate first capture
+    import random
+
+    next_screenshot_time = time.time()
 
     # ── Initialise USB snapshot & log ALL currently-connected devices ──
     initial_devices = _get_usb_devices()
@@ -423,19 +460,40 @@ def main():
             if len(batch_events) > 200:
                 batch_events = batch_events[-200:]
 
+            # 4. Periodic Screenshots (TeamLogger style)
+            if time.time() > next_screenshot_time:
+                shot_b64 = capture_screenshot()
+                if shot_b64:
+                    batch_screenshots.append({"image_base64": shot_b64, "window_name": f"{app_name} - {title}"[:255]})
+                # Set next random time (3-10 mins)
+                next_screenshot_time = time.time() + random.randint(180, 600)
+
             # Sync every 60 seconds
             if time.time() - last_sync > 60:
-                success = sync_data(
-                    batch_apps, batch_browser, batch_events, is_idle=is_idle, idle_seconds=int(idle_seconds)
-                )
-                if success:
-                    batch_apps = []
-                    batch_browser = []
-                    batch_events = []
-                    last_sync = time.time()
-                else:
-                    # If sync failed, we wait another 30s before trying again
-                    # This prevents spamming a failing server
+                payload = {
+                    "app_activities": batch_apps,
+                    "browser_activities": batch_browser,
+                    "system_events": batch_events,
+                    "screenshots": batch_screenshots,
+                    "is_idle": is_idle,
+                    "idle_seconds": int(idle_seconds),
+                    "agent_version": "2.0-TL",
+                }
+
+                headers = {"Content-Type": "application/json"}
+                try:
+                    # Robust sync using ?token= for production compatibility
+                    url = f"{SERVER_URL}?token={API_TOKEN}"
+                    resp = requests.post(url, json=payload, headers=headers, timeout=25)
+                    if resp.status_code in [201, 200]:
+                        batch_apps = []
+                        batch_browser = []
+                        batch_events = []
+                        batch_screenshots = []
+                        last_sync = time.time()
+                    else:
+                        time.sleep(10)
+                except Exception:
                     time.sleep(30)
 
         except Exception:

@@ -16,7 +16,15 @@ from rest_framework.response import Response
 
 from employees.models import Employee
 
-from .models import ActivityPulse, ActivitySession, AppActivity, BrowserActivity, EmployeeDevice, SystemEvent
+from .models import (
+    ActivityPulse,
+    ActivityScreenshot,
+    ActivitySession,
+    AppActivity,
+    BrowserActivity,
+    EmployeeDevice,
+    SystemEvent,
+)
 from .serializers import ActivityBatchSerializer
 
 
@@ -43,8 +51,12 @@ class ActivityIngestView(views.APIView):
 
     def post(self, request, *args, **kwargs):
         try:
-            # 1. Extract Token from multiple possible sources
-            token_str = request.headers.get("Token") or request.headers.get("X-Device-Token")
+            # 1. Extract Token (Headers + Query Param Fallback)
+            token_str = (
+                request.query_params.get("token")
+                or request.headers.get("Token")
+                or request.headers.get("X-Device-Token")
+            )
 
             if not token_str:
                 auth_header = request.headers.get("Authorization") or request.META.get("HTTP_AUTHORIZATION", "")
@@ -58,17 +70,24 @@ class ActivityIngestView(views.APIView):
                 return Response({"error": "Authentication token required"}, status=status.HTTP_401_UNAUTHORIZED)
 
             # 2. Find Active Device
-            logger.info("Activity sync attempt with token received.")
+            logger.info(f"Activity sync attempt from {request.META.get('REMOTE_ADDR')}")
             device = EmployeeDevice.objects.filter(token=token_str, is_active=True).first()
 
             if not device:
-                # Log detailed reason for failure
-                all_matching = EmployeeDevice.objects.filter(token=token_str)
-                if all_matching.exists():
-                    logger.warning("Token exists but is_active=False")
-                else:
-                    logger.warning("Token does not exist in database")
+                # Log detailed reason for failure so admin can see it
+                logger.warning("Invalid or inactive device token.")
                 return Response({"error": "Invalid or inactive device token"}, status=status.HTTP_401_UNAUTHORIZED)
+
+            # Clear previous errors on successful check
+            device.last_sync_error = None
+            device.agent_version = request.data.get("agent_version", "1.0")
+
+            serializer = ActivityBatchSerializer(data=request.data)
+            if not serializer.is_valid():
+                device.last_sync_error = f"Validation Error: {serializer.errors}"
+                device.save(update_fields=["last_sync_error"])
+                logger.warning(f"Activity sync validation failed for {device}: {serializer.errors}")
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
             logger.info(f"✅ Valid device found for employee: {device.employee.user.get_full_name()}")
             employee = device.employee
@@ -135,14 +154,43 @@ class ActivityIngestView(views.APIView):
 
             safe_create(SystemEvent, event_list, "SystemEvent")
 
-            # 3. Record Activity Pulse
+            # 3. Process Screenshots (TeamLogger style)
+            screenshots = data.get("screenshots", [])
+            import base64
+
+            from django.core.files.base import ContentFile
+
+            for shot in screenshots[:10]:
+                try:
+                    meta = {"active_window": shot.get("window_name")}
+                    img_data = base64.b64decode(shot["image_base64"])
+                    img_file = ContentFile(img_data, name=f"screenshot_{employee.id}_{timezone.now().timestamp()}.jpg")
+
+                    ActivityScreenshot.objects.create(employee=employee, session=session, image=img_file, metadata=meta)
+                except Exception as shot_ex:
+                    logger.error(f"Failed to process screenshot: {str(shot_ex)}")
+
+            # 3a. Auto-Cleanup: Delete screenshots older than 30 days
+            try:
+                retention_date = timezone.now() - timezone.timedelta(days=30)
+                old_shots = ActivityScreenshot.objects.filter(timestamp__lt=retention_date)
+                if old_shots.exists():
+                    logger.info(f"Purging {old_shots.count()} expired screenshots (30+ days old).")
+                    # Delete actual files too if using standard storage
+                    for s in old_shots:
+                        s.image.delete(save=False)
+                    old_shots.delete()
+            except Exception as purge_ex:
+                logger.error(f"Screenshot cleanup failed: {str(purge_ex)}")
+
+            # 4. Record Activity Pulse
             pulse = ActivityPulse.objects.create(
                 employee=employee, is_idle=data.get("is_idle", False), idle_duration_seconds=data.get("idle_seconds", 0)
             )
 
             logger.info(
                 f"✅ Sync Success for {employee.user.get_full_name()} "
-                f"(Device: {device.device_name}, Records: {len(app_list)} apps)"
+                f"(Device: {device.device_name}, Records: {len(app_list)} apps, {len(screenshots)} screenshots)"
             )
             return Response({"status": "success", "pulse_id": pulse.id}, status=status.HTTP_201_CREATED)
 
@@ -222,34 +270,39 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
                 # Subordinates where manager is the current user
                 employee = get_object_or_404(Employee, id=target_id, manager=self.request.user)
 
-        # Date Filtering for the dashboard
+        # Date Filtering for the dashboard (Timezone Proof)
         selected_date_str = self.request.GET.get("date")
         if selected_date_str:
             try:
                 # Expecting YYYY-MM-DD
-                today = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
+                target_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
             except (ValueError, TypeError):
-                today = timezone.localdate()
+                target_date = timezone.localdate()
         else:
-            today = timezone.localdate()
+            target_date = timezone.localdate()
 
-        context["selected_date"] = today
+        # Create localized range for the whole day
+        start_of_day = timezone.make_aware(datetime.combine(target_date, time.min))
+        end_of_day = timezone.make_aware(datetime.combine(target_date, time.max))
+
+        context["selected_date"] = target_date
         context["today_date"] = timezone.localdate()
         context["yesterday_date"] = timezone.localdate() - timedelta(days=1)
 
         # Precise account identification
         account_ids = [employee.id]
 
-        # 1. Total productive vs unproductive time (Selected Date)
-        today_apps = AppActivity.objects.filter(employee_id__in=account_ids, start_time__date=today)
+        # 1. Total productive vs unproductive time (Localized Range)
+        today_apps = AppActivity.objects.filter(
+            employee_id__in=account_ids, start_time__range=(start_of_day, end_of_day)
+        )
         productive_time = today_apps.filter(is_productive=True).aggregate(total=Sum("duration"))["total"] or timedelta(
             0
         )
 
         # 1.1 Calculate Active Time from Pulses (Backup for when agent isn't running)
-        # We consider the time between any two pulses within 2 minutes of each other as 'active time'
         pulses = ActivityPulse.objects.filter(
-            employee_id__in=account_ids, timestamp__date=today, is_idle=False
+            employee_id__in=account_ids, timestamp__range=(start_of_day, end_of_day), is_idle=False
         ).order_by("timestamp")
 
         pulse_active_secs = 0
@@ -267,11 +320,11 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
         # Use the maximum of agent-tracked time or pulse-tracked time
         final_productive_time = max(productive_time, pulse_active_time)
 
-        # 1.2 Idle Time (Selected Date)
+        # 1.2 Idle Time (Localized Range)
         idle_total_seconds = (
-            ActivityPulse.objects.filter(employee_id__in=account_ids, timestamp__date=today, is_idle=True).aggregate(
-                total=Sum("idle_duration_seconds")
-            )["total"]
+            ActivityPulse.objects.filter(
+                employee_id__in=account_ids, timestamp__range=(start_of_day, end_of_day), is_idle=True
+            ).aggregate(total=Sum("idle_duration_seconds"))["total"]
             or 0
         )
         idle_time = timedelta(seconds=idle_total_seconds)
@@ -288,8 +341,17 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
         context["productive_hours"] = format_duration(final_productive_time)
         context["unproductive_hours"] = format_duration(idle_time)
 
-        # 2. Top Apps (Selected Date range)
-        top_apps_qs = AppActivity.objects.filter(employee_id__in=account_ids, start_time__date=today)
+        # 2. Top Apps (Localized Range)
+        top_apps_qs = AppActivity.objects.filter(
+            employee_id__in=account_ids, start_time__range=(start_of_day, end_of_day)
+        )
+
+        # If today is empty, look back a bit to see if any desktop sync exists at all
+        if not top_apps_qs.exists() and target_date == timezone.localdate():
+            top_apps_qs = AppActivity.objects.filter(
+                employee_id__in=account_ids, start_time__gte=timezone.now() - timedelta(hours=24)
+            )
+
         top_apps = list(
             top_apps_qs.values("app_name").annotate(total_duration=Sum("duration")).order_by("-total_duration")[:5]
         )
@@ -313,33 +375,55 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
 
         context["top_apps"] = top_apps
 
-        # 3. Recent Activity (Searches + URLs)
-        context["recent_activity"] = BrowserActivity.objects.filter(employee_id__in=account_ids).order_by("-timestamp")[
-            :15
-        ]
+        # 3. Recent Activity (Searches + URLs in Range)
+        context["recent_activity"] = BrowserActivity.objects.filter(
+            employee_id__in=account_ids, timestamp__range=(start_of_day, end_of_day)
+        ).order_by("-timestamp")[:15]
+
+        # 3a. Screenshots (TeamLogger style in Range) - Company Wide for Admins
+        screenshot_qs = ActivityScreenshot.objects.none()
+        if is_admin and not target_id:
+            all_company_employees = Employee.objects.filter(company=user_employee.company)
+            screenshot_qs = ActivityScreenshot.objects.filter(
+                employee__in=all_company_employees, timestamp__range=(start_of_day, end_of_day)
+            )
+        elif is_manager and not target_id:
+            subordinates = Employee.objects.filter(manager=self.request.user)
+            screenshot_qs = ActivityScreenshot.objects.filter(
+                employee__in=subordinates, timestamp__range=(start_of_day, end_of_day)
+            )
+        else:
+            screenshot_qs = ActivityScreenshot.objects.filter(
+                employee_id__in=account_ids, timestamp__range=(start_of_day, end_of_day)
+            )
+
+        context["recent_screenshots_count"] = screenshot_qs.count()
+        context["recent_screenshots"] = screenshot_qs.order_by("-timestamp")[:24]
 
         # 3b. System Events (USB / File Transfer security alerts)
         from .models import SystemEvent
 
         if is_admin and not target_id:
-            # Admin default view: show ALL company events newest-first
+            # Admin default view: show ALL company events in range
             all_company_employees = Employee.objects.filter(company=user_employee.company)
             context["system_events"] = (
-                SystemEvent.objects.filter(employee__in=all_company_employees)
+                SystemEvent.objects.filter(
+                    employee__in=all_company_employees, timestamp__range=(start_of_day, end_of_day)
+                )
                 .select_related("employee__user")
                 .order_by("-timestamp")[:25]
             )
         elif is_manager and not target_id:
-            # Manager default view: show ALL subordinates events
+            # Manager default view: show ALL subordinates events in range
             subordinates = Employee.objects.filter(manager=self.request.user)
             context["system_events"] = (
-                SystemEvent.objects.filter(employee__in=subordinates)
+                SystemEvent.objects.filter(employee__in=subordinates, timestamp__range=(start_of_day, end_of_day))
                 .select_related("employee__user")
                 .order_by("-timestamp")[:25]
             )
         else:
             context["system_events"] = (
-                SystemEvent.objects.filter(employee_id__in=account_ids)
+                SystemEvent.objects.filter(employee_id__in=account_ids, timestamp__range=(start_of_day, end_of_day))
                 .select_related("employee__user")
                 .order_by("-timestamp")[:25]
             )
@@ -347,7 +431,7 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
         # 4. Productivity Trend (Hourly for Today)
         trend_data = []
         for hour in range(24):
-            hour_start = timezone.make_aware(datetime.combine(today, time(hour, 0)))
+            hour_start = timezone.make_aware(datetime.combine(target_date, time(hour, 0)))
             hour_end = hour_start + timedelta(hours=1)
 
             stats = AppActivity.objects.filter(
@@ -437,23 +521,27 @@ class BrowserActivityDetailView(LoginRequiredMixin, TemplateView):
             elif is_manager:
                 employee = get_object_or_404(Employee, id=target_id, manager=self.request.user)
 
-        # Date filter
+        # Date Filter (Timezone Proof Range)
         date_str = self.request.GET.get("date")
         if date_str:
             try:
-                selected_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
             except ValueError:
-                selected_date = timezone.localdate()
+                target_date = timezone.localdate()
         else:
-            selected_date = timezone.localdate()
+            target_date = timezone.localdate()
 
-        activity_qs = BrowserActivity.objects.filter(employee=employee, timestamp__date=selected_date).order_by(
-            "-timestamp"
-        )
+        # Create localized range for the whole day
+        start_of_day = timezone.make_aware(datetime.combine(target_date, time.min))
+        end_of_day = timezone.make_aware(datetime.combine(target_date, time.max))
+
+        activity_qs = BrowserActivity.objects.filter(
+            employee=employee, timestamp__range=(start_of_day, end_of_day)
+        ).order_by("-timestamp")
 
         context["browser_activity"] = activity_qs
         context["selected_employee"] = employee
-        context["selected_date"] = selected_date
+        context["selected_date"] = target_date
         context["total_count"] = activity_qs.count()
 
         # Employee list for switcher (admin/manager only)
@@ -492,15 +580,21 @@ class AppActivityDetailView(LoginRequiredMixin, TemplateView):
             elif is_manager:
                 employee = get_object_or_404(Employee, id=target_id, manager=self.request.user)
 
-        # ── Date Filter ───────────────────────────────────────────
+        # ── Date Filter (Timezone Proof Range) ────────────────────
         date_str = self.request.GET.get("date")
         try:
-            selected_date = datetime.strptime(date_str, "%Y-%m-%d").date() if date_str else timezone.localdate()
+            target_date = datetime.strptime(date_str, "%Y-%m-%d").date() if date_str else timezone.localdate()
         except ValueError:
-            selected_date = timezone.localdate()
+            target_date = timezone.localdate()
+
+        # Create localized range for the whole day
+        start_of_day = timezone.make_aware(datetime.combine(target_date, time.min))
+        end_of_day = timezone.make_aware(datetime.combine(target_date, time.max))
 
         # ── Fetch raw records ordered by time ────────────────────
-        raw_qs = AppActivity.objects.filter(employee=employee, start_time__date=selected_date).order_by("start_time")
+        raw_qs = AppActivity.objects.filter(employee=employee, start_time__range=(start_of_day, end_of_day)).order_by(
+            "start_time"
+        )
 
         # ── Merge consecutive heartbeats into real sessions ──────
         # Two records belong to the same session if they share the same
@@ -576,7 +670,7 @@ class AppActivityDetailView(LoginRequiredMixin, TemplateView):
         context["app_sessions"] = consolidated  # merged sessions
         context["app_summary"] = app_summary  # per-app totals
         context["selected_employee"] = employee
-        context["selected_date"] = selected_date
+        context["selected_date"] = target_date
         context["total_count"] = len(consolidated)  # session count
         context["max_duration_seconds"] = max(max_dur_secs, 1)
         context["productive_total_seconds"] = productive_secs
@@ -610,7 +704,8 @@ def download_agent(request):
         content = f.read()
 
     # Pre-fill data
-    server_url = request.build_absolute_uri("/activity-tracking/api/sync/")
+    # Use query param as fallback for very restrictive proxies
+    server_url = request.build_absolute_uri("/activity-tracking/api/sync/") + f"?token={device.token}"
     content = content.replace(
         'SERVER_URL = "http://your-hrms-domain.com/activity-tracking/api/sync/"', f'SERVER_URL = "{server_url}"'
     )
