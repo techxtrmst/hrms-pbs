@@ -542,21 +542,6 @@ def navigation_callback(request):
                     "icon": "devices",
                     "link": reverse_lazy("admin:activity_monitoring_employeedevice_changelist"),
                 },
-                {
-                    "title": _("App Activities"),
-                    "icon": "app_registration",
-                    "link": reverse_lazy("admin:activity_monitoring_appactivity_changelist"),
-                },
-                {
-                    "title": _("Browser Logs"),
-                    "icon": "history",
-                    "link": reverse_lazy("admin:activity_monitoring_browseractivity_changelist"),
-                },
-                {
-                    "title": _("Security Events"),
-                    "icon": "security",
-                    "link": reverse_lazy("admin:activity_monitoring_systemevent_changelist"),
-                },
             ],
         },
     ]
