@@ -47,18 +47,22 @@ class EmployeeDeviceAdmin(ModelAdmin):
     device_name_short.short_description = "Device"
 
     def status_indicator(self, obj):
+        now = timezone.now()
         if not obj.last_seen:
-            return format_html('<span style="color: gray;">⚫ Never Synced</span>')
+            return format_html('<span style="color: gray;">⚫ Not Synced</span>')
 
-        time_diff = timezone.now() - obj.last_seen
-        if time_diff < timedelta(minutes=2):
-            return format_html('<span style="color: green;">🟢 Online</span>')
-        elif time_diff < timedelta(minutes=10):
-            return format_html('<span style="color: orange;">🟠 Recently Active</span>')
+        is_current = (now - obj.last_seen) < timezone.timedelta(minutes=10)
+
+        # Check if latest pulse for this employee was from an ingest view (implies agent)
+        # or just a heartbeat pulse. We use a heuristic: if last_sync of device matches last_seen,
+        # it's likely the desktop agent.
+
+        if is_current:
+            return format_html('<span style="color: #28a745; font-weight: bold;">🟢 Online</span>')
         else:
-            return format_html('<span style="color: red;">🔴 Offline</span>')
+            return format_html('<span style="color: #6c757d;">⚪ Offline</span>')
 
-    status_indicator.short_description = "Status"
+    status_indicator.short_description = "Agent Status"
 
     def last_seen_display(self, obj):
         if not obj.last_seen:

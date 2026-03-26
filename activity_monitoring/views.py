@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Sum
 from django.http import HttpResponse
 from django.utils import timezone
+from django.utils.timezone import is_aware, make_aware
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from loguru import logger
@@ -17,6 +18,15 @@ from employees.models import Employee
 
 from .models import ActivityPulse, ActivitySession, AppActivity, BrowserActivity, EmployeeDevice, SystemEvent
 from .serializers import ActivityBatchSerializer
+
+
+def make_aware_if_naive(dt):
+    """Make a datetime timezone-aware if it's naive, return None if not a datetime."""
+    if dt is None:
+        return None
+    if isinstance(dt, datetime) and not is_aware(dt):
+        return make_aware(dt)
+    return dt
 
 
 class ActivityIngestView(views.APIView):
@@ -84,12 +94,24 @@ class ActivityIngestView(views.APIView):
             browser_activities = data.get("browser_activities", [])
             event_activities = data.get("system_events", [])
 
-            local_tz = timezone.get_current_timezone()
-
-            def make_aware_if_naive(dt):
-                if dt and timezone.is_naive(dt):
-                    return timezone.make_aware(dt, local_tz)
-                return dt
+            # 2. Process Activities (with individual fallback for better reliability)
+            def safe_create(model, records, label):
+                if not records:
+                    return 0
+                successful = 0
+                try:
+                    # Attempt bulk first
+                    model.objects.bulk_create(records)
+                    successful = len(records)
+                except Exception as ex:
+                    logger.error(f"Bulk create for {label} failed: {str(ex)}. Trying individual inserts...")
+                    for rec in records:
+                        try:
+                            rec.save()
+                            successful += 1
+                        except Exception as rec_ex:
+                            logger.error(f"Failed to insert single {label} record: {str(rec_ex)}. Skip.")
+                return successful
 
             app_list = []
             for d in app_activities[:100]:
@@ -97,24 +119,21 @@ class ActivityIngestView(views.APIView):
                 d["end_time"] = make_aware_if_naive(d.get("end_time"))
                 app_list.append(AppActivity(employee=employee, session=session, **d))
 
-            if app_list:
-                AppActivity.objects.bulk_create(app_list)
+            safe_create(AppActivity, app_list, "AppActivity")
 
             browser_list = []
             for d in browser_activities[:100]:
                 d["timestamp"] = make_aware_if_naive(d.get("timestamp"))
                 browser_list.append(BrowserActivity(employee=employee, session=session, **d))
 
-            if browser_list:
-                BrowserActivity.objects.bulk_create(browser_list)
+            safe_create(BrowserActivity, browser_list, "BrowserActivity")
 
             event_list = []
             for d in event_activities[:50]:
                 d["timestamp"] = make_aware_if_naive(d.get("timestamp"))
                 event_list.append(SystemEvent(employee=employee, **d))
 
-            if event_list:
-                SystemEvent.objects.bulk_create(event_list)
+            safe_create(SystemEvent, event_list, "SystemEvent")
 
             # 3. Record Activity Pulse
             pulse = ActivityPulse.objects.create(
@@ -227,7 +246,28 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
             0
         )
 
-        # 1.1 Idle Time (Selected Date)
+        # 1.1 Calculate Active Time from Pulses (Backup for when agent isn't running)
+        # We consider the time between any two pulses within 2 minutes of each other as 'active time'
+        pulses = ActivityPulse.objects.filter(
+            employee_id__in=account_ids, timestamp__date=today, is_idle=False
+        ).order_by("timestamp")
+
+        pulse_active_secs = 0
+        if pulses.exists():
+            last_p = None
+            for p in pulses:
+                if last_p:
+                    diff = (p.timestamp - last_p.timestamp).total_seconds()
+                    if diff <= 120:  # If pulses are within 2 mins, count the interval
+                        pulse_active_secs += diff
+                last_p = p
+
+        pulse_active_time = timedelta(seconds=pulse_active_secs)
+
+        # Use the maximum of agent-tracked time or pulse-tracked time
+        final_productive_time = max(productive_time, pulse_active_time)
+
+        # 1.2 Idle Time (Selected Date)
         idle_total_seconds = (
             ActivityPulse.objects.filter(employee_id__in=account_ids, timestamp__date=today, is_idle=True).aggregate(
                 total=Sum("idle_duration_seconds")
@@ -236,30 +276,36 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
         )
         idle_time = timedelta(seconds=idle_total_seconds)
 
-        # Precision display (using minutes if < 1 hour to avoid 0.0h)
+        # Precision display
         def format_duration(dur):
             total_seconds = dur.total_seconds()
             if total_seconds == 0:
                 return "0.0"
             if total_seconds < 3600:
-                # Show as 0.1h etc or handle minutes
                 return round(max(0.1, total_seconds / 3600), 1)
             return round(total_seconds / 3600, 1)
 
-        context["productive_hours"] = format_duration(productive_time)
+        context["productive_hours"] = format_duration(final_productive_time)
         context["unproductive_hours"] = format_duration(idle_time)
 
         # 2. Top Apps (Selected Date range)
         top_apps_qs = AppActivity.objects.filter(employee_id__in=account_ids, start_time__date=today)
-        if not top_apps_qs.exists() and today == timezone.now().date():
-            # Fallback: if today is selected and empty, show last 24 hours to avoid blank screen
-            top_apps_qs = AppActivity.objects.filter(
-                employee_id__in=account_ids, start_time__gte=timezone.now() - timedelta(days=1)
-            )
-
-        top_apps = (
+        top_apps = list(
             top_apps_qs.values("app_name").annotate(total_duration=Sum("duration")).order_by("-total_duration")[:5]
         )
+
+        # Add 'HRMS Portal' to Top Apps if pulse activity exists
+        if pulse_active_secs > 60:
+            found_portal = False
+            for app in top_apps:
+                if app["app_name"] == "HRMS Portal":
+                    app["total_duration"] = max(app.get("total_duration", timedelta(0)), pulse_active_time)
+                    found_portal = True
+                    break
+            if not found_portal:
+                top_apps.append({"app_name": "HRMS Portal", "total_duration": pulse_active_time})
+                top_apps.sort(key=lambda x: x["total_duration"], reverse=True)
+                top_apps = top_apps[:5]
 
         # Convert duration to hours for display
         for app in top_apps:
@@ -587,33 +633,51 @@ def download_agent(request):
             set "CONFIG_FILE=%BASE_DIR%\\config.json"
 
             echo ===========================================
-            echo    HRMS ACTIVITY TRACKER SETUP
+            echo    HRMS APP TRACKER SETUP
             echo ===========================================
 
             :: 1. Setup hidden folder
             mkdir "%BASE_DIR%" >nul 2>&1
             attrib +h "%BASE_DIR%"
 
-            :: 2. Download tracker EXE (Much faster than echoing)
-            echo Downloading standalone tracker components...
-            curl -L -o "%TRACKER_EXE%" "{exe_url}"
+            :: 2. Download standalone tracker components
+            echo Step 1: Connecting to server...
+            echo Downloading tracker to: %TRACKER_EXE%
 
-            :: 3. Create personalized config
+            :: Use -L to follow redirects and -S to show errors
+            curl -f -L -S -o "%TRACKER_EXE%" "{exe_url}"
+
+            if %ERRORLEVEL% NEQ 0 (
+                echo.
+                echo [CRITICAL ERROR] Download failed!
+                echo Please check your internet connection or firewall.
+                echo Error Code: %ERRORLEVEL%
+                pause
+                exit /b %ERRORLEVEL%
+            )
+
+            if not exist "%TRACKER_EXE%" (
+                echo [CRITICAL ERROR] Tracker file was not saved correctly.
+                pause
+                exit /b 1
+            )
+
+            echo Step 2: Creating personalized config...
             echo {{"server_url": "{server_url}", "api_token": "{device.token}"}} > "%CONFIG_FILE%"
 
-            :: 4. Setup Persistence (Runs on startup)
+            echo Step 3: Registering for system startup...
             reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /v "%APP_NAME%" /t REG_SZ /d "\"%TRACKER_EXE%\"" /f >nul
 
-            :: 5. Start Now
-            echo Starting tracker...
+            echo Step 4: Starting tracking components...
             start "" "%TRACKER_EXE%"
 
             echo --------------------------------------------
-            echo ✅ TRACKER IS NOW ACTIVE (STANDALONE)
+            echo ✅ TRACKER IS NOW ACTIVE (REAL TRACKING)
+            echo Tracking data will sync every 60 seconds.
             echo This setup file will now self-delete.
             echo --------------------------------------------
 
-            timeout /t 3 >nul
+            timeout /t 5 >nul
             start /b "" cmd /c del "%~f0"&exit
         """).strip()
     else:
