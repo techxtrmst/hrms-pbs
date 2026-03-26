@@ -1,8 +1,10 @@
 from datetime import timedelta
 
 from django.contrib import admin
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
+from unfold.admin import ModelAdmin
 
 from .models import (
     ActivityPulse,
@@ -15,7 +17,7 @@ from .models import (
 
 
 @admin.register(EmployeeDevice)
-class EmployeeDeviceAdmin(admin.ModelAdmin):
+class EmployeeDeviceAdmin(ModelAdmin):
     list_display = [
         "employee",
         "device_name_short",
@@ -23,11 +25,21 @@ class EmployeeDeviceAdmin(admin.ModelAdmin):
         "last_seen_display",
         "is_active",
         "created_at",
+        "delete_button",
     ]
     list_filter = ["is_active", "created_at", "last_seen"]
     search_fields = ["employee__user__first_name", "employee__user__last_name", "device_name", "token"]
     readonly_fields = ["token", "created_at", "last_seen"]
     list_per_page = 50
+
+    def delete_button(self, obj):
+        url = reverse("admin:activity_monitoring_employeedevice_delete", args=[obj.pk])
+        return format_html(
+            '<a href="{}" class="px-2 py-1 text-xs font-semibold text-white bg-red-500 rounded hover:bg-red-600 transition-colors">Delete</a>',
+            url,
+        )
+
+    delete_button.short_description = "Action"
 
     def device_name_short(self, obj):
         return obj.device_name[:50] + "..." if len(obj.device_name) > 50 else obj.device_name
@@ -67,7 +79,7 @@ class EmployeeDeviceAdmin(admin.ModelAdmin):
 
 
 @admin.register(ActivitySession)
-class ActivitySessionAdmin(admin.ModelAdmin):
+class ActivitySessionAdmin(ModelAdmin):
     list_display = ["employee", "start_time", "end_time", "is_active"]
     list_filter = ["start_time", "end_time"]
     search_fields = ["employee__user__first_name", "employee__user__last_name"]
@@ -81,7 +93,7 @@ class ActivitySessionAdmin(admin.ModelAdmin):
 
 
 @admin.register(AppActivity)
-class AppActivityAdmin(admin.ModelAdmin):
+class AppActivityAdmin(ModelAdmin):
     list_display = ["employee", "app_name", "window_title_short", "start_time", "duration", "is_productive"]
     list_filter = ["is_productive", "start_time", "app_name"]
     search_fields = ["employee__user__first_name", "employee__user__last_name", "app_name", "window_title"]
@@ -95,7 +107,7 @@ class AppActivityAdmin(admin.ModelAdmin):
 
 
 @admin.register(BrowserActivity)
-class BrowserActivityAdmin(admin.ModelAdmin):
+class BrowserActivityAdmin(ModelAdmin):
     list_display = ["employee", "url_short", "title_short", "timestamp", "time_spent"]
     list_filter = ["timestamp"]
     search_fields = ["employee__user__first_name", "employee__user__last_name", "url", "title", "search_query"]
@@ -114,7 +126,7 @@ class BrowserActivityAdmin(admin.ModelAdmin):
 
 
 @admin.register(SystemEvent)
-class SystemEventAdmin(admin.ModelAdmin):
+class SystemEventAdmin(ModelAdmin):
     list_display = ["employee", "event_type", "description_short", "timestamp"]
     list_filter = ["event_type", "timestamp"]
     search_fields = ["employee__user__first_name", "employee__user__last_name", "description"]
@@ -128,7 +140,7 @@ class SystemEventAdmin(admin.ModelAdmin):
 
 
 @admin.register(ActivityPulse)
-class ActivityPulseAdmin(admin.ModelAdmin):
+class ActivityPulseAdmin(ModelAdmin):
     list_display = ["employee", "timestamp", "is_idle", "idle_duration_display"]
     list_filter = ["is_idle", "timestamp"]
     search_fields = ["employee__user__first_name", "employee__user__last_name"]
@@ -142,4 +154,4 @@ class ActivityPulseAdmin(admin.ModelAdmin):
         secs = obj.idle_duration_seconds % 60
         return f"{mins}m {secs}s"
 
-    idle_duration_display.short_description = "Idle Duration"
+    idle_duration_display.short_description = "Idle Duration"  # Reload forced
