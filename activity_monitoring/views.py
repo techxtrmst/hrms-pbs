@@ -33,38 +33,32 @@ class ActivityIngestView(views.APIView):
 
     def post(self, request, *args, **kwargs):
         try:
-            # Log the request for debugging
-            logger.info(f"Activity sync request from {request.META.get('REMOTE_ADDR')}")
+            # 1. Extract Token from multiple possible sources
+            token_str = request.headers.get("Token") or request.headers.get("X-Device-Token")
 
-            auth_header = request.headers.get("Authorization", "")
-            if not auth_header:
-                # Try alternate header names
-                auth_header = request.META.get("HTTP_AUTHORIZATION", "")
-
-            logger.info(
-                f"Auth header present: {bool(auth_header)}, starts with Token: {auth_header.startswith('Token ') if auth_header else False}"
-            )
-
-            if not auth_header or not auth_header.startswith("Token "):
-                logger.warning(f"No valid token in request. Headers: {dict(request.headers)}")
-                return Response({"error": "No token provided"}, status=status.HTTP_401_UNAUTHORIZED)
-
-            token_str = auth_header.split(" ")[1] if len(auth_header.split(" ")) > 1 else ""
             if not token_str:
-                logger.warning("Token string is empty after split")
-                return Response({"error": "Invalid token format"}, status=status.HTTP_401_UNAUTHORIZED)
+                auth_header = request.headers.get("Authorization") or request.META.get("HTTP_AUTHORIZATION", "")
+                if auth_header and auth_header.startswith("Token "):
+                    token_str = auth_header.split(" ")[1]
+                elif auth_header and not auth_header.startswith("Bearer "):  # Try raw token if not Bearer
+                    token_str = auth_header
 
-            logger.info(f"Looking up device with token (first 10 chars): {token_str[:10]}...")
+            if not token_str:
+                logger.warning(f"Rejecting sync: No token found. Headers: {dict(request.headers)}")
+                return Response({"error": "Authentication token required"}, status=status.HTTP_401_UNAUTHORIZED)
+
+            # 2. Find Active Device
+            logger.info("Activity sync attempt with token received.")
             device = EmployeeDevice.objects.filter(token=token_str, is_active=True).first()
 
             if not device:
-                logger.warning("No active device found for token. Checking if token exists at all...")
-                any_device = EmployeeDevice.objects.filter(token=token_str).first()
-                if any_device:
-                    logger.warning(f"Device exists but is_active={any_device.is_active}")
+                # Log detailed reason for failure
+                all_matching = EmployeeDevice.objects.filter(token=token_str)
+                if all_matching.exists():
+                    logger.warning("Token exists but is_active=False")
                 else:
-                    logger.warning("Token doesn't match any device in database")
-                return Response({"error": "Invalid or inactive token"}, status=status.HTTP_401_UNAUTHORIZED)
+                    logger.warning("Token does not exist in database")
+                return Response({"error": "Invalid or inactive device token"}, status=status.HTTP_401_UNAUTHORIZED)
 
             logger.info(f"✅ Valid device found for employee: {device.employee.user.get_full_name()}")
             employee = device.employee
@@ -157,7 +151,9 @@ class HeartbeatView(views.APIView):
                 logger.warning("Heartbeat: Unauthenticated request")
                 return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
 
-            employee = Employee.objects.get(id=employee_id)
+            from django.shortcuts import get_object_or_404
+
+            employee = get_object_or_404(Employee, id=employee_id)
 
             # Verify user can only send heartbeat for themselves
             if request.user.employee_profile.id != employee.id:
@@ -166,6 +162,13 @@ class HeartbeatView(views.APIView):
 
             # Simple pulse recording
             ActivityPulse.objects.create(employee=employee, is_idle=False, idle_duration_seconds=0)
+
+            # Also update the 'last_seen' for the employee's main device if it's currently showing 'Never Synced'
+            # This helps bridge the gap between web heartbeat and agent sync for the UI
+            device = EmployeeDevice.objects.filter(employee=employee, is_active=True).order_by("-created_at").first()
+            if device:
+                device.last_seen = timezone.now()
+                device.save(update_fields=["last_seen"])
 
             logger.debug(f"Heartbeat recorded for {employee.user.get_full_name()}")
             return Response({"status": "pulse_recorded"}, status=status.HTTP_200_OK)
