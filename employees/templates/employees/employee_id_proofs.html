@@ -410,6 +410,7 @@
             {% csrf_token %}
             <input type="hidden" name="action" value="upload">
 
+            {% if is_admin or not id_proofs.aadhar_front %}
             <div class="form-group">
                 <label for="aadhar_front">
                     <i class="fas fa-id-card"></i> {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Card (Front){% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID (Front){% else %}Aadhar Card (Front){% endif %}
@@ -417,7 +418,9 @@
                 <input type="file" id="aadhar_front" name="aadhar_front" accept="image/*">
                 <p class="help-text">Upload a clear image of the front side of your {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Card{% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID{% else %}Aadhar Card{% endif %}</p>
             </div>
+            {% endif %}
 
+            {% if is_admin or not id_proofs.aadhar_back %}
             <div class="form-group">
                 <label for="aadhar_back">
                     <i class="fas fa-id-card"></i> {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Card (Back){% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID (Back){% else %}Aadhar Card (Back){% endif %}
@@ -425,7 +428,9 @@
                 <input type="file" id="aadhar_back" name="aadhar_back" accept="image/*">
                 <p class="help-text">Upload a clear image of the back side of your {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Card{% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID{% else %}Aadhar Card{% endif %}</p>
             </div>
+            {% endif %}
 
+            {% if is_admin or not id_proofs.pan_card %}
             <div class="form-group">
                 <label for="pan_card">
                     <i class="fas fa-credit-card"></i> {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}TIN Card{% elif employee.location.country_code == "US" or "US" in employee.location.name %}SSN Card{% else %}PAN Card{% endif %}
@@ -433,6 +438,7 @@
                 <input type="file" id="pan_card" name="pan_card" accept="image/*">
                 <p class="help-text">Upload a clear image of your {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}TIN Card{% elif employee.location.country_code == "US" or "US" in employee.location.name %}SSN Card{% else %}PAN Card{% endif %}</p>
             </div>
+            {% endif %}
 
             <button type="submit" class="btn-upload">
                 <i class="fas fa-upload"></i> Upload Documents
