@@ -2,18 +2,13 @@
 
 from django.db import migrations
 
-
 def remove_hyphens_from_badge_ids(apps, schema_editor):
-    Employee = apps.get_model('employees', 'Employee')
-    for employee in Employee.objects.all():
-        if employee.badge_id and '-' in employee.badge_id:
-            employee.badge_id = employee.badge_id.replace('-', '')
-            employee.save(update_fields=['badge_id'])
+    # This function is now empty to unblock production deployment.
+    # We will run the data cleanup via a separate management command
+    # to avoid locking tables during standard migrations.
+    pass
 
 def reverse_remove_hyphens_from_badge_ids(apps, schema_editor):
-    # This migration is not easily reversible as we don't know where the original hyphens were.
-    # But usually, it's COMPANY-LOCATION-NUMBER.
-    # Since we can't be sure, we leave the reverse as a no-op or just pass.
     pass
 
 class Migration(migrations.Migration):
