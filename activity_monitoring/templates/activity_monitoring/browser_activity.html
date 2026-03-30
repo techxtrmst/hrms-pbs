@@ -1,0 +1,309 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Web Activity Log — {{ selected_employee.user.get_full_name }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/browser_activity.css' %}">
+<style>
+    /* Break hero out of the base template's .content wrapper */
+    .baw-hero {
+        margin: -30px -30px 0 -30px;
+    }
+    @media (max-width: 768px) {
+        .baw-hero { margin: -15px -15px 0 -15px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ─── HERO ─────────────────────────────────────────────────── -->
+<div class="baw-hero">
+    <div class="baw-orb baw-orb-1"></div>
+    <div class="baw-orb baw-orb-2"></div>
+    <div class="baw-orb baw-orb-3"></div>
+
+    <div class="container-fluid px-4 baw-hero-content">
+        <div class="mb-4">
+            <a href="{% url 'activity-dashboard' %}{% if selected_employee.id != request.user.employee_profile.id %}?employee_id={{ selected_employee.id }}{% endif %}"
+               class="baw-back-btn">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+
+        <div class="row align-items-center">
+            <div class="col-md-7">
+                <div class="baw-badge">
+                    <span class="baw-live-dot"></span> Live Activity Tracking
+                </div>
+                <h1 class="baw-hero-title">Web Activity Log</h1>
+                <p class="baw-hero-subtitle">
+                    Browsing history for <strong>{{ selected_employee.user.get_full_name }}</strong>
+                </p>
+                <div class="baw-date-pill">
+                    <i class="fas fa-calendar-day"></i>
+                    {{ selected_date|date:"l, d F Y" }}
+                </div>
+            </div>
+
+            <div class="col-md-5 mt-4 mt-md-0">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="baw-glass-box">
+                            <div class="baw-glass-box-label">Total URLs</div>
+                            <div class="baw-glass-box-value">{{ total_count }}</div>
+                            <div class="baw-glass-box-sub"><i class="fas fa-link me-1"></i> recorded visits</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="baw-glass-box">
+                            <div class="baw-glass-box-label">Date</div>
+                            <div class="baw-glass-box-value-sm">{{ selected_date|date:"d M" }}</div>
+                            <div class="baw-glass-box-sub"><i class="fas fa-clock me-1"></i> {{ selected_date|date:"Y" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ─── MAIN CONTENT ─────────────────────────────────────────── -->
+<div class="container-fluid px-4 pb-5 baw-main">
+
+    <!-- Filter Card -->
+    <div class="baw-filter-card">
+        <form method="get" action="">
+            <div class="row align-items-end g-3">
+                <div class="col-md-3">
+                    <div class="baw-input-label"><i class="fas fa-calendar me-1"></i> Pick a Date</div>
+                    <div class="baw-input-wrap">
+                        <i class="fas fa-calendar-alt baw-input-icon"></i>
+                        <input type="date" name="date" class="baw-input"
+                               value="{{ selected_date|date:'Y-m-d' }}">
+                    </div>
+                </div>
+
+                {% if employees_list %}
+                <div class="col-md-4">
+                    <div class="baw-input-label"><i class="fas fa-user me-1"></i> Employee</div>
+                    <div class="baw-input-wrap">
+                        <i class="fas fa-users baw-input-icon"></i>
+                        <select name="employee_id" class="baw-input">
+                            <option value="">My Activity</option>
+                            {% for emp in employees_list %}
+                            <option value="{{ emp.id }}" {% if emp.id == selected_employee.id %}selected{% endif %}>
+                                {{ emp.user.get_full_name }} — {{ emp.designation }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="col-md-auto">
+                    <button type="submit" class="baw-btn-apply">
+                        <i class="fas fa-search"></i> Apply Filter
+                    </button>
+                </div>
+
+                <div class="col-md-auto ms-auto d-flex align-items-center gap-2">
+                    <span class="baw-record-dot"></span>
+                    <span style="font-size: 0.85rem; font-weight: 600; color: #64748B;">
+                        <strong style="color: #1E293B; font-size: 1rem;">{{ total_count }}</strong> records found
+                    </span>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Stats Strip -->
+    <div class="baw-stats-strip">
+        <div class="baw-stat-pill">
+            <div class="baw-stat-icon" style="background: #EEF2FF;">
+                <i class="fas fa-link" style="color: #6366F1;"></i>
+            </div>
+            <div>
+                <div class="baw-stat-label">Total Visits</div>
+                <div class="baw-stat-value">{{ total_count }}</div>
+            </div>
+        </div>
+        <div class="baw-stat-pill">
+            <div class="baw-stat-icon" style="background: #F0FDF4;">
+                <i class="fab fa-google" style="color: #16A34A;"></i>
+            </div>
+            <div>
+                <div class="baw-stat-label">Searches</div>
+                <div class="baw-stat-value" id="baw-stat-searches">—</div>
+            </div>
+        </div>
+        <div class="baw-stat-pill">
+            <div class="baw-stat-icon" style="background: #FFF7ED;">
+                <i class="fas fa-globe" style="color: #EA580C;"></i>
+            </div>
+            <div>
+                <div class="baw-stat-label">Browse</div>
+                <div class="baw-stat-value" id="baw-stat-browse">—</div>
+            </div>
+        </div>
+        <div class="baw-stat-pill">
+            <div class="baw-stat-icon" style="background: #F5F3FF;">
+                <i class="fas fa-user-circle" style="color: #7C3AED;"></i>
+            </div>
+            <div>
+                <div class="baw-stat-label">Employee</div>
+                <div class="baw-stat-value-sm">{{ selected_employee.user.first_name }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Table Card -->
+    <div class="baw-table-card">
+        <!-- Card Header -->
+        <div class="baw-table-header">
+            <div class="d-flex align-items-center gap-2">
+                <div class="baw-header-icon">
+                    <i class="fas fa-history" style="color: #6366F1; font-size: 0.9rem;"></i>
+                </div>
+                <div>
+                    <h5>Activity Timeline</h5>
+                    <div class="baw-table-header-sub">{{ selected_date|date:"d F Y" }}</div>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="baw-badge-live">
+                    <span class="baw-live-dot"></span> Live Feed
+                </span>
+                <span class="baw-badge-count">{{ total_count }} entries</span>
+            </div>
+        </div>
+
+        <div class="baw-scroll">
+            {% if browser_activity %}
+            <table class="baw-table">
+                <thead>
+                    <tr>
+                        <th class="baw-row-num">#</th>
+                        <th>Page / Search</th>
+                        <th>URL</th>
+                        <th>Type</th>
+                        <th class="text-end" style="padding-right: 2rem;">Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in browser_activity %}
+                    <tr>
+                        <!-- Row number -->
+                        <td class="baw-row-num">{{ forloop.counter }}</td>
+
+                        <!-- Page Title / Search -->
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="baw-favicon
+                                    {% if item.search_query %}baw-favicon-google
+                                    {% elif 'github' in item.url %}baw-favicon-github
+                                    {% elif 'youtube' in item.url %}baw-favicon-youtube
+                                    {% else %}baw-favicon-default{% endif %}">
+                                    {% if item.search_query %}
+                                        <i class="fab fa-google"></i>
+                                    {% elif 'github' in item.url %}
+                                        <i class="fab fa-github"></i>
+                                    {% elif 'youtube' in item.url %}
+                                        <i class="fab fa-youtube"></i>
+                                    {% elif 'linkedin' in item.url %}
+                                        <i class="fab fa-linkedin"></i>
+                                    {% elif 'twitter' in item.url or 'x.com' in item.url %}
+                                        <i class="fab fa-twitter"></i>
+                                    {% elif 'stackoverflow' in item.url %}
+                                        <i class="fab fa-stack-overflow"></i>
+                                    {% else %}
+                                        <span>{{ item.url|slice:"8:9"|upper }}</span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    {% if item.search_query %}
+                                    <div class="baw-search-text">{{ item.search_query|truncatechars:55 }}</div>
+                                    <div class="baw-cell-sub">Google Search</div>
+                                    {% else %}
+                                    <div class="baw-page-title">{{ item.title|default:"Untitled Page"|truncatechars:55 }}</div>
+                                    <div class="baw-cell-sub">Web Page</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- URL -->
+                        <td class="baw-url-cell">
+                            <a href="{{ item.url }}" target="_blank" rel="noopener" class="baw-url-link">
+                                {{ item.url|truncatechars:75 }}
+                            </a>
+                        </td>
+
+                        <!-- Type -->
+                        <td>
+                            {% if item.search_query %}
+                            <span class="baw-type-badge baw-type-search">
+                                <i class="fas fa-search" style="font-size:0.65rem;"></i> Search
+                            </span>
+                            {% else %}
+                            <span class="baw-type-badge baw-type-browse">
+                                <i class="fas fa-globe" style="font-size:0.65rem;"></i> Browse
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Time -->
+                        <td style="text-align: right; padding-right: 2rem;">
+                            <span class="baw-time-chip">
+                                <i class="fas fa-clock"></i>
+                                {{ item.timestamp|date:"H:i" }}
+                                <span class="baw-time-ampm">{{ item.timestamp|date:"A" }}</span>
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% else %}
+            <!-- Empty State -->
+            <div class="baw-empty">
+                <div class="baw-empty-icon">🌐</div>
+                <h4>No Activity Found</h4>
+                <p>No web browsing was recorded for <strong>{{ selected_date|date:"d F Y" }}</strong>.</p>
+                <form method="get" action="" style="display: inline-block; margin-top: 0.5rem;">
+                    <input type="hidden" name="employee_id" value="{{ selected_employee.id }}">
+                    <input type="hidden" name="date" value="{% now 'Y-m-d' %}">
+                    <button type="submit" class="baw-btn-apply">
+                        <i class="fas fa-calendar-check"></i> View Today's Activity
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Count searches vs browses dynamically
+    let searches = 0, browses = 0;
+    document.querySelectorAll('.baw-table tbody tr').forEach(row => {
+        const badge = row.querySelector('.baw-type-badge');
+        if (badge && badge.classList.contains('baw-type-search')) searches++;
+        else browses++;
+    });
+    const elSearches = document.getElementById('baw-stat-searches');
+    const elBrowse   = document.getElementById('baw-stat-browse');
+    if (elSearches) elSearches.textContent = searches;
+    if (elBrowse)   elBrowse.textContent   = browses;
+
+    // Animate stat pills in with staggered spring delay
+    document.querySelectorAll('.baw-stat-pill').forEach((pill, i) => {
+        setTimeout(() => pill.classList.add('baw-visible'), 100 + i * 90);
+    });
+});
+</script>
+{% endblock %}

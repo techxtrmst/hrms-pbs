@@ -2048,13 +2048,11 @@
                         {% if attendance and attendance.daily_sessions_count > 0 %}
                         <div class="p-3 bg-info bg-opacity-10 rounded-3 mb-4 border border-info">
                             <div class="text-label mb-1">Today's Progress</div>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="fw-bold text-dark">
-                                        {% widthratio attendance.total_working_hours|default:0 9 100 %}%
-                                    </div>
+                            <div class="d-flex flex-column gap-2">
+                                <div class="fw-bold text-dark">
+                                    {% widthratio attendance.total_working_hours|default:0 9 100 %}%
                                 </div>
-                                <div class="text-end">
+                                <div>
                                     <span class="status-badge status-{{ attendance.status|lower }}">
                                         {{ attendance.get_status_display }}
                                     </span>
@@ -2107,7 +2105,7 @@
                                         <div class="text-value text-success">100%</div>
                                         <div class="text-label">On Time</div>
                                     </div>
-                                    {% if user.employee_profile.company.name|lower == "bluebix" %}
+                                    {% if user.employee_profile.company.name|lower == "bluebix" or user.employee_profile.company.name|lower == "softstandard" or user.employee_profile.company.name|lower == "softstandard solutions" %}
                                     <div class="weekly-stats-item">
                                         <div class="text-value text-primary">{{ leave_balance.combined_sick_casual_balance|floatformat:1|default:"0" }}
                                         </div>
@@ -2617,7 +2615,7 @@
                     <div class="card-header-clean">
                         <span class="card-title-text"><i class="fas fa-list text-muted"></i> Attendance
                             Log</span>
-                        <a href="{% url 'attendance_report' %}"
+                        <a href="{% url 'my_attendance_logs' %}"
                             class="btn btn-sm btn-light text-primary fw-bold rounded-pill px-3">View All</a>
                     </div>
                     <div class="card-body-clean p-0">
@@ -2675,8 +2673,7 @@
                                             {% elif att.status == 'NOT_LOGGED_IN' %}
                                             <span class="status-badge status-not-login">Not Login</span>
                                             {% else %}
-                                            <span class="status-badge status-absent">{{
-                                                att.status_display|default:att.status }}</span>
+                                            <span class="status-badge status-absent">{{ att.status_display|default:att.status }}</span>
                                             {% endif %}
                                         </td>
                                         <td>
@@ -2712,13 +2709,13 @@
                     <div class="card-body-clean">
                         <div class="text-label mb-3">This Week</div>
                         <div class="week-days">
-                            <div class="day-badge">S</div>
-                            <div class="day-badge active">M</div>
-                            <div class="day-badge active">T</div>
-                            <div class="day-badge active">W</div>
-                            <div class="day-badge active">T</div>
-                            <div class="day-badge active">F</div>
-                            <div class="day-badge">S</div>
+                            <div class="day-badge {% if not employee.week_off_sunday %}active{% endif %}">S</div>
+                            <div class="day-badge {% if not employee.week_off_monday %}active{% endif %}">M</div>
+                            <div class="day-badge {% if not employee.week_off_tuesday %}active{% endif %}">T</div>
+                            <div class="day-badge {% if not employee.week_off_wednesday %}active{% endif %}">W</div>
+                            <div class="day-badge {% if not employee.week_off_thursday %}active{% endif %}">T</div>
+                            <div class="day-badge {% if not employee.week_off_friday %}active{% endif %}">F</div>
+                            <div class="day-badge {% if not employee.week_off_saturday %}active{% endif %}">S</div>
                         </div>
                     </div>
                 </div>
@@ -2809,8 +2806,8 @@
                         </h6>
                     </div>
                     <div class="card-body-clean">
-                        {% if user.employee_profile.company.name|lower == "bluebix" %}
-                        <!-- Combined Sick/Casual Leave for Bluebix -->
+                        {% if user.employee_profile.company.name|lower == "bluebix" or user.employee_profile.company.name|lower == "softstandard" or user.employee_profile.company.name|lower == "softstandard solutions" %}
+                        <!-- Combined Sick/Casual Leave for Bluebix / Softstandard -->
                         <div class="d-flex justify-content-between align-items-center p-3"
                             style="background: rgba(99, 102, 241, 0.05); border-radius: 12px; border-left: 4px solid #6366f1;">
                             <div>

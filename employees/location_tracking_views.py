@@ -180,6 +180,7 @@ def get_location_tracking_status(request):
             return JsonResponse(
                 {
                     "status": "success",
+                    "employee_id": employee.id,
                     "is_clocked_in": attendance.is_currently_clocked_in,
                     "location_tracking_active": attendance.location_tracking_active,
                     "session_count": attendance.daily_sessions_count,

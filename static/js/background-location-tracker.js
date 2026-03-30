@@ -77,7 +77,7 @@ class BackgroundLocationTracker {
 
         try {
             // Get current location status
-            const statusResponse = await fetch('/employees/api/location-tracking-status/');
+            const statusResponse = await fetch('/employees/api/location/status/');
             const statusData = await statusResponse.json();
 
             if (!statusData.is_clocked_in) {
@@ -179,7 +179,7 @@ class BackgroundLocationTracker {
     // Check if tracking should be active
     async checkTrackingStatus() {
         try {
-            const response = await fetch('/employees/api/location-tracking-status/');
+            const response = await fetch('/employees/api/location/status/');
             const data = await response.json();
 
             if (data.is_clocked_in && !data.tracking_stopped) {

@@ -1,0 +1,314 @@
+{% extends 'core/base.html' %}
+{% load static activity_filters %}
+
+{% block title %}App Activity — {{ selected_employee.user.get_full_name }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/browser_activity.css' %}">
+<style>
+    .baw-hero { margin: -30px -30px 0 -30px; padding: 2.5rem 30px 6rem; }
+    @media (max-width: 768px) { .baw-hero { margin: -15px -15px 0 -15px; padding: 2.5rem 15px 5rem; } }
+
+    /* App icon */
+    .app-icon-lg {
+        width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1rem; font-weight: 800;
+        background: linear-gradient(135deg, #6366F1, #8B5CF6);
+        color: white;
+    }
+
+    /* Duration progress bar */
+    .dur-bar-wrap { background: #F1F5F9; border-radius: 6px; height: 5px; overflow: hidden; margin-top: 5px; }
+    .dur-bar { height: 100%; border-radius: 6px; min-width: 3px; }
+    .dur-bar.ok   { background: linear-gradient(90deg, #10B981, #14B8A6); }
+    .dur-bar.idle { background: linear-gradient(90deg, #F43F5E, #FB923C); }
+
+    /* Badges */
+    .prod-yes { background: #F0FDF4; color: #15803D; border-radius: 8px; padding: 0.28rem 0.7rem; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px; }
+    .prod-no  { background: #FFF1F2; color: #BE123C; border-radius: 8px; padding: 0.28rem 0.7rem; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px; }
+    .cat-tag  { background: #F0F9FF; color: #0369A1; border-radius: 8px; padding: 0.28rem 0.7rem; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+
+    /* Summary strip */
+    .app-sum-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 0.9rem; margin-bottom: 1.75rem; }
+    .app-sum-card { background: white; border-radius: 16px; padding: 1rem 1.2rem; display: flex; align-items: center; gap: 0.9rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid #F1F5F9; transition: all 0.25s; opacity: 0; transform: translateY(12px); }
+    .app-sum-card.vis { opacity: 1; transform: translateY(0); transition: opacity 0.4s cubic-bezier(0.34,1.56,0.64,1), transform 0.4s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s; }
+    .app-sum-card:hover { transform: translateY(-3px) !important; box-shadow: 0 6px 20px rgba(99,102,241,0.12); }
+    .app-sum-ico { width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg,#6366F1,#8B5CF6); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 0.85rem; flex-shrink: 0; }
+    .app-sum-name { font-weight: 700; color: #1E293B; font-size: 0.83rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
+    .app-sum-meta { font-size: 0.68rem; color: #94A3B8; margin-top: 2px; }
+    .app-sum-dur  { font-size: 1.05rem; font-weight: 800; color: #6366F1; white-space: nowrap; }
+
+    /* Timeline connector */
+    .timeline-row { position: relative; }
+    .time-block {
+        display: flex; align-items: center; gap: 0.5rem;
+        background: #F8FAFC; border-radius: 10px;
+        padding: 0.45rem 0.75rem;
+        font-size: 0.82rem; font-weight: 700; color: #1E293B;
+        white-space: nowrap;
+    }
+    .time-block .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .time-block .dot.green { background: #10B981; }
+    .time-block .dot.red   { background: #F43F5E; }
+    .time-block-sec { font-size: 0.68rem; font-weight: 500; color: #94A3B8; margin-top: 2px; }
+
+    /* Arrow between start → end */
+    .time-arrow { color: #CBD5E1; font-size: 0.7rem; flex-shrink: 0; }
+
+    /* Duration chip */
+    .dur-chip {
+        display: inline-flex; align-items: center; gap: 5px;
+        font-weight: 900; font-size: 0.95rem;
+    }
+    .dur-chip.ok   { color: #6366F1; }
+    .dur-chip.idle { color: #F43F5E; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<div class="baw-hero" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 40%, #1E3A5F 70%, #1D4ED8 100%);">
+    <div class="baw-orb baw-orb-1" style="background:#3B82F6;"></div>
+    <div class="baw-orb baw-orb-2" style="background:#6366F1;"></div>
+    <div class="baw-orb baw-orb-3" style="background:#0EA5E9;"></div>
+
+    <div class="container-fluid px-4 baw-hero-content">
+        <div class="mb-4">
+            <a href="{% url 'activity-dashboard' %}{% if selected_employee.id != request.user.employee_profile.id %}?employee_id={{ selected_employee.id }}{% endif %}" class="baw-back-btn">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+        <div class="row align-items-center">
+            <div class="col-md-7">
+                <div class="baw-badge"><i class="fas fa-desktop" style="font-size:0.75rem;"></i> Application Usage Log</div>
+                <h1 class="baw-hero-title">Daily Toolset</h1>
+                <p class="baw-hero-subtitle">App sessions for <strong>{{ selected_employee.user.get_full_name }}</strong></p>
+                <div class="baw-date-pill"><i class="fas fa-calendar-day"></i> {{ selected_date|date:"l, d F Y" }}</div>
+            </div>
+            <div class="col-md-5 mt-4 mt-md-0">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="baw-glass-box">
+                            <div class="baw-glass-box-label">App Sessions</div>
+                            <div class="baw-glass-box-value">{{ total_count }}</div>
+                            <div class="baw-glass-box-sub"><i class="fas fa-layer-group me-1"></i> unique blocks</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="baw-glass-box">
+                            <div class="baw-glass-box-label">Productive Time</div>
+                            <div class="baw-glass-box-value-sm">{{ productive_total_seconds|duration_human }}</div>
+                            <div class="baw-glass-box-sub" style="color: #FDA4AF;">
+                                {{ unproductive_total_seconds|duration_human }} unproductive
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN -->
+<div class="container-fluid px-4 pb-5 baw-main">
+
+    <!-- Filter -->
+    <div class="baw-filter-card">
+        <form method="get" action="">
+            <div class="row align-items-end g-3">
+                <div class="col-md-3">
+                    <div class="baw-input-label"><i class="fas fa-calendar me-1"></i> Pick a Date</div>
+                    <div class="baw-input-wrap">
+                        <i class="fas fa-calendar-alt baw-input-icon"></i>
+                        <input type="date" name="date" class="baw-input" value="{{ selected_date|date:'Y-m-d' }}">
+                    </div>
+                </div>
+                {% if employees_list %}
+                <div class="col-md-4">
+                    <div class="baw-input-label"><i class="fas fa-user me-1"></i> Employee</div>
+                    <div class="baw-input-wrap">
+                        <i class="fas fa-users baw-input-icon"></i>
+                        <select name="employee_id" class="baw-input">
+                            <option value="">My Activity</option>
+                            {% for emp in employees_list %}
+                            <option value="{{ emp.id }}" {% if emp.id == selected_employee.id %}selected{% endif %}>
+                                {{ emp.user.get_full_name }} — {{ emp.designation }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="col-md-auto">
+                    <button type="submit" class="baw-btn-apply"><i class="fas fa-search"></i> Apply Filter</button>
+                </div>
+                <div class="col-md-auto ms-auto d-flex align-items-center gap-2">
+                    <span class="baw-record-dot"></span>
+                    <span style="font-size:0.85rem; font-weight:600; color:#64748B;">
+                        <strong style="color:#1E293B; font-size:1rem;">{{ total_count }}</strong> sessions
+                    </span>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Per-App Summary -->
+    {% if app_summary %}
+    <div class="baw-input-label mb-2"><i class="fas fa-chart-bar me-1" style="color:#6366F1;"></i> Time Per Application</div>
+    <div class="app-sum-grid">
+        {% for app in app_summary %}
+        <div class="app-sum-card">
+            <div class="app-sum-ico">{{ app.app_name|slice:":1"|upper }}</div>
+            <div style="flex:1; min-width:0;">
+                <div class="app-sum-name" title="{{ app.app_name }}">{{ app.app_name }}</div>
+                <div class="app-sum-meta">
+                    {{ app.sessions }} session{{ app.sessions|pluralize }} ·
+                    {% if app.is_productive %}<span style="color:#10B981;">Productive</span>{% else %}<span style="color:#F43F5E;">Unproductive</span>{% endif %}
+                </div>
+            </div>
+            <div class="app-sum-dur">{{ app.total_seconds|duration_human }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Session Timeline Table -->
+    <div class="baw-table-card">
+        <div class="baw-table-header">
+            <div class="d-flex align-items-center gap-2">
+                <div class="baw-header-icon" style="background:#EFF6FF;">
+                    <i class="fas fa-desktop" style="color:#1D4ED8; font-size:0.9rem;"></i>
+                </div>
+                <div>
+                    <h5>Session Timeline</h5>
+                    <div class="baw-table-header-sub">{{ selected_date|date:"d F Y" }} — merged consecutive heartbeats</div>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="baw-badge-live"><span class="baw-live-dot"></span> Live</span>
+                <span class="baw-badge-count">{{ total_count }} sessions</span>
+            </div>
+        </div>
+
+        <div class="baw-scroll">
+            {% if app_sessions %}
+            <table class="baw-table">
+                <thead>
+                    <tr>
+                        <th style="width:40px; text-align:center;">#</th>
+                        <th>Application</th>
+                        <th>Window Title</th>
+                        <th>Category</th>
+                        <th>Productive</th>
+                        <th>Time On App</th>
+                        <th>Started At</th>
+                        <th class="text-end" style="padding-right:2rem;">Ended At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in app_sessions %}
+                    <tr class="timeline-row">
+                        <!-- # -->
+                        <td style="text-align:center; color:#94A3B8; font-size:0.75rem; font-weight:700;">
+                            {{ forloop.counter }}
+                        </td>
+
+                        <!-- App name -->
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="app-icon-lg">{{ session.app_name|slice:":1"|upper }}</div>
+                                <div>
+                                    <div style="font-weight:800; color:#1E293B; font-size:0.88rem;">{{ session.app_name }}</div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Window title -->
+                        <td style="max-width:200px;">
+                            <span style="font-size:0.78rem; color:#475569; font-weight:500;
+                                         white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;"
+                                  title="{{ session.window_title|default:'' }}">
+                                {{ session.window_title|default:"—"|truncatechars:45 }}
+                            </span>
+                        </td>
+
+                        <!-- Category -->
+                        <td>
+                            {% if session.category %}
+                            <span class="cat-tag"><i class="fas fa-tag" style="font-size:0.6rem;"></i> {{ session.category }}</span>
+                            {% else %}
+                            <span style="color:#CBD5E1; font-size:0.78rem;">—</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Productive -->
+                        <td>
+                            {% if session.is_productive %}
+                            <span class="prod-yes"><i class="fas fa-check" style="font-size:0.6rem;"></i> Yes</span>
+                            {% else %}
+                            <span class="prod-no"><i class="fas fa-times" style="font-size:0.6rem;"></i> No</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- ✅ Time on app: actual duration with bar -->
+                        <td style="min-width:130px;">
+                            <span class="dur-chip {% if session.is_productive %}ok{% else %}idle{% endif %}">
+                                <i class="fas fa-hourglass-half" style="font-size:0.7rem; opacity:0.7;"></i>
+                                {{ session.total_seconds|duration_human }}
+                            </span>
+                            <div class="dur-bar-wrap">
+                                <div class="dur-bar {% if session.is_productive %}ok{% else %}idle{% endif %}"
+                                     style="width: {{ session.total_seconds|percent_of:max_duration_seconds }}%;">
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- ✅ Started At — H:i:s -->
+                        <td>
+                            <div class="time-block">
+                                <span class="dot green"></span>
+                                {{ session.start_time|date:"H:i:s" }}
+                            </div>
+                            <div class="time-block-sec">{{ session.start_time|date:"d M Y" }}</div>
+                        </td>
+
+                        <!-- ✅ Ended At — H:i:s -->
+                        <td style="text-align:right; padding-right:2rem;">
+                            <div class="time-block" style="justify-content:flex-end;">
+                                <span class="dot red"></span>
+                                {{ session.end_time|date:"H:i:s" }}
+                            </div>
+                            <div class="time-block-sec" style="text-align:right;">{{ session.end_time|date:"d M Y" }}</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% else %}
+            <div class="baw-empty">
+                <div class="baw-empty-icon">💻</div>
+                <h4>No App Activity Found</h4>
+                <p>No application sessions were recorded for <strong>{{ selected_date|date:"d F Y" }}</strong>.</p>
+                <form method="get" action="" style="display:inline-block; margin-top:0.5rem;">
+                    <input type="hidden" name="employee_id" value="{{ selected_employee.id }}">
+                    <input type="hidden" name="date" value="{% now 'Y-m-d' %}">
+                    <button type="submit" class="baw-btn-apply"><i class="fas fa-calendar-check"></i> View Today</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.app-sum-card').forEach((c, i) => {
+        setTimeout(() => c.classList.add('vis'), 70 + i * 55);
+    });
+});
+</script>
+{% endblock %}

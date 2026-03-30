@@ -693,6 +693,70 @@
             padding: 0.875rem;
         }
     }
+    .btn-view-doc {
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-top: 0.5rem;
+    }
+
+    .btn-view-doc:hover {
+        background: #e2e8f0;
+        color: #1e293b;
+    }
+
+    /* Image Modal */
+    .image-modal {
+        display: none;
+        position: fixed;
+        z-index: 10000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(5px);
+    }
+
+    .image-modal img {
+        max-width: 90%;
+        max-height: 90%;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-close {
+        position: absolute;
+        top: 2rem;
+        right: 2rem;
+        color: white;
+        font-size: 2.5rem;
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.1);
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+        border: none;
+    }
+
+    .modal-close:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: rotate(90deg);
+    }
 </style>
 {% endblock %}
 
@@ -1129,20 +1193,13 @@
                                 <label class="info-label">Working Days</label>
                                 <div class="info-value">
                                     <div class="working-days-badges">
-                                        {% if employee.assigned_shift.monday %}<span
-                                            class="badge bg-primary me-1">Mon</span>{% endif %}
-                                        {% if employee.assigned_shift.tuesday %}<span
-                                            class="badge bg-primary me-1">Tue</span>{% endif %}
-                                        {% if employee.assigned_shift.wednesday %}<span
-                                            class="badge bg-primary me-1">Wed</span>{% endif %}
-                                        {% if employee.assigned_shift.thursday %}<span
-                                            class="badge bg-primary me-1">Thu</span>{% endif %}
-                                        {% if employee.assigned_shift.friday %}<span
-                                            class="badge bg-primary me-1">Fri</span>{% endif %}
-                                        {% if employee.assigned_shift.saturday %}<span
-                                            class="badge bg-secondary me-1">Sat</span>{% endif %}
-                                        {% if employee.assigned_shift.sunday %}<span
-                                            class="badge bg-secondary me-1">Sun</span>{% endif %}
+                                        {% if not employee.week_off_monday %}<span class="badge bg-primary me-1">Mon</span>{% endif %}
+                                        {% if not employee.week_off_tuesday %}<span class="badge bg-primary me-1">Tue</span>{% endif %}
+                                        {% if not employee.week_off_wednesday %}<span class="badge bg-primary me-1">Wed</span>{% endif %}
+                                        {% if not employee.week_off_thursday %}<span class="badge bg-primary me-1">Thu</span>{% endif %}
+                                        {% if not employee.week_off_friday %}<span class="badge bg-primary me-1">Fri</span>{% endif %}
+                                        {% if not employee.week_off_saturday %}<span class="badge bg-primary me-1">Sat</span>{% endif %}
+                                        {% if not employee.week_off_sunday %}<span class="badge bg-primary me-1">Sun</span>{% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -1201,17 +1258,25 @@
                         <div class="row g-4">
                             <!-- Aadhar/NID/State ID Front -->
                             <div class="col-md-4">
-                                <div class="doc-upload-box text-center p-4 border-2 border-dashed rounded-3"
-                                    style="border-color: #cbd5e1; cursor: pointer; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;"
-                                    onclick="this.querySelector('input').click()">
+                                <div class="doc-upload-box text-center p-4 border-2 border-dashed rounded-3 position-relative"
+                                    style="border-color: #cbd5e1; {% if is_admin or not id_proofs.aadhar_front %}cursor: pointer;{% endif %} min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;"
+                                    {% if is_admin or not id_proofs.aadhar_front %}onclick="this.querySelector('input').click()"{% endif %}>
                                     {% if id_proofs.aadhar_front %}
                                     <span class="badge bg-success position-absolute top-0 end-0 m-2"><i
                                             class="fas fa-check"></i></span>
                                     <img src="{{ id_proofs.aadhar_front.url }}" class="img-fluid rounded mb-3"
-                                        style="max-height: 120px;">
+                                        style="max-height: 120px; {% if not is_admin %}cursor: zoom-in;{% endif %}"
+                                        {% if not is_admin %}onclick="event.stopPropagation(); openImageModal(this.src)"{% endif %}>
                                     <div class="fw-bold text-dark">
                                         {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Front{% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID Front{% else %}Aadhar Front{% endif %}
                                     </div>
+                                    {% if is_admin %}
+                                    <div class="small text-muted mt-2">Click to change</div>
+                                    {% else %}
+                                    <button type="button" class="btn-view-doc mt-2" onclick="event.stopPropagation(); openImageModal('{{ id_proofs.aadhar_front.url }}')">
+                                        <i class="fas fa-eye"></i> View Card
+                                    </button>
+                                    {% endif %}
                                     {% else %}
                                     <i class="fas fa-id-card fa-3x text-muted mb-3"></i>
                                     <div class="fw-bold text-dark mb-2">
@@ -1225,17 +1290,25 @@
 
                             <!-- Aadhar/NID/State ID Back -->
                             <div class="col-md-4">
-                                <div class="doc-upload-box text-center p-4 border-2 border-dashed rounded-3"
-                                    style="border-color: #cbd5e1; cursor: pointer; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;"
-                                    onclick="this.querySelector('input').click()">
+                                <div class="doc-upload-box text-center p-4 border-2 border-dashed rounded-3 position-relative"
+                                    style="border-color: #cbd5e1; {% if is_admin or not id_proofs.aadhar_back %}cursor: pointer;{% endif %} min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;"
+                                    {% if is_admin or not id_proofs.aadhar_back %}onclick="this.querySelector('input').click()"{% endif %}>
                                     {% if id_proofs.aadhar_back %}
                                     <span class="badge bg-success position-absolute top-0 end-0 m-2"><i
                                             class="fas fa-check"></i></span>
                                     <img src="{{ id_proofs.aadhar_back.url }}" class="img-fluid rounded mb-3"
-                                        style="max-height: 120px;">
+                                        style="max-height: 120px; {% if not is_admin %}cursor: zoom-in;{% endif %}"
+                                        {% if not is_admin %}onclick="event.stopPropagation(); openImageModal(this.src)"{% endif %}>
                                     <div class="fw-bold text-dark">
                                         {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Back{% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID Back{% else %}Aadhar Back{% endif %}
                                     </div>
+                                    {% if is_admin %}
+                                    <div class="small text-muted mt-2">Click to change</div>
+                                    {% else %}
+                                    <button type="button" class="btn-view-doc mt-2" onclick="event.stopPropagation(); openImageModal('{{ id_proofs.aadhar_back.url }}')">
+                                        <i class="fas fa-eye"></i> View Card
+                                    </button>
+                                    {% endif %}
                                     {% else %}
                                     <i class="fas fa-id-card fa-3x text-muted mb-3"></i>
                                     <div class="fw-bold text-dark mb-2">
@@ -1249,19 +1322,27 @@
 
                             <!-- PAN/TIN/SSN Card -->
                             <div class="col-md-4">
-                                <div class="doc-upload-box text-center p-4 border-2 border-dashed rounded-3"
-                                    style="border-color: #cbd5e1; cursor: pointer; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;"
-                                    onclick="this.querySelector('input').click()">
+                                <div class="doc-upload-box text-center p-4 border-2 border-dashed rounded-3 position-relative"
+                                    style="border-color: #cbd5e1; {% if is_admin or not id_proofs.pan_card %}cursor: pointer;{% endif %} min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;"
+                                    {% if is_admin or not id_proofs.pan_card %}onclick="this.querySelector('input').click()"{% endif %}>
                                     {% if id_proofs.pan_card %}
                                     <span class="badge bg-success position-absolute top-0 end-0 m-2"><i
                                             class="fas fa-check"></i></span>
                                     <img src="{{ id_proofs.pan_card.url }}" class="img-fluid rounded mb-3"
-                                        style="max-height: 120px;">
+                                        style="max-height: 120px; {% if not is_admin %}cursor: zoom-in;{% endif %}"
+                                        {% if not is_admin %}onclick="event.stopPropagation(); openImageModal(this.src)"{% endif %}>
                                     <div class="fw-bold text-dark">
                                         {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}TIN Card{% elif employee.location.country_code == "US" or "US" in employee.location.name %}SSN Card{% else %}PAN Card{% endif %}
                                     </div>
+                                    {% if is_admin %}
+                                    <div class="small text-muted mt-2">Click to change</div>
                                     {% else %}
-                                    <i class="fas fa-address-card fa-3x text-muted mb-3"></i>
+                                    <button type="button" class="btn-view-doc mt-2" onclick="event.stopPropagation(); openImageModal('{{ id_proofs.pan_card.url }}')">
+                                        <i class="fas fa-eye"></i> View Card
+                                    </button>
+                                    {% endif %}
+                                    {% else %}
+                                    <i class="fas fa-credit-card fa-3x text-muted mb-3"></i>
                                     <div class="fw-bold text-dark mb-2">
                                         {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}TIN Card{% elif employee.location.country_code == "US" or "US" in employee.location.name %}SSN Card{% else %}PAN Card{% endif %}
                                     </div>
@@ -1271,11 +1352,13 @@
                                 </div>
                             </div>
 
-                            <div class="col-12 text-end mt-4">
-                                <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold">
-                                    <i class="fas fa-save me-1"></i> Save Changes
+                            {% if is_admin or not id_proofs.aadhar_front or not id_proofs.aadhar_back or not id_proofs.pan_card %}
+                            <div class="mt-4 text-center">
+                                <button type="submit" class="btn btn-primary px-5 rounded-pill shadow-sm">
+                                    <i class="fas fa-save me-2"></i>Save Documents
                                 </button>
                             </div>
+                            {% endif %}
                         </div>
                     </form>
                 </div>
@@ -1427,6 +1510,38 @@
             </form>
         </div>
     </div>
+    <!-- Document Image Viewer Modal -->
+    <div id="docImageModal" class="image-modal" onclick="closeImageModal()">
+        <button class="modal-close" onclick="closeImageModal()">&times;</button>
+        <img id="modalImage" src="" alt="Document Preview">
+    </div>
+
+    <!-- Image Modal Logic -->
+    <script>
+        function openImageModal(src) {
+            const modal = document.getElementById('docImageModal');
+            const modalImg = document.getElementById('modalImage');
+            if (modal && modalImg) {
+                modalImg.src = src;
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('docImageModal');
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeImageModal();
+            }
+        });
+    </script>
 </div>
 {% endblock %}
 
@@ -1464,23 +1579,31 @@
         });
 
         // Document upload preview
-        document.querySelectorAll('input[type="file"]').forEach(input => {
+        document.querySelectorAll('.doc-upload-box input[type="file"]').forEach(input => {
             input.addEventListener('change', function () {
                 if (this.files && this.files[0]) {
                     const reader = new FileReader();
-                    const uploadBox = this.closest('.doc-upload-box');
+                    const box = this.closest('.doc-upload-box');
+                    const img = box.querySelector('img');
+                    const icon = box.querySelector('i.fa-3x');
+                    const statusText = box.querySelector('.small.text-muted');
 
-                    reader.onload = function (e) {
-                        uploadBox.innerHTML = `
-                            <span class="badge bg-info position-absolute top-0 end-0 m-2">
-                                <i class="fas fa-save"></i> Save Required
-                            </span>
-                            <img src="${e.target.result}" class="img-fluid rounded mb-3" style="max-height: 120px;">
-                            <div class="fw-bold text-dark">Document Selected</div>
-                            <div class="small text-muted">Click Save Changes to upload</div>
-                        `;
-                    };
+                    reader.onload = function(e) {
+                        if (img) {
+                            img.src = e.target.result;
+                        } else if (icon) {
+                            icon.remove();
+                            const newImg = document.createElement('img');
+                            newImg.src = e.target.result;
+                            newImg.className = 'img-fluid rounded mb-3';
+                            newImg.style.maxHeight = '120px';
+                            box.insertBefore(newImg, box.querySelector('.fw-bold'));
+                        }
 
+                        if (statusText) {
+                            statusText.innerHTML = '<span class="text-success"><i class="fas fa-check"></i> Selected</span>';
+                        }
+                    }
                     reader.readAsDataURL(this.files[0]);
                 }
             });

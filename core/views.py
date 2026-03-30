@@ -173,17 +173,19 @@ def manager_dashboard(request):
         date_of_joining__lt=today,
     )
 
-    # 6. Upcoming Holidays
+    # 6. Upcoming Holidays (location-specific only)
 
-    upcoming_holidays = (
-        Holiday.objects.filter(company=manager_profile.company, date__gte=today, is_active=True)
-        .filter(
-            Q(location__name__iexact="Global")
-            | Q(location__name__iexact="All Locations")
-            | Q(location=manager_profile.location)
-        )
-        .order_by("date")[:5]
-    )
+    if manager_profile.location:
+        # Only show holidays specific to the manager's location
+        upcoming_holidays = Holiday.objects.filter(
+            company=manager_profile.company,
+            location=manager_profile.location,  # Only location-specific holidays
+            date__gte=today,
+            is_active=True,
+        ).order_by("date")[:5]
+    else:
+        # If manager has no location, show no holidays
+        upcoming_holidays = Holiday.objects.none()
 
     context = {
         "title": "Manager Dashboard",
@@ -856,15 +858,21 @@ def employee_dashboard(request):
             leave_dates[curr] = "LEAVE"
             curr += timedelta(days=1)
 
-    # Fetch Holidays
+    # Fetch Holidays (location-specific only)
     from companies.models import Holiday
 
-    holiday_q = Q(location__isnull=True)
     if employee.location:
-        holiday_q |= Q(location=employee.location)
-    holidays = Holiday.objects.filter(
-        company=employee.company, date__range=[start_date, end_date], is_active=True
-    ).filter(holiday_q)
+        # Only holidays specific to the employee's location
+        holidays = Holiday.objects.filter(
+            company=employee.company,
+            location=employee.location,  # Only location-specific holidays
+            date__range=[start_date, end_date],
+            is_active=True,
+        )
+    else:
+        # If employee has no location, no holidays
+        holidays = Holiday.objects.none()
+
     holiday_dates = {h.date: h.name for h in holidays}
 
     history = []
@@ -1086,16 +1094,22 @@ def employee_dashboard(request):
     upcoming_birthdays.sort(key=lambda x: x["days_left"])
     upcoming_anniversaries.sort(key=lambda x: x["days_left"])
 
-    # 3. Upcoming Holidays
-    upcoming_holidays = (
-        Holiday.objects.filter(
-            company=employee.company,
-            date__gte=today,
-            is_active=True,
+    # 3. Upcoming Holidays (filtered by employee's location ONLY - no company-wide)
+    if employee.location:
+        # Only show holidays specific to the employee's location
+        upcoming_holidays = (
+            Holiday.objects.filter(
+                company=employee.company,
+                location=employee.location,  # Only location-specific holidays
+                date__gte=today,
+                is_active=True,
+            )
+            .select_related("location")
+            .order_by("date")[:5]
         )
-        .select_related("location")
-        .order_by("date")[:5]
-    )
+    else:
+        # If employee has no location, show no holidays
+        upcoming_holidays = Holiday.objects.none()
 
     context = {
         "title": "My Dashboard",
@@ -1167,6 +1181,7 @@ def personal_home(request):
     context = {}
     if hasattr(request.user, "employee_profile"):
         employee = request.user.employee_profile
+        context["employee"] = employee
         today = timezone.localdate()
 
         # Resolve correct timezone using central utility
@@ -1214,13 +1229,19 @@ def personal_home(request):
                 leave_dates[curr] = "LEAVE"
                 curr += timedelta(days=1)
 
-        # Fetch Holidays
-        holiday_q = Q(location__isnull=True)
+        # Fetch Holidays (location-specific only)
         if employee.location:
-            holiday_q |= Q(location=employee.location)
-        holidays = Holiday.objects.filter(
-            company=employee.company, date__range=[start_date, end_date], is_active=True
-        ).filter(holiday_q)
+            # Only holidays specific to the employee's location
+            holidays = Holiday.objects.filter(
+                company=employee.company,
+                location=employee.location,  # Only location-specific holidays
+                date__range=[start_date, end_date],
+                is_active=True,
+            )
+        else:
+            # If employee has no location, no holidays
+            holidays = Holiday.objects.none()
+
         holiday_dates = {h.date: h.name for h in holidays}
 
         history = []
@@ -1315,17 +1336,20 @@ def personal_home(request):
         )
         context["work_anniversaries"] = work_anniversaries
 
-        # Holidays - All holidays in current month (past and upcoming)
+        # Holidays - Only location-specific holidays (no company-wide)
 
-        upcoming_holidays = (
-            Holiday.objects.filter(
+        if employee.location:
+            # Only show holidays specific to the employee's location
+            upcoming_holidays = Holiday.objects.filter(
                 company=employee.company,
+                location=employee.location,  # Only location-specific holidays
                 date__gte=today,
                 is_active=True,
-            )
-            .filter(Q(location__isnull=True) | Q(location=employee.location))
-            .order_by("date")[:5]
-        )
+            ).order_by("date")[:5]
+        else:
+            # If employee has no location, show no holidays
+            upcoming_holidays = Holiday.objects.none()
+
         context["upcoming_holidays"] = upcoming_holidays
 
         # Shift Timings & Timeline Data
@@ -1496,6 +1520,159 @@ def personal_home(request):
             context["leave_balance"] = leave_balance
 
     return render(request, "core/personal_home.html", context)
+
+
+@login_required
+def my_attendance_logs(request):
+    """Personal Attendance Logs - Shows employee's own attendance for current month"""
+    if not hasattr(request.user, "employee_profile"):
+        messages.error(request, "Employee profile not found.")
+        return redirect("personal_home")
+
+    employee = request.user.employee_profile
+
+    # Resolve correct timezone
+    from core.utils import get_user_timezone
+
+    user_timezone = get_user_timezone(request.user, getattr(request, "company", None))
+
+    try:
+        import pytz
+
+        tz = pytz.timezone(user_timezone)
+        today = timezone.now().astimezone(tz).date()
+        timezone.activate(tz)
+    except Exception:
+        today = timezone.localdate()
+
+    # Get month and year from query params or use current
+    month = int(request.GET.get("month", today.month))
+    year = int(request.GET.get("year", today.year))
+
+    # Calculate month start and end dates
+    from calendar import monthrange
+
+    _, last_day = monthrange(year, month)
+    start_date = date(year, month, 1)
+    end_date = date(year, month, last_day)
+
+    # Fetch existing attendance records
+    attendance_records = {
+        att.date: att
+        for att in Attendance.objects.filter(employee=employee, date__range=[start_date, end_date]).order_by("-date")
+    }
+
+    # Fetch leaves
+    leaves = LeaveRequest.objects.filter(
+        employee=employee, status="APPROVED", start_date__lte=end_date, end_date__gte=start_date
+    )
+    leave_dates = {}
+    for leave in leaves:
+        curr = max(leave.start_date, start_date)
+        while curr <= min(leave.end_date, end_date):
+            leave_dates[curr] = "LEAVE"
+            curr += timedelta(days=1)
+
+    # Fetch Holidays (location-specific only)
+    if employee.location:
+        # Only holidays specific to the employee's location
+        holidays = Holiday.objects.filter(
+            company=employee.company,
+            location=employee.location,  # Only location-specific holidays
+            date__range=[start_date, end_date],
+            is_active=True,
+        )
+    else:
+        # If employee has no location, no holidays
+        holidays = Holiday.objects.none()
+
+    holiday_dates = {h.date: h.name for h in holidays}
+
+    # Build complete attendance history for the month
+    attendance_history = []
+    curr_date = end_date
+    while curr_date >= start_date:
+        if curr_date in attendance_records:
+            attendance_history.append(attendance_records[curr_date])
+        else:
+            # Determine status for missing records
+            if employee.is_week_off(curr_date):
+                status = "WEEKLY_OFF"
+            elif curr_date in holiday_dates:
+                status = "HOLIDAY"
+            elif curr_date in leave_dates:
+                status = "LEAVE"
+            elif curr_date == today:
+                status = "NOT_LOGGED_IN"
+            elif curr_date > today:
+                status = "FUTURE"
+            else:
+                status = "MISSED"
+
+            attendance_history.append(
+                {
+                    "date": curr_date,
+                    "status": status,
+                    "status_display": status.replace("_", " ").title(),
+                    "clock_in": None,
+                    "clock_out": None,
+                    "effective_hours": "-",
+                    "id": None,
+                }
+            )
+        curr_date -= timedelta(days=1)
+
+    # Calculate monthly statistics
+    total_present = sum(1 for att in attendance_history if isinstance(att, Attendance) and att.status == "PRESENT")
+    total_wfh = sum(1 for att in attendance_history if isinstance(att, Attendance) and att.status == "WFH")
+    total_leaves = len([d for d in leave_dates if start_date <= d <= end_date])
+    total_working_days = sum(
+        1
+        for att in attendance_history
+        if not (isinstance(att, dict) and att["status"] in ["WEEKLY_OFF", "HOLIDAY", "FUTURE"])
+    )
+
+    # Calculate total hours worked
+    total_seconds = 0
+    for att in attendance_history:
+        if isinstance(att, Attendance) and att.clock_in and att.clock_out:
+            total_seconds += (att.clock_out - att.clock_in).total_seconds()
+
+    total_hours = int(total_seconds // 3600)
+    total_minutes = int((total_seconds % 3600) // 60)
+    total_hours_formatted = f"{total_hours}h {total_minutes}m"
+
+    # Month navigation
+    prev_month = month - 1 if month > 1 else 12
+    prev_year = year if month > 1 else year - 1
+    next_month = month + 1 if month < 12 else 1
+    next_year = year if month < 12 else year + 1
+
+    # Don't allow future months
+    current_date = today
+    can_go_next = (next_year < current_date.year) or (
+        next_year == current_date.year and next_month <= current_date.month
+    )
+
+    context = {
+        "attendance_history": attendance_history,
+        "month": month,
+        "year": year,
+        "month_name": calendar.month_name[month],
+        "total_present": total_present,
+        "total_wfh": total_wfh,
+        "total_leaves": total_leaves,
+        "total_working_days": total_working_days,
+        "total_hours_formatted": total_hours_formatted,
+        "prev_month": prev_month,
+        "prev_year": prev_year,
+        "next_month": next_month,
+        "next_year": next_year,
+        "can_go_next": can_go_next,
+        "user_timezone": user_timezone,
+    }
+
+    return render(request, "core/my_attendance_logs.html", context)
 
 
 # --- Me Section Stubs ---
@@ -1669,19 +1846,19 @@ def employee_holidays(request):
     year_filter = int(request.GET.get("year", current_year))
 
     # Get holidays for the company and year
-
-    # Filter by employee's location OR global holidays
-
-    query_filter = Q(location__name__iexact="Global") | Q(location__name__iexact="All Locations")
+    # Filter by employee's location ONLY (no global/company-wide holidays)
 
     if employee.location:
-        query_filter |= Q(location=employee.location)
-
-    holidays = (
-        Holiday.objects.filter(company=request.user.company, year=year_filter, is_active=True)
-        .filter(query_filter)
-        .order_by("date")
-    )
+        # Only show holidays specific to the employee's location
+        holidays = Holiday.objects.filter(
+            company=request.user.company,
+            location=employee.location,  # Only location-specific holidays
+            year=year_filter,
+            is_active=True,
+        ).order_by("date")
+    else:
+        # If employee has no location, show no holidays
+        holidays = Holiday.objects.none()
 
     # Get available years
 
@@ -2218,6 +2395,30 @@ def attendance_analytics(request):
     month_absent = month_attendance.filter(status="ABSENT").count()
     month_wfh = month_attendance.filter(status="WFH").count()
 
+    # Calculate working days in the month so far (excluding weekends and holidays)
+    from companies.models import Holiday
+
+    # Get holidays for the company
+    holidays = Holiday.objects.filter(
+        company=company, date__gte=month_start, date__lte=today, is_active=True
+    ).values_list("date", flat=True)
+
+    # Calculate total working days
+    working_days = 0
+    current_date = month_start
+    while current_date <= today:
+        # Check if it's not a weekend (assuming Saturday=5, Sunday=6)
+        if current_date.weekday() < 5 and current_date not in holidays:
+            working_days += 1
+        current_date += timedelta(days=1)
+
+    # Calculate daily average percentages
+    total_possible_attendance = total_employees * working_days if working_days > 0 else 1
+
+    month_present_pct = (month_present / total_possible_attendance * 100) if total_possible_attendance > 0 else 0
+    month_wfh_pct = (month_wfh / total_possible_attendance * 100) if total_possible_attendance > 0 else 0
+    month_absent_pct = (month_absent / total_possible_attendance * 100) if total_possible_attendance > 0 else 0
+
     # Last month's stats for comparison
     last_month_attendance = Attendance.objects.filter(
         employee__in=employee_ids, date__gte=last_month_start, date__lte=last_month_end
@@ -2274,6 +2475,10 @@ def attendance_analytics(request):
             "month_present": month_present,
             "month_absent": month_absent,
             "month_wfh": month_wfh,
+            "month_present_pct": round(month_present_pct, 1),
+            "month_wfh_pct": round(month_wfh_pct, 1),
+            "month_absent_pct": round(month_absent_pct, 1),
+            "working_days": working_days,
             "mom_change": round(mom_change, 1),
             # Department stats
             "dept_stats": dept_stats,
@@ -2820,6 +3025,7 @@ def download_attendance(request):
 
 
 @login_required
+@manager_required
 def leave_requests(request):
     """Admin view for managing leave requests"""
 

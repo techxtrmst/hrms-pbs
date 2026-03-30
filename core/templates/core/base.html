@@ -1,4 +1,4 @@
-﻿{% load static %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -1618,10 +1618,13 @@
         <a href="{% url 'employee_org_chart' %}" class="{% if 'org-chart' in request.path %}active{% endif %}">
             <i class="fas fa-sitemap"></i> <span>Organisation</span>
         </a>
+        <a href="{% url 'activity-dashboard' %}" class="{% if 'activity-tracking' in request.path %}active{% endif %}">
+            <i class="fas fa-desktop"></i> <span>Activity Intelligence</span>
+        </a>
         {% endif %}
 
         <!-- Employees / Team (Collapsible) -->
-        {% if user.role == 'COMPANY_ADMIN' or user.role == 'MANAGER' %}
+        {% if user.role == 'COMPANY_ADMIN' or user.role == 'EMPLOYEE_MANAGER' or user.role == 'MANAGER' %}
         <a href="#menuEmployees" class="sidebar-dropdown-toggle d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse" role="button" aria-expanded="false">
             <span class="sidebar-section-title ps-0 mt-0 mb-0 py-1">
@@ -1639,7 +1642,7 @@
                 <a href="{% url 'org_chart' %}" class="{% if 'org-chart' in request.path %}active{% endif %}">
                     <i class="fas fa-sitemap"></i> Organisation
                 </a>
-                {% if user.role == 'COMPANY_ADMIN' %}
+                {% if user.role == "COMPANY_ADMIN" or user.role == "EMPLOYEE_MANAGER" %}
                 <a href="{% url 'add_employee_step0' %}" class="{% if 'add' in request.path %}active{% endif %}">
                     <i class="fas fa-user-plus"></i> Add Employee
                 </a>
@@ -1690,7 +1693,7 @@
         {% endif %}
 
         <!-- Exit Initiatives -->
-        {% if user.role == 'COMPANY_ADMIN' or user.role == 'MANAGER' %}
+        {% if user.role == 'COMPANY_ADMIN' or user.role == 'EMPLOYEE_MANAGER' or user.role == 'MANAGER' %}
         <a href="{% url 'exit_initiatives_list' %}"
             class="{% if 'exit-initiatives' in request.path %}active{% endif %}">
             <i class="fas fa-door-open"></i> <span>Exit Initiatives</span>
@@ -1730,7 +1733,8 @@
                 <a href="{% url 'holidays' %}" class="{% if 'holidays' in request.path %}active{% endif %}">
                     <i class="fas fa-umbrella-beach"></i> Holidays
                 </a>
-                <a href="{% url 'companies:domain_configuration' %}" class="{% if 'domain-configuration' in request.path %}active{% endif %}">
+                <a href="{% url 'companies:domain_configuration' %}"
+                    class="{% if 'domain-configuration' in request.path %}active{% endif %}">
                     <i class="fas fa-globe"></i> Domain Configuration
                 </a>
                 <a href="{% url 'companies:role_configuration' %}"
@@ -1812,7 +1816,7 @@
                 {% endif %}
 
                 <!-- Resume Parser - Admin only -->
-                {% if user.role == 'COMPANY_ADMIN' %}
+                {% if user.role == 'COMPANY_ADMIN' or user.role == 'EMPLOYEE_MANAGER' %}
                 <a href="{% url 'resume_parser' %}" class="{% if 'resume-parser' in request.path %}active{% endif %}">
                     <i class="fas fa-file-upload"></i> Resume Parser
                 </a>
@@ -1875,7 +1879,7 @@
                 {% endif %}
             </h4>
             <!-- Employee Search Bar (for Company Admins on all pages) -->
-            {% if user.role == 'COMPANY_ADMIN' %}
+            {% if user.role == 'COMPANY_ADMIN' or user.role == 'EMPLOYEE_MANAGER' %}
             <div class="employee-search-container">
                 <i class="fas fa-search search-icon"></i>
                 <input type="text" id="employeeSearchInput" class="form-control" placeholder="Search employees..."
@@ -1886,7 +1890,7 @@
         </div>
         {% if request.user.is_authenticated %}
         <div class="d-flex align-items-center gap-3">
-            {% if user.role == 'COMPANY_ADMIN' or user.role == 'MANAGER' %}
+            {% if user.role == 'COMPANY_ADMIN' or user.role == 'EMPLOYEE_MANAGER' or user.role == 'MANAGER' %}
             <!-- Notification Bell -->
             <div class="position-relative" id="notificationContainer">
                 <button class="btn btn-link position-relative p-0" id="notificationBell" style="text-decoration: none;">
@@ -2293,7 +2297,7 @@
     {% endif %}
 
     <!-- Employee Search Functionality (for Company Admins on all pages) -->
-    {% if user.role == 'COMPANY_ADMIN' %}
+    {% if user.role == 'COMPANY_ADMIN' or user.role == 'EMPLOYEE_MANAGER' %}
     <script>
         // Employee Search Functionality - Enhanced Responsive Version
         let searchTimeout;
@@ -3069,17 +3073,30 @@
     <script>
         (function () {
             const employeeId = "{{ user.employee_profile.id }}";
-            const trackingServer = "http://localhost:8001/api/v1/web/heartbeat";
+            const trackingServer = "/activity-tracking/api/heartbeat";
 
             function sendHeartbeat() {
-                // Check if connection is available
-                fetch(`${trackingServer}/${employeeId}`, {
+                fetch(`${trackingServer}/${employeeId}/`, {
                     method: 'POST',
-                    mode: 'cors'
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    credentials: 'same-origin'
                 })
-                    .then(res => res.json())
-                    .then(data => console.log("Monitoring: Heartbeat active", data))
-                    .catch(err => console.log("Monitoring: Backend offline (check tracking server)"));
+                    .then(res => {
+                        if (!res.ok) {
+                            console.warn(`Monitoring: Heartbeat failed (${res.status})`);
+                            return null;
+                        }
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (data) {
+                            console.log("Monitoring: Heartbeat active", data);
+                        }
+                    })
+                    .catch(err => console.log("Monitoring: Backend offline", err.message));
             }
 
             // Pulse every 30 seconds

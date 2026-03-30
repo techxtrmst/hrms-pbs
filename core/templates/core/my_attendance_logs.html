@@ -1,0 +1,436 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}My Attendance Logs | HRMS{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --primary-color: #2D3748;
+        --primary-light: #EDF2F7;
+        --secondary-color: #4A5568;
+        --accent-color: #38B2AC;
+        --accent-light: #E6FFFA;
+        --success-color: #48BB78;
+        --warning-color: #ED8936;
+        --danger-color: #F56565;
+        --info-color: #4299E1;
+        --bg-color: #F7FAFC;
+        --card-bg: #FFFFFF;
+        --text-primary: #1A202C;
+        --text-secondary: #2D3748;
+        --text-muted: #718096;
+        --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.08);
+        --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.12);
+        --radius-md: 12px;
+        --radius-lg: 16px;
+        --radius-xl: 20px;
+        --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+        font-family: 'Outfit', sans-serif;
+        background: var(--bg-color);
+        color: var(--text-primary);
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-medium);
+    }
+
+    .stats-card {
+        background: var(--card-bg);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-soft);
+        transition: var(--transition-smooth);
+        border: 1px solid rgba(226, 232, 240, 0.6);
+    }
+
+    .stats-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-medium);
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+    }
+
+    .attendance-table {
+        background: var(--card-bg);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow-soft);
+    }
+
+    .table-custom {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin: 0;
+    }
+
+    .table-custom thead th {
+        background: linear-gradient(135deg, var(--primary-light) 0%, var(--accent-light) 100%);
+        padding: 1rem 1.25rem;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        border-bottom: 2px solid rgba(56, 178, 172, 0.2);
+        letter-spacing: 0.08em;
+        white-space: nowrap;
+    }
+
+    .table-custom tbody td {
+        padding: 1rem 1.25rem;
+        font-size: 0.9rem;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+        vertical-align: middle;
+        background: var(--card-bg);
+        transition: var(--transition-smooth);
+    }
+
+    .table-custom tbody tr:hover td {
+        background: linear-gradient(135deg, var(--accent-light) 0%, rgba(56, 178, 172, 0.05) 100%);
+    }
+
+    .table-custom tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .status-badge {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border: 2px solid transparent;
+    }
+
+    .status-present {
+        background: linear-gradient(135deg, #D6F5D6 0%, #C6F6D5 100%);
+        color: var(--success-color);
+        border-color: rgba(72, 187, 120, 0.3);
+    }
+
+    .status-wfh {
+        background: linear-gradient(135deg, var(--primary-light) 0%, #E2E8F0 100%);
+        color: var(--secondary-color);
+        border-color: rgba(74, 85, 104, 0.3);
+    }
+
+    .status-leave {
+        background: linear-gradient(135deg, #FFF5F5 0%, #FED7D7 100%);
+        color: #C05621;
+        border-color: rgba(192, 86, 33, 0.3);
+    }
+
+    .status-weekly_off, .status-weekly-off {
+        background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+        color: #6B7280;
+        border-color: rgba(107, 114, 128, 0.3);
+    }
+
+    .status-holiday {
+        background: linear-gradient(135deg, var(--accent-light) 0%, #B2F5EA 100%);
+        color: var(--accent-color);
+        border-color: rgba(56, 178, 172, 0.3);
+    }
+
+    .status-missed {
+        background: linear-gradient(135deg, #FED7D7 0%, #FCA5A5 100%);
+        color: #C53030;
+        border-color: rgba(197, 48, 48, 0.3);
+    }
+
+    .status-not_logged_in, .status-not-logged-in {
+        background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+        color: #92400E;
+        border-color: rgba(146, 64, 14, 0.3);
+    }
+
+    .status-future {
+        background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);
+        color: #9CA3AF;
+        border-color: rgba(156, 163, 175, 0.3);
+    }
+
+    .month-nav {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .month-nav-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-md);
+        font-weight: 600;
+        transition: var(--transition-smooth);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .month-nav-btn:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .month-nav-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .map-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--accent-light);
+        color: var(--accent-color);
+        border: 2px solid rgba(56, 178, 172, 0.2);
+        transition: var(--transition-smooth);
+        text-decoration: none;
+    }
+
+    .map-btn:hover {
+        background: var(--accent-color);
+        color: white;
+        transform: scale(1.1);
+    }
+
+    @media (max-width: 768px) {
+        .table-custom {
+            font-size: 0.85rem;
+        }
+
+        .table-custom thead th,
+        .table-custom tbody td {
+            padding: 0.75rem 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+        }
+
+        .stats-card {
+            padding: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h2 class="mb-2 fw-bold">
+                        <i class="fas fa-calendar-check me-2"></i>
+                        My Attendance Logs
+                    </h2>
+                    <p class="mb-0 opacity-75">{{ month_name }} {{ year }}</p>
+                </div>
+                <div class="month-nav">
+                    <a href="?month={{ prev_month }}&year={{ prev_year }}" class="month-nav-btn">
+                        <i class="fas fa-chevron-left"></i>
+                        Previous
+                    </a>
+                    <a href="{% url 'my_attendance_logs' %}" class="month-nav-btn">
+                        <i class="fas fa-calendar-day"></i>
+                        Current
+                    </a>
+                    {% if can_go_next %}
+                    <a href="?month={{ next_month }}&year={{ next_year }}" class="month-nav-btn">
+                        Next
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                    {% else %}
+                    <button class="month-nav-btn" disabled>
+                        Next
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="stats-card">
+                <div class="stat-value text-success">{{ total_present }}</div>
+                <div class="stat-label">Present Days</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stats-card">
+                <div class="stat-value text-info">{{ total_wfh }}</div>
+                <div class="stat-label">WFH Days</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stats-card">
+                <div class="stat-value text-warning">{{ total_leaves }}</div>
+                <div class="stat-label">Leave Days</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stats-card">
+                <div class="stat-value text-primary">{{ total_hours_formatted }}</div>
+                <div class="stat-label">Total Hours</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Table -->
+    <div class="attendance-table">
+        <div class="table-responsive">
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Day</th>
+                        <th>Check In</th>
+                        <th>Check Out</th>
+                        <th>Hours</th>
+                        <th>Status</th>
+                        <th class="text-center">Map</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for att in attendance_history %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold text-dark">
+                                {% if att.date %}{{ att.date|date:"d M Y" }}{% else %}{{ att.date|date:"d M Y" }}{% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="text-muted">
+                                {% if att.date %}{{ att.date|date:"D" }}{% else %}{{ att.date|date:"D" }}{% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            {% if att.clock_in %}
+                            <div class="fw-bold text-dark">{{ att.clock_in|time:"h:i A" }}</div>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if att.clock_out %}
+                            <div class="fw-bold text-dark">{{ att.clock_out|time:"h:i A" }}</div>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="fw-bold text-secondary">
+                                {% if att.effective_hours %}{{ att.effective_hours }}{% else %}-{% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            {% if att.status == 'PRESENT' %}
+                            <span class="status-badge status-present">
+                                <i class="fas fa-check-circle"></i> Present
+                            </span>
+                            {% elif att.status == 'WFH' %}
+                            <span class="status-badge status-wfh">
+                                <i class="fas fa-home"></i> WFH
+                            </span>
+                            {% elif att.status == 'LEAVE' %}
+                            <span class="status-badge status-leave">
+                                <i class="fas fa-umbrella-beach"></i> Leave
+                            </span>
+                            {% elif att.status == 'WEEKLY_OFF' %}
+                            <span class="status-badge status-weekly-off">
+                                <i class="fas fa-calendar-times"></i> Week Off
+                            </span>
+                            {% elif att.status == 'HOLIDAY' %}
+                            <span class="status-badge status-holiday">
+                                <i class="fas fa-gift"></i> Holiday
+                            </span>
+                            {% elif att.status == 'MISSED' %}
+                            <span class="status-badge status-missed">
+                                <i class="fas fa-exclamation-triangle"></i> Missed
+                            </span>
+                            {% elif att.status == 'NOT_LOGGED_IN' %}
+                            <span class="status-badge status-not-logged-in">
+                                <i class="fas fa-clock"></i> Not Logged In
+                            </span>
+                            {% elif att.status == 'FUTURE' %}
+                            <span class="status-badge status-future">
+                                <i class="fas fa-calendar"></i> Future
+                            </span>
+                            {% else %}
+                            <span class="status-badge status-missed">
+                                {{ att.status_display|default:att.status }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if att.id and att.location_in or att.location_out %}
+                            <a href="{% url 'attendance_map' att.id %}" class="map-btn" title="View Location">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </a>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                            No attendance records found for this month.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="mt-4 text-center">
+        <a href="{% url 'personal_home' %}" class="btn btn-outline-primary rounded-pill px-4">
+            <i class="fas fa-arrow-left me-2"></i>
+            Back to Home
+        </a>
+    </div>
+</div>
+{% endblock %}

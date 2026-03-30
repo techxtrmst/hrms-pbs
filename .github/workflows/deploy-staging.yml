@@ -278,6 +278,28 @@ jobs:
           echo "✅ Config archive created with checksum"
           cat backend-staging-config.tar.gz.sha256
 
+      - name: Whitelist GitHub Runner IP
+        uses: appleboy/ssh-action@v1.2.0
+        continue-on-error: true
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USERNAME }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: ${{ secrets.STAGING_SSH_PORT }}
+          command_timeout: 1m
+          script: |
+            # Get the connecting IP from SSH environment
+            RUNNER_IP="${SSH_CLIENT%% *}"
+            echo "🔓 Whitelisting GitHub Runner IP: $RUNNER_IP"
+
+            # Unban from Fail2Ban if banned
+            if command -v fail2ban-client >/dev/null 2>&1; then
+              sudo fail2ban-client set sshd unbanip "$RUNNER_IP" 2>/dev/null || true
+              echo "✅ Unbanned IP from Fail2Ban (if it was banned)"
+            fi
+
+            echo "✅ IP whitelist check complete"
+
       - name: Upload deployment files
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -287,6 +309,7 @@ jobs:
           port: ${{ secrets.STAGING_SSH_PORT }}
           source: "backend-staging-config.tar.gz,backend-staging-config.tar.gz.sha256"
           target: "/tmp/"
+          timeout: 5m
 
       - name: Deploy to staging server
         uses: appleboy/ssh-action@v1.2.0
@@ -372,6 +395,17 @@ jobs:
                 fi
               else
                 echo "⚠️ Database container not running, skipping backup"
+              fi
+
+              # Record current migration state for rollback
+              echo "📋 Recording current migration state..."
+              if $DOCKER_COMPOSE_CMD ps | grep -q "backend.*Up"; then
+                $DOCKER_COMPOSE_CMD exec -T backend python manage.py showmigrations --plan > "$BACKUP_DIR/migration-state.txt" 2>&1 || true
+                if [ -f "$BACKUP_DIR/migration-state.txt" ] && [ -s "$BACKUP_DIR/migration-state.txt" ]; then
+                  echo "✅ Migration state recorded"
+                else
+                  echo "⚠️ Could not record migration state"
+                fi
               fi
 
               # Backup config files
@@ -724,13 +758,40 @@ jobs:
                 echo "✅ Restored docker-compose.yml"
               fi
 
-              # Check if database backup exists and ask about restoration
+              # Check if database backup exists and restore it
               if [ -f "$ROLLBACK_BACKUP/database-backup.sql" ] && [ -s "$ROLLBACK_BACKUP/database-backup.sql" ]; then
                 BACKUP_SIZE=$(du -h "$ROLLBACK_BACKUP/database-backup.sql" | cut -f1)
                 echo "📦 Database backup available: $BACKUP_SIZE"
-                echo "⚠️ Database will NOT be restored automatically (data preserved in volume)"
-                echo "ℹ️ To restore manually, run:"
-                echo "   cat $ROLLBACK_BACKUP/database-backup.sql | docker exec -i \$(docker ps -qf name=db) psql -U postgres postgres"
+                echo "🔄 Restoring database to match rolled-back image..."
+
+                # Start database service first
+                $DOCKER_COMPOSE_CMD up -d db
+
+                # Wait for database to be ready
+                for i in {1..30}; do
+                  if $DOCKER_COMPOSE_CMD exec -T db pg_isready -U postgres >/dev/null 2>&1; then
+                    echo "✅ Database is ready"
+                    break
+                  fi
+                  if [ $i -eq 30 ]; then
+                    echo "❌ Database failed to start"
+                    exit 1
+                  fi
+                  sleep 1
+                done
+
+                # Restore database
+                echo "📥 Restoring database backup..."
+                cat "$ROLLBACK_BACKUP/database-backup.sql" | $DOCKER_COMPOSE_CMD exec -T db psql -U postgres postgres
+
+                if [ $? -eq 0 ]; then
+                  echo "✅ Database restored successfully"
+                else
+                  echo "⚠️ Database restoration had issues - check logs"
+                fi
+              else
+                echo "⚠️ No database backup found - schema may be incompatible"
+                echo "⚠️ If backend fails to start, manual database rollback required"
               fi
             else
               echo "⚠️ Backup directory not found: $ROLLBACK_BACKUP"

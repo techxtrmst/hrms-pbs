@@ -63,7 +63,7 @@ def detect_timezone_from_coordinates(lat, lng):
 
 class CompanyAdminRequiredMixin(UserPassesTestMixin):
     def test_func(self):
-        return self.request.user.role == User.Role.COMPANY_ADMIN
+        return self.request.user.role in [User.Role.COMPANY_ADMIN, User.Role.EMPLOYEE_MANAGER]
 
 
 class EmployeeListView(LoginRequiredMixin, ListView):
@@ -75,21 +75,11 @@ class EmployeeListView(LoginRequiredMixin, ListView):
         user = self.request.user
 
         # Base queryset based on role
-        if user.role == User.Role.COMPANY_ADMIN:
+        if user.role in [User.Role.COMPANY_ADMIN, User.Role.EMPLOYEE_MANAGER]:
             queryset = Employee.objects.filter(company=user.company)
         elif user.role == User.Role.MANAGER:
-            # Show only employees who report to this manager AND are in the same location
-            try:
-                manager_employee = Employee.objects.get(user=user)
-                manager_location = manager_employee.location
-
-                # Filter by manager AND same location
-                queryset = Employee.objects.filter(
-                    manager=user,
-                    location=manager_location,  # Only same location employees
-                )
-            except Employee.DoesNotExist:
-                queryset = Employee.objects.none()
+            # Show all employees who report to this manager
+            queryset = Employee.objects.filter(manager=user)
         else:
             queryset = safe_queryset_filter(Employee, user=user)
 
@@ -121,19 +111,11 @@ class EmployeeListView(LoginRequiredMixin, ListView):
 
         # Add counts for different statuses
         user = self.request.user
-        if user.role == User.Role.COMPANY_ADMIN:
+        if user.role in [User.Role.COMPANY_ADMIN, User.Role.EMPLOYEE_MANAGER]:
             all_employees = Employee.objects.filter(company=user.company)
         elif user.role == User.Role.MANAGER:
-            # Show only employees who report to this manager AND are in the same location
-            try:
-                manager_employee = Employee.objects.get(user=user)
-                manager_location = manager_employee.location
-                all_employees = Employee.objects.filter(
-                    manager=user,
-                    location=manager_location,  # Only same location employees
-                )
-            except Employee.DoesNotExist:
-                all_employees = Employee.objects.none()
+            # Show all employees who report to this manager
+            all_employees = Employee.objects.filter(manager=user)
         else:
             all_employees = safe_queryset_filter(Employee, user=user)
 
@@ -143,7 +125,7 @@ class EmployeeListView(LoginRequiredMixin, ListView):
 
         # Check if pseudo name should be shown (for Bluebix and Softstandard)
         show_pseudo_name = False
-        if user.role == User.Role.COMPANY_ADMIN and user.company:
+        if user.role in [User.Role.COMPANY_ADMIN, User.Role.EMPLOYEE_MANAGER] and user.company:
             company_name = user.company.name.lower()
             if "bluebix" in company_name or "softstandard" in company_name:
                 show_pseudo_name = True
@@ -293,50 +275,50 @@ class EmployeeDeleteView(LoginRequiredMixin, CompanyAdminRequiredMixin, DeleteVi
 
             # Delete all related data in the correct order to avoid foreign key constraints
 
-            # 1. Delete Attendance Sessions and Location Logs
-            if hasattr(employee, "attendances"):
-                for attendance in employee.attendances.all():
-                    # Delete session location logs
-                    if hasattr(attendance, "sessions"):
-                        for session in attendance.sessions.all():
-                            # Delete session-specific location logs
-                            if hasattr(session, "location_logs"):
-                                session.location_logs.all().delete()
-                            session.delete()
-                    attendance.delete()
+            # 1. Delete Attendance related data
+            # Use querysets to delete in bulk for efficiency
+            employee.attendances.all().delete()
+            employee.attendance_sessions.all().delete()
+            employee.location_logs.all().delete()
 
-            # 2. Delete Location Logs (general)
-            if hasattr(employee, "location_logs"):
-                employee.location_logs.all().delete()
+            # 2. Delete Leave related data
+            employee.leave_requests.all().delete()
+            if hasattr(employee, "leave_balance"):
+                employee.leave_balance.delete()
 
-            # 3. Delete Leave Requests
-            if hasattr(employee, "leave_requests"):
-                employee.leave_requests.all().delete()
+            # 3. Delete Regularization, Exit Initiatives, Payslips, and Work History
+            employee.regularization_requests.all().delete()
+            employee.exit_initiatives.all().delete()
+            employee.payslips.all().delete()
+            employee.work_history.all().delete()
+            employee.emergency_contacts.all().delete()
 
-            # 4. Delete Leave Balances
-            if hasattr(employee, "leave_balances"):
-                employee.leave_balances.all().delete()
-
-            # 5. Delete Regularization Requests
-            if hasattr(employee, "regularization_requests"):
-                employee.regularization_requests.all().delete()
-
-            # 6. Delete Emergency Contacts
-            if hasattr(employee, "emergency_contacts"):
-                employee.emergency_contacts.all().delete()
-
-            # 7. Delete ID Proofs
+            # 4. Delete ID Proofs (Optional/Best Effort)
             if hasattr(employee, "id_proofs"):
                 try:
-                    employee.id_proofs.delete()
+                    with transaction.atomic():
+                        employee.id_proofs.delete()
                 except Exception as e:
                     logger.warning(f"Error deleting ID proofs: {e}")
 
-            # 8. Delete the User account (this will cascade delete the Employee due to CASCADE)
+            # 5. Delete the User account (this will cascade delete the Employee due to CASCADE)
             user = employee.user
             if user:
+                # RAW SQL Cleanup for legacy tracker data that blocks user deletion
+                # The activity_tracker_activitylog table is a legacy table not managed by Django
+                # which has a foreign key to accounts_user that prevents deletion.
+                from django.db import connection
+
+                try:
+                    with transaction.atomic(), connection.cursor() as cursor:
+                        cursor.execute("DELETE FROM activity_tracker_activitylog WHERE employee_id = %s", [user.id])
+                        logger.info(f"Cleared legacy activity logs for user {user.id}")
+                except Exception as e:
+                    # Table might not exist or have different structure, ignore if it fails
+                    logger.debug(f"Legacy activity log cleanup skipped or failed: {e}")
+
                 user_email = user.email
-                user.delete()  # This will also delete the employee due to CASCADE
+                user.delete()  # This will also delete the employee profile due to CASCADE
                 logger.info(f"Successfully deleted user account: {user_email}")
             else:
                 # If no user exists, delete employee directly
@@ -363,7 +345,7 @@ def resend_welcome_email(request, pk):
     """
     Resend welcome email with activation link to the employee.
     """
-    if request.user.role != User.Role.COMPANY_ADMIN:
+    if request.user.role not in [User.Role.COMPANY_ADMIN, User.Role.EMPLOYEE_MANAGER]:
         messages.error(request, "Permission denied.")
         return redirect("employee_list")
 
@@ -399,8 +381,8 @@ def clock_in(request):
 
             # Ensure employee profile exists
             if not hasattr(request.user, "employee_profile"):
-                # Auto-create for Company Admin to prevent setup deadlock
-                if request.user.role == User.Role.COMPANY_ADMIN and request.user.company:
+                # Auto-create for Company Admin/Employee Manager to prevent setup deadlock
+                if request.user.role in [User.Role.COMPANY_ADMIN, User.Role.EMPLOYEE_MANAGER] and request.user.company:
                     from .models import Employee
 
                     try:
@@ -1717,7 +1699,7 @@ def employee_detail(request, pk):
 
         # Permission Check (Company Admin or Manager of the employee)
         user = request.user
-        is_admin = user.role == User.Role.COMPANY_ADMIN or user.is_superuser
+        is_admin = user.role in [User.Role.COMPANY_ADMIN, User.Role.EMPLOYEE_MANAGER] or user.is_superuser
         is_manager = user.role == User.Role.MANAGER and employee.manager and employee.manager == user
 
         if not (is_admin or is_manager):
@@ -2008,7 +1990,7 @@ def employee_exit_action(request, pk):
     from .models import ExitInitiative
 
     # Permission check
-    if request.user.role not in [User.Role.COMPANY_ADMIN, User.Role.SUPERADMIN]:
+    if request.user.role not in [User.Role.COMPANY_ADMIN, User.Role.SUPERADMIN, User.Role.EMPLOYEE_MANAGER]:
         return JsonResponse(
             {
                 "status": "error",
@@ -2285,7 +2267,7 @@ def approve_exit_initiative(request, pk):
 
         # Permission check: Admin or Manager
         user = request.user
-        is_admin = user.role in [User.Role.COMPANY_ADMIN, User.Role.SUPERADMIN]
+        is_admin = user.role in [User.Role.COMPANY_ADMIN, User.Role.SUPERADMIN, User.Role.EMPLOYEE_MANAGER]
         is_manager = user.role == User.Role.MANAGER and employee.manager and employee.manager == user
 
         if not (is_admin or is_manager):
@@ -2562,7 +2544,7 @@ def reject_exit_initiative(request, pk):
 
         # Permission check: Admin or Manager
         user = request.user
-        is_admin = user.role in [User.Role.COMPANY_ADMIN, User.Role.SUPERADMIN]
+        is_admin = user.role in [User.Role.COMPANY_ADMIN, User.Role.SUPERADMIN, User.Role.EMPLOYEE_MANAGER]
         is_manager = user.role == User.Role.MANAGER and employee.manager and employee.manager == user
 
         if not (is_admin or is_manager):
@@ -2770,7 +2752,7 @@ def exit_initiatives_list(request):
     from .models import ExitInitiative
 
     user = request.user
-    is_admin = user.role in [User.Role.COMPANY_ADMIN, User.Role.SUPERADMIN]
+    is_admin = user.role in [User.Role.COMPANY_ADMIN, User.Role.SUPERADMIN, User.Role.EMPLOYEE_MANAGER]
 
     # Get exit initiatives based on role
     if is_admin:
@@ -3732,6 +3714,7 @@ def run_monthly_accrual(request):
         year = request.POST.get("year")
 
         period_msg = ""
+        month_name = ""
         if month and year:
             try:
                 month_name = calendar.month_name[int(month)]
@@ -3744,13 +3727,22 @@ def run_monthly_accrual(request):
                     error=str(e),
                 )
 
-        # Run the command
-        call_command("accrue_monthly_leaves")
+        # Use force_monthly_accrual command for manual runs (bypasses date check)
+        if month and year:
+            call_command("force_monthly_accrual", month=int(month), year=int(year))
+        else:
+            # If no month/year specified, use current month
+            from django.utils import timezone
+
+            now = timezone.now()
+            call_command("force_monthly_accrual", month=now.month, year=now.year)
+            month_name = calendar.month_name[now.month]
+            period_msg = f"for {month_name} {now.year}"
 
         success_msg = (
-            f"Monthly accrual processed {period_msg}: +1 Sick and +1 Casual leave added to all employees."
+            f"Monthly accrual processed {period_msg}: +1 Sick and +1 Casual leave added to eligible employees."
             if period_msg
-            else "Monthly accrual processed: +1 Sick and +1 Casual leave added to all employees."
+            else "Monthly accrual processed: +1 Sick and +1 Casual leave added to eligible employees."
         )
 
         messages.success(request, success_msg)
@@ -4195,7 +4187,10 @@ def employee_id_proofs(request, pk):
 
         # Permission Check
         user = request.user
-        is_admin = user.role == User.Role.COMPANY_ADMIN
+        is_admin = (
+            user.role in [User.Role.COMPANY_ADMIN, User.Role.SUPERADMIN, User.Role.EMPLOYEE_MANAGER]
+            or user.is_superuser
+        )
         is_self = hasattr(user, "employee_profile") and user.employee_profile == employee
 
         if not (is_admin or is_self):

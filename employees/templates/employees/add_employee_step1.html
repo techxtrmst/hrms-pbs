@@ -157,7 +157,7 @@
                 </div>
 
 
-                <small class="text-muted">Format: <span id="preview_id">{{ company_prefix }}-{{ location_code }}-{{ next_sequence }}</span></small>
+                <small class="text-muted">Format: <span id="preview_id">{{ company_prefix }}{{ location_code }}{{ next_sequence }}</span></small>
                 {% if form.badge_id.errors %}
                 <div class="text-danger">{{ form.badge_id.errors.0 }}</div>
                 {% endif %}
@@ -182,7 +182,7 @@
                         const loc = locSpan.textContent.trim().replace(/<i.*<\/i>/g, '').trim();
                         const num = numInput.value.trim();
 
-                        const fullId = prefix + '-' + loc + '-' + num;
+                        const fullId = prefix + loc + num;
                         realInput.value = fullId;
                         previewSpan.textContent = fullId;
                     }

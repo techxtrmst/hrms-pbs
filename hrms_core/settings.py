@@ -42,6 +42,9 @@ DEBUG = env("DEBUG")
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "testserver"])
 
+# Secure Proxy SSL Header (for production behind Nginx/ALB)
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 # CSRF Configuration
 # Ensure protocol is included (https:// or http://)
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
@@ -89,6 +92,8 @@ INSTALLED_APPS = [
     "handbooks",  # Employee handbooks with location-based access
     "policies",  # Company Policies
     "observability",  # System observability and monitoring
+    "finance_portal",  # Centralized finance portal for cross-company payroll
+    "activity_monitoring",  # Screen time and browser activity tracking
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -519,6 +524,23 @@ def navigation_callback(request):
                     "title": _("Configuration"),
                     "icon": "settings",
                     "link": reverse_lazy("admin:core_backupconfiguration_changelist"),
+                },
+            ],
+        },
+        {
+            "title": _("Activity Monitoring"),
+            "separator": True,
+            "collapsible": True,
+            "items": [
+                {
+                    "title": _("Activity Dashboard"),
+                    "icon": "analytics",
+                    "link": reverse_lazy("activity-dashboard"),
+                },
+                {
+                    "title": _("Employee Devices"),
+                    "icon": "devices",
+                    "link": reverse_lazy("admin:activity_monitoring_employeedevice_changelist"),
                 },
             ],
         },

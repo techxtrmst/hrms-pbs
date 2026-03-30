@@ -38,9 +38,10 @@ class PolicyForm(forms.ModelForm):
             from companies.models import Location
 
             if user.role == "COMPANY_ADMIN" and user.company:
+                # Show all locations for the company, not just admin's location
                 self.fields["location"].queryset = Location.objects.filter(company=user.company)
+                # Set initial value to admin's location if they have one, but don't restrict the queryset
                 if hasattr(user, "employee_profile") and user.employee_profile.location:
-                    self.fields["location"].queryset = Location.objects.filter(id=user.employee_profile.location.id)
                     self.fields["location"].initial = user.employee_profile.location
 
             # Filter sections by company

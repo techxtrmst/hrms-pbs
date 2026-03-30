@@ -277,8 +277,8 @@
     <div class="row">
         <div class="col-12">
             <div class="section-card">
-                <div class="section-title d-flex justify-content-between">
-                    <div><i class="fas fa-chart-line text-primary"></i> Monthly Overview</div>
+                <div class="section-title d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div><i class="fas fa-chart-line text-primary"></i> Daily Attendance Overview (This Month)</div>
                     {% if mom_change >= 0 %}
                     <span class="trend-indicator trend-up"><i class="fas fa-arrow-up"></i> {{ mom_change }}% vs Last
                         Month</span>
@@ -289,17 +289,55 @@
                 </div>
 
                 <div class="row text-center mt-4">
-                    <div class="col-md-4 border-end">
-                        <h2 class="fw-bold text-dark">{{ month_present }}</h2>
-                        <p class="text-muted text-uppercase small fw-bold tracking-wider">Total Present Days</p>
+                    <div class="col-md-4 border-end mb-3 mb-md-0">
+                        <div class="mb-2">
+                            <h2 class="fw-bold text-success mb-1">{{ month_present_pct }}%</h2>
+                            <p class="text-muted text-uppercase small fw-bold mb-2" style="letter-spacing: 0.5px;">Daily Present Rate</p>
+                        </div>
+                        <div class="progress" style="height: 8px; border-radius: 4px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ month_present_pct }}%;"
+                                 aria-valuenow="{{ month_present_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <small class="text-muted mt-2 d-block">{{ month_present }} of {{ month_present|add:month_absent|add:month_wfh }} total records</small>
                     </div>
-                    <div class="col-md-4 border-end">
-                        <h2 class="fw-bold text-dark">{{ month_wfh }}</h2>
-                        <p class="text-muted text-uppercase small fw-bold tracking-wider">Total WFH</p>
+                    <div class="col-md-4 border-end mb-3 mb-md-0">
+                        <div class="mb-2">
+                            <h2 class="fw-bold text-primary mb-1">{{ month_wfh_pct }}%</h2>
+                            <p class="text-muted text-uppercase small fw-bold mb-2" style="letter-spacing: 0.5px;">Daily WFH Rate</p>
+                        </div>
+                        <div class="progress" style="height: 8px; border-radius: 4px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ month_wfh_pct }}%;"
+                                 aria-valuenow="{{ month_wfh_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <small class="text-muted mt-2 d-block">{{ month_wfh }} of {{ month_present|add:month_absent|add:month_wfh }} total records</small>
                     </div>
-                    <div class="col-md-4">
-                        <h2 class="fw-bold text-dark">{{ month_absent }}</h2>
-                        <p class="text-muted text-uppercase small fw-bold tracking-wider">Total Absent</p>
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <div class="mb-2">
+                            <h2 class="fw-bold text-danger mb-1">{{ month_absent_pct }}%</h2>
+                            <p class="text-muted text-uppercase small fw-bold mb-2" style="letter-spacing: 0.5px;">Daily Absent Rate</p>
+                        </div>
+                        <div class="progress" style="height: 8px; border-radius: 4px;">
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: {{ month_absent_pct }}%;"
+                                 aria-valuenow="{{ month_absent_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <small class="text-muted mt-2 d-block">{{ month_absent }} of {{ month_present|add:month_absent|add:month_wfh }} total records</small>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-top">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <small class="text-muted d-block mb-1">Working Days (This Month)</small>
+                            <strong class="text-dark">{{ working_days }} days</strong>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted d-block mb-1">Total Employees</small>
+                            <strong class="text-dark">{{ total_employees }}</strong>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted d-block mb-1">Total Records</small>
+                            <strong class="text-dark">{{ month_present|add:month_absent|add:month_wfh }}</strong>
+                        </div>
                     </div>
                 </div>
             </div>

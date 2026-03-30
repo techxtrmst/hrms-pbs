@@ -8,6 +8,7 @@ class User(AbstractUser):
     class Role(models.TextChoices):
         SUPERADMIN = "SUPERADMIN", "Super Admin"
         COMPANY_ADMIN = "COMPANY_ADMIN", "Company Admin"
+        EMPLOYEE_MANAGER = "EMPLOYEE_MANAGER", "HR"
         MANAGER = "MANAGER", "Manager"
         EMPLOYEE = "EMPLOYEE", "Employee"
 
@@ -15,6 +16,7 @@ class User(AbstractUser):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="users", null=True, blank=True)
     role = models.CharField(max_length=50, choices=Role.choices, default=Role.EMPLOYEE)
     must_change_password = models.BooleanField(default=True)
+    is_finance_manager = models.BooleanField(default=False)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username", "first_name", "last_name"]
