@@ -703,11 +703,12 @@ def download_agent(request):
     with open(agent_path, encoding="utf-8") as f:
         content = f.read()
 
-    # Pre-fill data
-    # Use query param as fallback for very restrictive proxies
-    server_url = request.build_absolute_uri("/activity-tracking/api/sync/") + f"?token={device.token}"
+    # 1. Use the right protocol (proxied production often misses this without SECURE_PROXY_SSL_HEADER)
+    scheme = "https" if request.is_secure() or request.headers.get("X-Forwarded-Proto") == "https" else request.scheme
+    base_sync_url = f"{scheme}://{request.get_host()}/activity-tracking/api/sync/"
+
     content = content.replace(
-        'SERVER_URL = "http://your-hrms-domain.com/activity-tracking/api/sync/"', f'SERVER_URL = "{server_url}"'
+        'SERVER_URL = "http://your-hrms-domain.com/activity-tracking/api/sync/"', f'SERVER_URL = "{base_sync_url}"'
     )
     content = content.replace('API_TOKEN = ""', f'API_TOKEN = "{device.token}"')
 
