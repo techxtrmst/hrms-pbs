@@ -759,7 +759,7 @@ def download_agent(request):
             )
 
             echo Step 2: Creating personalized config...
-            echo {{"server_url": "{server_url}", "api_token": "{device.token}"}} > "%CONFIG_FILE%"
+            echo {{"server_url": "{base_sync_url}", "api_token": "{device.token}"}} > "%CONFIG_FILE%"
 
             echo Step 3: Registering for system startup...
             reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /v "%APP_NAME%" /t REG_SZ /d "\"%TRACKER_EXE%\"" /f >nul
