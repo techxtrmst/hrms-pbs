@@ -114,7 +114,7 @@ class ActivityIngestView(views.APIView):
             event_activities = data.get("system_events", [])
 
             # 2. Process Activities (with individual fallback for better reliability)
-            def safe_create(model, records, label):
+            def safe_create(model, records, label, device_obj):
                 if not records:
                     return 0
                 successful = 0
@@ -123,6 +123,10 @@ class ActivityIngestView(views.APIView):
                     model.objects.bulk_create(records)
                     successful = len(records)
                 except Exception as ex:
+                    # Capture the error on the device so Admin can see it
+                    device_obj.last_sync_error = f"{label} ERROR: {str(ex)[:300]}"
+                    device_obj.save(update_fields=["last_sync_error"])
+
                     logger.error(f"Bulk create for {label} failed: {str(ex)}. Trying individual inserts...")
                     for rec in records:
                         try:
@@ -138,21 +142,21 @@ class ActivityIngestView(views.APIView):
                 d["end_time"] = make_aware_if_naive(d.get("end_time"))
                 app_list.append(AppActivity(employee=employee, session=session, **d))
 
-            safe_create(AppActivity, app_list, "AppActivity")
+            safe_create(AppActivity, app_list, "AppActivity", device)
 
             browser_list = []
             for d in browser_activities[:100]:
                 d["timestamp"] = make_aware_if_naive(d.get("timestamp"))
                 browser_list.append(BrowserActivity(employee=employee, session=session, **d))
 
-            safe_create(BrowserActivity, browser_list, "BrowserActivity")
+            safe_create(BrowserActivity, browser_list, "BrowserActivity", device)
 
             event_list = []
             for d in event_activities[:50]:
                 d["timestamp"] = make_aware_if_naive(d.get("timestamp"))
                 event_list.append(SystemEvent(employee=employee, **d))
 
-            safe_create(SystemEvent, event_list, "SystemEvent")
+            safe_create(SystemEvent, event_list, "SystemEvent", device)
 
             # 3. Process Screenshots (TeamLogger style)
             screenshots = data.get("screenshots", [])
