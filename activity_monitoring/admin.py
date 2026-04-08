@@ -4,7 +4,10 @@ from django.utils.html import format_html
 from unfold.admin import ModelAdmin
 
 from .models import (
+    ActivityPulse,
     ActivityScreenshot,
+    AppActivity,
+    BrowserActivity,
     EmployeeDevice,
 )
 
@@ -79,3 +82,23 @@ class ActivityScreenshotAdmin(ModelAdmin):
         return "No Image"
 
     image_preview.short_description = "Capture Preview"
+
+
+@admin.register(AppActivity)
+class AppActivityAdmin(ModelAdmin):
+    list_display = ["employee", "app_name", "window_title", "start_time", "duration", "is_productive"]
+    list_filter = ["start_time", "is_productive", "app_name"]
+    search_fields = ["employee__user__first_name", "app_name", "window_title"]
+
+
+@admin.register(BrowserActivity)
+class BrowserActivityAdmin(ModelAdmin):
+    list_display = ["employee", "url", "timestamp"]
+    list_filter = ["timestamp"]
+    search_fields = ["employee__user__first_name", "url", "title"]
+
+
+@admin.register(ActivityPulse)
+class ActivityPulseAdmin(ModelAdmin):
+    list_display = ["employee", "timestamp", "is_idle", "idle_duration_seconds"]
+    list_filter = ["timestamp", "is_idle"]

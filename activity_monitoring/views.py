@@ -269,6 +269,22 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
             elif is_manager:
                 # Subordinates where manager is the current user
                 employee = get_object_or_404(Employee, id=target_id, manager=self.request.user)
+        else:
+            # Smart default to most recently tracking employee for Admins
+            if is_admin:
+                recent_dev = (
+                    EmployeeDevice.objects.filter(employee__company=user_employee.company)
+                    .order_by("-last_seen")
+                    .first()
+                )
+                if recent_dev:
+                    employee = recent_dev.employee
+            elif is_manager:
+                recent_dev = (
+                    EmployeeDevice.objects.filter(employee__manager=self.request.user).order_by("-last_seen").first()
+                )
+                if recent_dev:
+                    employee = recent_dev.employee
 
         # Date Filtering for the dashboard (Timezone Proof)
         selected_date_str = self.request.GET.get("date")
@@ -520,6 +536,22 @@ class BrowserActivityDetailView(LoginRequiredMixin, TemplateView):
                 employee = get_object_or_404(Employee, id=target_id, company=user_employee.company)
             elif is_manager:
                 employee = get_object_or_404(Employee, id=target_id, manager=self.request.user)
+        else:
+            # Smart default to most recently tracking employee for Admins
+            if is_admin:
+                recent_dev = (
+                    EmployeeDevice.objects.filter(employee__company=user_employee.company)
+                    .order_by("-last_seen")
+                    .first()
+                )
+                if recent_dev:
+                    employee = recent_dev.employee
+            elif is_manager:
+                recent_dev = (
+                    EmployeeDevice.objects.filter(employee__manager=self.request.user).order_by("-last_seen").first()
+                )
+                if recent_dev:
+                    employee = recent_dev.employee
 
         # Date Filter (Timezone Proof Range)
         date_str = self.request.GET.get("date")
@@ -579,6 +611,22 @@ class AppActivityDetailView(LoginRequiredMixin, TemplateView):
                 employee = get_object_or_404(Employee, id=target_id, company=user_employee.company)
             elif is_manager:
                 employee = get_object_or_404(Employee, id=target_id, manager=self.request.user)
+        else:
+            # Smart default to most recently tracking employee for Admins
+            if is_admin:
+                recent_dev = (
+                    EmployeeDevice.objects.filter(employee__company=user_employee.company)
+                    .order_by("-last_seen")
+                    .first()
+                )
+                if recent_dev:
+                    employee = recent_dev.employee
+            elif is_manager:
+                recent_dev = (
+                    EmployeeDevice.objects.filter(employee__manager=self.request.user).order_by("-last_seen").first()
+                )
+                if recent_dev:
+                    employee = recent_dev.employee
 
         # ── Date Filter (Timezone Proof Range) ────────────────────
         date_str = self.request.GET.get("date")
