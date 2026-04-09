@@ -1099,7 +1099,7 @@ def employee_profile(request):
                     employee.assigned_shift = shift
                     employee.save(update_fields=["assigned_shift"])
 
-                    from django.contrib import messages
+                    # Removed redundant local import
 
                     messages.success(
                         request,
@@ -1111,7 +1111,7 @@ def employee_profile(request):
                     employee.assigned_shift = None
                     employee.save(update_fields=["assigned_shift"])
 
-                    from django.contrib import messages
+                    # Removed redundant local import
 
                     messages.success(
                         request,
@@ -1121,12 +1121,12 @@ def employee_profile(request):
                 return redirect("employee_profile")
 
             except ShiftSchedule.DoesNotExist:
-                from django.contrib import messages
+                # Removed redundant local import
 
                 messages.error(request, "Selected shift not found.")
                 return redirect("employee_profile")
             except Exception as e:
-                from django.contrib import messages
+                # Removed redundant local import
 
                 messages.error(request, f"Error assigning shift: {str(e)}")
                 return redirect("employee_profile")
@@ -1153,7 +1153,7 @@ def employee_profile(request):
             id_proofs.pan_card = request.FILES["pan_card"]
 
         id_proofs.save()
-        from django.contrib import messages
+        # Removed redundant local import
 
         messages.success(request, "ID Documents updated successfully.")
 
@@ -1295,7 +1295,7 @@ class LeaveApplyView(LoginRequiredMixin, CreateView):
         ).exists()
 
         if recent_duplicate:
-            from django.contrib import messages
+            # Removed redundant local import
 
             messages.warning(
                 self.request,
@@ -1319,7 +1319,7 @@ class LeaveApplyView(LoginRequiredMixin, CreateView):
 
         # If validation shows issues and user hasn't confirmed, ask for confirmation
         if validation.get("will_be_lop", False) and form.cleaned_data["leave_type"] != "UL" and not confirm_lop:
-            from django.contrib import messages
+            # Removed redundant local import
 
             messages.error(
                 self.request,
@@ -1424,7 +1424,7 @@ def check_leave_balance(request):
 
 @login_required
 def approve_leave(request, pk):
-    from django.contrib import messages
+    # Removed redundant local import
 
     if request.method == "POST":
         leave_request = LeaveRequest.objects.get(pk=pk)
