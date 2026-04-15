@@ -87,9 +87,9 @@ class EmployeeListView(LoginRequiredMixin, ListView):
         status_filter = self.request.GET.get("status", "active")
 
         if status_filter == "active":
-            queryset = queryset.filter(is_active=True)
+            queryset = queryset.filter(is_active=True, employment_status="ACTIVE")
         elif status_filter == "inactive":
-            queryset = queryset.filter(is_active=False)
+            queryset = queryset.filter(Q(is_active=False) | ~Q(employment_status="ACTIVE"))
         elif status_filter == "resigned":
             queryset = queryset.filter(employment_status="RESIGNED")
         elif status_filter == "absconded":
@@ -119,8 +119,8 @@ class EmployeeListView(LoginRequiredMixin, ListView):
         else:
             all_employees = safe_queryset_filter(Employee, user=user)
 
-        context["active_count"] = all_employees.filter(is_active=True).count()
-        context["inactive_count"] = all_employees.filter(is_active=False).count()
+        context["active_count"] = all_employees.filter(is_active=True, employment_status="ACTIVE").count()
+        context["inactive_count"] = all_employees.filter(Q(is_active=False) | ~Q(employment_status="ACTIVE")).count()
         context["selected_filter"] = self.request.GET.get("status", "active")
 
         # Check if pseudo name should be shown (for Bluebix and Softstandard)
@@ -2330,7 +2330,9 @@ def approve_exit_initiative(request, pk):
 
         if is_immediate:
             # Immediate Exit - change to Ex-Employee type and disable employee
-            employee.employment_status = "EX_EMPLOYEE"
+            employee.employment_status = "TERMINATED" if exit_initiative.exit_type == "TERMINATED" else "RESIGNED"
+            if exit_initiative.exit_type == "ABSCONDED":
+                employee.employment_status = "ABSCONDED"
             employee.is_active = False
             employee.save()
 
@@ -2342,8 +2344,13 @@ def approve_exit_initiative(request, pk):
             status_msg = f"Exit initiative approved. {employee.user.get_full_name()}'s account has been changed to Ex-Employee type and access has been disabled immediately."
         else:
             # Future Exit - keep active until last working day
-            # Keep current employment status until last working day
-            employee.employment_status = exit_initiative.exit_type
+            # Map EXIT_TYPE to EMPLOYMENT_STATUS correctly
+            status_map = {
+                "RESIGNATION": "RESIGNED",
+                "ABSCONDED": "ABSCONDED",
+                "TERMINATED": "TERMINATED",
+            }
+            employee.employment_status = status_map.get(exit_initiative.exit_type, "RESIGNED")
             employee.is_active = True
             employee.save()
 

@@ -99,10 +99,10 @@ def manager_dashboard(request):
     today = timezone.localtime().date()
 
     # Get direct reports (Team)
-    # Filter out exited employees (keep if active or exit date is today/future)
+    # Filter out exited/resigned employees for active count
     team_members = (
         Employee.objects.filter(manager=request.user)
-        .filter(Q(is_active=True) | Q(exit_date__gte=today))
+        .filter(is_active=True, employment_status="ACTIVE")
         .select_related("user", "location", "assigned_shift")
     )
 
@@ -246,8 +246,8 @@ def admin_dashboard(request):
     if location_id:
         employees = employees.filter(location_id=location_id)
 
-    # Filter out inactive employees who have exited before today
-    employees = employees.filter(Q(is_active=True) | Q(exit_date__gte=today))
+    # Filter out inactive/resigned employees
+    employees = employees.filter(is_active=True, employment_status="ACTIVE")
 
     total_employees = employees.count()
 
@@ -757,9 +757,9 @@ def search_employees_api(request):
             logger.error("User has no company assigned")
             return JsonResponse({"employees": [], "error": "No company assigned"})
 
-        # Search employees by name (first name or last name)
+        # Search employees by name (first name or last name) - Only show Active employees
         employees = (
-            Employee.objects.filter(company=company)
+            Employee.objects.filter(company=company, is_active=True, employment_status="ACTIVE")
             .filter(
                 Q(user__first_name__icontains=query)
                 | Q(user__last_name__icontains=query)

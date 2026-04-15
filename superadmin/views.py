@@ -32,22 +32,18 @@ def superadmin_dashboard(request, selected_company=None, selected_company_id=Non
     """
     Main SuperAdmin dashboard with company context switching
     """
-    from django.utils import timezone
-
-    today = timezone.localtime().date()
-
     # Get all companies for dropdown
     companies = Company.objects.filter(is_active=True).order_by("name")
 
     # Get metrics based on selected company context
     metrics = get_dashboard_metrics(selected_company_id)
 
-    # Get company overview for table - exclude employees whose exit_date is in the past
+    # Get company overview for table - count strictly ACTIVE employees
     company_overview = (
         Company.objects.filter(is_active=True)
         .annotate(
             employee_count=Count(
-                "employees", filter=Q(employees__exit_date__isnull=True) | Q(employees__exit_date__gte=today)
+                "employees", filter=Q(employees__is_active=True, employees__employment_status="ACTIVE")
             )
         )
         .order_by("name")
@@ -107,18 +103,11 @@ def company_list_view(request):
     """
     Detailed company list view
     """
-    from django.utils import timezone
-
-    today = timezone.localtime().date()
-
     companies = Company.objects.annotate(
-        employee_count=Count(
-            "employees", filter=Q(employees__exit_date__isnull=True) | Q(employees__exit_date__gte=today)
-        ),
+        employee_count=Count("employees", filter=Q(employees__is_active=True, employees__employment_status="ACTIVE")),
         active_employee_count=Count(
             "employees",
-            filter=Q(employees__user__is_active=True)
-            & (Q(employees__exit_date__isnull=True) | Q(employees__exit_date__gte=today)),
+            filter=Q(employees__is_active=True, employees__employment_status="ACTIVE"),
         ),
     ).order_by("name")
 
@@ -158,12 +147,8 @@ def employee_list_view(request, selected_company=None, selected_company_id=None)
             pass
 
     # Base queryset - exclude employees whose exit_date is in the past
-    from django.utils import timezone
-
-    today = timezone.localtime().date()
-
     employees = (
-        Employee.objects.filter(Q(exit_date__isnull=True) | Q(exit_date__gte=today))
+        Employee.objects.filter(is_active=True, employment_status="ACTIVE")
         .select_related("user", "company", "manager")
         .order_by("-date_of_joining")
     )
@@ -392,7 +377,7 @@ def export_data_view(request, report_type):
                     emp.department,
                     emp.designation,
                     emp.date_of_joining.strftime("%Y-%m-%d") if emp.date_of_joining else "",
-                    "Active" if emp.user.is_active else "Inactive",
+                    emp.get_employment_status_display(),
                 ]
             )
 
