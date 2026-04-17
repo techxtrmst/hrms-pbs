@@ -873,16 +873,13 @@
                     document.getElementById('res_basic').innerText = symbol + res.basic.toLocaleString();
                     document.getElementById('res_hra').innerText = symbol + res.hra.toLocaleString();
 
-                    // Map allowances based on country (normalized to IN)
-                    if (res.country_code === 'IN' || res.country_code === 'INDIA' || res.country_code === 'INDIAN') {
-                        // For India: use lta and other_allowance
-                        document.getElementById('res_conveyance_allowance').innerText = symbol + (res.lta || 0).toLocaleString();
-                        document.getElementById('res_special_allowance').innerText = symbol + (res.other_allowance || 0).toLocaleString();
-                    } else {
-                        // For other countries: use conveyance and medical
-                        document.getElementById('res_conveyance_allowance').innerText = symbol + (res.conveyance || 0).toLocaleString();
-                        document.getElementById('res_special_allowance').innerText = symbol + (res.medical || 0).toLocaleString();
-                    }
+                    // Map allowances based on what values are returned (Works for ALL companies & countries)
+                    // India logic uses 'lta/other_allowance', while BD/US uses 'conveyance/medical'
+                    const convVal = res.lta || res.conveyance || 0;
+                    const specVal = res.other_allowance || res.medical || 0;
+
+                    document.getElementById('res_conveyance_allowance').innerText = symbol + convVal.toLocaleString();
+                    document.getElementById('res_special_allowance').innerText = symbol + specVal.toLocaleString();
 
                     document.getElementById('res_gross').innerText = symbol + res.gross_monthly.toLocaleString();
                     document.getElementById('res_net').innerText = symbol + res.net_salary.toLocaleString();
