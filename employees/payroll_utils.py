@@ -20,6 +20,8 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
                 country_code = "BD"
             elif status_code in ["US", "USA", "UNITED STATES"]:
                 country_code = "US"
+            elif status_code in ["IN", "INDIA", "INDIAN"]:
+                country_code = "IN"
             else:
                 country_code = status_code
         elif isinstance(location, str):
@@ -28,6 +30,8 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
                 country_code = "BD"
             elif loc_str in ["US", "USA", "UNITED STATES"]:
                 country_code = "US"
+            elif loc_str in ["IN", "INDIA", "INDIAN"]:
+                country_code = "IN"
             else:
                 country_code = loc_str
     # Determine currency symbol from location

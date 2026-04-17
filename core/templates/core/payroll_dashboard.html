@@ -873,8 +873,8 @@
                     document.getElementById('res_basic').innerText = symbol + res.basic.toLocaleString();
                     document.getElementById('res_hra').innerText = symbol + res.hra.toLocaleString();
 
-                    // Map allowances based on country
-                    if (res.country_code === 'IN') {
+                    // Map allowances based on country (normalized to IN)
+                    if (res.country_code === 'IN' || res.country_code === 'INDIA' || res.country_code === 'INDIAN') {
                         // For India: use lta and other_allowance
                         document.getElementById('res_conveyance_allowance').innerText = symbol + (res.lta || 0).toLocaleString();
                         document.getElementById('res_special_allowance').innerText = symbol + (res.other_allowance || 0).toLocaleString();
