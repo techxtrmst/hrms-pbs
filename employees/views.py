@@ -2343,23 +2343,23 @@ def approve_exit_initiative(request, pk):
 
             status_msg = f"Exit initiative approved. {employee.user.get_full_name()}'s account has been changed to Ex-Employee type and access has been disabled immediately."
         else:
-            # Future Exit - keep active until last working day
-            # Map EXIT_TYPE to EMPLOYMENT_STATUS correctly
+            # Future Exit - Change to Ex-Employee status immediately upon approval as per user request
+            # This ensures they disappear from active lists/birthdays once approved
             status_map = {
                 "RESIGNATION": "RESIGNED",
                 "ABSCONDED": "ABSCONDED",
                 "TERMINATED": "TERMINATED",
             }
             employee.employment_status = status_map.get(exit_initiative.exit_type, "RESIGNED")
-            employee.is_active = True
+            employee.is_active = False
             employee.save()
 
-            # Ensure user is active
+            # Disable user login immediately to ensure they are treated as Ex-Employees
             emp_user = employee.user
-            emp_user.is_active = True
+            emp_user.is_active = False
             emp_user.save()
 
-            status_msg = f"Exit initiative approved. {employee.user.get_full_name()}'s last working day is {last_working_day.strftime('%d %b %Y')}. Account will be changed to Ex-Employee type on that date."
+            status_msg = f"Exit initiative approved. {employee.user.get_full_name()}'s account has been changed to Ex-Employee type and access has been disabled immediately."
 
         # Send email notification to employee
         try:
@@ -3563,9 +3563,11 @@ def leave_configuration(request):
     # Apply status filter
     status_filter = request.GET.get("status", "active")
     if status_filter == "active":
-        employees = all_employees.filter(is_active=True)
+        employees = all_employees.filter(is_active=True, employment_status="ACTIVE")
     elif status_filter == "inactive":
-        employees = all_employees.filter(is_active=False)
+        from django.db.models import Q
+
+        employees = all_employees.filter(Q(is_active=False) | ~Q(employment_status="ACTIVE"))
     else:
         employees = all_employees
 
@@ -3616,8 +3618,8 @@ def leave_configuration(request):
             "employees": employees,
             "months_ctx": months_ctx,
             "years_ctx": years_ctx,
-            "active_count": all_employees.filter(is_active=True).count(),
-            "inactive_count": all_employees.filter(is_active=False).count(),
+            "active_count": all_employees.filter(is_active=True, employment_status="ACTIVE").count(),
+            "inactive_count": all_employees.filter(Q(is_active=False) | ~Q(employment_status="ACTIVE")).count(),
             "selected_status": status_filter,
             "is_bluebix": company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"],
         },

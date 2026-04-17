@@ -1447,7 +1447,7 @@
                 </thead>
                 <tbody>
                     {% for employee in employees %}
-                    <tr class="{% if not employee.is_active %}employee-row-inactive{% endif %}">
+                    <tr class="{% if not employee.is_active or employee.employment_status != 'ACTIVE' %}employee-row-inactive{% endif %}">
                         <td>
                             <span class="employee-number">{{ forloop.counter }}</span>
                         </td>
@@ -1464,7 +1464,7 @@
                                 </div>
                                 <div>
                                     <div>{{ employee.user.get_full_name }}{% if employee.pseudo_name %} ({{ employee.pseudo_name }}){% endif %}
-                                        {% if not employee.is_active %}
+                                        {% if not employee.is_active or employee.employment_status != 'ACTIVE' %}
                                         <span class="status-badge-inactive">{{ employee.get_employment_status_display }}</span>
                                         {% endif %}
                                     </div>

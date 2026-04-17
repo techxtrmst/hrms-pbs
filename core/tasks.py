@@ -46,9 +46,10 @@ def send_birthday_emails(self):
     try:
         # Find employees with birthdays today
         employees_with_birthday = Employee.objects.filter(
-            date_of_birth__month=today.month,
-            date_of_birth__day=today.day,
+            dob__month=today.month,
+            dob__day=today.day,
             is_active=True,
+            employment_status="ACTIVE",
         ).select_related("user", "company", "location")
 
         for employee in employees_with_birthday:
@@ -117,6 +118,7 @@ def send_anniversary_emails(self):
                 date_of_joining__month=today.month,
                 date_of_joining__day=today.day,
                 is_active=True,
+                employment_status="ACTIVE",
             )
             .exclude(
                 date_of_joining__year=today.year  # Exclude employees who joined this year
