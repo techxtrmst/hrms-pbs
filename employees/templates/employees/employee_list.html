@@ -1638,14 +1638,23 @@
         const submissionDate = form.querySelector('[name="submission_date"]').value;
         const exitNote = form.querySelector('[name="exit_note"]').value;
         let noticePeriod = '';
+        let lastWorkingDay = '';
 
-        if (exitType !== 'resignation') {
+        if (exitType === 'resignation') {
+            const lastWorkingDayInput = form.querySelector('[name="last_working_day"]');
+            lastWorkingDay = lastWorkingDayInput ? lastWorkingDayInput.value : '';
+        } else {
             noticePeriod = form.querySelector('[name="notice_period_days"]').value;
         }
 
         // Validation
         if (!submissionDate) {
-            alert('Please select a date');
+            alert('Please select a submission date');
+            return;
+        }
+
+        if (exitType === 'resignation' && !lastWorkingDay) {
+            alert('Please select the last working day');
             return;
         }
 
@@ -1665,7 +1674,9 @@
         formData.append('submission_date', submissionDate);
         formData.append('exit_note', exitNote);
 
-        if (exitType !== 'resignation') {
+        if (exitType === 'resignation') {
+            formData.append('last_working_day', lastWorkingDay);
+        } else {
             formData.append('notice_period_days', noticePeriod);
         }
 
@@ -1784,13 +1795,16 @@
                     <input type="date" name="submission_date" required>
                 </div>
                 <div class="form-group">
+                    <label>Last Working Day (Proposed) <span style="color: red;">*</span></label>
+                    <input type="date" name="last_working_day" required>
+                </div>
+                <div class="form-group">
                     <label>Reason for Resignation <span style="color: red;">*</span></label>
                     <textarea name="exit_note" placeholder="Please provide the reason for resignation..."
                         required></textarea>
                 </div>
                 <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 1rem;">
-                    <i class="fas fa-info-circle"></i> This will be sent to admin/manager for approval. Last working day
-                    will be assigned upon approval (2 months from approval date).
+                    <i class="fas fa-info-circle"></i> This will be sent for approval. Upon approval, the employee's status will be updated, and their access will be managed according to the last working day.
                 </p>
             </div>
 

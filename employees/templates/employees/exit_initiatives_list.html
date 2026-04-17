@@ -982,7 +982,7 @@
             {% if initiative.status == 'PENDING' %}
             <div class="action-buttons">
                 <button class="btn btn-approve"
-                    onclick="openApproveModal({{ initiative.pk }}, '{{ initiative.employee.user.get_full_name|escapejs }}', '{{ initiative.get_exit_type_display|escapejs }}', '{{ initiative.submission_date|date:'Y-m-d' }}')">
+                    onclick="openApproveModal({{ initiative.pk }}, '{{ initiative.employee.user.get_full_name|escapejs }}', '{{ initiative.get_exit_type_display|escapejs }}', '{{ initiative.submission_date|date:'Y-m-d' }}', '{{ initiative.last_working_day|date:'Y-m-d' }}')">
                     <i class="fas fa-check"></i> <span>Approve</span>
                 </button>
                 <button class="btn btn-reject"
@@ -1109,7 +1109,7 @@
         }
     }
 
-    function openApproveModal(initiativeId, employeeName, exitType, submissionDate) {
+    function openApproveModal(initiativeId, employeeName, exitType, submissionDate, proposedDate) {
         currentInitiativeId = initiativeId;
         document.getElementById('approveEmployeeName').textContent = employeeName;
         document.getElementById('approveExitType').textContent = exitType;
@@ -1119,10 +1119,10 @@
         const lastWorkingDayInput = document.getElementById('last_working_day');
         lastWorkingDayInput.min = submissionDate;
 
-        // Set default value to today or submission date, whichever is later
+        // Set default value to proposedDate if it exists, otherwise use today or submission date
         const today = new Date().toISOString().split('T')[0];
         const minDate = submissionDate > today ? submissionDate : today;
-        lastWorkingDayInput.value = minDate;
+        lastWorkingDayInput.value = (proposedDate && proposedDate !== '') ? proposedDate : minDate;
 
         document.getElementById('approveModal').classList.add('show');
         document.body.style.overflow = 'hidden'; // Prevent background scrolling

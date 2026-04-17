@@ -2015,8 +2015,9 @@ def employee_exit_action(request, pk):
         # Get form data
         exit_type = request.POST.get("exit_type")  # RESIGNATION, ABSCONDED, TERMINATED
         submission_date_str = request.POST.get("submission_date")
+        last_working_day_str = request.POST.get("last_working_day")
         exit_note = request.POST.get("exit_note", "").strip()
-        notice_period_days = request.POST.get("notice_period_days", "").strip()
+        notice_period_days_input = request.POST.get("notice_period_days", "").strip()
 
         # Validation
         if not exit_type or exit_type not in ["RESIGNATION", "ABSCONDED", "TERMINATED"]:
@@ -2041,25 +2042,62 @@ def employee_exit_action(request, pk):
         try:
             submission_date = timezone.datetime.strptime(submission_date_str, "%Y-%m-%d").date()
         except ValueError:
-            return JsonResponse({"status": "error", "message": "Invalid date format."}, status=400)
+            return JsonResponse({"status": "error", "message": "Invalid date format for submission date."}, status=400)
+
+        # If Admin submits, it's auto-approved
+        is_auto_approve = request.user.role in [User.Role.COMPANY_ADMIN, User.Role.SUPERADMIN]
 
         # Handle different exit types
         if exit_type == "RESIGNATION":
-            # Create ExitInitiative with PENDING status
+            if not last_working_day_str:
+                return JsonResponse(
+                    {"status": "error", "message": "Last working day is required for resignations."}, status=400
+                )
+
+            try:
+                last_working_day = timezone.datetime.strptime(last_working_day_str, "%Y-%m-%d").date()
+            except ValueError:
+                return JsonResponse(
+                    {"status": "error", "message": "Invalid date format for last working day."}, status=400
+                )
+
+            # Calculate notice period days
+            notice_period_days = (last_working_day - submission_date).days
+            if notice_period_days < 0:
+                return JsonResponse(
+                    {"status": "error", "message": "Last working day cannot be before submission date."}, status=400
+                )
+
+            # Create ExitInitiative - Auto-approve if submitted by Admin
             exit_initiative = ExitInitiative.objects.create(
                 employee=employee,
                 exit_type=exit_type,
                 submission_date=submission_date,
+                last_working_day=last_working_day,
+                notice_period_days=notice_period_days,
                 exit_note=exit_note,
-                status="PENDING",
+                status="APPROVED" if is_auto_approve else "PENDING",
+                approved_by=request.user if is_auto_approve else None,
+                approved_at=timezone.now() if is_auto_approve else None,
             )
 
-            # Update employee status but keep them active
-            # Update employee status but keep them active
-            employee.employment_status = exit_type
+            # Update employee status immediately
+            # Use 'RESIGNED' as the unified status for anything not 'ACTIVE'
+            employee.employment_status = "RESIGNED"
             employee.exit_note = exit_note
-            # Don't set exit_date yet - will be set upon approval
-            # Don't disable login - employee can work until last working day
+            employee.exit_date = last_working_day
+
+            # If auto-approved and last working day is today or past, deactivate immediately
+            today = timezone.localdate()
+            if is_auto_approve and last_working_day <= today:
+                employee.is_active = False
+                if employee.user:
+                    user = employee.user
+                    user.is_active = False
+                    user.save()
+            else:
+                employee.is_active = True
+
             employee.save()
 
             # --- Email Notification ---
@@ -2087,16 +2125,24 @@ def employee_exit_action(request, pk):
                 recipients = list(set(filter(None, recipients)))
 
                 if recipients:
-                    subject = f"Resignation Submitted: {employee.user.get_full_name()} ({employee.designation})"
+                    if is_auto_approve:
+                        subject = f"Resignation Processed: {employee.user.get_full_name()} ({employee.designation})"
+                        status_text = "Approved (Processed by Admin)"
+                    else:
+                        subject = f"Resignation Submitted: {employee.user.get_full_name()} ({employee.designation})"
+                        status_text = "Pending Approval"
+
                     message = f"""
                     Dear Team,
 
-                    This is to inform you that {employee.user.get_full_name()} ({employee.designation}) has submitted their resignation on {submission_date.strftime("%d %b %Y")}.
+                    This is to inform you that a resignation has been processed for {employee.user.get_full_name()} ({employee.designation}) on {submission_date.strftime("%d %b %Y")}.
 
                     Reason:
                     {exit_note}
 
-                    Current Status: Pending Approval
+                    Last Working Day: {last_working_day.strftime("%d %b %Y")}
+
+                    Current Status: {status_text}
 
                     Please login to the HRMS portal to review and take necessary action.
 
@@ -2114,22 +2160,26 @@ def employee_exit_action(request, pk):
             except Exception as e:
                 logger.error(f"Error in resignation notification: {e}")
 
-            messages.success(
-                request,
-                f"Resignation request from {employee.user.get_full_name()} has been submitted for approval.",
+            success_msg = (
+                f"Resignation for {employee.user.get_full_name()} has been processed."
+                if is_auto_approve
+                else f"Resignation request from {employee.user.get_full_name()} has been submitted for approval."
             )
+            messages.success(request, success_msg)
 
             return JsonResponse(
                 {
                     "status": "success",
-                    "message": "Resignation request submitted successfully. Awaiting approval.",
+                    "message": "Processed successfully."
+                    if is_auto_approve
+                    else "Resignation request submitted successfully. Awaiting approval.",
                     "redirect_url": reverse("employee_list"),
                 }
             )
 
         elif exit_type in ["ABSCONDED", "TERMINATED"]:
             # Validate notice period
-            if not notice_period_days:
+            if not notice_period_days_input:
                 return JsonResponse(
                     {
                         "status": "error",
@@ -2139,7 +2189,7 @@ def employee_exit_action(request, pk):
                 )
 
             try:
-                notice_period = int(notice_period_days)
+                notice_period = int(notice_period_days_input)
                 if notice_period < 0:
                     raise ValueError("Notice period cannot be negative")
             except ValueError:
@@ -2328,11 +2378,17 @@ def approve_exit_initiative(request, pk):
         today = timezone.localdate()
         is_immediate = last_working_day <= today
 
+        # Map EXIT_TYPE to EMPLOYMENT_STATUS
+        status_map = {
+            "RESIGNATION": "RESIGNED",
+            "ABSCONDED": "ABSCONDED",
+            "TERMINATED": "TERMINATED",
+        }
+        new_status = status_map.get(exit_initiative.exit_type, "RESIGNED")
+        employee.employment_status = new_status
+
         if is_immediate:
-            # Immediate Exit - change to Ex-Employee type and disable employee
-            employee.employment_status = "TERMINATED" if exit_initiative.exit_type == "TERMINATED" else "RESIGNED"
-            if exit_initiative.exit_type == "ABSCONDED":
-                employee.employment_status = "ABSCONDED"
+            # Immediate Exit - disable profile and login immediately
             employee.is_active = False
             employee.save()
 
@@ -2343,23 +2399,16 @@ def approve_exit_initiative(request, pk):
 
             status_msg = f"Exit initiative approved. {employee.user.get_full_name()}'s account has been changed to Ex-Employee type and access has been disabled immediately."
         else:
-            # Future Exit - Change to Ex-Employee status immediately upon approval as per user request
-            # This ensures they disappear from active lists/birthdays once approved
-            status_map = {
-                "RESIGNATION": "RESIGNED",
-                "ABSCONDED": "ABSCONDED",
-                "TERMINATED": "TERMINATED",
-            }
-            employee.employment_status = status_map.get(exit_initiative.exit_type, "RESIGNED")
-            employee.is_active = False
+            # Future Exit - Keep active until last working day, but mark as Resigned/Exited to hide from active lists
+            employee.is_active = True
             employee.save()
 
-            # Disable user login immediately to ensure they are treated as Ex-Employees
+            # Ensure user login remains active
             emp_user = employee.user
-            emp_user.is_active = False
+            emp_user.is_active = True
             emp_user.save()
 
-            status_msg = f"Exit initiative approved. {employee.user.get_full_name()}'s account has been changed to Ex-Employee type and access has been disabled immediately."
+            status_msg = f"Exit initiative approved. {employee.user.get_full_name()}'s last working day is {last_working_day.strftime('%d %b %Y')}. The profile will be deactivated automatically on that day."
 
         # Send email notification to employee
         try:
