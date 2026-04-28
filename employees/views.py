@@ -3595,6 +3595,7 @@ def reject_regularization(request, pk):
 @login_required
 def leave_configuration(request):
     from django.contrib import messages
+    from django.db.models import Q
 
     user = request.user
     if user.role not in [User.Role.COMPANY_ADMIN, User.Role.MANAGER]:
@@ -3614,8 +3615,6 @@ def leave_configuration(request):
     if status_filter == "active":
         employees = all_employees.filter(is_active=True, employment_status="ACTIVE")
     elif status_filter == "inactive":
-        from django.db.models import Q
-
         employees = all_employees.filter(Q(is_active=False) | ~Q(employment_status="ACTIVE"))
     else:
         employees = all_employees
