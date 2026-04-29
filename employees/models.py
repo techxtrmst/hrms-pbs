@@ -1536,8 +1536,19 @@ class RegularizationRequest(models.Model):
         ("CANCELLED", "Cancelled"),
     ]
 
+    CHANGE_TYPE_CHOICES = [
+        ("MISSED_PUNCH", "Missed Punch"),
+        ("SYSTEM_ERROR", "System Error"),
+        ("WEB_CLONING", "Web Cloning"),
+        ("REMOTE_CLOCK_IN", "Remote Clock-in"),
+        ("OTHER", "Other"),
+    ]
+
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="regularization_requests")
     date = models.DateField(help_text="Date to be regularized")
+    change_type = models.CharField(
+        max_length=20, choices=CHANGE_TYPE_CHOICES, default="MISSED_PUNCH", verbose_name="Change Type"
+    )
     check_in = models.TimeField(null=True, blank=True, verbose_name="New Check-In Time")
     check_out = models.TimeField(null=True, blank=True, verbose_name="New Check-Out Time")
     reason = models.TextField(help_text="Reason for regularization")

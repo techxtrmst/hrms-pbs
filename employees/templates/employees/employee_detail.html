@@ -1444,11 +1444,16 @@
                         <div class="form-text">Date when this action is recorded/submitted.</div>
                     </div>
 
+                    <div class="mb-3" id="lastWorkingDayGroup">
+                        <label for="lastWorkingDay" class="form-label">Proposed Last Working Day</label>
+                        <input type="date" class="form-control" id="lastWorkingDay" name="last_working_day">
+                        <div class="form-text" id="lwdHelp">Default is 2 months from submission.</div>
+                    </div>
+
                     <div class="mb-3" id="noticePeriodGroup" style="display: none;">
-                        <label for="noticePeriod" class="form-label">Notice Period (Days) <span
-                                class="text-danger">*</span></label>
+                        <label for="noticePeriod" class="form-label">Notice Period (Days)</label>
                         <input type="number" class="form-control" id="noticePeriod" name="notice_period_days" min="0"
-                            placeholder="e.g. 30">
+                            placeholder="e.g. 0">
                         <div class="form-text">Used to calculate the Last Working Day.</div>
                     </div>
 
@@ -1797,18 +1802,23 @@
         const dateLabel = document.getElementById('dateLabel');
         const noticeGroup = document.getElementById('noticePeriodGroup');
         const noticeInput = document.getElementById('noticePeriod');
+        const lwdGroup = document.getElementById('lastWorkingDayGroup');
+        const lwdHelp = document.getElementById('lwdHelp');
 
         if (exitType === 'RESIGNATION') {
             modalTitle.textContent = "Initiate Resignation";
             dateLabel.innerHTML = 'Resignation Submission Date <span class="text-danger">*</span>';
             noticeGroup.style.display = 'none';
+            lwdGroup.style.display = 'block';
+            lwdHelp.textContent = "Default is 2 months from submission.";
             noticeInput.removeAttribute('required');
         } else {
             // TERMINATED or ABSCONDED
             modalTitle.textContent = `Mark as ${exitType.charAt(0) + exitType.slice(1).toLowerCase()}`;
             dateLabel.innerHTML = 'Action Date <span class="text-danger">*</span>';
             noticeGroup.style.display = 'block';
-            noticeInput.setAttribute('required', 'required');
+            lwdGroup.style.display = 'none';
+            noticeInput.removeAttribute('required'); // Backend defaults to 0
         }
 
         // Show modal

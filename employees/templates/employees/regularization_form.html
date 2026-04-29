@@ -239,6 +239,16 @@
                         {% endif %}
                     </div>
 
+                    <!-- Change Type -->
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Change Type <span class="text-danger">*</span></label>
+                        {{ form.change_type }}
+                        {% if form.change_type.errors %}
+                        <div class="text-danger small mt-1 ms-2"><i class="fas fa-exclamation-circle me-1"></i>{{
+                            form.change_type.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
                     <!-- Time Stats -->
                     <div class="d-flex justify-content-center mb-4">
                         <div id="durationPill" class="duration-pill">
@@ -339,7 +349,10 @@
                                 </div>
                             </div>
 
-                            <p class="mb-0 small text-secondary fst-italic">"{{ req.reason }}"</p>
+                            <p class="mb-0 small text-secondary fst-italic">
+                                <span class="badge bg-secondary me-1">{{ req.get_change_type_display }}</span>
+                                "{{ req.reason }}"
+                            </p>
 
                             {% if req.manager_comment %}
                             <div class="mt-2 pt-2 border-top">

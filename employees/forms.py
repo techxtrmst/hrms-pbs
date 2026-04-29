@@ -419,9 +419,10 @@ class EmployeeBulkImportForm(forms.Form):
 class RegularizationRequestForm(forms.ModelForm):
     class Meta:
         model = RegularizationRequest
-        fields = ["date", "check_in", "check_out", "reason"]
+        fields = ["date", "change_type", "check_in", "check_out", "reason"]
         widgets = {
             "date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "change_type": forms.Select(attrs={"class": "form-select"}),
             "check_in": forms.TimeInput(attrs={"type": "time", "class": "form-control"}),
             "check_out": forms.TimeInput(attrs={"type": "time", "class": "form-control"}),
             "reason": forms.Textarea(
@@ -437,12 +438,14 @@ class RegularizationRequestForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Make all fields required
         self.fields["date"].required = True
+        self.fields["change_type"].required = True
         self.fields["check_in"].required = True
         self.fields["check_out"].required = True
         self.fields["reason"].required = True
 
         # Add required attribute to widgets
         self.fields["date"].widget.attrs["required"] = True
+        self.fields["change_type"].widget.attrs["required"] = True
         self.fields["check_in"].widget.attrs["required"] = True
         self.fields["check_out"].widget.attrs["required"] = True
         self.fields["reason"].widget.attrs["required"] = True

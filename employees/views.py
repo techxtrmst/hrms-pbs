@@ -2049,17 +2049,18 @@ def employee_exit_action(request, pk):
 
         # Handle different exit types
         if exit_type == "RESIGNATION":
-            if not last_working_day_str:
-                return JsonResponse(
-                    {"status": "error", "message": "Last working day is required for resignations."}, status=400
-                )
+            if last_working_day_str:
+                try:
+                    last_working_day = timezone.datetime.strptime(last_working_day_str, "%Y-%m-%d").date()
+                except ValueError:
+                    return JsonResponse(
+                        {"status": "error", "message": "Invalid date format for last working day."}, status=400
+                    )
+            else:
+                # Default to 2 months from submission date if not provided
+                from dateutil.relativedelta import relativedelta
 
-            try:
-                last_working_day = timezone.datetime.strptime(last_working_day_str, "%Y-%m-%d").date()
-            except ValueError:
-                return JsonResponse(
-                    {"status": "error", "message": "Invalid date format for last working day."}, status=400
-                )
+                last_working_day = submission_date + relativedelta(months=2)
 
             # Calculate notice period days
             notice_period_days = (last_working_day - submission_date).days
@@ -2178,28 +2179,22 @@ def employee_exit_action(request, pk):
             )
 
         elif exit_type in ["ABSCONDED", "TERMINATED"]:
-            # Validate notice period
-            if not notice_period_days_input:
-                return JsonResponse(
-                    {
-                        "status": "error",
-                        "message": "Notice period (in days) is required for absconding/termination.",
-                    },
-                    status=400,
-                )
-
-            try:
-                notice_period = int(notice_period_days_input)
-                if notice_period < 0:
-                    raise ValueError("Notice period cannot be negative")
-            except ValueError:
-                return JsonResponse(
-                    {
-                        "status": "error",
-                        "message": "Invalid notice period. Please enter a valid number of days.",
-                    },
-                    status=400,
-                )
+            # Default notice period to 0 if not provided
+            if notice_period_days_input:
+                try:
+                    notice_period = int(notice_period_days_input)
+                    if notice_period < 0:
+                        raise ValueError("Notice period cannot be negative")
+                except ValueError:
+                    return JsonResponse(
+                        {
+                            "status": "error",
+                            "message": "Invalid notice period. Please enter a valid number of days.",
+                        },
+                        status=400,
+                    )
+            else:
+                notice_period = 0
 
             # Calculate last working day
             last_working_day = submission_date + timedelta(days=notice_period)
