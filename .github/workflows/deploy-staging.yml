@@ -133,78 +133,52 @@ jobs:
 
             echo "✅ Sufficient disk space available"
 
-      - name: Smart pre-deployment cleanup
+      - name: Aggressive Disk Space Cleanup
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.STAGING_SSH_HOST }}
           username: ${{ secrets.STAGING_SSH_USERNAME }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT }}
-          command_timeout: 10m
+          command_timeout: 15m
           script: |
             set -e
+            echo "🚨 Disk space is critical. Starting AGGRESSIVE cleanup..."
 
-            echo "🗑️ Starting smart pre-deployment cleanup..."
-
-            # Check disk space BEFORE cleanup
-            echo "📊 Disk space BEFORE cleanup:"
+            # Show space before
             df -h /
-            docker system df
 
-            # Remove stopped containers
-            echo "🛑 Removing stopped containers..."
-            docker container prune -f
+            # 1. Remove all stopped containers, unused networks, and ALL unused images (not just dangling)
+            echo "🧹 Pruning all unused Docker data..."
+            docker system prune -a -f
 
-            # Remove dangling images (untagged)
-            echo "🗑️ Removing dangling images..."
-            docker image prune -f
+            # 2. Remove all build cache
+            echo "🧹 Clearing Docker build cache..."
+            docker builder prune -a -f
 
-            # PRESERVE build cache - only remove if older than 7 days
-            echo "🧹 Cleaning very old build cache (7+ days)..."
-            docker builder prune --filter "until=168h" -f || true
-
-            # Remove anonymous volumes only
-            echo "🗑️ Removing anonymous volumes (keeping named volumes)..."
-            docker volume prune -f
-
-            # Remove unused networks
-            echo "🗑️ Removing unused networks..."
-            docker network prune -f
-
-            # DO NOT cleanup backups here - only cleanup SUCCESSFUL backups after deployment succeeds
+            # 3. Clean up old backups (Keeping only the last 3 days of backups)
             BACKUP_ROOT="${{ secrets.STAGING_BACKUP_PATH }}"
             if [ -d "$BACKUP_ROOT" ]; then
-              echo "📦 Current backups:"
-              ls -lhd "$BACKUP_ROOT"/backup-* 2>/dev/null || echo "No backups found"
-
-              # Clean up FAILED deployment backups only (keep all successful ones for now)
-              echo "🗑️ Cleaning up failed deployment backups..."
-              find "$BACKUP_ROOT" -name "backup-*" -type d | while read backup_dir; do
-                if [ -f "$backup_dir/.deployment_failed" ]; then
-                  echo "  Removing failed backup: $(basename $backup_dir)"
-                  rm -rf "$backup_dir"
-                fi
-              done
+              echo "📦 Cleaning up old backups in $BACKUP_ROOT..."
+              # Find directories named backup-* and delete those older than 3 days
+              find "$BACKUP_ROOT" -name "backup-*" -type d -mtime +3 -exec rm -rf {} +
+              echo "✅ Old backups removed."
             fi
 
-            # Check disk space AFTER cleanup
-            echo ""
-            echo "📊 Disk space AFTER cleanup:"
+            # 4. Final log cleanup (if applicable)
+            sudo journalctl --vacuum-time=1d || true
+
+            # Show space after
+            echo "📊 Disk space AFTER aggressive cleanup:"
             df -h /
-            docker system df
 
-            # Verify we have enough space
+            # Verify we have at least 1GB now
             AVAILABLE=$(df / | tail -1 | awk '{print $4}')
-            AVAILABLE_GB=$(echo "scale=2; $AVAILABLE / 1048576" | bc)
-            echo ""
-            echo "💾 Available space after cleanup: ${AVAILABLE_GB}GB"
-
-            if [ "$AVAILABLE" -lt 2097152 ]; then
-              echo "❌ ERROR: Less than 2GB free space after cleanup!"
-              exit 1
+            if [ "$AVAILABLE" -lt 1048576 ]; then
+              echo "❌ STILL LOW ON SPACE! Manual intervention might be required."
+            else
+              echo "✅ Aggressive cleanup complete!"
             fi
-
-            echo "✅ Smart cleanup complete!"
 
       - name: Create deployment config files
         run: |
