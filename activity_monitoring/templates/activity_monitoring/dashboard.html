@@ -696,6 +696,8 @@
                                 <th>Member</th>
                                 <th>Status</th>
                                 <th>Last Sync</th>
+                                <th>Pulses (Today)</th>
+                                <th>GPS Logs (Today)</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -728,6 +730,12 @@
                                     {% else %}
                                     -
                                     {% endif %}
+                                </td>
+                                <td class="text-center fw-bold text-primary">
+                                    {{ emp.pulse_count|default:0 }}
+                                </td>
+                                <td class="text-center fw-bold text-teal">
+                                    {{ emp.location_count|default:0 }}
                                 </td>
                                 <td>
                                     <a href="?employee_id={{ emp.id }}"

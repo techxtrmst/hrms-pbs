@@ -104,10 +104,10 @@ jobs:
       - name: Check disk space on production server
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.PROD_SSH_HOST }}
-          username: ${{ secrets.PROD_SSH_USERNAME }}
-          key: ${{ secrets.PROD_SSH_KEY }}
-          port: ${{ secrets.PROD_SSH_PORT }}
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USERNAME }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: ${{ secrets.STAGING_SSH_PORT }}
           command_timeout: 2m
           script: |
             AVAILABLE=$(df / | tail -1 | awk '{print $4}')
@@ -121,17 +121,17 @@ jobs:
       - name: Aggressive Disk Space Cleanup
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.PROD_SSH_HOST }}
-          username: ${{ secrets.PROD_SSH_USERNAME }}
-          key: ${{ secrets.PROD_SSH_KEY }}
-          port: ${{ secrets.PROD_SSH_PORT }}
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USERNAME }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: ${{ secrets.STAGING_SSH_PORT }}
           command_timeout: 15m
           script: |
             set -e
             echo "🚨 Starting AGGRESSIVE cleanup on production..."
             docker system prune -a -f
             docker builder prune -a -f
-            BACKUP_ROOT="${{ secrets.PROD_BACKUP_PATH }}"
+            BACKUP_ROOT="${{ secrets.STAGING_BACKUP_PATH }}"
             if [ -d "$BACKUP_ROOT" ]; then
               find "$BACKUP_ROOT" -name "backup-*" -type d -mtime +3 -exec rm -rf {} +
             fi
@@ -144,27 +144,27 @@ jobs:
           cp docker-compose.yml /tmp/deployment/
           cp nginx.conf /tmp/deployment/
           cat > /tmp/deployment/.env << 'EOF'
-          DEBUG=${{ secrets.PROD_DEBUG }}
-          SECRET_KEY=${{ secrets.PROD_SECRET_KEY }}
-          APP_PORT=${{ secrets.PROD_APP_PORT }}
-          DB_ENGINE=${{ secrets.PROD_DB_ENGINE }}
-          DB_NAME=${{ secrets.PROD_DB_NAME }}
-          DB_USER=${{ secrets.PROD_DB_USER }}
-          DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}
-          DB_HOST=${{ secrets.PROD_DB_HOST }}
-          DB_PORT=${{ secrets.PROD_DB_PORT }}
-          ALLOWED_HOSTS=${{ secrets.PROD_ALLOWED_HOSTS }}
-          CSRF_TRUSTED_ORIGINS=${{ secrets.PROD_CSRF_TRUSTED_ORIGINS }}
-          CORS_ALLOW_ALL_ORIGINS=${{ secrets.PROD_CORS_ALLOW_ALL_ORIGINS }}
-          EMAIL_HOST=${{ secrets.PROD_EMAIL_HOST }}
-          EMAIL_PORT=${{ secrets.PROD_EMAIL_PORT }}
-          EMAIL_USE_TLS=${{ secrets.PROD_EMAIL_USE_TLS }}
-          EMAIL_HOST_USER=${{ secrets.PROD_EMAIL_HOST_USER }}
-          EMAIL_HOST_PASSWORD=${{ secrets.PROD_EMAIL_HOST_PASSWORD }}
-          DEFAULT_FROM_EMAIL=${{ secrets.PROD_DEFAULT_FROM_EMAIL }}
-          POSTHOG_API_KEY=${{ secrets.PROD_POSTHOG_API_KEY }}
-          POSTHOG_HOST=${{ secrets.PROD_POSTHOG_HOST }}
-          POSTHOG_ENABLED=${{ secrets.PROD_POSTHOG_ENABLED }}
+          DEBUG=${{ secrets.STAGING_DEBUG }}
+          SECRET_KEY=${{ secrets.STAGING_SECRET_KEY }}
+          APP_PORT=${{ secrets.STAGING_APP_PORT }}
+          DB_ENGINE=${{ secrets.STAGING_DB_ENGINE }}
+          DB_NAME=${{ secrets.STAGING_DB_NAME }}
+          DB_USER=${{ secrets.STAGING_DB_USER }}
+          DB_PASSWORD=${{ secrets.STAGING_DB_PASSWORD }}
+          DB_HOST=${{ secrets.STAGING_DB_HOST }}
+          DB_PORT=${{ secrets.STAGING_DB_PORT }}
+          ALLOWED_HOSTS=${{ secrets.STAGING_ALLOWED_HOSTS }}
+          CSRF_TRUSTED_ORIGINS=${{ secrets.STAGING_CSRF_TRUSTED_ORIGINS }}
+          CORS_ALLOW_ALL_ORIGINS=${{ secrets.STAGING_CORS_ALLOW_ALL_ORIGINS }}
+          EMAIL_HOST=${{ secrets.STAGING_EMAIL_HOST }}
+          EMAIL_PORT=${{ secrets.STAGING_EMAIL_PORT }}
+          EMAIL_USE_TLS=${{ secrets.STAGING_EMAIL_USE_TLS }}
+          EMAIL_HOST_USER=${{ secrets.STAGING_EMAIL_HOST_USER }}
+          EMAIL_HOST_PASSWORD=${{ secrets.STAGING_EMAIL_HOST_PASSWORD }}
+          DEFAULT_FROM_EMAIL=${{ secrets.STAGING_DEFAULT_FROM_EMAIL }}
+          POSTHOG_API_KEY=${{ secrets.STAGING_POSTHOG_API_KEY }}
+          POSTHOG_HOST=${{ secrets.STAGING_POSTHOG_HOST }}
+          POSTHOG_ENABLED=${{ secrets.STAGING_POSTHOG_ENABLED }}
           EOF
           cd /tmp/deployment
           tar -czf ../backend-prod-config.tar.gz .
@@ -173,14 +173,14 @@ jobs:
       - name: Deploy to production server
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.PROD_SSH_HOST }}
-          username: ${{ secrets.PROD_SSH_USERNAME }}
-          key: ${{ secrets.PROD_SSH_KEY }}
-          port: ${{ secrets.PROD_SSH_PORT }}
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USERNAME }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: ${{ secrets.STAGING_SSH_PORT }}
           command_timeout: 30m
           script: |
             set -e
-            DEPLOY_DIR="/home/${{ secrets.PROD_SSH_USERNAME }}/hrms-prod"
+            DEPLOY_DIR="/home/${{ secrets.STAGING_SSH_USERNAME }}/hrms-prod"
             mkdir -p $DEPLOY_DIR
             cd $DEPLOY_DIR
 

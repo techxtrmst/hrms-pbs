@@ -136,6 +136,7 @@ def get_location_tracking_status(request):
 
         employee = request.user.employee_profile
         today = timezone.localdate()
+        last_log = None  # Initialize to avoid UnboundLocalError
 
         try:
             attendance = Attendance.objects.get(employee=employee, date=today)
