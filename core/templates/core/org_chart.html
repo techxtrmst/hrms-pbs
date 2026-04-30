@@ -4,31 +4,90 @@
 {% block title %}Organisation Structure | {{ company.name }}{% endblock %}
 
 {% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&family=Inter:wght@400;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+
 <style>
-    /* Advanced Keka-Style Org Chart CSS */
-    .org-container {
-        padding: 40px 20px;
-        background-color: #f8fafc;
-        min-height: 80vh;
-        overflow-x: auto;
-        text-align: center;
-        background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
-        background-size: 20px 20px;
+    :root {
+        --primary-indigo: #3f51b5;
+        --vibrant-blue: #2196f3;
+        --bg-blueprint: #fbf8ff;
+        --grid-color: rgba(63, 81, 181, 0.05);
+        --glass-bg: rgba(255, 255, 255, 0.6);
+        --node-border: rgba(255, 255, 255, 0.8);
+        --text-dark: #1a1b22;
+        --text-muted: #454652;
     }
 
-    /* The Tree */
-    .tree {
-        display: inline-block;
-        margin: 0 auto;
-        white-space: nowrap;
+    /* Full-screen content override */
+    body:has(.org-wrapper) .content {
+        padding: 0 !important;
+        overflow: hidden;
     }
 
-    .tree ul {
-        padding-top: 20px;
+    .org-wrapper {
         position: relative;
-        transition: all 0.5s;
+        height: calc(100vh - 80px);
+        width: 100%;
+        overflow: hidden;
+        background-color: var(--bg-blueprint);
+        background-image:
+            linear-gradient(rgba(63, 81, 181, 0.08) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(63, 81, 181, 0.08) 1px, transparent 1px);
+        background-size: 40px 40px;
+        display: flex;
+        flex-direction: column;
+        font-family: 'Inter', sans-serif;
+    }
+
+    @media (max-width: 768px) {
+        .org-wrapper { height: calc(100vh - 64px); }
+    }
+
+    /* Header Section */
+    .org-header {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid #e5e7eb;
+        padding: 1.5rem 2rem;
+        z-index: 100;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .org-header h4 {
+        font-family: 'Manrope', sans-serif;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: var(--primary-indigo);
+    }
+
+    /* Panzoom Viewport */
+    #panzoom-container {
+        flex: 1;
+        width: 100%;
+        overflow: hidden;
+        position: relative;
+        cursor: grab;
+    }
+
+    #panzoom-container:active { cursor: grabbing; }
+
+    .tree-canvas {
+        padding: 200px;
+        transform-origin: 0 0;
+    }
+
+    /* Tree Styling */
+    .tree ul {
+        padding-top: 120px;
+        position: relative;
         display: flex;
         justify-content: center;
+        margin: 0;
+        padding-left: 0;
+        transition: all 0.5s;
     }
 
     .tree li {
@@ -36,215 +95,259 @@
         text-align: center;
         list-style-type: none;
         position: relative;
-        padding: 20px 5px 0 5px;
+        padding: 40px 15px 0 15px;
         transition: all 0.5s;
     }
 
     /* Connectors */
-    .tree li::before,
-    .tree li::after {
+    .tree li::before, .tree li::after {
         content: '';
         position: absolute;
         top: 0;
         right: 50%;
-        border-top: 2px solid #cbd5e0;
+        border-top: 2px solid #cbd5e1;
         width: 50%;
-        height: 20px;
+        height: 40px;
     }
 
     .tree li::after {
         right: auto;
         left: 50%;
-        border-left: 2px solid #cbd5e0;
+        border-left: 2px solid #cbd5e1;
     }
 
-    /* Remove connectors from root */
-    .tree li:only-child::after,
-    .tree li:only-child::before {
-        display: none;
-    }
-
-    .tree li:only-child {
-        padding-top: 0;
-    }
-
-    .tree li:first-child::before,
-    .tree li:last-child::after {
-        border: 0 none;
-    }
-
+    .tree li:only-child::after, .tree li:only-child::before { display: none; }
+    .tree li:only-child { padding-top: 0; }
+    .tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
     .tree li:last-child::before {
-        border-right: 2px solid #cbd5e0;
-        border-radius: 0 5px 0 0;
+        border-right: 2px solid #cbd5e1;
+        border-radius: 0 12px 0 0;
     }
-
     .tree li:first-child::after {
-        border-radius: 5px 0 0 0;
+        border-radius: 12px 0 0 0;
     }
 
-    /* Downward lines from parents */
     .tree ul ul::before {
         content: '';
         position: absolute;
         top: 0;
         left: 50%;
-        border-left: 2px solid #cbd5e0;
+        border-left: 2px solid #cbd5e1;
         width: 0;
-        height: 20px;
+        height: 40px;
     }
 
-    /* The Employee Card */
+    /* Node Card - The Digital Architect Style */
     .node-card {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 15px;
-        width: 220px;
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--node-border);
+        border-radius: 16px;
+        padding: 1.25rem;
         display: inline-block;
-        text-decoration: none;
-        color: #2d3748;
-        transition: all 0.3s;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        min-width: 240px;
         position: relative;
-        z-index: 2;
+        z-index: 10;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     }
 
     .node-card:hover {
-        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
         transform: translateY(-5px);
-        border-color: #3182ce;
+        border-color: var(--vibrant-blue);
+        box-shadow: 0 20px 25px -5px rgba(33, 150, 243, 0.1), 0 10px 10px -5px rgba(33, 150, 243, 0.04);
     }
 
-    /* Avatar */
     .node-avatar {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        margin: 0 auto 10px;
-        overflow: hidden;
-        border: 3px solid #f0f4f8;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #ebf8ff;
-        color: #3182ce;
-        font-size: 1.5rem;
-    }
-
-    .node-avatar img {
-        width: 100%;
-        height: 100%;
+        width: 64px;
+        height: 64px;
+        border-radius: 12px;
         object-fit: cover;
+        border: 2px solid #fff;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        display: block;
     }
 
     .node-name {
+        font-family: 'Manrope', sans-serif;
         font-weight: 700;
-        font-size: 0.95rem;
-        margin-bottom: 2px;
-        white-space: normal;
-        /* Allow wrap */
+        font-size: 1.1rem;
+        color: var(--primary-indigo);
+        margin: 0;
+        line-height: 1.2;
     }
 
     .node-role {
-        font-size: 0.8rem;
-        color: #718096;
-        margin-bottom: 8px;
-        white-space: normal;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin: 0.25rem 0;
     }
 
     .node-dept {
+        display: inline-block;
+        padding: 2px 10px;
+        background: rgba(63, 81, 181, 0.1);
+        color: var(--primary-indigo);
+        border-radius: 999px;
+        font-family: 'Space Grotesk', sans-serif;
         font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        background-color: #edf2f7;
-        padding: 4px 8px;
-        border-radius: 4px;
-        color: #4a5568;
         font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 0.5rem;
     }
 
-    /* Toggle Button for collapsing (JS needed) */
+    /* Floating Controls */
+    .org-controls {
+        position: absolute;
+        bottom: 110px;
+        right: 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        z-index: 1000;
+    }
+
+    .control-btn {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        color: var(--primary-indigo);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .control-btn:hover {
+        background: var(--vibrant-blue);
+        color: white;
+        transform: scale(1.05);
+    }
+
+    /* Node Toggler */
     .node-toggler {
         position: absolute;
-        bottom: -12px;
+        bottom: -14px;
         left: 50%;
         transform: translateX(-50%);
-        width: 24px;
-        height: 24px;
-        background-color: #fff;
-        border: 1px solid #cbd5e0;
+        width: 28px;
+        height: 28px;
+        background: white;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        font-size: 12px;
-        color: #718096;
-        z-index: 3;
+        z-index: 20;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         transition: all 0.2s;
     }
 
     .node-toggler:hover {
-        background-color: #3182ce;
+        background: var(--vibrant-blue);
         color: white;
-        border-color: #3182ce;
     }
 
-    .node-toggled .node-toggler i {
-        transform: rotate(180deg);
-    }
-
-    .collapsed>ul {
-        display: none !important;
-    }
-
-    .collapsed>.node-card .node-toggler i {
-        transform: rotate(180deg);
-        /* Or change icon */
-    }
+    .collapsed > ul { display: none; }
+    .collapsed .node-toggler i { transform: rotate(180deg); }
 </style>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid p-0">
-    <div class="d-flex justify-content-between align-items-center bg-white p-4 border-bottom shadow-sm">
+<div class="org-wrapper">
+    <!-- Header Section -->
+    <header class="org-header">
         <div>
-            <h4 class="fw-bold m-0 text-dark">Organisation Hierarchy</h4>
-            <p class="text-muted small m-0">
-                Visualizing reporting structures for {{ company.name }}
-                {% if department_filter %}
-                <span class="badge bg-primary ms-2">{{ department_filter }} Department</span>
-                {% endif %}
-            </p>
+            <h4 class="m-0">Organization Chart</h4>
+            <p class="text-muted small m-0">{{ company.name }} Architectural Hierarchy</p>
         </div>
-        <div>
-            <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-outline-secondary" onclick="expandAll()">Expand All</button>
-                <button class="btn btn-sm btn-outline-secondary" onclick="collapseAll()">Collapse All</button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary btn-sm rounded-pill px-4" onclick="expandAll()">
+                <i class="fas fa-expand-alt me-2"></i>Expand All
+            </button>
+            <button class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm" onclick="collapseAll()">
+                <i class="fas fa-compress-alt me-2"></i>Collapse All
+            </button>
+        </div>
+    </header>
+
+    <!-- Panzoom Area -->
+    <div id="panzoom-container">
+        <div class="tree-canvas" id="org-tree">
+            <div class="tree">
+                <ul>
+                    {% for root in roots %}
+                    {% include "core/org_node.html" with node=root %}
+                    {% empty %}
+                    <li>
+                        <div class="node-card p-5">
+                            <div class="text-muted">No hierarchy data available.</div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
             </div>
         </div>
     </div>
 
-    <div class="org-container custom-scrollbar">
-        <div class="tree">
-            <ul>
-                <!-- Recursive Rendering Macro/Include would be ideal, but looping is fine for root -->
-                {% for root in roots %}
-                {% include "core/org_node.html" with node=root %}
-                {% empty %}
-                <li>
-                    <div class="node-card p-5">
-                        <div class="text-muted">No employees found in structure.</div>
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
+    <!-- Floating Controls -->
+    <div class="org-controls">
+        <button class="control-btn shadow-sm" onclick="panzoom.zoomIn()" title="Zoom In">
+            <i class="fas fa-plus"></i>
+        </button>
+        <button class="control-btn shadow-sm" onclick="panzoom.zoomOut()" title="Zoom Out">
+            <i class="fas fa-minus"></i>
+        </button>
+        <button class="control-btn shadow-sm" onclick="resetView()" title="Reset View">
+            <i class="fas fa-sync-alt"></i>
+        </button>
     </div>
 </div>
 
+<!-- Panzoom JS -->
+<script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
 <script>
+    let panzoom;
+    let resetView;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const elem = document.getElementById('org-tree');
+        const parent = elem.parentElement;
+
+        panzoom = Panzoom(elem, {
+            maxScale: 3,
+            minScale: 0.1,
+            contain: null, // Allow full freedom to move and zoom out
+            startScale: 0.6,
+        });
+
+        // Enable wheel zoom
+        parent.addEventListener('wheel', panzoom.zoomWithWheel);
+
+        resetView = () => {
+            panzoom.reset();
+            const containerWidth = parent.offsetWidth;
+            const contentWidth = elem.offsetWidth;
+
+            // Center calculation
+            const x = (containerWidth - contentWidth * 0.6) / 2;
+            const y = 150;
+
+            panzoom.pan(x, y);
+        };
+
+        // Initial center
+        setTimeout(resetView, 100);
+    });
+
     function toggleNode(btn) {
         const li = btn.closest('li');
         li.classList.toggle('collapsed');
@@ -271,8 +374,8 @@
 
     function collapseAll() {
         document.querySelectorAll('.tree li').forEach(li => {
-            // Don't collapse root
-            if (li.closest('ul').parentNode.className !== 'tree') {
+            const children = li.querySelector('ul');
+            if (children) {
                 li.classList.add('collapsed');
                 const icon = li.querySelector('.node-toggler i');
                 if (icon) {

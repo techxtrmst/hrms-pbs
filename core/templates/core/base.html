@@ -1557,21 +1557,19 @@
     <div class="sidebar">
         <div class="brand-section">
             {% if request.user.company %}
-            {% if request.user.company.slug == 'softstandard' %}
-            <img src="https://softstandard.com/wp-content/uploads/2016/05/logo.jpg" alt="Softstandard Logo">
-            {% elif request.user.company.slug == 'bluebix' %}
-            <img src="https://media.licdn.com/dms/image/v2/C510BAQF_jSPngDmYig/company-logo_200_200/company-logo_200_200/0/1630611564837?e=2147483647&v=beta&t=K0Ip6YC5bjvQcpJwIyTAbBV_01rzUJhP4bwlIDO8hPw"
-                alt="Bluebix Logo">
-            {% elif request.user.company.slug == 'petabytz' %}
-            <img src="{% static 'img/petabytz_logo.jpg' %}" alt="PetaBytz Logo">
-            {% elif request.user.company.logo %}
-            <img src="{{ request.user.company.logo.url }}" alt="{{ request.user.company.name }} Logo">
+                {% if request.user.company.slug == 'softstandard' %}
+                <img src="https://softstandard.com/wp-content/uploads/2016/05/logo.jpg" alt="Softstandard Logo">
+                {% elif request.user.company.slug == 'bluebix' %}
+                <img src="https://media.licdn.com/dms/image/v2/C510BAQF_jSPngDmYig/company-logo_200_200/company-logo_200_200/0/1630611564837?e=2147483647&v=beta&t=K0Ip6YC5bjvQcpJwIyTAbBV_01rzUJhP4bwlIDO8hPw" alt="Bluebix Logo" style="background: white; padding: 4px; border-radius: 4px;">
+                {% elif request.user.company.slug == 'petabytz' %}
+                <img src="{% static 'img/petabytz_logo.jpg' %}" alt="PetaBytz Logo">
+                {% elif request.user.company.logo %}
+                <img src="{{ request.user.company.logo.url }}" alt="{{ request.user.company.name }} Logo">
+                {% else %}
+                <img src="{% static 'img/petabytz_logo.jpg' %}" alt="HRMS Logo">
+                {% endif %}
             {% else %}
-            <img src="{% static 'img/petabytz_logo.jpg' %}" alt="HRMS Logo">
-            {% endif %}
-            {% else %}
-            <img src="{% static 'img/petabytz_logo.jpg' %}" alt="HRMS Logo"
-                style="height: 48px; width: auto; max-width: 100%; border-radius: 4px;">
+                <img src="{% static 'img/petabytz_logo.jpg' %}" alt="HRMS Logo" style="height: 48px; width: auto; max-width: 100%; border-radius: 4px;">
             {% endif %}
         </div>
 
@@ -2065,13 +2063,9 @@
         });
 
         // Background Location Tracking Integration
-        // Load the background location tracker
-        const backgroundScript = document.createElement('script');
-        backgroundScript.src = '{% static "js/background-location-tracker.js" %}';
-        backgroundScript.async = true;
-        document.head.appendChild(backgroundScript);
-
-        // Location tracking code continues below...
+    </script>
+    <script src="{% static 'js/background-location-tracker.js' %}"></script>
+    <script>
 
         (function () {
             /**
@@ -2178,29 +2172,7 @@
                 }
             });
 
-            // Service Worker Registration for better background persistence
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(reg => {
-                        console.log('Service Worker registered for background tracking');
-                        // Request periodic sync if supported (requires PWA installation typically)
-                        if ('periodicSync' in reg) {
-                            reg.periodicSync.register('hourly-location-punch', {
-                                minInterval: 3600000 // 1 hour
-                            }).catch(err => {
-                                // Silent catch for browsers/environments that don't support periodic sync
-                            });
-                        }
-                    })
-                    .catch(err => console.warn('SW registration failed:', err));
-
-                navigator.serviceWorker.addEventListener('message', event => {
-                    if (event.data && event.data.type === 'REQUEST_LOCATION_PUNCH') {
-                        console.log('Location punch requested by Service Worker');
-                        performPunch();
-                    }
-                });
-            }
+            // Service Worker messaging handled by BackgroundLocationTracker
         })();
     </script>
     {% endif %}

@@ -72,15 +72,14 @@ async function startBackgroundTracking(config) {
     scheduleNextLocationCapture();
 
     // Register periodic background sync if supported
-    if ('serviceWorker' in navigator && 'periodicSync' in window.ServiceWorkerRegistration.prototype) {
+    if ('periodicSync' in self.registration) {
         try {
-            const registration = await navigator.serviceWorker.ready;
-            await registration.periodicSync.register('hourly-location-track', {
+            await self.registration.periodicSync.register('hourly-location-track', {
                 minInterval: 60 * 60 * 1000, // 1 hour
             });
             console.log('Periodic background sync registered');
         } catch (error) {
-            console.log('Periodic background sync not supported:', error);
+            console.log('Periodic background sync registration failed:', error);
         }
     }
 }
