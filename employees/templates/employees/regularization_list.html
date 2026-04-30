@@ -681,7 +681,10 @@
                                 </div>
                             </td>
                             <td>
-                                <div class="reason-text" title="{{ req.reason }}">{{ req.reason }}</div>
+                                <div class="reason-text" title="{{ req.reason }}">
+                                    <span class="badge bg-secondary mb-1">{{ req.get_change_type_display }}</span><br>
+                                    {{ req.reason }}
+                                </div>
                             </td>
                             <td>
                                 {% if req.status == 'APPROVED' %}
@@ -789,6 +792,11 @@
                             {% endif %}
                         </div>
                     </div>
+                </div>
+
+                <div class="card-field">
+                    <span class="card-field-label">Type</span>
+                    <div class="card-field-value"><span class="badge bg-secondary">{{ req.get_change_type_display }}</span></div>
                 </div>
 
                 <div class="card-field">

@@ -699,7 +699,7 @@
                                 <th>Action</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="employees-status-list">
                             {% for emp in employees_list %}
                             <tr>
                                 <td>
@@ -1076,14 +1076,23 @@
                         }
                     }
 
+                    // Update Employee List/Status Table if exists
+                    const newEmpList = doc.getElementById('employees-status-list');
+                    const oldEmpList = document.getElementById('employees-status-list');
+                    if (newEmpList && oldEmpList) {
+                        if (newEmpList.innerHTML !== oldEmpList.innerHTML) {
+                            oldEmpList.innerHTML = newEmpList.innerHTML;
+                        }
+                    }
+
                     // Update Web Activity
                     const recentLog = doc.getElementById('recent-activity-log');
                     const oldRecentLog = document.getElementById('recent-activity-log');
                     if (recentLog && oldRecentLog) oldRecentLog.innerHTML = recentLog.innerHTML;
 
                     // Update Top Apps if possible
-                    const newApps = doc.querySelector('.top-app-item')?.parentElement;
-                    const oldApps = document.querySelector('.top-app-item')?.parentElement;
+                    const newApps = doc.querySelector('.app-list-container');
+                    const oldApps = document.querySelector('.app-list-container');
                     if (oldApps && newApps) oldApps.innerHTML = newApps.innerHTML;
 
                     // Update System Events
@@ -1091,7 +1100,8 @@
                     const oldEvents = document.getElementById('system-events-log');
                     if (newEvents && oldEvents) oldEvents.innerHTML = newEvents.innerHTML;
                 });
-        }, 30000);
+        }, 15000); // Increased frequency to 15s for better "Real-time" feel
+
         {% endif %}
     </script>
 

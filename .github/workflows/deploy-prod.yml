@@ -1,0 +1,198 @@
+name: Deploy Backend to Production
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prod-backend
+  cancel-in-progress: false
+
+jobs:
+  # Pre-deployment validation job
+  validate-migrations:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv for fast dependency installation
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install system dependencies for pycairo
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcairo2-dev pkg-config
+
+      - name: Install dependencies
+        run: |
+          uv pip install --system -e . --no-cache
+
+      - name: Check models are in sync with migrations
+        env:
+          SECRET_KEY: 'temp-key-for-migration-check'
+          DEBUG: 'False'
+          DB_ENGINE: 'django.db.backends.sqlite3'
+          DB_NAME: ':memory:'
+          DB_USER: ''
+          DB_PASSWORD: ''
+          DB_HOST: ''
+          DB_PORT: ''
+          ALLOWED_HOSTS: 'localhost'
+        run: |
+          echo "🔍 Checking if models are in sync with migrations..."
+          if python manage.py makemigrations --check --dry-run 2>&1; then
+            echo "✅ All models are in sync with migrations"
+          else
+            echo "❌ ERROR: Models are out of sync with migrations!"
+            python manage.py makemigrations --dry-run 2>&1 || true
+            exit 1
+          fi
+
+  deploy-production:
+    needs: validate-migrations
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          buildkitd-flags: --debug
+          driver-opts: |
+            network=host
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=prod-
+
+      - name: Build and push Docker image to GHCR
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+      - name: Check disk space on production server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USERNAME }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          port: ${{ secrets.PROD_SSH_PORT }}
+          command_timeout: 2m
+          script: |
+            AVAILABLE=$(df / | tail -1 | awk '{print $4}')
+            AVAILABLE_GB=$(echo "scale=2; $AVAILABLE / 1048576" | bc)
+            echo "💾 Available disk space: ${AVAILABLE_GB}GB"
+            if [ "$AVAILABLE" -lt 2097152 ]; then
+              echo "❌ ERROR: Less than 2GB free space!"
+              exit 1
+            fi
+
+      - name: Aggressive Disk Space Cleanup
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USERNAME }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          port: ${{ secrets.PROD_SSH_PORT }}
+          command_timeout: 15m
+          script: |
+            set -e
+            echo "🚨 Starting AGGRESSIVE cleanup on production..."
+            docker system prune -a -f
+            docker builder prune -a -f
+            BACKUP_ROOT="${{ secrets.PROD_BACKUP_PATH }}"
+            if [ -d "$BACKUP_ROOT" ]; then
+              find "$BACKUP_ROOT" -name "backup-*" -type d -mtime +3 -exec rm -rf {} +
+            fi
+            sudo journalctl --vacuum-time=1d || true
+            df -h /
+
+      - name: Create deployment config files
+        run: |
+          mkdir -p /tmp/deployment
+          cp docker-compose.yml /tmp/deployment/
+          cp nginx.conf /tmp/deployment/
+          cat > /tmp/deployment/.env << 'EOF'
+          DEBUG=${{ secrets.PROD_DEBUG }}
+          SECRET_KEY=${{ secrets.PROD_SECRET_KEY }}
+          APP_PORT=${{ secrets.PROD_APP_PORT }}
+          DB_ENGINE=${{ secrets.PROD_DB_ENGINE }}
+          DB_NAME=${{ secrets.PROD_DB_NAME }}
+          DB_USER=${{ secrets.PROD_DB_USER }}
+          DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}
+          DB_HOST=${{ secrets.PROD_DB_HOST }}
+          DB_PORT=${{ secrets.PROD_DB_PORT }}
+          ALLOWED_HOSTS=${{ secrets.PROD_ALLOWED_HOSTS }}
+          CSRF_TRUSTED_ORIGINS=${{ secrets.PROD_CSRF_TRUSTED_ORIGINS }}
+          CORS_ALLOW_ALL_ORIGINS=${{ secrets.PROD_CORS_ALLOW_ALL_ORIGINS }}
+          EMAIL_HOST=${{ secrets.PROD_EMAIL_HOST }}
+          EMAIL_PORT=${{ secrets.PROD_EMAIL_PORT }}
+          EMAIL_USE_TLS=${{ secrets.PROD_EMAIL_USE_TLS }}
+          EMAIL_HOST_USER=${{ secrets.PROD_EMAIL_HOST_USER }}
+          EMAIL_HOST_PASSWORD=${{ secrets.PROD_EMAIL_HOST_PASSWORD }}
+          DEFAULT_FROM_EMAIL=${{ secrets.PROD_DEFAULT_FROM_EMAIL }}
+          POSTHOG_API_KEY=${{ secrets.PROD_POSTHOG_API_KEY }}
+          POSTHOG_HOST=${{ secrets.PROD_POSTHOG_HOST }}
+          POSTHOG_ENABLED=${{ secrets.PROD_POSTHOG_ENABLED }}
+          EOF
+          cd /tmp/deployment
+          tar -czf ../backend-prod-config.tar.gz .
+          mv ../backend-prod-config.tar.gz "${{ github.workspace }}/backend-prod-config.tar.gz"
+
+      - name: Deploy to production server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USERNAME }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          port: ${{ secrets.PROD_SSH_PORT }}
+          command_timeout: 30m
+          script: |
+            set -e
+            DEPLOY_DIR="/home/${{ secrets.PROD_SSH_USERNAME }}/hrms-prod"
+            mkdir -p $DEPLOY_DIR
+            cd $DEPLOY_DIR
+
+            # Stop services
+            docker compose down || true
+
+            # Pull latest image
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            docker compose pull
+
+            # Start services
+            docker compose up -d
+
+            # Final check
+            docker compose ps

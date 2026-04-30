@@ -114,7 +114,7 @@ class ActivityIngestView(views.APIView):
             event_activities = data.get("system_events", [])
 
             # 2. Process Activities (with individual fallback for better reliability)
-            def safe_create(model, records, label):
+            def safe_create(model, records, label, device_obj):
                 if not records:
                     return 0
                 successful = 0
@@ -123,6 +123,10 @@ class ActivityIngestView(views.APIView):
                     model.objects.bulk_create(records)
                     successful = len(records)
                 except Exception as ex:
+                    # Capture the error on the device so Admin can see it
+                    device_obj.last_sync_error = f"{label} ERROR: {str(ex)[:300]}"
+                    device_obj.save(update_fields=["last_sync_error"])
+
                     logger.error(f"Bulk create for {label} failed: {str(ex)}. Trying individual inserts...")
                     for rec in records:
                         try:
@@ -138,21 +142,21 @@ class ActivityIngestView(views.APIView):
                 d["end_time"] = make_aware_if_naive(d.get("end_time"))
                 app_list.append(AppActivity(employee=employee, session=session, **d))
 
-            safe_create(AppActivity, app_list, "AppActivity")
+            safe_create(AppActivity, app_list, "AppActivity", device)
 
             browser_list = []
             for d in browser_activities[:100]:
                 d["timestamp"] = make_aware_if_naive(d.get("timestamp"))
                 browser_list.append(BrowserActivity(employee=employee, session=session, **d))
 
-            safe_create(BrowserActivity, browser_list, "BrowserActivity")
+            safe_create(BrowserActivity, browser_list, "BrowserActivity", device)
 
             event_list = []
             for d in event_activities[:50]:
                 d["timestamp"] = make_aware_if_naive(d.get("timestamp"))
                 event_list.append(SystemEvent(employee=employee, **d))
 
-            safe_create(SystemEvent, event_list, "SystemEvent")
+            safe_create(SystemEvent, event_list, "SystemEvent", device)
 
             # 3. Process Screenshots (TeamLogger style)
             screenshots = data.get("screenshots", [])
@@ -269,6 +273,22 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
             elif is_manager:
                 # Subordinates where manager is the current user
                 employee = get_object_or_404(Employee, id=target_id, manager=self.request.user)
+        else:
+            # Smart default to most recently tracking employee for Admins
+            if is_admin:
+                recent_dev = (
+                    EmployeeDevice.objects.filter(employee__company=user_employee.company)
+                    .order_by("-last_seen")
+                    .first()
+                )
+                if recent_dev:
+                    employee = recent_dev.employee
+            elif is_manager:
+                recent_dev = (
+                    EmployeeDevice.objects.filter(employee__manager=self.request.user).order_by("-last_seen").first()
+                )
+                if recent_dev:
+                    employee = recent_dev.employee
 
         # Date Filtering for the dashboard (Timezone Proof)
         selected_date_str = self.request.GET.get("date")
@@ -520,6 +540,22 @@ class BrowserActivityDetailView(LoginRequiredMixin, TemplateView):
                 employee = get_object_or_404(Employee, id=target_id, company=user_employee.company)
             elif is_manager:
                 employee = get_object_or_404(Employee, id=target_id, manager=self.request.user)
+        else:
+            # Smart default to most recently tracking employee for Admins
+            if is_admin:
+                recent_dev = (
+                    EmployeeDevice.objects.filter(employee__company=user_employee.company)
+                    .order_by("-last_seen")
+                    .first()
+                )
+                if recent_dev:
+                    employee = recent_dev.employee
+            elif is_manager:
+                recent_dev = (
+                    EmployeeDevice.objects.filter(employee__manager=self.request.user).order_by("-last_seen").first()
+                )
+                if recent_dev:
+                    employee = recent_dev.employee
 
         # Date Filter (Timezone Proof Range)
         date_str = self.request.GET.get("date")
@@ -579,6 +615,22 @@ class AppActivityDetailView(LoginRequiredMixin, TemplateView):
                 employee = get_object_or_404(Employee, id=target_id, company=user_employee.company)
             elif is_manager:
                 employee = get_object_or_404(Employee, id=target_id, manager=self.request.user)
+        else:
+            # Smart default to most recently tracking employee for Admins
+            if is_admin:
+                recent_dev = (
+                    EmployeeDevice.objects.filter(employee__company=user_employee.company)
+                    .order_by("-last_seen")
+                    .first()
+                )
+                if recent_dev:
+                    employee = recent_dev.employee
+            elif is_manager:
+                recent_dev = (
+                    EmployeeDevice.objects.filter(employee__manager=self.request.user).order_by("-last_seen").first()
+                )
+                if recent_dev:
+                    employee = recent_dev.employee
 
         # ── Date Filter (Timezone Proof Range) ────────────────────
         date_str = self.request.GET.get("date")
@@ -703,11 +755,12 @@ def download_agent(request):
     with open(agent_path, encoding="utf-8") as f:
         content = f.read()
 
-    # Pre-fill data
-    # Use query param as fallback for very restrictive proxies
-    server_url = request.build_absolute_uri("/activity-tracking/api/sync/") + f"?token={device.token}"
+    # 1. Use the right protocol (proxied production often misses this without SECURE_PROXY_SSL_HEADER)
+    scheme = "https" if request.is_secure() or request.headers.get("X-Forwarded-Proto") == "https" else request.scheme
+    base_sync_url = f"{scheme}://{request.get_host()}/activity-tracking/api/sync/"
+
     content = content.replace(
-        'SERVER_URL = "http://your-hrms-domain.com/activity-tracking/api/sync/"', f'SERVER_URL = "{server_url}"'
+        'SERVER_URL = "http://your-hrms-domain.com/activity-tracking/api/sync/"', f'SERVER_URL = "{base_sync_url}"'
     )
     content = content.replace('API_TOKEN = ""', f'API_TOKEN = "{device.token}"')
 
@@ -758,7 +811,7 @@ def download_agent(request):
             )
 
             echo Step 2: Creating personalized config...
-            echo {{"server_url": "{server_url}", "api_token": "{device.token}"}} > "%CONFIG_FILE%"
+            echo {{"server_url": "{base_sync_url}", "api_token": "{device.token}"}} > "%CONFIG_FILE%"
 
             echo Step 3: Registering for system startup...
             reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /v "%APP_NAME%" /t REG_SZ /d "\"%TRACKER_EXE%\"" /f >nul

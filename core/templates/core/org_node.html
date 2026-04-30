@@ -1,34 +1,41 @@
 <li>
     <div class="node-card">
-        <div class="node-avatar">
-            {% if node.employee and node.employee.profile_picture %}
-            <img src="{{ node.employee.profile_picture.url }}" alt="Profile">
-            {% else %}
-            <i class="fas fa-user"></i>
-            {% endif %}
-        </div>
-        <div class="node-name">
-            {% if node.employee %}
-            {{ node.employee.user.get_full_name }}
-            {% else %}
-            {{ node.user.get_full_name }}
-            {% endif %}
-        </div>
-        <div class="node-role">
-            {% if node.employee %}
-            {{ node.employee.designation }}
-            {% elif node.is_superadmin %}
-            Super Admin
-            {% else %}
-            -
-            {% endif %}
-        </div>
-        <div class="node-dept">
-            {% if node.employee %}
-            {{ node.employee.department }}
-            {% else %}
-            Global
-            {% endif %}
+        <div class="d-flex flex-column align-items-center">
+            <div class="node-avatar-container mb-3">
+                {% if node.employee and node.employee.profile_picture %}
+                <img src="{{ node.employee.profile_picture.url }}" alt="Profile" class="node-avatar">
+                {% else %}
+                <div class="node-avatar d-flex align-items-center justify-content-center bg-light">
+                    <i class="fas fa-user text-muted" style="font-size: 1.5rem;"></i>
+                </div>
+                {% endif %}
+            </div>
+
+            <h5 class="node-name text-center">
+                {% if node.employee %}
+                {{ node.employee.user.get_full_name }}
+                {% else %}
+                {{ node.user.get_full_name }}
+                {% endif %}
+            </h5>
+
+            <div class="node-role text-center">
+                {% if node.employee %}
+                {{ node.employee.designation }}
+                {% elif node.is_superadmin %}
+                Super Admin
+                {% else %}
+                -
+                {% endif %}
+            </div>
+
+            <div class="node-dept">
+                {% if node.employee %}
+                {{ node.employee.department }}
+                {% else %}
+                Global
+                {% endif %}
+            </div>
         </div>
 
         {% if node.direct_reports %}

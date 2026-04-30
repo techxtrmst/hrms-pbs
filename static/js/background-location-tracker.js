@@ -34,15 +34,28 @@ class BackgroundLocationTracker {
 
         try {
             // Register service worker from root to allow root scope
+            console.log('Registering Service Worker...');
             const registration = await navigator.serviceWorker.register('/sw.js', {
                 scope: '/'
             });
 
-            console.log('Service Worker registered successfully');
-
-            // Wait for service worker to be ready
+            // Wait for service worker to be ready AND active
             await navigator.serviceWorker.ready;
+
+            // Check if active, if not wait a bit
+            if (!registration.active) {
+                console.log('Waiting for Service Worker to become active...');
+                await new Promise(resolve => {
+                    const timer = setTimeout(resolve, 2000);
+                    registration.addEventListener('updatefound', () => {
+                        clearTimeout(timer);
+                        resolve();
+                    });
+                });
+            }
+
             this.serviceWorker = registration;
+            console.log('Service Worker initialized and ready');
 
             // Request notification permission
             await this.requestNotificationPermission();
