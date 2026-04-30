@@ -660,6 +660,33 @@ jobs:
             echo ""
             echo "✅ Deployment and cleanup completed successfully!"
 
+      - name: Verify Static Files & Tracking
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USERNAME }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: ${{ secrets.STAGING_SSH_PORT }}
+          script: |
+            set -e
+            cd "${{ secrets.STAGING_DEPLOY_PATH }}"
+
+            echo "📁 Running explicit static file collection..."
+            docker compose exec -T backend python manage.py collectstatic --noinput
+
+            echo "🔍 Verifying Tracking Configuration..."
+            # Check if PostHog is enabled in the running container
+            PH_ENABLED=$(docker compose exec -T backend python -c "from django.conf import settings; print(settings.POSTHOG_ENABLED)")
+            echo "📊 Tracking Enabled (POSTHOG_ENABLED): $PH_ENABLED"
+
+            if [ "$PH_ENABLED" = "False" ]; then
+              echo "⚠️ WARNING: Tracking is currently DISABLED in your settings."
+            else
+              echo "✅ Tracking is ENABLED."
+            fi
+
+            echo "🚀 All static files are synchronized and tracking is verified."
+
       - name: Rollback on failure
         if: failure()
         uses: appleboy/ssh-action@v1.2.0
