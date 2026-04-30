@@ -133,7 +133,7 @@ async function performHourlyLocationTrack() {
 
     try {
         // Check if still clocked in
-        const statusResponse = await fetch(`${API_BASE}location-tracking-status/`, {
+        const statusResponse = await fetch(`${API_BASE}location/status/`, {
             method: 'GET',
             credentials: 'include'
         });
@@ -209,7 +209,7 @@ async function submitLocationData(position) {
     };
 
     try {
-        const response = await fetch(`${API_BASE}submit-hourly-location/`, {
+        const response = await fetch(`${API_BASE}location/hourly/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

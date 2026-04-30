@@ -487,11 +487,23 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
             employees = Employee.objects.filter(manager=self.request.user).order_by("user__first_name")
 
         if employees.exists():
-            # Enrich employees with tracking status
+            # Enrich employees with tracking status and counts
             now = timezone.now()
+            from employees.models import LocationLog
+
             for emp in employees:
-                # Use precise employee ID for status check (no fuzzy email prefix match)
+                # Use precise employee ID for status check
                 latest_pulse = ActivityPulse.objects.filter(employee_id=emp.id).order_by("-timestamp").first()
+
+                # Calculate counts for today
+                emp.pulse_count = ActivityPulse.objects.filter(
+                    employee_id=emp.id, timestamp__range=(start_of_day, end_of_day)
+                ).count()
+
+                emp.location_count = LocationLog.objects.filter(
+                    employee_id=emp.id, timestamp__range=(start_of_day, end_of_day)
+                ).count()
+
                 if latest_pulse:
                     is_active = (now - latest_pulse.timestamp) < timedelta(minutes=10)
                     emp.tracking_status = "Online" if is_active else "Offline"
