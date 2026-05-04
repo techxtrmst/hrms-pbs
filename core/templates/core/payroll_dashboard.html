@@ -630,8 +630,18 @@
                                     {{ data.employee.user.first_name|first }}{{ data.employee.user.last_name|first }}
                                 </div>
                                 <div>
-                                    <p class="emp-name">{{ data.employee.user.get_full_name }}</p>
-                                    <span class="emp-id">{{ data.employee.badge_id|default:"N/A" }}</span>
+                                    <p class="emp-name">
+                                        {{ data.employee.user.get_full_name }}
+                                        {% if data.employee.employment_status != 'ACTIVE' %}
+                                        <span class="badge bg-danger-soft text-danger ms-1" style="font-size: 10px; border: 1px solid rgba(255, 100, 124, 0.2);">{{ data.employee.employment_status }}</span>
+                                        {% endif %}
+                                    </p>
+                                    <span class="emp-id">
+                                        {{ data.employee.badge_id|default:"N/A" }}
+                                        {% if data.employee.exit_date %}
+                                        • Exited: {{ data.employee.exit_date|date:"d M Y" }}
+                                        {% endif %}
+                                    </span>
                                 </div>
                             </div>
                         </td>
@@ -1024,10 +1034,11 @@
                 div.innerHTML = `
                     <div class="search-item-avatar">${initials.toUpperCase()}</div>
                     <div class="search-item-details">
-                        <div class="search-item-name">${emp.name}</div>
+                        <div class="search-item-name">${emp.name} ${emp.status !== 'ACTIVE' ? '<span class="badge bg-danger ms-2" style="font-size: 10px;">' + emp.status + '</span>' : ''}</div>
                         <div class="search-item-meta">
                             <span><i class="fas fa-id-badge"></i> ${emp.employee_id}</span>
                             <span><i class="fas fa-briefcase"></i> ${emp.designation}</span>
+                            ${emp.exit_date ? '<span class="text-danger fw-600"><i class="fas fa-calendar-times"></i> Exited: ' + emp.exit_date + '</span>' : ''}
                         </div>
                     </div>
                 `;
