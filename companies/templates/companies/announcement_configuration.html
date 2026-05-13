@@ -230,9 +230,10 @@
 
     .announcement-meta {
         display: flex;
-        gap: 1rem;
+        gap: 0.75rem;
         flex-wrap: wrap;
-        margin-bottom: 1rem;
+        margin-top: 0.5rem;
+        margin-bottom: 1.25rem;
     }
 
     .meta-badge {
@@ -1051,10 +1052,15 @@
             {% for announcement in announcements %}
             <div class="announcement-item">
                 <div class="announcement-header">
-                    <h3 class="announcement-title">{{ announcement.title }}</h3>
+                    <h3 class="announcement-title mb-0">{{ announcement.title }}</h3>
                 </div>
 
                 <div class="announcement-meta">
+                    <span class="announcement-date" style="margin-right: 0.5rem;">
+                        <i class="far fa-calendar-alt"></i>
+                        {{ announcement.created_at|date:"M d, Y" }}
+                    </span>
+
                     {% if announcement.location %}
                     <span class="meta-badge location">
                         <i class="fas fa-map-marker-alt"></i>
@@ -1063,7 +1069,7 @@
                     {% else %}
                     <span class="meta-badge company-wide">
                         <i class="fas fa-globe"></i>
-                        Company-wide
+                        Global
                     </span>
                     {% endif %}
 
@@ -1091,9 +1097,9 @@
                 </div>
 
                 <div class="announcement-footer">
-                    <span class="announcement-date">
-                        <i class="fas fa-calendar"></i>
-                        Created: {{ announcement.created_at|date:"M d, Y" }}
+                    <span class="text-muted small">
+                        <i class="far fa-clock"></i>
+                        Last Updated: {{ announcement.updated_at|date:"M d, Y" }}
                     </span>
 
                     <div class="announcement-actions">
