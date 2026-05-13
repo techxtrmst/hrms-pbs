@@ -414,15 +414,20 @@ def main():
             idle_seconds = get_idle_time()
             is_idle = idle_seconds > 60
 
-            # 1. Active window
-            app_name, title, search_query, domain = get_active_window_info()
+            # 1. Active window (Fixed: returns only 2 values)
+            app_name, title = get_active_window_info()
+
+            # 2. Extract URL and Search details for Browsers
+            url = get_browser_url(app_name)
+            search_query, domain = parse_search_query(title, app_name, url)
+
             start_time = datetime.utcnow().isoformat() + "Z"
 
-            # 2. USB device changes
+            # 3. USB device changes
             usb_events, current_usb_ids = track_usb_devices(current_usb_ids)
             batch_events.extend(usb_events)
 
-            # 3. File transfers on removable drives
+            # 4. File transfers on removable drives
             file_events, monitored_files = track_file_transfers(monitored_files)
             batch_events.extend(file_events)
 
