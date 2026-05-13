@@ -966,20 +966,20 @@
                             <div class="col-6">
                                 <div class="mini-metric" style="padding: 0.4rem; min-width: auto; align-items: flex-start;">
                                     <span class="mini-metric-label" style="font-size: 0.55rem;">Work Time</span>
-                                    <span class="mini-metric-value text-success" style="font-size: 0.8rem;">{{ emp.pulse_count|default:0|add:"2" }}h <small class="text-muted fw-normal" style="font-size: 0.6rem;">eff.</small></span>
+                                    <span class="mini-metric-value text-success" style="font-size: 0.8rem;">{{ emp.work_hours|default:"0.0" }}h <small class="text-muted fw-normal" style="font-size: 0.6rem;">eff.</small></span>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="mini-metric" style="padding: 0.4rem; min-width: auto; align-items: flex-start;">
                                     <span class="mini-metric-label" style="font-size: 0.55rem;">Away/Idle</span>
-                                    <span class="mini-metric-value text-secondary" style="font-size: 0.8rem;">0.5h <small class="text-muted fw-normal" style="font-size: 0.6rem;">idle</small></span>
+                                    <span class="mini-metric-value text-secondary" style="font-size: 0.8rem;">{{ emp.idle_hours|default:"0.0" }}h <small class="text-muted fw-normal" style="font-size: 0.6rem;">idle</small></span>
                                 </div>
                             </div>
                         </div>
 
                         <div class="mini-bar-wrapper mb-3">
-                            <div class="mini-bar-productive" style="width: 85%"></div>
-                            <div class="mini-bar-idle" style="width: 15%"></div>
+                            <div class="mini-bar-productive" style="width: {{ emp.prod_percent|default:85 }}%"></div>
+                            <div class="mini-bar-idle" style="width: {{ emp.idle_percent|default:15 }}%"></div>
                         </div>
 
                         <div class="d-grid">

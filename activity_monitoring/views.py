@@ -581,6 +581,20 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
                     employee_id=emp.id, timestamp__range=(start_of_day, end_of_day)
                 ).count()
 
+                # Calculate real hours from pulses (1 pulse ≈ 15 seconds)
+                emp.work_hours = round((emp.pulse_count * 15) / 3600, 1)
+
+                # Calculate idle hours from pulses
+                idle_pulse_count = ActivityPulse.objects.filter(
+                    employee_id=emp.id, timestamp__range=(start_of_day, end_of_day), is_idle=True
+                ).count()
+                emp.idle_hours = round((idle_pulse_count * 15) / 3600, 1)
+
+                # Calculate productivity percentage for the bar
+                total_active = emp.work_hours + emp.idle_hours
+                emp.prod_percent = round((emp.work_hours / total_active * 100), 0) if total_active > 0 else 0
+                emp.idle_percent = 100 - emp.prod_percent if total_active > 0 else 0
+
                 if latest_pulse:
                     is_active = (now - latest_pulse.timestamp) < timedelta(minutes=10)
                     emp.tracking_status = "Online" if is_active else "Offline"
