@@ -1787,6 +1787,47 @@ def my_leaves(request):
 
 
 @login_required
+def my_leave_history(request):
+    """Employee view to see their own full leave history with filters."""
+    try:
+        employee = request.user.employee_profile
+    except Exception:
+        messages.error(request, "Employee profile not found.")
+        return redirect("personal_home")
+
+    leave_type_filter = request.GET.get("leave_type", "")
+    status_filter = request.GET.get("status", "")
+    year_filter = request.GET.get("year", "")
+
+    qs = LeaveRequest.objects.filter(employee=employee).order_by("-created_at")
+
+    if leave_type_filter:
+        qs = qs.filter(leave_type=leave_type_filter)
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+    if year_filter:
+        qs = qs.filter(start_date__year=int(year_filter))
+
+    years = LeaveRequest.objects.filter(employee=employee).dates("start_date", "year").distinct()
+
+    balance, _ = LeaveBalance.objects.get_or_create(employee=employee)
+
+    return render(
+        request,
+        "core/my_leave_history.html",
+        {
+            "title": "My Leave History",
+            "leave_requests": qs,
+            "years": years,
+            "balance": balance,
+            "leave_type_filter": leave_type_filter,
+            "status_filter": status_filter,
+            "year_filter": year_filter,
+        },
+    )
+
+
+@login_required
 def cancel_leave_request(request, pk):
     from django.shortcuts import get_object_or_404
 

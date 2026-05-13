@@ -336,6 +336,8 @@ def add_employee_step3(request):
             # Create Employee
             from datetime import datetime
 
+            # Finance
+            annual_ctc = finance_data.get("annual_ctc")
             employee = Employee.objects.create(
                 user=user,
                 company=company,
@@ -367,7 +369,31 @@ def add_employee_step3(request):
                 uan=finance_data.get("uan"),
                 pan_number=finance_data.get("pan_number"),
                 pf_enabled=finance_data.get("pf_enabled", False),
-                annual_ctc=finance_data.get("annual_ctc"),
+                annual_ctc=annual_ctc,
+            )
+
+            # Create CTC Change/Initial Entry in WorkHistory
+            from .models import WorkHistory
+
+            ctc_reason = request.POST.get("ctc_change_reason")
+            if annual_ctc:
+                WorkHistory.objects.create(
+                    employee=employee,
+                    event_type="CTC",
+                    title="Salary Details Set",
+                    description=f"Annual CTC set to {annual_ctc}",
+                    reason=ctc_reason or "Initial setup during onboarding",
+                    new_value=str(annual_ctc),
+                    date=employee.date_of_joining or datetime.now().date(),
+                )
+
+            # Create Joining Entry in WorkHistory
+            WorkHistory.objects.create(
+                employee=employee,
+                event_type="JOINING",
+                title="Employee Joined",
+                description=f"Joined as {employee.designation} in {employee.department}",
+                date=employee.date_of_joining or datetime.now().date(),
             )
 
             # Create Emergency Contacts

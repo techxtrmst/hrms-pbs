@@ -14,6 +14,7 @@ urlpatterns = [
     path("me/home/", views.personal_home, name="personal_home"),
     path("me/attendance/", views.my_attendance_logs, name="my_attendance_logs"),
     path("me/leaves/", views.my_leaves, name="my_leaves"),
+    path("me/leaves/history/", views.my_leave_history, name="my_leave_history"),
     path(
         "me/leaves/cancel/<int:pk>/",
         views.cancel_leave_request,
