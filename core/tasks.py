@@ -218,6 +218,101 @@ def cleanup_old_task_results(self, days=30):
 
 
 @shared_task(bind=True, ignore_result=False)
+def cleanup_old_activity_data(self, days=90):
+    """
+    Delete old high-volume activity monitoring and location tracking records
+    to prevent database bloat.
+
+    Cleans up:
+      - ActivityPulse         (heartbeat records)
+      - AppActivity           (per-app usage records)
+      - BrowserActivity       (browser URL records)
+      - ActivitySession       (grouped sessions)
+      - SystemEvent           (USB/network events)
+      - ActivityScreenshot    (screenshot files + DB rows)
+      - LocationLog           (GPS location records)
+
+    Args:
+        days: Retain records newer than this many days (default: 90)
+
+    Returns:
+        dict: Counts of deleted records per model
+    """
+    from activity_monitoring.models import (
+        ActivityPulse,
+        ActivityScreenshot,
+        ActivitySession,
+        AppActivity,
+        BrowserActivity,
+        SystemEvent,
+    )
+    from employees.models import LocationLog
+
+    cutoff = timezone.now() - timedelta(days=days)
+    results = {}
+
+    # --- ActivityPulse ---
+    count, _ = ActivityPulse.objects.filter(timestamp__lt=cutoff).delete()
+    results["ActivityPulse"] = count
+    logger.info(f"[cleanup] Deleted {count} ActivityPulse records older than {days} days")
+
+    # --- AppActivity ---
+    count, _ = AppActivity.objects.filter(start_time__lt=cutoff).delete()
+    results["AppActivity"] = count
+    logger.info(f"[cleanup] Deleted {count} AppActivity records older than {days} days")
+
+    # --- BrowserActivity ---
+    count, _ = BrowserActivity.objects.filter(timestamp__lt=cutoff).delete()
+    results["BrowserActivity"] = count
+    logger.info(f"[cleanup] Deleted {count} BrowserActivity records older than {days} days")
+
+    # --- ActivityScreenshot (delete files too) ---
+    old_screenshots = ActivityScreenshot.objects.filter(timestamp__lt=cutoff)
+    screenshot_count = 0
+    for screenshot in old_screenshots.iterator(chunk_size=500):
+        try:
+            if screenshot.image:
+                screenshot.image.delete(save=False)
+        except Exception as e:
+            logger.warning(f"[cleanup] Could not delete screenshot file: {e}")
+        screenshot_count += 1
+    old_screenshots.delete()
+    results["ActivityScreenshot"] = screenshot_count
+    logger.info(f"[cleanup] Deleted {screenshot_count} ActivityScreenshot records older than {days} days")
+
+    # --- ActivitySession (only sessions with no remaining child records) ---
+    count, _ = ActivitySession.objects.filter(
+        start_time__lt=cutoff,
+        apps__isnull=True,
+        browser_logs__isnull=True,
+        screenshots__isnull=True,
+    ).delete()
+    results["ActivitySession"] = count
+    logger.info(f"[cleanup] Deleted {count} empty ActivitySession records older than {days} days")
+
+    # --- SystemEvent ---
+    count, _ = SystemEvent.objects.filter(timestamp__lt=cutoff).delete()
+    results["SystemEvent"] = count
+    logger.info(f"[cleanup] Deleted {count} SystemEvent records older than {days} days")
+
+    # --- LocationLog ---
+    count, _ = LocationLog.objects.filter(timestamp__lt=cutoff).delete()
+    results["LocationLog"] = count
+    logger.info(f"[cleanup] Deleted {count} LocationLog records older than {days} days")
+
+    total = sum(results.values())
+    logger.info(f"[cleanup] Total records deleted: {total}")
+
+    return {
+        "task": "cleanup_old_activity_data",
+        "cutoff_days": days,
+        "cutoff_date": str(cutoff.date()),
+        "deleted": results,
+        "total_deleted": total,
+    }
+
+
+@shared_task(bind=True, ignore_result=False)
 def run_monthly_leave_accrual(self):
     """
     Run the automated monthly leave accrual management command.

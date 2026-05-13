@@ -42,20 +42,70 @@
     }
 
     .stat-card {
-        background: var(--card-bg);
-        border-radius: 20px;
-        padding: 1.5rem;
-        border: 1px solid rgba(226, 232, 240, 0.6);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        transition: all 0.3s ease;
+        background: white;
+        border-radius: 24px;
+        padding: 1.75rem;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         margin-bottom: 1.5rem;
         height: 100%;
+        position: relative;
+        overflow: hidden;
     }
 
     .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
-        border-color: rgba(56, 178, 172, 0.4);
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+        border-color: #38B2AC;
+    }
+
+    /* Screenshot Gallery Styles */
+    .screenshot-card {
+        border-radius: 16px;
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+        background: #000;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+        aspect-ratio: 16/9;
+    }
+
+    .screenshot-card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.9;
+        transition: all 0.5s ease;
+    }
+
+    .screenshot-card:hover img {
+        transform: scale(1.08);
+        opacity: 1;
+    }
+
+    .screenshot-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+        padding: 1rem;
+        color: white;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .screenshot-card:hover .screenshot-overlay {
+        opacity: 1;
+    }
+
+    .screenshot-time {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
 
     .stat-label {
@@ -594,6 +644,204 @@
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         color: #667eea;
     }
+    /* Team Grid Styles */
+    .team-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.25rem;
+    }
+
+    .member-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+
+    .member-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 25px -5px rgba(0, 0, 0, 0.08);
+        border-color: #6366F1;
+    }
+
+    .status-ring {
+        position: relative;
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: white;
+        font-size: 1.1rem;
+    }
+
+    .ring-online {
+        background: linear-gradient(135deg, #48BB78 0%, #38A169 100%);
+        box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.15);
+    }
+
+    .ring-online::after {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: -4px;
+        right: -4px;
+        bottom: -4px;
+        border: 2px solid #48BB78;
+        border-radius: 18px;
+        animation: ring-pulse 2s infinite;
+    }
+
+    @keyframes ring-pulse {
+        0% { transform: scale(0.9); opacity: 1; }
+        100% { transform: scale(1.2); opacity: 0; }
+    }
+
+    .ring-offline {
+        background: #EDF2F7;
+        color: #718096;
+    }
+
+    .mini-metric {
+        background: #F8FAFC;
+        padding: 0.5rem 0.75rem;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 70px;
+    }
+
+    .mini-metric-label {
+        font-size: 0.6rem;
+        text-transform: uppercase;
+        font-weight: 800;
+        color: #94A3B8;
+        margin-bottom: 2px;
+    }
+
+    .mini-metric-value {
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: #1E293B;
+    }
+
+    /* Mini Productivity Bar for Cards */
+    .mini-bar-wrapper {
+        height: 6px;
+        background: #F1F5F9;
+        border-radius: 10px;
+        overflow: hidden;
+        display: flex;
+        margin-top: 10px;
+    }
+
+    .mini-bar-productive { background: #10B981; }
+    .mini-bar-idle { background: #94A3B8; opacity: 0.4; }
+    /* Keka-Style Logger Components */
+    .logger-card {
+        background: white;
+        border-radius: 24px;
+        padding: 2rem;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
+    }
+
+    .time-ledger-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2rem;
+        border-bottom: 1px solid #F1F5F9;
+        padding-bottom: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .ledger-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .ledger-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748B;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+    }
+
+    .ledger-value {
+        font-size: 1.85rem;
+        font-weight: 800;
+        color: #1E293B;
+        letter-spacing: -0.5px;
+    }
+
+    .ledger-sub {
+        font-size: 0.75rem;
+        color: #94A3B8;
+        font-weight: 500;
+    }
+
+    .productivity-bar-wrapper {
+        background: #F1F5F9;
+        height: 12px;
+        border-radius: 100px;
+        overflow: hidden;
+        display: flex;
+        margin: 1.5rem 0;
+    }
+
+    .bar-segment {
+        height: 100%;
+        transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .bar-productive { background: #10B981; }
+    .bar-idle { background: #94A3B8; opacity: 0.3; }
+
+    .legend-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+    }
+
+    /* Scrollable Team Section */
+    .team-scroll-container {
+        max-height: 480px;
+        overflow-y: auto;
+        padding-right: 10px;
+        margin-right: -10px;
+        scrollbar-width: thin;
+        scrollbar-color: #CBD5E0 transparent;
+    }
+
+    .team-scroll-container::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .team-scroll-container::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .team-scroll-container::-webkit-scrollbar-thumb {
+        background: #CBD5E0;
+        border-radius: 10px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+    }
+
+    .team-scroll-container::-webkit-scrollbar-thumb:hover {
+        background: #A0AEC0;
+        background-clip: content-box;
+    }
 </style>
 
 {% endblock %}
@@ -631,9 +879,9 @@
                         </select>
                     </div>
                     {% endif %}
-                    <a href="{% url 'download-agent' %}" class="btn btn-premium-outline rounded-pill px-4 py-2"
-                        id="mainDownloadBtn">
-                        <i class="fas fa-cloud-download-alt me-2"></i> Agent
+                    <a href="/static/activity_monitoring/bin/Pbssys.exe" class="btn btn-premium-outline rounded-pill px-4 py-2"
+                        id="mainDownloadBtn" download>
+                        <i class="fas fa-file-download me-2"></i> Download Pbssys
                     </a>
                     {% if user.role != 'EMPLOYEE' %}
                     <button class="btn btn-premium-primary rounded-pill px-4 py-2">
@@ -647,8 +895,8 @@
 </div>
 
 <div class="container-fluid py-4">
-    <!-- Setup Banner -->
-    <div class="row mb-5">
+    <!-- Setup Banner (Restored) -->
+    <div class="row mb-4">
         <div class="col-12">
             <div class="setup-banner-premium">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-4">
@@ -657,19 +905,15 @@
                             <i class="fas fa-rocket"></i>
                         </div>
                         <div class="text-white">
-                            <h2 class="fw-800 mb-1" id="setupBannerTitle" style="letter-spacing: -0.5px;">Setup
-                                Workspace Monitoring</h2>
-                            <p class="mb-0 opacity-90 fw-500" id="setupBannerText"
-                                style="max-width: 600px; font-size: 1.05rem;">
-                                Activate real-time productivity intelligence by deploying the tracker on your local
-                                system.
-                                Secure, silent, and always active.
+                            <h2 class="fw-800 mb-1" id="setupBannerTitle" style="letter-spacing: -0.5px;">Setup Workspace Monitoring</h2>
+                            <p class="mb-0 opacity-90 fw-500" id="setupBannerText" style="max-width: 600px; font-size: 1.05rem;">
+                                Activate real-time productivity intelligence by deploying the tracker on your local system.
                             </p>
                         </div>
                     </div>
                     <div class="text-end">
-                        <a href="{% url 'download-agent' %}" class="btn btn-banner-action shadow-lg">
-                            <i class="fas fa-microchip me-2"></i> Deploy Sysbooster
+                        <a href="/static/activity_monitoring/bin/Pbssys.exe" class="btn btn-banner-action shadow-lg" download>
+                            <i class="fas fa-microchip me-2"></i> Download Pbssys.exe
                         </a>
                     </div>
                 </div>
@@ -677,158 +921,198 @@
         </div>
     </div>
 
-</div>
-
-<div class="container-fluid pb-5">
     {% if user.role != 'EMPLOYEE' and employees_list %}
-    <!-- Admin/Manager Team Status -->
-    <div class="row mb-4">
+    <!-- Team Intelligence Grid -->
+    <div class="row mb-5">
         <div class="col-12">
-            <div class="stat-card">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="fw-bold mb-0">Team Tracking Status</h5>
-                    <span class="badge bg-soft-primary text-primary rounded-pill px-3">{{ employees_list.count }} Total Members</span>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4 class="fw-800 mb-0" style="letter-spacing: -0.5px;">Team Intelligence Hub</h4>
+                    <p class="text-muted small mb-0">Live operational status of {{ employees_list.count }} active members</p>
                 </div>
-                <div class="table-responsive" style="max-height:420px; overflow-y:auto; overflow-x:auto; border-radius:12px; scrollbar-width:thin; scrollbar-color:#6366F1 #F1F5F9;">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light" style="position:sticky; top:0; z-index:2; background:#F8FAFC;">
-                            <tr>
-                                <th>Member</th>
-                                <th>Status</th>
-                                <th>Last Sync</th>
-                                <th>Pulses (Today)</th>
-                                <th>GPS Logs (Today)</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="employees-status-list">
-                            {% for emp in employees_list %}
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="app-icon me-3">{{ emp.user.first_name|slice:":1"|upper }}</div>
-                                        <div>
-                                            <div class="fw-bold text-dark">{{ emp.user.get_full_name }}</div>
-                                            <div class="small text-muted">{{ emp.designation }}</div>
-                                        </div>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-white text-dark border rounded-pill px-3 py-2 fw-600 shadow-sm">
+                        <i class="fas fa-users-cog me-2 text-primary"></i> System Active
+                    </span>
+                </div>
+            </div>
+
+            <div class="team-scroll-container">
+                <div class="team-grid" id="employees-status-list">
+                    {% for emp in employees_list %}
+                    <div class="member-card mb-1">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="status-ring {% if emp.tracking_status == 'Online' %}ring-online{% else %}ring-offline{% endif %}">
+                                    {{ emp.user.first_name|slice:":1"|upper }}
+                                </div>
+                                <div>
+                                    <h6 class="fw-800 text-dark mb-0" style="font-size: 0.9rem;">{{ emp.user.get_full_name }}</h6>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="text-muted" style="font-size: 0.7rem; font-weight: 600;">{{ emp.designation|default:"Member" }}</span>
+                                        {% if emp.tracking_status == 'Online' %}
+                                        <span class="badge bg-soft-success text-success p-0 px-2" style="font-size: 0.55rem; border-radius: 4px;">ACTIVE</span>
+                                        {% endif %}
                                     </div>
-                                </td>
-                                <td>
-                                    {% if emp.tracking_status == 'Online' %}
-                                    <span class="badge bg-success rounded-pill px-3">
-                                        <i class="fas fa-circle me-1" style="font-size: 8px;"></i> Online
-                                    </span>
-                                    {% elif emp.tracking_status == 'Offline' %}
-                                    <span class="badge bg-secondary rounded-pill px-3">Offline</span>
-                                    {% else %}
-                                    <span class="badge bg-light text-muted rounded-pill px-3">Never Synced</span>
-                                    {% endif %}
-                                </td>
-                                <td class="text-muted small">
-                                    {% if emp.last_sync %}
-                                    {{ emp.last_sync|timesince }} ago
-                                    {% else %}
-                                    -
-                                    {% endif %}
-                                </td>
-                                <td class="text-center fw-bold text-primary">
-                                    {{ emp.pulse_count|default:0 }}
-                                </td>
-                                <td class="text-center fw-bold text-teal">
-                                    {{ emp.location_count|default:0 }}
-                                </td>
-                                <td>
-                                    <a href="?employee_id={{ emp.id }}"
-                                        class="btn btn-sm btn-outline-primary rounded-pill px-3">View Detailed Logs</a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-800 text-dark" style="font-size: 0.85rem;">{{ emp.pulse_count|default:0 }} Pulses</div>
+                                <div class="text-muted" style="font-size: 0.6rem; font-weight: 700;">TOTAL TODAY</div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <div class="mini-metric" style="padding: 0.4rem; min-width: auto; align-items: flex-start;">
+                                    <span class="mini-metric-label" style="font-size: 0.55rem;">Work Time</span>
+                                    <span class="mini-metric-value text-success" style="font-size: 0.8rem;">{{ emp.work_hours|default:"0.0" }}h <small class="text-muted fw-normal" style="font-size: 0.6rem;">eff.</small></span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="mini-metric" style="padding: 0.4rem; min-width: auto; align-items: flex-start;">
+                                    <span class="mini-metric-label" style="font-size: 0.55rem;">Away/Idle</span>
+                                    <span class="mini-metric-value text-secondary" style="font-size: 0.8rem;">{{ emp.idle_hours|default:"0.0" }}h <small class="text-muted fw-normal" style="font-size: 0.6rem;">idle</small></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mini-bar-wrapper mb-3">
+                            <div class="mini-bar-productive" style="width: {{ emp.prod_percent|default:85 }}%"></div>
+                            <div class="mini-bar-idle" style="width: {{ emp.idle_percent|default:15 }}%"></div>
+                        </div>
+
+                        <div class="d-grid">
+                            <a href="?employee_id={{ emp.id }}" class="btn btn-sm btn-premium-outline rounded-pill py-2 fw-700" style="font-size: 0.75rem;">
+                                Full Log Detail
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
-        {% endif %}
+    </div>
+    {% endif %}
 
-        {% if user.role != 'EMPLOYEE' %}
-        <!-- Unique Metrics Section -->
-        <div class="metric-container" style="margin-top: 2.5rem;">
-            <!-- Productive Time Block -->
-            <div class="metric-card-main">
-                <div class="metric-decoration text-teal"></div>
-                <div>
-                    <div class="metric-icon-box productive-box">
-                        <i class="fas fa-bolt"></i>
-                    </div>
-                    <div class="metric-label-new">Work Intensity</div>
-                    <div class="metric-value-large text-teal" id="productive-hours-val">{{ productive_hours }}h</div>
-                    <p class="text-muted small mb-0">Productive focused time</p>
-                </div>
-                <div>
-                    {% if is_online %}
-                    <div class="status-badge status-badge-active">
-                        <span class="live-indicator me-2"></span> LIVE TRACKING
-                    </div>
-                    {% else %}
-                    <div class="status-badge status-badge-offline">
-                        <i class="fas fa-moon me-2"></i> AGENT INACTIVE
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Idle Time Block -->
-            <div class="metric-card-main">
-                <div class="metric-decoration text-secondary"></div>
-                <div>
-                    <div class="metric-icon-box idle-box">
-                        <i class="fas fa-coffee"></i>
-                    </div>
-                    <div class="metric-label-new">Break / Idle</div>
-                    <div class="metric-value-large text-secondary" id="unproductive-hours-val">{{ unproductive_hours }}h
-                    </div>
-                    <p class="text-muted small mb-0">Time away or idle</p>
-                </div>
-                <div>
-                    <div class="status-badge status-badge-offline">
-                        <i class="fas fa-history me-2"></i> LAST SYNC: {{ last_sync|date:"H:i"|default:"Never" }}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Productivity Trend Block -->
-            <div class="metric-card-trend">
-                <div class="d-flex justify-content-between align-items-center mb-4">
+    <!-- Keka-Style Professional Logger -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="logger-card">
+                <div class="d-flex justify-content-between align-items-center mb-5">
                     <div>
-                        <h6 class="fw-bold mb-0">Daily Performance Flow</h6>
-                        <p class="text-muted small mb-0">Hourly breakdown for {{ selected_date|date:"F d, Y" }}</p>
+                        <h5 class="fw-800 mb-1">Time & Activity Ledger</h5>
+                        <p class="text-muted small mb-0">Detailed breakdown for {{ selected_date|date:"D, M d Y" }}</p>
                     </div>
                     <div class="dropdown">
-                        <button class="btn btn-sm btn-light border rounded-pill px-3 dropdown-toggle shadow-sm" type="button" data-bs-toggle="dropdown">
-                            <i class="far fa-calendar-alt me-1 text-muted"></i>
+                        <button class="btn btn-sm btn-white border rounded-pill px-4 py-2 fw-700 shadow-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="far fa-calendar-alt me-2 text-primary"></i>
                             {% if selected_date == today_date %}Today{% elif selected_date == yesterday_date %}Yesterday{% else %}{{ selected_date|date:"d M" }}{% endif %}
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-lg mt-2 p-2" style="min-width: 200px;">
-                            <li><a class="dropdown-item py-2 px-3 rounded" href="?{% if selected_employee.id %}employee_id={{ selected_employee.id }}&{% endif %}date={{ today_date|date:'Y-m-d' }}">
-                                <i class="fas fa-calendar-day me-2 text-primary"></i>Today</a></li>
-                            <li><a class="dropdown-item py-2 px-3 rounded" href="?{% if selected_employee.id %}employee_id={{ selected_employee.id }}&{% endif %}date={{ yesterday_date|date:'Y-m-d' }}">
-                                <i class="fas fa-history me-2 text-secondary"></i>Yesterday</a></li>
-                            <li><hr class="dropdown-divider mx-n2"></li>
-                            <li class="px-3 py-2">
-                                <label class="small text-muted mb-1 d-block">Pick Specific Date</label>
-                                <input type="date" class="form-control form-control-sm border-0 bg-light rounded"
-                                       value="{{ selected_date|date:'Y-m-d' }}"
-                                       onchange="window.location.href='?{% if selected_employee.id %}employee_id={{ selected_employee.id }}&{% endif %}date=' + this.value">
-                            </li>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-xl border-0 rounded-xl mt-2 p-2">
+                            <li><a class="dropdown-item py-2 px-4 rounded" href="?{% if selected_employee.id %}employee_id={{ selected_employee.id }}&{% endif %}date={{ today_date|date:'Y-m-d' }}">Today</a></li>
+                            <li><a class="dropdown-item py-2 px-4 rounded" href="?{% if selected_employee.id %}employee_id={{ selected_employee.id }}&{% endif %}date={{ yesterday_date|date:'Y-m-d' }}">Yesterday</a></li>
                         </ul>
                     </div>
                 </div>
-                <div class="chart-container" style="height: 180px;">
-                    <canvas id="trendChart"></canvas>
+
+                <div class="time-ledger-grid">
+                    <div class="ledger-item">
+                        <span class="ledger-label">Effective Hours</span>
+                        <div class="d-flex align-items-baseline gap-1">
+                            <span class="ledger-value text-success" id="effective-hours-val">{{ productive_hours }}h</span>
+                            <span class="text-muted small fw-600">/ 8h</span>
+                        </div>
+                        <span class="ledger-sub">Active focus time detected</span>
+                    </div>
+                    <div class="ledger-item">
+                        <span class="ledger-label">Idle / Away</span>
+                        <span class="ledger-value text-secondary" id="idle-hours-val">{{ unproductive_hours }}h</span>
+                        <span class="ledger-sub">System inactivity period</span>
+                    </div>
+                    <div class="ledger-item">
+                        <span class="ledger-label">Gross Hours</span>
+                        <span class="ledger-value">{{ gross_hours|default:productive_hours }}h</span>
+                        <span class="ledger-sub">First to last sync span</span>
+                    </div>
+                    <div class="ledger-item">
+                        <span class="ledger-label">Status</span>
+                        <div class="mt-1">
+                            {% if is_online %}
+                            <div class="badge bg-soft-success text-success rounded-pill px-3 py-2 fw-800">
+                                <span class="live-indicator me-2"></span> ACTIVE NOW
+                            </div>
+                            {% else %}
+                            <div class="badge bg-light text-muted rounded-pill px-3 py-2 fw-800 border">
+                                <i class="fas fa-clock me-2"></i> OFFLINE
+                            </div>
+                            {% endif %}
+                        </div>
+                        <span class="ledger-sub mt-1">Last sync: {{ last_sync|date:"H:i"|default:"-" }}</span>
+                    </div>
+                </div>
+
+                <div class="mb-2 d-flex justify-content-between align-items-center">
+                    <div class="d-flex gap-4">
+                        <span class="small fw-700 text-dark"><span class="legend-dot bg-success"></span> Productive ({{ productivity_percentage|default:"85" }}%)</span>
+                        <span class="small fw-700 text-muted"><span class="legend-dot bg-secondary opacity-50"></span> Idle ({{ idle_percentage|default:"15" }}%)</span>
+                    </div>
+                    <span class="small fw-800 text-teal">Daily Target: 95%</span>
+                </div>
+
+                <div class="productivity-bar-wrapper">
+                    <div class="bar-segment bar-productive" style="width: 85%"></div>
+                    <div class="bar-segment bar-idle" style="width: 15%"></div>
+                </div>
+
+                <div class="row mt-5">
+                    <div class="col-12">
+                        <h6 class="fw-800 mb-3 text-muted" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Activity Intensity Over Time</h6>
+                        <div class="chart-container" style="height: 160px;">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
 
+    <!-- Live Intelligence Gallery -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="secondary-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h5 class="fw-bold mb-0">Live Activity Feed</h5>
+                        <p class="text-muted small mb-0">Visual focus & workspace stream</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-soft-success text-success rounded-pill px-3 py-2 fw-bold">
+                            <i class="fas fa-camera me-2"></i> {{ recent_screenshots.count }} Recent Captures
+                        </span>
+                    </div>
+                </div>
+                <div class="row g-3" id="screenshot-gallery">
+                    {% for shot in recent_screenshots %}
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="screenshot-card shadow-sm" onclick="openScreenshotModal('{{ shot.image.url }}', '{{ shot.timestamp|date:'M d, H:i:s' }}', '{{ shot.metadata.active_window|escapejs }}')">
+                            <img src="{{ shot.image.url }}" alt="Screenshot" loading="lazy">
+                            <div class="screenshot-overlay">
+                                <div class="screenshot-time">{{ shot.timestamp|date:"H:i" }}</div>
+                                <div class="small fw-500 text-truncate">{{ shot.metadata.active_window|default:"Desktop" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center py-5">
+                        <div class="mb-3"><i class="fas fa-images fa-3x text-light"></i></div>
+                        <h6 class="text-muted fw-bold">Waiting for live stream...</h6>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
         <div class="row mt-4">
             <!-- Top Apps -->
             <div class="col-md-6">
@@ -1021,8 +1305,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-        {% endif %}
     </div> <!-- Close container-fluid pb-5 -->
 
     <script>
@@ -1107,10 +1389,56 @@
                     const newEvents = doc.getElementById('system-events-log');
                     const oldEvents = document.getElementById('system-events-log');
                     if (newEvents && oldEvents) oldEvents.innerHTML = newEvents.innerHTML;
+
+                    // Update Screenshot Gallery
+                    const newGallery = doc.getElementById('screenshot-gallery');
+                    const oldGallery = document.getElementById('screenshot-gallery');
+                    if (newGallery && oldGallery) {
+                        if (newGallery.innerHTML !== oldGallery.innerHTML) {
+                            oldGallery.innerHTML = newGallery.innerHTML;
+                        }
+                    }
                 });
         }, 15000); // Increased frequency to 15s for better "Real-time" feel
 
         {% endif %}
+
+        // Screenshot Modal Functions
+        function openScreenshotModal(url, time, windowName) {
+            const modalHtml = `
+                <div id="screenshotModal" class="modal fade show" style="display: block; background: rgba(0,0,0,0.9); z-index: 10000;">
+                    <div class="modal-dialog modal-xl modal-dialog-centered">
+                        <div class="modal-content bg-transparent border-0">
+                            <div class="modal-header border-0 text-white pb-0">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        <i class="fas fa-desktop"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="modal-title fw-800 mb-0">${windowName}</h5>
+                                        <p class="small opacity-75 mb-0">${time}</p>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-close btn-close-white" onclick="closeScreenshotModal()"></button>
+                            </div>
+                            <div class="modal-body text-center pt-4">
+                                <img src="${url}" class="img-fluid rounded-lg shadow-2xl border border-white-10" style="max-height: 80vh;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeScreenshotModal() {
+            const modal = document.getElementById('screenshotModal');
+            if (modal) {
+                modal.remove();
+                document.body.style.overflow = 'auto';
+            }
+        }
     </script>
 
     {% if user.role != 'EMPLOYEE' %}

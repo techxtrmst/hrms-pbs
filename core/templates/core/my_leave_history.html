@@ -1,0 +1,458 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}My Leave History | Petabytz{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body { font-family: 'Outfit', sans-serif; background-color: #f8fafc; color: #1e293b; }
+
+    .page-header {
+        background: white;
+        border-radius: 20px;
+        padding: 1.75rem 2rem;
+        margin-bottom: 1.75rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .page-header h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .page-header p {
+        color: #64748b;
+        margin: 0;
+        font-size: 0.9rem;
+    }
+
+    /* Balance summary strip */
+    .balance-strip {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.75rem;
+    }
+
+    .balance-chip {
+        background: white;
+        border-radius: 14px;
+        padding: 1rem 1.5rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        border: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex: 1;
+        min-width: 160px;
+    }
+
+    .balance-chip .chip-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .balance-chip .chip-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1;
+    }
+
+    .balance-chip .chip-label {
+        font-size: 0.8rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    /* Filter bar */
+    .filter-bar {
+        background: white;
+        border-radius: 16px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-bar .form-select,
+    .filter-bar .form-control {
+        border-radius: 10px;
+        border: 1.5px solid #e2e8f0;
+        font-size: 0.9rem;
+        padding: 0.5rem 0.875rem;
+        min-width: 140px;
+        flex: 1;
+    }
+
+    .filter-bar .form-select:focus,
+    .filter-bar .form-control:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+    }
+
+    .filter-bar label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 0.3rem;
+        display: block;
+    }
+
+    .btn-filter {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 0.5rem 1.25rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: opacity 0.2s;
+        align-self: flex-end;
+    }
+
+    .btn-filter:hover { opacity: 0.9; color: white; }
+
+    .btn-reset {
+        background: #f1f5f9;
+        color: #475569;
+        border: none;
+        border-radius: 10px;
+        padding: 0.5rem 1.25rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background 0.2s;
+        align-self: flex-end;
+        text-decoration: none;
+    }
+
+    .btn-reset:hover { background: #e2e8f0; color: #1e293b; }
+
+    /* Table */
+    .table-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.75rem 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    }
+
+    .table-card .result-count {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        margin-bottom: 1.25rem;
+    }
+
+    .history-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 0.6rem;
+    }
+
+    .history-table th {
+        color: #94a3b8;
+        font-weight: 600;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .history-table td {
+        background: #f8fafc;
+        padding: 1rem;
+        vertical-align: middle;
+        font-size: 0.9rem;
+    }
+
+    .history-table td:first-child { border-radius: 12px 0 0 12px; }
+    .history-table td:last-child  { border-radius: 0 12px 12px 0; }
+
+    .history-table tr:hover td {
+        background: #f0f4ff;
+    }
+
+    /* Leave type icon */
+    .leave-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        flex-shrink: 0;
+    }
+
+    /* Status badges */
+    .badge-status {
+        padding: 5px 14px;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .badge-pending   { background: #fff7ed; color: #c2410c; }
+    .badge-approved  { background: #f0fdf4; color: #15803d; }
+    .badge-rejected  { background: #fef2f2; color: #b91c1c; }
+    .badge-cancelled { background: #f8fafc; color: #64748b; }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #94a3b8;
+    }
+
+    .empty-state i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.4; }
+    .empty-state p { font-size: 1rem; }
+
+    @media (max-width: 768px) {
+        .page-header { flex-direction: column; align-items: flex-start; }
+        .balance-chip { min-width: 140px; }
+        .filter-bar { flex-direction: column; }
+        .filter-bar .form-select,
+        .filter-bar .form-control { min-width: 100%; }
+        .table-card { padding: 1.25rem; }
+        .history-table th:nth-child(3),
+        .history-table td:nth-child(3) { display: none; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h1><i class="fas fa-history me-2 text-primary"></i>My Leave History</h1>
+            <p>A complete record of all your leave requests.</p>
+        </div>
+        <a href="{% url 'my_leaves' %}" class="btn btn-outline-secondary rounded-pill px-4 btn-sm fw-bold">
+            <i class="fas fa-arrow-left me-1"></i> Back to Leave Dashboard
+        </a>
+    </div>
+
+    <!-- Balance Summary -->
+    <div class="balance-strip">
+        {% if "bluebix" in request.user.employee_profile.company.name|lower or "softstandard" in request.user.employee_profile.company.name|lower %}
+        <div class="balance-chip">
+            <div class="chip-icon" style="background: rgba(99,102,241,0.1); color: #6366f1;">
+                <i class="fas fa-user-md"></i>
+            </div>
+            <div>
+                <div class="chip-value">{{ balance.combined_sick_casual_balance|floatformat:1 }}</div>
+                <div class="chip-label">Sick/Casual Available</div>
+            </div>
+        </div>
+        {% else %}
+        <div class="balance-chip">
+            <div class="chip-icon" style="background: rgba(99,102,241,0.1); color: #6366f1;">
+                <i class="fas fa-mug-hot"></i>
+            </div>
+            <div>
+                <div class="chip-value">{{ balance.casual_leave_balance|floatformat:1 }}</div>
+                <div class="chip-label">Casual Leave Available</div>
+            </div>
+        </div>
+        <div class="balance-chip">
+            <div class="chip-icon" style="background: rgba(16,185,129,0.1); color: #10b981;">
+                <i class="fas fa-first-aid"></i>
+            </div>
+            <div>
+                <div class="chip-value">{{ balance.sick_leave_balance|floatformat:1 }}</div>
+                <div class="chip-label">Sick Leave Available</div>
+            </div>
+        </div>
+        {% endif %}
+        <div class="balance-chip">
+            <div class="chip-icon" style="background: rgba(148,163,184,0.15); color: #64748b;">
+                <i class="fas fa-user-clock"></i>
+            </div>
+            <div>
+                <div class="chip-value">{{ balance.unpaid_leave|floatformat:1|default:"0" }}</div>
+                <div class="chip-label">Unpaid Leaves Taken</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" action="">
+        <div class="filter-bar">
+            <div>
+                <label>Leave Type</label>
+                <select name="leave_type" class="form-select">
+                    <option value="">All Types</option>
+                    <option value="CL" {% if leave_type_filter == "CL" %}selected{% endif %}>Casual Leave</option>
+                    <option value="SL" {% if leave_type_filter == "SL" %}selected{% endif %}>Sick Leave</option>
+                    <option value="UL" {% if leave_type_filter == "UL" %}selected{% endif %}>Unpaid Leave (LOP)</option>
+                    <option value="OD" {% if leave_type_filter == "OD" %}selected{% endif %}>On Duty</option>
+                    <option value="OT" {% if leave_type_filter == "OT" %}selected{% endif %}>Others</option>
+                </select>
+            </div>
+            <div>
+                <label>Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="PENDING"   {% if status_filter == "PENDING" %}selected{% endif %}>Pending</option>
+                    <option value="APPROVED"  {% if status_filter == "APPROVED" %}selected{% endif %}>Approved</option>
+                    <option value="REJECTED"  {% if status_filter == "REJECTED" %}selected{% endif %}>Rejected</option>
+                    <option value="CANCELLED" {% if status_filter == "CANCELLED" %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+            <div>
+                <label>Year</label>
+                <select name="year" class="form-select">
+                    <option value="">All Years</option>
+                    {% for y in years %}
+                    <option value="{{ y.year }}" {% if year_filter == y.year|stringformat:"s" %}selected{% endif %}>
+                        {{ y.year }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn-filter">
+                <i class="fas fa-filter me-1"></i> Filter
+            </button>
+            <a href="{% url 'my_leave_history' %}" class="btn-reset">
+                <i class="fas fa-times me-1"></i> Reset
+            </a>
+        </div>
+    </form>
+
+    <!-- Results Table -->
+    <div class="table-card">
+        <p class="result-count">
+            Showing <strong>{{ leave_requests|length }}</strong> record{{ leave_requests|length|pluralize }}
+            {% if leave_type_filter or status_filter or year_filter %} (filtered){% endif %}
+        </p>
+
+        <div class="table-responsive">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Leave Type</th>
+                        <th>Dates</th>
+                        <th>Duration</th>
+                        <th>Status</th>
+                        <th>Applied On</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in leave_requests %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                {% if req.leave_type == 'CL' %}
+                                <span class="leave-icon" style="background: rgba(99,102,241,0.1); color: #6366f1;">
+                                    <i class="fas fa-mug-hot"></i>
+                                </span>
+                                {% elif req.leave_type == 'SL' %}
+                                <span class="leave-icon" style="background: rgba(16,185,129,0.1); color: #10b981;">
+                                    <i class="fas fa-first-aid"></i>
+                                </span>
+                                {% elif req.leave_type == 'UL' %}
+                                <span class="leave-icon" style="background: rgba(148,163,184,0.15); color: #64748b;">
+                                    <i class="fas fa-ban"></i>
+                                </span>
+                                {% else %}
+                                <span class="leave-icon" style="background: rgba(59,130,246,0.1); color: #3b82f6;">
+                                    <i class="fas fa-circle"></i>
+                                </span>
+                                {% endif %}
+                                <span class="fw-semibold">{{ req.get_leave_type_display }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fw-medium">{{ req.start_date|date:"d M Y" }}</div>
+                            {% if req.start_date != req.end_date %}
+                            <div class="text-muted small">to {{ req.end_date|date:"d M Y" }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">
+                                {{ req.total_days }} day{{ req.total_days|pluralize }}
+                            </span>
+                            {% if req.duration != 'FULL' %}
+                            <div class="text-muted small mt-1">{{ req.get_duration_display }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if req.status == 'PENDING' %}
+                            <span class="badge-status badge-pending"><i class="fas fa-clock"></i> Pending</span>
+                            {% elif req.status == 'APPROVED' %}
+                            <span class="badge-status badge-approved"><i class="fas fa-check-circle"></i> Approved</span>
+                            {% elif req.status == 'REJECTED' %}
+                            <span class="badge-status badge-rejected"><i class="fas fa-times-circle"></i> Rejected</span>
+                            {% else %}
+                            <span class="badge-status badge-cancelled"><i class="fas fa-ban"></i> Cancelled</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted small">{{ req.created_at|date:"d M Y" }}</td>
+                        <td>
+                            {% if req.status == 'REJECTED' and req.rejection_reason %}
+                            <span class="text-danger small" title="{{ req.rejection_reason }}">
+                                <i class="fas fa-info-circle me-1"></i>
+                                {{ req.rejection_reason|truncatechars:40 }}
+                            </span>
+                            {% elif req.admin_comment %}
+                            <span class="text-muted small" title="{{ req.admin_comment }}">
+                                {{ req.admin_comment|truncatechars:40 }}
+                            </span>
+                            {% elif req.status == 'PENDING' %}
+                            <form method="post" action="{% url 'cancel_my_leave_request' req.id %}"
+                                  onsubmit="return confirm('Cancel this leave request?');" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-link text-danger p-0 text-decoration-none small fw-semibold">
+                                    <i class="fas fa-times me-1"></i>Cancel
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <i class="far fa-calendar-check d-block"></i>
+                                <p>No leave records found{% if leave_type_filter or status_filter or year_filter %} for the selected filters{% endif %}.</p>
+                                {% if leave_type_filter or status_filter or year_filter %}
+                                <a href="{% url 'my_leave_history' %}" class="btn btn-outline-secondary btn-sm rounded-pill">Clear Filters</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

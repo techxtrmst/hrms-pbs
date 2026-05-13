@@ -757,15 +757,15 @@ def search_employees_api(request):
             logger.error("User has no company assigned")
             return JsonResponse({"employees": [], "error": "No company assigned"})
 
-        # Search employees by name (first name or last name) - Only show Active employees
+        # Search employees by name (first name or last name) - Include ex-employees for payroll history
         employees = (
-            Employee.objects.filter(company=company, is_active=True, employment_status="ACTIVE")
+            Employee.objects.filter(company=company)
             .filter(
                 Q(user__first_name__icontains=query)
                 | Q(user__last_name__icontains=query)
                 | Q(badge_id__icontains=query)
             )
-            .select_related("user", "location", "manager")[:10]
+            .select_related("user", "location", "manager")[:15]
         )
 
         logger.info(f"Found {employees.count()} employees matching query")
@@ -782,6 +782,8 @@ def search_employees_api(request):
                 "email": emp.user.email,
                 "phone": emp.mobile_number or "N/A",
                 "profile_url": f"/employees/{emp.id}/detail/",
+                "status": emp.employment_status,
+                "exit_date": emp.exit_date.strftime("%Y-%m-%d") if emp.exit_date else None,
                 # Payroll specific fields
                 "annual_ctc": float(emp.annual_ctc) if emp.annual_ctc else 0,
                 "pf_enabled": emp.pf_enabled,
@@ -1781,6 +1783,47 @@ def my_leaves(request):
         request,
         "employees/leave_dashboard.html",
         {"title": "My Leaves", "balance": balance, "recent_requests": recent_requests},
+    )
+
+
+@login_required
+def my_leave_history(request):
+    """Employee view to see their own full leave history with filters."""
+    try:
+        employee = request.user.employee_profile
+    except Exception:
+        messages.error(request, "Employee profile not found.")
+        return redirect("personal_home")
+
+    leave_type_filter = request.GET.get("leave_type", "")
+    status_filter = request.GET.get("status", "")
+    year_filter = request.GET.get("year", "")
+
+    qs = LeaveRequest.objects.filter(employee=employee).order_by("-created_at")
+
+    if leave_type_filter:
+        qs = qs.filter(leave_type=leave_type_filter)
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+    if year_filter:
+        qs = qs.filter(start_date__year=int(year_filter))
+
+    years = LeaveRequest.objects.filter(employee=employee).dates("start_date", "year").distinct()
+
+    balance, _ = LeaveBalance.objects.get_or_create(employee=employee)
+
+    return render(
+        request,
+        "core/my_leave_history.html",
+        {
+            "title": "My Leave History",
+            "leave_requests": qs,
+            "years": years,
+            "balance": balance,
+            "leave_type_filter": leave_type_filter,
+            "status_filter": status_filter,
+            "year_filter": year_filter,
+        },
     )
 
 
@@ -3296,8 +3339,28 @@ def payroll_dashboard(request):
     selected_month = int(request.GET.get("month", today.month))
     selected_year = int(request.GET.get("year", today.year))
 
-    # Get all active employees
-    employees = Employee.objects.filter(company=company, is_active=True).select_related("user")
+    import calendar
+    from datetime import date
+
+    # Calculate month range
+    num_days = calendar.monthrange(selected_year, selected_month)[1]
+    month_start = date(selected_year, selected_month, 1)
+    month_end = date(selected_year, selected_month, num_days)
+
+    # Get all employees who were employed during the selected month
+    # 1. Joined before or during the month
+    # 2. Still ACTIVE OR (Resigned/Exited but their last working day is within or after this month)
+    employees = (
+        Employee.objects.filter(company=company)
+        .filter(Q(date_of_joining__isnull=True) | Q(date_of_joining__lte=month_end))
+        .filter(
+            Q(is_active=True)
+            | Q(employment_status="ACTIVE")
+            | (Q(exit_date__isnull=False) & Q(exit_date__gte=month_start))
+        )
+        .select_related("user")
+        .order_by(Lower("user__first_name"), Lower("user__last_name"))
+    )
 
     # Get payslips for the selected month/year
     existing_payslips = Payslip.objects.filter(

@@ -29,7 +29,7 @@ except ImportError:
 # ──────────────────────────────────────────────
 #  CONFIGURATION  (overwritten by config.json)
 # ──────────────────────────────────────────────
-SERVER_URL = "http://your-hrms-domain.com/activity-tracking/api/sync/"
+SERVER_URL = "https://petabytzglobal.com/activity-tracking/api/sync/"
 API_TOKEN = ""
 APP_NAME = "HRMS_Activity_Tracker"
 
@@ -63,7 +63,7 @@ def set_persistence():
         if sys.platform != "win32":
             return
         # The EXE is installed to %LOCALAPPDATA%\PetaBytz-Tracker\
-        exe_path = os.path.join(BASE_DIR, "ActivityTracker.exe")
+        exe_path = os.path.join(BASE_DIR, "Pbssys.exe")
         if not os.path.isfile(exe_path):
             # Fallback: use current executable
             exe_path = sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__)
@@ -387,7 +387,6 @@ def main():
     last_sync = time.time()
 
     # Next screenshot time initialized to NOW for immediate first capture
-    import random
 
     next_screenshot_time = time.time()
 
@@ -415,15 +414,20 @@ def main():
             idle_seconds = get_idle_time()
             is_idle = idle_seconds > 60
 
-            # 1. Active window
-            app_name, title, search_query, domain = get_active_window_info()
+            # 1. Active window (Fixed: returns only 2 values)
+            app_name, title = get_active_window_info()
+
+            # 2. Extract URL and Search details for Browsers
+            url = get_browser_url(app_name)
+            search_query, domain = parse_search_query(title, app_name, url)
+
             start_time = datetime.utcnow().isoformat() + "Z"
 
-            # 2. USB device changes
+            # 3. USB device changes
             usb_events, current_usb_ids = track_usb_devices(current_usb_ids)
             batch_events.extend(usb_events)
 
-            # 3. File transfers on removable drives
+            # 4. File transfers on removable drives
             file_events, monitored_files = track_file_transfers(monitored_files)
             batch_events.extend(file_events)
 
@@ -465,8 +469,8 @@ def main():
                 shot_b64 = capture_screenshot()
                 if shot_b64:
                     batch_screenshots.append({"image_base64": shot_b64, "window_name": f"{app_name} - {title}"[:255]})
-                # Set next random time (3-10 mins)
-                next_screenshot_time = time.time() + random.randint(180, 600)
+                # Set next capture time (exactly 10 minutes)
+                next_screenshot_time = time.time() + 600
 
             # Sync every 60 seconds
             if time.time() - last_sync > 60:
@@ -480,7 +484,7 @@ def main():
                     "agent_version": "2.0-TL",
                 }
 
-                headers = {"Content-Type": "application/json"}
+                headers = {"Content-Type": "application/json", "X-Computer-User": os.getlogin()}
                 try:
                     # Robust sync using ?token= for production compatibility
                     url = f"{SERVER_URL}?token={API_TOKEN}"

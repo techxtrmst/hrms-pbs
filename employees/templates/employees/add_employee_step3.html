@@ -265,6 +265,9 @@
                     ({% if employee_location and employee_location.currency == 'USD' or employee_location and employee_location.country_code == 'US' %}USD{% elif employee_location and employee_location.currency == 'BDT' or employee_location and employee_location.country_code == 'BD' %}BDT{% elif employee_location and employee_location.currency %}{{ employee_location.currency }}{% elif employee_company and employee_company.currency %}{{ employee_company.currency }}{% else %}INR{% endif %})
                 </label>
                 {% render_field form.annual_ctc class="form-control" placeholder="e.g. 1200000" %}
+                {% if form.annual_ctc.errors %}
+                <div class="text-danger small">{{ form.annual_ctc.errors.0 }}</div>
+                {% endif %}
             </div>
             <div class="col-md-6 d-flex align-items-end">
                 <div class="form-check form-switch mb-2">
@@ -282,10 +285,16 @@
             <div class="col-md-6">
                 <label class="form-label">Bank Name</label>
                 {% render_field form.bank_name class="form-control" placeholder="e.g. HDFC Bank" %}
+                {% if form.bank_name.errors %}
+                <div class="text-danger small">{{ form.bank_name.errors.0 }}</div>
+                {% endif %}
             </div>
             <div class="col-md-6">
                 <label class="form-label">Account Number</label>
                 {% render_field form.account_number class="form-control" placeholder="e.g. 1234567890" %}
+                {% if form.account_number.errors %}
+                <div class="text-danger small">{{ form.account_number.errors.0 }}</div>
+                {% endif %}
             </div>
             <div class="col-md-6">
                 <label class="form-label">
@@ -408,16 +417,14 @@
                     const initialVal = this.dataset.initialValue;
                     const currentVal = this.value;
 
-                    // Only trigger if initial value was not empty (i.e. we are editing an existing value)
-                    // OR if the user explicitly wants strictly "change".
-                    // Assuming for "Add Employee", we only care if they change it AFTER setting it?
-                    // No, that's annoying.
-                    // Let's assume this feature is mainly for EDIT.
-                    // But if I am in Step 3, and I pre-filled it (e.g. from previous session?), it has a value.
-                    // If I change it, I should provide a reason.
+                    // If initial value was empty, this is the first entry.
+                    // We treat the first entry as the 'new' initial value for subsequent changes.
+                    if (!initialVal || initialVal.trim() === '') {
+                        this.dataset.initialValue = currentVal;
+                        return;
+                    }
 
-                    if (initialVal && initialVal.trim() !== '' && initialVal !== currentVal) {
-
+                    if (initialVal !== currentVal) {
                         // Reset modal state
                         document.querySelectorAll('input[name="ctcReasonOption"]').forEach(el => el.checked = false);
                         document.getElementById('otherReasonInput').value = '';

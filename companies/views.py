@@ -22,11 +22,20 @@ def announcement_configuration(request):
     company = None
     if hasattr(request.user, "company") and request.user.company:
         company = request.user.company
-    elif request.user.employee_profile and request.user.employee_profile.company:
+    elif (
+        hasattr(request.user, "employee_profile")
+        and request.user.employee_profile
+        and request.user.employee_profile.company
+    ):
         company = request.user.employee_profile.company
 
+    if not company and request.user.is_superuser:
+        company = Company.objects.first()
+
     if not company:
-        messages.error(request, "No company associated.")
+        messages.error(
+            request, "No company associated. Please associate your account with a company or create one first."
+        )
         return redirect("dashboard")
 
     # Get all locations for this company
@@ -149,8 +158,20 @@ def announcement_configuration(request):
                 messages.error(request, "Title and content are required.")
 
         elif action == "update":
-            announcement_id = request.POST.get("announcement_id")
-            announcement = get_object_or_404(Announcement, id=announcement_id, company=company)
+            announcement_id = request.POST.get("announcement_id", "").strip()
+            if not announcement_id:
+                messages.error(request, "Error: Announcement ID is missing. Please try again.")
+                return redirect("companies:announcement_configuration")
+
+            # Fetch announcement with flexible permissions for superusers
+            query = Announcement.objects.filter(id=announcement_id)
+            if not request.user.is_superuser:
+                query = query.filter(company=company)
+
+            announcement = query.first()
+            if not announcement:
+                messages.error(request, f"Error: Announcement with ID {announcement_id} not found.")
+                return redirect("companies:announcement_configuration")
 
             announcement.title = request.POST.get("title")
             announcement.content = request.POST.get("content")
@@ -168,13 +189,26 @@ def announcement_configuration(request):
             messages.success(request, f"Announcement '{announcement.title}' updated successfully!")
 
         elif action == "delete":
-            announcement_id = request.POST.get("announcement_id")
-            announcement = get_object_or_404(Announcement, id=announcement_id, company=company)
+            announcement_id = request.POST.get("announcement_id", "").strip()
+            if not announcement_id:
+                messages.error(request, "Error: Announcement ID is missing. Please try again.")
+                return redirect("companies:announcement_configuration")
+
+            # Fetch announcement with flexible permissions for superusers
+            query = Announcement.objects.filter(id=announcement_id)
+            if not request.user.is_superuser:
+                query = query.filter(company=company)
+
+            announcement = query.first()
+            if not announcement:
+                messages.error(request, f"Error: Announcement with ID {announcement_id} not found.")
+                return redirect("companies:announcement_configuration")
+
             title = announcement.title
             announcement.delete()
             messages.success(request, f"Announcement '{title}' deleted successfully!")
 
-        return redirect("announcement_configuration")
+        return redirect("companies:announcement_configuration")
 
     # Get all announcements for this company
     announcements = Announcement.objects.filter(company=company).order_by("-created_at")

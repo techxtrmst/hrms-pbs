@@ -973,16 +973,17 @@
     }
 
     .ann-icon-box {
-        width: 48px;
-        height: 48px;
-        min-width: 48px;
+        width: 52px;
+        height: 52px;
+        min-width: 52px;
         background: #eff6ff;
         color: #3b82f6;
-        border-radius: 12px;
+        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.25rem;
+        font-size: 1.4rem;
+        box-shadow: 0 4px 10px rgba(59, 130, 246, 0.1);
     }
 
     /* Modal Styles */
@@ -1130,11 +1131,23 @@
     }
 
     .ann-meta {
-        font-size: 0.75rem;
-        color: #6b7280;
+        font-size: 0.85rem;
+        color: #9ca3af;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 1.25rem;
+        margin-top: 0.25rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .ann-meta i {
+        font-size: 0.9rem;
+    }
+
+    .ann-meta .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
     }
 
     .ann-date-badge {
@@ -1925,28 +1938,41 @@
                         </div>
                         <div class="ann-content">
                             <div class="d-flex justify-content-between align-items-start">
-                                <h4 class="ann-heading">{{ ann.title }}</h4>
-                                <div class="ann-date-badge">{{ ann.created_at|date:"d M" }}</div>
+                                <h4 class="ann-heading mb-0">{{ ann.title }}</h4>
                             </div>
-                            {% if ann.image %}
-                            <div class="mb-2 mt-1">
-                                <img src="{{ ann.image.url }}" alt="{{ ann.title }}" class="img-fluid rounded"
-                                    style="aspect-ratio: 1/1; object-fit: cover; width: 100%; max-width: 200px; height: auto;">
-                            </div>
-                            {% endif %}
-                            <p class="ann-text">
-                                {{ ann.content|striptags|truncatechars:100 }}
-                            </p>
-                            {% if ann.location or ann.department %}
+
                             <div class="ann-meta">
-                                {% if ann.location %}<i class="fas fa-map-marker-alt"></i> {{ ann.location }}{% endif %}
-                                {% if ann.department %}<i class="fas fa-building"></i> {{ ann.department }}{% endif %}
+                                <div class="meta-item">
+                                    <i class="far fa-calendar-alt"></i> {{ ann.created_at|date:"d M Y" }}
+                                </div>
+                                {% if ann.location or ann.department %}
+                                    {% if ann.location %}
+                                    <div class="meta-item text-warning">
+                                        <i class="fas fa-globe"></i> {{ ann.location }}
+                                    </div>
+                                    {% endif %}
+                                    {% if ann.department %}
+                                    <div class="meta-item">
+                                        <i class="fas fa-building"></i> {{ ann.department }}
+                                    </div>
+                                    {% endif %}
+                                {% else %}
+                                <div class="meta-item text-warning">
+                                    <i class="fas fa-globe"></i> Global
+                                </div>
+                                {% endif %}
                             </div>
-                            {% else %}
-                            <div class="ann-meta text-warning">
-                                <i class="fas fa-globe"></i> Company-wide
+
+                            {% if ann.image %}
+                            <div class="mb-3 mt-2">
+                                <img src="{{ ann.image.url }}" alt="{{ ann.title }}" class="img-fluid rounded"
+                                    style="aspect-ratio: 1/1; object-fit: cover; width: 100%; max-width: 200px; height: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                             </div>
                             {% endif %}
+
+                            <p class="ann-text">
+                                {{ ann.content|striptags|truncatechars:200 }}
+                            </p>
                         </div>
                     </div>
                     {% endfor %}

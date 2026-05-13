@@ -1016,16 +1016,17 @@
 
     /* Professional Announcement Styles */
     .announcement-icon-lg {
-        width: 48px;
-        height: 48px;
+        width: 52px;
+        height: 52px;
         background: #eff6ff;
         color: var(--keka-primary);
-        border-radius: 12px;
+        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 20px;
+        font-size: 24px;
         flex-shrink: 0;
+        box-shadow: 0 4px 10px rgba(91, 71, 251, 0.1);
     }
 
     .announcement-title-large {
@@ -1040,9 +1041,20 @@
         display: flex;
         align-items: center;
         flex-wrap: wrap;
-        font-size: 13px;
-        color: var(--keka-text-secondary);
-        gap: 12px;
+        font-size: 14px;
+        color: #9ca3af;
+        gap: 1.25rem;
+        margin-top: 0.25rem;
+    }
+
+    .announcement-meta-row span {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .announcement-meta-row i {
+        font-size: 0.95rem;
     }
 
     .announcement-hero-image {
@@ -1056,10 +1068,17 @@
     }
 
     .announcement-body-text {
-        font-size: 14px;
-        line-height: 1.7;
+        font-size: 15px;
+        line-height: 1.8;
         color: #374151;
         white-space: pre-line;
+        margin-left: 68px; /* Align with title (52px icon + 16px margin) */
+    }
+
+    @media (max-width: 768px) {
+        .announcement-body-text {
+            margin-left: 0;
+        }
     }
 
     .carousel-nav-btn {
@@ -2410,20 +2429,22 @@
 
                                 <div class="announcement-content-wrapper custom-scrollbar pe-2"
                                     style="overflow-y: auto; flex: 1;">
-                                    <div class="d-flex align-items-start mb-4">
+                                    <div class="d-flex align-items-center mb-4">
                                         <div class="announcement-icon-lg me-3">
                                             <i class="fas fa-bullhorn"></i>
                                         </div>
-                                        <div>
-                                            <h4 class="announcement-title-large">{{ announcement.title }}</h4>
+                                        <div class="flex-grow-1">
+                                            <h4 class="announcement-title-large mb-0">{{ announcement.title }}</h4>
                                             <div class="announcement-meta-row">
-                                                <span><i class="far fa-calendar-alt me-1"></i> {{ announcement.created_at|date:"d M Y" }}</span>
+                                                <span><i class="far fa-calendar-alt"></i> {{ announcement.created_at|date:"d M Y" }}</span>
                                                 {% if announcement.location %}
-                                                <span class="text-primary bg-soft-primary px-2 py-1 rounded small"><i
-                                                        class="fas fa-map-marker-alt me-1"></i> {{ announcement.location.name }}</span>
+                                                <span class="text-warning">
+                                                    <i class="fas fa-globe"></i> {{ announcement.location.name }}
+                                                </span>
                                                 {% else %}
-                                                <span class="text-warning bg-soft-warning px-2 py-1 rounded small"><i
-                                                        class="fas fa-globe me-1"></i> Global</span>
+                                                <span class="text-warning">
+                                                    <i class="fas fa-globe"></i> Global
+                                                </span>
                                                 {% endif %}
                                             </div>
                                         </div>
@@ -2436,7 +2457,7 @@
                                     </div>
                                     {% endif %}
 
-                                    <div class="announcement-content">
+                                    <div class="announcement-body-text">
                                         {{ announcement.content|safe }}
                                     </div>
                                 </div>

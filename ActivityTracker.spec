@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='ActivityTracker',
+    name='Pbssys',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
