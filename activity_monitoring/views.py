@@ -1,7 +1,11 @@
+import json
 import os
 import textwrap
+import time as wallclock
 from datetime import datetime, time, timedelta
+from pathlib import Path
 
+from django.conf import settings as django_settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Sum
@@ -37,6 +41,27 @@ def make_aware_if_naive(dt):
     return dt
 
 
+# #region agent log
+def _agent_session_ndjson(hypothesis_id, location, message, data):
+    try:
+        payload = {
+            "sessionId": "12c2d1",
+            "hypothesisId": hypothesis_id,
+            "location": location,
+            "message": message,
+            "data": data,
+            "timestamp": int(wallclock.time() * 1000),
+        }
+        log_path = Path(django_settings.BASE_DIR) / "debug-12c2d1.log"
+        with open(log_path, "a", encoding="utf-8") as _lf:
+            _lf.write(json.dumps(payload, default=str) + "\n")
+    except Exception:
+        pass
+
+
+# #endregion agent log
+
+
 class ActivityIngestView(views.APIView):
     """
     API endpoint for the Desktop Agent or Extension to sync activity data.
@@ -67,6 +92,14 @@ class ActivityIngestView(views.APIView):
 
             if not token_str:
                 logger.warning(f"Rejecting sync: No token found. Headers: {dict(request.headers)}")
+                # #region agent log
+                _agent_session_ndjson(
+                    "H3",
+                    "activity_monitoring/views.py:ActivityIngestView.post",
+                    "sync_rejected_no_token",
+                    {"top_keys": list(request.data.keys())[:20] if hasattr(request.data, "keys") else []},
+                )
+                # #endregion agent log
                 return Response({"error": "Authentication token required"}, status=status.HTTP_401_UNAUTHORIZED)
 
             # 2. Find Active Device
@@ -76,6 +109,14 @@ class ActivityIngestView(views.APIView):
             if not device:
                 # Log detailed reason for failure so admin can see it
                 logger.warning("Invalid or inactive device token.")
+                # #region agent log
+                _agent_session_ndjson(
+                    "H3",
+                    "activity_monitoring/views.py:ActivityIngestView.post",
+                    "sync_rejected_invalid_device",
+                    {"token_len": len(str(token_str))},
+                )
+                # #endregion agent log
                 return Response({"error": "Invalid or inactive device token"}, status=status.HTTP_401_UNAUTHORIZED)
 
             # Clear previous errors on successful check
@@ -87,6 +128,17 @@ class ActivityIngestView(views.APIView):
                 device.last_sync_error = f"Validation Error: {serializer.errors}"
                 device.save(update_fields=["last_sync_error"])
                 logger.warning(f"Activity sync validation failed for {device}: {serializer.errors}")
+                # #region agent log
+                _agent_session_ndjson(
+                    "H1",
+                    "activity_monitoring/views.py:ActivityIngestView.post",
+                    "sync_validation_failed",
+                    {
+                        "employee_id": device.employee_id,
+                        "errors": str(serializer.errors)[:800],
+                    },
+                )
+                # #endregion agent log
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
             logger.info(f"✅ Valid device found for employee: {device.employee.user.get_full_name()}")
@@ -95,6 +147,14 @@ class ActivityIngestView(views.APIView):
             if not serializer.is_valid():
                 logger.warning(f"Activity sync validation failed: {serializer.errors}")
                 logger.debug(f"Payload was: {str(request.data)[:500]}...")
+                # #region agent log
+                _agent_session_ndjson(
+                    "H1",
+                    "activity_monitoring/views.py:ActivityIngestView.post",
+                    "sync_validation_failed_second_pass",
+                    {"employee_id": employee.id, "errors": str(serializer.errors)[:800]},
+                )
+                # #endregion agent log
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
             data = serializer.validated_data
@@ -160,6 +220,23 @@ class ActivityIngestView(views.APIView):
 
             # 3. Process Screenshots (TeamLogger style)
             screenshots = data.get("screenshots", [])
+            # #region agent log
+            device.refresh_from_db(fields=["last_sync_error"])
+            _agent_session_ndjson(
+                "H1",
+                "activity_monitoring/views.py:ActivityIngestView.post",
+                "sync_batch_processed",
+                {
+                    "employee_id": employee.id,
+                    "app_n": len(app_list),
+                    "browser_n": len(browser_list),
+                    "events_n": len(event_list),
+                    "screenshots_n": len(screenshots),
+                    "payload_keys": list(data.keys()),
+                    "last_sync_error": (device.last_sync_error or "")[:200],
+                },
+            )
+            # #endregion agent log
             import base64
 
             from django.core.files.base import ContentFile
@@ -525,6 +602,42 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
             context["last_sync"] = None
 
         context["selected_employee"] = employee
+        # #region agent log
+        try:
+            day_app_count = AppActivity.objects.filter(
+                employee_id__in=account_ids, start_time__range=(start_of_day, end_of_day)
+            ).count()
+            day_browser_count = BrowserActivity.objects.filter(
+                employee_id__in=account_ids, timestamp__range=(start_of_day, end_of_day)
+            ).count()
+            _agent_session_ndjson(
+                "H2",
+                "activity_monitoring/views.py:ActivityDashboardView.get_context_data",
+                "dashboard_context",
+                {
+                    "viewer_role": getattr(self.request.user, "role", None),
+                    "viewing_employee_id": employee.id,
+                    "target_id": target_id,
+                    "target_date": str(target_date),
+                    "local_today": str(timezone.localdate()),
+                    "start_of_day": start_of_day.isoformat(),
+                    "end_of_day": end_of_day.isoformat(),
+                    "django_time_zone": getattr(django_settings, "TIME_ZONE", None),
+                    "day_app_activity_count": day_app_count,
+                    "day_browser_activity_count": day_browser_count,
+                    "top_apps_len": len(context.get("top_apps") or []),
+                    "recent_screenshots_count": context.get("recent_screenshots_count"),
+                    "system_events_len": len(context.get("system_events") or []),
+                },
+            )
+        except Exception as _ex:
+            _agent_session_ndjson(
+                "H2",
+                "activity_monitoring/views.py:ActivityDashboardView.get_context_data",
+                "dashboard_context_log_failed",
+                {"error": str(_ex)[:300]},
+            )
+        # #endregion agent log
         return context
 
 
