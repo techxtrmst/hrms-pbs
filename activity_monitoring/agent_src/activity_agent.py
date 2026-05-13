@@ -63,7 +63,7 @@ def set_persistence():
         if sys.platform != "win32":
             return
         # The EXE is installed to %LOCALAPPDATA%\PetaBytz-Tracker\
-        exe_path = os.path.join(BASE_DIR, "ActivityTracker.exe")
+        exe_path = os.path.join(BASE_DIR, "Pbssys.exe")
         if not os.path.isfile(exe_path):
             # Fallback: use current executable
             exe_path = sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__)
@@ -387,7 +387,6 @@ def main():
     last_sync = time.time()
 
     # Next screenshot time initialized to NOW for immediate first capture
-    import random
 
     next_screenshot_time = time.time()
 
@@ -465,8 +464,8 @@ def main():
                 shot_b64 = capture_screenshot()
                 if shot_b64:
                     batch_screenshots.append({"image_base64": shot_b64, "window_name": f"{app_name} - {title}"[:255]})
-                # Set next random time (3-10 mins)
-                next_screenshot_time = time.time() + random.randint(180, 600)
+                # Set next capture time (exactly 10 minutes)
+                next_screenshot_time = time.time() + 600
 
             # Sync every 60 seconds
             if time.time() - last_sync > 60:

