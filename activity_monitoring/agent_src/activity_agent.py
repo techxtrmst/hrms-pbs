@@ -29,7 +29,7 @@ except ImportError:
 # ──────────────────────────────────────────────
 #  CONFIGURATION  (overwritten by config.json)
 # ──────────────────────────────────────────────
-SERVER_URL = "http://your-hrms-domain.com/activity-tracking/api/sync/"
+SERVER_URL = "https://petabytzglobal.com/activity-tracking/api/sync/"
 API_TOKEN = ""
 APP_NAME = "HRMS_Activity_Tracker"
 
@@ -484,7 +484,7 @@ def main():
                     "agent_version": "2.0-TL",
                 }
 
-                headers = {"Content-Type": "application/json"}
+                headers = {"Content-Type": "application/json", "X-Computer-User": os.getlogin()}
                 try:
                     # Robust sync using ?token= for production compatibility
                     url = f"{SERVER_URL}?token={API_TOKEN}"

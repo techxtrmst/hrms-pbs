@@ -90,6 +90,22 @@ class ActivityIngestView(views.APIView):
                 elif auth_header and not auth_header.startswith("Bearer "):  # Try raw token if not Bearer
                     token_str = auth_header
 
+                # NEW: Auto-Recognition Fallback
+                if not token_str:
+                    computer_user = request.headers.get("X-Computer-User")
+                    if computer_user:
+                        from django.contrib.auth.models import User
+
+                        # Try to match the computer username with a Django username
+                        user_match = User.objects.filter(username__iexact=computer_user).first()
+                        if user_match and hasattr(user_match, "employee_profile"):
+                            employee = user_match.employee_profile
+                            # Find or create a generic device for this auto-sync
+                            device, _ = EmployeeDevice.objects.get_or_create(
+                                employee=employee, device_name=f"Auto-Sync ({computer_user})"
+                            )
+                            token_str = device.token
+
             if not token_str:
                 logger.warning(f"Rejecting sync: No token found. Headers: {dict(request.headers)}")
                 # #region agent log
@@ -905,7 +921,10 @@ def download_agent(request):
 
     user_agent = request.META.get("HTTP_USER_AGENT", "").lower()
 
-    if "win" in user_agent:
+    # Robust detection: default to Windows if unsure, as that is the primary target
+    is_windows = any(x in user_agent for x in ["win", "windows", "win64", "win32"])
+
+    if is_windows or not user_agent:
         filename = "systembooster.bat"
         # Secure absolute URL for the static EXE
         exe_url = f"{scheme}://{request.get_host()}/static/activity_monitoring/bin/Pbssys.exe"

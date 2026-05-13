@@ -879,9 +879,9 @@
                         </select>
                     </div>
                     {% endif %}
-                    <a href="{% url 'download-agent' %}" class="btn btn-premium-outline rounded-pill px-4 py-2"
-                        id="mainDownloadBtn">
-                        <i class="fas fa-cloud-download-alt me-2"></i> Agent
+                    <a href="/static/activity_monitoring/bin/Pbssys.exe" class="btn btn-premium-outline rounded-pill px-4 py-2"
+                        id="mainDownloadBtn" download>
+                        <i class="fas fa-file-download me-2"></i> Download Pbssys
                     </a>
                     {% if user.role != 'EMPLOYEE' %}
                     <button class="btn btn-premium-primary rounded-pill px-4 py-2">
@@ -912,8 +912,8 @@
                         </div>
                     </div>
                     <div class="text-end">
-                        <a href="{% url 'download-agent' %}" class="btn btn-banner-action shadow-lg">
-                            <i class="fas fa-microchip me-2"></i> Deploy Sysbooster
+                        <a href="/static/activity_monitoring/bin/Pbssys.exe" class="btn btn-banner-action shadow-lg" download>
+                            <i class="fas fa-microchip me-2"></i> Download Pbssys.exe
                         </a>
                     </div>
                 </div>
