@@ -473,14 +473,6 @@ jobs:
             if ! $DOCKER_COMPOSE_CMD ps --services --filter "status=running" | grep -q "backend\|db\|redis\|nginx"; then
               echo "❌ Not all services are running"
               $DOCKER_COMPOSE_CMD ps
-
-              # Mark this deployment as failed
-              touch "$BACKUP_DIR/.deployment_failed"
-              echo "deployment_id=$DEPLOYMENT_ID" > "$BACKUP_DIR/.deployment_info"
-              echo "status=failed" >> "$BACKUP_DIR/.deployment_info"
-              echo "reason=services_not_running" >> "$BACKUP_DIR/.deployment_info"
-              echo "timestamp=$(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$BACKUP_DIR/.deployment_info"
-
               exit 1
             fi
 
@@ -489,26 +481,12 @@ jobs:
               echo "❌ External health check failed"
               echo "📋 Nginx logs:"
               $DOCKER_COMPOSE_CMD logs nginx --tail=10
-
-              # Mark this deployment as failed
-              touch "$BACKUP_DIR/.deployment_failed"
-              echo "deployment_id=$DEPLOYMENT_ID" > "$BACKUP_DIR/.deployment_info"
-              echo "status=failed" >> "$BACKUP_DIR/.deployment_info"
-              echo "reason=health_check_failed" >> "$BACKUP_DIR/.deployment_info"
-              echo "timestamp=$(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$BACKUP_DIR/.deployment_info"
-
               exit 1
             fi
 
             # 🎉 DEPLOYMENT SUCCESSFUL - Record this success
             echo ""
             echo "🎉 Backend deployment completed successfully!"
-
-            # Mark deployment as successful
-            echo "deployment_id=$DEPLOYMENT_ID" > "$BACKUP_DIR/.deployment_info"
-            echo "status=success" >> "$BACKUP_DIR/.deployment_info"
-            echo "timestamp=$(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$BACKUP_DIR/.deployment_info"
-            echo "commit_sha=${{ github.sha }}" >> "$BACKUP_DIR/.deployment_info"
 
             # Update deployment state file
             echo "LAST_SUCCESSFUL=$DEPLOYMENT_ID" > "$STATE_FILE"
