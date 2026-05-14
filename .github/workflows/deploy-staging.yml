@@ -292,7 +292,7 @@ jobs:
           username: ${{ secrets.STAGING_SSH_USERNAME }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT }}
-          command_timeout: 20m
+          command_timeout: 40m
           script: |
             set -e
 
@@ -347,26 +347,17 @@ jobs:
 
               # Backup database FIRST (before stopping services)
               DB_BACKUP_SUCCESSFUL=false
-              echo "🗃️ Backing up database..."
+              echo "🗃️ Backing up database (max 5 min, non-blocking)..."
               if $DOCKER_COMPOSE_CMD ps | grep -q "db.*Up"; then
-                if $DOCKER_COMPOSE_CMD exec -T db pg_dump -U postgres postgres > "$BACKUP_DIR/database-backup.sql" 2>&1; then
-                  if [ -f "$BACKUP_DIR/database-backup.sql" ] && [ -s "$BACKUP_DIR/database-backup.sql" ]; then
-                    BACKUP_SIZE=$(du -h "$BACKUP_DIR/database-backup.sql" | cut -f1)
-
-                    # Verify backup integrity by checking for SQL dump header
-                    if head -n 1 "$BACKUP_DIR/database-backup.sql" | grep -q "PostgreSQL database dump"; then
-                      echo "✅ Database backup verified: $BACKUP_SIZE"
-                      DB_BACKUP_SUCCESSFUL=true
-                    else
-                      echo "⚠️ Database backup validation failed - invalid SQL dump format"
-                      rm -f "$BACKUP_DIR/database-backup.sql"
-                    fi
+                timeout 300 bash -c "$DOCKER_COMPOSE_CMD exec -T db pg_dump -U postgres --compress=9 postgres > \"$BACKUP_DIR/database-backup.sql.gz\" 2>&1" && {
+                  if [ -f "$BACKUP_DIR/database-backup.sql.gz" ] && [ -s "$BACKUP_DIR/database-backup.sql.gz" ]; then
+                    BACKUP_SIZE=$(du -h "$BACKUP_DIR/database-backup.sql.gz" | cut -f1)
+                    echo "✅ Database backup completed: $BACKUP_SIZE"
+                    DB_BACKUP_SUCCESSFUL=true
                   else
                     echo "⚠️ Database backup is empty"
                   fi
-                else
-                  echo "⚠️ Database backup command failed"
-                fi
+                } || echo "⚠️ Database backup timed out or failed — skipping, deployment will continue"
               else
                 echo "⚠️ Database container not running, skipping backup"
               fi
