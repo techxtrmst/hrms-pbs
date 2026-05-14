@@ -340,60 +340,6 @@ jobs:
               echo "📌 Last successful deployment: ${LAST_SUCCESSFUL_DEPLOYMENT:-none}"
             fi
 
-            # Backup current deployment if it exists
-            if [ -f "docker-compose.yml" ]; then
-              echo "💾 Creating backup of current deployment..."
-              mkdir -p "$BACKUP_DIR"
-
-              # Backup database FIRST (before stopping services)
-              DB_BACKUP_SUCCESSFUL=false
-              echo "🗃️ Backing up database (max 5 min, non-blocking)..."
-              if $DOCKER_COMPOSE_CMD ps | grep -q "db.*Up"; then
-                timeout 300 bash -c "$DOCKER_COMPOSE_CMD exec -T db pg_dump -U postgres --compress=9 postgres > \"$BACKUP_DIR/database-backup.sql.gz\" 2>&1" && {
-                  if [ -f "$BACKUP_DIR/database-backup.sql.gz" ] && [ -s "$BACKUP_DIR/database-backup.sql.gz" ]; then
-                    BACKUP_SIZE=$(du -h "$BACKUP_DIR/database-backup.sql.gz" | cut -f1)
-                    echo "✅ Database backup completed: $BACKUP_SIZE"
-                    DB_BACKUP_SUCCESSFUL=true
-                  else
-                    echo "⚠️ Database backup is empty"
-                  fi
-                } || echo "⚠️ Database backup timed out or failed — skipping, deployment will continue"
-              else
-                echo "⚠️ Database container not running, skipping backup"
-              fi
-
-              # Record current migration state for rollback
-              echo "📋 Recording current migration state..."
-              if $DOCKER_COMPOSE_CMD ps | grep -q "backend.*Up"; then
-                $DOCKER_COMPOSE_CMD exec -T backend python manage.py showmigrations --plan > "$BACKUP_DIR/migration-state.txt" 2>&1 || true
-                if [ -f "$BACKUP_DIR/migration-state.txt" ] && [ -s "$BACKUP_DIR/migration-state.txt" ]; then
-                  echo "✅ Migration state recorded"
-                else
-                  echo "⚠️ Could not record migration state"
-                fi
-              fi
-
-              # Backup config files
-              cp -r . "$BACKUP_DIR/" 2>/dev/null || true
-              [ -f ".env" ] && cp ".env" "$BACKUP_DIR/.env" 2>/dev/null || true
-
-              # Record current image ID for rollback
-              CURRENT_IMAGE=$(docker images hrms-backend:latest -q 2>/dev/null)
-              if [ -n "$CURRENT_IMAGE" ]; then
-                echo "$CURRENT_IMAGE" > "$BACKUP_DIR/.image_id"
-                echo "📦 Recorded image ID: $CURRENT_IMAGE"
-              fi
-
-              # Mark this backup's status
-              if [ "$DB_BACKUP_SUCCESSFUL" = true ]; then
-                echo "complete" > "$BACKUP_DIR/.backup_status"
-                echo "✅ Backup completed successfully at: $BACKUP_DIR"
-              else
-                echo "incomplete" > "$BACKUP_DIR/.backup_status"
-                echo "⚠️ Backup incomplete (no DB backup) at: $BACKUP_DIR"
-              fi
-            fi
-
             # Tag current image with deployment ID for precise rollback
             if [ -f "docker-compose.yml" ]; then
               echo "🏷️ Tagging current image for rollback..."
