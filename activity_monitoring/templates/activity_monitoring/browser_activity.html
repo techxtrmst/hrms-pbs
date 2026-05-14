@@ -18,6 +18,7 @@
 {% endblock %}
 
 {% block content %}
+{% if user.role == 'COMPANY_ADMIN' or user.role == 'SUPERADMIN' or user.role == 'EMPLOYEE_MANAGER' %}
 
 <!-- ─── HERO ─────────────────────────────────────────────────── -->
 <div class="baw-hero">
@@ -306,4 +307,14 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
+{% else %}
+<div class="container py-5 text-center">
+    <div class="card shadow-sm border-0 rounded-xl p-5" style="border-radius: 24px; background: white;">
+        <i class="fas fa-lock fa-4x text-muted mb-4"></i>
+        <h2 class="fw-bold">Access Denied</h2>
+        <p class="text-muted">You do not have permission to view this activity log.</p>
+        <a href="{% url 'activity-dashboard' %}" class="btn btn-primary rounded-pill px-4 mt-3">Back to Dashboard</a>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

