@@ -3545,7 +3545,9 @@ def calculate_generated_payslip(request):
                 except Employee.DoesNotExist:
                     pass
 
-            breakdown = calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled, location=location)
+            breakdown = calculate_payslip_breakdown(
+                annual_ctc, worked_days, total_days, pf_enabled, location=location, company=employee.company
+            )
             return JsonResponse({"status": "success", "breakdown": breakdown})
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)}, status=400)
@@ -3578,7 +3580,12 @@ def process_payslip_generation(request):
 
             # Pass employee's PF status and location
             breakdown = calculate_payslip_breakdown(
-                annual_ctc, worked_days, total_days, employee.pf_enabled, location=employee.location
+                annual_ctc,
+                worked_days,
+                total_days,
+                employee.pf_enabled,
+                location=employee.location,
+                company=employee.company,
             )
 
             payslip, created = Payslip.objects.get_or_create(employee=employee, month=month_date)
@@ -3877,7 +3884,12 @@ def bulk_upload_payslips(request):
 
                     # Calculate breakdown
                     breakdown = calculate_payslip_breakdown(
-                        annual_ctc, worked_days, total_days, employee.pf_enabled, location=employee.location
+                        annual_ctc,
+                        worked_days,
+                        total_days,
+                        employee.pf_enabled,
+                        location=employee.location,
+                        company=employee.company,
                     )
 
                     payslip, created = Payslip.objects.get_or_create(employee=employee, month=month_date)

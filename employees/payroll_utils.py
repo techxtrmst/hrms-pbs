@@ -1,4 +1,4 @@
-def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=True, location=None):
+def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=True, location=None, company=None):
     """
     Calculates the payslip breakdown based on the user's provided logic.
     Integrates the specific formulas and rounding rules based on location.
@@ -20,7 +20,7 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
                 country_code = "BD"
             elif status_code in ["US", "USA", "UNITED STATES"]:
                 country_code = "US"
-            elif status_code in ["IN", "INDIA", "INDIAN"]:
+            elif status_code in ["IN", "INDIA", "INDIAN", "IND"]:
                 country_code = "IN"
             else:
                 country_code = status_code
@@ -30,7 +30,7 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
                 country_code = "BD"
             elif loc_str in ["US", "USA", "UNITED STATES"]:
                 country_code = "US"
-            elif loc_str in ["IN", "INDIA", "INDIAN"]:
+            elif loc_str in ["IN", "INDIA", "INDIAN", "IND"]:
                 country_code = "IN"
             else:
                 country_code = loc_str
@@ -49,8 +49,12 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
     from companies.models import PayrollConfiguration
 
     config = None
-    if location and hasattr(location, "company"):
-        config = PayrollConfiguration.objects.filter(company=location.company).first()
+    target_company = company
+    if not target_company and location and hasattr(location, "company"):
+        target_company = location.company
+
+    if target_company:
+        config = PayrollConfiguration.objects.filter(company=target_company).first()
 
     def get_breakdown_logic(ctc_to_use, is_pf_enabled, country="IN"):
         """Helper to apply the specific calculation logic to a given CTC amount"""
@@ -178,8 +182,24 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
             # -------- Net Salary --------
             net_before_pt = float(round(gross_monthly - employee_pf))
 
-            # Professional Tax (Only for India)
-            professional_tax = (pt_low if net_before_pt < pt_thresh else pt_high) if country == "IN" else 0.0
+            # Professional Tax (Only for India or Bluebix/SoftStandard entities)
+            # Based on Gross Monthly Salary: 200 if >= 20000, 150 if < 20000
+            is_special_entity = False
+            if target_company:
+                cname = str(target_company.name).upper()
+                if "BLUEBIX" in cname or "SOFTSTANDARD" in cname:
+                    is_special_entity = True
+
+            should_apply_pt = country == "IN" or is_special_entity
+
+            # Ensure we have valid rates even if config is partially set
+            pt_thresh_val = pt_thresh if pt_thresh > 0 else 20000.0
+            pt_low_val = pt_low if pt_low > 0 else 150.0
+            pt_high_val = pt_high if pt_high > 0 else 200.0
+
+            professional_tax = (
+                (pt_low_val if gross_monthly < pt_thresh_val else pt_high_val) if should_apply_pt else 0.0
+            )
 
             # Net Take Home Salary
             net_salary = float(round(net_before_pt - professional_tax))
