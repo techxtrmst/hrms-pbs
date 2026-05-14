@@ -879,7 +879,7 @@
                         </select>
                     </div>
                     {% endif %}
-                    <a href="/static/activity_monitoring/bin/Pbssys.exe" class="btn btn-premium-outline rounded-pill px-4 py-2"
+                    <a href="{% url 'download-agent' %}" class="btn btn-premium-outline rounded-pill px-4 py-2"
                         id="mainDownloadBtn" download>
                         <i class="fas fa-file-download me-2"></i> Download Pbssys
                     </a>
@@ -912,7 +912,7 @@
                         </div>
                     </div>
                     <div class="text-end">
-                        <a href="/static/activity_monitoring/bin/Pbssys.exe" class="btn btn-banner-action shadow-lg" download>
+                        <a href="{% url 'download-agent' %}" class="btn btn-banner-action shadow-lg" download>
                             <i class="fas fa-microchip me-2"></i> Download Pbssys.exe
                         </a>
                     </div>

