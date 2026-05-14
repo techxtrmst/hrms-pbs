@@ -453,6 +453,27 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
         context["productive_hours"] = format_duration(final_productive_time)
         context["unproductive_hours"] = format_duration(idle_time)
 
+        # 1.3 Gross Hours (First to last activity)
+        first_p = (
+            ActivityPulse.objects.filter(employee_id__in=account_ids, timestamp__range=(start_of_day, end_of_day))
+            .order_by("timestamp")
+            .first()
+        )
+        last_p = (
+            ActivityPulse.objects.filter(employee_id__in=account_ids, timestamp__range=(start_of_day, end_of_day))
+            .order_by("-timestamp")
+            .first()
+        )
+        if first_p and last_p:
+            gross_dur = last_p.timestamp - first_p.timestamp
+            context["gross_hours"] = format_duration(gross_dur)
+            context["sync_range"] = (
+                f"{timezone.localtime(first_p.timestamp).strftime('%H:%M')} - {timezone.localtime(last_p.timestamp).strftime('%H:%M')}"
+            )
+        else:
+            context["gross_hours"] = "0.0"
+            context["sync_range"] = "-"
+
         # 2. Top Apps (Localized Range)
         top_apps_qs = AppActivity.objects.filter(
             employee_id__in=account_ids, start_time__range=(start_of_day, end_of_day)
@@ -938,3 +959,33 @@ def download_agent(request):
     except Exception as e:
         logger.error(f"Error serving tracker: {str(e)}")
         return HttpResponse("Error serving file.", status=500)
+
+
+@csrf_exempt
+@login_required
+def delete_screenshot(request, screenshot_id):
+    """
+    Deletes a specific screenshot if the user has permission (Admin/HR).
+    """
+    from django.http import JsonResponse
+    from django.shortcuts import get_object_or_404
+
+    is_authorized = request.user.role in ["COMPANY_ADMIN", "SUPERADMIN", "EMPLOYEE_MANAGER"]
+    if not is_authorized:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+
+    try:
+        shot = get_object_or_404(ActivityScreenshot, id=screenshot_id)
+        # Delete file if exists
+        if shot.image and os.path.exists(shot.image.path):
+            import contextlib
+
+            with contextlib.suppress(Exception):
+                os.remove(shot.image.path)
+        shot.delete()
+        return JsonResponse({"success": True})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
