@@ -5,10 +5,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Petabytz HRMS</title>
+    <title>Login - PetaBytz HRMS</title>
     <link rel="icon" type="image/png" href="{% static 'images/favicon_circle.png' %}">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome -->
@@ -16,277 +16,426 @@
 
     <style>
         :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --glass-bg: rgba(255, 255, 255, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.5);
-            --text-primary: #2d3748;
-            --text-secondary: #718096;
-            --input-bg: rgba(255, 255, 255, 0.6);
-            --focus-ring: rgba(118, 75, 162, 0.4);
+            --bg-deep: #020617;
+            --accent-primary: #6366F1;
+            --accent-secondary: #A855F7;
+            --text-main: #FFFFFF;
+            --text-muted: #94A3B8;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --input-bg: rgba(255, 255, 255, 0.05);
         }
 
         body {
-            font-family: 'Outfit', sans-serif;
+            font-family: 'Inter', 'Outfit', sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
             margin: 0;
             padding: 0;
-            height: 100vh;
-            overflow: hidden;
-            background: #fdfbf7;
-        }
-
-        .login-wrapper {
+            min-height: 100vh;
             display: flex;
-            height: 100vh;
-            width: 100%;
-        }
-
-        /* --- LEFT SIDE: ANIMATED SLIDESHOW --- */
-        .visual-section {
-            flex: 1.2;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            overflow-y: auto;
             position: relative;
-            overflow: hidden;
-            background-color: #000;
         }
 
-        .slide-container {
-            position: absolute;
-            top: 0;
-            left: 0;
+        /* Abstract Background Mesh/Waves */
+        body::before {
+            content: '';
+            position: fixed;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(168, 85, 247, 0.08) 0%, transparent 40%);
+            z-index: -1;
+            animation: meshMove 20s infinite alternate linear;
+        }
+
+        @keyframes meshMove {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(5deg); }
+        }
+
+        .login-container {
             width: 100%;
-            height: 100%;
-        }
-
-        .slide {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-size: cover;
-            background-position: center;
-            opacity: 0;
-            transition: opacity 1.5s ease-in-out, transform 8s ease-in-out;
-            transform: scale(1);
-        }
-
-        .slide.active {
-            opacity: 1;
-            transform: scale(1.1);
-        }
-
-        /* Overlay Gradient */
-        .visual-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.6) 100%);
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 4rem;
+            padding: 2rem;
             z-index: 10;
         }
 
-        /* Animated Text on Left Side */
-        .visual-content {
-            position: relative;
-            z-index: 20;
-            height: 100%;
+        /* --- LEFT SIDE: Branding & Selector --- */
+        .branding-section {
             display: flex;
             flex-direction: column;
-            justify-content: flex-end;
-            padding: 4rem;
-            color: white;
-            max-width: 600px;
+            justify-content: center;
         }
 
-        .visual-tagline {
-            font-size: 3.5rem;
+        .top-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 3.5rem;
+            text-decoration: none;
+            color: white;
+        }
+
+        .top-logo svg {
+            width: 32px;
+            height: 32px;
+            filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.5));
+        }
+
+        .top-logo span {
+            font-size: 1.5rem;
             font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 5vw, 3.5rem);
+            font-weight: 800;
             line-height: 1.1;
             margin-bottom: 1.5rem;
-            opacity: 0;
-            transform: translateY(30px);
-            animation: fadeInUp 1s forwards 0.5s;
+            letter-spacing: -1.5px;
         }
 
-        .visual-subtext {
-            font-size: 1.2rem;
-            opacity: 0;
-            transform: translateY(30px);
-            animation: fadeInUp 1s forwards 0.8s;
-            margin-bottom: 2rem;
+        .hero-title .highlight {
+            background: linear-gradient(135deg, #818CF8 0%, #C084FC 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        /* --- RIGHT SIDE: GLASSMORPHISM FORM --- */
-        .form-section {
-            flex: 0.8;
+        .hero-subtitle {
+            color: var(--text-muted);
+            font-size: clamp(0.95rem, 2vw, 1.1rem);
+            max-width: 480px;
+            margin-bottom: 3rem;
+            line-height: 1.6;
+        }
+
+        .selector-label {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        .organization-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .org-item {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .org-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .multi-tenant-info {
+            margin-bottom: 2.5rem;
+            max-width: 500px;
+        }
+
+        .tenant-desc {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-top: 0.5rem;
+        }
+
+        .org-logo {
+            width: 48px;
+            height: 48px;
+            background: white;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem;
-            background: url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop') no-repeat center center/cover;
-            /* Subtle background for the form side too */
-            position: relative;
+            padding: 6px;
+            flex-shrink: 0;
         }
 
-        /* Blur overlay for the form background to make it distinct */
-        .form-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(20px);
-            z-index: 1;
+        .org-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .org-info {
+            flex-grow: 1;
+        }
+
+        .org-name {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+            display: block;
+        }
+
+        .org-slogan {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .linkedin-btn {
+            width: 32px;
+            height: 32px;
+            background: #0077b5;
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: transform 0.2s;
+            text-decoration: none;
+        }
+
+        .linkedin-btn:hover {
+            transform: scale(1.1);
+            color: white;
+        }
+
+        /* --- RIGHT SIDE: Form Card --- */
+        .form-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .login-card {
-            position: relative;
-            z-index: 2;
-            width: 100%;
-            max-width: 450px;
-            padding: 3rem;
-            background: var(--glass-bg);
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
             border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-            backdrop-filter: blur(4px);
-            opacity: 0;
-            transform: translateY(20px);
-            animation: fadeInUp 0.8s forwards 0.2s;
-        }
-
-        .brand-logo-small {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 2rem;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .brand-logo-small i {
-            font-size: 2rem;
-            background: var(--primary-gradient);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-right: 0.8rem;
-        }
-
-        .welcome-text h3 {
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 0.5rem;
-        }
-
-        .welcome-text p {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            margin-bottom: 2rem;
-        }
-
-        /* Form Controls */
-        .form-floating>.form-control {
-            background-color: var(--input-bg);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            font-size: 1rem;
-            height: 55px;
-            /* Taller inputs */
-        }
-
-        .form-floating>label {
-            padding-top: 1rem;
-            color: var(--text-secondary);
-        }
-
-        .form-floating>.form-control:focus {
-            background-color: #fff;
-            border-color: #764ba2;
-            box-shadow: 0 0 0 4px var(--focus-ring);
-        }
-
-        .btn-submit {
-            background: var(--primary-gradient);
-            border: none;
-            color: white;
+            border-radius: 32px;
+            padding: 3.5rem;
             width: 100%;
-            padding: 16px;
+            max-width: 500px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .welcome-back {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.5px;
+        }
+
+        .login-subtext {
+            color: var(--text-muted);
             font-size: 1rem;
+            margin-bottom: 3rem;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            font-size: 0.9rem;
             font-weight: 600;
-            border-radius: 12px;
-            margin-top: 1rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
+            color: var(--text-main);
+            margin-bottom: 0.75rem;
+            display: block;
         }
 
-        .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(118, 75, 162, 0.5);
+        .input-wrapper {
+            position: relative;
+            background: var(--input-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            transition: all 0.3s;
         }
 
-        .extra-links {
+        .input-wrapper:focus-within {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1.25rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .form-control {
+            background: transparent !important;
+            border: none !important;
+            color: white !important;
+            padding: 1.1rem 1.25rem 1.1rem 3.5rem;
+            font-size: 0.95rem;
+            width: 100%;
+            border-radius: 16px;
+        }
+
+        .form-control:focus {
+            box-shadow: none;
+        }
+
+        .form-control::placeholder {
+            color: #64748B;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 1.25rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: color 0.2s;
+        }
+
+        .password-toggle:hover {
+            color: white;
+        }
+
+        .form-options {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 1.5rem;
-            font-size: 0.9rem;
+            margin: 2rem 0;
         }
 
-        .forgot-pass {
-            color: var(--text-secondary);
+        .form-check-input {
+            background-color: var(--input-bg);
+            border-color: var(--glass-border);
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 0.75rem;
+            cursor: pointer;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .form-check-label {
+            color: white;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .forgot-link {
+            color: #818CF8;
             text-decoration: none;
-            transition: color 0.3s;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: color 0.2s;
         }
 
-        .forgot-pass:hover {
-            color: #764ba2;
+        .forgot-link:hover {
+            color: #C084FC;
         }
 
-        /* Animations */
-        @keyframes fadeInUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
+        .btn-login {
+            width: 100%;
+            padding: 1.1rem;
+            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            border: none;
+            border-radius: 16px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(79, 70, 229, 0.4);
+            filter: brightness(1.1);
+        }
+
+        .btn-login i {
+            font-size: 0.9rem;
+            transition: transform 0.3s;
+        }
+
+        .btn-login:hover i {
+            transform: translateX(5px);
+        }
+
+        @media (max-width: 1024px) {
+            .login-container {
+                gap: 2rem;
+                padding: 3rem 1.5rem;
             }
-        }
-
-        /* Decorative Elements */
-        .circle-1,
-        .circle-2 {
-            position: absolute;
-            border-radius: 50%;
-            z-index: 1;
-        }
-
-        .circle-1 {
-            width: 300px;
-            height: 300px;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.6), rgba(118, 75, 162, 0.6));
-            top: -100px;
-            right: -100px;
-            filter: blur(60px);
-        }
-
-        .circle-2 {
-            width: 200px;
-            height: 200px;
-            background: linear-gradient(135deg, rgba(255, 106, 0, 0.4), rgba(238, 9, 121, 0.4));
-            bottom: -50px;
-            left: -50px;
-            filter: blur(50px);
         }
 
         @media (max-width: 900px) {
-            .visual-section {
-                display: none;
+            body {
+                align-items: flex-start;
+                padding: 2rem 0;
             }
+            .login-container {
+                grid-template-columns: 1fr;
+                max-width: 600px;
+                gap: 4rem;
+            }
+            .branding-section {
+                align-items: center;
+                text-align: center;
+            }
+            .top-logo {
+                margin-bottom: 2.5rem;
+            }
+            .hero-subtitle {
+                margin-left: auto;
+                margin-right: auto;
+            }
+            .organization-list {
+                width: 100%;
+                text-align: left;
+            }
+            .login-card {
+                padding: 2.5rem 1.5rem;
+            }
+        }
 
-            .form-section {
-                flex: 1;
+        @media (max-width: 480px) {
+            .hero-title {
+                font-size: 2.2rem;
+            }
+            .login-card {
+                padding: 2rem 1rem;
+                border-radius: 24px;
+            }
+            .welcome-back {
+                font-size: 1.6rem;
             }
         }
     </style>
@@ -294,143 +443,137 @@
 
 <body>
 
-    <div class="login-wrapper">
-        <!-- LEFT SIDE: SLIDESHOW -->
-        <div class="visual-section">
-            <div class="slide-container" id="slideContainer">
-                <!-- Slides will be injected here via JS -->
+    <div class="login-container">
+        <!-- LEFT SIDE -->
+        <div class="branding-section">
+            <a href="/" class="top-logo">
+                <img src="{% static 'img/petabytz_logo.jpg' %}" alt="PetaBytz Logo" style="height: 32px; width: auto; border-radius: 6px;">
+                <span>PetaBytz</span>
+            </a>
+
+            <h1 class="hero-title">Workforce Command <br> <span class="highlight">Redefined.</span></h1>
+            <p class="hero-subtitle">Empowering multi-tenant agility with precision intelligence and a unified management ecosystem.</p>
+
+            <div class="multi-tenant-info">
+                <span class="selector-label">Multi-Tenant Architecture</span>
+                <p class="tenant-desc">Our platform securely powers three distinct organizational ecosystems with complete data isolation and specialized management workflows.</p>
             </div>
 
-            <div class="visual-overlay"></div>
+            <div class="organization-list">
+                {% for company in active_companies %}
+                <div class="org-item">
+                    <div class="org-logo">
+                        {% if "petabytz" in company.name.lower %}
+                            <img src="{% static 'img/petabytz_logo.jpg' %}" alt="PetaBytz Logo">
+                        {% elif "bluebix" in company.name.lower %}
+                            <img src="https://media.licdn.com/dms/image/v2/C510BAQF_jSPngDmYig/company-logo_200_200/company-logo_200_200/0/1630611564837?e=2147483647&v=beta&t=K0Ip6YC5bjvQcpJwIyTAbBV_01rzUJhP4bwlIDO8hPw" alt="BlueBix Logo">
+                        {% elif "softstandard" in company.name.lower %}
+                            <img src="https://softstandard.com/wp-content/uploads/2016/05/logo.jpg" alt="SoftStandard Logo" style="width: 100%; height: auto;">
+                        {% elif company.logo %}
+                            <img src="{{ company.logo.url }}" alt="{{ company.name }} Logo">
+                        {% else %}
+                            <span style="color: var(--accent-primary); font-weight: 800; font-size: 1rem;">{{ company.name|slice:":1" }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="org-info">
+                        {% if "petabytz" in company.name.lower %}
+                            <span class="org-name">{{ company.name }}</span>
+                            <span class="org-slogan">Technology for a better tomorrow.</span>
+                        {% elif "bluebix" in company.name.lower %}
+                            <span class="org-name">{{ company.name }}</span>
+                            <span class="org-slogan">Building solutions, delivering excellence.</span>
+                        {% elif "softstandard" in company.name.lower %}
+                            <span class="org-name">{{ company.name }}</span>
+                            <span class="org-slogan">Innovating systems, empowering people.</span>
+                        {% else %}
+                            <span class="org-name">{{ company.name }}</span>
+                            <span class="org-slogan">Empowering organizations globally.</span>
+                        {% endif %}
+                    </div>
 
-            <div class="visual-content">
-                <div class="visual-tagline">Welcome to the Future of Work.</div>
-                <div class="visual-subtext">Experience improved productivity and seamless management with Petabytz HRMS.
+                    {% if "petabytz" in company.name.lower %}
+                        <a href="https://www.linkedin.com/company/petabytz-technologies/posts/?feedView=all" target="_blank" class="linkedin-btn">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                    {% elif "bluebix" in company.name.lower %}
+                        <a href="https://www.linkedin.com/company/blue-bix/posts/?feedView=all" target="_blank" class="linkedin-btn">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                    {% elif "softstandard" in company.name.lower %}
+                        <a href="https://www.linkedin.com/company/softstandard/" target="_blank" class="linkedin-btn">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                    {% endif %}
                 </div>
+                {% endfor %}
             </div>
         </div>
 
-        <!-- RIGHT SIDE: LOGIN FORM -->
+        <!-- RIGHT SIDE -->
         <div class="form-section">
-            <!-- Decorative blurred circles -->
-            <div class="circle-1"></div>
-            <div class="circle-2"></div>
-
             <div class="login-card">
-                <div class="brand-logo-small">
-                    <img src="{% static 'img/petabytz_logo.jpg' %}" alt="PetaBytz Logo"
-                        style="height: 60px; width: auto; max-width: 100%; border-radius: 8px;">
-                </div>
-
-                <div class="welcome-text text-center">
-                    <h3>Hello Again!</h3>
-                    <p>Enter your credentials to access your account.</p>
-                </div>
+                <h2 class="welcome-back">Welcome Back</h2>
+                <p class="login-subtext">Login to your HRMS dashboard</p>
 
                 <form method="post">
                     {% csrf_token %}
 
                     {% if form.errors %}
-                    <div class="alert alert-danger small p-2 mb-3 rounded-3 border-0 bg-danger-subtle text-danger">
+                    <div class="alert alert-danger small p-2 mb-4 rounded-3 border-0 bg-danger bg-opacity-10 text-danger">
                         <i class="fas fa-exclamation-triangle me-2"></i>Invalid credentials provided.
                     </div>
                     {% endif %}
 
-                    <div class="form-floating mb-3">
-                        <input type="text" class="form-control" id="id_username" name="username" placeholder="Email"
-                            required autofocus>
-                        <label for="id_username">Email Address</label>
-                    </div>
-
-                    <div class="form-floating mb-4">
-                        <input type="password" class="form-control" id="id_password" name="password"
-                            placeholder="Password" required>
-                        <label for="id_password">Password</label>
-                        <i class="far fa-eye position-absolute top-50 end-0 translate-middle-y me-3 text-secondary"
-                            id="togglePassword" style="cursor: pointer;"></i>
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="rememberMe">
-                            <label class="form-check-label text-secondary small" for="rememberMe">Remember me</label>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <div class="input-wrapper">
+                            <i class="far fa-envelope input-icon"></i>
+                            <input type="text" class="form-control" name="username" placeholder="Enter your email" required autofocus>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-submit">
-                        Log In <i class="fas fa-arrow-right ms-2"></i>
-                    </button>
-
-                    <div class="extra-links text-center mt-4">
-                        <a href="{% url 'forgot_password' %}" class="forgot-pass small">Forgot Password?</a>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" class="form-control" id="passwordInput" name="password" placeholder="Enter your password" required>
+                            <i class="far fa-eye-slash password-toggle" onclick="togglePass()"></i>
+                        </div>
                     </div>
 
-                    <!-- NO GOOGLE/SOCIAL LOGIN HERE -->
+                    <div class="form-options">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="rememberMe" name="remember">
+                            <label class="form-check-label" for="rememberMe">Remember me</label>
+                        </div>
+                        <a href="{% url 'forgot_password' %}" class="forgot-link">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" class="btn-login">
+                        Log In <i class="fas fa-arrow-right"></i>
+                    </button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- MAIN SCRIPT -->
     <script>
-        // --- SLIDESHOW LOGIC ---
-        // Default placeholder images (fallback if no local images found)
-        let slidesData = [
-            'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2069&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2070&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=2032&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1504384308090-c54be3855091?q=80&w=1974&auto=format&fit=crop'
-        ];
-
-        // Check if Django passed any local images
-        // NOTE: Local images optimized to AVIF format (88% size reduction)
-        // Original: 43.42 MB → Optimized: 4.93 MB
-        const localImages = [
-            {% for img_path in slide_images %}
-        "{% get_static_prefix %}{{ img_path }}",
-            {% endfor %}
-        ];
-
-        // If local images exist, override the default ones
-        if (localImages.length > 0) {
-            slidesData = localImages;
+        function togglePass() {
+            const input = document.getElementById('passwordInput');
+            const icon = document.querySelector('.password-toggle');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            }
         }
 
-        const slideContainer = document.getElementById('slideContainer');
-        let currentSlide = 0;
-
-        function initSlides() {
-            slidesData.forEach((url, index) => {
-                const div = document.createElement('div');
-                div.classList.add('slide');
-                if (index === 0) div.classList.add('active');
-                div.style.backgroundImage = `url('${url}')`;
-                slideContainer.appendChild(div);
-            });
+        function selectOrg(element) {
+            document.querySelectorAll('.org-item').forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
         }
-
-        function nextSlide() {
-            const slides = document.querySelectorAll('.slide');
-            slides[currentSlide].classList.remove('active');
-
-            currentSlide = (currentSlide + 1) % slides.length;
-
-            slides[currentSlide].classList.add('active');
-        }
-
-        initSlides();
-        setInterval(nextSlide, 5000); // Change slide every 5 seconds
-
-        // --- PASSWORD TOGGLE ---
-        const togglePassword = document.querySelector('#togglePassword');
-        const password = document.querySelector('#id_password');
-
-        togglePassword.addEventListener('click', function (e) {
-            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
-            password.setAttribute('type', type);
-            this.classList.toggle('fa-eye-slash');
-            this.classList.toggle('fa-eye');
-        });
     </script>
 </body>
 
