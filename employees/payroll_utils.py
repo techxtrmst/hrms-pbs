@@ -1,14 +1,50 @@
-def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=True, location=None, company=None):
+def calculate_payslip_breakdown(
+    annual_ctc, worked_days, total_days, pf_enabled=True, location=None, company=None, month=None, year=None
+):
     """
     Calculates the payslip breakdown based on the user's provided logic.
     Integrates the specific formulas and rounding rules based on location.
+
+    Payroll cycle rule (India):
+      Cycle runs from 27th of previous month → 28th of current month.
+      - total_days for calculation  = days in the PREVIOUS month
+        (e.g. April payroll → March has 31 days → total_days = 31)
+      - display_days (shown in PDF) = days in the CURRENT month (April = 30)
+      - absent_days  = display_days - entered_worked_days
+      - actual_worked_days = total_days - absent_days
+      So entering 29 for April (display=30, cycle=31) gives:
+        absent=1, actual_worked=30, gross = round(monthly × 30/31)
     """
+    import calendar as _calendar
+
     # Convert inputs to float/Decimal
     if isinstance(annual_ctc, str):
         annual_ctc = annual_ctc.replace(",", "")
     annual_ctc = float(annual_ctc)
     worked_days = float(worked_days)
     total_days = int(total_days)
+
+    # ----------------------------------------------------------------
+    # Payroll-cycle adjustment (only when month+year are provided)
+    # ----------------------------------------------------------------
+    display_days = total_days  # days in current month (for PDF label)
+    cycle_total_days = total_days  # days used for proration denominator
+
+    if month is not None and year is not None:
+        month = int(month)
+        year = int(year)
+        # Previous month
+        if month == 1:
+            prev_month, prev_year = 12, year - 1
+        else:
+            prev_month, prev_year = month - 1, year
+        cycle_total_days = _calendar.monthrange(prev_year, prev_month)[1]
+        display_days = _calendar.monthrange(year, month)[1]
+
+    # Convert entered worked_days (out of display_days) to actual worked days
+    # (out of cycle_total_days) by preserving the number of absent days.
+    absent_days = display_days - worked_days
+    actual_worked_days = cycle_total_days - absent_days
 
     # Determine location-specific logic
     country_code = "IN"
@@ -182,20 +218,33 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
             # -------- Net Salary --------
             net_before_pt = float(round(gross_monthly - employee_pf))
 
-            # Professional Tax (Only for India or Bluebix/SoftStandard entities)
-            # Based on Gross Monthly Salary: 200 if >= 20000, 150 if < 20000
-            is_special_entity = False
-            if target_company:
-                cname = str(target_company.name).upper()
-                if "BLUEBIX" in cname or "SOFTSTANDARD" in cname:
-                    is_special_entity = True
+            # Professional Tax — use per-location config if available,
+            # otherwise fall back to global PayrollConfiguration PT settings.
+            pt_config = None
+            if location and hasattr(location, "professional_tax_config"):
+                try:
+                    pt_config = location.professional_tax_config
+                except Exception:
+                    pt_config = None
 
-            should_apply_pt = country == "IN" or is_special_entity
+            if pt_config and pt_config.is_active:
+                pt_thresh_val = float(pt_config.pt_threshold) if float(pt_config.pt_threshold) > 0 else 20000.0
+                pt_low_val = float(pt_config.pt_amount_below)
+                pt_high_val = float(pt_config.pt_amount_above)
+                should_apply_pt = True
+            else:
+                # Fall back to global config / company-level rules
+                is_special_entity = False
+                if target_company:
+                    cname = str(target_company.name).upper()
+                    if "BLUEBIX" in cname or "SOFTSTANDARD" in cname:
+                        is_special_entity = True
 
-            # Ensure we have valid rates even if config is partially set
-            pt_thresh_val = pt_thresh if pt_thresh > 0 else 20000.0
-            pt_low_val = pt_low if pt_low > 0 else 150.0
-            pt_high_val = pt_high if pt_high > 0 else 200.0
+                should_apply_pt = country == "IN" or is_special_entity
+
+                pt_thresh_val = pt_thresh if pt_thresh > 0 else 20000.0
+                pt_low_val = pt_low if pt_low > 0 else 150.0
+                pt_high_val = pt_high if pt_high > 0 else 200.0
 
             professional_tax = (
                 (pt_low_val if gross_monthly < pt_thresh_val else pt_high_val) if should_apply_pt else 0.0
@@ -222,9 +271,9 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
     full_monthly_ctc = float(round(annual_ctc / 12))
     full_breakdown = get_breakdown_logic(full_monthly_ctc, pf_enabled, country_code)
 
-    # Prorated Monthly CTC based on worked days
-    if total_days > 0:
-        monthly_ctc = float(round(full_monthly_ctc * (worked_days / total_days)))
+    # Prorated Monthly CTC based on actual worked days within the payroll cycle
+    if cycle_total_days > 0:
+        monthly_ctc = float(round(full_monthly_ctc * (actual_worked_days / cycle_total_days)))
         prorated_breakdown = get_breakdown_logic(monthly_ctc, pf_enabled, country_code)
     else:
         monthly_ctc = 0.0
@@ -246,7 +295,10 @@ def calculate_payslip_breakdown(annual_ctc, worked_days, total_days, pf_enabled=
         "professional_tax": float(prorated_breakdown["professional_tax"]),
         "net_salary": prorated_breakdown["net_salary"],
         "worked_days": worked_days,
+        "actual_worked_days": actual_worked_days,
         "total_days": total_days,
+        "cycle_total_days": cycle_total_days,
+        "display_days": display_days,
         "pf_enabled": pf_enabled,
         "country_code": country_code,
         "currency_symbol": currency_symbol,

@@ -3384,6 +3384,12 @@ def payroll_dashboard(request):
     # Add days in month to context for default worked days
     days_in_month = calendar.monthrange(selected_year, selected_month)[1]
 
+    # Payroll cycle: previous month's day count is used for calculation denominator
+    if selected_month == 1:
+        prev_month_days = calendar.monthrange(selected_year - 1, 12)[1]
+    else:
+        prev_month_days = calendar.monthrange(selected_year, selected_month - 1)[1]
+
     context = {
         "title": "Payroll Dashboard",
         "employee_data": employee_data,
@@ -3392,6 +3398,7 @@ def payroll_dashboard(request):
         "months": months,
         "years": years,
         "days_in_month": days_in_month,
+        "prev_month_days": prev_month_days,
     }
 
     return render(request, "core/payroll_dashboard.html", context)
@@ -3418,7 +3425,23 @@ def payroll_settings(request):
         messages.error(request, "Restricted access.")
         return redirect("dashboard")
 
+    from companies.models import LocationProfessionalTax
+
     config, created = PayrollConfiguration.objects.get_or_create(company=company)
+
+    # Fetch all active locations for this company
+    locations = company.locations.filter(is_active=True).order_by("name")
+
+    # Ensure every location has a PT config row (auto-create with defaults)
+    for loc in locations:
+        LocationProfessionalTax.objects.get_or_create(location=loc)
+
+    # Reload with PT configs attached
+    location_pt_configs = (
+        LocationProfessionalTax.objects.filter(location__company=company, location__is_active=True)
+        .select_related("location")
+        .order_by("location__name")
+    )
 
     if request.method == "POST":
         # Extract decimal values safely
@@ -3461,10 +3484,28 @@ def payroll_settings(request):
         config.us_tax_percentage = get_decimal("us_tax_percentage", config.us_tax_percentage)
 
         config.save()
+
+        # Save per-location PT configs
+        for lpt in location_pt_configs:
+            loc_id = lpt.location.id
+            lpt.pt_threshold = get_decimal(f"loc_pt_threshold_{loc_id}", lpt.pt_threshold)
+            lpt.pt_amount_below = get_decimal(f"loc_pt_below_{loc_id}", lpt.pt_amount_below)
+            lpt.pt_amount_above = get_decimal(f"loc_pt_above_{loc_id}", lpt.pt_amount_above)
+            lpt.is_active = request.POST.get(f"loc_pt_active_{loc_id}") == "on"
+            lpt.save()
+
         messages.success(request, f"Payroll configuration for {company.name} updated successfully.")
         return redirect("payroll_settings")
 
-    return render(request, "core/payroll_settings.html", {"config": config, "company": company})
+    return render(
+        request,
+        "core/payroll_settings.html",
+        {
+            "config": config,
+            "company": company,
+            "location_pt_configs": location_pt_configs,
+        },
+    )
 
 
 @login_required
@@ -3546,7 +3587,14 @@ def calculate_generated_payslip(request):
                     pass
 
             breakdown = calculate_payslip_breakdown(
-                annual_ctc, worked_days, total_days, pf_enabled, location=location, company=employee.company
+                annual_ctc,
+                worked_days,
+                total_days,
+                pf_enabled,
+                location=location,
+                company=employee.company,
+                month=month,
+                year=year,
             )
             return JsonResponse({"status": "success", "breakdown": breakdown})
         except Exception as e:
@@ -3586,6 +3634,8 @@ def process_payslip_generation(request):
                 employee.pf_enabled,
                 location=employee.location,
                 company=employee.company,
+                month=month,
+                year=year,
             )
 
             payslip, created = Payslip.objects.get_or_create(employee=employee, month=month_date)
@@ -3611,7 +3661,8 @@ def process_payslip_generation(request):
             payslip.professional_tax = breakdown["professional_tax"]
             payslip.net_salary = breakdown["net_salary"]
             payslip.worked_days = worked_days
-            payslip.total_days = total_days
+            # Store display_days (current month days) for PDF "payable units"
+            payslip.total_days = breakdown.get("display_days", total_days)
             payslip.save()
 
             # Generate PDF
@@ -3670,6 +3721,8 @@ def process_payslip_generation(request):
                 "total_earnings_ctc": round((payslip.gross_salary or 0) + (payslip.employer_pf or 0)),
                 "total_contributions": round((payslip.employee_pf or 0) + (payslip.employer_pf or 0)),
                 "net_salary_rounded": round(payslip.net_salary or 0),
+                # PDF shows current-month days (display_days), not cycle days
+                "payable_units": f"{breakdown.get('display_days', total_days)} Days",
             }
 
             # Generate PDF using template-based approach (no WeasyPrint)
@@ -3890,6 +3943,8 @@ def bulk_upload_payslips(request):
                         employee.pf_enabled,
                         location=employee.location,
                         company=employee.company,
+                        month=month,
+                        year=year,
                     )
 
                     payslip, created = Payslip.objects.get_or_create(employee=employee, month=month_date)
@@ -3915,7 +3970,8 @@ def bulk_upload_payslips(request):
                     payslip.professional_tax = breakdown["professional_tax"]
                     payslip.net_salary = breakdown["net_salary"]
                     payslip.worked_days = worked_days
-                    payslip.total_days = total_days
+                    # Store display_days (current month days) for PDF "payable units"
+                    payslip.total_days = breakdown.get("display_days", total_days)
                     payslip.save()
 
                     # Generate PDF
