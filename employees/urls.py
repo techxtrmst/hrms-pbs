@@ -128,5 +128,6 @@ urlpatterns = [
         views.delete_emergency_contact,
         name="delete_emergency_contact",
     ),
+    path("api/birthday-wish/", views.send_birthday_wish, name="api_send_birthday_wish"),
     path("id-card/", views.employee_id_card, name="id_card"),
 ]

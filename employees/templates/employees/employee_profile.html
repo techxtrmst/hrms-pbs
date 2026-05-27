@@ -1,1613 +1,1280 @@
 {% extends 'core/base.html' %}
 {% load static %}
-
-{% block title %}My Profile | Petabytz{% endblock %}
+{% block title %}My Profile | HRMS{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/employee-profile-enhanced-responsive.css' %}">
+<!-- Outfit Font for an ultra-premium SaaS look -->
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-    :root {
-        --primary-hue: 245;
-        --primary-color: hsl(var(--primary-hue), 80%, 60%);
-        --primary-dark: hsl(var(--primary-hue), 80%, 50%);
-        --primary-light: hsl(var(--primary-hue), 90%, 95%);
-        --secondary-color: #64748b;
-        --success-color: #10b981;
-        --warning-color: #f59e0b;
-        --danger-color: #ef4444;
-        --bg-body: #f8fafc;
-        --card-bg: #ffffff;
-        --glass-bg: rgba(255, 255, 255, 0.7);
-        --shadow-custom: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
-        --radius-lg: 1.25rem;
-        --radius-md: 0.75rem;
-        --vh: 1vh;
-    }
-
-    /* === GLOBAL RESET AND BASE STYLES === */
-    * {
-        box-sizing: border-box;
-    }
-
-    html {
-        overflow-x: hidden !important;
-        overflow-y: auto !important;
-        height: 100% !important;
-        scroll-behavior: smooth !important;
-    }
-
-    body {
-        background-color: var(--bg-body);
-        font-family: 'Inter', sans-serif;
-        color: #1e293b;
-        overflow-x: hidden !important;
-        overflow-y: auto !important;
-        min-height: 100vh !important;
-        height: auto !important;
-        position: relative !important;
-        line-height: 1.6;
-    }
-
-    .container {
-        max-width: 100% !important;
-        padding-left: 15px !important;
-        padding-right: 15px !important;
-        overflow: visible !important;
-        height: auto !important;
-    }
-
-    /* === PROFILE HERO SECTION === */
-    .profile-hero {
-        position: relative;
-        height: 200px;
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        overflow: hidden;
-        border-bottom-left-radius: 2rem;
-        border-bottom-right-radius: 2rem;
-    }
-
-    /* === PROFILE CARD === */
-    .profile-card-main {
-        margin-top: -3rem;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-custom);
-        padding: 2rem;
-        position: relative;
-        z-index: 10;
-    }
-
-    /* === PROFILE LAYOUT === */
-    .profile-layout {
-        display: flex;
-        align-items: end;
-        gap: 1.5rem;
-        flex-wrap: wrap;
-    }
-
-    .profile-layout .col-lg-2 {
-        flex: 0 0 auto;
-    }
-
-    .profile-layout .col-lg-6 {
-        flex: 1 1 auto;
-        min-width: 0;
-    }
-
-    .profile-layout .col-lg-4 {
-        flex: 0 0 auto;
-        margin-left: auto;
-    }
-
-    /* === PROFILE AVATAR === */
-    .profile-avatar-wrapper {
-        position: relative;
-        width: 120px;
-        height: 120px;
-        margin: -4rem auto 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .profile-avatar {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 50%;
-        border: 4px solid white;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-        background-color: #cbd5e1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        position: relative;
-    }
-
-    .profile-avatar.placeholder {
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        color: white;
-        font-size: 2rem;
-    }
-
-    .camera-btn {
-        position: absolute;
-        bottom: 5px;
-        right: 5px;
-        background: #1e293b;
-        color: white;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        border: 2px solid white;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        transition: all 0.2s ease;
-        z-index: 10;
-    }
-
-    .camera-btn:hover {
-        background: #374151;
-        transform: scale(1.1);
-    }
-
-    /* === PROFILE INFO === */
-    .profile-name {
-        font-weight: 700;
-        font-size: 1.75rem;
-        color: #1e293b;
-        letter-spacing: -0.025em;
-        text-align: center;
-        margin-bottom: 0.5rem;
-    }
-
-    .profile-role {
-        font-size: 0.95rem;
-        color: var(--secondary-color);
-        font-weight: 500;
-        text-align: center;
-        margin-bottom: 1rem;
-    }
-
-    /* === BADGES === */
-    .badge-soft {
-        padding: 0.35em 0.8em;
-        border-radius: 2rem;
-        font-weight: 600;
-        font-size: 0.75rem;
-        letter-spacing: 0.02em;
-    }
-
-    .badge-soft-primary {
-        background: var(--primary-light);
-        color: var(--primary-dark);
-    }
-
-    .badge-soft-success {
-        background: #d1fae5;
-        color: #059669;
-    }
-
-    /* === NAVIGATION TABS === */
-    .nav-pills-custom {
-        display: flex;
-        background: #f1f5f9;
-        padding: 0.35rem;
-        border-radius: 1rem;
-        gap: 0.25rem;
-        justify-content: center;
-        flex-wrap: wrap;
-        margin-top: 1rem;
-    }
-
-    .nav-pills-custom .nav-link {
-        color: #64748b;
-        font-weight: 600;
-        font-size: 0.9rem;
-        padding: 0.6rem 1.5rem;
-        border-radius: 0.75rem;
-        transition: all 0.3s;
-        white-space: nowrap;
-        border: none;
-        background: transparent;
-        flex: 1;
-        text-align: center;
-        min-width: 0;
-    }
-
-    .nav-pills-custom .nav-link.active {
-        background: white;
-        color: var(--primary-color);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    }
-
-    .nav-pills-custom .nav-link:hover {
-        background: rgba(255, 255, 255, 0.7);
-        color: var(--primary-color);
-    }
-
-    /* === TAB CONTENT === */
-    .tab-content {
-        margin-top: 2rem;
-        min-height: 500px;
-        overflow: visible !important;
-        height: auto !important;
-    }
-
-    .tab-pane {
-        overflow: visible !important;
-        height: auto !important;
-        min-height: 400px !important;
-        position: relative !important;
-    }
-
-    .tab-pane.active,
-    .tab-pane.show {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-    }
-
-    /* === CONTENT CARDS === */
-    .content-card {
-        background: white;
-        border-radius: var(--radius-md);
-        border: 1px solid #f1f5f9;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
-        height: auto;
-        min-height: 200px;
-        overflow: visible;
-        margin-bottom: 1.5rem;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .card-header-clean {
-        padding: 1.25rem 1.5rem;
-        border-bottom: 1px solid #f1f5f9;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        font-weight: 600;
-        color: #334155;
-        background: #fff;
-        flex-wrap: wrap;
-        flex-shrink: 0;
-    }
-
-    .card-icon {
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--primary-light);
-        color: var(--primary-dark);
-        border-radius: 8px;
-        font-size: 0.9rem;
-        flex-shrink: 0;
-    }
-
-    .card-body-clean {
-        padding: 1.5rem;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        min-height: 150px;
-    }
-
-    .gradient-icon {
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        color: white;
-        border: none;
-    }
-
-    .gradient-icon-2 {
-        background: linear-gradient(135deg, #3b82f6, #06b6d4);
-        color: white;
-        border: none;
-    }
-
-    .gradient-icon-3 {
-        background: linear-gradient(135deg, #f59e0b, #ea580c);
-        color: white;
-        border: none;
-    }
-
-    /* === INFO STYLES === */
-    .info-label {
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        color: #94a3b8;
-        font-weight: 600;
-        letter-spacing: 0.05em;
-        margin-bottom: 0.25rem;
-        display: block;
-    }
-
-    .info-value {
-        font-size: 0.95rem;
-        color: #1e293b;
-        font-weight: 500;
-        word-break: break-word;
-        line-height: 1.4;
-    }
-
-    .info-group {
-        background: #f8fafc;
-        padding: 0.75rem 1rem;
-        border-radius: 0.75rem;
-        height: 100%;
-        transition: 0.2s;
-        margin-bottom: 0.75rem;
-    }
-
-    .info-group:hover {
-        background: #fff;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-    }
-
-    /* === TIMELINE STYLES === */
-    .timeline-wrapper {
-        position: relative;
-        padding: 1rem 0.75rem 1rem 2rem;
-        min-height: 200px;
-        overflow: visible;
-    }
-
-    .timeline-line {
-        position: absolute;
-        top: 1rem;
-        bottom: 1rem;
-        left: 18px;
-        width: 2px;
-        background: linear-gradient(to bottom, #e2e8f0 0%, #cbd5e1 100%);
-        border-radius: 1px;
-    }
-
-    .timeline-node {
-        position: relative;
-        padding-left: 2rem;
-        margin-bottom: 1.5rem;
-        min-height: 60px;
-    }
-
-    .timeline-node:last-child {
-        margin-bottom: 0.5rem;
-    }
-
-    .timeline-dot {
-        width: 16px;
-        height: 16px;
-        position: absolute;
-        top: 0.25rem;
-        left: 10px;
-        background: white;
-        border: 3px solid #cbd5e1;
-        border-radius: 50%;
-        z-index: 3;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-    }
-
-    .timeline-dot.active {
-        border-color: var(--primary-color);
-        background: var(--primary-color);
-        box-shadow: 0 0 0 4px var(--primary-light), 0 2px 8px rgba(99, 102, 241, 0.2);
-    }
-
-    .timeline-dot.pulsing {
-        animation: pulse-dot 2s infinite;
-    }
-
-    .timeline-dot-inner {
-        width: 4px;
-        height: 4px;
-        border-radius: 50%;
-        background: #cbd5e1;
-        transition: all 0.3s ease;
-    }
-
-    .timeline-dot.active .timeline-dot-inner {
-        background: white;
-        width: 6px;
-        height: 6px;
-    }
-
-    @keyframes pulse-dot {
-
-        0%,
-        100% {
-            transform: scale(1);
-        }
-
-        50% {
-            transform: scale(1.1);
-        }
-    }
-
-    .timeline-content {
-        padding: 1rem 1.25rem;
-        background: #fff;
-        border-radius: 0.875rem;
-        border: 1px solid #f1f5f9;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        margin-left: 0.5rem;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .timeline-content.active-node {
-        background: linear-gradient(135deg, #fcfaff 0%, #f8fafc 100%);
-        border-color: var(--primary-light);
-        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.12);
-        transform: translateX(2px);
-    }
-
-    .timeline-date {
-        font-size: 0.7rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--secondary-color);
-        margin-bottom: 0.375rem;
-        display: block;
-        opacity: 0.8;
-    }
-
-    .timeline-title {
-        font-size: 1.05rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-        color: #1e293b;
-        line-height: 1.3;
-    }
-
-    .bg-primary-soft {
-        background-color: #e0e7ff;
-        color: #4338ca;
-    }
-
-    /* === ADDRESS STYLES === */
-    .address-box {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        padding: 1.25rem;
-        border-radius: 1rem;
-        height: 100%;
-    }
-
-    .address-header {
-        font-weight: 600;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 1rem;
-        color: #475569;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .address-text {
-        font-size: 0.95rem;
-        color: #334155;
-        line-height: 1.6;
-        margin: 0;
-        word-break: break-word;
-    }
-
-    /* === RESPONSIVE STYLES === */
-    @media (max-width: 767px) {
-        .container {
-            padding-left: 10px;
-            padding-right: 10px;
-        }
-
-        .profile-hero {
-            height: 160px;
-        }
-
-        .profile-card-main {
-            margin-top: -2rem;
-            padding: 1.5rem 1rem;
-            border-radius: 1rem;
-        }
-
-        .profile-layout {
-            flex-direction: column;
-            text-align: center;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .profile-avatar-wrapper {
-            width: 90px;
-            height: 90px;
-            margin: -3rem auto 1rem;
-        }
-
-        .profile-avatar.placeholder {
-            font-size: 1.6rem;
-        }
-
-        .camera-btn {
-            width: 26px;
-            height: 26px;
-        }
-
-        .profile-name {
-            font-size: 1.3rem;
-        }
-
-        .profile-role {
-            font-size: 0.85rem;
-        }
-
-        .nav-pills-custom {
-            flex-direction: column;
-            gap: 0.5rem;
-            padding: 0.5rem;
-            width: 100%;
-        }
-
-        .nav-pills-custom .nav-link {
-            padding: 0.6rem;
-            font-size: 0.85rem;
-            flex: none;
-            width: 100%;
-        }
-
-        .content-card {
-            margin-bottom: 1rem;
-            border-radius: 0.75rem;
-        }
-
-        .card-header-clean {
-            padding: 1rem;
-            font-size: 0.9rem;
-        }
-
-        .card-body-clean {
-            padding: 1.25rem;
-        }
-
-        .card-icon {
-            width: 28px;
-            height: 28px;
-            font-size: 0.8rem;
-        }
-
-        .info-group {
-            padding: 0.625rem 0.875rem;
-        }
-
-        .info-label {
-            font-size: 0.7rem;
-        }
-
-        .info-value {
-            font-size: 0.875rem;
-        }
-
-        .address-box {
-            padding: 1rem;
-        }
-
-        .address-header {
-            font-size: 0.8rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .address-text {
-            font-size: 0.875rem;
-        }
-    }
-
-    @media (max-width: 575px) {
-        .container {
-            padding-left: 8px;
-            padding-right: 8px;
-        }
-
-        .profile-hero {
-            height: 140px;
-        }
-
-        .profile-card-main {
-            margin-top: -1.5rem;
-            padding: 1.25rem 0.875rem;
-        }
-
-        .profile-avatar-wrapper {
-            width: 80px;
-            height: 80px;
-            margin: -2.5rem auto 0.75rem;
-        }
-
-        .profile-avatar.placeholder {
-            font-size: 1.4rem;
-        }
-
-        .camera-btn {
-            width: 24px;
-            height: 24px;
-        }
-
-        .profile-name {
-            font-size: 1.2rem;
-        }
-
-        .profile-role {
-            font-size: 0.8rem;
-        }
-
-        .nav-pills-custom .nav-link {
-            padding: 0.5rem;
-            font-size: 0.8rem;
-        }
-
-        .card-header-clean {
-            padding: 0.875rem;
-            font-size: 0.85rem;
-        }
-
-        .card-body-clean {
-            padding: 1rem;
-        }
-
-        .card-icon {
-            width: 24px;
-            height: 24px;
-            font-size: 0.75rem;
-        }
-
-        .info-group {
-            padding: 0.5rem 0.75rem;
-        }
-
-        .info-label {
-            font-size: 0.65rem;
-        }
-
-        .info-value {
-            font-size: 0.8rem;
-        }
-
-        .address-box {
-            padding: 0.875rem;
-        }
-    }
-    .btn-view-doc {
-        padding: 0.35rem 0.75rem;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        background: #f1f5f9;
-        color: #475569;
-        border: 1px solid #e2e8f0;
-        transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        margin-top: 0.5rem;
-    }
-
-    .btn-view-doc:hover {
-        background: #e2e8f0;
-        color: #1e293b;
-    }
-
-    /* Image Modal */
-    .image-modal {
-        display: none;
-        position: fixed;
-        z-index: 10000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.9);
-        justify-content: center;
-        align-items: center;
-        backdrop-filter: blur(5px);
-    }
-
-    .image-modal img {
-        max-width: 90%;
-        max-height: 90%;
-        border-radius: 12px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-    }
-
-    .modal-close {
-        position: absolute;
-        top: 2rem;
-        right: 2rem;
-        color: white;
-        font-size: 2.5rem;
-        cursor: pointer;
-        background: rgba(255, 255, 255, 0.1);
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s;
-        border: none;
-    }
-
-    .modal-close:hover {
-        background: rgba(255, 255, 255, 0.2);
-        transform: rotate(90deg);
-    }
+:root {
+  --kp: #5b47fb;
+  --kp2: #7c3aed;
+  --kp-light: rgba(91,71,251,0.06);
+  --ks: #10b981;
+  --ks-light: rgba(16,185,129,0.08);
+  --kw: #f59e0b;
+  --kw-light: rgba(245,158,11,0.08);
+  --kd: #ef4444;
+  --kd-light: rgba(239,68,68,0.08);
+  --ki: #06b6d4;
+  --bg: #f4f6fb;
+  --card: #ffffff;
+  --border: #e8eaf0;
+  --t1: #1e293b;
+  --t2: #64748b;
+  --t3: #94a3b8;
+  --shadow: 0 4px 20px rgba(0,0,0,0.02), 0 2px 8px rgba(0,0,0,0.03);
+  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  font-family: 'Outfit', sans-serif !important;
+  background: var(--bg) !important;
+  color: var(--t1);
+}
+
+/* PAGE TITLE */
+.kp-page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--t1);
+  letter-spacing: -0.02em;
+}
+.kp-page-sub {
+  font-size: 0.88rem;
+  color: var(--t2);
+}
+
+/* HERO BANNER */
+.kp-hero {
+  background: linear-gradient(135deg, #3b22e7 0%, #763cf6 50%, #b25dfc 100%);
+  border-radius: 16px;
+  padding: 32px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px -10px rgba(91,71,251,0.3);
+}
+.kp-hero::before {
+  content:'';
+  position:absolute;
+  right:-50px;
+  top:-50px;
+  width:260px;
+  height:260px;
+  border-radius:50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+}
+.kp-hero::after {
+  content:'';
+  position:absolute;
+  right:80px;
+  bottom:-80px;
+  width:180px;
+  height:180px;
+  border-radius:50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%);
+}
+.kp-hero-avatar {
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  border: 4px solid rgba(255,255,255,1);
+  object-fit: cover;
+  flex-shrink: 0;
+  cursor: pointer;
+  background: linear-gradient(135deg,#818cf8,#a78bfa);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 2.2rem;
+  font-weight: 800;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+  transition: transform 0.2s ease;
+}
+.kp-hero-avatar:hover {
+  transform: scale(1.03);
+}
+.kp-hero-info {
+  flex: 1;
+  position: relative;
+  z-index: 2;
+}
+.kp-hero-name {
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 2px;
+  letter-spacing: -0.01em;
+}
+.kp-hero-role {
+  font-size: 0.95rem;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+.kp-hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.kp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.16);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 30px;
+  border: 1px solid rgba(255,255,255,0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.kp-chip.active {
+  background: rgba(16,185,129,0.25);
+  border-color: rgba(16,185,129,0.4);
+}
+.kp-chip.active i {
+  color: #10b981;
+}
+.kp-edit-btn {
+  position: relative;
+  z-index: 2;
+  background: white;
+  color: var(--kp);
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 10px 24px;
+  border-radius: 30px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: var(--transition);
+}
+.kp-edit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  background: #f8fafc;
+}
+
+/* STATS ROW */
+.kp-stats {
+  background: var(--card);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  overflow: hidden;
+}
+.kp-stat-item {
+  padding: 24px 16px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.kp-stat-item:last-child {
+  border-right: none;
+}
+.kp-stat-val {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 2px;
+  line-height: 1.1;
+}
+.kp-stat-lbl {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--t2);
+}
+
+/* LAYOUT */
+.kp-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+/* SIDEBAR */
+.kp-sidebar {
+  background: var(--card);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  position: sticky;
+  top: 90px;
+  padding: 8px;
+}
+.kp-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--t2);
+  border-radius: 10px;
+  transition: var(--transition);
+  position: relative;
+}
+.kp-nav-item:hover {
+  background: #f8fafc;
+  color: var(--t1);
+}
+.kp-nav-item.active {
+  color: var(--kp);
+  background: var(--kp-light);
+  font-weight: 700;
+}
+.kp-nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 25%;
+  height: 50%;
+  width: 4px;
+  background: var(--kp);
+  border-radius: 0 4px 4px 0;
+}
+.kp-nav-item i {
+  width: 18px;
+  text-align: center;
+  font-size: 1rem;
+}
+
+/* SECTION CARD */
+.kp-section {
+  background: var(--card);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.kp-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--border);
+}
+.kp-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--t1);
+  letter-spacing: -0.01em;
+}
+.kp-section-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.88rem;
+}
+.kp-section-body {
+  padding: 24px 28px;
+}
+
+/* FIELD GRID - Elegant 2-Column fields with uppercase labels above values */
+.kp-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+.kp-field {
+  padding: 18px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.kp-field:nth-last-child(-n+2) {
+  border-bottom: none;
+}
+.kp-field-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--t3);
+  margin-bottom: 4px;
+}
+.kp-field-value {
+  font-size: 0.95rem;
+  color: var(--t1);
+  font-weight: 600;
+}
+
+/* ADDRESS */
+.kp-addr-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--t3);
+  margin-bottom: 4px;
+}
+.kp-addr-value {
+  font-size: 0.92rem;
+  color: var(--t1);
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+/* EMPTY STATE */
+.kp-empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--t3);
+}
+.kp-empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #eceafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--kp);
+  font-size: 1.25rem;
+  margin: 0 auto 16px;
+}
+.kp-empty p {
+  font-size: 0.88rem;
+  font-weight: 500;
+  margin: 0;
+  color: var(--t2);
+}
+
+/* ADD / EDIT BUTTONS */
+.kp-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1.5px solid var(--kp);
+  color: var(--kp);
+  background: transparent;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.kp-btn-outline:hover {
+  background: var(--kp-light);
+  transform: translateY(-1px);
+}
+
+/* EMERGENCY CONTACT CARD */
+.kp-ec {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  background: #fafbff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.01);
+  transition: var(--transition);
+}
+.kp-ec:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.04);
+}
+.kp-ec.primary {
+  border-color: rgba(91,71,251,0.25);
+  background: var(--kp-light);
+}
+
+/* JOB INFO */
+.kp-job-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+.kp-job-field {
+  padding: 18px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.kp-job-field:nth-last-child(-n+2) {
+  border-bottom: none;
+}
+
+/* SHIFT DAYS */
+.kp-day {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.kp-day.on {
+  background: var(--kp);
+  color: white;
+  box-shadow: 0 4px 10px rgba(91,71,251,0.25);
+}
+.kp-day.off {
+  background: #f1f5f9;
+  color: var(--t3);
+}
+
+/* MANAGER CARD */
+.kp-mgr {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: var(--kp-light);
+  border: 1px solid rgba(91,71,251,0.12);
+  border-radius: 16px;
+  padding: 20px 24px;
+}
+.kp-mgr-av {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--kp), var(--kp2));
+  color: white;
+  font-size: 1.35rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(91,71,251,0.2);
+}
+
+/* LEAVE BARS */
+.kp-lb {
+  margin-bottom: 22px;
+}
+.kp-lb-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--t2);
+}
+.kp-lb-bg {
+  height: 10px;
+  background: #e8eaf0;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.kp-lb-fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.kp-lb-sub {
+  font-size: 0.75rem;
+  color: var(--t3);
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+/* LEAVE STAT CARDS */
+.kp-lstat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  text-align: center;
+  transition: var(--transition);
+}
+.kp-lstat:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.kp-lstat-val {
+  font-size: 1.85rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.kp-lstat-lbl {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--t3);
+  margin-top: 6px;
+}
+
+/* TIMELINE */
+.kp-tl {
+  position: relative;
+  padding-left: 36px;
+}
+.kp-tl::before {
+  content:'';
+  position:absolute;
+  left:10px;
+  top:8px;
+  bottom:8px;
+  width:2px;
+  background: linear-gradient(to bottom, var(--kp), #e8eaf0);
+  border-radius:2px;
+}
+.kp-tl-node {
+  position: relative;
+  margin-bottom: 24px;
+}
+.kp-tl-dot {
+  position: absolute;
+  left: -32px;
+  top: 6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid #cbd5e1;
+  box-shadow: 0 0 0 4px white;
+}
+.kp-tl-dot.on {
+  border-color: var(--kp);
+  background: var(--kp);
+}
+.kp-tl-dot.pulse {
+  border-color: var(--kp);
+  animation: kpulse 2s infinite;
+}
+@keyframes kpulse {
+  0%,100%{box-shadow:0 0 0 4px white,0 0 0 8px rgba(91,71,251,0.15)}
+  50%{box-shadow:0 0 0 4px white,0 0 0 12px rgba(91,71,251,0.05)}
+}
+.kp-tl-box {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+.kp-tl-box.cur {
+  background: var(--kp-light);
+  border-color: rgba(91,71,251,0.15);
+}
+.kp-tl-date {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--t3);
+  margin-bottom: 4px;
+}
+.kp-tl-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--t1);
+}
+.kp-tl-sub {
+  font-size: 0.82rem;
+  color: var(--t2);
+  margin-top: 4px;
+}
+
+/* DOC BOXES */
+.kp-doc {
+  border: 2px dashed var(--border);
+  border-radius: 16px;
+  padding: 28px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--transition);
+  min-height: 170px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.kp-doc:hover {
+  border-color: var(--kp);
+  background: var(--kp-light);
+}
+.kp-doc.done {
+  border-style: solid;
+  border-color: var(--ks);
+  background: rgba(16,185,129,0.02);
+}
+
+/* RESPONSIVE */
+@media (max-width: 991px) {
+  .kp-layout { grid-template-columns: 1fr; }
+  .kp-sidebar { position: static; display: flex; flex-wrap: wrap; padding: 6px; gap: 2px; }
+  .kp-nav-item { width: auto; flex: 1; justify-content: center; border-left: none; border-bottom: 3px solid transparent; padding: 10px 12px; font-size: 0.85rem; }
+  .kp-nav-item.active { border-bottom-color: var(--kp); border-left: none; }
+  .kp-nav-item.active::before { display: none; }
+  .kp-stats { grid-template-columns: repeat(2,1fr); }
+  .kp-stat-item:nth-child(2) { border-right: none; }
+  .kp-stat-item:nth-child(3) { border-top: 1px solid var(--border); }
+  .kp-stat-item:nth-child(4) { border-top: 1px solid var(--border); border-right: none; }
+}
+@media (max-width: 575px) {
+  .kp-hero { flex-direction: column; align-items: flex-start; padding: 24px; gap: 20px; }
+  .kp-hero-name { font-size: 1.5rem; }
+  .kp-edit-btn { align-self: flex-start; }
+  .kp-fields, .kp-job-fields { grid-template-columns: 1fr; }
+  .kp-field:last-child, .kp-job-field:last-child { border-bottom: none; }
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="profile-hero"></div>
+<div style="max-width:1240px;margin:0 auto;padding:28px 24px 48px;">
 
-<div class="container pb-5">
-    <div class="profile-card-main">
-        <div class="profile-layout">
-            <div class="profile-avatar-section">
-                <div class="profile-avatar-wrapper" onclick="document.getElementById('profile_pic_input').click()"
-                    title="Click to change profile picture">
-                    {% if employee.profile_picture %}
-                    <img src="{{ employee.profile_picture.url }}" class="profile-avatar" alt="Profile">
-                    {% else %}
-                    <div class="profile-avatar placeholder d-flex align-items-center justify-content-center text-white">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    {% endif %}
-                    <div class="camera-btn"><i class="fas fa-camera"></i></div>
-                </div>
-            </div>
+  <!-- Page Title -->
+  {% if is_viewing_colleague %}
+  <div class="mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+    <div>
+      <div class="kp-page-title">{{ employee.user.get_full_name }}'s Profile</div>
+      <div class="kp-page-sub">Colleague profile details</div>
+    </div>
+    <a href="{% url 'dashboard' %}" class="btn px-4 py-2 text-white border-0 fw-bold" style="background: var(--kp); border-radius: 8px; font-size: 0.9rem; transition: var(--transition); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(91,71,251,0.25);">
+      <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+  </div>
+  {% else %}
+  <div class="mb-4">
+    <div class="kp-page-title">My Profile</div>
+    <div class="kp-page-sub">View and manage your personal information</div>
+  </div>
+  {% endif %}
 
-            <div class="profile-info-section">
-                <h1 class="profile-name mb-1">
-                    {{ employee.user.get_full_name }}
-                </h1>
-                <div class="d-flex flex-wrap align-items-center justify-content-center gap-2 mb-3">
-                    <span class="profile-role"><i class="fas fa-briefcase me-1 text-muted"></i>
-                        {{ employee.designation }}
-                    </span>
-                    <span class="text-muted">•</span>
-                    <span class="profile-role"><i class="fas fa-building me-1 text-muted"></i>
-                        {{ employee.department }}
-                    </span>
-                </div>
-                <div class="d-flex gap-3 flex-wrap justify-content-center mb-3">
-                    <div class="badge-soft badge-soft-primary">
-                        {{ employee.get_work_type_display|default:"Full Time" }}
-                    </div>
-                    <div class="d-flex align-items-center text-muted small"><i class="fas fa-id-badge me-1"></i>
-                        {{ employee.badge_id|default:"-" }}
-                    </div>
-                    <div class="d-flex align-items-center text-muted small"><i class="fas fa-map-marker-alt me-1"></i>
-                        {{ employee.location.name|default:"Remote" }}
-                    </div>
-                </div>
-            </div>
+  <!-- Hero Banner -->
+  <div class="kp-hero mb-4 animate__animated animate__fadeIn">
+    {% if is_viewing_colleague %}
+    <div class="kp-hero-avatar" style="cursor: default;" title="Colleague Profile">
+      {% if employee.profile_picture %}
+        <img src="{{ employee.profile_picture.url }}" style="width:100%;height:100%;object-fit:cover;" alt="Profile Picture">
+      {% else %}
+        {{ employee.user.first_name|first|upper }}{{ employee.user.last_name|first|upper }}
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="kp-hero-avatar" onclick="document.getElementById('pp_input').click()" title="Change photo">
+      {% if employee.profile_picture %}
+        <img src="{{ employee.profile_picture.url }}" style="width:100%;height:100%;object-fit:cover;" alt="Profile Picture">
+      {% else %}
+        {{ employee.user.first_name|first|upper }}{{ employee.user.last_name|first|upper }}
+      {% endif %}
+    </div>
+    {% endif %}
+    <div class="kp-hero-info">
+      <div class="kp-hero-name">{{ employee.user.get_full_name }}</div>
+      <div class="kp-hero-role">{{ employee.designation }} · {{ employee.department }}</div>
+      <div class="kp-hero-chips">
+        {% if employee.badge_id %}<span class="kp-chip"><i class="fas fa-id-badge"></i> {{ employee.badge_id }}</span>{% endif %}
+        {% if employee.location %}<span class="kp-chip"><i class="fas fa-map-marker-alt"></i> {{ employee.location.name }}</span>{% endif %}
+        <span class="kp-chip"><i class="fas fa-briefcase"></i> {{ employee.get_work_type_display }}</span>
+        {% if employee.is_active %}
+          <span class="kp-chip active"><i class="fas fa-circle" style="font-size:0.45rem;"></i> Active</span>
+        {% else %}
+          <span class="kp-chip" style="background:rgba(239,68,68,0.25);border-color:rgba(239,68,68,0.35);"><i class="fas fa-circle" style="font-size:0.45rem;"></i> Inactive</span>
+        {% endif %}
+      </div>
+    </div>
+    {% if not is_viewing_colleague %}
+    <button class="kp-edit-btn" data-bs-toggle="modal" data-bs-target="#editModal">
+      <i class="fas fa-pen"></i> Edit Profile
+    </button>
+    {% endif %}
+  </div>
+  <form id="pp_form" method="post" enctype="multipart/form-data" class="d-none">{% csrf_token %}
+    <input type="file" id="pp_input" name="profile_picture" accept="image/*" onchange="document.getElementById('pp_form').submit()">
+  </form>
 
-            <div class="profile-status-section">
-                <div class="d-inline-block text-center mb-3">
-                    <div class="small text-muted mb-1 text-uppercase fw-bold" style="font-size: 0.7rem;">Current Status
-                    </div>
-                    {% if employee.is_active %}
-                    <span class="badge bg-success rounded-pill px-3 py-2 shadow-sm"><i
-                            class="fas fa-check-circle me-1"></i> Active</span>
-                    {% else %}
-                    <span class="badge bg-danger rounded-pill px-3 py-2 shadow-sm"><i
-                            class="fas fa-times-circle me-1"></i> Inactive</span>
-                    {% endif %}
-                </div>
+  <!-- Leave Balance / Stats Row -->
+  <div class="kp-stats mb-4 animate__animated animate__fadeIn" style="animation-delay:0.05s;">
+    <div class="kp-stat-item">
+      <div class="kp-stat-val" style="color:var(--kp);">{% if leave_balance %}{{ leave_balance.casual_leave_balance|floatformat:1 }}{% else %}0.0{% endif %}</div>
+      <div class="kp-stat-lbl">Casual Leave</div>
+    </div>
+    <div class="kp-stat-item">
+      <div class="kp-stat-val" style="color:var(--ks);">{% if leave_balance %}{{ leave_balance.sick_leave_balance|floatformat:1 }}{% else %}0.0{% endif %}</div>
+      <div class="kp-stat-lbl">Sick Leave</div>
+    </div>
+    <div class="kp-stat-item">
+      <div class="kp-stat-val" style="color:var(--kw);">{% if leave_balance %}{{ leave_balance.carry_forward_leave|floatformat:1 }}{% else %}0.0{% endif %}</div>
+      <div class="kp-stat-lbl">Carry Forward</div>
+    </div>
+    <div class="kp-stat-item">
+      <div class="kp-stat-val" style="color:var(--t1);">{% if employee.date_of_joining %}{{ employee.date_of_joining|timesince }}{% else %}—{% endif %}</div>
+      <div class="kp-stat-lbl">Tenure</div>
+    </div>
+  </div>
 
-                <div class="nav-container">
-                    <ul class="nav nav-pills-custom" id="profileTabs" role="tablist">
-                        <li class="nav-item"><button class="nav-link active" id="about-tab" data-bs-toggle="tab"
-                                data-bs-target="#about" type="button" role="tab">About</button></li>
-                        <li class="nav-item"><button class="nav-link" id="job-tab" data-bs-toggle="tab"
-                                data-bs-target="#job" type="button" role="tab">Job</button></li>
-                        <li class="nav-item"><button class="nav-link" id="docs-tab" data-bs-toggle="tab"
-                                data-bs-target="#docs" type="button" role="tab">Docs</button></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        <input type="file" id="profile_pic_input" class="d-none" form="avatar-form" name="profile_picture"
-            accept="image/*" onchange="document.getElementById('avatar-form').submit()">
-        <form id="avatar-form" method="post" enctype="multipart/form-data" class="d-none">{% csrf_token %}</form>
+  <!-- Main Layout -->
+  <div class="kp-layout animate__animated animate__fadeIn" style="animation-delay:0.1s;">
+
+    <!-- Sidebar navigation categories -->
+    <div class="kp-sidebar">
+      <button class="kp-nav-item active" onclick="kpTab('about',this)"><i class="fas fa-user"></i> About</button>
+      <button class="kp-nav-item" onclick="kpTab('job',this)"><i class="fas fa-briefcase"></i> Job</button>
+      <button class="kp-nav-item" onclick="kpTab('leave',this)"><i class="fas fa-calendar-check"></i> Leave</button>
+      {% if show_sensitive_data %}
+      <button class="kp-nav-item" onclick="kpTab('docs',this)"><i class="fas fa-folder"></i> Documents</button>
+      {% endif %}
+      <button class="kp-nav-item" onclick="kpTab('timeline',this)"><i class="fas fa-history"></i> Timeline</button>
     </div>
 
-    <div class="tab-content mt-4" id="profileTabsContent">
+    <!-- Right Side Content Area -->
+    <div>
 
-        <!-- ABOUT TAB - Only About Content -->
-        <div class="tab-pane fade show active" id="about" role="tabpanel">
+      <!-- ══ ABOUT TAB ══ -->
+      <div id="kp-about">
 
-            <!-- Work Timeline -->
-            <div class="content-card">
-                <div class="card-header-clean">
-                    <div class="card-icon gradient-icon"><i class="fas fa-history"></i></div>Work Timeline
-                </div>
-                <div class="card-body-clean">
-                    <div class="timeline-wrapper">
-                        <div class="timeline-line"></div>
-
-                        <!-- Present -->
-                        <div class="timeline-node">
-                            <div class="timeline-dot pulsing">
-                                <div class="timeline-dot-inner"></div>
-                            </div>
-                            <div class="timeline-content active-node">
-                                <span class="timeline-date">Current</span>
-                                <div class="timeline-title text-primary">Current Role</div>
-                                <span class="badge bg-primary-soft text-primary mt-1">
-                                    {{ employee.designation }}
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Work History -->
-                        {% for event in work_history %}
-                        <div class="timeline-node">
-                            <div class="timeline-dot active">
-                                <div class="timeline-dot-inner"></div>
-                            </div>
-                            <div class="timeline-content">
-                                <span class="timeline-date">{{ event.date|date:"d M, Y" }}</span>
-                                <div class="timeline-title d-flex align-items-center">
-                                    {{ event.title }}
-                                    {% if event.event_type == 'DESIGNATION' or event.event_type == 'CTC' %}
-                                    <span class="ms-2 badge bg-light text-dark fw-normal"
-                                        style="font-size: 0.7rem;">Update</span>
-                                    {% endif %}
-                                </div>
-
-                                {% if event.previous_value and event.new_value %}
-                                <div class="mt-2 p-2 bg-light rounded-3 border-start border-primary border-3">
-                                    <div class="row g-0 align-items-center">
-                                        <div class="col text-muted small text-truncate">{{ event.previous_value }}</div>
-                                        <div class="col-auto px-2 text-primary small"><i
-                                                class="fas fa-long-arrow-alt-right"></i></div>
-                                        <div class="col fw-bold small text-truncate">{{ event.new_value }}</div>
-                                    </div>
-                                </div>
-                                {% else %}
-                                <div class="small text-muted">{{ event.description }}</div>
-                                {% endif %}
-
-                                {% if event.reason %}
-                                <div class="small text-muted fst-italic mt-2" style="font-size: 0.75rem;">
-                                    <i class="fas fa-comment-dots me-1 text-primary-light"></i>Reason: {{ event.reason }}
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endfor %}
-
-                        <!-- Probation Status (only show if completed) -->
-                        {% if probation_status == 'COMPLETED' or probation_status == 'COMPLETED_TODAY' %}
-                        <div class="timeline-node">
-                            <div class="timeline-dot {% if employee.employment_status == 'ACTIVE' %}active{% endif %}">
-                                <div class="timeline-dot-inner"></div>
-                            </div>
-                            <div class="timeline-content">
-                                <span class="timeline-date">{{ probation_date|date:"d M, Y" }}</span>
-                                <div class="timeline-title">
-                                    {% if probation_status == 'COMPLETED_TODAY' %}
-                                    <span class="text-success">🎉 Probation Completed</span>
-                                    {% else %}
-                                    Probation Completed
-                                    {% endif %}
-                                </div>
-                                <div class="small text-muted">Confirmed Employee</div>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        <!-- Joined -->
-                        <div class="timeline-node">
-                            <div class="timeline-dot active">
-                                <div class="timeline-dot-inner"></div>
-                            </div>
-                            <div class="timeline-content">
-                                <span class="timeline-date">
-                                    {{ employee.date_of_joining|date:"d M, Y"|default:"-" }}
-                                </span>
-                                <div class="timeline-title">Joined Organization</div>
-                                <div class="small text-muted">
-                                    {{ employee.designation }} • {{ employee.department }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <!-- Personal Details -->
+        <div class="kp-section">
+          <div class="kp-section-head">
+            <div class="kp-section-title">
+              <div class="kp-section-icon" style="background:var(--kp-light);color:var(--kp);"><i class="fas fa-user"></i></div>
+              Personal Details
             </div>
-
-            <!-- Personal Details -->
-            <div class="content-card">
-                <div class="card-header-clean d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="card-icon gradient-icon-2"><i class="fas fa-user"></i></div>Personal Details
-                    </div>
-                    {% if not employee.profile_edited or is_admin %}
-                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3"
-                        data-bs-toggle="modal" data-bs-target="#editProfileModal">
-                        <i class="fas fa-edit me-1"></i> Edit
-                    </button>
-                    {% endif %}
-                </div>
-                <div class="card-body-clean">
-                    <div class="row g-3">
-                        <div class="col-sm-6">
-                            <div class="info-group"><label class="info-label">Full Name</label>
-                                <div class="info-value fw-bold">
-                                    {{ employee.user.get_full_name }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="info-group"><label class="info-label">Pseudo Name</label>
-                                <div class="info-value">
-                                    {{ employee.pseudo_name|default:"--" }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="info-group"><label class="info-label">Email (Official)</label>
-                                <div class="info-value text-break">
-                                    {{ employee.user.email }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="info-group"><label class="info-label">Email (Personal)</label>
-                                <div class="info-value text-break">
-                                    {{ employee.personal_email|default:"--" }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="info-group"><label class="info-label">Phone</label>
-                                <div class="info-value">
-                                    {{ employee.mobile_number|default:"--" }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="info-group"><label class="info-label">Date of Birth</label>
-                                <div class="info-value">
-                                    {{ employee.dob|date:"d M, Y"|default:"--" }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="info-group"><label class="info-label">Gender</label>
-                                <div class="info-value">
-                                    {{ employee.get_gender_display|default:"--" }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="info-group"><label class="info-label">Marital Status</label>
-                                <div class="info-value">
-                                    {{ employee.get_marital_status_display|default:"--" }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            {% if not is_viewing_colleague %}
+            <button class="kp-btn-outline" data-bs-toggle="modal" data-bs-target="#editModal"><i class="fas fa-pen"></i> Edit</button>
+            {% endif %}
+          </div>
+          <div class="kp-section-body">
+            <div class="kp-fields">
+              <div class="kp-field" style="padding-right:24px;">
+                <div class="kp-field-label">Full Name</div>
+                <div class="kp-field-value">{{ employee.user.get_full_name }}</div>
+              </div>
+              <div class="kp-field" style="padding-left:24px;">
+                <div class="kp-field-label">Pseudo Name</div>
+                <div class="kp-field-value">{{ employee.pseudo_name|default:"—" }}</div>
+              </div>
+              <div class="kp-field" style="padding-right:24px;">
+                <div class="kp-field-label">Personal Email</div>
+                <div class="kp-field-value" style="font-size:0.9rem;">{{ employee.personal_email|default:"—" }}</div>
+              </div>
+              <div class="kp-field" style="padding-left:24px;">
+                <div class="kp-field-label">Mobile</div>
+                <div class="kp-field-value">{{ employee.mobile_number|default:"—" }}</div>
+              </div>
+              <div class="kp-field" style="padding-right:24px;">
+                <div class="kp-field-label">Gender</div>
+                <div class="kp-field-value">{{ employee.get_gender_display|default:"—" }}</div>
+              </div>
+              <div class="kp-field" style="padding-left:24px;">
+                <div class="kp-field-label">Marital Status</div>
+                <div class="kp-field-value">{{ employee.get_marital_status_display|default:"—" }}</div>
+              </div>
+              <div class="kp-field" style="padding-right:24px; border-bottom: none;">
+                <div class="kp-field-label">Date of Birth</div>
+                <div class="kp-field-value">{{ employee.dob|date:"d M, Y"|default:"—" }}</div>
+              </div>
+              <div class="kp-field" style="padding-left:24px; border-bottom: none;">
+                <div class="kp-field-label">Official Email</div>
+                <div class="kp-field-value" style="font-size:0.9rem;">{{ employee.user.email }}</div>
+              </div>
             </div>
-
-            <!-- Address Book -->
-            <div class="content-card">
-                <div class="card-header-clean d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="card-icon gradient-icon-3"><i class="fas fa-map-marker-alt"></i></div>Address Book
-                    </div>
-                    {% if not employee.profile_edited or is_admin %}
-                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3"
-                        data-bs-toggle="modal" data-bs-target="#editProfileModal">
-                        <i class="fas fa-edit me-1"></i> Edit
-                    </button>
-                    {% endif %}
-                </div>
-                <div class="card-body-clean">
-                    <div class="row g-4">
-                        <div class="col-md-6">
-                            <div class="address-box">
-                                <div class="address-header"><i class="fas fa-home me-2 text-primary"></i> Current
-                                    Address</div>
-                                <p class="address-text">
-                                    {{ employee.current_address|default:"Not Provided"|linebreaksbr }}
-                                </p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="address-box">
-                                <div class="address-header"><i class="fas fa-building me-2 text-secondary"></i>
-                                    Permanent
-                                    Address</div>
-                                <p class="address-text">
-                                    {{ employee.permanent_address|default:"-"|linebreaksbr }}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Emergency Contacts -->
-            <div class="content-card">
-                <div class="card-header-clean d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="card-icon"
-                            style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white;">
-                            <i class="fas fa-phone-alt"></i>
-                        </div>
-                        Emergency Contacts
-                    </div>
-                    {% if not employee.profile_edited or is_admin %}
-                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3"
-                        data-bs-toggle="modal" data-bs-target="#editProfileModal">
-                        <i class="fas fa-edit me-1"></i> Edit
-                    </button>
-                    {% endif %}
-                </div>
-                <div class="card-body-clean">
-                    {% if emergency_contacts %}
-                    <div class="row g-3">
-                        {% for contact in emergency_contacts %}
-                        <div class="col-md-6">
-                            <div class="border rounded-3 p-3 h-100" style="background: #f8fafc; transition: all 0.3s;">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h6 class="mb-0 fw-bold text-dark">
-                                        <i class="fas fa-user-circle me-2 text-primary"></i>
-                                        {{ contact.name }}
-                                    </h6>
-                                    {% if contact.is_primary %}
-                                    <span class="badge bg-success" style="font-size: 0.7rem;">Primary</span>
-                                    {% endif %}
-                                </div>
-                                <div class="small text-muted mb-1">
-                                    <i class="fas fa-phone me-2 text-success"></i>
-                                    <a href="tel:{{ contact.phone_number }}"
-                                        class="text-decoration-none text-dark fw-medium">
-                                        {{ contact.phone_number }}
-                                    </a>
-                                </div>
-                                <div class="small text-muted">
-                                    <i class="fas fa-user-friends me-2 text-info"></i>
-                                    {{ contact.relationship }}
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <div class="text-center py-5 text-muted">
-                        <i class="fas fa-phone-slash fa-3x mb-3 opacity-25"></i>
-                        <p class="mb-0">No emergency contacts added yet.</p>
-                        <p class="small">Contact your HR to add emergency contacts.</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
+          </div>
         </div>
 
-        <!-- JOB TAB - Only Job Content -->
-        <div class="tab-pane fade" id="job" role="tabpanel">
-
-            <!-- Employment Details -->
-            <div class="content-card">
-                <div class="card-header-clean">
-                    <div class="card-icon gradient-icon"><i class="fas fa-briefcase"></i></div>Employment Details
-                </div>
-                <div class="card-body-clean">
-                    <div class="row g-3">
-                        <div class="col-sm-6">
-                            <div class="info-group"><label class="info-label">Employment Type</label>
-                                <div class="info-value">
-                                    {{ employee.get_work_type_display|default:"Full Time" }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="info-group"><label class="info-label">Department</label>
-                                <div class="info-value">
-                                    {{ employee.department }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="info-group"><label class="info-label">Date of Joining</label>
-                                <div class="info-value">
-                                    {{ employee.date_of_joining|date:"d F, Y"|default:"-" }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="info-group"><label class="info-label">Work Shift</label>
-                                <div class="info-value text-primary"><i class="far fa-clock me-1"></i>
-                                    {{ employee.assigned_shift.name|default:"General Shift" }}</div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="info-group"><label class="info-label">Location</label>
-                                <div class="info-value">
-                                    {{ employee.location.name|default:"Head Office" }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <!-- Address Book -->
+        <div class="kp-section">
+          <div class="kp-section-head">
+            <div class="kp-section-title">
+              <div class="kp-section-icon" style="background:var(--kw-light);color:var(--kw);"><i class="fas fa-map-marker-alt"></i></div>
+              Address Book
             </div>
-
-            <!-- Shift Configuration -->
-            <div class="content-card">
-                <div class="card-header-clean">
-                    <div class="card-icon gradient-icon-2"><i class="fas fa-clock"></i></div>Shift Configuration
-                </div>
-                <div class="card-body-clean">
-                    {% if employee.assigned_shift %}
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">Shift Name</label>
-                                <div class="info-value">{{ employee.assigned_shift.name }}</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">Timing</label>
-                                <div class="info-value">
-                                    {{ employee.assigned_shift.start_time|time:"H:i" }} - {{ employee.assigned_shift.end_time|time:"H:i" }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">Grace Period</label>
-                                <div class="info-value">{{ employee.assigned_shift.grace_period_minutes }} minutes</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">Working Days</label>
-                                <div class="info-value">
-                                    <div class="working-days-badges">
-                                        {% if not employee.week_off_monday %}<span class="badge bg-primary me-1">Mon</span>{% endif %}
-                                        {% if not employee.week_off_tuesday %}<span class="badge bg-primary me-1">Tue</span>{% endif %}
-                                        {% if not employee.week_off_wednesday %}<span class="badge bg-primary me-1">Wed</span>{% endif %}
-                                        {% if not employee.week_off_thursday %}<span class="badge bg-primary me-1">Thu</span>{% endif %}
-                                        {% if not employee.week_off_friday %}<span class="badge bg-primary me-1">Fri</span>{% endif %}
-                                        {% if not employee.week_off_saturday %}<span class="badge bg-primary me-1">Sat</span>{% endif %}
-                                        {% if not employee.week_off_sunday %}<span class="badge bg-primary me-1">Sun</span>{% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="text-center py-4 text-muted">
-                        <i class="fas fa-clock fa-3x mb-3 opacity-25"></i>
-                        <p class="mb-2">No shift assigned</p>
-                        <p class="small">Contact HR for shift assignment</p>
-                    </div>
-                    {% endif %}
-                </div>
+            <button class="kp-btn-outline" data-bs-toggle="modal" data-bs-target="#editModal"><i class="fas fa-plus"></i> Add</button>
+          </div>
+          <div class="kp-section-body">
+            <div class="row g-4">
+              <div class="col-md-6">
+                <div class="kp-addr-label">Current Address</div>
+                <div class="kp-addr-value">{{ employee.current_address|default:"Not provided"|linebreaksbr }}</div>
+              </div>
+              <div class="col-md-6">
+                <div class="kp-addr-label">Permanent Address</div>
+                <div class="kp-addr-value">{{ employee.permanent_address|default:"Not provided"|linebreaksbr }}</div>
+              </div>
             </div>
-
-            <!-- Reporting Hierarchy -->
-            <div class="content-card">
-                <div class="card-header-clean">
-                    <div class="card-icon gradient-icon-3"><i class="fas fa-sitemap"></i></div>Reporting Hierarchy
-                </div>
-                <div class="card-body-clean">
-                    {% if employee.manager %}
-                    <div class="text-center py-4">
-                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary text-white mb-3"
-                            style="width: 80px; height: 80px; font-size: 2rem; font-weight: bold;">
-                            {{ employee.manager.first_name|first|upper|default:"M" }}
-                        </div>
-                        <h5 class="fw-bold text-dark mb-1">{{ employee.manager.get_full_name }}</h5>
-                        <p class="text-muted small text-uppercase fw-bold mb-3">Reporting Manager</p>
-                        <a href="mailto:{{ employee.manager.email }}" class="btn btn-primary btn-sm rounded-pill">
-                            <i class="fas fa-envelope me-1"></i>Contact Manager
-                        </a>
-                    </div>
-                    {% else %}
-                    <div class="text-center py-4 text-muted">
-                        <i class="fas fa-user-slash fa-3x mb-3 opacity-25"></i>
-                        <p class="mb-2">No Manager Assigned</p>
-                        <p class="small">Contact HR for assignment</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
+          </div>
         </div>
 
-        <!-- DOCS TAB - Only Document Uploads -->
-        <div class="tab-pane fade" id="docs" role="tabpanel">
-
-            <div class="content-card">
-                <div class="card-header-clean">
-                    <div class="card-icon gradient-icon"><i class="fas fa-folder-open"></i></div>Identity Documents
-                </div>
-                <div class="card-body-clean">
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <div class="row g-4">
-                            <!-- Aadhar/NID/State ID Front -->
-                            <div class="col-md-4">
-                                <div class="doc-upload-box text-center p-4 border-2 border-dashed rounded-3 position-relative"
-                                    style="border-color: #cbd5e1; {% if is_admin or not id_proofs.aadhar_front %}cursor: pointer;{% endif %} min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;"
-                                    {% if is_admin or not id_proofs.aadhar_front %}onclick="this.querySelector('input').click()"{% endif %}>
-                                    {% if id_proofs.aadhar_front %}
-                                    <span class="badge bg-success position-absolute top-0 end-0 m-2"><i
-                                            class="fas fa-check"></i></span>
-                                    <img src="{{ id_proofs.aadhar_front.url }}" class="img-fluid rounded mb-3"
-                                        style="max-height: 120px; {% if not is_admin %}cursor: zoom-in;{% endif %}"
-                                        {% if not is_admin %}onclick="event.stopPropagation(); openImageModal(this.src)"{% endif %}>
-                                    <div class="fw-bold text-dark">
-                                        {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Front{% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID Front{% else %}Aadhar Front{% endif %}
-                                    </div>
-                                    {% if is_admin %}
-                                    <div class="small text-muted mt-2">Click to change</div>
-                                    {% else %}
-                                    <button type="button" class="btn-view-doc mt-2" onclick="event.stopPropagation(); openImageModal('{{ id_proofs.aadhar_front.url }}')">
-                                        <i class="fas fa-eye"></i> View Card
-                                    </button>
-                                    {% endif %}
-                                    {% else %}
-                                    <i class="fas fa-id-card fa-3x text-muted mb-3"></i>
-                                    <div class="fw-bold text-dark mb-2">
-                                        {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Front{% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID Front{% else %}Aadhar Front{% endif %}
-                                    </div>
-                                    <div class="small text-muted">Click to upload</div>
-                                    {% endif %}
-                                    <input type="file" name="aadhar_front" hidden accept="image/*">
-                                </div>
-                            </div>
-
-                            <!-- Aadhar/NID/State ID Back -->
-                            <div class="col-md-4">
-                                <div class="doc-upload-box text-center p-4 border-2 border-dashed rounded-3 position-relative"
-                                    style="border-color: #cbd5e1; {% if is_admin or not id_proofs.aadhar_back %}cursor: pointer;{% endif %} min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;"
-                                    {% if is_admin or not id_proofs.aadhar_back %}onclick="this.querySelector('input').click()"{% endif %}>
-                                    {% if id_proofs.aadhar_back %}
-                                    <span class="badge bg-success position-absolute top-0 end-0 m-2"><i
-                                            class="fas fa-check"></i></span>
-                                    <img src="{{ id_proofs.aadhar_back.url }}" class="img-fluid rounded mb-3"
-                                        style="max-height: 120px; {% if not is_admin %}cursor: zoom-in;{% endif %}"
-                                        {% if not is_admin %}onclick="event.stopPropagation(); openImageModal(this.src)"{% endif %}>
-                                    <div class="fw-bold text-dark">
-                                        {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Back{% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID Back{% else %}Aadhar Back{% endif %}
-                                    </div>
-                                    {% if is_admin %}
-                                    <div class="small text-muted mt-2">Click to change</div>
-                                    {% else %}
-                                    <button type="button" class="btn-view-doc mt-2" onclick="event.stopPropagation(); openImageModal('{{ id_proofs.aadhar_back.url }}')">
-                                        <i class="fas fa-eye"></i> View Card
-                                    </button>
-                                    {% endif %}
-                                    {% else %}
-                                    <i class="fas fa-id-card fa-3x text-muted mb-3"></i>
-                                    <div class="fw-bold text-dark mb-2">
-                                        {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}NID Back{% elif employee.location.country_code == "US" or "US" in employee.location.name %}State ID Back{% else %}Aadhar Back{% endif %}
-                                    </div>
-                                    <div class="small text-muted">Click to upload</div>
-                                    {% endif %}
-                                    <input type="file" name="aadhar_back" hidden accept="image/*">
-                                </div>
-                            </div>
-
-                            <!-- PAN/TIN/SSN Card -->
-                            <div class="col-md-4">
-                                <div class="doc-upload-box text-center p-4 border-2 border-dashed rounded-3 position-relative"
-                                    style="border-color: #cbd5e1; {% if is_admin or not id_proofs.pan_card %}cursor: pointer;{% endif %} min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;"
-                                    {% if is_admin or not id_proofs.pan_card %}onclick="this.querySelector('input').click()"{% endif %}>
-                                    {% if id_proofs.pan_card %}
-                                    <span class="badge bg-success position-absolute top-0 end-0 m-2"><i
-                                            class="fas fa-check"></i></span>
-                                    <img src="{{ id_proofs.pan_card.url }}" class="img-fluid rounded mb-3"
-                                        style="max-height: 120px; {% if not is_admin %}cursor: zoom-in;{% endif %}"
-                                        {% if not is_admin %}onclick="event.stopPropagation(); openImageModal(this.src)"{% endif %}>
-                                    <div class="fw-bold text-dark">
-                                        {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}TIN Card{% elif employee.location.country_code == "US" or "US" in employee.location.name %}SSN Card{% else %}PAN Card{% endif %}
-                                    </div>
-                                    {% if is_admin %}
-                                    <div class="small text-muted mt-2">Click to change</div>
-                                    {% else %}
-                                    <button type="button" class="btn-view-doc mt-2" onclick="event.stopPropagation(); openImageModal('{{ id_proofs.pan_card.url }}')">
-                                        <i class="fas fa-eye"></i> View Card
-                                    </button>
-                                    {% endif %}
-                                    {% else %}
-                                    <i class="fas fa-credit-card fa-3x text-muted mb-3"></i>
-                                    <div class="fw-bold text-dark mb-2">
-                                        {% if employee.location.country_code == "BD" or "Dhaka" in employee.location.name %}TIN Card{% elif employee.location.country_code == "US" or "US" in employee.location.name %}SSN Card{% else %}PAN Card{% endif %}
-                                    </div>
-                                    <div class="small text-muted">Click to upload</div>
-                                    {% endif %}
-                                    <input type="file" name="pan_card" hidden accept="image/*">
-                                </div>
-                            </div>
-
-                            {% if is_admin or not id_proofs.aadhar_front or not id_proofs.aadhar_back or not id_proofs.pan_card %}
-                            <div class="mt-4 text-center">
-                                <button type="submit" class="btn btn-primary px-5 rounded-pill shadow-sm">
-                                    <i class="fas fa-save me-2"></i>Save Documents
-                                </button>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </form>
-                </div>
+        <!-- Emergency Contacts -->
+        <div class="kp-section">
+          <div class="kp-section-head">
+            <div class="kp-section-title">
+              <div class="kp-section-icon" style="background:var(--kd-light);color:var(--kd);"><i class="fas fa-phone-alt"></i></div>
+              Emergency Contacts
             </div>
+            <button class="kp-btn-outline" data-bs-toggle="modal" data-bs-target="#editModal"><i class="fas fa-plus"></i> Add</button>
+          </div>
+          <div class="kp-section-body">
+            {% if emergency_contacts %}
+            <div class="row g-3">
+              {% for c in emergency_contacts %}
+              <div class="col-md-6">
+                <div class="kp-ec {% if c.is_primary %}primary{% endif %}">
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div style="font-weight:700;color:var(--t1);font-size:0.92rem;">{{ c.name }}</div>
+                    {% if c.is_primary %}<span style="font-size:0.65rem;font-weight:700;background:var(--kp);color:white;padding:2px 10px;border-radius:12px;">Primary</span>{% endif %}
+                  </div>
+                  <div style="font-size:0.85rem;color:var(--t2);margin-bottom:4px;">
+                    <i class="fas fa-phone me-2" style="color:var(--ks);font-size:0.8rem;"></i>
+                    <a href="tel:{{ c.phone_number }}" style="color:var(--t1);text-decoration:none;font-weight:600;">{{ c.phone_number }}</a>
+                  </div>
+                  <div style="font-size:0.8rem;color:var(--t3);">
+                    <i class="fas fa-user-friends me-2" style="font-size:0.8rem;"></i>{{ c.relationship }}
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <!-- Exact high fidelity Keka emergency contacts empty state -->
+            <div class="kp-empty">
+              <div class="kp-empty-icon"><i class="fas fa-phone-alt"></i></div>
+              <p>No emergency contacts added yet.</p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div><!-- /about -->
 
+      <!-- ══ JOB TAB ══ -->
+      <div id="kp-job" style="display:none;">
+        <div class="kp-section">
+          <div class="kp-section-head">
+            <div class="kp-section-title">
+              <div class="kp-section-icon" style="background:var(--kp-light);color:var(--kp);"><i class="fas fa-briefcase"></i></div>
+              Employment Details
+            </div>
+          </div>
+          <div class="kp-section-body">
+            <div class="kp-job-fields">
+              <div class="kp-job-field" style="padding-right:24px;">
+                <div class="kp-field-label">Employee ID</div>
+                <div class="kp-field-value" style="color:var(--kp);font-weight:700;">{{ employee.badge_id|default:"—" }}</div>
+              </div>
+              <div class="kp-job-field" style="padding-left:24px;">
+                <div class="kp-field-label">Designation</div>
+                <div class="kp-field-value">{{ employee.designation }}</div>
+              </div>
+              <div class="kp-job-field" style="padding-right:24px;">
+                <div class="kp-field-label">Department</div>
+                <div class="kp-field-value">{{ employee.department }}</div>
+              </div>
+              <div class="kp-job-field" style="padding-left:24px;">
+                <div class="kp-field-label">Employment Type</div>
+                <div class="kp-field-value">{{ employee.get_work_type_display }}</div>
+              </div>
+              <div class="kp-job-field" style="padding-right:24px;">
+                <div class="kp-field-label">Date of Joining</div>
+                <div class="kp-field-value">{{ employee.date_of_joining|date:"d F, Y"|default:"—" }}</div>
+              </div>
+              <div class="kp-job-field" style="padding-left:24px;">
+                <div class="kp-field-label">Location</div>
+                <div class="kp-field-value">{{ employee.location.name|default:"—" }}</div>
+              </div>
+              <div class="kp-job-field" style="padding-right:24px; border-bottom: none;">
+                <div class="kp-field-label">Status</div>
+                <div class="kp-field-value">
+                  {% if employee.employment_status == 'ACTIVE' %}<span style="color:var(--ks);font-weight:700;"><i class="fas fa-circle me-1" style="font-size:0.5rem;"></i> Active</span>
+                  {% else %}<span style="color:var(--kd);font-weight:700;"><i class="fas fa-circle me-1" style="font-size:0.5rem;"></i> {{ employee.get_employment_status_display }}</span>{% endif %}
+                </div>
+              </div>
+              <div class="kp-job-field" style="padding-left:24px; border-bottom: none;">
+                <div class="kp-field-label">Probation</div>
+                <div class="kp-field-value">
+                  {% if probation_status == 'IN_PROBATION' %}<span style="color:var(--kw);font-weight:600;">In Probation</span>{% if probation_date %}<div style="font-size:0.75rem;color:var(--t3);">Ends {{ probation_date|date:"d M, Y" }}</div>{% endif %}
+                  {% elif probation_status == 'COMPLETED_TODAY' %}<span style="color:var(--ks);font-weight:600;">🎉 Completed Today</span>
+                  {% else %}<span style="color:var(--ks);font-weight:600;">✓ Confirmed</span>{% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
+        <!-- Shift Configuration -->
+        <div class="kp-section">
+          <div class="kp-section-head">
+            <div class="kp-section-title">
+              <div class="kp-section-icon" style="background:rgba(6,182,212,0.1);color:var(--ki);"><i class="fas fa-clock"></i></div>
+              Shift Configuration
+            </div>
+          </div>
+          <div class="kp-section-body">
+            {% if employee.assigned_shift %}
+            <div class="kp-job-fields" style="margin-bottom:24px;">
+              <div class="kp-job-field" style="padding-right:24px;">
+                <div class="kp-field-label">Shift Name</div>
+                <div class="kp-field-value" style="color:var(--kp);font-weight:700;">{{ employee.assigned_shift.name }}</div>
+              </div>
+              <div class="kp-job-field" style="padding-left:24px;">
+                <div class="kp-field-label">Timing</div>
+                <div class="kp-field-value">{{ employee.assigned_shift.start_time|time:"h:i A" }} – {{ employee.assigned_shift.end_time|time:"h:i A" }}</div>
+              </div>
+              <div class="kp-job-field" style="padding-right:24px;">
+                <div class="kp-field-label">Grace Period</div>
+                <div class="kp-field-value">{{ employee.assigned_shift.grace_period_minutes }} min</div>
+              </div>
+              <div class="kp-job-field" style="padding-left:24px;">
+                <div class="kp-field-label">Type</div>
+                <div class="kp-field-value">{{ employee.assigned_shift.get_shift_type_display }}{% if employee.assigned_shift.is_flexible %} · <span style="color:var(--ks);">Flexible</span>{% endif %}</div>
+              </div>
+              {% if employee.assigned_shift.lunch_break_start %}
+              <div class="kp-job-field" style="padding-right:24px;border-bottom:none;">
+                <div class="kp-field-label">Lunch Break</div>
+                <div class="kp-field-value">{{ employee.assigned_shift.lunch_break_start|time:"h:i A" }} – {{ employee.assigned_shift.lunch_break_end|time:"h:i A" }}</div>
+              </div>
+              {% endif %}
+            </div>
+            <div class="kp-field-label" style="margin-bottom:12px;">Working Days</div>
+            <div class="d-flex gap-2">
+              <span class="kp-day {% if not employee.week_off_sunday %}on{% else %}off{% endif %}">Sun</span>
+              <span class="kp-day {% if not employee.week_off_monday %}on{% else %}off{% endif %}">Mon</span>
+              <span class="kp-day {% if not employee.week_off_tuesday %}on{% else %}off{% endif %}">Tue</span>
+              <span class="kp-day {% if not employee.week_off_wednesday %}on{% else %}off{% endif %}">Wed</span>
+              <span class="kp-day {% if not employee.week_off_thursday %}on{% else %}off{% endif %}">Thu</span>
+              <span class="kp-day {% if not employee.week_off_friday %}on{% else %}off{% endif %}">Fri</span>
+              <span class="kp-day {% if not employee.week_off_saturday %}on{% else %}off{% endif %}">Sat</span>
+            </div>
+            {% else %}
+            <div class="kp-empty"><i class="fas fa-clock fa-2x mb-2" style="opacity:0.25;"></i><p>No shift assigned. Contact HR.</p></div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Reporting Manager -->
+        <div class="kp-section">
+          <div class="kp-section-head">
+            <div class="kp-section-title">
+              <div class="kp-section-icon" style="background:var(--kw-light);color:var(--kw);"><i class="fas fa-sitemap"></i></div>
+              Reporting Manager
+            </div>
+          </div>
+          <div class="kp-section-body">
+            {% if employee.manager %}
+            <div class="kp-mgr">
+              <div class="kp-mgr-av">{{ employee.manager.first_name|first|upper }}</div>
+              <div>
+                <div style="font-size:1.05rem;font-weight:700;color:var(--t1);">{{ employee.manager.get_full_name }}</div>
+                <div style="font-size:0.85rem;color:var(--t2);margin-top:2px;">{{ employee.manager.email }}</div>
+                <a href="mailto:{{ employee.manager.email }}" class="btn btn-sm mt-3 rounded-pill px-4 fw-bold" style="background:var(--kp);color:white;font-size:0.75rem;"><i class="fas fa-envelope me-1"></i>Contact</a>
+              </div>
+            </div>
+            {% else %}
+            <div class="kp-empty"><i class="fas fa-user-slash fa-2x mb-2" style="opacity:0.25;"></i><p>No manager assigned.</p></div>
+            {% endif %}
+          </div>
+        </div>
+      </div><!-- /job -->
+
+      <!-- ══ LEAVE TAB ══ -->
+      <div id="kp-leave" style="display:none;">
+        {% if leave_balance %}
+        <div class="kp-section">
+          <div class="kp-section-head">
+            <div class="kp-section-title">
+              <div class="kp-section-icon" style="background:var(--ks-light);color:var(--ks);"><i class="fas fa-calendar-check"></i></div>
+              Leave Balance
+            </div>
+          </div>
+          <div class="kp-section-body">
+            <div class="kp-lb">
+              <div class="kp-lb-head"><span><i class="fas fa-umbrella-beach me-2" style="color:var(--kp);"></i>Casual Leave</span><span style="color:var(--kp);font-weight:700;">{{ leave_balance.casual_leave_balance|floatformat:1 }} / {{ leave_balance.casual_leave_allocated|floatformat:1 }}</span></div>
+              <div class="kp-lb-bg"><div class="kp-lb-fill" style="width:{% if leave_balance.casual_leave_allocated > 0 %}{% widthratio leave_balance.casual_leave_balance leave_balance.casual_leave_allocated 100 %}{% else %}0{% endif %}%;background:var(--kp);"></div></div>
+              <div class="kp-lb-sub">Used: {{ leave_balance.casual_leave_used|floatformat:1 }} days</div>
+            </div>
+            <div class="kp-lb">
+              <div class="kp-lb-head"><span><i class="fas fa-thermometer-half me-2" style="color:var(--ks);"></i>Sick Leave</span><span style="color:var(--ks);font-weight:700;">{{ leave_balance.sick_leave_balance|floatformat:1 }} / {{ leave_balance.sick_leave_allocated|floatformat:1 }}</span></div>
+              <div class="kp-lb-bg"><div class="kp-lb-fill" style="width:{% if leave_balance.sick_leave_allocated > 0 %}{% widthratio leave_balance.sick_leave_balance leave_balance.sick_leave_allocated 100 %}{% else %}0{% endif %}%;background:var(--ks);"></div></div>
+              <div class="kp-lb-sub">Used: {{ leave_balance.sick_leave_used|floatformat:1 }} days</div>
+            </div>
+            {% if leave_balance.carry_forward_leave > 0 %}
+            <div class="kp-lb">
+              <div class="kp-lb-head"><span><i class="fas fa-forward me-2" style="color:var(--kw);"></i>Carry Forward</span><span style="color:var(--kw);font-weight:700;">{{ leave_balance.carry_forward_leave|floatformat:1 }} days</span></div>
+              <div class="kp-lb-bg"><div class="kp-lb-fill" style="width:100%;background:var(--kw);"></div></div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-md-3"><div class="kp-lstat"><div class="kp-lstat-val" style="color:var(--kp);">{{ leave_balance.casual_leave_balance|floatformat:0 }}</div><div class="kp-lstat-lbl">Casual Left</div></div></div>
+          <div class="col-6 col-md-3"><div class="kp-lstat"><div class="kp-lstat-val" style="color:var(--ks);">{{ leave_balance.sick_leave_balance|floatformat:0 }}</div><div class="kp-lstat-lbl">Sick Left</div></div></div>
+          <div class="col-6 col-md-3"><div class="kp-lstat"><div class="kp-lstat-val" style="color:var(--kw);">{{ leave_balance.carry_forward_leave|floatformat:0 }}</div><div class="kp-lstat-lbl">Carry Fwd</div></div></div>
+          <div class="col-6 col-md-3"><div class="kp-lstat"><div class="kp-lstat-val" style="color:var(--kd);">{{ leave_balance.unpaid_leave|floatformat:0 }}</div><div class="kp-lstat-lbl">Unpaid Used</div></div></div>
+        </div>
+        <div class="d-flex gap-3">
+          {% if not is_viewing_colleague %}
+          <a href="{% url 'leave_apply' %}" class="btn rounded-pill px-4 fw-bold" style="background:var(--kp);color:white;font-size:0.88rem;box-shadow:0 4px 12px rgba(91,71,251,0.2);"><i class="fas fa-plus me-2"></i>Apply Leave</a>
+          {% endif %}
+          <a href="{% url 'my_leaves' %}" class="btn btn-outline-secondary rounded-pill px-4 fw-bold" style="font-size:0.88rem;"><i class="fas fa-list me-2"></i>History</a>
+        </div>
+        {% else %}
+        <div class="kp-section"><div class="kp-section-body"><div class="kp-empty"><i class="fas fa-calendar-times fa-2x mb-2" style="opacity:0.25;"></i><p>No leave balance found. Contact HR.</p></div></div></div>
+        {% endif %}
+      </div><!-- /leave -->
+
+      <!-- ══ DOCUMENTS TAB ══ -->
+      <div id="kp-docs" style="display:none;">
+        <div class="kp-section">
+          <div class="kp-section-head">
+            <div class="kp-section-title">
+              <div class="kp-section-icon" style="background:var(--kw-light);color:var(--kw);"><i class="fas fa-folder-open"></i></div>
+              Identity Documents
+            </div>
+          </div>
+          <div class="kp-section-body">
+            <form method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+              <div class="row g-4">
+                {% with cf=employee.location.country_code %}
+                <div class="col-md-4">
+                  <div class="kp-doc {% if id_proofs.aadhar_front %}done{% endif %}" {% if is_admin or not id_proofs.aadhar_front %}onclick="this.querySelector('input').click()"{% endif %}>
+                    {% if id_proofs.aadhar_front %}
+                      <span style="position:absolute;top:10px;right:10px;background:var(--ks);color:white;font-size:0.62rem;font-weight:700;padding:3px 9px;border-radius:20px;"><i class="fas fa-check me-1"></i>Done</span>
+                      <img src="{{ id_proofs.aadhar_front.url }}" style="max-height:100px;border-radius:8px;margin-bottom:10px;cursor:zoom-in;" onclick="event.stopPropagation();kpDoc(this.src)">
+                      <div style="font-size:0.85rem;font-weight:700;color:var(--t1);">{% if cf == "BD" %}NID Front{% elif cf == "US" %}State ID Front{% else %}Aadhar Front{% endif %}</div>
+                      <button type="button" class="btn btn-sm mt-3 rounded-pill" style="background:#f1f5f9;color:var(--t2);font-size:0.75rem;font-weight:700;" onclick="event.stopPropagation();kpDoc('{{ id_proofs.aadhar_front.url }}')"><i class="fas fa-eye me-1"></i>View</button>
+                    {% else %}
+                      <i class="fas fa-id-card fa-2x mb-3" style="color:var(--t3);opacity:0.35;"></i>
+                      <div style="font-size:0.85rem;font-weight:700;color:var(--t1);margin-bottom:4px;">{% if cf == "BD" %}NID Front{% elif cf == "US" %}State ID Front{% else %}Aadhar Front{% endif %}</div>
+                      <div style="font-size:0.75rem;color:var(--t3);">Click to upload</div>
+                    {% endif %}
+                    <input type="file" name="aadhar_front" hidden accept="image/*">
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="kp-doc {% if id_proofs.aadhar_back %}done{% endif %}" {% if is_admin or not id_proofs.aadhar_back %}onclick="this.querySelector('input').click()"{% endif %}>
+                    {% if id_proofs.aadhar_back %}
+                      <span style="position:absolute;top:10px;right:10px;background:var(--ks);color:white;font-size:0.62rem;font-weight:700;padding:3px 9px;border-radius:20px;"><i class="fas fa-check me-1"></i>Done</span>
+                      <img src="{{ id_proofs.aadhar_back.url }}" style="max-height:100px;border-radius:8px;margin-bottom:10px;cursor:zoom-in;" onclick="event.stopPropagation();kpDoc(this.src)">
+                      <div style="font-size:0.85rem;font-weight:700;color:var(--t1);">{% if cf == "BD" %}NID Back{% elif cf == "US" %}State ID Back{% else %}Aadhar Back{% endif %}</div>
+                      <button type="button" class="btn btn-sm mt-3 rounded-pill" style="background:#f1f5f9;color:var(--t2);font-size:0.75rem;font-weight:700;" onclick="event.stopPropagation();kpDoc('{{ id_proofs.aadhar_back.url }}')"><i class="fas fa-eye me-1"></i>View</button>
+                    {% else %}
+                      <i class="fas fa-id-card fa-2x mb-3" style="color:var(--t3);opacity:0.35;"></i>
+                      <div style="font-size:0.85rem;font-weight:700;color:var(--t1);margin-bottom:4px;">{% if cf == "BD" %}NID Back{% elif cf == "US" %}State ID Back{% else %}Aadhar Back{% endif %}</div>
+                      <div style="font-size:0.75rem;color:var(--t3);">Click to upload</div>
+                    {% endif %}
+                    <input type="file" name="aadhar_back" hidden accept="image/*">
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="kp-doc {% if id_proofs.pan_card %}done{% endif %}" {% if is_admin or not id_proofs.pan_card %}onclick="this.querySelector('input').click()"{% endif %}>
+                    {% if id_proofs.pan_card %}
+                      <span style="position:absolute;top:10px;right:10px;background:var(--ks);color:white;font-size:0.62rem;font-weight:700;padding:3px 9px;border-radius:20px;"><i class="fas fa-check me-1"></i>Done</span>
+                      <img src="{{ id_proofs.pan_card.url }}" style="max-height:100px;border-radius:8px;margin-bottom:10px;cursor:zoom-in;" onclick="event.stopPropagation();kpDoc(this.src)">
+                      <div style="font-size:0.85rem;font-weight:700;color:var(--t1);">{% if cf == "BD" %}TIN Card{% elif cf == "US" %}SSN Card{% else %}PAN Card{% endif %}</div>
+                      <button type="button" class="btn btn-sm mt-3 rounded-pill" style="background:#f1f5f9;color:var(--t2);font-size:0.75rem;font-weight:700;" onclick="event.stopPropagation();kpDoc('{{ id_proofs.pan_card.url }}')"><i class="fas fa-eye me-1"></i>View</button>
+                    {% else %}
+                      <i class="fas fa-credit-card fa-2x mb-3" style="color:var(--t3);opacity:0.35;"></i>
+                      <div style="font-size:0.85rem;font-weight:700;color:var(--t1);margin-bottom:4px;">{% if cf == "BD" %}TIN Card{% elif cf == "US" %}SSN Card{% else %}PAN Card{% endif %}</div>
+                      <div style="font-size:0.75rem;color:var(--t3);">Click to upload</div>
+                    {% endif %}
+                    <input type="file" name="pan_card" hidden accept="image/*">
+                  </div>
+                </div>
+                {% endwith %}
+              </div>
+              {% if is_admin or not id_proofs.aadhar_front or not id_proofs.aadhar_back or not id_proofs.pan_card %}
+              <div class="text-center mt-4">
+                <button type="submit" class="btn rounded-pill px-5 fw-bold" style="background:var(--kp);color:white;box-shadow:0 4px 12px rgba(91,71,251,0.2);"><i class="fas fa-save me-2"></i>Save Documents</button>
+              </div>
+              {% endif %}
+            </form>
+          </div>
+        </div>
+      </div><!-- /docs -->
+
+      <!-- ══ TIMELINE TAB ══ -->
+      <div id="kp-timeline" style="display:none;">
+        <div class="kp-section">
+          <div class="kp-section-head">
+            <div class="kp-section-title">
+              <div class="kp-section-icon" style="background:var(--kp-light);color:var(--kp);"><i class="fas fa-history"></i></div>
+              Work Timeline
+            </div>
+          </div>
+          <div class="kp-section-body">
+            <div class="kp-tl">
+              <div class="kp-tl-node">
+                <div class="kp-tl-dot pulse"></div>
+                <div class="kp-tl-box cur">
+                  <div class="kp-tl-date">Current</div>
+                  <div class="kp-tl-title" style="color:var(--kp);">{{ employee.designation }}</div>
+                  <div class="kp-tl-sub">{{ employee.department }} · {{ employee.company.name }}</div>
+                </div>
+              </div>
+              {% for ev in work_history %}
+              <div class="kp-tl-node">
+                <div class="kp-tl-dot on"></div>
+                <div class="kp-tl-box">
+                  <div class="kp-tl-date">{{ ev.date|date:"d M, Y" }}</div>
+                  <div class="kp-tl-title">{{ ev.title }}</div>
+                  {% if ev.previous_value and ev.new_value %}
+                  <div style="display:flex;align-items:center;gap:8px;margin-top:8px;background:#f1f5f9;border-radius:8px;padding:6px 12px;font-size:0.8rem;">
+                    <span style="color:var(--t3);text-decoration:line-through;">{{ ev.previous_value }}</span>
+                    <i class="fas fa-arrow-right" style="color:var(--kp);font-size:0.65rem;"></i>
+                    <span style="color:var(--t1);font-weight:700;">{{ ev.new_value }}</span>
+                  </div>
+                  {% else %}
+                  <div class="kp-tl-sub">{{ ev.description }}</div>
+                  {% endif %}
+                  {% if ev.reason %}<div style="font-size:0.75rem;color:var(--t3);margin-top:6px;font-style:italic;"><i class="fas fa-comment-dots me-1"></i>{{ ev.reason }}</div>{% endif %}
+                </div>
+              </div>
+              {% endfor %}
+              {% if probation_status == 'COMPLETED' or probation_status == 'COMPLETED_TODAY' %}
+              <div class="kp-tl-node">
+                <div class="kp-tl-dot on"></div>
+                <div class="kp-tl-box">
+                  <div class="kp-tl-date">{{ probation_date|date:"d M, Y" }}</div>
+                  <div class="kp-tl-title" style="color:var(--ks);">✓ Probation Completed</div>
+                  <div class="kp-tl-sub">Confirmed Employee</div>
+                </div>
+              </div>
+              {% endif %}
+              {% if employee.date_of_joining %}
+              <div class="kp-tl-node">
+                <div class="kp-tl-dot on"></div>
+                <div class="kp-tl-box">
+                  <div class="kp-tl-date">{{ employee.date_of_joining|date:"d M, Y" }}</div>
+                  <div class="kp-tl-title">Joined {{ employee.company.name }}</div>
+                  <div class="kp-tl-sub">{{ employee.designation }} · {{ employee.department }}</div>
+                </div>
+              </div>
+              {% endif %}
+              {% if not work_history and not employee.date_of_joining %}
+              <div class="kp-empty"><i class="fas fa-history fa-2x mb-2" style="opacity:0.25;"></i><p>No timeline events yet.</p></div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div><!-- /timeline -->
+
+    </div><!-- /content col -->
+  </div><!-- /layout -->
+</div><!-- /container -->
+
+<!-- ══ EDIT MODAL ══ -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius:20px;">
+      <div class="modal-header border-0 py-3 px-4" style="background:linear-gradient(135deg,var(--kp),var(--kp2));border-radius:20px 20px 0 0;">
+        <h5 class="modal-title text-white fw-bold" style="font-size:1.1rem;"><i class="fas fa-user-edit me-2"></i>Edit Personal Information</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_profile">
+        <div class="modal-body p-4">
+          {% if employee.profile_edited and not is_admin %}
+          <div class="alert alert-warning border-0 rounded-3 mb-4" style="font-size:0.85rem;"><i class="fas fa-lock me-2"></i>Profile has already been edited once. Contact HR for further changes.</div>
+          {% endif %}
+          <div class="row g-3">
+            <div class="col-md-6"><label class="form-label fw-bold" style="font-size:0.8rem;color:var(--t2);">Pseudo Name</label><input type="text" name="pseudo_name" class="form-control rounded-3" value="{{ employee.pseudo_name|default:'' }}" {% if employee.profile_edited and not is_admin %}disabled{% endif %}></div>
+            <div class="col-md-6"><label class="form-label fw-bold" style="font-size:0.8rem;color:var(--t2);">Personal Email</label><input type="email" name="personal_email" class="form-control rounded-3" value="{{ employee.personal_email|default:'' }}" {% if employee.profile_edited and not is_admin %}disabled{% endif %}></div>
+            <div class="col-md-6"><label class="form-label fw-bold" style="font-size:0.8rem;color:var(--t2);">Mobile Number</label><input type="text" name="mobile_number" class="form-control rounded-3" value="{{ employee.mobile_number|default:'' }}" {% if employee.profile_edited and not is_admin %}disabled{% endif %}></div>
+            <div class="col-md-6"><label class="form-label fw-bold" style="font-size:0.8rem;color:var(--t2);">Date of Birth</label><input type="date" name="dob" class="form-control rounded-3" value="{{ employee.dob|date:'Y-m-d' }}" {% if employee.profile_edited and not is_admin %}disabled{% endif %}></div>
+            <div class="col-md-6"><label class="form-label fw-bold" style="font-size:0.8rem;color:var(--t2);">Gender</label><select name="gender" class="form-select rounded-3" {% if employee.profile_edited and not is_admin %}disabled{% endif %}><option value="">Select</option><option value="M" {% if employee.gender == 'M' %}selected{% endif %}>Male</option><option value="F" {% if employee.gender == 'F' %}selected{% endif %}>Female</option><option value="O" {% if employee.gender == 'O' %}selected{% endif %}>Other</option></select></div>
+            <div class="col-md-6"><label class="form-label fw-bold" style="font-size:0.8rem;color:var(--t2);">Marital Status</label><select name="marital_status" class="form-select rounded-3" {% if employee.profile_edited and not is_admin %}disabled{% endif %}><option value="">Select</option><option value="S" {% if employee.marital_status == 'S' %}selected{% endif %}>Single</option><option value="M" {% if employee.marital_status == 'M' %}selected{% endif %}>Married</option><option value="D" {% if employee.marital_status == 'D' %}selected{% endif %}>Divorced</option><option value="W" {% if employee.marital_status == 'W' %}selected{% endif %}>Widowed</option></select></div>
+            <div class="col-md-6"><label class="form-label fw-bold" style="font-size:0.8rem;color:var(--t2);">Current Address</label><textarea name="current_address" class="form-control rounded-3" rows="3" {% if employee.profile_edited and not is_admin %}disabled{% endif %}>{{ employee.current_address|default:'' }}</textarea></div>
+            <div class="col-md-6"><label class="form-label fw-bold" style="font-size:0.8rem;color:var(--t2);">Permanent Address</label><textarea name="permanent_address" class="form-control rounded-3" rows="3" {% if employee.profile_edited and not is_admin %}disabled{% endif %}>{{ employee.permanent_address|default:'' }}</textarea></div>
+          </div>
+          <hr class="my-4">
+          <div style="font-size:0.92rem;font-weight:700;color:var(--t1);margin-bottom:12px;"><i class="fas fa-phone-alt me-2" style="color:var(--kd);"></i>Emergency Contacts</div>
+          <div class="row g-3">
+            <div class="col-12"><div class="p-3 rounded-3" style="background:#f8fafc;border:1px solid var(--border);"><div style="font-size:0.75rem;font-weight:700;color:var(--kp);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">Primary Contact</div><div class="row g-2"><div class="col-md-4"><input type="text" name="contact_name_1" placeholder="Name" class="form-control form-control-sm rounded-3" value="{% for c in emergency_contacts %}{% if c.is_primary %}{{ c.name }}{% endif %}{% endfor %}" {% if employee.profile_edited and not is_admin %}disabled{% endif %}></div><div class="col-md-4"><input type="text" name="contact_phone_1" placeholder="Phone" class="form-control form-control-sm rounded-3" value="{% for c in emergency_contacts %}{% if c.is_primary %}{{ c.phone_number }}{% endif %}{% endfor %}" {% if employee.profile_edited and not is_admin %}disabled{% endif %}></div><div class="col-md-4"><input type="text" name="contact_rel_1" placeholder="Relationship" class="form-control form-control-sm rounded-3" value="{% for c in emergency_contacts %}{% if c.is_primary %}{{ c.relationship }}{% endif %}{% endfor %}" {% if employee.profile_edited and not is_admin %}disabled{% endif %}></div></div></div></div>
+            <div class="col-12"><div class="p-3 rounded-3" style="background:#f8fafc;border:1px solid var(--border);"><div style="font-size:0.75rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">Secondary Contact</div><div class="row g-2"><div class="col-md-4"><input type="text" name="contact_name_2" placeholder="Name" class="form-control form-control-sm rounded-3" value="{% for c in emergency_contacts %}{% if not c.is_primary %}{{ c.name }}{% endif %}{% endfor %}" {% if employee.profile_edited and not is_admin %}disabled{% endif %}></div><div class="col-md-4"><input type="text" name="contact_phone_2" placeholder="Phone" class="form-control form-control-sm rounded-3" value="{% for c in emergency_contacts %}{% if not c.is_primary %}{{ c.phone_number }}{% endif %}{% endfor %}" {% if employee.profile_edited and not is_admin %}disabled{% endif %}></div><div class="col-md-4"><input type="text" name="contact_rel_2" placeholder="Relationship" class="form-control form-control-sm rounded-3" value="{% for c in emergency_contacts %}{% if not c.is_primary %}{{ c.relationship }}{% endif %}{% endfor %}" {% if employee.profile_edited and not is_admin %}disabled{% endif %}></div></div></div></div>
+          </div>
+        </div>
+        <div class="modal-footer border-0 px-4 pb-4 pt-0">
+          <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+          {% if not employee.profile_edited or is_admin %}<button type="submit" class="btn rounded-pill px-5 fw-bold" style="background:var(--kp);color:white;">Save Changes</button>{% endif %}
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 
-<!-- Edit Profile Modal -->
-<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 1.25rem;">
-            <div class="modal-header bg-primary text-white border-0 py-3"
-                style="border-top-left-radius: 1.25rem; border-top-right-radius: 1.25rem;">
-                <h5 class="modal-title fw-bold" id="editProfileModalLabel">
-                    <i class="fas fa-user-edit me-2"></i> Edit Personal Information
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                    aria-label="Close"></button>
-            </div>
-            <form method="POST">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="update_profile">
-                <div class="modal-body p-4">
-                    <div class="alert alert-info border-0 shadow-sm mb-4" style="border-radius: 0.75rem;">
-                        <i class="fas fa-info-circle me-2"></i> Profile details can only be edited once. Please ensure
-                        all information is correct.
-                    </div>
-
-                    <h6 class="fw-bold text-primary mb-3"><i class="fas fa-address-card me-2"></i> Basic Information
-                    </h6>
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted">Pseudo Name</label>
-                            <input type="text" name="pseudo_name" class="form-control rounded-3"
-                                value="{{ employee.pseudo_name|default:'' }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted">Personal Email</label>
-                            <input type="email" name="personal_email" class="form-control rounded-3"
-                                value="{{ employee.personal_email|default:'' }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted">Mobile Number</label>
-                            <input type="text" name="mobile_number" class="form-control rounded-3"
-                                value="{{ employee.mobile_number|default:'' }}" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted">Date of Birth</label>
-                            <input type="date" name="dob" class="form-control rounded-3"
-                                value="{{ employee.dob|date:'Y-m-d' }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted">Gender</label>
-                            <select name="gender" class="form-select rounded-3">
-                                <option value="">Select Gender</option>
-                                <option value="M" {% if employee.gender == 'M' %}selected{% endif %}>Male</option>
-                                <option value="F" {% if employee.gender == 'F' %}selected{% endif %}>Female</option>
-                                <option value="O" {% if employee.gender == 'O' %}selected{% endif %}>Other</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted">Marital Status</label>
-                            <select name="marital_status" class="form-select rounded-3">
-                                <option value="">Select Status</option>
-                                <option value="S" {% if employee.marital_status == 'S' %}selected{% endif %}>Single
-                                </option>
-                                <option value="M" {% if employee.marital_status == 'M' %}selected{% endif %}>Married
-                                </option>
-                                <option value="D" {% if employee.marital_status == 'D' %}selected{% endif %}>Divorced
-                                </option>
-                                <option value="W" {% if employee.marital_status == 'W' %}selected{% endif %}>Widowed
-                                </option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <h6 class="fw-bold text-primary mb-3"><i class="fas fa-map-marked-alt me-2"></i> Address Details
-                    </h6>
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted">Current Address</label>
-                            <textarea name="current_address" class="form-control rounded-3"
-                                rows="3">{{ employee.current_address|default:'' }}</textarea>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted">Permanent Address</label>
-                            <textarea name="permanent_address" class="form-control rounded-3"
-                                rows="3">{{ employee.permanent_address|default:'' }}</textarea>
-                        </div>
-                    </div>
-
-                    <h6 class="fw-bold text-primary mb-3"><i class="fas fa-phone-alt me-2"></i> Emergency Contacts</h6>
-                    <div class="row g-3">
-                        <div class="col-md-12">
-                            <div class="p-3 border rounded-3 bg-light">
-                                <small class="fw-bold text-primary d-block mb-2">Contact 1 (Primary)</small>
-                                <div class="row g-2">
-                                    <div class="col-md-4">
-                                        <input type="text" name="contact_name_1" placeholder="Name"
-                                            class="form-control form-control-sm"
-                                            value="{% for contact in emergency_contacts %}{% if contact.is_primary %}{{ contact.name }}{% endif %}{% endfor %}">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <input type="text" name="contact_phone_1" placeholder="Phone"
-                                            class="form-control form-control-sm"
-                                            value="{% for contact in emergency_contacts %}{% if contact.is_primary %}{{ contact.phone_number }}{% endif %}{% endfor %}">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <input type="text" name="contact_rel_1" placeholder="Relationship"
-                                            class="form-control form-control-sm"
-                                            value="{% for contact in emergency_contacts %}{% if contact.is_primary %}{{ contact.relationship }}{% endif %}{% endfor %}">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-12 mt-3">
-                            <div class="p-3 border rounded-3 bg-light">
-                                <small class="fw-bold text-muted d-block mb-2">Contact 2 (Secondary)</small>
-                                <div class="row g-2">
-                                    <div class="col-md-4">
-                                        <input type="text" name="contact_name_2" placeholder="Name"
-                                            class="form-control form-control-sm"
-                                            value="{% for contact in emergency_contacts %}{% if not contact.is_primary %}{{ contact.name }}{% endif %}{% endfor %}">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <input type="text" name="contact_phone_2" placeholder="Phone"
-                                            class="form-control form-control-sm"
-                                            value="{% for contact in emergency_contacts %}{% if not contact.is_primary %}{{ contact.phone_number }}{% endif %}{% endfor %}">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <input type="text" name="contact_rel_2" placeholder="Relationship"
-                                            class="form-control form-control-sm"
-                                            value="{% for contact in emergency_contacts %}{% if not contact.is_primary %}{{ contact.relationship }}{% endif %}{% endfor %}">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-0 p-4 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4"
-                        data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-5 shadow-sm fw-bold">Update
-                        Profile</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    <!-- Document Image Viewer Modal -->
-    <div id="docImageModal" class="image-modal" onclick="closeImageModal()">
-        <button class="modal-close" onclick="closeImageModal()">&times;</button>
-        <img id="modalImage" src="" alt="Document Preview">
-    </div>
-
-    <!-- Image Modal Logic -->
-    <script>
-        function openImageModal(src) {
-            const modal = document.getElementById('docImageModal');
-            const modalImg = document.getElementById('modalImage');
-            if (modal && modalImg) {
-                modalImg.src = src;
-                modal.style.display = 'flex';
-                document.body.style.overflow = 'hidden';
-            }
-        }
-
-        function closeImageModal() {
-            const modal = document.getElementById('docImageModal');
-            if (modal) {
-                modal.style.display = 'none';
-                document.body.style.overflow = 'auto';
-            }
-        }
-
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeImageModal();
-            }
-        });
-    </script>
+<!-- Doc Viewer Modal -->
+<div id="kpDocViewer" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(10px);" onclick="kpDocClose()">
+  <button onclick="kpDocClose()" style="position:absolute;top:20px;right:20px;background:rgba(255,255,255,0.1);border:none;color:white;width:48px;height:48px;border-radius:50%;font-size:1.25rem;cursor:pointer;transition:var(--transition);"><i class="fas fa-times"></i></button>
+  <img id="kpDocImg" src="" style="max-width:85%;max-height:85%;border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,0.6);">
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Initialize Bootstrap tooltips
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
-
-        // Handle tab switching
-        const tabButtons = document.querySelectorAll('[data-bs-toggle="tab"]');
-        tabButtons.forEach(button => {
-            button.addEventListener('click', function () {
-                // Remove active class from all tabs and buttons
-                document.querySelectorAll('.tab-pane').forEach(pane => {
-                    pane.classList.remove('show', 'active');
-                });
-                document.querySelectorAll('.nav-link').forEach(link => {
-                    link.classList.remove('active');
-                });
-
-                // Add active class to clicked button
-                this.classList.add('active');
-
-                // Show target tab
-                const targetId = this.getAttribute('data-bs-target');
-                const targetTab = document.querySelector(targetId);
-                if (targetTab) {
-                    targetTab.classList.add('show', 'active');
-                }
-            });
-        });
-
-        // Document upload preview
-        document.querySelectorAll('.doc-upload-box input[type="file"]').forEach(input => {
-            input.addEventListener('change', function () {
-                if (this.files && this.files[0]) {
-                    const reader = new FileReader();
-                    const box = this.closest('.doc-upload-box');
-                    const img = box.querySelector('img');
-                    const icon = box.querySelector('i.fa-3x');
-                    const statusText = box.querySelector('.small.text-muted');
-
-                    reader.onload = function(e) {
-                        if (img) {
-                            img.src = e.target.result;
-                        } else if (icon) {
-                            icon.remove();
-                            const newImg = document.createElement('img');
-                            newImg.src = e.target.result;
-                            newImg.className = 'img-fluid rounded mb-3';
-                            newImg.style.maxHeight = '120px';
-                            box.insertBefore(newImg, box.querySelector('.fw-bold'));
-                        }
-
-                        if (statusText) {
-                            statusText.innerHTML = '<span class="text-success"><i class="fas fa-check"></i> Selected</span>';
-                        }
-                    }
-                    reader.readAsDataURL(this.files[0]);
-                }
-            });
-        });
-    });
+function kpTab(name, btn) {
+  ['about','job','leave','docs','timeline'].forEach(t => {
+    const el = document.getElementById('kp-' + t);
+    if (el) el.style.display = 'none';
+  });
+  document.querySelectorAll('.kp-nav-item').forEach(b => b.classList.remove('active'));
+  const target = document.getElementById('kp-' + name);
+  if (target) target.style.display = 'block';
+  btn.classList.add('active');
+  if (name === 'leave') {
+    setTimeout(() => {
+      document.querySelectorAll('.kp-lb-fill').forEach(b => {
+        const w = b.style.width; b.style.width = '0';
+        setTimeout(() => b.style.width = w, 60);
+      });
+    }, 100);
+  }
+}
+function kpDoc(src) {
+  document.getElementById('kpDocImg').src = src;
+  document.getElementById('kpDocViewer').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function kpDocClose() {
+  document.getElementById('kpDocViewer').style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') kpDocClose(); });
+document.querySelectorAll('.kp-doc input[type="file"]').forEach(inp => {
+  inp.addEventListener('change', function() {
+    if (!this.files || !this.files[0]) return;
+    const reader = new FileReader();
+    const box = this.closest('.kp-doc');
+    reader.onload = e => {
+      let img = box.querySelector('img');
+      if (!img) {
+        img = document.createElement('img');
+        img.style.cssText = 'max-height:100px;border-radius:8px;margin-bottom:10px;cursor:zoom-in;';
+        img.onclick = ev => { ev.stopPropagation(); kpDoc(img.src); };
+        box.querySelector('i')?.remove();
+        box.insertBefore(img, box.querySelector('div'));
+      }
+      img.src = e.target.result;
+      box.classList.add('done');
+    };
+    reader.readAsDataURL(this.files[0]);
+  });
+});
 </script>
 {% endblock %}

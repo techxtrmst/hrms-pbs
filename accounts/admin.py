@@ -42,5 +42,11 @@ class CustomUserAdmin(ConditionalHijackMixin, UserAdmin, ModelAdmin, ImportExpor
     search_fields = ("email", "username", "first_name", "last_name")
     ordering = ("email",)
 
-    fieldsets = UserAdmin.fieldsets + (("Company Info", {"fields": ("company", "role")}),)
-    add_fieldsets = UserAdmin.add_fieldsets + (("Company Info", {"fields": ("company", "role")}),)
+    fieldsets = UserAdmin.fieldsets + (
+        ("Company Info", {"fields": ("company", "role", "is_finance_manager")}),
+        ("Security Settings", {"fields": ("must_change_password",)}),
+    )
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        ("Company Info", {"fields": ("company", "role", "is_finance_manager")}),
+        ("Security Settings", {"fields": ("must_change_password",)}),
+    )

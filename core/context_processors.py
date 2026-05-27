@@ -17,3 +17,12 @@ def notification_count(request):
         return {"unread_notification_count": unread_count}
 
     return {"unread_notification_count": 0}
+
+
+def google_maps_api_key(request):
+    """Expose GOOGLE_MAPS_API_KEY to all templates."""
+    from django.conf import settings
+
+    return {
+        "GOOGLE_MAPS_API_KEY": getattr(settings, "GOOGLE_MAPS_API_KEY", ""),
+    }

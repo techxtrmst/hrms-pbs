@@ -35,7 +35,7 @@ from .error_handling import (
     safe_get_employee_profile,
 )
 from .forms import ForgotPasswordForm, OTPVerificationForm, ResetPasswordForm
-from .models import PasswordResetOTP
+from .models import Notification, PasswordResetOTP
 from .utils import save_pdf_to_model
 
 
@@ -1031,7 +1031,7 @@ def employee_dashboard(request):
 
     # 2. Upcoming Birthdays & Anniversaries
     # Optimized Anniversary/Birthday Calculation for Employees
-    future_date = today + timedelta(days=30)
+    future_date = today + timedelta(days=90)
     upcoming_birthdays = []
     upcoming_anniversaries = []
 
@@ -1113,11 +1113,105 @@ def employee_dashboard(request):
         # If employee has no location, show no holidays
         upcoming_holidays = Holiday.objects.none()
 
+    # --- Department Team Attendance Today ---
+    team_members_list = []
+    dept_name = (
+        employee.department.upper()
+        if employee.department and employee.department.lower() == "it"
+        else (employee.department.title() if employee.department else "Company")
+    )
+
+    if employee.department:
+        colleagues = (
+            Employee.objects.filter(
+                company=employee.company, department=employee.department, is_active=True, employment_status="ACTIVE"
+            )
+            .select_related("user")
+            .exclude(id=employee.id)
+        )
+    else:
+        colleagues = (
+            Employee.objects.filter(company=employee.company, is_active=True, employment_status="ACTIVE")
+            .select_related("user")
+            .exclude(id=employee.id)[:15]
+        )
+
+    colleague_ids = [c.id for c in colleagues]
+    colleague_attendance = {
+        att.employee_id: att for att in Attendance.objects.filter(employee_id__in=colleague_ids, date=today)
+    }
+    colleague_leaves = {
+        lreq.employee_id: lreq
+        for lreq in LeaveRequest.objects.filter(
+            employee_id__in=colleague_ids, status="APPROVED", start_date__lte=today, end_date__gte=today
+        )
+    }
+
+    for col in colleagues:
+        status = "ABSENT"
+        clock_in_time = None
+        clock_out_time = None
+
+        if col.id in colleague_attendance:
+            status = colleague_attendance[col.id].status
+            if colleague_attendance[col.id].clock_in:
+                # Convert UTC clock-in to the user's active local timezone
+                clock_in_time = colleague_attendance[col.id].clock_in.astimezone(tz)
+            if colleague_attendance[col.id].clock_out:
+                # Convert UTC clock-out to local timezone
+                clock_out_time = colleague_attendance[col.id].clock_out.astimezone(tz)
+        elif col.id in colleague_leaves:
+            status = "LEAVE"
+
+        # Generate custom initials for fallback avatar
+        first_initial = col.user.first_name[0].upper() if col.user.first_name else ""
+        last_initial = col.user.last_name[0].upper() if col.user.last_name else ""
+        initials = first_initial + last_initial
+        if not initials:
+            initials = col.user.username[:2].upper()
+
+        team_members_list.append(
+            {
+                "id": col.id,
+                "name": col.user.get_full_name(),
+                "avatar": col.profile_picture.url if col.profile_picture else None,
+                "initials": initials,
+                "status": status,
+                "designation": col.designation or "Team Member",
+                "clock_in": clock_in_time.strftime("%I:%M %p") if clock_in_time else None,
+                "clock_out": clock_out_time.strftime("%I:%M %p") if clock_out_time else None,
+                "email": col.user.email or "No Email",
+                "mobile": col.mobile_number or "Not Provided",
+                "manager_name": col.manager.get_full_name() if col.manager else "No Manager",
+                "work_type": col.get_work_type_display() if hasattr(col, "get_work_type_display") else "Office",
+            }
+        )
+
+    # --- Birthday & Anniversary Wishes Received Today ---
+    today_wishes = Notification.objects.filter(
+        recipient=request.user, notification_type="BIRTHDAY_WISH", created_at__date=today
+    )
+    wishes_received = []
+    for wish in today_wishes:
+        parts = wish.message.split("|||")
+        if len(parts) >= 3:
+            wishes_received.append(
+                {
+                    "sender_name": parts[0],
+                    "sender_avatar": parts[1],
+                    "wish_type": parts[2],
+                    "created_at": wish.created_at,
+                }
+            )
+
     context = {
         "title": "My Dashboard",
         "employee": employee,
         "attendance": attendance,
         "today": today,
+        "team_members_list": team_members_list,
+        "department_name": dept_name,
+        "wishes_received": wishes_received,
         "avg_hours": avg_hours,
         "total_days": total_days,
         "present_days": present_days,
@@ -1211,10 +1305,56 @@ def personal_home(request):
             attendance = Attendance.objects.filter(employee=employee, date=today).first()
         context["attendance"] = attendance
 
-        # --- Comprehensive Attendance History (Last 30 Days) ---
-        end_date = today
-        start_date = today - timedelta(days=30)
+        # --- Month/Year filter from query params (for Jun/May buttons) ---
+        import calendar
 
+        filter_month = request.GET.get("month")
+        filter_year = request.GET.get("year")
+
+        if filter_month and filter_year:
+            try:
+                filter_month = int(filter_month)
+                filter_year = int(filter_year)
+                _, last_day = calendar.monthrange(filter_year, filter_month)
+                end_date = today.__class__(filter_year, filter_month, last_day)
+                start_date = today.__class__(filter_year, filter_month, 1)
+                # Don't show future dates
+                if end_date > today:
+                    end_date = today
+                context["active_filter"] = f"{filter_year}-{filter_month:02d}"
+                context["active_filter_label"] = calendar.month_abbr[filter_month]
+            except (ValueError, TypeError):
+                end_date = today
+                start_date = today - timedelta(days=30)
+                context["active_filter"] = "30days"
+                context["active_filter_label"] = "30 Days"
+        else:
+            end_date = today
+            start_date = today - timedelta(days=30)
+            context["active_filter"] = "30days"
+            context["active_filter_label"] = "30 Days"
+
+        context["filter_end_date"] = end_date
+        context["filter_start_date"] = start_date
+
+        # Build dynamic month filter buttons (current month + 3 previous months)
+        month_filters = []
+        for i in range(4):
+            import datetime
+
+            d = today.replace(day=1) - datetime.timedelta(days=i * 28)
+            d = d.replace(day=1)
+            month_filters.append(
+                {
+                    "label": calendar.month_abbr[d.month],
+                    "month": d.month,
+                    "year": d.year,
+                    "key": f"{d.year}-{d.month:02d}",
+                }
+            )
+        context["month_filters"] = month_filters
+
+        # --- Comprehensive Attendance History ---
         # Fetch existing records
         attendance_records = {
             att.date: att for att in Attendance.objects.filter(employee=employee, date__range=[start_date, end_date])
@@ -1276,13 +1416,23 @@ def personal_home(request):
                 )
             curr_date -= timedelta(days=1)
 
-        # Calculate stats from history
+        # Calculate REAL stats from history
         total_seconds = 0
         sessions_with_time = 0
+        on_time_count = 0
+        late_count = 0
+
         for att in [item for item in history if isinstance(item, Attendance)]:
-            if att.clock_in and att.clock_out:
-                total_seconds += (att.clock_out - att.clock_in).total_seconds()
-                sessions_with_time += 1
+            # Only count sessions where the employee actually clocked in
+            if att.clock_in:
+                if att.clock_out:
+                    total_seconds += (att.clock_out - att.clock_in).total_seconds()
+                    sessions_with_time += 1
+                # Only track on-time/late for records with an actual clock-in
+                if att.is_late:
+                    late_count += 1
+                else:
+                    on_time_count += 1
 
         avg_hours = "00:00"
         if sessions_with_time > 0:
@@ -1291,10 +1441,293 @@ def personal_home(request):
             m = int((avg_sec % 3600) // 60)
             avg_hours = f"{h:02d}:{m:02d}"
 
-        context["avg_hours"] = avg_hours
-        context["on_time_percentage"] = "100%"  # Stub for now
+        total_tracked = on_time_count + late_count
+        on_time_pct = round((on_time_count / total_tracked) * 100) if total_tracked > 0 else 0
 
-        context["attendance_history"] = history
+        context["avg_hours"] = avg_hours
+        context["on_time_percentage"] = f"{on_time_pct}%"
+
+        # --- Team Attendance Stats (real data) ---
+        from employees.models import AttendanceSession
+
+        team_total_seconds = 0
+        team_sessions = 0
+        team_on_time = 0
+        team_late = 0
+
+        # Get teammates from same department/team
+        team_members = Employee.objects.filter(
+            company=employee.company, is_active=True, employment_status="ACTIVE"
+        ).exclude(id=employee.id)[:20]  # cap at 20 for perf
+
+        for member in team_members:
+            member_atts = Attendance.objects.filter(
+                employee=member, date__range=[start_date, end_date], clock_in__isnull=False, clock_out__isnull=False
+            )
+            for att in member_atts:
+                team_total_seconds += (att.clock_out - att.clock_in).total_seconds()
+                team_sessions += 1
+                if not att.is_late:
+                    team_on_time += 1
+                else:
+                    team_late += 1
+
+        team_avg_hours = "00:00"
+        if team_sessions > 0:
+            tavg = team_total_seconds / team_sessions
+            th = int(tavg // 3600)
+            tm = int((tavg % 3600) // 60)
+            team_avg_hours = f"{th:02d}:{tm:02d}"
+
+        total_team = team_on_time + team_late
+        team_on_time_pct = round((team_on_time / total_team) * 100) if total_team > 0 else 0
+
+        context["team_avg_hours"] = team_avg_hours
+        context["team_on_time_percentage"] = f"{team_on_time_pct}%"
+
+        # --- Enrich history with GPS location data for map display ---
+        enriched_history = []
+        for record in history:
+            if isinstance(record, Attendance):
+                # 1. Try Attendance.location_in (format "lat,lng" or "N/A")
+                clock_in_lat = None
+                clock_in_lng = None
+                clock_out_lat = None
+                clock_out_lng = None
+
+                def _parse_latlong(s):
+                    """Parse 'lat,lng' string. Returns (lat, lng) or (None, None)."""
+                    if not s or s.strip().upper() in ("N/A", "NONE", "NULL", ""):
+                        return None, None
+                    try:
+                        parts = s.split(",")
+                        if len(parts) == 2:
+                            return float(parts[0].strip()), float(parts[1].strip())
+                    except (ValueError, AttributeError):
+                        pass
+                    return None, None
+
+                clock_in_lat, clock_in_lng = _parse_latlong(record.location_in)
+                clock_out_lat, clock_out_lng = _parse_latlong(record.location_out)
+
+                # 2. Fallback: AttendanceSession (has lat/lng as DecimalField)
+                if not clock_in_lat:
+                    first_session = (
+                        AttendanceSession.objects.filter(employee=employee, date=record.date)
+                        .order_by("session_number")
+                        .first()
+                    )
+                    if first_session:
+                        if first_session.clock_in_latitude:
+                            clock_in_lat = float(first_session.clock_in_latitude)
+                            clock_in_lng = (
+                                float(first_session.clock_in_longitude) if first_session.clock_in_longitude else None
+                            )
+                        if first_session.clock_out_latitude:
+                            clock_out_lat = float(first_session.clock_out_latitude)
+                            clock_out_lng = (
+                                float(first_session.clock_out_longitude) if first_session.clock_out_longitude else None
+                            )
+
+                # 3. Fallback: LocationLog (created ONLY when real GPS coordinates exist)
+                if not clock_in_lat:
+                    from employees.models import LocationLog
+
+                    loc_in = (
+                        LocationLog.objects.filter(
+                            employee=employee, attendance_session__date=record.date, log_type="CLOCK_IN", is_valid=True
+                        )
+                        .order_by("timestamp")
+                        .first()
+                    )
+                    if loc_in and loc_in.latitude:
+                        clock_in_lat = float(loc_in.latitude)
+                        clock_in_lng = float(loc_in.longitude) if loc_in.longitude else None
+
+                if not clock_out_lat:
+                    from employees.models import LocationLog
+
+                    loc_out = (
+                        LocationLog.objects.filter(
+                            employee=employee, attendance_session__date=record.date, log_type="CLOCK_OUT", is_valid=True
+                        )
+                        .order_by("timestamp")
+                        .first()
+                    )
+                    if loc_out and loc_out.latitude:
+                        clock_out_lat = float(loc_out.latitude)
+                        clock_out_lng = float(loc_out.longitude) if loc_out.longitude else None
+
+                # Calculate effective hours string — use model property for live accuracy
+                eff_hours_str = "-"
+                eff_hours_num = 0.0
+                try:
+                    # Use the model's effective_hours property (handles active sessions too)
+                    model_eff = record.effective_hours  # e.g. "9:11" or "9:11+"
+                    if model_eff and model_eff not in ("0:00", "0:00+", "-"):
+                        eff_hours_str = model_eff.rstrip("+")  # strip trailing '+' for display
+                        # Parse to numeric for the visual bar
+                        parts = eff_hours_str.split(":")
+                        if len(parts) == 2:
+                            eff_hours_num = int(parts[0]) + int(parts[1]) / 60.0
+                    elif record.total_working_hours:
+                        tw = float(record.total_working_hours)
+                        if tw > 0:
+                            eh = int(tw)
+                            em = int((tw - eh) * 60)
+                            eff_hours_str = f"{eh}:{em:02d}"
+                            eff_hours_num = tw
+                except Exception:
+                    eff_hours_str = "-"
+                    eff_hours_num = 0.0
+
+                # Calculate worked duration segment inside shift for the visual timeline
+                timeline_left = 0
+                timeline_width = 0
+                if employee.assigned_shift and record.clock_in:
+                    try:
+                        shift = employee.assigned_shift
+                        current_tz = timezone.get_current_timezone()
+                        shift_start_dt = timezone.make_aware(
+                            datetime.combine(record.date, shift.start_time), current_tz
+                        )
+                        shift_end_dt = timezone.make_aware(datetime.combine(record.date, shift.end_time), current_tz)
+                        if shift_end_dt <= shift_start_dt:
+                            shift_end_dt += timedelta(days=1)
+
+                        shift_total_sec = (shift_end_dt - shift_start_dt).total_seconds()
+                        if shift_total_sec > 0:
+                            local_in = record.local_clock_in
+                            local_out = record.local_clock_out
+                            if not local_out and record.is_currently_clocked_in:
+                                local_out = timezone.localtime(timezone.now())
+
+                            if local_in and local_out:
+                                start_diff = (local_in - shift_start_dt).total_seconds()
+                                worked_diff = (local_out - local_in).total_seconds()
+
+                                left_pct = (start_diff / shift_total_sec) * 100
+                                width_pct = (worked_diff / shift_total_sec) * 100
+
+                                timeline_left = max(0, min(95, left_pct))
+                                timeline_width = max(1, min(100 - timeline_left, width_pct))
+                    except Exception:
+                        pass
+
+                # Query daily sessions for the current record date to render capsules
+                day_sessions = []
+                try:
+                    from employees.models import AttendanceSession
+
+                    session_objs = AttendanceSession.objects.filter(employee=employee, date=record.date).order_by(
+                        "session_number"
+                    )
+
+                    for s in session_objs:
+                        s_in = timezone.localtime(s.clock_in) if s.clock_in else None
+                        s_out = timezone.localtime(s.clock_out) if s.clock_out else None
+
+                        s_duration_str = "-"
+                        if s_in:
+                            if s_out:
+                                diff_sec = (s_out - s_in).total_seconds()
+                                dh = int(diff_sec // 3600)
+                                dm = int((diff_sec % 3600) // 60)
+                                s_duration_str = f"{dh}h {dm}m"
+                            elif record.is_currently_clocked_in:
+                                diff_sec = (timezone.now() - s.clock_in).total_seconds()
+                                dh = int(diff_sec // 3600)
+                                dm = int((diff_sec % 3600) // 60)
+                                s_duration_str = f"{dh}h {dm}m"
+
+                        day_sessions.append(
+                            {
+                                "number": s.session_number,
+                                "clock_in": s_in.strftime("%I:%M %p").lstrip("0") if s_in else None,
+                                "clock_out": s_out.strftime("%I:%M %p").lstrip("0") if s_out else None,
+                                "duration": s_duration_str,
+                                "is_active": s_in and not s_out and record.is_currently_clocked_in,
+                                "type": s.session_type or "WEB",
+                            }
+                        )
+                except Exception:
+                    pass
+
+                enriched_history.append(
+                    {
+                        "obj": record,
+                        "date": record.date,
+                        "status": record.status,
+                        "clock_in": record.local_clock_in,
+                        "clock_out": record.local_clock_out,
+                        "effective_hours": eff_hours_str,
+                        "effective_hours_num": eff_hours_num,
+                        "timeline_left": timeline_left,
+                        "timeline_width": timeline_width,
+                        "day_sessions": day_sessions,
+                        "is_late": record.is_late,
+                        "late_minutes": record.late_by_minutes,
+                        "clock_in_lat": clock_in_lat,
+                        "clock_in_lng": clock_in_lng,
+                        "clock_out_lat": clock_out_lat,
+                        "clock_out_lng": clock_out_lng,
+                        "session_type": record.current_session_type or "WEB",
+                        "is_currently_clocked_in": record.is_currently_clocked_in,
+                    }
+                )
+            else:
+                # dict record (weekly off, holiday, etc.)
+                enriched_history.append(
+                    {
+                        "obj": None,
+                        "date": record["date"],
+                        "status": record["status"],
+                        "clock_in": None,
+                        "clock_out": None,
+                        "effective_hours": "-",
+                        "effective_hours_num": 0.0,
+                        "timeline_left": 0,
+                        "timeline_width": 0,
+                        "day_sessions": [],
+                        "is_late": False,
+                        "late_minutes": 0,
+                        "clock_in_lat": None,
+                        "clock_in_lng": None,
+                        "clock_out_lat": None,
+                        "clock_out_lng": None,
+                        "session_type": None,
+                        "is_currently_clocked_in": False,
+                    }
+                )
+
+        context["attendance_history"] = enriched_history
+
+        # --- Today's worked hours formatted for Timings card ---
+        today_worked_hours_raw = (
+            float(attendance.total_working_hours) if attendance and attendance.total_working_hours else 0.0
+        )
+        tw_h = int(today_worked_hours_raw)
+        tw_m = int((today_worked_hours_raw - tw_h) * 60)
+        context["today_worked_display"] = f"{tw_h}:{tw_m:02d}"
+        # Percentage of shift goal — compute from shift start/end times
+        if employee.assigned_shift:
+            from datetime import datetime as _dt
+
+            _s = employee.assigned_shift.start_time
+            _e = employee.assigned_shift.end_time
+            _start_dt = _dt.combine(today, _s)
+            _end_dt = _dt.combine(today, _e)
+            if _end_dt <= _start_dt:
+                from datetime import timedelta as _td
+
+                _end_dt += _td(days=1)
+            shift_goal_hours = (_end_dt - _start_dt).total_seconds() / 3600
+        else:
+            shift_goal_hours = 9.0
+        context["today_worked_pct"] = (
+            min(int((today_worked_hours_raw / shift_goal_hours) * 100), 100) if shift_goal_hours > 0 else 0
+        )
+        context["shift_goal_hours"] = round(shift_goal_hours, 1)
 
         # Announcements - current month
 
@@ -1358,6 +1791,31 @@ def personal_home(request):
         if employee.assigned_shift:
             context["assigned_shift"] = employee.assigned_shift
             shift = employee.assigned_shift
+
+            # Calculate dynamic visual timeline ticks
+            try:
+                start_dt = datetime.combine(date.today(), shift.start_time)
+                end_dt = datetime.combine(date.today(), shift.end_time)
+                if end_dt <= start_dt:
+                    end_dt += timedelta(days=1)
+
+                total_sec = (end_dt - start_dt).total_seconds()
+                tick1_dt = start_dt + timedelta(seconds=total_sec * 0.33)
+                tick2_dt = start_dt + timedelta(seconds=total_sec * 0.66)
+
+                context["timeline_ticks"] = [
+                    shift.start_time.strftime("%I %p").lstrip("0"),
+                    tick1_dt.time().strftime("%I %p").lstrip("0"),
+                    tick2_dt.time().strftime("%I %p").lstrip("0"),
+                    shift.end_time.strftime("%I %p").lstrip("0"),
+                ]
+            except Exception:
+                context["timeline_ticks"] = ["9 AM", "12 PM", "3 PM", "6 PM"]
+
+            # Shift breaks (Tea, Lunch, Dinner etc.) from ShiftBreak model
+            from companies.models import ShiftBreak
+
+            context["shift_breaks"] = list(ShiftBreak.objects.filter(shift=shift).order_by("start_time"))
 
             # Grace Usage Stats
             grace_used_count = Attendance.objects.filter(
@@ -1506,6 +1964,7 @@ def personal_home(request):
             shift_timing, _ = ShiftTiming.objects.get_or_create(company=employee.company)
             context["shift_timing"] = shift_timing
             context["timeline_items"] = []  # Empty for default
+            context["timeline_ticks"] = ["9 AM", "12 PM", "3 PM", "6 PM"]
 
         # Add leave balance to context
         try:

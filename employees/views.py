@@ -996,9 +996,20 @@ def update_location(request):
 def employee_profile(request):
     user = request.user
 
-    # Try to get or create employee profile if User is a Company Admin/Manager
-    # This prevents the "blank page" issue for the initial admin user.
-    employee = safe_get_employee_profile(user)
+    # Check if viewing a colleague's profile
+    colleague_id = request.GET.get("id")
+    is_viewing_colleague = False
+
+    if colleague_id:
+        try:
+            # Colleague must belong to the same company
+            employee = Employee.objects.get(pk=colleague_id, company=user.company)
+            is_viewing_colleague = employee.user != user
+        except Employee.DoesNotExist:
+            messages.error(request, "Colleague profile not found.")
+            return redirect("personal_home")
+    else:
+        employee = safe_get_employee_profile(user)
 
     if not employee:
         if user.company:
@@ -1026,6 +1037,10 @@ def employee_profile(request):
     locations = employee.company.locations.all()
 
     if request.method == "POST":
+        if is_viewing_colleague:
+            messages.error(request, "Permission denied. You cannot modify a colleague's profile.")
+            return redirect(f"/employees/employee-profile/?id={employee.pk}")
+
         action = request.POST.get("action")
 
         if action == "update_profile":
@@ -1204,6 +1219,10 @@ def employee_profile(request):
             "probation_date": probation_date,
             "available_shifts": available_shifts,
             "work_history": work_history,
+            "leave_balance": getattr(employee, "leave_balance", None),
+            "is_viewing_colleague": is_viewing_colleague,
+            "show_sensitive_data": not is_viewing_colleague
+            or (request.user.role == User.Role.COMPANY_ADMIN or request.user.is_superuser),
         },
     )
 
@@ -4458,3 +4477,68 @@ def employee_id_card(request):
         "company": employee.company,
     }
     return render(request, "employees/id_card.html", context)
+
+
+@csrf_exempt
+@login_required
+def send_birthday_wish(request):
+    """
+    AJAX endpoint to send a birthday/anniversary wish to a colleague.
+    Saves the wish in the Notification table to avoid migrations.
+    """
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            receiver_id = data.get("receiver_id")
+            wish_type = data.get("type", "birthday")
+
+            if not receiver_id:
+                return JsonResponse({"status": "error", "message": "Receiver ID is required"}, status=400)
+
+            sender_employee = request.user.employee_profile
+            receiver_employee = Employee.objects.get(id=receiver_id)
+
+            # Construct the special message to store sender details
+            sender_name = sender_employee.user.get_full_name()
+            sender_avatar = (
+                sender_employee.profile_picture.url
+                if sender_employee.profile_picture
+                else f"https://ui-avatars.com/api/?name={sender_employee.user.first_name}+{sender_employee.user.last_name}&background=5b47fb&color=fff"
+            )
+
+            message_payload = f"{sender_name}|||{sender_avatar}|||{wish_type}"
+
+            # Create a Notification in core
+            from django.contrib.contenttypes.models import ContentType
+
+            from core.models import Notification
+
+            # Link notification to employee content type
+            emp_content_type = ContentType.objects.get_for_model(sender_employee)
+
+            # Check if already wished today
+            today = timezone.localdate()
+            already_wished = Notification.objects.filter(
+                recipient=receiver_employee.user,
+                notification_type="BIRTHDAY_WISH",
+                message__startswith=f"{sender_name}|||",
+                created_at__date=today,
+            ).exists()
+
+            if already_wished:
+                return JsonResponse({"status": "error", "message": "You have already sent your wishes today!"})
+
+            Notification.objects.create(
+                recipient=receiver_employee.user,
+                notification_type="BIRTHDAY_WISH",
+                message=message_payload,
+                content_type=emp_content_type,
+                object_id=sender_employee.id,
+                is_read=False,
+            )
+
+            return JsonResponse({"status": "success", "message": f"Sent {wish_type} wish successfully!"})
+
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=500)
+    return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
