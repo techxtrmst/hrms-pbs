@@ -963,3 +963,112 @@ def send_regularization_approval_notification(reg_request):
     except Exception as e:
         logger.error(f"Reg approval mail failed: {e}")
         return False
+
+
+def send_payslip_email(payslip):
+    """
+    Send generated payslip PDF to employee as an email attachment.
+    """
+    try:
+        employee = payslip.employee
+        user = employee.user
+        company = employee.company
+
+        if not user.email:
+            logger.warning(f"Employee {user.get_full_name()} has no email address. Cannot send payslip.")
+            return False
+
+        if not payslip.pdf_file:
+            logger.warning(f"Payslip for {user.get_full_name()} ({payslip.month}) has no PDF generated. Cannot send.")
+            return False
+
+        # Get connection
+        connection = get_company_email_connection(company)
+
+        # Determine from email
+        if company.hr_email and company.hr_email_name:
+            from_email = f"{company.hr_email_name} <{company.hr_email}>"
+        elif company.hr_email:
+            from_email = f"{company.name} HR <{company.hr_email}>"
+        else:
+            # Safe fallback if no company settings configured
+            connection = get_hr_email_connection()
+            from_email = "Petabytz HR <hrms@petabytz.com>"
+
+        # Prepare context for email template
+        month_str = payslip.month.strftime("%B %Y")
+
+        # Round net salary safely
+        net_val = 0
+        if payslip.net_salary is not None:
+            import contextlib
+
+            with contextlib.suppress(ValueError, TypeError):
+                net_val = round(float(payslip.net_salary))
+
+        context = {
+            "employee_name": user.get_full_name(),
+            "month": month_str,
+            "company_name": company.name,
+            "net_salary": net_val,
+        }
+
+        # Render HTML email
+        try:
+            html_content = render_to_string("core/emails/payslip_email.html", context)
+        except Exception:
+            # Fallback inline HTML if template doesn't exist yet
+            html_content = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                    <h2 style="color: #1f3c88; border-bottom: 2px solid #1f3c88; padding-bottom: 10px;">Payslip for {month_str}</h2>
+                    <p>Dear <strong>{user.get_full_name()}</strong>,</p>
+                    <p>Please find attached your payslip for the month of <strong>{month_str}</strong> from <strong>{company.name}</strong>.</p>
+                    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #1f3c88;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="font-weight: bold; color: #555;">Net Salary Paid:</td>
+                                <td style="text-align: right; font-weight: bold; color: #2e7d32; font-size: 1.1em;">{net_val}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <p>If you have any questions or require clarification regarding your pay breakdown, please contact the HR department.</p>
+                    <br>
+                    <p style="color: #666; font-size: 0.9em; border-top: 1px solid #eee; padding-top: 15px; margin-top: 20px;">
+                        Regards,<br>
+                        <strong>HR & Finance Team</strong><br>
+                        {company.name}
+                    </p>
+                </div>
+            </body>
+            </html>
+            """
+
+        subject = f"📄 Payslip for {month_str} - {company.name}"
+        recipient_list = [user.email]
+
+        # Create email
+        email = EmailMultiAlternatives(subject, "", from_email, recipient_list, connection=connection)
+        email.attach_alternative(html_content, "text/html")
+
+        # Attach PDF
+        pdf_name = payslip.pdf_file.name.split("/")[-1]
+        # Make sure we read the file correctly from storage
+        try:
+            # If pdf_file is in FileField, we can read its bytes
+            payslip.pdf_file.open("rb")
+            pdf_data = payslip.pdf_file.read()
+            payslip.pdf_file.close()
+        except Exception:
+            pdf_data = payslip.pdf_file.read()
+
+        email.attach(pdf_name, pdf_data, "application/pdf")
+
+        email.send()
+        logger.info(f"Payslip email sent successfully to {user.get_full_name()} ({user.email}) for {month_str}")
+        return True
+
+    except Exception as e:
+        logger.error(f"Failed to send payslip email: {str(e)}", exc_info=True)
+        return False

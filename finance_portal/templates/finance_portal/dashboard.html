@@ -1,0 +1,704 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | HRMS PBS{% endblock %}
+
+{% block content %}
+<style>
+    /* Premium Glassmorphic Design System */
+    .finance-header-card {
+        background: linear-gradient(135deg, #1e1b4b 0%, #311042 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        color: #fff;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .finance-header-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -30%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-bottom: 25px;
+    }
+
+    .glass-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(31, 38, 135, 0.08);
+        border-color: rgba(255, 255, 255, 0.8);
+    }
+
+    .stat-badge {
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 30px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-completed {
+        background: rgba(16, 185, 129, 0.12);
+        color: #059669;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .badge-processing {
+        background: rgba(245, 158, 11, 0.12);
+        color: #d97706;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    .badge-failed {
+        background: rgba(239, 68, 68, 0.12);
+        color: #dc2626;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .badge-sent {
+        background: rgba(99, 102, 241, 0.12);
+        color: #4f46e5;
+        border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+
+    .badge-unsent {
+        background: rgba(107, 114, 128, 0.12);
+        color: #4b5563;
+        border: 1px solid rgba(107, 114, 128, 0.2);
+    }
+
+    /* Premium interactive elements */
+    .btn-gradient {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        padding: 10px 24px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25);
+    }
+
+    .btn-gradient:hover {
+        background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+        color: #fff;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+    }
+
+    .btn-outline-custom {
+        background: transparent;
+        color: #4f46e5;
+        border: 1.5px solid #4f46e5;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .btn-outline-custom:hover {
+        background: rgba(99, 102, 241, 0.05);
+        color: #4338ca;
+        border-color: #4338ca;
+    }
+
+    .form-control-custom {
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        padding: 10px 14px;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+
+    .form-control-custom:focus {
+        background: #fff;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        outline: none;
+    }
+
+    /* Table customization */
+    .table-container {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .custom-table {
+        margin-bottom: 0;
+    }
+
+    .custom-table th {
+        background: rgba(243, 244, 246, 0.8);
+        color: #4b5563;
+        font-weight: 600;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 14px 20px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .custom-table td {
+        padding: 16px 20px;
+        vertical-align: middle;
+        font-size: 0.92rem;
+        color: #1f2937;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .custom-table tr:hover td {
+        background-color: rgba(99, 102, 241, 0.02);
+    }
+
+    /* Custom scrollbar for tables & cards */
+    .custom-scroll::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+
+    /* Loading Overlay Animation */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(8px);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: #fff;
+    }
+
+    .spinner-neon {
+        width: 60px;
+        height: 60px;
+        border: 4px solid rgba(99, 102, 241, 0.1);
+        border-top-color: #6366f1;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+        margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Drag & Drop Upload Zone */
+    .dropzone-container {
+        border: 2px dashed rgba(99, 102, 241, 0.4);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.4);
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .dropzone-container:hover, .dropzone-container.dragover {
+        background: rgba(99, 102, 241, 0.05);
+        border-color: #6366f1;
+        box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
+    }
+
+    .dropzone-icon {
+        font-size: 3rem;
+        color: #6366f1;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .dropzone-container:hover .dropzone-icon {
+        transform: scale(1.1) rotate(2deg);
+    }
+</style>
+
+<div class="container-fluid py-4">
+
+    <!-- Premium Header Card -->
+    <div class="finance-header-card">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <span class="stat-badge bg-primary text-white mb-2 d-inline-block">Finance Management</span>
+                <h1 class="display-6 fw-bold mb-1">Centralized Payroll Portal</h1>
+                <p class="lead text-slate-300 mb-0 opacity-90">
+                    Process, audit, and distribute payroll securely across multiple legal entities.
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
+                <div class="d-inline-flex flex-column align-items-lg-end">
+                    <span class="text-uppercase text-muted small fw-bold tracking-wider">Payroll Period</span>
+                    <h3 class="fw-bold mb-0 text-white">{{ selected_month|add:"0"|date:"F" }} {{ selected_year }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration & Batch Filters Panel -->
+    <div class="glass-card p-4">
+        <h5 class="fw-bold text-dark mb-4">
+            <i class="fa-solid fa-sliders text-indigo-500 me-2"></i> Payroll Generation Console
+        </h5>
+
+        <form method="GET" class="row g-3 align-items-end mb-4">
+            <div class="col-md-4 col-sm-6">
+                <label class="form-label small fw-bold text-muted">Legal Entity</label>
+                <select name="company" class="form-select form-control-custom" onchange="this.form.submit()">
+                    <option value="all" {% if selected_company_id == "all" %}selected{% endif %}>All Companies</option>
+                    {% for comp in companies %}
+                    <option value="{{ comp.id }}" {% if selected_company_id == comp.id|slugify %}selected{% endif %}>{{ comp.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 col-sm-3 col-6">
+                <label class="form-label small fw-bold text-muted">Month</label>
+                <select name="month" class="form-select form-control-custom" onchange="this.form.submit()">
+                    {% for m in months %}
+                    <option value="{{ m.value }}" {% if selected_month == m.value %}selected{% endif %}>{{ m.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 col-sm-3 col-6">
+                <label class="form-label small fw-bold text-muted">Year</label>
+                <select name="year" class="form-select form-control-custom" onchange="this.form.submit()">
+                    {% for y in years %}
+                    <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 col-sm-12">
+                <button type="submit" class="btn btn-outline-custom w-100 py-2">
+                    <i class="fa-solid fa-filter me-1"></i> Filter
+                </button>
+            </div>
+        </form>
+
+        <hr class="border-slate-200 my-4">
+
+        <!-- Bulk Action Form -->
+        <form id="bulkPayrollForm" method="POST" action="{% url 'finance_portal:process_bulk_payroll' %}" class="row g-3 align-items-center">
+            {% csrf_token %}
+            <input type="hidden" name="company_id" value="{{ selected_company_id }}">
+            <input type="hidden" name="month" value="{{ selected_month }}">
+            <input type="hidden" name="year" value="{{ selected_year }}">
+
+            <div class="col-lg-7 col-md-6">
+                <div class="form-check form-switch ps-4">
+                    <input class="form-check-input" type="checkbox" name="auto_send_email" id="autoSendEmail" checked>
+                    <label class="form-check-label fw-semibold text-dark ms-2" for="autoSendEmail">
+                        Automatically email generated payslips to all employees upon completion
+                    </label>
+                    <div class="form-text text-muted ms-2 small">
+                        If checked, employees will receive secure PDF attachments immediately after generation.
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5 col-md-6 text-md-end">
+                <button type="button" onclick="confirmBulkProcess()" class="btn btn-gradient w-100 py-3">
+                    <i class="fa-solid fa-bolt me-2 animate-pulse"></i> Generate & Process Batch
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Collapsible Bulk Excel Upload Console -->
+    <div class="glass-card p-4">
+        <h5 class="fw-bold text-dark mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <span>
+                <i class="fa-solid fa-file-excel text-indigo-500 me-2"></i> Bulk Excel Payroll Upload
+            </span>
+            <a href="{% url 'bulk_payroll_template' %}?month={{ selected_month }}&year={{ selected_year }}" class="text-decoration-none text-indigo-600 small" style="font-size: 0.85rem;">
+                <i class="fa-solid fa-download me-1"></i> Download Excel Template
+            </a>
+        </h5>
+
+        <p class="text-muted small mb-4">
+            Upload a populated Excel sheet containing badge numbers, monthly gross, and optional worked days to automatically calculate regional taxes, render payslip PDFs, and email them to employees.
+        </p>
+
+        <form id="excelUploadForm" method="POST" action="{% url 'finance_portal:process_bulk_excel_upload' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="company_id" value="{{ selected_company_id }}">
+            <input type="hidden" name="month" value="{{ selected_month }}">
+            <input type="hidden" name="year" value="{{ selected_year }}">
+
+            <div class="row g-3 align-items-center mb-3">
+                <div class="col-lg-8">
+                    <div class="form-check form-switch ps-4">
+                        <input class="form-check-input" type="checkbox" name="auto_send_email" id="excelAutoSendEmail" checked>
+                        <label class="form-check-label fw-semibold text-dark ms-2" for="excelAutoSendEmail">
+                            Automatically email generated payslips to all employees upon completion
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dropzone-container" id="dropzone">
+                <input type="file" name="excel_file" id="excelFile" accept=".xlsx, .xls" style="display: none;">
+                <i class="fa-solid fa-cloud-arrow-up dropzone-icon"></i>
+                <h6 class="fw-bold text-dark mb-1" id="dropzoneText">Drag & Drop your Excel (.xlsx) file here</h6>
+                <p class="text-muted small mb-0">or click to browse local files</p>
+                <div id="fileSelectedInfo" class="mt-3 text-indigo-600 fw-bold small" style="display: none;">
+                    <i class="fa-solid fa-circle-check me-1"></i> <span id="selectedFileName">filename.xlsx</span>
+                </div>
+            </div>
+
+            <div class="text-end mt-4">
+                <button type="button" onclick="triggerExcelUpload()" id="btnSubmitExcel" class="btn btn-gradient py-3 px-5" disabled>
+                    <i class="fa-solid fa-upload me-2"></i> Upload & Process Excel
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Active Employees Payroll Panel -->
+    <div class="glass-card p-0 overflow-hidden">
+        <div class="p-4 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <h5 class="fw-bold text-dark mb-0">
+                <i class="fa-solid fa-users text-indigo-500 me-2"></i> Employee Roster ({{ employee_data|length }})
+            </h5>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge badge-completed small py-2 px-3">
+                    Calculated: {{ calculated_count }}
+                </span>
+            </div>
+        </div>
+
+        <div class="table-responsive custom-scroll">
+            <table class="table custom-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Legal Entity</th>
+                        <th>Location</th>
+                        <th class="text-end">CTC (Annual)</th>
+                        <th class="text-end">Monthly Net</th>
+                        <th class="text-center">Payroll Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in employee_data %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-mini bg-slate-100 text-indigo-700 fw-bold rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 38px; height: 38px;">
+                                    {{ item.employee.user.first_name|first }}{{ item.employee.user.last_name|first }}
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-0">{{ item.employee.user.get_full_name }}</h6>
+                                    <span class="text-muted small">ID: {{ item.employee.badge_id|default:"N/A" }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="fw-semibold text-dark">{{ item.employee.company.name }}</span>
+                        </td>
+                        <td>
+                            <span class="text-muted small">
+                                <i class="fa-solid fa-location-dot me-1"></i>
+                                {{ item.employee.location.name|default:"Not Configured" }}
+                            </span>
+                        </td>
+                        <td class="text-end fw-semibold">
+                            {% if item.employee.annual_ctc %}
+                            {{ item.employee.location.currency|default:"INR" }} {{ item.employee.annual_ctc }}
+                            {% else %}
+                            <span class="text-muted italic small">Not Set</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end fw-bold text-slate-800">
+                            {% if item.payslip %}
+                            {{ item.employee.location.currency|default:"INR" }} {{ item.payslip.net_salary|floatformat:0 }}
+                            {% else %}
+                            <span class="text-muted small">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if item.payslip %}
+                                {% if item.payslip.pdf_file %}
+                                <span class="stat-badge badge-completed">
+                                    <i class="fa-solid fa-circle-check me-1"></i> Generated
+                                </span>
+                                {% else %}
+                                <span class="stat-badge badge-processing">
+                                    <i class="fa-solid fa-circle-exclamation me-1"></i> Unrendered
+                                </span>
+                                {% endif %}
+                            {% else %}
+                            <span class="stat-badge badge-failed" style="background: rgba(107, 114, 128, 0.08); color: #6b7280; border-color: rgba(107, 114, 128, 0.15);">
+                                <i class="fa-solid fa-circle-minus me-1"></i> Not Processed
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="d-flex align-items-center justify-content-center gap-2">
+                                {% if item.payslip %}
+                                    {% if item.payslip.pdf_file %}
+                                    <a href="{{ item.payslip.pdf_file.url }}" target="_blank" class="btn btn-sm btn-outline-custom" title="View PDF">
+                                        <i class="fa-solid fa-file-pdf"></i> View
+                                    </a>
+                                    {% endif %}
+
+                                    <button type="button" onclick="sendEmail('{{ item.payslip.id }}')" class="btn btn-sm btn-outline-custom text-indigo-600 border-indigo-200" title="Email Payslip">
+                                        <i class="fa-solid fa-paper-plane"></i> Email
+                                    </button>
+                                {% else %}
+                                <span class="text-muted small italic">Run batch to calculate</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="fa-regular fa-folder-open display-6 mb-3 d-block text-slate-300"></i>
+                            No eligible employees found for legal entity: <strong>{{ selected_company_id }}</strong>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Recent Batches Panel -->
+        <div class="col-xl-6 col-lg-12 mb-4">
+            <div class="glass-card p-0 overflow-hidden h-100">
+                <div class="p-4 border-bottom">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="fa-solid fa-list-check text-indigo-500 me-2"></i> Recent Payroll Batches
+                    </h5>
+                </div>
+                <div class="p-0">
+                    <div class="table-responsive custom-scroll" style="max-height: 400px;">
+                        <table class="table custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Batch ID</th>
+                                    <th>Period</th>
+                                    <th class="text-center">Processed</th>
+                                    <th class="text-end">Total Amount</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for b in batches %}
+                                <tr>
+                                    <td>
+                                        <h6 class="fw-bold mb-0 text-slate-800">{{ b.batch_id }}</h6>
+                                        <span class="text-muted small d-block">{{ b.created_at|date:"d M Y H:i" }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-semibold text-slate-700">{{ b.month }}/{{ b.year }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="fw-semibold">{{ b.processed_employees }}/{{ b.total_employees }}</span>
+                                    </td>
+                                    <td class="text-end fw-bold text-slate-800">
+                                        {{ b.total_amount|floatformat:2 }}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if b.status == 'COMPLETED' %}
+                                        <span class="stat-badge badge-completed">Completed</span>
+                                        {% elif b.status == 'PROCESSING' %}
+                                        <span class="stat-badge badge-processing">Processing</span>
+                                        {% elif b.status == 'FAILED' %}
+                                        <span class="stat-badge badge-failed">Failed</span>
+                                        {% else %}
+                                        <span class="stat-badge badge-unsent">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        No recent batches found.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Trail Panel -->
+        <div class="col-xl-6 col-lg-12 mb-4">
+            <div class="glass-card p-0 overflow-hidden h-100">
+                <div class="p-4 border-bottom">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="fa-solid fa-shield-halved text-indigo-500 me-2"></i> Security & Audit Trail
+                    </h5>
+                </div>
+                <div class="p-0">
+                    <div class="table-responsive custom-scroll" style="max-height: 400px;">
+                        <table class="table custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Audit Event</th>
+                                    <th>Details</th>
+                                    <th>Origin</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in audit_logs %}
+                                <tr>
+                                    <td>
+                                        <h6 class="fw-bold mb-0 text-slate-800" style="font-size: 0.88rem;">{{ log.action }}</h6>
+                                        <span class="text-muted small d-block" style="font-size: 0.75rem;">{{ log.timestamp|date:"d M H:i:s" }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-slate-600 small" style="font-size: 0.85rem; display: block; max-width: 250px; white-space: normal;">
+                                            {{ log.details }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-semibold text-slate-700 small">{{ log.user.first_name|default:"System" }}</span>
+                                        <span class="text-muted small d-block" style="font-size: 0.72rem;">IP: {{ log.ip_address|default:"-" }}</span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-5 text-muted">
+                                        No logs captured.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-neon"></div>
+    <h4 class="fw-bold text-white mb-2">Processing Payroll Batch</h4>
+    <p class="text-slate-300 small mb-0 px-4 text-center">
+        Calculating multi-regional CTCs, compiling deductions, writing payslips, and dispatching PDF copies. This may take a minute.
+    </p>
+</div>
+
+<!-- JavaScript helpers -->
+<script>
+    function confirmBulkProcess() {
+        if(confirm("Are you sure you want to process bulk payroll for the selected legal entity and period? This will overwrite existing calculations and generate new PDF payslips.")) {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.getElementById('bulkPayrollForm').submit();
+        }
+    }
+
+    function sendEmail(payslipId) {
+        if(confirm("Email this payslip to the employee directly?")) {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.querySelector('h4').innerText = "Sending Payslip Email";
+            overlay.querySelector('p').innerText = "Establishing secure SMTP channel and dispatching PDF attachment...";
+            overlay.style.display = 'flex';
+
+            fetch(`/finance/send-email/${payslipId}/?ajax=1`)
+                .then(response => {
+                    overlay.style.display = 'none';
+                    if(response.ok) {
+                        alert("Payslip email sent successfully!");
+                        window.location.reload();
+                    } else {
+                        alert("Failed to send email. Please check server logs or SMTP configuration.");
+                    }
+                })
+                .catch(err => {
+                    overlay.style.display = 'none';
+                    alert("Network error: " + err);
+                });
+        }
+    }
+
+    // Drag & Drop Excel Uploader Handlers
+    const dropzone = document.getElementById('dropzone');
+    const excelFile = document.getElementById('excelFile');
+    const dropzoneText = document.getElementById('dropzoneText');
+    const fileSelectedInfo = document.getElementById('fileSelectedInfo');
+    const selectedFileName = document.getElementById('selectedFileName');
+    const btnSubmitExcel = document.getElementById('btnSubmitExcel');
+
+    dropzone.addEventListener('click', () => excelFile.click());
+
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+            excelFile.files = e.dataTransfer.files;
+            handleFileSelection();
+        }
+    });
+
+    excelFile.addEventListener('change', handleFileSelection);
+
+    function handleFileSelection() {
+        if (excelFile.files.length) {
+            const file = excelFile.files[0];
+            selectedFileName.innerText = file.name;
+            fileSelectedInfo.style.display = 'block';
+            dropzoneText.innerText = "Excel sheet loaded";
+            btnSubmitExcel.removeAttribute('disabled');
+        }
+    }
+
+    function triggerExcelUpload() {
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.querySelector('h4').innerText = "Processing Excel Sheet";
+        overlay.querySelector('p').innerText = "Parsing rows, calculating custom net salaries, writing PDF payslips, and dispatching SMTP emails...";
+        overlay.style.display = 'flex';
+        document.getElementById('excelUploadForm').submit();
+    }
+</script>
+{% endblock %}
