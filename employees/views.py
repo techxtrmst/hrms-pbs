@@ -1043,6 +1043,45 @@ def employee_profile(request):
 
         action = request.POST.get("action")
 
+        if action == "update_about":
+            # About section: always editable, no one-time restriction
+            try:
+                employee.mobile_number = request.POST.get("mobile_number")
+                employee.personal_email = request.POST.get("personal_email")
+                employee.pseudo_name = request.POST.get("pseudo_name")
+                dob_str = request.POST.get("dob")
+                if dob_str:
+                    employee.dob = dob_str
+                employee.gender = request.POST.get("gender")
+                employee.marital_status = request.POST.get("marital_status")
+                employee.current_address = request.POST.get("current_address")
+                employee.permanent_address = request.POST.get("permanent_address")
+                employee.save()
+
+                from .models import EmergencyContact
+
+                employee.emergency_contacts.all().delete()
+                c1_name = request.POST.get("contact_name_1")
+                c1_phone = request.POST.get("contact_phone_1")
+                c1_rel = request.POST.get("contact_rel_1")
+                if c1_name and c1_phone:
+                    EmergencyContact.objects.create(
+                        employee=employee, name=c1_name, phone_number=c1_phone, relationship=c1_rel, is_primary=True
+                    )
+                c2_name = request.POST.get("contact_name_2")
+                c2_phone = request.POST.get("contact_phone_2")
+                c2_rel = request.POST.get("contact_rel_2")
+                if c2_name and c2_phone:
+                    EmergencyContact.objects.create(
+                        employee=employee, name=c2_name, phone_number=c2_phone, relationship=c2_rel, is_primary=False
+                    )
+
+                messages.success(request, "About section updated successfully.")
+                return redirect("employee_profile")
+            except Exception as e:
+                messages.error(request, f"Error updating profile: {str(e)}")
+                return redirect("employee_profile")
+
         if action == "update_profile":
             is_admin = request.user.role == User.Role.COMPANY_ADMIN
             if employee.profile_edited and not is_admin:

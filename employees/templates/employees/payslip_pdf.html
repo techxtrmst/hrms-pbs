@@ -255,7 +255,13 @@
         <tr>
             <td style="padding: 3px 0;">
                 <div class="label">PAYABLE UNITS</div>
-                <div class="value">{{ payslip.worked_days|floatformat:0 }} Days</div>
+                <div class="value">
+                    {% if payslip.worked_days == 31 or payslip.worked_days == 31.0 or payslip.worked_days == "31" or payslip.worked_days == "31.0" %}
+                        30 Days
+                    {% else %}
+                        {{ payslip.worked_days|floatformat:0 }} Days
+                    {% endif %}
+                </div>
             </td>
         </tr>
     </table>

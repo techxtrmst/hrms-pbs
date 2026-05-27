@@ -636,6 +636,12 @@ class PayslipGenerator:
         # Convert month to 3-letter format
         month_short = month[:3] if len(month) > 3 else month
 
+        raw_payable_units = employee_data.get("payable_units", "30 Days")
+        if raw_payable_units in ["31 Days", "31.0 Days", "31", 31, 31.0]:
+            payable_units_val = "30 Days"
+        else:
+            payable_units_val = raw_payable_units
+
         # Prepare template context - ALL from employee_data
         context = {
             "month": month,
@@ -657,7 +663,7 @@ class PayslipGenerator:
             "bank_account": employee_data.get("bank_account", ""),
             "uan": employee_data.get("uan", "N/A"),
             "pan_number": employee_data.get("pan_number", ""),
-            "payable_units": employee_data.get("payable_units", "30 Days"),
+            "payable_units": payable_units_val,
             "earnings": employee_data.get("earnings", []),
             "deductions": employee_data.get("deductions", []),
             "pf_contributions": pf_contributions,

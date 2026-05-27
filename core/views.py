@@ -5151,3 +5151,165 @@ def biometric_sync_api(request):
     except Exception as e:
         logger.error(f"Biometric Sync Error: {str(e)}")
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# View All: Birthdays, Anniversaries, Announcements
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@login_required
+def all_birthdays(request):
+    """View All Birthdays – shows upcoming birthdays for the next 365 days (real data)."""
+
+    today = timezone.localtime().date()
+    future_date = today + timedelta(days=365)
+
+    # Resolve company
+    if hasattr(request.user, "employee_profile"):
+        company = request.user.employee_profile.company
+    elif hasattr(request.user, "company"):
+        company = request.user.company
+    else:
+        company = None
+
+    if not company:
+        return render(request, "core/all_birthdays.html", {"birthdays": [], "today": today})
+
+    employees_qs = (
+        Employee.objects.filter(company=company, is_active=True, employment_status="ACTIVE")
+        .filter(Q(exit_date__isnull=True) | Q(exit_date__gt=today))
+        .select_related("user")
+    )
+
+    upcoming_birthdays = []
+    for emp in employees_qs:
+        if not emp.dob:
+            continue
+        try:
+            this_year_bday = emp.dob.replace(year=today.year)
+        except ValueError:
+            this_year_bday = emp.dob.replace(year=today.year, month=2, day=28)
+
+        if this_year_bday < today:
+            try:
+                next_birthday = emp.dob.replace(year=today.year + 1)
+            except ValueError:
+                next_birthday = emp.dob.replace(year=today.year + 1, month=2, day=28)
+        else:
+            next_birthday = this_year_bday
+
+        if today <= next_birthday <= future_date:
+            days_left = (next_birthday - today).days
+            upcoming_birthdays.append(
+                {
+                    "employee": emp,
+                    "date": next_birthday,
+                    "is_today": days_left == 0,
+                    "days_left": days_left,
+                }
+            )
+
+    upcoming_birthdays.sort(key=lambda x: x["days_left"])
+
+    context = {
+        "title": "All Birthdays",
+        "birthdays": upcoming_birthdays,
+        "today": today,
+    }
+    return render(request, "core/all_birthdays.html", context)
+
+
+@login_required
+def all_anniversaries(request):
+    """View All Work Anniversaries – shows upcoming anniversaries for the next 365 days (real data)."""
+    today = timezone.localtime().date()
+    future_date = today + timedelta(days=365)
+
+    if hasattr(request.user, "employee_profile"):
+        company = request.user.employee_profile.company
+    elif hasattr(request.user, "company"):
+        company = request.user.company
+    else:
+        company = None
+
+    if not company:
+        return render(request, "core/all_anniversaries.html", {"anniversaries": [], "today": today})
+
+    employees_qs = (
+        Employee.objects.filter(company=company, is_active=True, employment_status="ACTIVE")
+        .filter(Q(exit_date__isnull=True) | Q(exit_date__gt=today))
+        .select_related("user")
+    )
+
+    upcoming_anniversaries = []
+    for emp in employees_qs:
+        if not emp.date_of_joining:
+            continue
+        years_completed = today.year - emp.date_of_joining.year
+        try:
+            this_year_anniv = emp.date_of_joining.replace(year=today.year)
+        except ValueError:
+            this_year_anniv = emp.date_of_joining.replace(year=today.year, month=2, day=28)
+
+        if this_year_anniv < today:
+            try:
+                next_anniv = emp.date_of_joining.replace(year=today.year + 1)
+                years_completed += 1
+            except ValueError:
+                next_anniv = emp.date_of_joining.replace(year=today.year + 1, month=2, day=28)
+                years_completed += 1
+        else:
+            next_anniv = this_year_anniv
+
+        if today <= next_anniv <= future_date and years_completed > 0:
+            days_left = (next_anniv - today).days
+            upcoming_anniversaries.append(
+                {
+                    "employee": emp,
+                    "date": next_anniv,
+                    "years": years_completed,
+                    "is_today": days_left == 0,
+                    "days_left": days_left,
+                }
+            )
+
+    upcoming_anniversaries.sort(key=lambda x: x["days_left"])
+
+    context = {
+        "title": "All Work Anniversaries",
+        "anniversaries": upcoming_anniversaries,
+        "today": today,
+    }
+    return render(request, "core/all_anniversaries.html", context)
+
+
+@login_required
+def all_announcements(request):
+    """View All Announcements – shows all active announcements for the company (real data)."""
+    from companies.models import Announcement
+
+    today = timezone.localtime().date()
+
+    if hasattr(request.user, "employee_profile"):
+        company = request.user.employee_profile.company
+    elif hasattr(request.user, "company"):
+        company = request.user.company
+    else:
+        company = None
+
+    if not company:
+        return render(request, "core/all_announcements.html", {"announcements": [], "today": today})
+
+    announcements = (
+        Announcement.objects.filter(company=company, is_active=True)
+        .exclude(title__startswith="Resignation Alert:")
+        .order_by("-created_at")
+    )
+
+    context = {
+        "title": "All Announcements",
+        "announcements": announcements,
+        "today": today,
+    }
+    return render(request, "core/all_announcements.html", context)

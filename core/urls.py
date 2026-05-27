@@ -71,4 +71,8 @@ urlpatterns = [
     path("api/notifications/mark-all-read/", views.mark_all_notifications_read, name="mark_all_notifications_read"),
     # Biometric Integration API
     path("api/biometric/sync/", views.biometric_sync_api, name="biometric_sync_api"),
+    # View All pages
+    path("birthdays/", views.all_birthdays, name="all_birthdays"),
+    path("anniversaries/", views.all_anniversaries, name="all_anniversaries"),
+    path("announcements/", views.all_announcements, name="all_announcements"),
 ]

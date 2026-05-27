@@ -1019,9 +1019,9 @@
                         {% endif %}
 
                         <div class="actions-links-container">
-                            <a href="#" class="actions-link-item"><i class="fas fa-key"></i> Forgot ID</a>
+                            <a href="{% url 'forgot_password' %}" class="actions-link-item"><i class="fas fa-key"></i> Forgot ID</a>
                             <a href="#" class="actions-link-item" onclick="handleClockAction('in', 'REMOTE', this)"><i class="fas fa-globe"></i> Remote Clock-in</a>
-                            <a href="#" class="actions-link-item"><i class="fas fa-home"></i> Work From Home</a>
+                            <a href="#" class="actions-link-item" onclick="handleClockAction('in', 'WFH', this); return false;"><i class="fas fa-home"></i> Work From Home</a>
                         </div>
                     </div>
 
