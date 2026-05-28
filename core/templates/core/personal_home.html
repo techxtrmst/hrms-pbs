@@ -457,18 +457,18 @@
 
     .keka-visual-track-24 {
         width: 100%;
-        height: 18px;
+        height: 10px;
         background: #f8fafc;
-        border-radius: 9px;
+        border-radius: 5px;
         position: relative;
         overflow: visible;
-        border: 1.5px solid #e2e8f0;
+        border: 1px solid #e2e8f0;
         /* Draw perfect vertical grid dividers to match Keka's segments */
         background-image: repeating-linear-gradient(
             to right,
             transparent,
-            transparent calc(100% / 12 - 1.5px),
-            #e2e8f0 calc(100% / 12 - 1.5px),
+            transparent calc(100% / 12 - 1px),
+            #e2e8f0 calc(100% / 12 - 1px),
             #e2e8f0 calc(100% / 12)
         );
     }
@@ -477,17 +477,17 @@
         height: 100%;
         position: absolute;
         top: 0;
-        border-radius: 9px;
-        background: linear-gradient(90deg, #00c6ff 0%, #0072ff 100%) !important;
-        box-shadow: 0 0 10px rgba(0, 198, 255, 0.7);
+        border-radius: 5px;
+        background: linear-gradient(90deg, #0ea5e9 0%, #2563eb 100%) !important;
+        box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
         transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
         animation: kekaGrow 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
     }
 
     /* Live Shimmer Sweep on active session */
     .keka-visual-fill-24.keka-active-session {
-        background: linear-gradient(90deg, #00c6ff 0%, #0072ff 100%) !important;
-        box-shadow: 0 0 12px rgba(0, 198, 255, 0.85);
+        background: linear-gradient(90deg, #0ea5e9 0%, #2563eb 100%) !important;
+        box-shadow: 0 1px 5px rgba(37, 99, 235, 0.5);
     }
 
     .keka-visual-fill-24.keka-active-session::after {
@@ -500,7 +500,7 @@
         background: linear-gradient(
             90deg,
             rgba(255, 255, 255, 0) 0%,
-            rgba(255, 255, 255, 0.6) 50%,
+            rgba(255, 255, 255, 0.5) 50%,
             rgba(255, 255, 255, 0) 100%
         );
         transform: translateX(-100%);
@@ -513,43 +513,30 @@
         }
     }
 
-    /* Checkpoint Pins perfectly aligned to center and matching first image hollow circles */
-    .keka-pin-in {
+    /* Checkpoint Triangles aligned below the track matching Keka's exact pointer style */
+    .keka-checkpoint-triangle {
         position: absolute;
-        top: 50%;
-        transform: translateY(-50%) translateX(-50%);
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: #ffffff;
-        border: 4.5px solid #10b981;
-        z-index: 15;
-        box-shadow: 0 2px 5px rgba(16, 185, 129, 0.4);
+        bottom: -7.5px; /* sit perfectly right below the 10px track */
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 4.5px solid transparent;
+        border-right: 4.5px solid transparent;
+        z-index: 12;
         cursor: help;
         transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
     }
 
-    .keka-pin-in:hover {
-        transform: translateY(-50%) translateX(-50%) scale(1.3);
+    .keka-triangle-in {
+        border-bottom: 6.5px solid #10b981; /* bright green for check-in */
     }
 
-    .keka-pin-out {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%) translateX(-50%);
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: #ffffff;
-        border: 4.5px solid #ef4444;
-        z-index: 15;
-        box-shadow: 0 2px 5px rgba(239, 68, 68, 0.4);
-        cursor: help;
-        transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+    .keka-triangle-out {
+        border-bottom: 6.5px solid #ef4444; /* bright red for check-out */
     }
 
-    .keka-pin-out:hover {
-        transform: translateY(-50%) translateX(-50%) scale(1.3);
+    .keka-checkpoint-triangle:hover {
+        transform: translateX(-50%) scale(1.4);
     }
 
     @keyframes kekaGrow {
@@ -1305,17 +1292,9 @@
                                 <td class="keka-visual-wrapper-24" style="overflow: visible;">
                                     <div class="keka-attendance-visual-container-24 keka-tooltip-container" style="overflow: visible;">
                                         <div class="keka-visual-track-24"
-                                             data-clock-in="{% if record.clock_in %}{{ record.clock_in|date:'H:i' }}{% endif %}"
-                                             data-clock-out="{% if record.clock_out %}{{ record.clock_out|date:'H:i' }}{% endif %}"
+                                             data-sessions="[{% for s in record.day_sessions %}{&quot;in&quot;: &quot;{{ s.in_time }}&quot;, &quot;out&quot;: &quot;{{ s.out_time }}&quot;, &quot;is_active&quot;: {% if s.is_active %}true{% else %}false{% endif %}, &quot;type&quot;: &quot;{{ s.type }}&quot;, &quot;in_label&quot;: &quot;{{ s.clock_in }}&quot;, &quot;out_label&quot;: &quot;{{ s.clock_out }}&quot;}{% if not forloop.last %},{% endif %}{% endfor %}]"
                                              data-status="{{ record.status }}"
                                              data-is-active="{% if record.is_currently_clocked_in %}true{% else %}false{% endif %}">
-
-                                            <!-- Worked Progress -->
-                                            <div class="keka-visual-fill-24 {% if record.is_currently_clocked_in %}keka-active-session{% endif %}"></div>
-
-                                            <!-- Checkpoint pins -->
-                                            <div class="keka-pin-in" style="display: none;" title="Clock-in"></div>
-                                            <div class="keka-pin-out" style="display: none;" title="Clock-out"></div>
                                         </div>
 
                                         <!-- Interactive detail card on hover -->
@@ -1875,71 +1854,158 @@
         if (locationTrackingInterval) clearInterval(locationTrackingInterval);
     });
 
-    // 24-Hour Timeline visual calculations
-    document.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('.keka-visual-track-24').forEach(track => {
-            const clockIn = track.getAttribute('data-clock-in'); // "HH:MM"
-            const clockOut = track.getAttribute('data-clock-out'); // "HH:MM"
-            const status = track.getAttribute('data-status');
-            const isActive = track.getAttribute('data-is-active') === 'true';
+    function renderTrack(track) {
+        // Clear any previously generated fills or triangles to prevent double rendering
+        track.querySelectorAll('.keka-visual-fill-24, .keka-checkpoint-triangle').forEach(el => el.remove());
 
-            const fill = track.querySelector('.keka-visual-fill-24');
-            const pinIn = track.querySelector('.keka-pin-in');
-            const pinOut = track.querySelector('.keka-pin-out');
+        const status = track.getAttribute('data-status');
+        const isActive = track.getAttribute('data-is-active') === 'true';
+        let sessions = [];
+        try {
+            sessions = JSON.parse(track.getAttribute('data-sessions') || '[]');
+        } catch (e) {
+            console.error("Error parsing sessions JSON", e);
+        }
 
-            if (clockIn) {
-                const [inH, inM] = clockIn.split(':').map(Number);
-                const inTotalMin = inH * 60 + inM;
-                const leftPct = (inTotalMin / 1440) * 100;
+        if (sessions && sessions.length > 0) {
+            // Find first check-in session and last check-out session
+            const firstSession = sessions[0];
+            const lastSession = sessions[sessions.length - 1];
 
-                let widthPct = 0;
+            // 1. Draw exactly one Check-in Triangle Pointer (green) at the absolute first login
+            if (firstSession && firstSession.in) {
+                const [inH, inM] = firstSession.in.split(':').map(Number);
+                const inMin = inH * 60 + inM;
+                const leftPct = (inMin / 1440) * 100;
 
-                if (clockOut) {
-                    const [outH, outM] = clockOut.split(':').map(Number);
-                    const outTotalMin = outH * 60 + outM;
-                    widthPct = ((outTotalMin - inTotalMin) / 1440) * 100;
-                } else if (isActive) {
+                const triIn = document.createElement('div');
+                triIn.className = 'keka-checkpoint-triangle keka-triangle-in';
+                triIn.style.left = `${leftPct}%`;
+                triIn.title = `First Login: ${firstSession.in_label || firstSession.in}`;
+                track.appendChild(triIn);
+            }
+
+            // 2. Draw exactly one Check-out Triangle Pointer (red) at the absolute last logout / ticking state
+            if (lastSession) {
+                let outMin = 0;
+                let hasOut = false;
+                let isLastSessionActive = lastSession.is_active;
+
+                if (lastSession.out) {
+                    const [outH, outM] = lastSession.out.split(':').map(Number);
+                    outMin = outH * 60 + outM;
+                    hasOut = true;
+                } else if (isLastSessionActive) {
                     const now = new Date();
-                    const nowTotalMin = now.getHours() * 60 + now.getMinutes();
-                    widthPct = Math.max(2, ((nowTotalMin - inTotalMin) / 1440) * 100);
-                } else {
-                    widthPct = 100 - leftPct;
+                    outMin = now.getHours() * 60 + now.getMinutes() + (now.getSeconds() / 60);
+                    hasOut = true;
                 }
 
-                // Position worked segment
-                fill.style.left = `${leftPct}%`;
-                fill.style.width = `${Math.max(2, widthPct)}%`;
-                fill.style.display = 'block';
-
-                // Position check-in pin
-                pinIn.style.left = `${leftPct}%`;
-                pinIn.style.display = 'block';
-
-                // Position check-out pin if clocked out or session is completed
-                if (clockOut || !isActive) {
-                    const rightPos = leftPct + widthPct;
-                    pinOut.style.left = `${rightPos}%`;
-                    pinOut.style.display = 'block';
-                }
-            } else {
-                // Default shift timeline representation for WFH/PRESENT with no clock-ins
-                if (status === 'WFH' || status === 'PRESENT') {
-                    const startPct = (540 / 1440) * 100; // 9:00 AM is 540 min
-                    const durationPct = (540 / 1440) * 100; // 9 hours is 540 min
-
-                    fill.style.left = `${startPct}%`;
-                    fill.style.width = `${durationPct}%`;
-                    fill.style.display = 'block';
-
-                    pinIn.style.left = `${startPct}%`;
-                    pinIn.style.display = 'block';
-
-                    pinOut.style.left = `${startPct + durationPct}%`;
-                    pinOut.style.display = 'block';
-                } else {
-                    fill.style.display = 'none';
+                if (hasOut) {
+                    const triOut = document.createElement('div');
+                    triOut.className = 'keka-checkpoint-triangle keka-triangle-out';
+                    triOut.style.left = `${(outMin / 1440) * 100}%`;
+                    triOut.title = isLastSessionActive ? `Active Session (ticking...)` : `Last Logout: ${lastSession.out_label || lastSession.out}`;
+                    track.appendChild(triOut);
                 }
             }
+
+            // 3. Draw blue work fill segments for all sessions (without duplicate triangles)
+            sessions.forEach(s => {
+                if (s.in) {
+                    const [inH, inM] = s.in.split(':').map(Number);
+                    const inMin = inH * 60 + inM;
+                    const leftPct = (inMin / 1440) * 100;
+
+                    let outMin = 0;
+                    let hasOut = false;
+                    let isSessionActive = s.is_active;
+
+                    if (s.out) {
+                        const [outH, outM] = s.out.split(':').map(Number);
+                        outMin = outH * 60 + outM;
+                        hasOut = true;
+                    } else if (isSessionActive) {
+                        const now = new Date();
+                        outMin = now.getHours() * 60 + now.getMinutes() + (now.getSeconds() / 60);
+                        hasOut = true;
+                    }
+
+                    if (hasOut) {
+                        if (outMin < inMin) {
+                            // Crossing midnight!
+                            // Segment 1 (Evening): inMin -> midnight (1440 min)
+                            const fill1 = document.createElement('div');
+                            fill1.className = 'keka-visual-fill-24';
+                            if (isSessionActive) fill1.classList.add('keka-active-session');
+                            fill1.style.left = `${leftPct}%`;
+                            fill1.style.width = `${100 - leftPct}%`;
+                            track.appendChild(fill1);
+
+                            // Segment 2 (Morning): midnight (0) -> outMin
+                            const fill2 = document.createElement('div');
+                            fill2.className = 'keka-visual-fill-24';
+                            if (isSessionActive) fill2.classList.add('keka-active-session');
+                            fill2.style.left = '0%';
+                            fill2.style.width = `${(outMin / 1440) * 100}%`;
+                            track.appendChild(fill2);
+                        } else {
+                            // Regular day session
+                            const widthPct = ((outMin - inMin) / 1440) * 100;
+                            const fill = document.createElement('div');
+                            fill.className = 'keka-visual-fill-24';
+                            if (isSessionActive) fill.classList.add('keka-active-session');
+                            fill.style.left = `${leftPct}%`;
+                            fill.style.width = `${Math.max(1.5, widthPct)}%`;
+                            track.appendChild(fill);
+                        }
+                    } else {
+                        // Clocked in but no clock out and not currently active session
+                        const fill = document.createElement('div');
+                        fill.className = 'keka-visual-fill-24';
+                        fill.style.left = `${leftPct}%`;
+                        fill.style.width = `${100 - leftPct}%`;
+                        track.appendChild(fill);
+                    }
+                }
+            });
+        } else {
+            // Default shift representation for Present/WFH days with no sessions
+            if (status === 'WFH' || status === 'PRESENT') {
+                const startPct = (540 / 1440) * 100; // 9:00 AM
+                const widthPct = (540 / 1440) * 100; // 9 hours duration
+
+                const fill = document.createElement('div');
+                fill.className = 'keka-visual-fill-24';
+                // Use a beautiful subtle grey/lavender color for passive shift presence
+                fill.style.background = 'linear-gradient(90deg, #cbd5e1 0%, #94a3b8 100%)';
+                fill.style.boxShadow = 'none';
+                fill.style.left = `${startPct}%`;
+                fill.style.width = `${widthPct}%`;
+                track.appendChild(fill);
+
+                // Add subtle grey pointers at 9 AM and 6 PM
+                const triIn = document.createElement('div');
+                triIn.className = 'keka-checkpoint-triangle';
+                triIn.style.borderBottom = '6.5px solid #94a3b8';
+                triIn.style.left = `${startPct}%`;
+                triIn.title = 'Shift Start: 09:00 AM';
+                track.appendChild(triIn);
+
+                const triOut = document.createElement('div');
+                triOut.className = 'keka-checkpoint-triangle';
+                triOut.style.borderBottom = '6.5px solid #94a3b8';
+                triOut.style.left = `${startPct + widthPct}%`;
+                triOut.title = 'Shift End: 06:00 PM';
+                track.appendChild(triOut);
+            }
+        }
+    }
+
+    // Render all tracks on load
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.keka-visual-track-24').forEach(track => {
+            renderTrack(track);
         });
 
         // 1. Live ticking for the main Timings progress card
@@ -1996,39 +2062,16 @@
         }
 
         // 2. Live ticking for the 24-hour visual logs track
-        function tickActive24HourTrack() {
+        function tickActiveTracks() {
             document.querySelectorAll('.keka-visual-track-24').forEach(track => {
-                const clockIn = track.getAttribute('data-clock-in'); // "HH:MM"
                 const isActive = track.getAttribute('data-is-active') === 'true';
-
-                if (clockIn && isActive) {
-                    const fill = track.querySelector('.keka-visual-fill-24');
-                    const pinOut = track.querySelector('.keka-pin-out');
-
-                    const [inH, inM] = clockIn.split(':').map(Number);
-                    const inTotalMin = inH * 60 + inM;
-                    const leftPct = (inTotalMin / 1440) * 100;
-
-                    const now = new Date();
-                    const nowTotalMin = now.getHours() * 60 + now.getMinutes() + (now.getSeconds() / 60);
-                    const widthPct = Math.max(2, ((nowTotalMin - inTotalMin) / 1440) * 100);
-
-                    if (fill) {
-                        fill.style.width = `${Math.max(2, widthPct)}%`;
-                    }
-
-                    if (pinOut) {
-                        const rightPos = leftPct + widthPct;
-                        pinOut.style.left = `${rightPos}%`;
-                        pinOut.style.display = 'block';
-                    }
+                if (isActive) {
+                    renderTrack(track);
                 }
             });
         }
 
-        // Execute immediately and then tick every 1 second for live growing progress visual while working
-        tickActive24HourTrack();
-        setInterval(tickActive24HourTrack, 1000);
+        setInterval(tickActiveTracks, 1000);
     });
 
 </script>
