@@ -312,6 +312,8 @@ class Attendance(models.Model):
         ("HALF_DAY", "Half Day"),
         ("LEAVE", "On Leave"),
         ("WFH", "Work From Home"),
+        ("REMOTE", "Remote"),
+        ("HYBRID", "Hybrid"),
         ("ON_DUTY", "On Duty"),
         ("WEEKLY_OFF", "Weekly Off"),
         ("HOLIDAY", "Holiday"),
@@ -638,8 +640,19 @@ class Attendance(models.Model):
             percent = max(0, min((hours / 9) * 100, 100))
             return percent
         elif self.clock_in:
-            # If currently clocked in, calculate from clock_in to now (handled in view typically, but distinct here)
-            pass
+            # If currently clocked in, calculate from clock_in to now
+            diff = timezone.now() - self.clock_in
+            hours = diff.total_seconds() / 3600
+            percent = max(0, min((hours / 9) * 100, 100))
+            return percent
+        return 0
+
+    @property
+    def early_departure_width(self):
+        # Percentage of 9 hours shift for the early departure period
+        if self.is_early_departure and self.early_departure_minutes:
+            percent = (self.early_departure_minutes / 540) * 100
+            return max(0, min(percent, 100 - self.visual_width))
         return 0
 
     @property

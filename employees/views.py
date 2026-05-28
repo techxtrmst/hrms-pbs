@@ -481,7 +481,7 @@ def clock_in(request):
                 )
 
             # Determine session type and status
-            session_type = "WEB" if clock_in_type == "office" else "REMOTE"
+            session_type = "WEB" if clock_in_type in ["office", "WEB"] else "REMOTE"
 
             # Use database transaction to prevent race conditions
             from django.db import transaction
@@ -544,9 +544,14 @@ def clock_in(request):
                         attendance.clock_in = session.clock_in
                         attendance.location_in = f"{lat},{lng}" if lat is not None and lng is not None else "N/A"
 
-                    # Determine overall status
+                    # Determine overall status based on clock_in_type
                     if session_number == 1:
-                        attendance.status = "WFH" if session_type == "REMOTE" else "PRESENT"
+                        if clock_in_type == "WFH":
+                            attendance.status = "WFH"
+                        elif clock_in_type == "REMOTE":
+                            attendance.status = "REMOTE"
+                        else:
+                            attendance.status = "PRESENT"
                     else:
                         # Multiple sessions - check if mixed types
                         session_types = set(
@@ -554,10 +559,16 @@ def clock_in(request):
                                 "session_type", flat=True
                             )
                         )
+                        session_types.add(session_type)
                         if len(session_types) > 1:
                             attendance.status = "HYBRID"
                         else:
-                            attendance.status = "WFH" if session_type == "REMOTE" else "PRESENT"
+                            if clock_in_type == "WFH":
+                                attendance.status = "WFH"
+                            elif clock_in_type == "REMOTE":
+                                attendance.status = "REMOTE"
+                            else:
+                                attendance.status = "PRESENT"
 
                     # Start location tracking
                     attendance.location_tracking_active = True

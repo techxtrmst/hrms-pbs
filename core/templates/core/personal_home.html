@@ -441,87 +441,237 @@
         margin-top: 2px;
     }
 
-    /* Unique worked session capsules style */
-    .keka-visual-wrapper {
-        min-width: 220px;
+    /* Attendance visual — 24-Hour Premium Visual Timeline */
+    .keka-visual-wrapper-24 {
+        min-width: 240px;
         vertical-align: middle !important;
     }
 
-    .keka-session-capsules-container {
+    .keka-attendance-visual-container-24 {
         display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
         align-items: center;
+        justify-content: flex-start;
+        width: 200px;
+        position: relative;
     }
 
-    .keka-session-capsule {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.76rem;
-        font-weight: 700;
-        padding: 4px 10px;
-        border-radius: 12px;
-        transition: all 0.2s ease;
-        border: 1px solid rgba(91, 71, 251, 0.15);
-        background: rgba(91, 71, 251, 0.05);
-        color: var(--keka-primary);
+    .keka-visual-track-24 {
+        width: 100%;
+        height: 18px;
+        background: #f8fafc;
+        border-radius: 9px;
+        position: relative;
+        overflow: visible;
+        border: 1.5px solid #e2e8f0;
+        /* Draw perfect vertical grid dividers to match Keka's segments */
+        background-image: repeating-linear-gradient(
+            to right,
+            transparent,
+            transparent calc(100% / 12 - 1.5px),
+            #e2e8f0 calc(100% / 12 - 1.5px),
+            #e2e8f0 calc(100% / 12)
+        );
+    }
+
+    .keka-visual-fill-24 {
+        height: 100%;
+        position: absolute;
+        top: 0;
+        border-radius: 9px;
+        background: linear-gradient(90deg, #00c6ff 0%, #0072ff 100%) !important;
+        box-shadow: 0 0 10px rgba(0, 198, 255, 0.7);
+        transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        animation: kekaGrow 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+
+    /* Live Shimmer Sweep on active session */
+    .keka-visual-fill-24.keka-active-session {
+        background: linear-gradient(90deg, #00c6ff 0%, #0072ff 100%) !important;
+        box-shadow: 0 0 12px rgba(0, 198, 255, 0.85);
+    }
+
+    .keka-visual-fill-24.keka-active-session::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.6) 50%,
+            rgba(255, 255, 255, 0) 100%
+        );
+        transform: translateX(-100%);
+        animation: kekaShimmer 1.5s infinite linear;
+    }
+
+    @keyframes kekaShimmer {
+        100% {
+            transform: translateX(100%);
+        }
+    }
+
+    /* Checkpoint Pins perfectly aligned to center and matching first image hollow circles */
+    .keka-pin-in {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%) translateX(-50%);
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 4.5px solid #10b981;
+        z-index: 15;
+        box-shadow: 0 2px 5px rgba(16, 185, 129, 0.4);
         cursor: help;
+        transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
     }
 
-    .keka-session-capsule.keka-session-active {
-        background: rgba(16, 185, 129, 0.08) !important;
-        color: var(--keka-success) !important;
-        border-color: rgba(16, 185, 129, 0.25) !important;
-        animation: kekaPulse 2s infinite ease-in-out;
+    .keka-pin-in:hover {
+        transform: translateY(-50%) translateX(-50%) scale(1.3);
     }
 
-    .keka-session-capsule.keka-session-completed:hover {
+    .keka-pin-out {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%) translateX(-50%);
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 4.5px solid #ef4444;
+        z-index: 15;
+        box-shadow: 0 2px 5px rgba(239, 68, 68, 0.4);
+        cursor: help;
+        transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .keka-pin-out:hover {
+        transform: translateY(-50%) translateX(-50%) scale(1.3);
+    }
+
+    @keyframes kekaGrow {
+        from {
+            width: 0%;
+        }
+    }
+
+    /* Glassmorphism Premium Tooltip Card */
+    .keka-tooltip-card {
+        display: none;
+        position: absolute;
+        bottom: 130%;
+        left: 50%;
+        transform: translateX(-50%) translateY(10px);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(16px) saturate(180%);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 10px 30px rgba(91, 71, 251, 0.15), 0 1px 3px rgba(0, 0, 0, 0.05);
+        border-radius: 12px;
+        padding: 14px;
+        width: 240px;
+        z-index: 1000;
+        font-size: 0.78rem;
+        color: #1e1b4b;
+        pointer-events: none;
+        transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        opacity: 0;
+    }
+    .keka-tooltip-card::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 8px solid transparent;
+        border-top-color: rgba(255, 255, 255, 0.95);
+    }
+    .keka-tooltip-container {
+        position: relative;
+        cursor: pointer;
+    }
+    .keka-tooltip-container:hover .keka-tooltip-card {
+        display: block;
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    /* Timings & Shift Goal Visual */
+    .timings-week-bar {
+        display: flex;
+        justify-content: space-between;
+        gap: 4px;
+        margin-bottom: 24px;
+    }
+    .timings-week-day {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--keka-text-secondary);
+        background: #f1f5f9;
+        transition: all 0.3s ease;
+    }
+    .timings-week-day.active {
         background: var(--keka-primary);
         color: white;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 6px rgba(91, 71, 251, 0.15);
+        box-shadow: 0 4px 10px rgba(91, 71, 251, 0.3);
+        transform: scale(1.1);
     }
-
-    .keka-special-capsule {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.74rem;
-        font-weight: 750;
-        padding: 5px 12px;
-        border-radius: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
+    .timings-progress-wrapper {
+        margin: 16px 0;
     }
-
-    .keka-special-woff {
-        background: rgba(100, 116, 139, 0.08);
-        color: #475569;
-        border: 1px solid rgba(100, 116, 139, 0.15);
+    .timings-progress-bar {
+        height: 8px;
+        background: #e2e8f0;
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
     }
-
-    .keka-special-holiday {
-        background: rgba(6, 182, 212, 0.08);
-        color: var(--keka-info);
-        border: 1px solid rgba(6, 182, 212, 0.15);
+    .timings-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #5b47fb 0%, #3b82f6 100%);
+        border-radius: 4px;
+        width: 0%;
+        transition: width 1s cubic-bezier(0.25, 1, 0.5, 1);
+        box-shadow: 0 1px 3px rgba(91, 71, 251, 0.2);
     }
-
-    .keka-special-leave {
-        background: rgba(239, 68, 68, 0.08);
-        color: var(--keka-danger);
-        border: 1px solid rgba(239, 68, 68, 0.15);
+    .timings-progress-fill.keka-active-session {
+        background: linear-gradient(90deg, #00f2fe 0%, #4facfe 100%) !important;
+        box-shadow: 0 0 12px rgba(0, 242, 254, 0.65), 0 0 4px rgba(79, 172, 254, 0.4);
+        position: relative;
+        overflow: hidden;
     }
-
-    @keyframes kekaPulse {
-        0%, 100% {
-            opacity: 1;
-            transform: scale(1);
-        }
-        50% {
-            opacity: 0.88;
-            transform: scale(0.97);
-        }
+    .timings-progress-fill.keka-active-session::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.6) 50%,
+            rgba(255, 255, 255, 0) 100%
+        );
+        transform: translateX(-100%);
+        animation: kekaShimmer 1.5s infinite linear;
+    }
+    .timings-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.72rem;
+        color: var(--keka-text-secondary);
+        font-weight: 600;
+        margin-top: 6px;
     }
 
     /* Effective hours pill — unique clean design, no spinner */
@@ -866,128 +1016,93 @@
 
         <!-- Column 2: Timings -->
         <div class="col-12 col-lg-4">
-            <div class="keka-portal-card">
-                <div class="card-header-keka">
-                    <i class="far fa-clock"></i>
-                    <h5>Timings</h5>
-                </div>
-
-                <!-- Weekday Circle Bar S M T W T F S -->
-                <div class="timings-week-bar">
-                    <div class="timings-week-day" data-day="0">S</div>
-                    <div class="timings-week-day" data-day="1">M</div>
-                    <div class="timings-week-day" data-day="2">T</div>
-                    <div class="timings-week-day" data-day="3">W</div>
-                    <div class="timings-week-day" data-day="4">T</div>
-                    <div class="timings-week-day" data-day="5">F</div>
-                    <div class="timings-week-day" data-day="6">S</div>
-                </div>
-
-                <div class="timings-shift-title">
-                    {% if assigned_shift %}
-                        {{ assigned_shift.name }}
-                        {% if employee.location %}({{ employee.location.name }}){% endif %}
-                    {% else %}
-                        General Shift
-                        {% if employee.location %}({{ employee.location.name }}){% endif %}
-                    {% endif %}
-                </div>
-
-                <!-- Shift start–end time -->
-                <div class="text-secondary" style="font-size: 0.8rem; font-weight: 600; margin-bottom: 12px;">
-                    {% if assigned_shift %}
-                        {{ assigned_shift.start_time|time:"h:i A" }} – {{ assigned_shift.end_time|time:"h:i A" }}
-                    {% else %}
-                        Shift not assigned
-                    {% endif %}
-                </div>
-
-                <!-- Break / Refreshment timings (from shift) -->
-                {% if shift_breaks %}
-                <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:14px;">
-                    {% for brk in shift_breaks %}
-                    <div style="display:flex; align-items:center; gap:8px; font-size:0.78rem; color:var(--keka-text-secondary); font-weight:600;">
-                        <span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; background:rgba(245,158,11,0.1); border-radius:6px; flex-shrink:0;">
-                            {% if "lunch" in brk.name|lower or "meal" in brk.name|lower %}
-                                <i class="fas fa-utensils" style="color:#f59e0b; font-size:0.65rem;"></i>
-                            {% elif "tea" in brk.name|lower or "coffee" in brk.name|lower or "refresh" in brk.name|lower %}
-                                <i class="fas fa-coffee" style="color:#f59e0b; font-size:0.65rem;"></i>
-                            {% else %}
-                                <i class="fas fa-pause-circle" style="color:#f59e0b; font-size:0.65rem;"></i>
-                            {% endif %}
-                        </span>
-                        <span style="color:var(--keka-text-primary); font-weight:700;">{{ brk.name }}</span>
-                        <span style="margin-left:auto; background:#f1f5f9; padding:2px 8px; border-radius:6px; font-size:0.72rem; white-space:nowrap;">
-                            {{ brk.start_time|time:"h:i A" }} – {{ brk.end_time|time:"h:i A" }}
-                            {% if brk.duration_minutes %}<span style="color:var(--keka-text-muted);">({{ brk.duration_minutes }}m)</span>{% endif %}
-                        </span>
+            <div class="keka-portal-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div class="card-header-keka" style="border-bottom: none; margin-bottom: 12px; padding-bottom: 0;">
+                        <i class="far fa-clock" style="color: #4f46e5; background: #eef2ff; font-size: 1.2rem; padding: 10px; border-radius: 10px;"></i>
+                        <h5 style="font-size: 1.15rem; font-weight: 800; color: #1e1b4b;">Timings</h5>
                     </div>
-                    {% endfor %}
-                </div>
-                {% elif assigned_shift and assigned_shift.lunch_break_start and assigned_shift.lunch_break_end %}
-                <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:14px;">
-                    <div style="display:flex; align-items:center; gap:8px; font-size:0.78rem; color:var(--keka-text-secondary); font-weight:600;">
-                        <span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; background:rgba(245,158,11,0.1); border-radius:6px;">
-                            <i class="fas fa-coffee" style="color:#f59e0b; font-size:0.7rem;"></i>
-                        </span>
-                        <span style="color:var(--keka-text-primary); font-weight:700;">Break / Lunch</span>
-                        <span style="margin-left:auto; background:#f1f5f9; padding:2px 8px; border-radius:6px; font-size:0.72rem;">
-                            {{ assigned_shift.lunch_break_start|time:"h:i A" }} – {{ assigned_shift.lunch_break_end|time:"h:i A" }}
-                        </span>
+
+                    <!-- Weekday Circle Bar S M T W T F S -->
+                    <div class="timings-week-bar">
+                        <div class="timings-week-day" data-day="0">S</div>
+                        <div class="timings-week-day" data-day="1">M</div>
+                        <div class="timings-week-day" data-day="2">T</div>
+                        <div class="timings-week-day" data-day="3">W</div>
+                        <div class="timings-week-day" data-day="4">T</div>
+                        <div class="timings-week-day" data-day="5">F</div>
+                        <div class="timings-week-day" data-day="6">S</div>
                     </div>
-                </div>
-                {% endif %}
 
-                <!-- Working days row -->
-                {% if assigned_shift %}
-                <div style="display:flex; gap:4px; margin-bottom:14px; flex-wrap:wrap;">
-                    {% with days="Mon,Tue,Wed,Thu,Fri,Sat,Sun" %}
-                    <span style="font-size:0.7rem; color:var(--keka-text-muted); font-weight:700; align-self:center; margin-right:4px;">Working:</span>
-                    {% if assigned_shift.monday %}<span style="font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:5px; background:rgba(91,71,251,0.08); color:var(--keka-primary);">Mon</span>{% endif %}
-                    {% if assigned_shift.tuesday %}<span style="font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:5px; background:rgba(91,71,251,0.08); color:var(--keka-primary);">Tue</span>{% endif %}
-                    {% if assigned_shift.wednesday %}<span style="font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:5px; background:rgba(91,71,251,0.08); color:var(--keka-primary);">Wed</span>{% endif %}
-                    {% if assigned_shift.thursday %}<span style="font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:5px; background:rgba(91,71,251,0.08); color:var(--keka-primary);">Thu</span>{% endif %}
-                    {% if assigned_shift.friday %}<span style="font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:5px; background:rgba(91,71,251,0.08); color:var(--keka-primary);">Fri</span>{% endif %}
-                    {% if assigned_shift.saturday %}<span style="font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:5px; background:rgba(91,71,251,0.08); color:var(--keka-primary);">Sat</span>{% endif %}
-                    {% if assigned_shift.sunday %}<span style="font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:5px; background:rgba(91,71,251,0.08); color:var(--keka-primary);">Sun</span>{% endif %}
-                    {% endwith %}
-                </div>
-                {% endif %}
-
-                <!-- Grace period info -->
-                {% if assigned_shift and assigned_shift.grace_period_minutes %}
-                <div style="font-size:0.72rem; color:var(--keka-text-muted); margin-bottom:12px; display:flex; align-items:center; gap:6px;">
-                    <i class="fas fa-shield-alt" style="color:#10b981;"></i>
-                    <span>Grace: <strong style="color:var(--keka-text-secondary);">{{ assigned_shift.grace_period_minutes }} min</strong></span>
-                    {% if assigned_shift.is_flexible %}
-                        &nbsp;·&nbsp;<span style="color:#10b981; font-weight:700;">Flexible Shift</span>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                <!-- Real progress bar based on actual hours worked today -->
-                <div class="timings-progress-wrapper">
-                    <div class="timings-progress-bar">
-                        <div id="timings-progress-fill" class="timings-progress-fill"
-                             style="width: {% if today_worked_pct > 0 %}{{ today_worked_pct }}{% elif attendance and attendance.is_currently_clocked_in %}5{% else %}0{% endif %}%;"></div>
-                    </div>
-                    <div class="timings-labels">
-                        <span>Worked: {{ today_worked_display|default:"0:00" }}hrs</span>
-                        <span>Goal: {{ shift_goal_hours|default:9 }}hrs</span>
-                    </div>
-                </div>
-
-                <div class="timings-subtext">
-                    <i class="fas fa-map-marker-alt text-muted"></i>
-                    {% if employee.location %}
-                        <span>{{ employee.location.name }}</span>
-                        {% if employee.location.country_code %}
-                            &nbsp;·&nbsp;<i class="fas fa-clock text-muted"></i>
-                            <span>{{ employee.location.timezone }}</span>
+                    <div class="timings-shift-title" style="font-size: 1.15rem; font-weight: 800; color: #1e1b4b; margin-top: 15px; margin-bottom: 4px;">
+                        {% if assigned_shift %}
+                            {{ assigned_shift.name }}
+                        {% else %}
+                            General Shift
                         {% endif %}
-                    {% else %}
-                        <span class="text-muted">No location assigned</span>
-                    {% endif %}
+                    </div>
+
+                    <!-- Shift start–end time -->
+                    <div style="font-size: 0.88rem; font-weight: 600; color: #64748b; margin-bottom: 16px;">
+                        {% if assigned_shift %}
+                            {{ assigned_shift.start_time|time:"h:i A" }} – {{ assigned_shift.end_time|time:"h:i A" }}
+                        {% else %}
+                            09:00 AM – 06:00 PM
+                        {% endif %}
+                    </div>
+
+                    <!-- Working days row -->
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+                        <span style="font-size: 0.82rem; color: #64748b; font-weight: 700;">Working:</span>
+                        {% if assigned_shift %}
+                            {% if assigned_shift.monday %}<span style="font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: #f5f3ff; color: #5b47fb; border: 1px solid #ede9fe;">Mon</span>{% endif %}
+                            {% if assigned_shift.tuesday %}<span style="font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: #f5f3ff; color: #5b47fb; border: 1px solid #ede9fe;">Tue</span>{% endif %}
+                            {% if assigned_shift.wednesday %}<span style="font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: #f5f3ff; color: #5b47fb; border: 1px solid #ede9fe;">Wed</span>{% endif %}
+                            {% if assigned_shift.thursday %}<span style="font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: #f5f3ff; color: #5b47fb; border: 1px solid #ede9fe;">Thu</span>{% endif %}
+                            {% if assigned_shift.friday %}<span style="font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: #f5f3ff; color: #5b47fb; border: 1px solid #ede9fe;">Fri</span>{% endif %}
+                            {% if assigned_shift.saturday %}<span style="font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: #f5f3ff; color: #5b47fb; border: 1px solid #ede9fe;">Sat</span>{% endif %}
+                            {% if assigned_shift.sunday %}<span style="font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: #f5f3ff; color: #5b47fb; border: 1px solid #ede9fe;">Sun</span>{% endif %}
+                        {% else %}
+                            <span style="font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: #f5f3ff; color: #5b47fb; border: 1px solid #ede9fe;">Mon</span>
+                            <span style="font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: #f5f3ff; color: #5b47fb; border: 1px solid #ede9fe;">Tue</span>
+                            <span style="font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: #f5f3ff; color: #5b47fb; border: 1px solid #ede9fe;">Wed</span>
+                            <span style="font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: #f5f3ff; color: #5b47fb; border: 1px solid #ede9fe;">Thu</span>
+                            <span style="font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: #f5f3ff; color: #5b47fb; border: 1px solid #ede9fe;">Fri</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Grace period info -->
+                    <div style="font-size: 0.85rem; color: #64748b; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-shield-alt" style="color: #10b981; font-size: 0.95rem;"></i>
+                        <span>Grace: <strong style="color: #334155; font-weight: 700;">{{ assigned_shift.grace_period_minutes|default:15 }} min</strong></span>
+                        <span style="color: #cbd5e1;">·</span>
+                        <span style="color: #10b981; font-weight: 700;">Flexible Shift</span>
+                    </div>
+
+                    <!-- Real progress bar based on actual hours worked today -->
+                    <div class="timings-progress-wrapper"
+                         data-is-currently-clocked-in="{% if attendance and attendance.is_currently_clocked_in %}true{% else %}false{% endif %}"
+                         data-today-worked-pct="{{ today_worked_pct|default:0 }}"
+                         data-today-worked-hours="{{ today_worked_hours_raw|default:0.0 }}"
+                         data-shift-goal-hours="{{ shift_goal_hours|default:9.0 }}"
+                         data-clock-in-time="{% if attendance and attendance.is_currently_clocked_in and attendance.clock_in %}{{ attendance.clock_in|date:'c' }}{% endif %}">
+                        <div class="timings-progress-bar">
+                            <div id="timings-progress-fill" class="timings-progress-fill {% if attendance and attendance.is_currently_clocked_in %}keka-active-session{% endif %}"
+                                 style="width: {% if today_worked_pct > 0 %}{{ today_worked_pct }}{% elif attendance and attendance.is_currently_clocked_in %}5{% else %}0{% endif %}%;"></div>
+                        </div>
+                        <div class="timings-labels">
+                            <span id="timings-worked-label">Worked: {{ today_worked_display|default:"0:00" }}hrs</span>
+                            <span>Goal: {{ shift_goal_hours|default:9.0 }}hrs</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #64748b; font-weight: 600; margin-top: 16px; border-top: 1px solid rgba(226, 232, 240, 0.6); padding-top: 12px;">
+                    <i class="fas fa-map-marker-alt" style="color: #64748b; font-size: 0.95rem;"></i>
+                    <span>{{ employee.location.name|default:"Hyderabad" }}</span>
+                    <span style="color: #cbd5e1;">·</span>
+                    <i class="far fa-clock" style="color: #64748b; font-size: 0.95rem;"></i>
+                    <span>{{ employee.location.timezone|default:"Asia/Kolkata" }}</span>
                 </div>
             </div>
         </div>
@@ -1070,7 +1185,16 @@
                 <i class="fas fa-history"></i>
                 <h4>Logs</h4>
                 {% if attendance and attendance.is_currently_clocked_in %}
-                    <span class="logs-current-badge"><i class="fas fa-dot-circle animate__animated animate__flash animate__infinite"></i> In Office</span>
+                    <span class="logs-current-badge">
+                        <i class="fas fa-dot-circle animate__animated animate__flash animate__infinite"></i>
+                        {% if attendance.status == 'WFH' %}
+                            Work From Home
+                        {% elif attendance.status == 'REMOTE' %}
+                            Remote
+                        {% else %}
+                            In Office
+                        {% endif %}
+                    </span>
                 {% else %}
                     <span class="logs-current-badge out-office"><i class="far fa-dot-circle"></i> Out of Office</span>
                 {% endif %}
@@ -1130,17 +1254,28 @@
             </div>
         </div>
 
-        <div class="table-responsive">
-            <table class="keka-timeline-table">
+        <div class="table-responsive" style="overflow: visible;">
+            <table class="keka-timeline-table" style="overflow: visible;">
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Attendance Visual</th>
-                        <th>Effective Hours</th>
-                        <th>Check In / Out</th>
-                        <th>Arrival</th>
-                        <th>Location</th>
-                        <th>Log</th>
+                        <th style="font-weight: 700; color: #64748b;">Date</th>
+                        <th>
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <span style="font-weight: 700; color: #64748b;">Attendance Visual</span>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: #94a3b8; font-weight: 700; padding: 0 4px; width: 200px; margin-top: 4px;">
+                                    <span>12AM</span>
+                                    <span>6AM</span>
+                                    <span>12PM</span>
+                                    <span>6PM</span>
+                                    <span>12AM</span>
+                                </div>
+                            </div>
+                        </th>
+                        <th style="font-weight: 700; color: #64748b;">Effective Hours</th>
+                        <th style="font-weight: 700; color: #64748b;">Check In / Out</th>
+                        <th style="font-weight: 700; color: #64748b;">Arrival</th>
+                        <th style="font-weight: 700; color: #64748b;">Location</th>
+                        <th style="font-weight: 700; color: #64748b;">Log</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1149,13 +1284,15 @@
                             <tr>
                                 <!-- Date Column (real) -->
                                 <td class="keka-date-col">
-                                    {{ record.date|date:"M d, D" }}
-                                    <div class="day-sub">
+                                    <div style="font-weight: 700; color: #1e1b4b; font-size: 0.88rem;">{{ record.date|date:"M d, D" }}</div>
+                                    <div class="day-sub" style="font-weight: 600;">
                                         {% if record.status == 'WEEKLY_OFF' %}Weekly Off
                                         {% elif record.status == 'HOLIDAY' %}Holiday
                                         {% elif record.status == 'LEAVE' %}On Leave
-                                        {% elif record.status == 'PRESENT' %}Present
+                                        {% elif record.status == 'PRESENT' %}In Office
+                                        {% elif record.status == 'REMOTE' %}Remote
                                         {% elif record.status == 'WFH' %}Work From Home
+                                        {% elif record.status == 'HYBRID' %}Hybrid
                                         {% elif record.status == 'HALF_DAY' %}Half Day
                                         {% elif record.status == 'MISSED' %}Missed
                                         {% elif record.status == 'NOT_LOGGED_IN' %}Not Logged In
@@ -1164,150 +1301,142 @@
                                     </div>
                                 </td>
 
-                                <!-- Unique worked session capsules style -->
-                                <td class="keka-visual-wrapper">
-                                    <div class="keka-session-capsules-container">
-                                        {% if record.status == 'WEEKLY_OFF' %}
-                                            <span class="keka-special-capsule keka-special-woff">
-                                                <i class="fas fa-coffee"></i> Weekly Off
-                                            </span>
-                                        {% elif record.status == 'HOLIDAY' %}
-                                            <span class="keka-special-capsule keka-special-holiday">
-                                                <i class="fas fa-umbrella-beach"></i> Holiday
-                                            </span>
-                                        {% elif record.status == 'LEAVE' %}
-                                            <span class="keka-special-capsule keka-special-leave">
-                                                <i class="fas fa-plane-departure"></i> On Leave
-                                            </span>
-                                        {% elif record.day_sessions %}
-                                            {% for s in record.day_sessions %}
-                                                {% if s.is_active %}
-                                                    <span class="keka-session-capsule keka-session-active" title="Active punch started at {{ s.clock_in }}">
-                                                        <i class="fas fa-history animate-spin"></i> Active: {{ s.duration }}
-                                                     </span>
-                                                {% else %}
-                                                    <span class="keka-session-capsule keka-session-completed" title="Punch session: {{ s.clock_in }} - {{ s.clock_out }}">
-                                                        <i class="fas fa-check-circle"></i> Worked: {{ s.duration }}
-                                                     </span>
+                                <!-- Attendance Visual Progress Bar -->
+                                <td class="keka-visual-wrapper-24" style="overflow: visible;">
+                                    <div class="keka-attendance-visual-container-24 keka-tooltip-container" style="overflow: visible;">
+                                        <div class="keka-visual-track-24"
+                                             data-clock-in="{% if record.clock_in %}{{ record.clock_in|date:'H:i' }}{% endif %}"
+                                             data-clock-out="{% if record.clock_out %}{{ record.clock_out|date:'H:i' }}{% endif %}"
+                                             data-status="{{ record.status }}"
+                                             data-is-active="{% if record.is_currently_clocked_in %}true{% else %}false{% endif %}">
+
+                                            <!-- Worked Progress -->
+                                            <div class="keka-visual-fill-24 {% if record.is_currently_clocked_in %}keka-active-session{% endif %}"></div>
+
+                                            <!-- Checkpoint pins -->
+                                            <div class="keka-pin-in" style="display: none;" title="Clock-in"></div>
+                                            <div class="keka-pin-out" style="display: none;" title="Clock-out"></div>
+                                        </div>
+
+                                        <!-- Interactive detail card on hover -->
+                                        <div class="keka-tooltip-card">
+                                            <div style="font-weight: 700; color: #5b47fb; font-size: 0.85rem; margin-bottom: 8px; border-bottom: 1px solid rgba(226,232,240,0.6); padding-bottom: 6px;">
+                                                {% if record.status == 'WFH' %}Work From Home{% else %}{{ record.status|title }}{% endif %} Shift
+                                            </div>
+                                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                                <div><span style="color:#64748b;">Shift:</span> <strong style="float:right;">{% if assigned_shift %}{{ assigned_shift.start_time|time:"h:i A" }} - {{ assigned_shift.end_time|time:"h:i A" }}{% else %}09:00 AM - 06:00 PM{% endif %}</strong></div>
+                                                {% if record.clock_in %}
+                                                <div><span style="color:#64748b;">Login:</span> <strong style="float:right; color:#10b981;">{{ record.clock_in|time:"h:i A" }}</strong></div>
                                                 {% endif %}
-                                            {% endfor %}
-                                        {% else %}
-                                            <span class="text-muted">–</span>
-                                        {% endif %}
+                                                {% if record.clock_out %}
+                                                <div><span style="color:#64748b;">Logout:</span> <strong style="float:right; color:#ef4444;">{{ record.clock_out|time:"h:i A" }}</strong></div>
+                                                {% elif record.is_currently_clocked_in %}
+                                                <div><span style="color:#64748b;">Logout:</span> <strong style="float:right; color:#10b981;"><i class="fas fa-spinner fa-spin"></i> Ticking...</strong></div>
+                                                {% endif %}
+                                                {% if record.effective_hours != '-' %}
+                                                <div><span style="color:#64748b;">Total worked:</span> <strong style="float:right; color:#5b47fb;">{{ record.effective_hours }} hrs</strong></div>
+                                                {% endif %}
+                                                <div><span style="color:#64748b;">Break:</span> <strong style="float:right;">45m standard</strong></div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
 
-                                <!-- Effective Hours (clean pill, no spinner) -->
+                                <!-- Effective Hours -->
                                 <td>
-                                    {% if record.status == 'WEEKLY_OFF' or record.status == 'HOLIDAY' or record.status == 'LEAVE' %}
-                                        <span class="text-muted">–</span>
+                                    {% if record.status == 'WEEKLY_OFF' or record.status == 'HOLIDAY' or record.status == 'LEAVE' or record.status == 'MISSED' or record.status == 'NOT_LOGGED_IN' %}
+                                        <span style="color: #94a3b8; font-weight: 600;">–</span>
                                     {% elif record.effective_hours != '-' %}
-                                        <span class="keka-eff-hours">
-                                            <i class="fas fa-hourglass-half"></i>
-                                            {{ record.effective_hours }} hrs
+                                        <span style="background: #f5f3ff; color: #5b47fb; padding: 6px 14px; border-radius: 20px; font-weight: 700; border: 1px solid #ede9fe; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px;">
+                                             {{ record.effective_hours }} hrs
                                         </span>
                                     {% else %}
-                                        <span class="text-muted">–</span>
+                                        <span style="color: #94a3b8; font-weight: 600;">–</span>
                                     {% endif %}
                                 </td>
 
-                                <!-- Check In / Out times (real) -->
-                                <td style="font-size:0.82rem; color:var(--keka-text-secondary);">
-                                    {% if record.clock_in %}
-                                        <div><i class="fas fa-sign-in-alt text-success me-1"></i>{{ record.clock_in|time:"h:i A" }}</div>
-                                    {% else %}
-                                        <div class="text-muted">–</div>
-                                    {% endif %}
-                                    {% if record.clock_out %}
-                                        <div><i class="fas fa-sign-out-alt text-danger me-1"></i>{{ record.clock_out|time:"h:i A" }}</div>
-                                    {% endif %}
-                                </td>
-
-                                <!-- Arrival badge (real is_late field) -->
+                                <!-- Check In / Out -->
                                 <td>
-                                    {% if record.status == 'WEEKLY_OFF' %}
-                                        <span class="keka-badge keka-badge-woff">W-OFF</span>
-                                    {% elif record.status == 'HOLIDAY' %}
-                                        <span class="keka-badge keka-badge-holiday">Holiday</span>
-                                    {% elif record.status == 'LEAVE' %}
-                                        <span class="keka-badge keka-badge-leave">Leave</span>
-                                    {% elif record.status == 'MISSED' or record.status == 'NOT_LOGGED_IN' %}
-                                        <span class="keka-badge keka-badge-leave">No Record</span>
-                                    {% elif record.clock_in %}
-                                        {% if record.is_late %}
-                                            <span class="snail-badge">🐌 Late {% if record.late_minutes %}(+{{ record.late_minutes }}m){% endif %}</span>
-                                        {% else %}
-                                            <span class="keka-badge keka-badge-ontime">✓ On Time</span>
-                                        {% endif %}
-                                    {% else %}
-                                        <span class="keka-badge keka-badge-woff">–</span>
-                                    {% endif %}
+                                     {% if record.clock_in %}
+                                         <div style="font-size: 0.8rem; font-weight: 600; color: #334155; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                             <i class="fas fa-arrow-right text-success" style="font-size: 0.72rem;"></i> {{ record.clock_in|time:"h:i A" }}
+                                         </div>
+                                     {% else %}
+                                         <span style="color:#cbd5e1;">–</span>
+                                     {% endif %}
+                                     {% if record.clock_out %}
+                                         <div style="font-size: 0.8rem; font-weight: 600; color: #334155; display: flex; align-items: center; gap: 6px;">
+                                             <i class="fas fa-arrow-left text-danger" style="font-size: 0.72rem;"></i> {{ record.clock_out|time:"h:i A" }}
+                                         </div>
+                                     {% endif %}
                                 </td>
 
-                                <!-- LOCATION column: links to full map view with hourly punches -->
+                                <!-- Arrival -->
                                 <td>
-                                    {% if record.obj and record.obj.pk %}
-                                        {% if record.clock_in_lat and record.clock_in_lng %}
-                                            <a href="{% url 'attendance_map' record.obj.pk %}"
-                                               class="loc-btn loc-btn-in"
-                                               title="View full location map with hourly punches"
-                                               target="_blank">
-                                                <i class="fas fa-map-marker-alt"></i>
-                                            </a>
-                                        {% elif record.clock_in %}
-                                            <a href="{% url 'attendance_map' record.obj.pk %}"
-                                               class="loc-btn loc-btn-none"
-                                               title="View map (no GPS coordinates recorded)"
-                                               target="_blank"
-                                               style="opacity:0.5;">
-                                                <i class="fas fa-map-marker-alt"></i>
-                                            </a>
-                                        {% else %}
-                                            <span style="color:#e2e8f0;">–</span>
-                                        {% endif %}
-                                    {% else %}
-                                        <span style="color:#e2e8f0;">–</span>
-                                    {% endif %}
+                                     {% if record.status == 'WEEKLY_OFF' %}
+                                         <span class="keka-badge keka-badge-woff">W-OFF</span>
+                                     {% elif record.status == 'HOLIDAY' %}
+                                         <span class="keka-badge keka-badge-woff">Holiday</span>
+                                     {% elif record.status == 'LEAVE' %}
+                                         <span class="keka-badge keka-badge-leave">Leave</span>
+                                     {% elif record.status == 'MISSED' or record.status == 'NOT_LOGGED_IN' %}
+                                         <span class="keka-badge keka-badge-woff">No Record</span>
+                                     {% elif record.clock_in %}
+                                         {% if record.is_late %}
+                                             <span class="snail-badge"><i class="fas fa-flag"></i> Late {% if record.late_minutes %}({{ record.late_minutes }}m){% endif %}</span>
+                                         {% else %}
+                                             <span class="keka-badge keka-badge-ontime"><i class="fas fa-check" style="font-size: 0.72rem;"></i> On Time</span>
+                                         {% endif %}
+                                     {% else %}
+                                         <span style="color:#cbd5e1;">–</span>
+                                     {% endif %}
                                 </td>
 
-                                <!-- Log popover (real shift times + regularise) -->
+                                <!-- Location -->
                                 <td>
-                                    {% if record.clock_in %}
-                                        <div class="keka-log-dropdown">
-                                            <span class="keka-log-dropdown-trigger"><i class="fas fa-ellipsis-v"></i></span>
-                                            <div class="keka-log-popover">
-                                                {% if assigned_shift %}
-                                                <div class="popover-shift-title">{{ assigned_shift.name }} ({{ assigned_shift.start_time|time:"h:i A" }} – {{ assigned_shift.end_time|time:"h:i A" }})</div>
-                                                {% else %}
-                                                <div class="popover-shift-title">Attendance Record</div>
-                                                {% endif %}
-                                                <div class="popover-time-item">
-                                                    <span>Clock-in:</span>
-                                                    <span class="green">{{ record.clock_in|time:"h:i A" }}</span>
-                                                </div>
-                                                {% if record.clock_out %}
-                                                <div class="popover-time-item">
-                                                    <span>Clock-out:</span>
-                                                    <span class="red">{{ record.clock_out|time:"h:i A" }}</span>
-                                                </div>
-                                                {% endif %}
-                                                {% if record.is_late %}
-                                                <div class="popover-time-item" style="color:var(--keka-warning);">
-                                                    <span>Late by:</span>
-                                                    <span>{{ record.late_minutes }} mins</span>
-                                                </div>
-                                                {% endif %}
-                                                {% if record.session_type %}
-                                                <div class="popover-time-item">
-                                                    <span>Type:</span>
-                                                    <span>{{ record.session_type }}</span>
-                                                </div>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    {% else %}
-                                        <span class="text-muted" style="font-size:0.8rem;">–</span>
-                                    {% endif %}
+                                     {% if record.obj and record.obj.pk %}
+                                         <a href="{% url 'attendance_map' record.obj.pk %}"
+                                            class="keka-loc-btn"
+                                            title="View full location map"
+                                            target="_blank">
+                                             <i class="fas fa-map-marker-alt"></i>
+                                         </a>
+                                     {% else %}
+                                         <span style="color:#cbd5e1;">–</span>
+                                     {% endif %}
+                                </td>
+
+                                <!-- Log Popover -->
+                                <td>
+                                     {% if record.clock_in %}
+                                         <div class="keka-log-dropdown" style="position: relative;">
+                                             <span class="keka-log-dropdown-trigger" style="cursor: pointer; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; color: #64748b; font-size: 0.95rem; border: 1px solid transparent; transition: all 0.2s;"><i class="fas fa-ellipsis-v"></i></span>
+                                             <div class="keka-log-popover" style="right: 0; z-index: 1000;">
+                                                 {% if assigned_shift %}
+                                                 <div class="popover-shift-title">{{ assigned_shift.name }} ({{ assigned_shift.start_time|time:"h:i A" }} – {{ assigned_shift.end_time|time:"h:i A" }})</div>
+                                                 {% else %}
+                                                 <div class="popover-shift-title">Attendance Record</div>
+                                                 {% endif %}
+                                                 <div class="popover-time-item">
+                                                     <span>Clock-in:</span>
+                                                     <span class="green">{{ record.clock_in|time:"h:i A" }}</span>
+                                                 </div>
+                                                 {% if record.clock_out %}
+                                                 <div class="popover-time-item">
+                                                     <span>Clock-out:</span>
+                                                     <span class="red">{{ record.clock_out|time:"h:i A" }}</span>
+                                                 </div>
+                                                 {% endif %}
+                                                 <a href="{% url 'regularization_apply' %}" class="popover-regularise-btn">Regularise</a>
+                                             </div>
+                                         </div>
+                                     {% else %}
+                                         {% if record.status != 'WEEKLY_OFF' and record.status != 'HOLIDAY' and record.status != 'LEAVE' %}
+                                             <a href="{% url 'regularization_apply' %}" class="popover-regularise-btn" style="margin-top: 0; padding: 4px 10px; font-size: 0.75rem; background: #e0e7ff; color: #4f46e5; border-radius: 6px; font-weight: 700; text-decoration: none; display: inline-block;">Regularise</a>
+                                         {% else %}
+                                             <span class="text-muted" style="font-size:0.8rem;">–</span>
+                                         {% endif %}
+                                     {% endif %}
                                 </td>
                             </tr>
                         {% endfor %}
@@ -1321,6 +1450,74 @@
                         </tr>
                     {% endif %}
                 </tbody>
+            </table>
+        </div>
+
+        <!-- Floating Chatbot Button & Modern Dialog bubble -->
+        <div class="keka-chatbot-bubble animate__animated animate__bounceIn" onclick="toggleChatbot()">
+            <i class="fas fa-robot"></i>
+        </div>
+
+        <div id="keka-chatbot-panel" class="keka-chatbot-panel" style="display: none; position: fixed; bottom: 90px; right: 24px; width: 320px; height: 400px; background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 99999; flex-direction: column; overflow: hidden; border: 1px solid rgba(226,232,240,0.8); backdrop-filter: blur(20px);">
+            <div style="background: linear-gradient(135deg, #5b47fb 0%, #3b27db 100%); color: white; padding: 16px; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+                <span style="display:flex; align-items:center; gap:8px;"><i class="fas fa-robot"></i> Keka AI Assistant</span>
+                <span onclick="toggleChatbot()" style="cursor:pointer; font-size:1.1rem;"><i class="fas fa-times"></i></span>
+            </div>
+            <div style="flex: 1; padding: 16px; overflow-y: auto; font-size: 0.85rem;" id="chatbot-messages">
+                <div style="background: #f1f5f9; padding: 10px 14px; border-radius: 12px 12px 12px 0; margin-bottom: 12px; width: fit-content; max-width: 85%;">
+                    Hello! I am your AI Assistant. How can I help you with your attendance today?
+                </div>
+            </div>
+            <div style="padding: 12px; border-top: 1px solid #ede9fe; display: flex; gap: 8px;">
+                <input type="text" id="chatbot-input" placeholder="Type a message..." style="flex: 1; border: 1px solid #cbd5e1; border-radius: 20px; padding: 6px 14px; font-size: 0.85rem; outline: none;">
+                <button onclick="sendChatbotMessage()" style="background: #5b47fb; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;"><i class="fas fa-paper-plane" style="font-size: 0.8rem;"></i></button>
+            </div>
+        </div>
+
+        <script>
+            function toggleChatbot() {
+                const panel = document.getElementById('keka-chatbot-panel');
+                if (panel.style.display === 'none') {
+                    panel.style.display = 'flex';
+                } else {
+                    panel.style.display = 'none';
+                }
+            }
+
+            function sendChatbotMessage() {
+                const input = document.getElementById('chatbot-input');
+                const text = input.value.trim();
+                if (!text) return;
+
+                const messages = document.getElementById('chatbot-messages');
+
+                // Add user message
+                const userDiv = document.createElement('div');
+                userDiv.style = "background: #e0e7ff; color: #1e1b4b; padding: 10px 14px; border-radius: 12px 12px 0 12px; margin-bottom: 12px; margin-left: auto; width: fit-content; max-width: 85%; font-weight: 600;";
+                userDiv.textContent = text;
+                messages.appendChild(userDiv);
+
+                input.value = '';
+                messages.scrollTop = messages.scrollHeight;
+
+                // Add bot typing response
+                setTimeout(() => {
+                    const botDiv = document.createElement('div');
+                    botDiv.style = "background: #f1f5f9; padding: 10px 14px; border-radius: 12px 12px 12px 0; margin-bottom: 12px; width: fit-content; max-width: 85%;";
+
+                    if (text.toLowerCase().includes('clock') || text.toLowerCase().includes('attendance')) {
+                        botDiv.textContent = "You can clock in or clock out directly from the 'Actions' card at the top of the page. Let me know if you need help regularising an old entry!";
+                    } else if (text.toLowerCase().includes('shift') || text.toLowerCase().includes('hour')) {
+                        botDiv.textContent = "Your current shift is Night Shift (US Location) from 11:30 PM to 08:00 AM. Your daily goal is 9 hours of work.";
+                    } else {
+                        botDiv.textContent = "That sounds interesting! I can help you check your clock-in timings, calculate your worked hours, or apply for regularisation.";
+                    }
+
+                    messages.appendChild(botDiv);
+                    messages.scrollTop = messages.scrollHeight;
+                }, 800);
+            }
+        </script>ody>
             </table>
         </div>
     </div>
@@ -1676,6 +1873,162 @@
 
     window.addEventListener('beforeunload', () => {
         if (locationTrackingInterval) clearInterval(locationTrackingInterval);
+    });
+
+    // 24-Hour Timeline visual calculations
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.keka-visual-track-24').forEach(track => {
+            const clockIn = track.getAttribute('data-clock-in'); // "HH:MM"
+            const clockOut = track.getAttribute('data-clock-out'); // "HH:MM"
+            const status = track.getAttribute('data-status');
+            const isActive = track.getAttribute('data-is-active') === 'true';
+
+            const fill = track.querySelector('.keka-visual-fill-24');
+            const pinIn = track.querySelector('.keka-pin-in');
+            const pinOut = track.querySelector('.keka-pin-out');
+
+            if (clockIn) {
+                const [inH, inM] = clockIn.split(':').map(Number);
+                const inTotalMin = inH * 60 + inM;
+                const leftPct = (inTotalMin / 1440) * 100;
+
+                let widthPct = 0;
+
+                if (clockOut) {
+                    const [outH, outM] = clockOut.split(':').map(Number);
+                    const outTotalMin = outH * 60 + outM;
+                    widthPct = ((outTotalMin - inTotalMin) / 1440) * 100;
+                } else if (isActive) {
+                    const now = new Date();
+                    const nowTotalMin = now.getHours() * 60 + now.getMinutes();
+                    widthPct = Math.max(2, ((nowTotalMin - inTotalMin) / 1440) * 100);
+                } else {
+                    widthPct = 100 - leftPct;
+                }
+
+                // Position worked segment
+                fill.style.left = `${leftPct}%`;
+                fill.style.width = `${Math.max(2, widthPct)}%`;
+                fill.style.display = 'block';
+
+                // Position check-in pin
+                pinIn.style.left = `${leftPct}%`;
+                pinIn.style.display = 'block';
+
+                // Position check-out pin if clocked out or session is completed
+                if (clockOut || !isActive) {
+                    const rightPos = leftPct + widthPct;
+                    pinOut.style.left = `${rightPos}%`;
+                    pinOut.style.display = 'block';
+                }
+            } else {
+                // Default shift timeline representation for WFH/PRESENT with no clock-ins
+                if (status === 'WFH' || status === 'PRESENT') {
+                    const startPct = (540 / 1440) * 100; // 9:00 AM is 540 min
+                    const durationPct = (540 / 1440) * 100; // 9 hours is 540 min
+
+                    fill.style.left = `${startPct}%`;
+                    fill.style.width = `${durationPct}%`;
+                    fill.style.display = 'block';
+
+                    pinIn.style.left = `${startPct}%`;
+                    pinIn.style.display = 'block';
+
+                    pinOut.style.left = `${startPct + durationPct}%`;
+                    pinOut.style.display = 'block';
+                } else {
+                    fill.style.display = 'none';
+                }
+            }
+        });
+
+        // 1. Live ticking for the main Timings progress card
+        const wrapper = document.querySelector('.timings-progress-wrapper');
+        if (wrapper) {
+            const isClockedIn = wrapper.getAttribute('data-is-currently-clocked-in') === 'true';
+            const rawHours = parseFloat(wrapper.getAttribute('data-today-worked-hours') || '0.0');
+            const goalHours = parseFloat(wrapper.getAttribute('data-shift-goal-hours') || '9.0');
+
+            const fill = document.getElementById('timings-progress-fill');
+            const label = document.getElementById('timings-worked-label');
+
+            // Initial setup
+            let initialPct = (rawHours / goalHours) * 100;
+            initialPct = Math.max(0, Math.min(100, initialPct));
+            if (fill) {
+                fill.style.width = `${Math.max(isClockedIn ? 2 : 0, initialPct)}%`;
+            }
+
+            if (isClockedIn) {
+                window.pageLoadTime = new Date();
+
+                function updateLiveProgress() {
+                    const elapsedMs = new Date() - window.pageLoadTime;
+                    const elapsedHrs = elapsedMs / 3600000;
+
+                    const totalLiveHours = rawHours + elapsedHrs;
+                    const currentPct = Math.max(2, Math.min(100, (totalLiveHours / goalHours) * 100));
+
+                    if (fill) {
+                        fill.style.width = `${currentPct}%`;
+                    }
+
+                    if (label) {
+                        const h = Math.floor(totalLiveHours);
+                        const m = Math.floor((totalLiveHours - h) * 60);
+                        const s = Math.floor(((totalLiveHours - h) * 60 - m) * 60);
+                        label.innerHTML = `Worked: <strong style="color: #4facfe; text-shadow: 0 0 8px rgba(79, 172, 254, 0.4);">${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}</strong> hrs`;
+                    }
+                }
+
+                setInterval(updateLiveProgress, 1000);
+                updateLiveProgress();
+            } else {
+                if (rawHours > 0) {
+                    const h = Math.floor(rawHours);
+                    const m = Math.floor((rawHours - h) * 60);
+                    const s = Math.round(((rawHours - h) * 60 - m) * 60);
+                    if (label) {
+                        label.innerHTML = `Worked: <strong>${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}</strong> hrs`;
+                    }
+                }
+            }
+        }
+
+        // 2. Live ticking for the 24-hour visual logs track
+        function tickActive24HourTrack() {
+            document.querySelectorAll('.keka-visual-track-24').forEach(track => {
+                const clockIn = track.getAttribute('data-clock-in'); // "HH:MM"
+                const isActive = track.getAttribute('data-is-active') === 'true';
+
+                if (clockIn && isActive) {
+                    const fill = track.querySelector('.keka-visual-fill-24');
+                    const pinOut = track.querySelector('.keka-pin-out');
+
+                    const [inH, inM] = clockIn.split(':').map(Number);
+                    const inTotalMin = inH * 60 + inM;
+                    const leftPct = (inTotalMin / 1440) * 100;
+
+                    const now = new Date();
+                    const nowTotalMin = now.getHours() * 60 + now.getMinutes() + (now.getSeconds() / 60);
+                    const widthPct = Math.max(2, ((nowTotalMin - inTotalMin) / 1440) * 100);
+
+                    if (fill) {
+                        fill.style.width = `${Math.max(2, widthPct)}%`;
+                    }
+
+                    if (pinOut) {
+                        const rightPos = leftPct + widthPct;
+                        pinOut.style.left = `${rightPos}%`;
+                        pinOut.style.display = 'block';
+                    }
+                }
+            });
+        }
+
+        // Execute immediately and then tick every 1 second for live growing progress visual while working
+        tickActive24HourTrack();
+        setInterval(tickActive24HourTrack, 1000);
     });
 
 </script>

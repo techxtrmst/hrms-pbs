@@ -1703,12 +1703,18 @@ def personal_home(request):
         context["attendance_history"] = enriched_history
 
         # --- Today's worked hours formatted for Timings card ---
-        today_worked_hours_raw = (
-            float(attendance.total_working_hours) if attendance and attendance.total_working_hours else 0.0
-        )
+        today_worked_hours_raw = 0.0
+        if attendance:
+            try:
+                today_worked_hours_raw = float(attendance.get_cumulative_working_hours_including_current())
+            except Exception:
+                if attendance.total_working_hours:
+                    today_worked_hours_raw = float(attendance.total_working_hours)
+
         tw_h = int(today_worked_hours_raw)
         tw_m = int((today_worked_hours_raw - tw_h) * 60)
         context["today_worked_display"] = f"{tw_h}:{tw_m:02d}"
+        context["today_worked_hours_raw"] = today_worked_hours_raw
         # Percentage of shift goal — compute from shift start/end times
         if employee.assigned_shift:
             from datetime import datetime as _dt
