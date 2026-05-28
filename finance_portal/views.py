@@ -59,14 +59,25 @@ def dashboard(request):
 
     payslip_map = {slip.employee_id: slip for slip in existing_payslips}
 
-    # Package employee details with payslips
-    employee_data = []
-    calculated_count = 0
+    # Package employee details with payslips, separating active from ex-employees
+    active_employee_data = []
+    ex_employee_data = []
+    active_calculated_count = 0
+    ex_calculated_count = 0
+
     for emp in employees:
         slip = payslip_map.get(emp.id)
-        if slip:
-            calculated_count += 1
-        employee_data.append({"employee": emp, "payslip": slip})
+        is_active = emp.is_active and emp.employment_status == "ACTIVE" and emp.exit_date is None
+        item = {"employee": emp, "payslip": slip}
+
+        if is_active:
+            if slip:
+                active_calculated_count += 1
+            active_employee_data.append(item)
+        else:
+            if slip:
+                ex_calculated_count += 1
+            ex_employee_data.append(item)
 
     months = [{"value": i, "name": calendar.month_name[i]} for i in range(1, 13)]
     years = range(today.year - 2, today.year + 2)
@@ -78,8 +89,10 @@ def dashboard(request):
     context = {
         "title": "Centralized Finance Portal",
         "companies": companies,
-        "employee_data": employee_data,
-        "calculated_count": calculated_count,
+        "active_employee_data": active_employee_data,
+        "ex_employee_data": ex_employee_data,
+        "active_calculated_count": active_calculated_count,
+        "ex_calculated_count": ex_calculated_count,
         "selected_month": selected_month,
         "selected_year": selected_year,
         "selected_company_id": selected_company_id,
@@ -779,3 +792,81 @@ def process_bulk_excel_upload(request):
         messages.error(request, f"Failed to read or parse Excel file: {str(e)}")
 
     return redirect(f"/finance/?company={company_id}&month={month}&year={year}")
+
+
+@finance_manager_required
+def preview_draft_payslip(request, payslip_id):
+    """
+    Dynamically renders and streams an on-the-fly PDF preview of a draft or final payslip.
+    """
+    from django.http import Http404, HttpResponse
+
+    from core.utils import render_to_pdf
+
+    try:
+        payslip = Payslip.objects.get(pk=payslip_id)
+    except Payslip.DoesNotExist:
+        raise Http404("Payslip not found.")
+
+    employee = payslip.employee
+
+    # Generate branding and currency details for PDF context
+    currency = "INR"
+    currency_name = "Rupees"
+    if employee.location:
+        currency = employee.location.currency or "INR"
+        if employee.location.country_code == "IN" or currency == "INR":
+            currency_name = "Rupees"
+        elif employee.location.country_code == "BD" or currency == "BDT":
+            currency_name = "Taka"
+        elif employee.location.country_code == "US" or currency == "USD":
+            currency_name = "Dollars"
+        else:
+            currency_name = currency
+
+    cname_upper = employee.company.name.upper()
+    branding = {
+        "name": "PETABYTZ TECHNOLOGY SERVICES PVT LTD",
+        "address": "PLOT NO 201 & 202, 1ST FLOOR, DMR CORPORATE, KAVURI HILLS RD, HYDERABAD, TELANGANA 500081.",
+    }
+    if "SOFTSTANDARD" in cname_upper or "RMINDS" in cname_upper:
+        branding["name"] = "SOFTSTANDARD SOLUTIONS"
+
+    if employee.location and employee.location.address_line1:
+        loc = employee.location
+        addr = f"{loc.address_line1}"
+        if loc.address_line2:
+            addr += f", {loc.address_line2}"
+        addr += f", {loc.city}"
+        if loc.state:
+            addr += f", {loc.state}"
+        if loc.postal_code:
+            addr += f" {loc.postal_code}"
+        branding["address"] = addr
+
+    context = {
+        "payslip": payslip,
+        "company": employee.company,
+        "branding": branding,
+        "net_salary_words": num2words_flexible(round(payslip.net_salary or 0), currency_name),
+        "currency": currency,
+        "basic_rounded": round(payslip.basic or 0),
+        "hra_rounded": round(payslip.hra or 0),
+        "conveyance_rounded": round(payslip.conveyance_allowance or 0),
+        "special_rounded": round(payslip.special_allowance or 0),
+        "employer_pf_rounded": round(payslip.employer_pf or 0),
+        "employee_pf_rounded": round(payslip.employee_pf or 0),
+        "professional_tax_rounded": round(payslip.professional_tax or 0),
+        "total_earnings_ctc": round((payslip.gross_salary or 0) + (payslip.employer_pf or 0)),
+        "total_contributions": round((payslip.employee_pf or 0) + (payslip.employer_pf or 0)),
+        "net_salary_rounded": round(payslip.net_salary or 0),
+        "payable_units": f"{int(payslip.worked_days)} Days",
+    }
+
+    pdf_content = render_to_pdf("employees/payslip_pdf.html", context)
+    if pdf_content:
+        response = HttpResponse(pdf_content, content_type="application/pdf")
+        response["Content-Disposition"] = f'inline; filename="draft_payslip_{payslip.id}.pdf"'
+        return response
+    else:
+        return HttpResponse("Error generating draft preview PDF.", status=500)

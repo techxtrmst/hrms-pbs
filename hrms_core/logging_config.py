@@ -17,6 +17,24 @@ from pathlib import Path
 from loguru import logger
 
 
+def get_safe_log_path(file_path: Path) -> Path:
+    """
+    On Windows, files can be locked by other running processes (like parallel runserver or celery).
+    If a file is locked and cannot be renamed (which prevents Loguru rotation),
+    append the current PID to the filename to avoid WinError 32 PermissionError.
+    """
+    if os.name == "nt" and file_path.exists():
+        temp_name = file_path.parent / f"{file_path.stem}_locktest_{os.getpid()}{file_path.suffix}"
+        try:
+            # Try to temporarily rename the file to check for locks
+            os.rename(file_path, temp_name)
+            os.rename(temp_name, file_path)
+        except OSError:
+            # File is locked, append PID to distinguish this process
+            return file_path.parent / f"{file_path.stem}_{os.getpid()}{file_path.suffix}"
+    return file_path
+
+
 def configure_logging():
     """
     Configure Loguru for the HRMS application.
@@ -70,7 +88,7 @@ def configure_logging():
 
     # Main application log - rotates at 50MB, keeps 10 days
     logger.add(
-        log_dir / "hrms.log",
+        get_safe_log_path(log_dir / "hrms.log"),
         format=file_format,
         level=log_level,
         rotation="50 MB",
@@ -83,7 +101,7 @@ def configure_logging():
 
     # Error-specific log with full backtrace
     logger.add(
-        log_dir / "errors.log",
+        get_safe_log_path(log_dir / "errors.log"),
         format=file_format,
         level="ERROR",
         rotation="20 MB",
@@ -96,7 +114,7 @@ def configure_logging():
 
     # Structured JSON log for production analysis and log aggregation
     logger.add(
-        log_dir / "hrms_structured.json",
+        get_safe_log_path(log_dir / "hrms_structured.json"),
         serialize=True,  # JSON format
         level="INFO",
         rotation="100 MB",
@@ -107,7 +125,7 @@ def configure_logging():
 
     # Access/audit log - separate file for request tracking
     logger.add(
-        log_dir / "access.log",
+        get_safe_log_path(log_dir / "access.log"),
         format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {extra[request_id]} | {extra[user]} | {extra[method]} {extra[path]} | {extra[status]} | {extra[duration]}ms",
         level="INFO",
         rotation="100 MB",

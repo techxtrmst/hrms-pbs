@@ -381,19 +381,28 @@ def clock_in(request):
 
             # Ensure employee profile exists
             if not hasattr(request.user, "employee_profile"):
-                # Auto-create for Company Admin/Employee Manager to prevent setup deadlock
-                if request.user.role in [User.Role.COMPANY_ADMIN, User.Role.EMPLOYEE_MANAGER] and request.user.company:
+                # Auto-create for admin-level roles (Company Admin, HR, Finance Managers)
+                # to prevent setup deadlock where they cannot clock in without a profile.
+                _is_finance = (
+                    getattr(request.user, "is_finance_manager", False) or request.user.role == "FINANCE_MANAGER"
+                )
+                _is_admin_role = request.user.role in [User.Role.COMPANY_ADMIN, User.Role.EMPLOYEE_MANAGER]
+                if (_is_admin_role or _is_finance) and request.user.company:
                     from .models import Employee
 
                     try:
-                        Employee.objects.create(
+                        designation = "Finance Manager" if _is_finance else "Administrator"
+                        department = "Finance" if _is_finance else "Management"
+                        Employee.objects.get_or_create(
                             user=request.user,
-                            company=request.user.company,
-                            designation="Administrator",
-                            department="Management",
-                            badge_id=f"ADM{request.user.id}",
+                            defaults={
+                                "company": request.user.company,
+                                "designation": designation,
+                                "department": department,
+                                "badge_id": f"ADM{request.user.id}",
+                            },
                         )
-                        # Refresh user to get the profile
+                        # Refresh user to pick up the newly created profile
                         request.user.refresh_from_db()
                     except Exception as e:
                         logger.error(f"Failed to auto-create profile in clock-in: {e}")

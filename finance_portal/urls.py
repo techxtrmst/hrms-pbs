@@ -11,4 +11,5 @@ urlpatterns = [
     path("save-draft-payslip/", views.save_draft_payslip, name="save_draft_payslip"),
     path("upload-bulk-excel/", views.process_bulk_excel_upload, name="process_bulk_excel_upload"),
     path("send-email/<int:payslip_id>/", views.send_single_payslip_email_view, name="send_single_payslip_email"),
+    path("preview-draft/<int:payslip_id>/", views.preview_draft_payslip, name="preview_draft_payslip"),
 ]

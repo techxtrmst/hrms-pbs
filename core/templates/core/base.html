@@ -1698,7 +1698,7 @@
         </a>
         {% endif %}
 
-        {% if user.is_finance_manager %}
+        {% if user.is_finance_manager or user.role == 'FINANCE_MANAGER' %}
         <!-- Finance Manager Portal -->
         <a href="#menuFinancePortal" class="sidebar-dropdown-toggle d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse" role="button" aria-expanded="false">
@@ -1713,6 +1713,7 @@
             </div>
         </div>
         {% endif %}
+
 
         {% if user.role == 'COMPANY_ADMIN' %}
         <!-- Payroll (Collapsible) -->
@@ -2196,88 +2197,113 @@
     <!-- Celebration Animations -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     {% if celebration_type %}
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var type = "{{ celebration_type }}";
-            var duration = 5000;
-            var end = Date.now() + duration;
+    <!-- Celebration Modal — shown only ONCE per day via localStorage -->
+    <div class="modal" id="celebrationModal" tabindex="-1"
+        style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center;"
+        aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered" style="margin:auto; max-width:440px; width:90%;">
+            <div class="modal-content text-center p-4 border-0 shadow-lg position-relative"
+                style="background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%); border-radius: 20px;">
 
-            function launchConfetti(colors) {
-                (function frame() {
-                    confetti({
-                        particleCount: 5,
-                        angle: 60,
-                        spread: 55,
-                        origin: { x: 0 },
-                        colors: colors
-                    });
-                    confetti({
-                        particleCount: 5,
-                        angle: 120,
-                        spread: 55,
-                        origin: { x: 1 },
-                        colors: colors
-                    });
+                <!-- ✕ Close button — large and visible -->
+                <button type="button" id="celebrationCloseBtn"
+                    style="position:absolute; top:14px; right:16px; background:#f1f5f9; border:none;
+                           border-radius:50%; width:36px; height:36px; font-size:1.1rem; cursor:pointer;
+                           display:flex; align-items:center; justify-content:center;
+                           color:#475569; transition: background 0.2s;"
+                    onmouseover="this.style.background='#e2e8f0'"
+                    onmouseout="this.style.background='#f1f5f9'"
+                    onclick="closeCelebrationModal()"
+                    title="Close">✕</button>
 
-                    if (Date.now() < end) {
-                        requestAnimationFrame(frame);
-                    }
-                }());
-            }
-
-            if (type === 'birthday' || type === 'both') {
-                launchConfetti(['#ff0000', '#00ff00', '#0000ff', '#ffff00']);
-            }
-
-            if (type === 'anniversary') {
-                launchConfetti(['#FFD700', '#C0C0C0', '#ffffff']);
-            }
-        });
-    </script>
-
-    <!-- Celebration Modal -->
-    <div class="modal fade show" id="celebrationModal" tabindex="-1"
-        style="display: block; background: rgba(0,0,0,0.5); z-index: 2000;" aria-modal="true" role="dialog">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content text-center p-4 border-0 shadow-lg"
-                style="background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);">
-                <div class="modal-body position-relative">
-                    <button type="button" class="btn-close position-absolute top-0 end-0"
-                        onclick="document.getElementById('celebrationModal').remove()"></button>
-                    <div style="font-size: 4rem; margin-bottom: 1rem;">
-                        {% if celebration_type == 'birthday' %}&#127874;{% endif %}
-                        {% if celebration_type == 'anniversary' %}&#127942;{% endif %}
-                        {% if celebration_type == 'both' %}&#127874;&#127942;{% endif %}
-                    </div>
-                    <h2 class="mb-3 fw-bold text-primary">
-                        {% if celebration_type == 'birthday' %}Happy Birthday!{% endif %}
-                        {% if celebration_type == 'anniversary' %}Happy Work Anniversary!{% endif %}
-                        {% if celebration_type == 'both' %}Double Celebration!{% endif %}
-                    </h2>
-                    <p class="lead text-muted mb-4">
-                        {% if celebration_type == 'birthday' %}
-                        Wishing you a fantastic day filled with joy and success!
-                        <br><small>From all of us at {{ request.user.company.name|default:"the team" }}</small>
-                        {% endif %}
-
-                        {% if celebration_type == 'anniversary' %}
-                        Congratulations on completing {{ years_service|default:"another" }} year(s) with us!
-                        <br>Thank you for your dedication and hard work.
-                        {% endif %}
-
-                        {% if celebration_type == 'both' %}
-                        Happy Birthday and Happy Anniversary! What a special day!
-                        {% endif %}
-                    </p>
-                    <button type="button" class="btn btn-primary px-4 py-2 rounded-pill"
-                        onclick="document.getElementById('celebrationModal').remove()">
-                        Thank You!
-                    </button>
+                <div style="font-size: 4rem; margin-bottom: 1rem; margin-top: 0.5rem;">
+                    {% if celebration_type == 'birthday' %}🎂{% endif %}
+                    {% if celebration_type == 'anniversary' %}🏆{% endif %}
+                    {% if celebration_type == 'both' %}🎂🏆{% endif %}
                 </div>
+                <h2 class="mb-3 fw-bold text-primary">
+                    {% if celebration_type == 'birthday' %}Happy Birthday!{% endif %}
+                    {% if celebration_type == 'anniversary' %}Happy Work Anniversary!{% endif %}
+                    {% if celebration_type == 'both' %}Double Celebration!{% endif %}
+                </h2>
+                <p class="lead text-muted mb-4">
+                    {% if celebration_type == 'birthday' %}
+                    Wishing you a fantastic day filled with joy and success!
+                    <br><small>From all of us at {{ request.user.company.name|default:"the team" }}</small>
+                    {% endif %}
+                    {% if celebration_type == 'anniversary' %}
+                    Congratulations on completing {{ years_service|default:"another" }} year(s) with us!
+                    <br>Thank you for your dedication and hard work.
+                    {% endif %}
+                    {% if celebration_type == 'both' %}
+                    Happy Birthday and Happy Anniversary! What a special day!
+                    {% endif %}
+                </p>
+                <button type="button" class="btn btn-primary px-4 py-2 rounded-pill" onclick="closeCelebrationModal()">
+                    🎉 Thank You!
+                </button>
             </div>
         </div>
     </div>
+
+    <script>
+        (function () {
+            // Unique key per user + per day — resets automatically next day
+            var userId = "{{ request.user.id }}";
+            var todayKey = "celebration_seen_" + userId + "_" + new Date().toISOString().slice(0, 10);
+            var celebType = "{{ celebration_type }}";
+
+            function closeCelebrationModal() {
+                var modal = document.getElementById('celebrationModal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+                // Mark as seen for today — won't show again until tomorrow
+                try { localStorage.setItem(todayKey, '1'); } catch (e) {}
+            }
+
+            // Expose globally so onclick= works
+            window.closeCelebrationModal = closeCelebrationModal;
+
+            // Close when clicking the dark backdrop (outside the card)
+            document.getElementById('celebrationModal').addEventListener('click', function (e) {
+                if (e.target === this) closeCelebrationModal();
+            });
+
+            document.addEventListener('DOMContentLoaded', function () {
+                // Only show if not already seen today
+                var alreadySeen = false;
+                try { alreadySeen = localStorage.getItem(todayKey) === '1'; } catch (e) {}
+
+                if (!alreadySeen) {
+                    var modal = document.getElementById('celebrationModal');
+                    modal.style.display = 'flex';
+
+                    // Launch confetti only once
+                    var duration = 4000;
+                    var end = Date.now() + duration;
+
+                    function launchConfetti(colors) {
+                        (function frame() {
+                            confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: colors });
+                            confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: colors });
+                            if (Date.now() < end) requestAnimationFrame(frame);
+                        }());
+                    }
+
+                    if (celebType === 'birthday' || celebType === 'both') {
+                        launchConfetti(['#ff0066', '#ffcc00', '#00ccff', '#ff9900']);
+                    }
+                    if (celebType === 'anniversary' || celebType === 'both') {
+                        launchConfetti(['#FFD700', '#C0C0C0', '#ffffff']);
+                    }
+                }
+            });
+        })();
+    </script>
     {% endif %}
+
+
 
     <!-- Floating AI Chatbot Widget -->
     {% if user.is_authenticated %}

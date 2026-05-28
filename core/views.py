@@ -61,26 +61,23 @@ def service_worker(request):
 def dashboard(request):
     """Role-based Dashboard - Different views for Admin, Manager, and Employee"""
 
-    """Role-based Dashboard - Different views for Admin, Manager, and Employee"""
+    user = request.user
 
-    if request.user.role == User.Role.SUPERADMIN:
+    if user.role == User.Role.SUPERADMIN:
         return redirect("superadmin:dashboard")
 
-    if request.user.role == User.Role.COMPANY_ADMIN:
+    if user.role == User.Role.COMPANY_ADMIN:
         return admin_dashboard(request)
 
-    role = request.user.role
+    # Finance managers (by role string or by explicit flag) go straight to the Finance Portal
+    if user.role == "FINANCE_MANAGER" or getattr(user, "is_finance_manager", False):
+        return redirect("finance_portal:dashboard")
 
-    if role == User.Role.COMPANY_ADMIN:
-        return admin_dashboard(request)
-
-    elif role == User.Role.MANAGER:
+    if user.role == User.Role.MANAGER:
         return manager_dashboard(request)
 
-    else:
-        # Default to employee dashboard
-
-        return employee_dashboard(request)
+    # Default: employee dashboard
+    return employee_dashboard(request)
 
 
 @login_required

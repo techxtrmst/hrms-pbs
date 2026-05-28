@@ -2081,7 +2081,7 @@
 
 <!-- Birthday & Anniversary Wishes Celebration Banner -->
 {% if wishes_received %}
-<div class="keka-wishes-celebration-banner animate__animated animate__bounceIn">
+<div class="keka-wishes-celebration-banner animate__animated animate__bounceIn" id="wishesBanner">
     <div class="celebration-glow"></div>
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3" style="position: relative; z-index: 5;">
         <div class="d-flex align-items-center gap-3">
@@ -2091,11 +2091,49 @@
                 <p class="mb-0 text-white opacity-90 text-sm">You have received <strong>{{ wishes_received|length }}</strong> warm wish{{ wishes_received|length|pluralize:"es" }} from your wonderful team members today!</p>
             </div>
         </div>
-        <button class="keka-pill-btn keka-pill-btn-white" onclick="openCelebrationWishesModal()">
-            <i class="fas fa-gift"></i> View Wishes
-        </button>
+        <div class="d-flex align-items-center gap-2">
+            <button class="keka-pill-btn keka-pill-btn-white" onclick="openCelebrationWishesModal()">
+                <i class="fas fa-gift"></i> View Wishes
+            </button>
+            <!-- ✕ Close / Dismiss banner -->
+            <button onclick="dismissWishesBanner()"
+                title="Dismiss for today"
+                style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+                       border-radius: 50%; width: 34px; height: 34px; color: white; font-size: 1rem;
+                       cursor: pointer; display: flex; align-items: center; justify-content: center;
+                       transition: background 0.2s; flex-shrink: 0;"
+                onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+                onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+                ✕
+            </button>
+        </div>
     </div>
 </div>
+
+<script>
+    (function () {
+        var bannerKey = "wishesBanner_dismissed_{{ request.user.id }}_" + new Date().toISOString().slice(0, 10);
+
+        // Hide on load if already dismissed today
+        try {
+            if (localStorage.getItem(bannerKey) === '1') {
+                var b = document.getElementById('wishesBanner');
+                if (b) b.style.display = 'none';
+            }
+        } catch (e) {}
+
+        window.dismissWishesBanner = function () {
+            var b = document.getElementById('wishesBanner');
+            if (b) {
+                b.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                b.style.opacity = '0';
+                b.style.transform = 'translateY(-10px)';
+                setTimeout(function () { b.style.display = 'none'; }, 300);
+            }
+            try { localStorage.setItem(bannerKey, '1'); } catch (e) {}
+        };
+    })();
+</script>
 
 <!-- Breathtaking Birthday Wishes Celebration Modal -->
 <div class="ann-modal-overlay" id="celebrationWishesModal" onclick="closeCelebrationWishesModal()">
@@ -2129,6 +2167,8 @@
     </div>
 </div>
 {% endif %}
+
+
 
 <!-- Stats Row -->
 <div class="keka-stats-row animate__animated animate__fadeInUp">
