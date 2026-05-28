@@ -1529,6 +1529,7 @@ class Payslip(models.Model):
     # Meta info
     worked_days = models.FloatField(default=0)
     total_days = models.IntegerField(default=30)
+    is_draft = models.BooleanField(default=False)
 
     net_salary = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     generated_at = models.DateTimeField(auto_now_add=True)

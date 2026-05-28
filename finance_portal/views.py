@@ -1,4 +1,5 @@
 import calendar
+import json
 from datetime import date
 
 from django.contrib import messages
@@ -6,6 +7,7 @@ from django.db.models import Q
 from django.db.models.functions import Lower
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.csrf import csrf_exempt
 
 from companies.models import Company
 from core.email_utils import send_payslip_email
@@ -89,10 +91,10 @@ def dashboard(request):
     return render(request, "finance_portal/dashboard.html", context)
 
 
-def generate_payslip_internal(employee, month, year, worked_days=None, monthly_gross=None):
+def generate_payslip_internal(employee, month, year, worked_days=None, monthly_gross=None, is_draft=False):
     """
     Core payroll generation helper (mirroring core/views.py process_payslip_generation).
-    Calculates breakdown, saves Payslip, and renders PDF.
+    Calculates breakdown, saves Payslip, and optionally renders PDF (skipped if is_draft=True).
     """
     total_days = calendar.monthrange(year, month)[1]
     month_date = date(year, month, 1)
@@ -139,7 +141,80 @@ def generate_payslip_internal(employee, month, year, worked_days=None, monthly_g
     payslip.net_salary = breakdown["net_salary"]
     payslip.worked_days = worked_days
     payslip.total_days = breakdown.get("display_days", total_days)
+    payslip.is_draft = is_draft
     payslip.save()
+
+    if not is_draft:
+        # Generate branding and currency details for PDF context
+        currency = "INR"
+        currency_name = "Rupees"
+        if employee.location:
+            currency = employee.location.currency or "INR"
+            if employee.location.country_code == "IN" or currency == "INR":
+                currency_name = "Rupees"
+            elif employee.location.country_code == "BD" or currency == "BDT":
+                currency_name = "Taka"
+            elif employee.location.country_code == "US" or currency == "USD":
+                currency_name = "Dollars"
+            else:
+                currency_name = currency
+
+        cname_upper = employee.company.name.upper()
+        branding = {
+            "name": "PETABYTZ TECHNOLOGY SERVICES PVT LTD",
+            "address": "PLOT NO 201 & 202, 1ST FLOOR, DMR CORPORATE, KAVURI HILLS RD, HYDERABAD, TELANGANA 500081.",
+        }
+        if "SOFTSTANDARD" in cname_upper or "RMINDS" in cname_upper:
+            branding["name"] = "SOFTSTANDARD SOLUTIONS"
+
+        if employee.location and employee.location.address_line1:
+            loc = employee.location
+            addr = f"{loc.address_line1}"
+            if loc.address_line2:
+                addr += f", {loc.address_line2}"
+            addr += f", {loc.city}"
+            if loc.state:
+                addr += f", {loc.state}"
+            if loc.postal_code:
+                addr += f" {loc.postal_code}"
+            branding["address"] = addr
+
+        context = {
+            "payslip": payslip,
+            "company": employee.company,
+            "branding": branding,
+            "net_salary_words": num2words_flexible(round(payslip.net_salary or 0), currency_name),
+            "currency": currency,
+            "basic_rounded": round(payslip.basic or 0),
+            "hra_rounded": round(payslip.hra or 0),
+            "conveyance_rounded": round(payslip.conveyance_allowance or 0),
+            "special_rounded": round(payslip.special_allowance or 0),
+            "employer_pf_rounded": round(payslip.employer_pf or 0),
+            "employee_pf_rounded": round(payslip.employee_pf or 0),
+            "professional_tax_rounded": round(payslip.professional_tax or 0),
+            "total_earnings_ctc": round((payslip.gross_salary or 0) + (payslip.employer_pf or 0)),
+            "total_contributions": round((payslip.employee_pf or 0) + (payslip.employer_pf or 0)),
+            "net_salary_rounded": round(payslip.net_salary or 0),
+            "payable_units": f"{int(payslip.worked_days)} Days",
+        }
+
+        filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
+        save_pdf_to_model(payslip, "employees/payslip_pdf.html", context, filename)
+    else:
+        # Clear existing PDF files when generating draft
+        payslip.pdf_file = None
+        payslip.save()
+
+    return payslip
+
+
+def finalize_payslip_internal(payslip):
+    """
+    Core payroll finalization helper. Renders the PDF using values currently stored in the
+    Payslip record, changes is_draft to False, and saves it.
+    """
+    employee = payslip.employee
+    month_date = payslip.month
 
     # Generate branding and currency details for PDF context
     currency = "INR"
@@ -191,17 +266,151 @@ def generate_payslip_internal(employee, month, year, worked_days=None, monthly_g
         "total_earnings_ctc": round((payslip.gross_salary or 0) + (payslip.employer_pf or 0)),
         "total_contributions": round((payslip.employee_pf or 0) + (payslip.employer_pf or 0)),
         "net_salary_rounded": round(payslip.net_salary or 0),
-        "payable_units": f"{breakdown.get('display_days', total_days)} Days",
+        "payable_units": f"{int(payslip.worked_days)} Days",
     }
 
     filename = f"payslip_{employee.badge_id}_{month_date.strftime('%b_%Y')}.pdf"
     save_pdf_to_model(payslip, "employees/payslip_pdf.html", context, filename)
+
+    payslip.is_draft = False
+    payslip.save()
     return payslip
 
 
 @finance_manager_required
+def process_draft_payroll(request):
+    """Process Phase 1 bulk draft payroll for a company or all companies with backend attendance count"""
+    if request.method != "POST":
+        return redirect("finance_portal:dashboard")
+
+    company_id = request.POST.get("company_id", "all")
+    month = int(request.POST.get("month"))
+    year = int(request.POST.get("year"))
+
+    # Calculate range
+    num_days = calendar.monthrange(year, month)[1]
+    month_start = date(year, month, 1)
+    month_end = date(year, month, num_days)
+
+    # Filter employees
+    employees = Employee.objects.filter(Q(date_of_joining__isnull=True) | Q(date_of_joining__lte=month_end)).filter(
+        Q(is_active=True) | Q(employment_status="ACTIVE") | (Q(exit_date__isnull=False) & Q(exit_date__gte=month_start))
+    )
+
+    # Apply company filter
+    target_companies = Company.objects.filter(is_active=True)
+    if company_id and company_id != "all":
+        employees = employees.filter(company_id=company_id)
+        target_companies = target_companies.filter(id=company_id)
+
+    if not employees.exists():
+        messages.error(request, "No eligible employees found for the selected company/companies.")
+        return redirect(f"/finance/?company={company_id}&month={month}&year={year}")
+
+    from employees.models import Attendance
+
+    processed_count = 0
+    errors = []
+
+    for emp in employees:
+        try:
+            # Count days with clock_in or status present in selected month/year
+            worked_days = (
+                Attendance.objects.filter(employee=emp, date__year=year, date__month=month)
+                .filter(Q(clock_in__isnull=False) | Q(status__in=["PRESENT", "WFH", "ON_DUTY", "HYBRID"]))
+                .count()
+            )
+
+            # Default to total days if employee has no attendance records at all
+            if worked_days == 0:
+                worked_days = num_days
+
+            # Generate Phase 1 draft payslip
+            generate_payslip_internal(emp, month, year, worked_days=float(worked_days), is_draft=True)
+            processed_count += 1
+        except Exception as e:
+            errors.append(f"Error for {emp.user.get_full_name()}: {str(e)}")
+
+    # Audit log
+    comp_name_str = "All Companies" if company_id == "all" else target_companies.first().name
+    details = f"Processed Phase 1 Draft payroll for {comp_name_str}. Period: {month}/{year}. Total: {employees.count()}, Success: {processed_count}."
+    if errors:
+        details += f" Errors: {len(errors)}"
+
+    FinanceAuditLog.objects.create(
+        user=request.user,
+        action="BULK_PAYROLL_DRAFT",
+        company=None if company_id == "all" else target_companies.first(),
+        details=details,
+        ip_address=get_client_ip(request),
+    )
+
+    if errors:
+        messages.warning(
+            request, f"Draft payroll generated with some errors ({len(errors)} failed out of {employees.count()})."
+        )
+    else:
+        messages.success(request, f"Successfully generated Phase 1 Draft payroll for {processed_count} employees!")
+
+    return redirect(f"/finance/?company={company_id}&month={month}&year={year}")
+
+
+@finance_manager_required
+@csrf_exempt
+def save_draft_payslip(request):
+    """
+    AJAX endpoint to update draft payslip fields dynamically.
+    Recalculates net and gross based on edited values.
+    """
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "Only POST requests allowed"}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        payslip_id = data.get("payslip_id")
+        payslip = get_object_or_404(Payslip, id=payslip_id)
+
+        # Update customizable fields
+        payslip.worked_days = float(data.get("worked_days", payslip.worked_days))
+        payslip.basic = float(data.get("basic", payslip.basic))
+        payslip.hra = float(data.get("hra", payslip.hra))
+        payslip.conveyance_allowance = float(data.get("conveyance_allowance", payslip.conveyance_allowance))
+        payslip.special_allowance = float(data.get("special_allowance", payslip.special_allowance))
+        payslip.employee_pf = float(data.get("employee_pf", payslip.employee_pf))
+        payslip.employer_pf = float(data.get("employer_pf", payslip.employer_pf))
+        payslip.professional_tax = float(data.get("professional_tax", payslip.professional_tax))
+
+        # Dynamic salary calculations based on manual overrides
+        payslip.gross_salary = payslip.basic + payslip.hra + payslip.conveyance_allowance + payslip.special_allowance
+        payslip.monthly_gross = payslip.gross_salary
+        payslip.net_salary = payslip.gross_salary - payslip.employee_pf - payslip.professional_tax
+        payslip.save()
+
+        # Log change to security audit log
+        FinanceAuditLog.objects.create(
+            user=request.user,
+            company=payslip.employee.company,
+            action="EDIT_DRAFT_PAYSLIP",
+            details=f"Manually edited draft payslip for {payslip.employee.user.get_full_name()} ({payslip.month.strftime('%b %Y')}). Net: {payslip.net_salary}.",
+            ip_address=get_client_ip(request),
+        )
+
+        return JsonResponse(
+            {
+                "status": "success",
+                "net_salary": payslip.net_salary,
+                "gross_salary": payslip.gross_salary,
+                "message": "Draft saved successfully!",
+            }
+        )
+
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=400)
+
+
+@finance_manager_required
 def process_bulk_payroll(request):
-    """Process bulk payroll for a company or all companies"""
+    """Process bulk payroll or finalize existing Phase 1 drafts for a company or all companies"""
     if request.method != "POST":
         return redirect("finance_portal:dashboard")
 
@@ -230,6 +439,74 @@ def process_bulk_payroll(request):
         messages.error(request, "No eligible employees found for the selected company/companies.")
         return redirect(f"/finance/?company={company_id}&month={month}&year={year}")
 
+    # Check for existing draft payslips for this employee subset and period
+    draft_payslips = Payslip.objects.filter(employee__in=employees, month__month=month, month__year=year, is_draft=True)
+
+    if draft_payslips.exists():
+        # Phase 2: Finalize drafts
+        processed_count = 0
+        total_amount = 0.0
+        errors = []
+
+        batch = PayrollBatch.objects.create(
+            month=month,
+            year=year,
+            status="PROCESSING",
+            total_employees=draft_payslips.count(),
+            processed_employees=0,
+            total_amount=0.0,
+            created_by=request.user,
+        )
+        batch.companies.add(*target_companies)
+
+        for slip in draft_payslips:
+            try:
+                # Finalize draft (saves is_draft=False and renders PDF)
+                finalize_payslip_internal(slip)
+
+                # Send email if auto-send requested
+                if auto_send_email:
+                    send_payslip_email(slip)
+
+                processed_count += 1
+                if slip.net_salary:
+                    total_amount += float(slip.net_salary)
+
+                batch.processed_employees = processed_count
+                batch.total_amount = total_amount
+                batch.save()
+            except Exception as e:
+                errors.append(f"Error finalizing draft for {slip.employee.user.get_full_name()}: {str(e)}")
+
+        if errors and processed_count == 0:
+            batch.status = "FAILED"
+        else:
+            batch.status = "COMPLETED"
+        batch.save()
+
+        # Audit log
+        company_log = None if company_id == "all" else target_companies.first()
+        comp_name_str = "All Companies" if company_id == "all" else target_companies.first().name
+        details = f"Finalized bulk payroll from drafts for {comp_name_str}. Period: {month}/{year}. Processed: {processed_count}/{batch.total_employees}."
+        if errors:
+            details += f" Errors: {len(errors)}"
+
+        FinanceAuditLog.objects.create(
+            user=request.user,
+            action="BULK_PAYROLL_FINALIZE",
+            company=company_log,
+            details=details,
+            ip_address=get_client_ip(request),
+        )
+
+        if errors:
+            messages.warning(request, f"Payroll finalized with some errors ({len(errors)} failed).")
+        else:
+            messages.success(request, f"Successfully finalized and sent payroll for {processed_count} employees!")
+
+        return redirect(f"/finance/?company={company_id}&month={month}&year={year}")
+
+    # Fallback to direct bulk process if no drafts exist
     # Create the Batch record
     batch = PayrollBatch.objects.create(
         month=month,
