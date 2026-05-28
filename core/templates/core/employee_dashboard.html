@@ -2270,9 +2270,9 @@
                         <div class="keka-circle-content">
                             <div class="keka-circle-hours">
                                 {% if attendance and attendance.clock_in %}
-                                {{ attendance.effective_hours|default:"09:01" }}
+                                {{ attendance.effective_hours|default:"0:00" }}
                                 {% else %}
-                                09:01
+                                0:00
                                 {% endif %}
                             </div>
                             <div class="keka-circle-desc">Logged</div>
@@ -2319,10 +2319,19 @@
                                 {% if attendance and attendance.clock_in %}
                                 {{ attendance.clock_in|date:"h:i A" }}
                                 {% else %}
-                                08:42 AM
+                                –
                                 {% endif %}
                             </span>
-                            <span class="keka-timeline-sub">Web App Punch</span>
+                            <span class="keka-timeline-sub">
+                                {% if attendance and attendance.clock_in %}
+                                    {% if attendance.current_session_type == 'WFH' %}Work From Home Punch
+                                    {% elif attendance.current_session_type == 'REMOTE' %}Remote Punch
+                                    {% else %}Web App Punch
+                                    {% endif %}
+                                {% else %}
+                                    Pending Check-in
+                                {% endif %}
+                            </span>
                         </div>
                     </div>
 
@@ -2336,15 +2345,21 @@
                             <span class="keka-timeline-time">
                                 {% if attendance and attendance.clock_out %}
                                 {{ attendance.clock_out|date:"h:i A" }}
+                                {% elif attendance and attendance.is_currently_clocked_in %}
+                                <span style="color: #10b981; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="fas fa-spinner fa-spin"></i> Working...
+                                </span>
                                 {% else %}
-                                11:41 PM
+                                –
                                 {% endif %}
                             </span>
                             <span class="keka-timeline-sub">
                                 {% if attendance and attendance.clock_out %}
                                 Shift Completed
+                                {% elif attendance and attendance.is_currently_clocked_in %}
+                                Active Session
                                 {% else %}
-                                Auto punch-out log
+                                Not Clocked Out
                                 {% endif %}
                             </span>
                         </div>
@@ -2366,8 +2381,8 @@
 
             <script>
                 document.addEventListener("DOMContentLoaded", function() {
-                    var hoursStr = "{% if attendance and attendance.clock_in %}{{ attendance.effective_hours|default:'09:01' }}{% else %}09:01{% endif %}";
-                    var hours = 9.0;
+                    var hoursStr = "{% if attendance and attendance.clock_in %}{{ attendance.effective_hours|default:'0:00' }}{% else %}0:00{% endif %}";
+                    var hours = 0.0;
                     if (hoursStr) {
                         var parts = hoursStr.split(":");
                         if (parts.length >= 2) {

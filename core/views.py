@@ -1304,22 +1304,6 @@ def personal_home(request):
         if not attendance:
             attendance = Attendance.objects.filter(employee=employee, date=today).first()
 
-        # Self-healing patch for Sathinath's attendance on May 28, 2026 to fix the pre-pushed buggy record
-        if request.user.first_name == "Sathinath":
-            from datetime import date as _date
-
-            from employees.models import AttendanceSession
-
-            target_date = _date(2026, 5, 28)
-            temp_att = Attendance.objects.filter(employee=employee, date=target_date).first()
-            if temp_att and temp_att.status in ["WFH", "REMOTE"]:
-                temp_att.status = "PRESENT"
-                temp_att.current_session_type = "WEB"
-                temp_att.save()
-                AttendanceSession.objects.filter(employee=employee, date=target_date).update(session_type="WEB")
-                if attendance and attendance.date == target_date:
-                    attendance.refresh_from_db()
-
         context["attendance"] = attendance
 
         # --- Month/Year filter from query params (for Jun/May buttons) ---
