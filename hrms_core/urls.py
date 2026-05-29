@@ -30,6 +30,7 @@ urlpatterns = [
     ),
     path("accounts/", include("accounts.urls")),
     path("superadmin/", include("superadmin.urls")),
+    path("finance/", include("finance_portal.urls", namespace="finance_portal")),
     path("ai/", include("ai_assistant.urls")),  # AI-powered features
     path("handbooks/", include("handbooks.urls", namespace="handbooks")),  # Employee Handbooks
     path("policies/", include("policies.urls", namespace="policies")),  # Company Policies

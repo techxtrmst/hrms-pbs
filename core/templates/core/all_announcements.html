@@ -1,0 +1,280 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}All Announcements{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(-45deg, #1e3a5f, #1d4ed8, #1e40af, #2563eb);
+        background-size: 400% 400%;
+        animation: gradientFlow 12s ease infinite;
+        border-radius: 16px;
+        padding: 2rem;
+        color: white;
+        margin-bottom: 24px;
+    }
+    @keyframes gradientFlow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    .ann-card {
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 2px 12px rgba(37,99,235,0.06);
+        border: 1px solid rgba(226,232,240,0.8);
+        transition: transform 0.18s, box-shadow 0.18s;
+        cursor: pointer;
+        overflow: hidden;
+    }
+    .ann-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(37,99,235,0.12);
+    }
+    .ann-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #5b47fb;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+    .ann-title {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 4px;
+    }
+    .ann-meta {
+        font-size: 0.75rem;
+        color: #64748b;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .ann-content {
+        font-size: 0.82rem;
+        color: #475569;
+        margin-top: 8px;
+        line-height: 1.55;
+    }
+    .ann-badge-global {
+        background: #fef3c7;
+        color: #92400e;
+        font-size: 0.68rem;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+    .ann-badge-location {
+        background: #dbeafe;
+        color: #1e40af;
+        font-size: 0.68rem;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #64748b;
+    }
+    .empty-state .emoji { font-size: 3.5rem; margin-bottom: 12px; }
+    .filter-bar {
+        background: #fff;
+        border-radius: 12px;
+        padding: 14px 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        border: 1px solid rgba(226,232,240,0.8);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .filter-bar input {
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 7px 14px;
+        font-size: 0.85rem;
+        outline: none;
+        transition: border-color 0.2s;
+        min-width: 220px;
+    }
+    .filter-bar input:focus { border-color: #5b47fb; }
+
+    /* Modal */
+    .ann-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 9998;
+        align-items: center;
+        justify-content: center;
+    }
+    .ann-modal-overlay.active { display: flex; }
+    .ann-modal {
+        background: #fff;
+        border-radius: 18px;
+        max-width: 560px;
+        width: 95%;
+        max-height: 80vh;
+        overflow-y: auto;
+        padding: 28px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        position: relative;
+    }
+    .ann-modal-close {
+        position: absolute;
+        top: 16px;
+        right: 18px;
+        background: #f1f5f9;
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        cursor: pointer;
+        font-size: 1rem;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .ann-modal-close:hover { background: #e2e8f0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+    <!-- Page Header -->
+    <div class="page-header d-flex align-items-center justify-content-between">
+        <div>
+            <h2 class="fw-bold mb-1" style="font-size:1.6rem;">📢 All Announcements</h2>
+            <p class="mb-0 opacity-75" style="font-size:0.9rem;">{{ announcements|length }} active announcement{{ announcements|length|pluralize }} for your company</p>
+        </div>
+        <a href="{% url 'dashboard' %}" class="btn btn-sm" style="background:rgba(255,255,255,0.15);color:white;border:1.5px solid rgba(255,255,255,0.3);border-radius:8px;">
+            <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <i class="fas fa-search" style="color:#94a3b8;"></i>
+        <input type="text" id="searchInput" placeholder="Search announcements…" oninput="filterAnn()">
+        <span class="ms-auto text-muted" style="font-size:0.82rem;" id="countLabel">{{ announcements|length }} result{{ announcements|length|pluralize }}</span>
+    </div>
+
+    {% if announcements %}
+        <div class="d-flex flex-column gap-3" id="annList">
+            {% for ann in announcements %}
+            <div class="ann-card p-3 ann-item"
+                 data-title="{{ ann.title|lower }}"
+                 data-content="{{ ann.content|striptags|lower }}"
+                 onclick="openModal('{{ ann.title|escapejs }}', '{{ ann.created_at|date:"l, d F Y" }}', '{{ ann.created_at|date:"h:i A" }}', `{{ ann.content|linebreaksbr|escapejs }}`, '{% if ann.location %}{{ ann.location }}{% endif %}')">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="ann-icon">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
+                            <div class="ann-title">{{ ann.title }}</div>
+                            {% if ann.location %}
+                                <span class="ann-badge-location"><i class="fas fa-map-marker-alt me-1"></i>{{ ann.location }}</span>
+                            {% else %}
+                                <span class="ann-badge-global"><i class="fas fa-globe me-1"></i>Global</span>
+                            {% endif %}
+                        </div>
+                        <div class="ann-meta">
+                            <span><i class="far fa-calendar-alt me-1"></i>{{ ann.created_at|date:"d M Y" }}</span>
+                            <span><i class="far fa-clock me-1"></i>{{ ann.created_at|date:"h:i A" }}</span>
+                        </div>
+                        <div class="ann-content">{{ ann.content|striptags|truncatechars:200 }}</div>
+                    </div>
+                    <i class="fas fa-chevron-right text-muted" style="margin-top:4px;font-size:0.8rem;"></i>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="emoji">📭</div>
+            <h5 class="fw-bold" style="color:#1e1b4b;">No Announcements</h5>
+            <p class="text-muted">There are no active announcements at the moment.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Announcement Detail Modal -->
+<div class="ann-modal-overlay" id="annModalOverlay" onclick="closeModal(event)">
+    <div class="ann-modal">
+        <button class="ann-modal-close" onclick="closeModalDirect()"><i class="fas fa-times"></i></button>
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="ann-icon" style="width:48px;height:48px;font-size:1.3rem;"><i class="fas fa-bullhorn"></i></div>
+            <div>
+                <h5 class="fw-bold mb-0" id="modalTitle" style="color:#1e293b;"></h5>
+                <div class="ann-meta mt-1" id="modalMeta"></div>
+            </div>
+        </div>
+        <hr style="border-color:#f1f5f9;">
+        <div id="modalContent" style="font-size:0.88rem;color:#475569;line-height:1.7;"></div>
+        <div id="modalLocation" class="mt-3"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterAnn() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const items = document.querySelectorAll('.ann-item');
+    let visible = 0;
+    items.forEach(item => {
+        const title = item.dataset.title || '';
+        const content = item.dataset.content || '';
+        if (title.includes(q) || content.includes(q)) {
+            item.style.display = '';
+            visible++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    document.getElementById('countLabel').textContent = visible + ' result' + (visible !== 1 ? 's' : '');
+}
+
+function openModal(title, date, time, content, location) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalMeta').innerHTML =
+        '<span><i class="far fa-calendar-alt me-1"></i>' + date + '</span>' +
+        '<span><i class="far fa-clock me-1"></i>' + time + '</span>';
+    document.getElementById('modalContent').innerHTML = content;
+    const locEl = document.getElementById('modalLocation');
+    if (location) {
+        locEl.innerHTML = '<span style="background:#dbeafe;color:#1e40af;font-size:0.75rem;padding:3px 10px;border-radius:20px;font-weight:600;"><i class="fas fa-map-marker-alt me-1"></i>' + location + '</span>';
+    } else {
+        locEl.innerHTML = '<span style="background:#fef3c7;color:#92400e;font-size:0.75rem;padding:3px 10px;border-radius:20px;font-weight:600;"><i class="fas fa-globe me-1"></i>Global</span>';
+    }
+    document.getElementById('annModalOverlay').classList.add('active');
+}
+
+function closeModal(e) {
+    if (e.target === document.getElementById('annModalOverlay')) {
+        document.getElementById('annModalOverlay').classList.remove('active');
+    }
+}
+
+function closeModalDirect() {
+    document.getElementById('annModalOverlay').classList.remove('active');
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModalDirect();
+});
+</script>
+{% endblock %}

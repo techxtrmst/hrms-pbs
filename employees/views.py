@@ -381,19 +381,28 @@ def clock_in(request):
 
             # Ensure employee profile exists
             if not hasattr(request.user, "employee_profile"):
-                # Auto-create for Company Admin/Employee Manager to prevent setup deadlock
-                if request.user.role in [User.Role.COMPANY_ADMIN, User.Role.EMPLOYEE_MANAGER] and request.user.company:
+                # Auto-create for admin-level roles (Company Admin, HR, Finance Managers)
+                # to prevent setup deadlock where they cannot clock in without a profile.
+                _is_finance = (
+                    getattr(request.user, "is_finance_manager", False) or request.user.role == "FINANCE_MANAGER"
+                )
+                _is_admin_role = request.user.role in [User.Role.COMPANY_ADMIN, User.Role.EMPLOYEE_MANAGER]
+                if (_is_admin_role or _is_finance) and request.user.company:
                     from .models import Employee
 
                     try:
-                        Employee.objects.create(
+                        designation = "Finance Manager" if _is_finance else "Administrator"
+                        department = "Finance" if _is_finance else "Management"
+                        Employee.objects.get_or_create(
                             user=request.user,
-                            company=request.user.company,
-                            designation="Administrator",
-                            department="Management",
-                            badge_id=f"ADM{request.user.id}",
+                            defaults={
+                                "company": request.user.company,
+                                "designation": designation,
+                                "department": department,
+                                "badge_id": f"ADM{request.user.id}",
+                            },
                         )
-                        # Refresh user to get the profile
+                        # Refresh user to pick up the newly created profile
                         request.user.refresh_from_db()
                     except Exception as e:
                         logger.error(f"Failed to auto-create profile in clock-in: {e}")
@@ -481,7 +490,7 @@ def clock_in(request):
                 )
 
             # Determine session type and status
-            session_type = "WEB" if clock_in_type == "office" else "REMOTE"
+            session_type = "WEB" if clock_in_type in ["office", "WEB"] else "REMOTE"
 
             # Use database transaction to prevent race conditions
             from django.db import transaction
@@ -544,9 +553,14 @@ def clock_in(request):
                         attendance.clock_in = session.clock_in
                         attendance.location_in = f"{lat},{lng}" if lat is not None and lng is not None else "N/A"
 
-                    # Determine overall status
+                    # Determine overall status based on clock_in_type
                     if session_number == 1:
-                        attendance.status = "WFH" if session_type == "REMOTE" else "PRESENT"
+                        if clock_in_type == "WFH":
+                            attendance.status = "WFH"
+                        elif clock_in_type == "REMOTE":
+                            attendance.status = "REMOTE"
+                        else:
+                            attendance.status = "PRESENT"
                     else:
                         # Multiple sessions - check if mixed types
                         session_types = set(
@@ -554,10 +568,16 @@ def clock_in(request):
                                 "session_type", flat=True
                             )
                         )
+                        session_types.add(session_type)
                         if len(session_types) > 1:
                             attendance.status = "HYBRID"
                         else:
-                            attendance.status = "WFH" if session_type == "REMOTE" else "PRESENT"
+                            if clock_in_type == "WFH":
+                                attendance.status = "WFH"
+                            elif clock_in_type == "REMOTE":
+                                attendance.status = "REMOTE"
+                            else:
+                                attendance.status = "PRESENT"
 
                     # Start location tracking
                     attendance.location_tracking_active = True
@@ -996,9 +1016,20 @@ def update_location(request):
 def employee_profile(request):
     user = request.user
 
-    # Try to get or create employee profile if User is a Company Admin/Manager
-    # This prevents the "blank page" issue for the initial admin user.
-    employee = safe_get_employee_profile(user)
+    # Check if viewing a colleague's profile
+    colleague_id = request.GET.get("id")
+    is_viewing_colleague = False
+
+    if colleague_id:
+        try:
+            # Colleague must belong to the same company
+            employee = Employee.objects.get(pk=colleague_id, company=user.company)
+            is_viewing_colleague = employee.user != user
+        except Employee.DoesNotExist:
+            messages.error(request, "Colleague profile not found.")
+            return redirect("personal_home")
+    else:
+        employee = safe_get_employee_profile(user)
 
     if not employee:
         if user.company:
@@ -1026,7 +1057,50 @@ def employee_profile(request):
     locations = employee.company.locations.all()
 
     if request.method == "POST":
+        if is_viewing_colleague:
+            messages.error(request, "Permission denied. You cannot modify a colleague's profile.")
+            return redirect(f"/employees/employee-profile/?id={employee.pk}")
+
         action = request.POST.get("action")
+
+        if action == "update_about":
+            # About section: always editable, no one-time restriction
+            try:
+                employee.mobile_number = request.POST.get("mobile_number")
+                employee.personal_email = request.POST.get("personal_email")
+                employee.pseudo_name = request.POST.get("pseudo_name")
+                dob_str = request.POST.get("dob")
+                if dob_str:
+                    employee.dob = dob_str
+                employee.gender = request.POST.get("gender")
+                employee.marital_status = request.POST.get("marital_status")
+                employee.current_address = request.POST.get("current_address")
+                employee.permanent_address = request.POST.get("permanent_address")
+                employee.save()
+
+                from .models import EmergencyContact
+
+                employee.emergency_contacts.all().delete()
+                c1_name = request.POST.get("contact_name_1")
+                c1_phone = request.POST.get("contact_phone_1")
+                c1_rel = request.POST.get("contact_rel_1")
+                if c1_name and c1_phone:
+                    EmergencyContact.objects.create(
+                        employee=employee, name=c1_name, phone_number=c1_phone, relationship=c1_rel, is_primary=True
+                    )
+                c2_name = request.POST.get("contact_name_2")
+                c2_phone = request.POST.get("contact_phone_2")
+                c2_rel = request.POST.get("contact_rel_2")
+                if c2_name and c2_phone:
+                    EmergencyContact.objects.create(
+                        employee=employee, name=c2_name, phone_number=c2_phone, relationship=c2_rel, is_primary=False
+                    )
+
+                messages.success(request, "About section updated successfully.")
+                return redirect("employee_profile")
+            except Exception as e:
+                messages.error(request, f"Error updating profile: {str(e)}")
+                return redirect("employee_profile")
 
         if action == "update_profile":
             is_admin = request.user.role == User.Role.COMPANY_ADMIN
@@ -1204,6 +1278,10 @@ def employee_profile(request):
             "probation_date": probation_date,
             "available_shifts": available_shifts,
             "work_history": work_history,
+            "leave_balance": getattr(employee, "leave_balance", None),
+            "is_viewing_colleague": is_viewing_colleague,
+            "show_sensitive_data": not is_viewing_colleague
+            or (request.user.role == User.Role.COMPANY_ADMIN or request.user.is_superuser),
         },
     )
 
@@ -4458,3 +4536,68 @@ def employee_id_card(request):
         "company": employee.company,
     }
     return render(request, "employees/id_card.html", context)
+
+
+@csrf_exempt
+@login_required
+def send_birthday_wish(request):
+    """
+    AJAX endpoint to send a birthday/anniversary wish to a colleague.
+    Saves the wish in the Notification table to avoid migrations.
+    """
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            receiver_id = data.get("receiver_id")
+            wish_type = data.get("type", "birthday")
+
+            if not receiver_id:
+                return JsonResponse({"status": "error", "message": "Receiver ID is required"}, status=400)
+
+            sender_employee = request.user.employee_profile
+            receiver_employee = Employee.objects.get(id=receiver_id)
+
+            # Construct the special message to store sender details
+            sender_name = sender_employee.user.get_full_name()
+            sender_avatar = (
+                sender_employee.profile_picture.url
+                if sender_employee.profile_picture
+                else f"https://ui-avatars.com/api/?name={sender_employee.user.first_name}+{sender_employee.user.last_name}&background=5b47fb&color=fff"
+            )
+
+            message_payload = f"{sender_name}|||{sender_avatar}|||{wish_type}"
+
+            # Create a Notification in core
+            from django.contrib.contenttypes.models import ContentType
+
+            from core.models import Notification
+
+            # Link notification to employee content type
+            emp_content_type = ContentType.objects.get_for_model(sender_employee)
+
+            # Check if already wished today
+            today = timezone.localdate()
+            already_wished = Notification.objects.filter(
+                recipient=receiver_employee.user,
+                notification_type="BIRTHDAY_WISH",
+                message__startswith=f"{sender_name}|||",
+                created_at__date=today,
+            ).exists()
+
+            if already_wished:
+                return JsonResponse({"status": "error", "message": "You have already sent your wishes today!"})
+
+            Notification.objects.create(
+                recipient=receiver_employee.user,
+                notification_type="BIRTHDAY_WISH",
+                message=message_payload,
+                content_type=emp_content_type,
+                object_id=sender_employee.id,
+                is_read=False,
+            )
+
+            return JsonResponse({"status": "success", "message": f"Sent {wish_type} wish successfully!"})
+
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=500)
+    return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)

@@ -1,0 +1,168 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Support Ticket Board{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Top Header Card -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
+        <div class="card-body p-4 text-white d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h2 class="fw-bold mb-1"><i class="fas fa-headset me-2 text-info"></i>Support Helpdesk</h2>
+                <p class="text-slate-400 mb-0 opacity-75">Raise internal support tickets, chat with the IT/HR support agents, and monitor resolutions in real-time.</p>
+            </div>
+            <div>
+                <button class="btn btn-info text-white px-4 py-2 fw-semibold rounded-3 shadow-sm hover-scale" data-bs-toggle="modal" data-bs-target="#createTicketModal">
+                    <i class="fas fa-plus me-2"></i>Raise New Ticket
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Jira / Kanban Columns Board -->
+    <div class="row g-4">
+        <!-- 1. OPEN COLUMN -->
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-light h-100 min-vh-75">
+                <div class="card-header border-0 bg-transparent pt-4 px-4 pb-2 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill me-2">
+                            <i class="fas fa-circle-notch fa-spin me-1"></i> Open
+                        </span>
+                        <span class="text-muted fw-semibold small">({{ open_tickets.count }})</span>
+                    </h5>
+                </div>
+                <div class="card-body p-3 overflow-y-auto" style="max-height: 60vh;">
+                    {% if open_tickets %}
+                        {% for ticket in open_tickets %}
+                            {% include 'employees/support_ticket_card.html' with ticket=ticket %}
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-inbox fa-2x mb-2 opacity-50"></i>
+                            <p class="small mb-0">No open tickets</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. IN PROGRESS COLUMN -->
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-light h-100 min-vh-75">
+                <div class="card-header border-0 bg-transparent pt-4 px-4 pb-2 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 rounded-pill me-2">
+                            <i class="fas fa-spinner me-1"></i> In Progress
+                        </span>
+                        <span class="text-muted fw-semibold small">({{ inprogress_tickets.count }})</span>
+                    </h5>
+                </div>
+                <div class="card-body p-3 overflow-y-auto" style="max-height: 60vh;">
+                    {% if inprogress_tickets %}
+                        {% for ticket in inprogress_tickets %}
+                            {% include 'employees/support_ticket_card.html' with ticket=ticket %}
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-tasks fa-2x mb-2 opacity-50"></i>
+                            <p class="small mb-0">No tickets in progress</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. DONE COLUMN -->
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-light h-100 min-vh-75">
+                <div class="card-header border-0 bg-transparent pt-4 px-4 pb-2 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill me-2">
+                            <i class="fas fa-check-circle me-1"></i> Resolved
+                        </span>
+                        <span class="text-muted fw-semibold small">({{ done_tickets.count }})</span>
+                    </h5>
+                </div>
+                <div class="card-body p-3 overflow-y-auto" style="max-height: 60vh;">
+                    {% if done_tickets %}
+                        {% for ticket in done_tickets %}
+                            {% include 'employees/support_ticket_card.html' with ticket=ticket %}
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-clipboard-check fa-2x mb-2 opacity-50"></i>
+                            <p class="small mb-0">No resolved tickets</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CREATE TICKET MODAL -->
+<div class="modal fade" id="createTicketModal" tabindex="-1" aria-labelledby="createTicketModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold text-dark" id="createTicketModalLabel"><i class="fas fa-ticket-alt text-info me-2"></i>Create New Support Ticket</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'support_ticket_create' %}" method="post">
+                {% csrf_token %}
+                <div class="modal-body px-4 py-3">
+                    <div class="mb-3">
+                        <label for="id_subject" class="form-label fw-semibold text-muted small">Subject / Brief Summary</label>
+                        <input type="text" class="form-control rounded-3" id="id_subject" name="subject" placeholder="e.g. Printer not connecting, Leave query" required>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label for="id_category" class="form-label fw-semibold text-muted small">Category</label>
+                            <select class="form-select rounded-3" id="id_category" name="category">
+                                {% for val, label in categories %}
+                                    <option value="{{ val }}" {% if val == 'GENERAL' %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label for="id_priority" class="form-label fw-semibold text-muted small">Priority</label>
+                            <select class="form-select rounded-3" id="id_priority" name="priority">
+                                {% for val, label in priorities %}
+                                    <option value="{{ val }}" {% if val == 'MEDIUM' %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_description" class="form-label fw-semibold text-muted small">Detailed Description</label>
+                        <textarea class="form-control rounded-3" id="id_description" name="description" rows="4" placeholder="Describe the issue in detail..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4 px-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-3 px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info text-white rounded-3 px-4 fw-semibold shadow-sm">Submit Ticket</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .min-vh-75 {
+        min-height: 70vh;
+    }
+    .hover-scale {
+        transition: all 0.2s ease-in-out;
+    }
+    .hover-scale:hover {
+        transform: scale(1.03);
+    }
+    .text-slate-400 {
+        color: #94a3b8;
+    }
+</style>
+{% endblock %}

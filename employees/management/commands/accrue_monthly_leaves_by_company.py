@@ -64,14 +64,16 @@ class Command(BaseCommand):
         target_date_str = f"{target_month:02d}/{target_year}"
 
         if dry_run:
-            self.stdout.write(self.style.WARNING(f"🔍 DRY RUN - Showing what would be accrued for {target_date_str}"))
+            self.stdout.write(
+                self.style.WARNING(f"[Dry Run] DRY RUN - Showing what would be accrued for {target_date_str}")
+            )
         else:
-            self.stdout.write(f"💰 Accruing monthly leaves for {target_date_str}")
+            self.stdout.write(f"[Info] Accruing monthly leaves for {target_date_str}")
 
         if preserve_manual:
-            self.stdout.write(self.style.SUCCESS("✅ Manual admin adjustments will be preserved"))
+            self.stdout.write(self.style.SUCCESS("[OK] Manual admin adjustments will be preserved"))
         else:
-            self.stdout.write(self.style.WARNING("⚠️  Manual admin adjustments will be overwritten"))
+            self.stdout.write(self.style.WARNING("[Warning] Manual admin adjustments will be overwritten"))
 
         total_updated = 0
 
@@ -83,10 +85,10 @@ class Command(BaseCommand):
                 rules = leave_allocation_rules[company_name]
             else:
                 # Skip companies without defined rules
-                self.stdout.write(self.style.WARNING(f"⚠️  Skipping {company_name} - no leave rules defined"))
+                self.stdout.write(self.style.WARNING(f"[Warning] Skipping {company_name} - no leave rules defined"))
                 continue
 
-            self.stdout.write(f"\n📍 Processing Company: {company_name}")
+            self.stdout.write(f"\n[Company] Processing Company: {company_name}")
             self.stdout.write(
                 f"   Monthly allocation: {rules['casual_leave_monthly']} CL + {rules['sick_leave_monthly']} SL"
             )
@@ -100,7 +102,9 @@ class Command(BaseCommand):
                 if not employee.is_probation_completed():
                     if dry_run:
                         self.stdout.write(
-                            self.style.WARNING(f"   ⏩ Skipping {employee.user.get_full_name()} - Still in probation")
+                            self.style.WARNING(
+                                f"   [Skip] Skipping {employee.user.get_full_name()} - Still in probation"
+                            )
                         )
                     company_updated += 0  # Just for clarity
                     continue
@@ -170,13 +174,15 @@ class Command(BaseCommand):
 
             if dry_run:
                 self.stdout.write(
-                    self.style.WARNING(f"   🔍 Would update {company_updated} employees for {company_name}")
+                    self.style.WARNING(f"   [Info] Would update {company_updated} employees for {company_name}")
                 )
             else:
-                self.stdout.write(self.style.SUCCESS(f"   ✅ Updated {company_updated} employees for {company_name}"))
+                self.stdout.write(self.style.SUCCESS(f"   [OK] Updated {company_updated} employees for {company_name}"))
 
         if dry_run:
-            self.stdout.write(self.style.WARNING(f"\n🔍 DRY RUN COMPLETE - Would update {total_updated} employees"))
+            self.stdout.write(
+                self.style.WARNING(f"\n[Dry Run] DRY RUN COMPLETE - Would update {total_updated} employees")
+            )
             self.stdout.write(
                 self.style.SUCCESS(
                     f"To apply changes, run: python manage.py accrue_monthly_leaves_by_company --month {target_month} --year {target_year}"
@@ -184,12 +190,12 @@ class Command(BaseCommand):
             )
         else:
             self.stdout.write(
-                self.style.SUCCESS(f"\n🎉 Monthly leave accrual completed! Updated {total_updated} employees")
+                self.style.SUCCESS(f"\n[OK] Monthly leave accrual completed! Updated {total_updated} employees")
             )
 
         # Show updated summary
         if not dry_run:
-            self.stdout.write("\n📊 UPDATED LEAVE BALANCES:")
+            self.stdout.write("\n[Summary] UPDATED LEAVE BALANCES:")
             for company in companies:
                 company_name = company.name
                 if company_name in leave_allocation_rules:

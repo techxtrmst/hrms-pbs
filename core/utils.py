@@ -199,7 +199,11 @@ def generate_payslip_pdf_with_generator(payslip_instance, output_dir="media/pays
             "bank_account": employee.account_number or "N/A",
             "uan": employee.uan or "N/A",
             "pan_number": employee.pan_number or "N/A",
-            "payable_units": "30 Days",  # This could be calculated based on worked days
+            "payable_units": "30 Days"
+            if payslip_instance.worked_days == 31 or payslip_instance.worked_days == 31.0
+            else (
+                f"{int(payslip_instance.worked_days)} Days" if payslip_instance.worked_days is not None else "30 Days"
+            ),
             "company_name": branding_name,
             "company_address": company.address_line1 or "",
             "company_city": company.city or "",

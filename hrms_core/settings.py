@@ -133,6 +133,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.notification_count",  # Notification count for admins/managers
+                "core.context_processors.google_maps_api_key",  # Google Maps API key
             ],
         },
     },
@@ -262,6 +263,9 @@ LOG_DIR = env("LOG_DIR", default=str(BASE_DIR / "_logs"))
 
 # OpenAI Configuration
 OPENAI_API_KEY = env("OPENAI_API_KEY", default=None)
+
+# Google Maps Configuration
+GOOGLE_MAPS_API_KEY = env("GOOGLE_MAPS_API_KEY", default="")
 
 # =============================================================================
 # Observability Configuration (First-party error tracking and monitoring)

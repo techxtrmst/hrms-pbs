@@ -592,12 +592,16 @@ class ActivityDashboardView(LoginRequiredMixin, TemplateView):
 
         context["trend_data"] = trend_data
 
-        # 5. Admin/Manager Features: List of Employees with Status
+        # 5. Admin/Manager Features: List of Employees with Status (Filtered for ACTIVE only)
         employees = Employee.objects.none()
         if is_admin:
-            employees = Employee.objects.filter(company=user_employee.company).order_by("user__first_name")
+            employees = Employee.objects.filter(
+                company=user_employee.company, employment_status="ACTIVE", is_active=True
+            ).order_by("user__first_name")
         elif is_manager:
-            employees = Employee.objects.filter(manager=self.request.user).order_by("user__first_name")
+            employees = Employee.objects.filter(
+                manager=self.request.user, employment_status="ACTIVE", is_active=True
+            ).order_by("user__first_name")
 
         if employees.exists():
             # Enrich employees with tracking status and counts

@@ -607,6 +607,37 @@ class PayrollConfiguration(models.Model):
         return f"Payroll Config - {self.company.name}"
 
 
+class LocationProfessionalTax(models.Model):
+    """
+    Per-location Professional Tax (PT) slab configuration.
+    Overrides the global PayrollConfiguration PT settings for a specific location.
+    """
+
+    location = models.OneToOneField(
+        Location,
+        on_delete=models.CASCADE,
+        related_name="professional_tax_config",
+    )
+    pt_threshold = models.DecimalField(
+        max_digits=12, decimal_places=2, default=20000.00, help_text="Gross salary threshold for PT slab (e.g. 20000)"
+    )
+    pt_amount_below = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00, help_text="PT amount when gross < threshold"
+    )
+    pt_amount_above = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00, help_text="PT amount when gross >= threshold"
+    )
+    is_active = models.BooleanField(default=True, help_text="Uncheck to disable PT for this location")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"PT Config — {self.location.name} ({self.location.company.name})"
+
+    class Meta:
+        verbose_name = "Location Professional Tax"
+        verbose_name_plural = "Location Professional Taxes"
+
+
 class BiometricDevice(models.Model):
     """
     Configuration for Biometric Attendance/Door Devices

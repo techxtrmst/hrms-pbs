@@ -4,363 +4,646 @@
 {% block title %}Holiday Calendar | Petabytz{% endblock %}
 
 {% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 <style>
     :root {
         --keka-primary: #5b47fb;
-        --keka-success: #00c48c;
-        --keka-danger: #ff647c;
-        --keka-warning: #ffa26b;
-        --keka-bg: #f8f9fd;
-        --keka-card: #ffffff;
-        --keka-border: #e8ecf4;
-        --keka-text-primary: #1e2139;
-        --keka-text-secondary: #6c7293;
+        --keka-primary-light: rgba(91, 71, 251, 0.06);
+        --keka-success: #10b981;
+        --keka-success-light: #e6fbf4;
+        --keka-warning: #f59e0b;
+        --keka-warning-light: #fef8e7;
+        --keka-border: #f1f5f9;
+        --keka-text: #1e1b4b;
+        --keka-muted: #64748b;
+        --keka-bg: #f8fafc;
+        --keka-card-bg: #ffffff;
     }
 
     body {
         background: var(--keka-bg);
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-family: 'Outfit', sans-serif;
+        color: var(--keka-text);
     }
 
-    .page-header {
-        background: linear-gradient(135deg, var(--keka-primary) 0%, #7c6bff 100%);
-        color: white;
-        padding: 32px;
+    .keka-header-banner {
+        background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #5b47fb 100%);
+        padding: 40px 32px;
+        border-radius: 16px;
         margin-bottom: 24px;
-        border-radius: 0 0 24px 24px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(91, 71, 251, 0.15);
     }
 
-    .stats-row {
+    .keka-header-banner::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(91, 71, 251, 0.2) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+
+    .keka-header-banner::after {
+        content: '';
+        position: absolute;
+        bottom: -20%;
+        left: 5%;
+        width: 150px;
+        height: 150px;
+        background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+
+    .keka-header-title {
+        color: #ffffff;
+        font-weight: 800;
+        font-size: 2.2rem;
+        letter-spacing: -0.5px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .keka-header-desc {
+        color: #c7d2fe;
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+
+    .keka-header-badge {
+        background: rgba(255, 255, 255, 0.12);
+        color: #ffffff;
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(8px);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
+    }
+
+    /* Stats Grid */
+    .keka-stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 16px;
-        margin-bottom: 24px;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
     }
 
-    .stat-card {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        border-left: 4px solid var(--keka-primary);
+    .keka-stat-card {
+        background: var(--keka-card-bg);
+        border: 1px solid var(--keka-border);
+        border-radius: 16px;
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 4px 20px rgba(30, 27, 75, 0.02);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
     }
 
-    .stat-card.success {
-        border-left-color: var(--keka-success);
+    .keka-stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(30, 27, 75, 0.05);
+        border-color: rgba(91, 71, 251, 0.15);
     }
 
-    .stat-card.warning {
-        border-left-color: var(--keka-warning);
+    .keka-stat-info {
+        display: flex;
+        flex-direction: column;
     }
 
-    .stat-value {
-        font-size: 32px;
-        font-weight: 700;
-        color: var(--keka-text-primary);
+    .keka-stat-number {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: var(--keka-text);
+        line-height: 1.1;
         margin-bottom: 4px;
     }
 
-    .stat-label {
-        font-size: 13px;
-        color: var(--keka-text-secondary);
-    }
-
-    .filter-bar {
-        background: white;
-        padding: 16px 20px;
-        border-radius: 12px;
-        margin-bottom: 24px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .year-selector {
-        padding: 8px 16px;
-        border: 1.5px solid var(--keka-border);
-        border-radius: 8px;
-        font-size: 14px;
+    .keka-stat-label {
+        font-size: 0.82rem;
         font-weight: 600;
-        color: var(--keka-text-primary);
-        background: white;
+        color: var(--keka-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
-    .upcoming-section {
-        background: white;
-        padding: 24px;
+    .keka-stat-icon {
+        width: 48px;
+        height: 48px;
         border-radius: 12px;
-        margin-bottom: 24px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    }
-
-    .section-title {
-        font-size: 18px;
-        font-weight: 700;
-        color: var(--keka-text-primary);
-        margin-bottom: 16px;
-    }
-
-    .upcoming-holiday {
         display: flex;
-        align-items: center;
-        padding: 12px;
-        border-radius: 8px;
-        margin-bottom: 8px;
-        background: var(--keka-bg);
-    }
-
-    .holiday-date-box {
-        width: 60px;
-        height: 60px;
-        background: var(--keka-primary);
-        color: white;
-        border-radius: 8px;
-        display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        margin-right: 16px;
+        font-size: 1.3rem;
     }
 
-    .date-day {
-        font-size: 24px;
-        font-weight: 700;
-        line-height: 1;
+    .keka-stat-icon.primary {
+        background: rgba(91, 71, 251, 0.08);
+        color: var(--keka-primary);
     }
 
-    .date-month {
-        font-size: 11px;
-        text-transform: uppercase;
-        opacity: 0.9;
+    .keka-stat-icon.success {
+        background: rgba(16, 185, 129, 0.08);
+        color: var(--keka-success);
     }
 
-    .holiday-info {
-        flex: 1;
+    .keka-stat-icon.warning {
+        background: rgba(245, 158, 11, 0.08);
+        color: var(--keka-warning);
     }
 
-    .holiday-name {
-        font-size: 15px;
-        font-weight: 600;
-        color: var(--keka-text-primary);
-        margin-bottom: 2px;
+    /* Main Container Split */
+    .keka-dashboard-wrapper {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
     }
 
-    .holiday-meta {
-        font-size: 12px;
-        color: var(--keka-text-secondary);
+    @media (max-width: 992px) {
+        .keka-dashboard-wrapper {
+            grid-template-columns: 1fr;
+        }
     }
 
-    .month-section {
-        background: white;
-        padding: 24px;
-        border-radius: 12px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    /* Left Column - Monthly Feed */
+    .keka-month-container {
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
     }
 
-    .month-title {
-        font-size: 20px;
-        font-weight: 700;
-        color: var(--keka-text-primary);
-        margin-bottom: 16px;
+    .keka-month-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         padding-bottom: 12px;
         border-bottom: 2px solid var(--keka-border);
     }
 
-    .holiday-card {
+    .keka-month-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--keka-text);
         display: flex;
         align-items: center;
-        padding: 16px;
-        border-radius: 10px;
+        gap: 10px;
+    }
+
+    .keka-month-badge {
+        background: var(--keka-primary-light);
+        color: var(--keka-primary);
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 30px;
+    }
+
+    .keka-holiday-card {
+        background: var(--keka-card-bg);
+        border: 1px solid var(--keka-border);
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 4px 20px rgba(30, 27, 75, 0.01);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+
+    .keka-holiday-card:hover {
+        transform: translateY(-2px) scale(1.005);
+        border-color: rgba(91, 71, 251, 0.12);
+        box-shadow: 0 10px 25px rgba(91, 71, 251, 0.05);
+    }
+
+    /* Accent borders depending on mandatory / optional */
+    .keka-holiday-card.mandatory {
+        border-left: 5px solid var(--keka-success);
+    }
+
+    .keka-holiday-card.optional {
+        border-left: 5px solid var(--keka-warning);
+    }
+
+    .keka-date-block {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 64px;
+        height: 64px;
+        border-radius: 14px;
+        background: #f8fafc;
+        border: 1px solid var(--keka-border);
+        transition: all 0.3s;
+    }
+
+    .keka-holiday-card:hover .keka-date-block {
+        background: var(--keka-primary-light);
+        border-color: rgba(91, 71, 251, 0.15);
+    }
+
+    .keka-date-day {
+        font-size: 1.45rem;
+        font-weight: 800;
+        color: var(--keka-text);
+        line-height: 1;
+    }
+
+    .keka-date-month {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--keka-muted);
+        letter-spacing: 0.5px;
+    }
+
+    .keka-holiday-content {
+        flex: 1;
+    }
+
+    .keka-holiday-name-row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 4px;
+    }
+
+    .keka-holiday-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--keka-text);
+    }
+
+    .keka-holiday-desc {
+        font-size: 0.85rem;
+        color: var(--keka-muted);
+        line-height: 1.5;
+    }
+
+    .keka-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .keka-badge-mandatory {
+        background: var(--keka-success-light);
+        color: var(--keka-success);
+    }
+
+    .keka-badge-optional {
+        background: var(--keka-warning-light);
+        color: var(--keka-warning);
+    }
+
+    .keka-badge-location {
+        background: #f1f5f9;
+        color: #475569;
+        text-transform: capitalize;
+    }
+
+    /* Right Column - Upcoming feed and Policies */
+    .keka-side-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .keka-panel-card {
+        background: var(--keka-card-bg);
+        border: 1px solid var(--keka-border);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 20px rgba(30, 27, 75, 0.01);
+    }
+
+    .keka-panel-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--keka-text);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Mini Feed list styling */
+    .keka-feed-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .keka-feed-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding-bottom: 14px;
+        border-bottom: 1px dashed var(--keka-border);
+    }
+
+    .keka-feed-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .keka-feed-circle {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--keka-primary);
+        box-shadow: 0 0 0 4px rgba(91, 71, 251, 0.1);
+        flex-shrink: 0;
+    }
+
+    .keka-feed-circle.mandatory {
+        background: var(--keka-success);
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+    }
+
+    .keka-feed-circle.optional {
+        background: var(--keka-warning);
+        box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+    }
+
+    .keka-feed-content {
+        flex: 1;
+    }
+
+    .keka-feed-name {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--keka-text);
+        line-height: 1.2;
+        margin-bottom: 2px;
+    }
+
+    .keka-feed-date {
+        font-size: 0.75rem;
+        color: var(--keka-muted);
+        font-weight: 500;
+    }
+
+    /* Filter Panel selector styling */
+    .keka-filter-control {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #f8fafc;
+        border: 1px solid var(--keka-border);
+        border-radius: 12px;
+        padding: 8px 14px;
+    }
+
+    .keka-year-select {
+        border: none;
+        background: transparent;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--keka-text);
+        cursor: pointer;
+        padding-right: 20px;
+        outline: none;
+    }
+
+    /* Policy section list */
+    .keka-policy-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
         margin-bottom: 12px;
-        border: 1.5px solid var(--keka-border);
-        transition: all 0.2s;
+        font-size: 0.82rem;
+        color: var(--keka-muted);
+        line-height: 1.4;
     }
 
-    .holiday-card:hover {
-        border-color: var(--keka-primary);
-        box-shadow: 0 4px 12px rgba(91, 71, 251, 0.1);
-        transform: translateY(-2px);
+    .keka-policy-item i {
+        color: var(--keka-primary);
+        margin-top: 2px;
     }
 
-    .location-badge {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 600;
-        margin-left: 8px;
-        background: #f1f5f9;
-        color: #64748b;
-    }
-
-    .location-india {
-        background: #fff4e6;
-        color: #ff9f43;
-    }
-
-    .location-us {
-        background: #e0f2fe;
-        color: #0284c7;
-    }
-
-    .location-dhaka {
-        background: #dcfce7;
-        color: #16a34a;
-    }
-
-    .location-global {
-        background: #f3e8ff;
-        color: #9333ea;
-    }
-
-    .type-badge {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 600;
-        margin-left: 8px;
-        background: #f1f5f9;
-        color: #64748b;
-    }
-
-    .type-mandatory {
-        background: #d1fae5;
-        color: #065f46;
-    }
-
-    .type-optional {
-        background: #fef3c7;
-        color: #92400e;
-    }
-
-    .empty-state {
+    /* Breathtaking empty state inside grid */
+    .keka-empty-state-card {
+        background: var(--keka-card-bg);
+        border: 1px solid var(--keka-border);
+        border-radius: 16px;
+        padding: 60px 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         text-align: center;
-        padding: 60px 20px;
-        color: var(--keka-text-secondary);
-    }
-
-    .empty-icon {
-        font-size: 64px;
-        margin-bottom: 16px;
+        box-shadow: 0 4px 20px rgba(30, 27, 75, 0.01);
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div class="container-fluid px-4">
-        <h1 style="font-size: 28px; font-weight: 700; margin: 0 0 8px 0;">
-            🗓️ Holiday Calendar {{ year_filter }}
-        </h1>
-        <p style="font-size: 14px; opacity: 0.9; margin: 0;">
-            Showing holidays for <strong>{{ employee_location }}</strong> location
-        </p>
+<!-- Top Header Banner -->
+<div class="keka-header-banner animate__animated animate__fadeIn">
+    <div class="container-fluid px-2">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+                <h1 class="keka-header-title">
+                    <i class="far fa-calendar-alt"></i> Holiday Calendar {{ year_filter }}
+                </h1>
+                <div class="keka-header-desc">
+                    Review and plan your days off for the year with ease.
+                </div>
+            </div>
+            <div>
+                <span class="keka-header-badge">
+                    <i class="fas fa-map-marker-alt" style="color: #ef4444;"></i>
+                    Region: {{ employee_location|default:"US" }} Location
+                </span>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="container-fluid px-4 pb-4">
-    <!-- Statistics -->
-    <div class="stats-row">
-        <div class="stat-card">
-            <div class="stat-value">{{ total_holidays }}</div>
-            <div class="stat-label">Total Holidays</div>
+<div class="container-fluid px-2 pb-5 animate__animated animate__fadeInUp">
+    <!-- Statistics Grid -->
+    <div class="keka-stats-grid">
+        <div class="keka-stat-card">
+            <div class="keka-stat-info">
+                <span class="keka-stat-number">{{ total_holidays }}</span>
+                <span class="keka-stat-label">Total Holidays</span>
+            </div>
+            <div class="keka-stat-icon primary">
+                <i class="fas fa-calendar-check"></i>
+            </div>
         </div>
-        <div class="stat-card success">
-            <div class="stat-value">{{ mandatory_count }}</div>
-            <div class="stat-label">Mandatory Holidays</div>
+        <div class="keka-stat-card">
+            <div class="keka-stat-info">
+                <span class="keka-stat-number" style="color: var(--keka-success);">{{ mandatory_count }}</span>
+                <span class="keka-stat-label">Mandatory</span>
+            </div>
+            <div class="keka-stat-icon success">
+                <i class="fas fa-shield-alt"></i>
+            </div>
         </div>
-        <div class="stat-card warning">
-            <div class="stat-value">{{ optional_count }}</div>
-            <div class="stat-label">Optional Holidays</div>
+        <div class="keka-stat-card">
+            <div class="keka-stat-info">
+                <span class="keka-stat-number" style="color: var(--keka-warning);">{{ optional_count }}</span>
+                <span class="keka-stat-label">Optional</span>
+            </div>
+            <div class="keka-stat-icon warning">
+                <i class="fas fa-star"></i>
+            </div>
         </div>
     </div>
 
-    <!-- Filter Bar -->
-    <div class="filter-bar">
-        <h3 style="font-size: 16px; font-weight: 600; color: var(--keka-text-primary); margin: 0;">
-            All Holidays
-        </h3>
-        <form method="get">
-            <select name="year" class="year-selector" onchange="this.form.submit()">
-                {% for year in years %}
-                <option value="{{ year }}" {% if year == year_filter %}selected{% endif %}>{{ year }}</option>
+    <!-- Main Wrapper Split Layout -->
+    <div class="keka-dashboard-wrapper">
+
+        <!-- Left Side: List of Holidays grouped by month -->
+        <div class="keka-month-container">
+
+            {% if holidays_by_month %}
+                {% for month, month_holidays in holidays_by_month.items %}
+                <div class="animate__animated animate__fadeInUp">
+                    <div class="keka-month-header mb-3">
+                        <h3 class="keka-month-title">
+                            <i class="far fa-folder" style="color: var(--keka-primary); font-size: 1.15rem;"></i>
+                            {{ month }}
+                        </h3>
+                        <span class="keka-month-badge">{{ month_holidays|length }} Holiday{{ month_holidays|length|pluralize }}</span>
+                    </div>
+
+                    <div class="d-flex flex-column gap-3">
+                        {% for holiday in month_holidays %}
+                        <div class="keka-holiday-card {% if holiday.holiday_type == 'MANDATORY' %}mandatory{% else %}optional{% endif %}">
+                            <div class="keka-date-block">
+                                <span class="keka-date-day">{{ holiday.date|date:"d" }}</span>
+                                <span class="keka-date-month">{{ holiday.date|date:"M" }}</span>
+                            </div>
+                            <div class="keka-holiday-content">
+                                <div class="keka-holiday-name-row">
+                                    <span class="keka-holiday-name">{{ holiday.name }}</span>
+
+                                    <span class="keka-badge {% if holiday.holiday_type == 'MANDATORY' %}keka-badge-mandatory{% else %}keka-badge-optional{% endif %}">
+                                        {% if holiday.holiday_type == 'MANDATORY' %}
+                                            <i class="fas fa-circle" style="font-size: 5px; margin-right: 3px;"></i> Mandatory
+                                        {% else %}
+                                            <i class="far fa-star" style="font-size: 8px; margin-right: 3px;"></i> Optional
+                                        {% endif %}
+                                    </span>
+
+                                    <span class="keka-badge keka-badge-location">
+                                        <i class="fas fa-map-marker-alt" style="font-size: 8px;"></i> {{ holiday.location.name }}
+                                    </span>
+                                </div>
+                                <div class="keka-holiday-desc">
+                                    {{ holiday.date|date:"l" }} {% if holiday.description %}• {{ holiday.description }}{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
                 {% endfor %}
-                {% if not years %}
-                <option value="{{ year_filter }}">{{ year_filter }}</option>
-                {% endif %}
-            </select>
-        </form>
-    </div>
+            {% else %}
+                <div class="keka-empty-state-card">
+                    <div style="font-size: 3rem; margin-bottom: 16px; animation: bounce 2s infinite;">📅</div>
+                    <h3 style="font-weight: 700; font-size: 1.25rem; color: var(--keka-text); margin-bottom: 6px;">No Holidays Found</h3>
+                    <p style="color: var(--keka-muted); font-size: 0.88rem; max-width: 320px; margin-bottom: 0;">
+                        No holidays are currently configured for your location in {{ year_filter }}.
+                    </p>
+                </div>
+            {% endif %}
+        </div>
 
-    <!-- Upcoming Holidays -->
-    {% if upcoming_holidays %}
-    <div class="upcoming-section">
-        <h2 class="section-title">🔔 Upcoming Holidays</h2>
-        {% for holiday in upcoming_holidays %}
-        <div class="upcoming-holiday">
-            <div class="holiday-date-box">
-                <div class="date-day">{{ holiday.date|date:"d" }}</div>
-                <div class="date-month">{{ holiday.date|date:"M" }}</div>
-            </div>
-            <div class="holiday-info">
-                <div class="holiday-name">{{ holiday.name }}</div>
-                <div class="holiday-meta">
-                    {{ holiday.date|date:"l, F d, Y" }}
-                    <span class="location-badge location-{{ holiday.location.name|lower }}">
-                        {{ holiday.location.name }}
-                    </span>
-                    <span class="type-badge type-{{ holiday.holiday_type|lower }}">
-                        {{ holiday.get_holiday_type_display }}
-                    </span>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
+        <!-- Right Side: Filter & Upcoming Feed & Policies -->
+        <div class="keka-side-panel">
 
-    <!-- Holidays by Month -->
-    {% if holidays_by_month %}
-    {% for month, month_holidays in holidays_by_month.items %}
-    <div class="month-section">
-        <h3 class="month-title">{{ month }}</h3>
-        {% for holiday in month_holidays %}
-        <div class="holiday-card">
-            <div class="holiday-date-box" style="margin-right: 20px;">
-                <div class="date-day">{{ holiday.date|date:"d" }}</div>
-                <div class="date-month">{{ holiday.date|date:"M" }}</div>
-            </div>
-            <div class="holiday-info">
-                <div class="holiday-name">
-                    {{ holiday.name }}
-                    <span class="location-badge location-{{ holiday.location.name|lower }}">
-                        {{ holiday.location.name }}
-                    </span>
-                    <span class="type-badge type-{{ holiday.holiday_type|lower }}">
-                        {{ holiday.get_holiday_type_display }}
-                    </span>
-                </div>
-                <div class="holiday-meta">
-                    {{ holiday.date|date:"l" }}
-                    {% if holiday.description %}
-                    • {{ holiday.description }}
-                    {% endif %}
+            <!-- Quick Filter Card -->
+            <div class="keka-panel-card">
+                <h4 class="keka-panel-title">
+                    <i class="fas fa-sliders-h" style="color: var(--keka-primary);"></i> Options
+                </h4>
+                <div class="d-flex flex-column gap-3">
+                    <label style="font-size: 0.8rem; font-weight: 700; color: var(--keka-muted); text-transform: uppercase;">Select Calendar Year</label>
+                    <div class="keka-filter-control">
+                        <i class="far fa-clock" style="color: var(--keka-primary);"></i>
+                        <form method="get" class="flex-grow-1">
+                            <select name="year" class="keka-year-select w-100" onchange="this.form.submit()">
+                                {% for year in years %}
+                                <option value="{{ year }}" {% if year == year_filter %}selected{% endif %}>{{ year }} Calendar</option>
+                                {% endfor %}
+                                {% if not years %}
+                                <option value="{{ year_filter }}">{{ year_filter }} Calendar</option>
+                                {% endif %}
+                            </select>
+                        </form>
+                    </div>
                 </div>
             </div>
+
+            <!-- Upcoming Holiday Feed -->
+            {% if upcoming_holidays %}
+            <div class="keka-panel-card">
+                <h4 class="keka-panel-title">
+                    <i class="far fa-bell" style="color: var(--keka-success);"></i> Upcoming Next
+                </h4>
+                <div class="keka-feed-list">
+                    {% for holiday in upcoming_holidays %}
+                    <div class="keka-feed-item">
+                        <div class="keka-feed-circle {% if holiday.holiday_type == 'MANDATORY' %}mandatory{% else %}optional{% endif %}"></div>
+                        <div class="keka-feed-content">
+                            <div class="keka-feed-name">{{ holiday.name }}</div>
+                            <div class="keka-feed-date">{{ holiday.date|date:"l, M d" }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Company Holiday Policy Widget -->
+            <div class="keka-panel-card" style="background: linear-gradient(135deg, var(--keka-primary-light) 0%, rgba(91,71,251,0.01) 100%); border-color: rgba(91,71,251,0.15);">
+                <h4 class="keka-panel-title" style="color: var(--keka-primary);">
+                    <i class="fas fa-info-circle"></i> Holiday Policy Info
+                </h4>
+                <div class="d-flex flex-column gap-2">
+                    <div class="keka-policy-item">
+                        <i class="fas fa-check-circle"></i>
+                        <span><strong>Mandatory Holidays:</strong> All employees are entitled to fully paid time off on these dates.</span>
+                    </div>
+                    <div class="keka-policy-item">
+                        <i class="fas fa-check-circle"></i>
+                        <span><strong>Optional Holidays:</strong> Can be requested depending on regional team coverage rules. Check with HR.</span>
+                    </div>
+                    <div class="keka-policy-item">
+                        <i class="fas fa-check-circle"></i>
+                        <span><strong>Floating Leave:</strong> If a mandatory holiday falls on a weekend, floating rules may apply.</span>
+                    </div>
+                </div>
+            </div>
+
         </div>
-        {% endfor %}
+
     </div>
-    {% endfor %}
-    {% else %}
-    <div class="month-section">
-        <div class="empty-state">
-            <div class="empty-icon">📅</div>
-            <p style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">No Holidays Found</p>
-            <p style="font-size: 14px;">No holidays have been configured for {{ year_filter }} yet.</p>
-        </div>
-    </div>
-    {% endif %}
 </div>
 {% endblock %}

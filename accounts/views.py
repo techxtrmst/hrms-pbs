@@ -9,7 +9,10 @@ from django.contrib.auth.views import (
     PasswordChangeView,
     PasswordResetConfirmView,
 )
+from django.db.models import Case, IntegerField, Value, When
 from django.urls import reverse_lazy
+
+from companies.models import Company
 
 from .forms import LoginForm
 
@@ -22,6 +25,20 @@ class CustomLoginView(LoginView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        # Fetch active companies, prioritizing PetaBytz at the top
+        active_companies = (
+            Company.objects.filter(is_active=True)
+            .annotate(
+                priority=Case(
+                    When(name__icontains="petabytz", then=Value(1)),
+                    default=Value(2),
+                    output_field=IntegerField(),
+                )
+            )
+            .order_by("priority", "name")
+        )
+        context["active_companies"] = active_companies
 
         # Define the path to the slides directory
         slides_dir = os.path.join(settings.BASE_DIR, "static", "accounts", "slides")

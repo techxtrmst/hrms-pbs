@@ -1,0 +1,1366 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | HRMS PBS{% endblock %}
+
+{% block content %}
+<style>
+    /* Premium Glassmorphic Design System */
+    .finance-header-card {
+        background: linear-gradient(135deg, #1e1b4b 0%, #311042 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        color: #fff;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .finance-header-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -30%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-bottom: 25px;
+    }
+
+    .glass-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(31, 38, 135, 0.08);
+        border-color: rgba(255, 255, 255, 0.8);
+    }
+
+    .stat-badge {
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 30px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-completed {
+        background: rgba(16, 185, 129, 0.12);
+        color: #059669;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .badge-processing {
+        background: rgba(245, 158, 11, 0.12);
+        color: #d97706;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    .badge-failed {
+        background: rgba(239, 68, 68, 0.12);
+        color: #dc2626;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .badge-sent {
+        background: rgba(99, 102, 241, 0.12);
+        color: #4f46e5;
+        border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+
+    .badge-unsent {
+        background: rgba(107, 114, 128, 0.12);
+        color: #4b5563;
+        border: 1px solid rgba(107, 114, 128, 0.2);
+    }
+
+    /* Premium interactive elements */
+    .btn-gradient {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        padding: 10px 24px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25);
+    }
+
+    .btn-gradient:hover {
+        background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+        color: #fff;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+    }
+
+    .btn-outline-custom {
+        background: transparent;
+        color: #4f46e5;
+        border: 1.5px solid #4f46e5;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .btn-outline-custom:hover {
+        background: rgba(99, 102, 241, 0.05);
+        color: #4338ca;
+        border-color: #4338ca;
+    }
+
+    .form-control-custom {
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        padding: 10px 14px;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+
+    .form-control-custom:focus {
+        background: #fff;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        outline: none;
+    }
+
+    /* Table customization */
+    .table-container {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .custom-table {
+        margin-bottom: 0;
+    }
+
+    .custom-table th {
+        background: rgba(243, 244, 246, 0.8);
+        color: #4b5563;
+        font-weight: 600;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 14px 20px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .custom-table td {
+        padding: 16px 20px;
+        vertical-align: middle;
+        font-size: 0.92rem;
+        color: #1f2937;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .custom-table tr:hover td {
+        background-color: rgba(99, 102, 241, 0.02);
+    }
+
+    /* Custom scrollbar for tables & cards */
+    .custom-scroll::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+
+    /* Loading Overlay Animation */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(8px);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: #fff;
+    }
+
+    .spinner-neon {
+        width: 60px;
+        height: 60px;
+        border: 4px solid rgba(99, 102, 241, 0.1);
+        border-top-color: #6366f1;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+        margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Drag & Drop Upload Zone */
+    .dropzone-container {
+        border: 2px dashed rgba(99, 102, 241, 0.4);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.4);
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .dropzone-container:hover, .dropzone-container.dragover {
+        background: rgba(99, 102, 241, 0.05);
+        border-color: #6366f1;
+        box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
+    }
+
+    .dropzone-icon {
+        font-size: 3rem;
+        color: #6366f1;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .dropzone-container:hover .dropzone-icon {
+        transform: scale(1.1) rotate(2deg);
+    }
+</style>
+
+<div class="container-fluid py-4">
+
+    <!-- Premium Header Card -->
+    <div class="finance-header-card">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <span class="stat-badge bg-primary text-white mb-2 d-inline-block">Finance Management</span>
+                <h1 class="display-6 fw-bold mb-1">Centralized Payroll Portal</h1>
+                <p class="lead text-slate-300 mb-0 opacity-90">
+                    Process, audit, and distribute payroll securely across multiple legal entities.
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
+                <div class="d-inline-flex flex-column align-items-lg-end">
+                    <span class="text-uppercase text-muted small fw-bold tracking-wider">Payroll Period</span>
+                    <h3 class="fw-bold mb-0 text-white">{{ selected_month|add:"0"|date:"F" }} {{ selected_year }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration & Batch Filters Panel -->
+    <div class="glass-card p-4">
+        <h5 class="fw-bold text-dark mb-4">
+            <i class="fa-solid fa-sliders text-indigo-500 me-2"></i> Payroll Generation Console
+        </h5>
+
+        <form method="GET" class="row g-3 align-items-end mb-4">
+            <div class="col-md-4 col-sm-6">
+                <label class="form-label small fw-bold text-muted">Legal Entity</label>
+                <select name="company" class="form-select form-control-custom" onchange="this.form.submit()">
+                    <option value="all" {% if selected_company_id == "all" %}selected{% endif %}>All Companies</option>
+                    {% for comp in companies %}
+                    <option value="{{ comp.id }}" {% if selected_company_id == comp.id|slugify %}selected{% endif %}>{{ comp.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 col-sm-3 col-6">
+                <label class="form-label small fw-bold text-muted">Month</label>
+                <select name="month" class="form-select form-control-custom" onchange="this.form.submit()">
+                    {% for m in months %}
+                    <option value="{{ m.value }}" {% if selected_month == m.value %}selected{% endif %}>{{ m.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 col-sm-3 col-6">
+                <label class="form-label small fw-bold text-muted">Year</label>
+                <select name="year" class="form-select form-control-custom" onchange="this.form.submit()">
+                    {% for y in years %}
+                    <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 col-sm-12">
+                <button type="submit" class="btn btn-outline-custom w-100 py-2">
+                    <i class="fa-solid fa-filter me-1"></i> Filter
+                </button>
+            </div>
+        </form>
+
+        <hr class="border-slate-200 my-4">
+
+        <!-- Bulk Action Form -->
+        <div class="row g-3 align-items-center">
+            <div class="col-lg-6 col-md-6">
+                <div class="form-check form-switch ps-4">
+                    <input class="form-check-input" type="checkbox" name="auto_send_email" id="autoSendEmail" checked>
+                    <label class="form-check-label fw-semibold text-dark ms-2" for="autoSendEmail">
+                        Automatically email generated payslips to all employees upon completion
+                    </label>
+                    <div class="form-text text-muted ms-2 small">
+                        If checked, employees will receive secure PDF attachments immediately after generation.
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-3">
+                <form id="draftPayrollForm" method="POST" action="{% url 'finance_portal:process_draft_payroll' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="company_id" value="{{ selected_company_id }}">
+                    <input type="hidden" name="month" value="{{ selected_month }}">
+                    <input type="hidden" name="year" value="{{ selected_year }}">
+                    <button type="button" onclick="confirmDraftProcess()" class="btn btn-outline-custom w-100 py-3" style="border: 2px solid #6366f1; color: #6366f1; font-weight: 600; background: transparent; border-radius: 12px; transition: all 0.3s ease;">
+                        <i class="fa-solid fa-file-invoice me-2"></i> Generate Phase 1 Drafts
+                    </button>
+                </form>
+            </div>
+
+            <div class="col-lg-3 col-md-3 text-md-end">
+                <form id="bulkPayrollForm" method="POST" action="{% url 'finance_portal:process_bulk_payroll' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="company_id" value="{{ selected_company_id }}">
+                    <input type="hidden" name="month" value="{{ selected_month }}">
+                    <input type="hidden" name="year" value="{{ selected_year }}">
+                    <input type="hidden" name="auto_send_email" id="bulkAutoSendEmail" value="on">
+                    <button type="button" onclick="confirmBulkProcess()" class="btn btn-gradient w-100 py-3">
+                        <i class="fa-solid fa-bolt me-2 animate-pulse"></i> Finalize & Process Batch
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collapsible Bulk Excel Upload Console -->
+    <div class="glass-card p-4">
+        <h5 class="fw-bold text-dark mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <span>
+                <i class="fa-solid fa-file-excel text-indigo-500 me-2"></i> Bulk Excel Payroll Upload
+            </span>
+            <a href="{% url 'bulk_payroll_template' %}?month={{ selected_month }}&year={{ selected_year }}" class="text-decoration-none text-indigo-600 small" style="font-size: 0.85rem;">
+                <i class="fa-solid fa-download me-1"></i> Download Excel Template
+            </a>
+        </h5>
+
+        <p class="text-muted small mb-4">
+            Upload a populated Excel sheet containing badge numbers, monthly gross, and optional worked days to automatically calculate regional taxes, render payslip PDFs, and email them to employees.
+        </p>
+
+        <form id="excelUploadForm" method="POST" action="{% url 'finance_portal:process_bulk_excel_upload' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="company_id" value="{{ selected_company_id }}">
+            <input type="hidden" name="month" value="{{ selected_month }}">
+            <input type="hidden" name="year" value="{{ selected_year }}">
+
+            <div class="row g-3 align-items-center mb-3">
+                <div class="col-lg-8">
+                    <div class="form-check form-switch ps-4">
+                        <input class="form-check-input" type="checkbox" name="auto_send_email" id="excelAutoSendEmail" checked>
+                        <label class="form-check-label fw-semibold text-dark ms-2" for="excelAutoSendEmail">
+                            Automatically email generated payslips to all employees upon completion
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dropzone-container" id="dropzone">
+                <input type="file" name="excel_file" id="excelFile" accept=".xlsx, .xls" style="display: none;">
+                <i class="fa-solid fa-cloud-arrow-up dropzone-icon"></i>
+                <h6 class="fw-bold text-dark mb-1" id="dropzoneText">Drag & Drop your Excel (.xlsx) file here</h6>
+                <p class="text-muted small mb-0">or click to browse local files</p>
+                <div id="fileSelectedInfo" class="mt-3 text-indigo-600 fw-bold small" style="display: none;">
+                    <i class="fa-solid fa-circle-check me-1"></i> <span id="selectedFileName">filename.xlsx</span>
+                </div>
+            </div>
+
+            <div class="text-end mt-4">
+                <button type="button" onclick="triggerExcelUpload()" id="btnSubmitExcel" class="btn btn-gradient py-3 px-5" disabled>
+                    <i class="fa-solid fa-upload me-2"></i> Upload & Process Excel
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Active Employees Payroll Panel -->
+    <div class="glass-card p-0 overflow-hidden">
+        <div class="p-4 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-4">
+                <h5 class="fw-bold text-dark mb-0 me-2">
+                    <i class="fa-solid fa-users text-indigo-500 me-2"></i> Employee Roster
+                </h5>
+                <ul class="nav nav-pills" id="rosterTabs" role="tablist" style="background: rgba(0, 0, 0, 0.04); padding: 4px; border-radius: 10px;">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-bold px-3 py-2" id="active-tab" data-bs-toggle="tab" data-bs-target="#active-employees-pane" type="button" role="tab" style="border-radius: 8px; font-size: 0.85rem; transition: all 0.2s;">
+                            Active Employees ({{ active_employee_data|length }})
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold px-3 py-2 text-muted" id="ex-tab" data-bs-toggle="tab" data-bs-target="#ex-employees-pane" type="button" role="tab" style="border-radius: 8px; font-size: 0.85rem; transition: all 0.2s;">
+                            Ex-Employees ({{ ex_employee_data|length }})
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge badge-completed small py-2 px-3" id="calculated-badge">
+                    Calculated: {{ active_calculated_count }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="px-4 py-3 border-bottom" style="background: rgba(248,250,252,0.8);">
+            <div class="d-flex align-items-center gap-3">
+                <div class="position-relative flex-grow-1" style="max-width: 420px;">
+                    <i class="fa-solid fa-magnifying-glass position-absolute text-muted"
+                       style="left: 14px; top: 50%; transform: translateY(-50%); font-size: 0.85rem; pointer-events: none;"></i>
+                    <input type="text"
+                           id="rosterSearchInput"
+                           class="form-control"
+                           placeholder="Search by name, ID, location, entity…"
+                           oninput="filterRosterTable(this.value)"
+                           autocomplete="off"
+                           style="padding-left: 38px; border-radius: 10px; border: 1px solid #e2e8f0;
+                                  font-size: 0.875rem; background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+                </div>
+                <button class="btn btn-sm" onclick="clearRosterSearch()"
+                        style="border-radius: 10px; border: 1px solid #e2e8f0; background: white;
+                               color: #64748b; font-size: 0.82rem; padding: 7px 14px; display: none;"
+                        id="clearSearchBtn">
+                    <i class="fa-solid fa-xmark me-1"></i> Clear
+                </button>
+                <span id="rosterSearchCount" class="text-muted small fw-semibold" style="display:none;"></span>
+            </div>
+        </div>
+
+        <div class="tab-content" id="rosterTabsContent">
+            <!-- Active Employees Pane -->
+            <div class="tab-pane fade show active" id="active-employees-pane" role="tabpanel" aria-labelledby="active-tab">
+                <div class="table-responsive custom-scroll">
+                    <table class="table custom-table" id="active-roster-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Legal Entity</th>
+                                <th>Location</th>
+                                <th class="text-end">CTC (Annual)</th>
+                                <th class="text-end">Monthly Net</th>
+                                <th class="text-center">Payroll Status</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in active_employee_data %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-mini bg-slate-100 text-indigo-700 fw-bold rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 38px; height: 38px;">
+                                            {{ item.employee.user.first_name|first }}{{ item.employee.user.last_name|first }}
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-bold mb-0">{{ item.employee.user.get_full_name }}</h6>
+                                            <span class="text-muted small">ID: {{ item.employee.badge_id|default:"N/A" }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="fw-semibold text-dark">{{ item.employee.company.name }}</span>
+                                </td>
+                                <td>
+                                    <span class="text-muted small">
+                                        <i class="fa-solid fa-location-dot me-1"></i>
+                                        {{ item.employee.location.name|default:"Not Configured" }}
+                                    </span>
+                                </td>
+                                <td class="text-end fw-semibold">
+                                    {% if item.employee.annual_ctc %}
+                                    {{ item.employee.location.currency|default:"INR" }} {{ item.employee.annual_ctc }}
+                                    {% else %}
+                                    <span class="text-muted italic small">Not Set</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end fw-bold text-slate-800">
+                                    {% if item.payslip %}
+                                    {{ item.employee.location.currency|default:"INR" }} <span id="net-salary-row-{{ item.payslip.id }}">{{ item.payslip.net_salary|floatformat:0 }}</span>
+                                    {% else %}
+                                    <span class="text-muted small">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if item.payslip %}
+                                        {% if item.payslip.is_draft %}
+                                        <span class="stat-badge badge-processing" style="background: rgba(99, 102, 241, 0.1); color: #4f46e5; border-color: rgba(99, 102, 241, 0.2);">
+                                            <i class="fa-solid fa-pen-to-square me-1"></i> Draft Mode
+                                        </span>
+                                        {% elif item.payslip.pdf_file %}
+                                        <span class="stat-badge badge-completed">
+                                            <i class="fa-solid fa-circle-check me-1"></i> Generated
+                                        </span>
+                                        {% else %}
+                                        <span class="stat-badge badge-processing">
+                                            <i class="fa-solid fa-circle-exclamation me-1"></i> Unrendered
+                                        </span>
+                                        {% endif %}
+                                    {% else %}
+                                    <span class="stat-badge badge-failed" style="background: rgba(107, 114, 128, 0.08); color: #6b7280; border-color: rgba(107, 114, 128, 0.15);">
+                                        <i class="fa-solid fa-circle-minus me-1"></i> Not Processed
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-flex align-items-center justify-content-center gap-2">
+                                        {% if item.payslip %}
+                                            {% if item.payslip.is_draft %}
+                                            <button type="button" onclick="toggleEditRow('{{ item.payslip.id }}')" class="btn btn-sm btn-outline-custom text-indigo-600 border-indigo-200" title="Edit Draft Layout">
+                                                <i class="fa-solid fa-pen-to-square me-1"></i> Edit Draft
+                                            </button>
+                                            <a href="{% url 'finance_portal:preview_draft_payslip' item.payslip.id %}" target="_blank" class="btn btn-sm btn-outline-custom text-indigo-600 border-indigo-200" title="View Draft Document">
+                                                <i class="fa-solid fa-file-pdf me-1"></i> View Draft
+                                            </a>
+                                            {% else %}
+                                                {% if item.payslip.pdf_file %}
+                                                <a href="{{ item.payslip.pdf_file.url }}" target="_blank" class="btn btn-sm btn-outline-custom" title="View PDF">
+                                                    <i class="fa-solid fa-file-pdf"></i> View
+                                                </a>
+                                                {% endif %}
+                                                <button type="button" onclick="sendEmail('{{ item.payslip.id }}')" class="btn btn-sm btn-outline-custom text-indigo-600 border-indigo-200" title="Email Payslip">
+                                                    <i class="fa-solid fa-paper-plane"></i> Email
+                                                </button>
+                                            {% endif %}
+                                        {% else %}
+                                        <span class="text-muted small italic">Run batch to calculate</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+
+                            {% if item.payslip and item.payslip.is_draft %}
+                            <tr id="edit-row-{{ item.payslip.id }}" class="d-none bg-light" style="transition: all 0.3s ease;">
+                                <td colspan="7" class="p-4" style="background-color: rgba(99, 102, 241, 0.02); border-left: 4px solid #6366f1;">
+
+                                    <!-- CTC Edit Banner -->
+                                    <div class="mb-4 p-3 rounded-3" style="background: linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(139,92,246,0.05) 100%); border: 1px solid rgba(99,102,241,0.18);">
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <i class="fa-solid fa-indian-rupee-sign text-indigo-600"></i>
+                                            <h6 class="fw-bold text-indigo-800 mb-0">CTC Editor</h6>
+                                            <span class="badge bg-indigo-100 text-indigo-600 small ms-1" style="background: rgba(99,102,241,0.1); color:#4f46e5; border:1px solid rgba(99,102,241,0.2); border-radius:20px; padding:2px 10px;">
+                                                Auto-Recalculates All Components
+                                            </span>
+                                        </div>
+                                        <div class="row g-3 align-items-end">
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-semibold text-muted">Annual CTC ({{ item.employee.location.currency|default:"INR" }})</label>
+                                                <input type="number" step="1000" min="0"
+                                                       class="form-control ctc-annual-input fw-bold"
+                                                       id="ctc-annual-{{ item.payslip.id }}"
+                                                       value="{{ item.employee.annual_ctc|default:'' }}"
+                                                       placeholder="e.g. 420000"
+                                                       oninput="updateMonthlyPreview('{{ item.payslip.id }}')"
+                                                       style="border-radius: 8px; border-color: #818cf8; font-size:1rem;">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-semibold text-muted">Monthly Gross (CTC ÷ 12)</label>
+                                                <input type="text" class="form-control bg-light fw-bold text-success"
+                                                       id="ctc-monthly-{{ item.payslip.id }}"
+                                                       value="{% if item.employee.annual_ctc %}{{ item.employee.annual_ctc|floatformat:0 }}{% endif %}"
+                                                       placeholder="Auto-calculated"
+                                                       readonly
+                                                       style="border-radius: 8px;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <button type="button"
+                                                        onclick="recalculateFromCTC('{{ item.payslip.id }}')"
+                                                        class="btn btn-sm btn-gradient px-4 py-2 fw-bold"
+                                                        id="recalc-btn-{{ item.payslip.id }}"
+                                                        style="border-radius: 8px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color:white; border:none;">
+                                                    <i class="fa-solid fa-rotate me-1"></i> Recalculate All from CTC
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row text-start">
+                                        <div class="col-md-3">
+                                            <h6 class="fw-bold text-indigo-800 mb-3"><i class="fa-solid fa-clock me-1"></i> Payable Units</h6>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold text-muted">Worked Days (Pre-calculated)</label>
+                                                <input type="number" step="0.5" class="form-control worked-days-input"
+                                                       value="{{ item.payslip.worked_days }}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')" style="border-radius: 8px;">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6 class="fw-bold text-indigo-800 mb-3"><i class="fa-solid fa-money-bill-wave me-1"></i> Earnings</h6>
+                                            <div class="row g-2">
+                                                <div class="col-6 mb-2">
+                                                    <label class="form-label small text-muted">Basic</label>
+                                                    <input type="number" step="0.01" class="form-control basic-input"
+                                                           value="{{ item.payslip.basic }}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')" style="border-radius: 8px;">
+                                                </div>
+                                                <div class="col-6 mb-2">
+                                                    <label class="form-label small text-muted">HRA</label>
+                                                    <input type="number" step="0.01" class="form-control hra-input"
+                                                           value="{{ item.payslip.hra }}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')" style="border-radius: 8px;">
+                                                </div>
+                                                <div class="col-6 mb-2">
+                                                    <label class="form-label small text-muted">Conveyance</label>
+                                                    <input type="number" step="0.01" class="form-control conveyance-input"
+                                                           value="{{ item.payslip.conveyance_allowance }}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')" style="border-radius: 8px;">
+                                                </div>
+                                                <div class="col-6 mb-2">
+                                                    <label class="form-label small text-muted">Special Allowance</label>
+                                                    <input type="number" step="0.01" class="form-control special-input"
+                                                           value="{{ item.payslip.special_allowance }}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')" style="border-radius: 8px;">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <h6 class="fw-bold text-indigo-800 mb-3"><i class="fa-solid fa-percent me-1"></i> Taxes & Deductions</h6>
+                                            <div class="row g-2">
+                                                <div class="col-12 mb-2">
+                                                    <label class="form-label small text-muted">Professional Tax (PT)</label>
+                                                    <input type="number" step="0.01" class="form-control pt-input"
+                                                           value="{{ item.payslip.professional_tax }}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')" style="border-radius: 8px;">
+                                                </div>
+                                                <div class="col-6 mb-2">
+                                                    <label class="form-label small text-muted">Employee PF</label>
+                                                    <input type="number" step="0.01" class="form-control employee-pf-input"
+                                                           value="{{ item.payslip.employee_pf }}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')" style="border-radius: 8px;">
+                                                </div>
+                                                <div class="col-6 mb-2">
+                                                    <label class="form-label small text-muted">Employer PF</label>
+                                                    <input type="number" step="0.01" class="form-control employer-pf-input"
+                                                           value="{{ item.payslip.employer_pf }}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')" style="border-radius: 8px;">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 d-flex flex-column justify-content-between text-end">
+                                            <div>
+                                                <h6 class="fw-bold text-indigo-800 mb-2">Calculations</h6>
+                                                <div class="small mb-1">Gross: <strong class="text-dark">{{ item.employee.location.currency|default:"INR" }} <span class="gross-display-{{ item.payslip.id }}">{{ item.payslip.gross_salary|floatformat:2 }}</span></strong></div>
+                                                <div class="small">Net Pay: <strong class="text-success">{{ item.employee.location.currency|default:"INR" }} <span class="net-display-{{ item.payslip.id }}">{{ item.payslip.net_salary|floatformat:2 }}</span></strong></div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <button type="button" id="save-btn-{{ item.payslip.id }}" onclick="saveDraftRow('{{ item.payslip.id }}')" class="btn btn-sm btn-gradient w-100 py-2" style="border-radius: 8px;">
+                                                    <i class="fa-solid fa-circle-check me-1"></i> Save Changes
+                                                </button>
+                                                <button type="button" onclick="toggleEditRow('{{ item.payslip.id }}')" class="btn btn-sm btn-outline-secondary w-100 py-2 mt-2" style="border-radius: 8px;">
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
+
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="fa-regular fa-folder-open display-6 mb-3 d-block text-slate-300"></i>
+                                    No eligible active employees found for legal entity: <strong>{{ selected_company_id }}</strong>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="ex-employees-pane" role="tabpanel" aria-labelledby="ex-tab">
+                <div class="table-responsive custom-scroll">
+                    <table class="table custom-table" id="ex-roster-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Legal Entity</th>
+                                <th>Location</th>
+                                <th class="text-end">CTC (Annual)</th>
+                                <th class="text-end">Monthly Net</th>
+                                <th class="text-center">Payroll Status</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in ex_employee_data %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-mini bg-slate-100 text-indigo-700 fw-bold rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 38px; height: 38px;">
+                                            {{ item.employee.user.first_name|first }}{{ item.employee.user.last_name|first }}
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-bold mb-0">{{ item.employee.user.get_full_name }}</h6>
+                                            <span class="text-muted small">ID: {{ item.employee.badge_id|default:"N/A" }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="fw-semibold text-dark">{{ item.employee.company.name }}</span>
+                                </td>
+                                <td>
+                                    <span class="text-muted small">
+                                        <i class="fa-solid fa-location-dot me-1"></i>
+                                        {{ item.employee.location.name|default:"Not Configured" }}
+                                    </span>
+                                </td>
+                                <td class="text-end fw-semibold">
+                                    {% if item.employee.annual_ctc %}
+                                    {{ item.employee.location.currency|default:"INR" }} {{ item.employee.annual_ctc }}
+                                    {% else %}
+                                    <span class="text-muted italic small">Not Set</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end fw-bold text-slate-800">
+                                    {% if item.payslip %}
+                                    {{ item.employee.location.currency|default:"INR" }} <span id="net-salary-row-{{ item.payslip.id }}">{{ item.payslip.net_salary|floatformat:0 }}</span>
+                                    {% else %}
+                                    <span class="text-muted small">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if item.payslip %}
+                                        {% if item.payslip.is_draft %}
+                                        <span class="stat-badge badge-processing" style="background: rgba(99, 102, 241, 0.1); color: #4f46e5; border-color: rgba(99, 102, 241, 0.2);">
+                                            <i class="fa-solid fa-pen-to-square me-1"></i> Draft Mode
+                                        </span>
+                                        {% elif item.payslip.pdf_file %}
+                                        <span class="stat-badge badge-completed">
+                                            <i class="fa-solid fa-circle-check me-1"></i> Generated
+                                        </span>
+                                        {% else %}
+                                        <span class="stat-badge badge-processing">
+                                            <i class="fa-solid fa-circle-exclamation me-1"></i> Unrendered
+                                        </span>
+                                        {% endif %}
+                                    {% else %}
+                                    <span class="stat-badge badge-failed" style="background: rgba(107, 114, 128, 0.08); color: #6b7280; border-color: rgba(107, 114, 128, 0.15);">
+                                        <i class="fa-solid fa-circle-minus me-1"></i> Not Processed
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-flex align-items-center justify-content-center gap-2">
+                                        {% if item.payslip %}
+                                            {% if item.payslip.is_draft %}
+                                            <button type="button" onclick="toggleEditRow('{{ item.payslip.id }}')" class="btn btn-sm btn-outline-custom text-indigo-600 border-indigo-200" title="Edit Draft Layout">
+                                                <i class="fa-solid fa-pen-to-square me-1"></i> Edit Draft
+                                            </button>
+                                            <a href="{% url 'finance_portal:preview_draft_payslip' item.payslip.id %}" target="_blank" class="btn btn-sm btn-outline-custom text-indigo-600 border-indigo-200" title="View Draft Document">
+                                                <i class="fa-solid fa-file-pdf me-1"></i> View Draft
+                                            </a>
+                                            {% else %}
+                                                {% if item.payslip.pdf_file %}
+                                                <a href="{{ item.payslip.pdf_file.url }}" target="_blank" class="btn btn-sm btn-outline-custom" title="View PDF">
+                                                    <i class="fa-solid fa-file-pdf"></i> View
+                                                </a>
+                                                {% endif %}
+                                                <button type="button" onclick="sendEmail('{{ item.payslip.id }}')" class="btn btn-sm btn-outline-custom text-indigo-600 border-indigo-200" title="Email Payslip">
+                                                    <i class="fa-solid fa-paper-plane"></i> Email
+                                                </button>
+                                            {% endif %}
+                                        {% else %}
+                                        <span class="text-muted small italic">Run batch to calculate</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+
+                            {% if item.payslip and item.payslip.is_draft %}
+                            <tr id="edit-row-{{ item.payslip.id }}" class="d-none bg-light" style="transition: all 0.3s ease;">
+                                <td colspan="7" class="p-4" style="background-color: rgba(99, 102, 241, 0.02); border-left: 4px solid #6366f1;">
+
+                                    <!-- CTC Edit Banner -->
+                                    <div class="mb-4 p-3 rounded-3" style="background: linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(139,92,246,0.05) 100%); border: 1px solid rgba(99,102,241,0.18);">
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <i class="fa-solid fa-indian-rupee-sign text-indigo-600"></i>
+                                            <h6 class="fw-bold text-indigo-800 mb-0">CTC Editor</h6>
+                                            <span class="badge bg-indigo-100 text-indigo-600 small ms-1" style="background: rgba(99,102,241,0.1); color:#4f46e5; border:1px solid rgba(99,102,241,0.2); border-radius:20px; padding:2px 10px;">
+                                                Auto-Recalculates All Components
+                                            </span>
+                                        </div>
+                                        <div class="row g-3 align-items-end">
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-semibold text-muted">Annual CTC ({{ item.employee.location.currency|default:"INR" }})</label>
+                                                <input type="number" step="1000" min="0"
+                                                       class="form-control ctc-annual-input fw-bold"
+                                                       id="ctc-annual-{{ item.payslip.id }}"
+                                                       value="{{ item.employee.annual_ctc|default:'' }}"
+                                                       placeholder="e.g. 420000"
+                                                       oninput="updateMonthlyPreview('{{ item.payslip.id }}')"
+                                                       style="border-radius: 8px; border-color: #818cf8; font-size:1rem;">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-semibold text-muted">Monthly Gross (CTC ÷ 12)</label>
+                                                <input type="text" class="form-control bg-light fw-bold text-success"
+                                                       id="ctc-monthly-{{ item.payslip.id }}"
+                                                       value="{% if item.employee.annual_ctc %}{{ item.employee.annual_ctc|floatformat:0 }}{% endif %}"
+                                                       placeholder="Auto-calculated"
+                                                       readonly
+                                                       style="border-radius: 8px;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <button type="button"
+                                                        onclick="recalculateFromCTC('{{ item.payslip.id }}')"
+                                                        class="btn btn-sm btn-gradient px-4 py-2 fw-bold"
+                                                        id="recalc-btn-{{ item.payslip.id }}"
+                                                        style="border-radius: 8px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color:white; border:none;">
+                                                    <i class="fa-solid fa-rotate me-1"></i> Recalculate All from CTC
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row text-start">
+                                        <div class="col-md-3">
+                                            <h6 class="fw-bold text-indigo-800 mb-3"><i class="fa-solid fa-clock me-1"></i> Payable Units</h6>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold text-muted">Worked Days (Pre-calculated)</label>
+                                                <input type="number" step="0.5" class="form-control worked-days-input"
+                                                       value="{{ item.payslip.worked_days }}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')" style="border-radius: 8px;">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6 class="fw-bold text-indigo-800 mb-3"><i class="fa-solid fa-money-bill-wave me-1"></i> Earnings</h6>
+                                            <div class="row g-2">
+                                                <div class="col-6 mb-2">
+                                                    <label class="form-label small text-muted">Basic</label>
+                                                    <input type="number" step="0.01" class="form-control basic-input"
+                                                           value="{{ item.payslip.basic }}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')" style="border-radius: 8px;">
+                                                </div>
+                                                <div class="col-6 mb-2">
+                                                    <label class="form-label small text-muted">HRA</label>
+                                                    <input type="number" step="0.01" class="form-control hra-input"
+                                                           value="{{ item.payslip.hra }}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')" style="border-radius: 8px;">
+                                                </div>
+                                                <div class="col-6 mb-2">
+                                                    <label class="form-label small text-muted">Conveyance</label>
+                                                    <input type="number" step="0.01" class="form-control conveyance-input"
+                                                           value="{{ item.payslip.conveyance_allowance }}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')" style="border-radius: 8px;">
+                                                </div>
+                                                <div class="col-6 mb-2">
+                                                    <label class="form-label small text-muted">Special Allowance</label>
+                                                    <input type="number" step="0.01" class="form-control special-input"
+                                                           value="{{ item.payslip.special_allowance }}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')" style="border-radius: 8px;">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <h6 class="fw-bold text-indigo-800 mb-3"><i class="fa-solid fa-percent me-1"></i> Taxes & Deductions</h6>
+                                            <div class="row g-2">
+                                                <div class="col-12 mb-2">
+                                                    <label class="form-label small text-muted">Professional Tax (PT)</label>
+                                                    <input type="number" step="0.01" class="form-control pt-input"
+                                                           value="{{ item.payslip.professional_tax }}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')" style="border-radius: 8px;">
+                                                </div>
+                                                <div class="col-6 mb-2">
+                                                    <label class="form-label small text-muted">Employee PF</label>
+                                                    <input type="number" step="0.01" class="form-control employee-pf-input"
+                                                           value="{{ item.payslip.employee_pf }}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')" style="border-radius: 8px;">
+                                                </div>
+                                                <div class="col-6 mb-2">
+                                                    <label class="form-label small text-muted">Employer PF</label>
+                                                    <input type="number" step="0.01" class="form-control employer-pf-input"
+                                                           value="{{ item.payslip.employer_pf }}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')" style="border-radius: 8px;">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 d-flex flex-column justify-content-between text-end">
+                                            <div>
+                                                <h6 class="fw-bold text-indigo-800 mb-2">Calculations</h6>
+                                                <div class="small mb-1">Gross: <strong class="text-dark">{{ item.employee.location.currency|default:"INR" }} <span class="gross-display-{{ item.payslip.id }}">{{ item.payslip.gross_salary|floatformat:2 }}</span></strong></div>
+                                                <div class="small">Net Pay: <strong class="text-success">{{ item.employee.location.currency|default:"INR" }} <span class="net-display-{{ item.payslip.id }}">{{ item.payslip.net_salary|floatformat:2 }}</span></strong></div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <button type="button" id="save-btn-{{ item.payslip.id }}" onclick="saveDraftRow('{{ item.payslip.id }}')" class="btn btn-sm btn-gradient w-100 py-2" style="border-radius: 8px;">
+                                                    <i class="fa-solid fa-circle-check me-1"></i> Save Changes
+                                                </button>
+                                                <button type="button" onclick="toggleEditRow('{{ item.payslip.id }}')" class="btn btn-sm btn-outline-secondary w-100 py-2 mt-2" style="border-radius: 8px;">
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
+
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="fa-regular fa-folder-open display-6 mb-3 d-block text-slate-300"></i>
+                                    No exited/ex-employees found for legal entity: <strong>{{ selected_company_id }}</strong>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Recent Batches Panel -->
+        <div class="col-xl-6 col-lg-12 mb-4">
+            <div class="glass-card p-0 overflow-hidden h-100">
+                <div class="p-4 border-bottom">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="fa-solid fa-list-check text-indigo-500 me-2"></i> Recent Payroll Batches
+                    </h5>
+                </div>
+                <div class="p-0">
+                    <div class="table-responsive custom-scroll" style="max-height: 400px;">
+                        <table class="table custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Batch ID</th>
+                                    <th>Period</th>
+                                    <th class="text-center">Processed</th>
+                                    <th class="text-end">Total Amount</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for b in batches %}
+                                <tr>
+                                    <td>
+                                        <h6 class="fw-bold mb-0 text-slate-800">{{ b.batch_id }}</h6>
+                                        <span class="text-muted small d-block">{{ b.created_at|date:"d M Y H:i" }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-semibold text-slate-700">{{ b.month }}/{{ b.year }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="fw-semibold">{{ b.processed_employees }}/{{ b.total_employees }}</span>
+                                    </td>
+                                    <td class="text-end fw-bold text-slate-800">
+                                        {{ b.total_amount|floatformat:2 }}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if b.status == 'COMPLETED' %}
+                                        <span class="stat-badge badge-completed">Completed</span>
+                                        {% elif b.status == 'PROCESSING' %}
+                                        <span class="stat-badge badge-processing">Processing</span>
+                                        {% elif b.status == 'FAILED' %}
+                                        <span class="stat-badge badge-failed">Failed</span>
+                                        {% else %}
+                                        <span class="stat-badge badge-unsent">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        No recent batches found.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Trail Panel -->
+        <div class="col-xl-6 col-lg-12 mb-4">
+            <div class="glass-card p-0 overflow-hidden h-100">
+                <div class="p-4 border-bottom">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="fa-solid fa-shield-halved text-indigo-500 me-2"></i> Security & Audit Trail
+                    </h5>
+                </div>
+                <div class="p-0">
+                    <div class="table-responsive custom-scroll" style="max-height: 400px;">
+                        <table class="table custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Audit Event</th>
+                                    <th>Details</th>
+                                    <th>Origin</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in audit_logs %}
+                                <tr>
+                                    <td>
+                                        <h6 class="fw-bold mb-0 text-slate-800" style="font-size: 0.88rem;">{{ log.action }}</h6>
+                                        <span class="text-muted small d-block" style="font-size: 0.75rem;">{{ log.timestamp|date:"d M H:i:s" }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-slate-600 small" style="font-size: 0.85rem; display: block; max-width: 250px; white-space: normal;">
+                                            {{ log.details }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-semibold text-slate-700 small">{{ log.user.first_name|default:"System" }}</span>
+                                        <span class="text-muted small d-block" style="font-size: 0.72rem;">IP: {{ log.ip_address|default:"-" }}</span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-5 text-muted">
+                                        No logs captured.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-neon"></div>
+    <h4 class="fw-bold text-white mb-2">Processing Payroll Batch</h4>
+    <p class="text-slate-300 small mb-0 px-4 text-center">
+        Calculating multi-regional CTCs, compiling deductions, writing payslips, and dispatching PDF copies. This may take a minute.
+    </p>
+</div>
+
+<!-- JavaScript helpers -->
+<script>
+    document.getElementById('autoSendEmail').addEventListener('change', function(e) {
+        document.getElementById('bulkAutoSendEmail').value = e.target.checked ? 'on' : 'off';
+    });
+
+    const activeTab = document.getElementById('active-tab');
+    const exTab = document.getElementById('ex-tab');
+    if (activeTab && exTab) {
+        activeTab.addEventListener('shown.bs.tab', function (e) {
+            document.getElementById('calculated-badge').innerText = "Calculated: {{ active_calculated_count }}";
+            this.classList.remove('text-muted');
+            exTab.classList.add('text-muted');
+        });
+        exTab.addEventListener('shown.bs.tab', function (e) {
+            document.getElementById('calculated-badge').innerText = "Calculated: {{ ex_calculated_count }}";
+            this.classList.remove('text-muted');
+            activeTab.classList.add('text-muted');
+        });
+    }
+
+    function confirmBulkProcess() {
+        if(confirm("Are you sure you want to finalize bulk payroll for the selected legal entity and period? This will finalize all drafts, generate final PDF payslips, and dispatch emails if enabled.")) {
+            document.getElementById('loadingOverlay').querySelector('h4').innerText = "Finalizing & Dispatching Payroll";
+            document.getElementById('loadingOverlay').querySelector('p').innerText = "Rendering final multi-regional PDF payslips, writing audit trail, and dispatching secure emails...";
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.getElementById('bulkPayrollForm').submit();
+        }
+    }
+
+    function confirmDraftProcess() {
+        if(confirm("Are you sure you want to generate Phase 1 Draft payroll for the selected legal entity and period? This will calculate the attendance-based worked days and set up the draft console.")) {
+            document.getElementById('loadingOverlay').querySelector('h4').innerText = "Generating Phase 1 Drafts";
+            document.getElementById('loadingOverlay').querySelector('p').innerText = "Counting actual attendance clock-ins, calculating regional taxes, and preparing the draft console...";
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.getElementById('draftPayrollForm').submit();
+        }
+    }
+
+    function toggleEditRow(id) {
+        const row = document.getElementById(`edit-row-${id}`);
+        if (row.classList.contains('d-none')) {
+            row.classList.remove('d-none');
+        } else {
+            row.classList.add('d-none');
+        }
+    }
+
+    function updateSummary(id) {
+        const row = document.getElementById(`edit-row-${id}`);
+        const basic = parseFloat(row.querySelector('.basic-input').value) || 0;
+        const hra = parseFloat(row.querySelector('.hra-input').value) || 0;
+        const conveyance = parseFloat(row.querySelector('.conveyance-input').value) || 0;
+        const special = parseFloat(row.querySelector('.special-input').value) || 0;
+        const pt = parseFloat(row.querySelector('.pt-input').value) || 0;
+        const empPf = parseFloat(row.querySelector('.employee-pf-input').value) || 0;
+
+        const gross = basic + hra + conveyance + special;
+        const net = gross - empPf - pt;
+
+        row.querySelector(`.gross-display-${id}`).innerText = gross.toFixed(2);
+        row.querySelector(`.net-display-${id}`).innerText = net.toFixed(2);
+    }
+
+    function saveDraftRow(id) {
+        const row = document.getElementById(`edit-row-${id}`);
+        const saveBtn = document.getElementById(`save-btn-${id}`);
+        const oldHtml = saveBtn.innerHTML;
+
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Saving...`;
+
+        const payload = {
+            payslip_id: id,
+            worked_days: parseFloat(row.querySelector('.worked-days-input').value) || 0,
+            basic: parseFloat(row.querySelector('.basic-input').value) || 0,
+            hra: parseFloat(row.querySelector('.hra-input').value) || 0,
+            conveyance_allowance: parseFloat(row.querySelector('.conveyance-input').value) || 0,
+            special_allowance: parseFloat(row.querySelector('.special-input').value) || 0,
+            professional_tax: parseFloat(row.querySelector('.pt-input').value) || 0,
+            employee_pf: parseFloat(row.querySelector('.employee-pf-input').value) || 0,
+            employer_pf: parseFloat(row.querySelector('.employer-pf-input').value) || 0
+        };
+
+        fetch('/finance/save-draft-payslip/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = oldHtml;
+            if (data.status === 'success') {
+                // Update UI elements
+                document.getElementById(`net-salary-row-${id}`).innerText = Math.round(data.net_salary);
+                alert("Draft payslip saved successfully!");
+                toggleEditRow(id);
+            } else {
+                alert("Error: " + data.message);
+            }
+        })
+        .catch(err => {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = oldHtml;
+            alert("Network error: " + err);
+        });
+    }
+
+    function updateMonthlyPreview(id) {
+        const ctcInput = document.getElementById(`ctc-annual-${id}`);
+        const monthlyInput = document.getElementById(`ctc-monthly-${id}`);
+        const ctc = parseFloat(ctcInput.value) || 0;
+        if (ctc > 0) {
+            monthlyInput.value = (ctc / 12).toFixed(0);
+        } else {
+            monthlyInput.value = '';
+        }
+    }
+
+    function recalculateFromCTC(id) {
+        const ctcInput = document.getElementById(`ctc-annual-${id}`);
+        const btn = document.getElementById(`recalc-btn-${id}`);
+        const newCTC = parseFloat(ctcInput.value);
+
+        if (!newCTC || newCTC <= 0) {
+            alert('Please enter a valid Annual CTC value.');
+            ctcInput.focus();
+            return;
+        }
+
+        const oldHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status"></span> Recalculating...`;
+
+        fetch('/finance/update-ctc/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ payslip_id: id, annual_ctc: newCTC })
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = oldHtml;
+            if (data.status === 'success') {
+                const row = document.getElementById(`edit-row-${id}`);
+                // Fill all salary component inputs
+                row.querySelector('.basic-input').value = data.basic;
+                row.querySelector('.hra-input').value = data.hra;
+                row.querySelector('.conveyance-input').value = data.conveyance;
+                row.querySelector('.special-input').value = data.special;
+                row.querySelector('.employee-pf-input').value = data.employee_pf;
+                row.querySelector('.employer-pf-input').value = data.employer_pf;
+                row.querySelector('.pt-input').value = data.professional_tax;
+                // Update gross/net displays
+                document.querySelector(`.gross-display-${id}`).innerText = data.gross.toFixed(2);
+                document.querySelector(`.net-display-${id}`).innerText = data.net.toFixed(2);
+                // Update monthly preview
+                document.getElementById(`ctc-monthly-${id}`).value = Math.round(data.monthly_gross);
+                // Flash success
+                btn.innerHTML = `<i class="fa-solid fa-circle-check me-1"></i> Recalculated!`;
+                btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                setTimeout(() => {
+                    btn.innerHTML = oldHtml;
+                    btn.style.background = 'linear-gradient(135deg, #6366f1, #8b5cf6)';
+                }, 2000);
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = oldHtml;
+            alert('Network error: ' + err);
+        });
+    }
+
+    function sendEmail(payslipId) {
+        if(confirm("Email this payslip to the employee directly?")) {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.querySelector('h4').innerText = "Sending Payslip Email";
+            overlay.querySelector('p').innerText = "Establishing secure SMTP channel and dispatching PDF attachment...";
+            overlay.style.display = 'flex';
+
+            fetch(`/finance/send-email/${payslipId}/?ajax=1`)
+                .then(response => {
+                    overlay.style.display = 'none';
+                    if(response.ok) {
+                        alert("Payslip email sent successfully!");
+                        window.location.reload();
+                    } else {
+                        alert("Failed to send email. Please check server logs or SMTP configuration.");
+                    }
+                })
+                .catch(err => {
+                    overlay.style.display = 'none';
+                    alert("Network error: " + err);
+                });
+        }
+    }
+
+    // Drag & Drop Excel Uploader Handlers
+    const dropzone = document.getElementById('dropzone');
+    const excelFile = document.getElementById('excelFile');
+    const dropzoneText = document.getElementById('dropzoneText');
+    const fileSelectedInfo = document.getElementById('fileSelectedInfo');
+    const selectedFileName = document.getElementById('selectedFileName');
+    const btnSubmitExcel = document.getElementById('btnSubmitExcel');
+
+    dropzone.addEventListener('click', () => excelFile.click());
+
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+            excelFile.files = e.dataTransfer.files;
+            handleFileSelection();
+        }
+    });
+
+    excelFile.addEventListener('change', handleFileSelection);
+
+    function handleFileSelection() {
+        if (excelFile.files.length) {
+            const file = excelFile.files[0];
+            selectedFileName.innerText = file.name;
+            fileSelectedInfo.style.display = 'block';
+            dropzoneText.innerText = "Excel sheet loaded";
+            btnSubmitExcel.removeAttribute('disabled');
+        }
+    }
+
+    function triggerExcelUpload() {
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.querySelector('h4').innerText = "Processing Excel Sheet";
+        overlay.querySelector('p').innerText = "Parsing rows, calculating custom net salaries, writing PDF payslips, and dispatching SMTP emails...";
+        overlay.style.display = 'flex';
+        document.getElementById('excelUploadForm').submit();
+    }
+
+    function filterRosterTable(query) {
+        const lowerQuery = query.toLowerCase().trim();
+        const clearBtn = document.getElementById('clearSearchBtn');
+        const countSpan = document.getElementById('rosterSearchCount');
+
+        if (lowerQuery.length > 0) {
+            clearBtn.style.display = 'inline-block';
+        } else {
+            clearBtn.style.display = 'none';
+            countSpan.style.display = 'none';
+        }
+
+        let totalMatches = 0;
+
+        function filterTable(tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+
+            const rows = Array.from(tbody.children);
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                if (row.id && row.id.startsWith('edit-row-')) {
+                    continue;
+                }
+
+                const text = row.textContent.toLowerCase();
+                const isMatch = text.includes(lowerQuery);
+
+                const nextRow = rows[i + 1];
+                const hasEditRow = nextRow && nextRow.id && nextRow.id.startsWith('edit-row-');
+
+                if (isMatch || lowerQuery === "") {
+                    row.classList.remove('d-none');
+                    if (isMatch && lowerQuery !== "") {
+                        totalMatches++;
+                    }
+                } else {
+                    row.classList.add('d-none');
+                    if (hasEditRow) {
+                        nextRow.classList.add('d-none');
+                    }
+                }
+
+                if (hasEditRow) {
+                    i++;
+                }
+            }
+        }
+
+        filterTable('active-roster-table');
+        filterTable('ex-roster-table');
+
+        if (lowerQuery !== "") {
+            countSpan.innerText = `${totalMatches} match${totalMatches !== 1 ? 'es' : ''} found`;
+            countSpan.style.display = 'inline-block';
+        }
+    }
+
+    function clearRosterSearch() {
+        const input = document.getElementById('rosterSearchInput');
+        input.value = "";
+        filterRosterTable("");
+    }
+</script>
+{% endblock %}

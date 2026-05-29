@@ -468,6 +468,7 @@
                         <label class="form-label">Working Days</label>
                         <input type="number" name="worked_days" id="calc_worked_days" class="form-control"
                             placeholder="e.g. 22" step="0.5" required value="{{ days_in_month }}">
+                        <small class="text-muted">Enter out of <strong>{{ days_in_month }}</strong> days (cycle uses {{ prev_month_days }} days from previous month)</small>
                     </div>
 
                     <div class="mb-4">

@@ -32,7 +32,7 @@ class EmailSchedulerService:
         self.running = True
         self.thread = threading.Thread(target=self._run_scheduler, daemon=True)
         self.thread.start()
-        logger.info("✅ Email scheduler service started - checking every hour")
+        logger.info("[OK] Email scheduler service started - checking every hour")
 
     def stop(self):
         """Stop the background service"""
@@ -46,16 +46,18 @@ class EmailSchedulerService:
         while self.running:
             try:
                 current_time = datetime.now()
-                logger.info(f"🔍 Checking for birthdays/anniversaries at {current_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                logger.info(
+                    f"[INFO] Checking for birthdays/anniversaries at {current_time.strftime('%Y-%m-%d %H:%M:%S')}"
+                )
 
                 # Run the management command
                 # Run the management command
                 call_command("send_birthday_anniversary_emails", hour=9)
 
-                logger.info("✅ Email check completed")
+                logger.info("[OK] Email check completed")
 
             except Exception as e:
-                logger.error(f"❌ Error in email scheduler: {str(e)}")
+                logger.error(f"[ERROR] Error in email scheduler: {str(e)}")
 
             # Wait for 1 hour (3600 seconds)
             # Check every minute if we should stop

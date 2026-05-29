@@ -111,7 +111,7 @@ class Command(BaseCommand):
             location_key = f"{emp.company.id}_{tz_name}"
             if location_key not in processed_locations:
                 processed_locations.add(location_key)
-                self.stdout.write(f"\n📍 {emp.company.name} - {tz_name}:")
+                self.stdout.write(f"\n[Location] {emp.company.name} - {tz_name}:")
                 self.stdout.write(f"   Local time: {local_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
 
             # Only process if current hour matches target hour (within the same hour window)
@@ -141,14 +141,14 @@ class Command(BaseCommand):
                                 # Send individual birthday email
                                 if send_birthday_email(emp_locked):
                                     birthday_emails_sent += 1
-                                    self.stdout.write(f"   ✅ Birthday email sent to: {emp.user.email}")
+                                    self.stdout.write(f"   [OK] Birthday email sent to: {emp.user.email}")
 
                                 # Send company-wide announcement
                                 company_employees = companies[emp.company.id]["employees"]
                                 announcement_count = send_birthday_announcement(emp_locked, company_employees)
                                 if announcement_count > 0:
                                     birthday_announcements_sent += announcement_count
-                                    self.stdout.write(f"   ✅ Announcement sent to {announcement_count} employees")
+                                    self.stdout.write(f"   [OK] Announcement sent to {announcement_count} employees")
 
                                 # Mark as sent
                                 emp_locked.last_birthday_email_year = local_date.year
@@ -198,14 +198,14 @@ class Command(BaseCommand):
                                 # Send individual anniversary email
                                 if send_anniversary_email(emp_locked, years):
                                     anniversary_emails_sent += 1
-                                    self.stdout.write(f"   ✅ Anniversary email sent to: {emp.user.email}")
+                                    self.stdout.write(f"   [OK] Anniversary email sent to: {emp.user.email}")
 
                                 # Send company-wide announcement
                                 company_employees = companies[emp.company.id]["employees"]
                                 announcement_count = send_anniversary_announcement(emp_locked, years, company_employees)
                                 if announcement_count > 0:
                                     anniversary_announcements_sent += announcement_count
-                                    self.stdout.write(f"   ✅ Announcement sent to {announcement_count} employees")
+                                    self.stdout.write(f"   [OK] Announcement sent to {announcement_count} employees")
 
                                 # Mark as sent
                                 emp_locked.last_anniversary_email_year = local_date.year
@@ -241,7 +241,7 @@ class Command(BaseCommand):
                         # Send probation completion email
                         if send_probation_completion_email(emp):
                             probation_emails_sent += 1
-                            self.stdout.write(f"   ✅ Probation completion email sent to: {emp.user.email}")
+                            self.stdout.write(f"   [OK] Probation completion email sent to: {emp.user.email}")
                     else:
                         self.stdout.write(f"   Would send probation completion email to: {emp.user.email}")
 
@@ -265,8 +265,8 @@ class Command(BaseCommand):
                 + anniversary_announcements_sent
                 + probation_emails_sent
             )
-            self.stdout.write(self.style.SUCCESS(f"\n✅ Total emails sent: {total_emails}"))
+            self.stdout.write(self.style.SUCCESS(f"\n[OK] Total emails sent: {total_emails}"))
         else:
             self.stdout.write(self.style.WARNING("\nNo emails sent (test mode)"))
 
-        self.stdout.write(self.style.SUCCESS("\n✅ Command completed successfully"))
+        self.stdout.write(self.style.SUCCESS("\n[OK] Command completed successfully"))

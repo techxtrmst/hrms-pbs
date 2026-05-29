@@ -1,0 +1,258 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}All Birthdays{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(-45deg, #1b0f3a, #2a1b5c, #0d0926, #3b1954);
+        background-size: 400% 400%;
+        animation: gradientFlow 12s ease infinite;
+        border-radius: 16px;
+        padding: 2rem;
+        color: white;
+        margin-bottom: 24px;
+    }
+    @keyframes gradientFlow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    .celebration-card {
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 2px 12px rgba(91,71,251,0.07);
+        border: 1px solid rgba(226,232,240,0.8);
+        transition: transform 0.18s, box-shadow 0.18s;
+        overflow: hidden;
+    }
+    .celebration-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(91,71,251,0.13);
+    }
+    .avatar-circle {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #ede9fe;
+    }
+    .avatar-initials {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #5b47fb 0%, #7c6bff 100%);
+        color: white;
+        font-weight: 700;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 3px solid #ede9fe;
+        flex-shrink: 0;
+    }
+    .badge-today {
+        background: linear-gradient(135deg, #ef4444, #f97316);
+        color: white;
+        font-size: 0.7rem;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-weight: 700;
+    }
+    .badge-soon {
+        background: #ede9fe;
+        color: #5b47fb;
+        font-size: 0.7rem;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+    .wish-btn {
+        background: transparent;
+        border: 1.5px solid #5b47fb;
+        color: #5b47fb;
+        border-radius: 20px;
+        padding: 4px 16px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .wish-btn:hover {
+        background: #5b47fb;
+        color: white;
+    }
+    .section-month {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #5b47fb;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 6px 0 4px;
+        border-bottom: 2px solid #ede9fe;
+        margin-bottom: 12px;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #64748b;
+    }
+    .empty-state .emoji { font-size: 3.5rem; margin-bottom: 12px; }
+    .filter-bar {
+        background: #fff;
+        border-radius: 12px;
+        padding: 14px 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        border: 1px solid rgba(226,232,240,0.8);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .filter-bar input {
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 7px 14px;
+        font-size: 0.85rem;
+        outline: none;
+        transition: border-color 0.2s;
+        min-width: 220px;
+    }
+    .filter-bar input:focus { border-color: #5b47fb; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+    <!-- Page Header -->
+    <div class="page-header d-flex align-items-center justify-content-between">
+        <div>
+            <h2 class="fw-bold mb-1" style="font-size:1.6rem;">🎂 All Birthdays</h2>
+            <p class="mb-0 opacity-75" style="font-size:0.9rem;">Upcoming birthdays in the next 12 months — {{ birthdays|length }} celebration{{ birthdays|length|pluralize }}</p>
+        </div>
+        <a href="{% url 'dashboard' %}" class="btn btn-sm" style="background:rgba(255,255,255,0.15);color:white;border:1.5px solid rgba(255,255,255,0.3);border-radius:8px;">
+            <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <i class="fas fa-search" style="color:#94a3b8;"></i>
+        <input type="text" id="searchInput" placeholder="Search by name or department…" oninput="filterCards()">
+        <span class="ms-auto text-muted" style="font-size:0.82rem;" id="countLabel">{{ birthdays|length }} result{{ birthdays|length|pluralize }}</span>
+    </div>
+
+    {% if birthdays %}
+        <div class="row g-3" id="birthdayGrid">
+            {% for item in birthdays %}
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3 birthday-item"
+                 data-name="{{ item.employee.user.get_full_name|lower }}"
+                 data-dept="{{ item.employee.department|lower }}">
+                <div class="celebration-card p-3 h-100">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        {% if item.employee.profile_picture %}
+                            <img src="{{ item.employee.profile_picture.url }}" alt="{{ item.employee.user.first_name }}" class="avatar-circle">
+                        {% else %}
+                            <div class="avatar-initials">{{ item.employee.user.first_name|first }}{{ item.employee.user.last_name|first }}</div>
+                        {% endif %}
+                        <div class="flex-grow-1 min-width-0">
+                            <div class="fw-bold text-truncate" style="font-size:0.92rem;color:#1e293b;">{{ item.employee.user.get_full_name }}</div>
+                            <div class="text-muted" style="font-size:0.75rem;">{{ item.employee.designation }}</div>
+                            <div class="text-muted" style="font-size:0.72rem;">{{ item.employee.department }}</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mt-2">
+                        <div>
+                            <div style="font-size:0.8rem;color:#475569;"><i class="far fa-calendar-alt me-1"></i>{{ item.date|date:"d M Y" }}</div>
+                            {% if item.is_today %}
+                                <span class="badge-today mt-1 d-inline-block">🎉 Today!</span>
+                            {% else %}
+                                <span class="badge-soon mt-1 d-inline-block">in {{ item.days_left }} day{{ item.days_left|pluralize }}</span>
+                            {% endif %}
+                        </div>
+                        <button class="wish-btn" onclick="sendBirthdayWish('{{ item.employee.id }}', '{{ item.employee.user.first_name }}', 'birthday', this)">
+                            <i class="fas fa-heart me-1"></i>Wish
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="emoji">🎈</div>
+            <h5 class="fw-bold" style="color:#1e1b4b;">No Upcoming Birthdays</h5>
+            <p class="text-muted">No birthdays found in the next 12 months. Make sure employees have their date of birth filled in.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Toast -->
+<div id="wishToast" style="display:none;position:fixed;bottom:24px;right:24px;background:linear-gradient(135deg,#1b0f3a,#3b1954);color:#fff;padding:14px 22px;border-radius:12px;font-size:0.88rem;font-weight:600;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.25);"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterCards() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const items = document.querySelectorAll('.birthday-item');
+    let visible = 0;
+    items.forEach(item => {
+        const name = item.dataset.name || '';
+        const dept = item.dataset.dept || '';
+        if (name.includes(q) || dept.includes(q)) {
+            item.style.display = '';
+            visible++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    document.getElementById('countLabel').textContent = visible + ' result' + (visible !== 1 ? 's' : '');
+}
+
+function sendBirthdayWish(receiverId, receiverName, type, element) {
+    if (!receiverId) return;
+    const originalHTML = element.innerHTML;
+    element.disabled = true;
+    element.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Sending…';
+
+    fetch('/employees/api/birthday-wish/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ receiver_id: receiverId, type: type })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            element.innerHTML = '<i class="fas fa-heart text-danger me-1"></i>Wished';
+            element.style.borderColor = '#fee2e2';
+            element.style.color = '#ef4444';
+            showToast('🎉 Sent warm wishes to ' + receiverName + '!');
+        } else {
+            element.innerHTML = '<i class="fas fa-heart text-danger me-1"></i>Wished';
+            element.style.borderColor = '#fee2e2';
+            element.style.color = '#ef4444';
+            showToast('💖 You already wished ' + receiverName + ' today!');
+        }
+    })
+    .catch(() => {
+        element.disabled = false;
+        element.innerHTML = originalHTML;
+        showToast('❌ Failed to send wish. Try again.');
+    });
+}
+
+function showToast(msg) {
+    const t = document.getElementById('wishToast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 3500);
+}
+</script>
+{% endblock %}
