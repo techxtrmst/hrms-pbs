@@ -1061,20 +1061,20 @@ class LeaveBalance(models.Model):
     def casual_leave_balance(self):
         # For Bluebix and Softstandard, use combined balance
         if self.employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]:
-            return max(0, self.combined_sick_casual_allocated - self.combined_sick_casual_used)
-        return max(0, self.casual_leave_allocated - self.casual_leave_used)
+            return max(0.0, (self.combined_sick_casual_allocated or 0.0) - (self.combined_sick_casual_used or 0.0))
+        return max(0.0, (self.casual_leave_allocated or 0.0) - (self.casual_leave_used or 0.0))
 
     @property
     def sick_leave_balance(self):
         # For Bluebix and Softstandard, use combined balance
         if self.employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]:
-            return max(0, self.combined_sick_casual_allocated - self.combined_sick_casual_used)
-        return max(0, self.sick_leave_allocated - self.sick_leave_used)
+            return max(0.0, (self.combined_sick_casual_allocated or 0.0) - (self.combined_sick_casual_used or 0.0))
+        return max(0.0, (self.sick_leave_allocated or 0.0) - (self.sick_leave_used or 0.0))
 
     @property
     def combined_sick_casual_balance(self):
         """Combined sick/casual leave balance for companies like Bluebix"""
-        return max(0, self.combined_sick_casual_allocated - self.combined_sick_casual_used)
+        return max(0.0, (self.combined_sick_casual_allocated or 0.0) - (self.combined_sick_casual_used or 0.0))
 
     def get_available_balance(self, leave_type):
         """Get available balance for a specific leave type"""
@@ -1083,7 +1083,7 @@ class LeaveBalance(models.Model):
             if leave_type in ["CL", "SL"]:
                 return self.combined_sick_casual_balance
             else:
-                return 0
+                return 0.0
 
         # For other companies, use separate pools
         if leave_type == "CL":
@@ -1091,7 +1091,7 @@ class LeaveBalance(models.Model):
         elif leave_type == "SL":
             return self.sick_leave_balance
         else:
-            return 0
+            return 0.0
 
     def can_apply_leave(self, leave_type, days_requested):
         """Check if employee can apply for the requested leave"""
@@ -1101,13 +1101,13 @@ class LeaveBalance(models.Model):
             return {
                 "can_apply": True,
                 "available": float("inf"),
-                "shortfall": 0,
+                "shortfall": 0.0,
                 "will_be_lop": True,
             }
 
         # For other leave types, check if there's sufficient balance
-        shortfall = max(0, days_requested - available_balance)
-        will_be_lop = shortfall > 0
+        shortfall = max(0.0, days_requested - available_balance)
+        will_be_lop = shortfall > 0.0
 
         return {
             "can_apply": True,  # Always allow application, excess will be LOP
@@ -1121,17 +1121,17 @@ class LeaveBalance(models.Model):
         # For Bluebix and Softstandard, both CL and SL deduct from combined pool
         if self.employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]:
             if leave_type in ["CL", "SL"]:
-                self.combined_sick_casual_used += days_approved
+                self.combined_sick_casual_used = (self.combined_sick_casual_used or 0.0) + days_approved
             elif leave_type == "UL":
-                self.unpaid_leave += days_approved
+                self.unpaid_leave = (self.unpaid_leave or 0.0) + days_approved
         else:
             # For other companies, use separate pools
             if leave_type == "CL":
-                self.casual_leave_used += days_approved
+                self.casual_leave_used = (self.casual_leave_used or 0.0) + days_approved
             elif leave_type == "SL":
-                self.sick_leave_used += days_approved
+                self.sick_leave_used = (self.sick_leave_used or 0.0) + days_approved
             elif leave_type == "UL":
-                self.unpaid_leave += days_approved
+                self.unpaid_leave = (self.unpaid_leave or 0.0) + days_approved
         # OD (On Duty) and OT (Others) don't affect leave balance
 
         self.save()
@@ -1139,18 +1139,18 @@ class LeaveBalance(models.Model):
     def validate_and_save(self):
         """Validate leave balance data before saving"""
         # Ensure non-negative allocated leaves
-        self.casual_leave_allocated = max(0, self.casual_leave_allocated)
-        self.sick_leave_allocated = max(0, self.sick_leave_allocated)
-        self.combined_sick_casual_allocated = max(0, self.combined_sick_casual_allocated)
+        self.casual_leave_allocated = max(0.0, self.casual_leave_allocated or 0.0)
+        self.sick_leave_allocated = max(0.0, self.sick_leave_allocated or 0.0)
+        self.combined_sick_casual_allocated = max(0.0, self.combined_sick_casual_allocated or 0.0)
 
         # Ensure non-negative used leaves
-        self.casual_leave_used = max(0, self.casual_leave_used)
-        self.sick_leave_used = max(0, self.sick_leave_used)
-        self.combined_sick_casual_used = max(0, self.combined_sick_casual_used)
-        self.unpaid_leave = max(0, self.unpaid_leave)
+        self.casual_leave_used = max(0.0, self.casual_leave_used or 0.0)
+        self.sick_leave_used = max(0.0, self.sick_leave_used or 0.0)
+        self.combined_sick_casual_used = max(0.0, self.combined_sick_casual_used or 0.0)
+        self.unpaid_leave = max(0.0, self.unpaid_leave or 0.0)
 
         # Ensure non-negative carry forward
-        self.carry_forward_leave = max(0, self.carry_forward_leave)
+        self.carry_forward_leave = max(0.0, self.carry_forward_leave or 0.0)
 
         self.save()
         return self
@@ -1160,33 +1160,41 @@ class LeaveBalance(models.Model):
         Fix negative leave balances by moving them to LOP.
         Returns the amount of LOP added.
         """
-        lop_added = 0
+        lop_added = 0.0
 
         # Determine if we're using combined or separate
         is_combined = self.employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]
 
         if is_combined:
-            surplus = self.combined_sick_casual_used - (self.combined_sick_casual_allocated + self.carry_forward_leave)
-            if surplus > 0:
-                self.combined_sick_casual_used -= surplus
-                self.unpaid_leave += surplus
+            allocated = self.combined_sick_casual_allocated or 0.0
+            used = self.combined_sick_casual_used or 0.0
+            carry = self.carry_forward_leave or 0.0
+            surplus = used - (allocated + carry)
+            if surplus > 0.0:
+                self.combined_sick_casual_used = (self.combined_sick_casual_used or 0.0) - surplus
+                self.unpaid_leave = (self.unpaid_leave or 0.0) + surplus
                 lop_added += surplus
         else:
             # Check CL (including carry forward)
-            cl_surplus = self.casual_leave_used - (self.casual_leave_allocated + self.carry_forward_leave)
-            if cl_surplus > 0:
-                self.casual_leave_used -= cl_surplus
-                self.unpaid_leave += cl_surplus
+            allocated = self.casual_leave_allocated or 0.0
+            used = self.casual_leave_used or 0.0
+            carry = self.carry_forward_leave or 0.0
+            cl_surplus = used - (allocated + carry)
+            if cl_surplus > 0.0:
+                self.casual_leave_used = (self.casual_leave_used or 0.0) - cl_surplus
+                self.unpaid_leave = (self.unpaid_leave or 0.0) + cl_surplus
                 lop_added += cl_surplus
 
             # Check SL
-            sl_surplus = self.sick_leave_used - self.sick_leave_allocated
-            if sl_surplus > 0:
-                self.sick_leave_used -= sl_surplus
-                self.unpaid_leave += sl_surplus
+            sl_allocated = self.sick_leave_allocated or 0.0
+            sl_used = self.sick_leave_used or 0.0
+            sl_surplus = sl_used - sl_allocated
+            if sl_surplus > 0.0:
+                self.sick_leave_used = (self.sick_leave_used or 0.0) - sl_surplus
+                self.unpaid_leave = (self.unpaid_leave or 0.0) + sl_surplus
                 lop_added += sl_surplus
 
-        if lop_added > 0:
+        if lop_added > 0.0:
             self.save()
 
         return lop_added
@@ -1200,7 +1208,7 @@ class LeaveBalance(models.Model):
 
     @property
     def has_negative_balance(self):
-        return self.casual_leave_balance < 0 or self.sick_leave_balance < 0
+        return self.casual_leave_balance < 0.0 or self.sick_leave_balance < 0.0
 
     def __str__(self):
         return f"Balance: {self.employee.user.get_full_name()}"
