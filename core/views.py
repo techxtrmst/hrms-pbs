@@ -21,6 +21,7 @@ from accounts.models import User
 from companies.models import Holiday, PayrollConfiguration
 from employees.models import (
     Attendance,
+    AttendanceSession,
     Employee,
     HandbookSection,
     LeaveBalance,
@@ -1446,29 +1447,149 @@ def personal_home(request):
         context["on_time_percentage"] = f"{on_time_pct}%"
 
         # --- Team Attendance Stats (real data) ---
-        from employees.models import AttendanceSession
-
         team_total_seconds = 0
         team_sessions = 0
         team_on_time = 0
         team_late = 0
 
-        # Get teammates from same department/team
-        team_members = Employee.objects.filter(
-            company=employee.company, is_active=True, employment_status="ACTIVE"
-        ).exclude(id=employee.id)[:20]  # cap at 20 for perf
+        # Real-time Reporting Structure Team Filtering:
+        # 1. If the logged-in user is a reporting manager (direct reports exist)
+        direct_reports = Employee.objects.filter(
+            company=employee.company, is_active=True, employment_status="ACTIVE", manager=request.user
+        ).select_related("user", "location")
+
+        if direct_reports.exists():
+            team_qs = direct_reports[:20]
+        else:
+            # 2. If the logged-in user is an employee who reports to a manager
+            if employee.manager:
+                team_qs = (
+                    Employee.objects.filter(
+                        company=employee.company, is_active=True, employment_status="ACTIVE", manager=employee.manager
+                    )
+                    .exclude(id=employee.id)
+                    .select_related("user", "location")[:20]
+                )
+            else:
+                # 3. Fallback to same department or company
+                if employee.department:
+                    team_qs = (
+                        Employee.objects.filter(
+                            company=employee.company,
+                            is_active=True,
+                            employment_status="ACTIVE",
+                            department=employee.department,
+                        )
+                        .exclude(id=employee.id)
+                        .select_related("user", "location")[:20]
+                    )
+                else:
+                    team_qs = (
+                        Employee.objects.filter(company=employee.company, is_active=True, employment_status="ACTIVE")
+                        .exclude(id=employee.id)
+                        .select_related("user", "location")[:20]
+                    )
+
+        team_members = list(team_qs)
+
+        # Build per-member enriched data for template
+        team_members_data = []
+        today_atts = {
+            att.employee_id: att
+            for att in Attendance.objects.filter(employee__in=team_members, date=today).select_related("employee")
+        }
+        # Also check currently clocked-in sessions
+        active_atts = {
+            att.employee_id: att
+            for att in Attendance.objects.filter(employee__in=team_members, is_currently_clocked_in=True)
+        }
 
         for member in team_members:
             member_atts = Attendance.objects.filter(
                 employee=member, date__range=[start_date, end_date], clock_in__isnull=False, clock_out__isnull=False
             )
+            m_total_sec = 0
+            m_sessions = 0
+            m_on_time = 0
+            m_late = 0
             for att in member_atts:
-                team_total_seconds += (att.clock_out - att.clock_in).total_seconds()
+                sec = (att.clock_out - att.clock_in).total_seconds()
+                m_total_sec += sec
+                m_sessions += 1
+                team_total_seconds += sec
                 team_sessions += 1
                 if not att.is_late:
+                    m_on_time += 1
                     team_on_time += 1
                 else:
+                    m_late += 1
                     team_late += 1
+
+            m_avg = "00:00"
+            if m_sessions > 0:
+                s = m_total_sec / m_sessions
+                m_avg = f"{int(s // 3600):02d}:{int((s % 3600) // 60):02d}"
+
+            m_total_tracked = m_on_time + m_late
+            m_on_time_pct = round((m_on_time / m_total_tracked) * 100) if m_total_tracked > 0 else 0
+
+            # Today's status
+            today_att = active_atts.get(member.id) or today_atts.get(member.id)
+            clock_in_time_str = ""
+            if today_att:
+                if today_att.clock_in:
+                    try:
+                        from django.utils.timezone import localtime
+
+                        local_time = localtime(today_att.clock_in)
+                        clock_in_time_str = local_time.strftime("%I:%M %p")
+                    except Exception:
+                        clock_in_time_str = today_att.clock_in.strftime("%I:%M %p")
+
+                if today_att.is_currently_clocked_in:
+                    today_status = "ACTIVE"
+                    today_status_label = f"Clocked In at {clock_in_time_str}" if clock_in_time_str else "Clocked In"
+                    today_status_color = "#10b981"
+                elif today_att.status == "WFH":
+                    today_status = "WFH"
+                    today_status_label = f"WFH at {clock_in_time_str}" if clock_in_time_str else "WFH"
+                    today_status_color = "#8b5cf6"
+                elif today_att.status == "LEAVE":
+                    today_status = "LEAVE"
+                    today_status_label = "On Leave"
+                    today_status_color = "#f97316"
+                else:
+                    today_status = "PRESENT"
+                    today_status_label = f"Present at {clock_in_time_str}" if clock_in_time_str else "Present"
+                    today_status_color = "#10b981"
+            else:
+                if member.is_week_off(today):
+                    today_status = "WEEKOFF"
+                    today_status_label = "Week Off"
+                    today_status_color = "#94a3b8"
+                else:
+                    today_status = "ABSENT"
+                    today_status_label = "Absent"
+                    today_status_color = "#ef4444"
+
+            initials = (
+                (member.user.first_name[:1] if member.user.first_name else "")
+                + (member.user.last_name[:1] if member.user.last_name else "")
+            ).upper() or "?"
+
+            team_members_data.append(
+                {
+                    "name": member.user.get_full_name() or member.user.username,
+                    "designation": str(member.designation) if member.designation else "Employee",
+                    "initials": initials,
+                    "avg_hours": m_avg,
+                    "on_time_pct": f"{m_on_time_pct}%",
+                    "today_status": today_status,
+                    "today_status_label": today_status_label,
+                    "today_status_color": today_status_color,
+                    "profile_picture": member.profile_picture.url if member.profile_picture else None,
+                }
+            )
 
         team_avg_hours = "00:00"
         if team_sessions > 0:
@@ -1482,6 +1603,7 @@ def personal_home(request):
 
         context["team_avg_hours"] = team_avg_hours
         context["team_on_time_percentage"] = f"{team_on_time_pct}%"
+        context["team_members_data"] = team_members_data
 
         # --- Enrich history with GPS location data for map display ---
         enriched_history = []

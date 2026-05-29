@@ -427,11 +427,36 @@
             </div>
         </div>
 
+        <!-- Search Bar -->
+        <div class="px-4 py-3 border-bottom" style="background: rgba(248,250,252,0.8);">
+            <div class="d-flex align-items-center gap-3">
+                <div class="position-relative flex-grow-1" style="max-width: 420px;">
+                    <i class="fa-solid fa-magnifying-glass position-absolute text-muted"
+                       style="left: 14px; top: 50%; transform: translateY(-50%); font-size: 0.85rem; pointer-events: none;"></i>
+                    <input type="text"
+                           id="rosterSearchInput"
+                           class="form-control"
+                           placeholder="Search by name, ID, location, entity…"
+                           oninput="filterRosterTable(this.value)"
+                           autocomplete="off"
+                           style="padding-left: 38px; border-radius: 10px; border: 1px solid #e2e8f0;
+                                  font-size: 0.875rem; background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+                </div>
+                <button class="btn btn-sm" onclick="clearRosterSearch()"
+                        style="border-radius: 10px; border: 1px solid #e2e8f0; background: white;
+                               color: #64748b; font-size: 0.82rem; padding: 7px 14px; display: none;"
+                        id="clearSearchBtn">
+                    <i class="fa-solid fa-xmark me-1"></i> Clear
+                </button>
+                <span id="rosterSearchCount" class="text-muted small fw-semibold" style="display:none;"></span>
+            </div>
+        </div>
+
         <div class="tab-content" id="rosterTabsContent">
             <!-- Active Employees Pane -->
             <div class="tab-pane fade show active" id="active-employees-pane" role="tabpanel" aria-labelledby="active-tab">
                 <div class="table-responsive custom-scroll">
-                    <table class="table custom-table">
+                    <table class="table custom-table" id="active-roster-table">
                         <thead>
                             <tr>
                                 <th>Employee</th>
@@ -531,6 +556,48 @@
                             {% if item.payslip and item.payslip.is_draft %}
                             <tr id="edit-row-{{ item.payslip.id }}" class="d-none bg-light" style="transition: all 0.3s ease;">
                                 <td colspan="7" class="p-4" style="background-color: rgba(99, 102, 241, 0.02); border-left: 4px solid #6366f1;">
+
+                                    <!-- CTC Edit Banner -->
+                                    <div class="mb-4 p-3 rounded-3" style="background: linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(139,92,246,0.05) 100%); border: 1px solid rgba(99,102,241,0.18);">
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <i class="fa-solid fa-indian-rupee-sign text-indigo-600"></i>
+                                            <h6 class="fw-bold text-indigo-800 mb-0">CTC Editor</h6>
+                                            <span class="badge bg-indigo-100 text-indigo-600 small ms-1" style="background: rgba(99,102,241,0.1); color:#4f46e5; border:1px solid rgba(99,102,241,0.2); border-radius:20px; padding:2px 10px;">
+                                                Auto-Recalculates All Components
+                                            </span>
+                                        </div>
+                                        <div class="row g-3 align-items-end">
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-semibold text-muted">Annual CTC ({{ item.employee.location.currency|default:"INR" }})</label>
+                                                <input type="number" step="1000" min="0"
+                                                       class="form-control ctc-annual-input fw-bold"
+                                                       id="ctc-annual-{{ item.payslip.id }}"
+                                                       value="{{ item.employee.annual_ctc|default:'' }}"
+                                                       placeholder="e.g. 420000"
+                                                       oninput="updateMonthlyPreview('{{ item.payslip.id }}')"
+                                                       style="border-radius: 8px; border-color: #818cf8; font-size:1rem;">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-semibold text-muted">Monthly Gross (CTC ÷ 12)</label>
+                                                <input type="text" class="form-control bg-light fw-bold text-success"
+                                                       id="ctc-monthly-{{ item.payslip.id }}"
+                                                       value="{% if item.employee.annual_ctc %}{{ item.employee.annual_ctc|floatformat:0 }}{% endif %}"
+                                                       placeholder="Auto-calculated"
+                                                       readonly
+                                                       style="border-radius: 8px;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <button type="button"
+                                                        onclick="recalculateFromCTC('{{ item.payslip.id }}')"
+                                                        class="btn btn-sm btn-gradient px-4 py-2 fw-bold"
+                                                        id="recalc-btn-{{ item.payslip.id }}"
+                                                        style="border-radius: 8px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color:white; border:none;">
+                                                    <i class="fa-solid fa-rotate me-1"></i> Recalculate All from CTC
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div class="row text-start">
                                         <div class="col-md-3">
                                             <h6 class="fw-bold text-indigo-800 mb-3"><i class="fa-solid fa-clock me-1"></i> Payable Units</h6>
@@ -604,6 +671,7 @@
                                 </td>
                             </tr>
                             {% endif %}
+
                             {% empty %}
                             <tr>
                                 <td colspan="7" class="text-center py-5 text-muted">
@@ -617,10 +685,9 @@
                 </div>
             </div>
 
-            <!-- Ex-Employees Pane -->
             <div class="tab-pane fade" id="ex-employees-pane" role="tabpanel" aria-labelledby="ex-tab">
                 <div class="table-responsive custom-scroll">
-                    <table class="table custom-table">
+                    <table class="table custom-table" id="ex-roster-table">
                         <thead>
                             <tr>
                                 <th>Employee</th>
@@ -720,6 +787,48 @@
                             {% if item.payslip and item.payslip.is_draft %}
                             <tr id="edit-row-{{ item.payslip.id }}" class="d-none bg-light" style="transition: all 0.3s ease;">
                                 <td colspan="7" class="p-4" style="background-color: rgba(99, 102, 241, 0.02); border-left: 4px solid #6366f1;">
+
+                                    <!-- CTC Edit Banner -->
+                                    <div class="mb-4 p-3 rounded-3" style="background: linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(139,92,246,0.05) 100%); border: 1px solid rgba(99,102,241,0.18);">
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <i class="fa-solid fa-indian-rupee-sign text-indigo-600"></i>
+                                            <h6 class="fw-bold text-indigo-800 mb-0">CTC Editor</h6>
+                                            <span class="badge bg-indigo-100 text-indigo-600 small ms-1" style="background: rgba(99,102,241,0.1); color:#4f46e5; border:1px solid rgba(99,102,241,0.2); border-radius:20px; padding:2px 10px;">
+                                                Auto-Recalculates All Components
+                                            </span>
+                                        </div>
+                                        <div class="row g-3 align-items-end">
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-semibold text-muted">Annual CTC ({{ item.employee.location.currency|default:"INR" }})</label>
+                                                <input type="number" step="1000" min="0"
+                                                       class="form-control ctc-annual-input fw-bold"
+                                                       id="ctc-annual-{{ item.payslip.id }}"
+                                                       value="{{ item.employee.annual_ctc|default:'' }}"
+                                                       placeholder="e.g. 420000"
+                                                       oninput="updateMonthlyPreview('{{ item.payslip.id }}')"
+                                                       style="border-radius: 8px; border-color: #818cf8; font-size:1rem;">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-semibold text-muted">Monthly Gross (CTC ÷ 12)</label>
+                                                <input type="text" class="form-control bg-light fw-bold text-success"
+                                                       id="ctc-monthly-{{ item.payslip.id }}"
+                                                       value="{% if item.employee.annual_ctc %}{{ item.employee.annual_ctc|floatformat:0 }}{% endif %}"
+                                                       placeholder="Auto-calculated"
+                                                       readonly
+                                                       style="border-radius: 8px;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <button type="button"
+                                                        onclick="recalculateFromCTC('{{ item.payslip.id }}')"
+                                                        class="btn btn-sm btn-gradient px-4 py-2 fw-bold"
+                                                        id="recalc-btn-{{ item.payslip.id }}"
+                                                        style="border-radius: 8px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color:white; border:none;">
+                                                    <i class="fa-solid fa-rotate me-1"></i> Recalculate All from CTC
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div class="row text-start">
                                         <div class="col-md-3">
                                             <h6 class="fw-bold text-indigo-800 mb-3"><i class="fa-solid fa-clock me-1"></i> Payable Units</h6>
@@ -793,6 +902,7 @@
                                 </td>
                             </tr>
                             {% endif %}
+
                             {% empty %}
                             <tr>
                                 <td colspan="7" class="text-center py-5 text-muted">
@@ -1043,6 +1153,77 @@
         });
     }
 
+    function updateMonthlyPreview(id) {
+        const ctcInput = document.getElementById(`ctc-annual-${id}`);
+        const monthlyInput = document.getElementById(`ctc-monthly-${id}`);
+        const ctc = parseFloat(ctcInput.value) || 0;
+        if (ctc > 0) {
+            monthlyInput.value = (ctc / 12).toFixed(0);
+        } else {
+            monthlyInput.value = '';
+        }
+    }
+
+    function recalculateFromCTC(id) {
+        const ctcInput = document.getElementById(`ctc-annual-${id}`);
+        const btn = document.getElementById(`recalc-btn-${id}`);
+        const newCTC = parseFloat(ctcInput.value);
+
+        if (!newCTC || newCTC <= 0) {
+            alert('Please enter a valid Annual CTC value.');
+            ctcInput.focus();
+            return;
+        }
+
+        const oldHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status"></span> Recalculating...`;
+
+        fetch('/finance/update-ctc/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ payslip_id: id, annual_ctc: newCTC })
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = oldHtml;
+            if (data.status === 'success') {
+                const row = document.getElementById(`edit-row-${id}`);
+                // Fill all salary component inputs
+                row.querySelector('.basic-input').value = data.basic;
+                row.querySelector('.hra-input').value = data.hra;
+                row.querySelector('.conveyance-input').value = data.conveyance;
+                row.querySelector('.special-input').value = data.special;
+                row.querySelector('.employee-pf-input').value = data.employee_pf;
+                row.querySelector('.employer-pf-input').value = data.employer_pf;
+                row.querySelector('.pt-input').value = data.professional_tax;
+                // Update gross/net displays
+                document.querySelector(`.gross-display-${id}`).innerText = data.gross.toFixed(2);
+                document.querySelector(`.net-display-${id}`).innerText = data.net.toFixed(2);
+                // Update monthly preview
+                document.getElementById(`ctc-monthly-${id}`).value = Math.round(data.monthly_gross);
+                // Flash success
+                btn.innerHTML = `<i class="fa-solid fa-circle-check me-1"></i> Recalculated!`;
+                btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                setTimeout(() => {
+                    btn.innerHTML = oldHtml;
+                    btn.style.background = 'linear-gradient(135deg, #6366f1, #8b5cf6)';
+                }, 2000);
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = oldHtml;
+            alert('Network error: ' + err);
+        });
+    }
+
     function sendEmail(payslipId) {
         if(confirm("Email this payslip to the employee directly?")) {
             const overlay = document.getElementById('loadingOverlay');
@@ -1113,6 +1294,73 @@
         overlay.querySelector('p').innerText = "Parsing rows, calculating custom net salaries, writing PDF payslips, and dispatching SMTP emails...";
         overlay.style.display = 'flex';
         document.getElementById('excelUploadForm').submit();
+    }
+
+    function filterRosterTable(query) {
+        const lowerQuery = query.toLowerCase().trim();
+        const clearBtn = document.getElementById('clearSearchBtn');
+        const countSpan = document.getElementById('rosterSearchCount');
+
+        if (lowerQuery.length > 0) {
+            clearBtn.style.display = 'inline-block';
+        } else {
+            clearBtn.style.display = 'none';
+            countSpan.style.display = 'none';
+        }
+
+        let totalMatches = 0;
+
+        function filterTable(tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+
+            const rows = Array.from(tbody.children);
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                if (row.id && row.id.startsWith('edit-row-')) {
+                    continue;
+                }
+
+                const text = row.textContent.toLowerCase();
+                const isMatch = text.includes(lowerQuery);
+
+                const nextRow = rows[i + 1];
+                const hasEditRow = nextRow && nextRow.id && nextRow.id.startsWith('edit-row-');
+
+                if (isMatch || lowerQuery === "") {
+                    row.classList.remove('d-none');
+                    if (isMatch && lowerQuery !== "") {
+                        totalMatches++;
+                    }
+                } else {
+                    row.classList.add('d-none');
+                    if (hasEditRow) {
+                        nextRow.classList.add('d-none');
+                    }
+                }
+
+                if (hasEditRow) {
+                    i++;
+                }
+            }
+        }
+
+        filterTable('active-roster-table');
+        filterTable('ex-roster-table');
+
+        if (lowerQuery !== "") {
+            countSpan.innerText = `${totalMatches} match${totalMatches !== 1 ? 'es' : ''} found`;
+            countSpan.style.display = 'inline-block';
+        }
+    }
+
+    function clearRosterSearch() {
+        const input = document.getElementById('rosterSearchInput');
+        input.value = "";
+        filterRosterTable("");
     }
 </script>
 {% endblock %}

@@ -374,6 +374,7 @@ def save_draft_payslip(request):
     """
     AJAX endpoint to update draft payslip fields dynamically.
     Recalculates net and gross based on edited values.
+    Also saves annual_ctc back to the Employee if provided.
     """
     if request.method != "POST":
         return JsonResponse({"status": "error", "message": "Only POST requests allowed"}, status=405)
@@ -399,6 +400,13 @@ def save_draft_payslip(request):
         payslip.net_salary = payslip.gross_salary - payslip.employee_pf - payslip.professional_tax
         payslip.save()
 
+        # Also save annual_ctc to Employee if provided
+        new_ctc = data.get("annual_ctc")
+        if new_ctc is not None:
+            employee = payslip.employee
+            employee.annual_ctc = float(new_ctc)
+            employee.save(update_fields=["annual_ctc"])
+
         # Log change to security audit log
         FinanceAuditLog.objects.create(
             user=request.user,
@@ -414,6 +422,108 @@ def save_draft_payslip(request):
                 "net_salary": payslip.net_salary,
                 "gross_salary": payslip.gross_salary,
                 "message": "Draft saved successfully!",
+            }
+        )
+
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=400)
+
+
+@finance_manager_required
+@csrf_exempt
+def update_employee_ctc(request):
+    """
+    AJAX endpoint: given an employee_id and new annual_ctc,
+    recalculates the full payslip breakdown and returns all component values
+    so the frontend can auto-populate the Edit Draft form fields.
+    Also persists annual_ctc on the Employee record.
+    """
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "Only POST allowed"}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        payslip_id = data.get("payslip_id")
+        new_ctc = float(data.get("annual_ctc", 0))
+        payslip = get_object_or_404(Payslip, id=payslip_id)
+        employee = payslip.employee
+
+        if new_ctc <= 0:
+            return JsonResponse({"status": "error", "message": "CTC must be a positive number"}, status=400)
+
+        # Save CTC on employee
+        employee.annual_ctc = new_ctc
+        employee.save(update_fields=["annual_ctc"])
+
+        # Recalculate breakdown using existing worked_days
+        worked_days = float(payslip.worked_days or 30)
+        month_obj = payslip.month  # date(year, month, 1)
+        total_days = calendar.monthrange(month_obj.year, month_obj.month)[1]
+
+        breakdown = calculate_payslip_breakdown(
+            new_ctc,
+            worked_days,
+            total_days,
+            employee.pf_enabled,
+            location=employee.location,
+            company=employee.company,
+            month=month_obj.month,
+            year=month_obj.year,
+        )
+
+        # Determine which allowance fields map to conveyance/special
+        if breakdown.get("country_code", "IN") == "IN":
+            conveyance = breakdown.get("lta", 0.0)
+            special = breakdown.get("other_allowance", 0.0)
+        else:
+            conveyance = breakdown.get("conveyance", 0.0)
+            special = breakdown.get("medical", 0.0)
+
+        basic = breakdown["basic"]
+        hra = breakdown["hra"]
+        employee_pf = breakdown["employee_pf"]
+        employer_pf = breakdown["employer_pf"]
+        professional_tax = breakdown["professional_tax"]
+        gross = breakdown["gross_monthly"]
+        net = breakdown["net_salary"]
+        monthly_gross = breakdown["full_monthly_gross"]
+
+        # Update payslip with recalculated values
+        payslip.basic = basic
+        payslip.hra = hra
+        payslip.conveyance_allowance = conveyance
+        payslip.special_allowance = special
+        payslip.employee_pf = employee_pf
+        payslip.employer_pf = employer_pf
+        payslip.professional_tax = professional_tax
+        payslip.gross_salary = gross
+        payslip.monthly_gross = monthly_gross
+        payslip.net_salary = net
+        payslip.save()
+
+        # Audit log
+        FinanceAuditLog.objects.create(
+            user=request.user,
+            company=employee.company,
+            action="UPDATE_CTC",
+            details=f"CTC updated for {employee.user.get_full_name()} to {new_ctc} ({month_obj.strftime('%b %Y')}). Recalculated Net: {net}.",
+            ip_address=get_client_ip(request),
+        )
+
+        return JsonResponse(
+            {
+                "status": "success",
+                "annual_ctc": new_ctc,
+                "monthly_gross": round(monthly_gross, 2),
+                "basic": round(basic, 2),
+                "hra": round(hra, 2),
+                "conveyance": round(conveyance, 2),
+                "special": round(special, 2),
+                "employee_pf": round(employee_pf, 2),
+                "employer_pf": round(employer_pf, 2),
+                "professional_tax": round(professional_tax, 2),
+                "gross": round(gross, 2),
+                "net": round(net, 2),
             }
         )
 

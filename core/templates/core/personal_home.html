@@ -943,63 +943,98 @@
 
         <!-- Column 1: Attendance Stats -->
         <div class="col-12 col-lg-4">
-            <div class="keka-portal-card">
+            <div class="keka-portal-card" style="height: 100%;">
                 <div class="card-header-keka">
                     <i class="far fa-calendar-check"></i>
                     <h5>Attendance Stats</h5>
                     <div class="ms-auto">
-                        <select class="form-select form-select-sm border-0 bg-light fw-bold text-secondary" style="font-size: 0.75rem; border-radius: 8px;">
-                            <option>This Week</option>
-                            <option>This Month</option>
-                        </select>
+                        <span style="font-size: 0.72rem; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 4px 10px; border-radius: 20px;">
+                            Last 30 Days
+                        </span>
                     </div>
                 </div>
 
                 <!-- Stat Me (REAL DATA) -->
-                <div class="stat-row-keka">
+                <div class="stat-row-keka" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 12px; padding: 12px; margin-bottom: 10px; border: 1px solid #bae6fd;">
                     <div class="stat-member-info">
-                        <div class="stat-member-avatar" style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); color: #0284c7;">
+                        <div class="stat-member-avatar" style="background: linear-gradient(135deg, #3b82f6 0%, #0284c7 100%); color: white; font-weight: 800;">
                             {{ employee.user.first_name|first|upper }}{{ employee.user.last_name|first|upper }}
                         </div>
                         <div class="stat-member-details">
-                            <div class="name">{{ employee.user.get_full_name|default:request.user.username }}</div>
+                            <div class="name" style="font-weight: 800; color: #1e1b4b;">{{ employee.user.get_full_name|default:request.user.username }}</div>
                             <div class="role">{{ employee.designation|default:"Employee" }}</div>
                         </div>
                     </div>
-                    <div class="d-flex gap-4">
+                    <div class="d-flex gap-3">
                         <div class="stat-number-block">
                             <div class="label">AVG HRS / DAY</div>
-                            <div class="value">{{ avg_hours|default:"00:00" }}hrs</div>
+                            <div class="value" style="color: #0284c7;">{{ avg_hours|default:"00:00" }}hrs</div>
                         </div>
                         <div class="stat-number-block">
                             <div class="label">ON TIME</div>
-                            <div class="value">{{ on_time_percentage|default:"—" }}</div>
+                            <div class="value" style="color: #059669;">{{ on_time_percentage|default:"—" }}</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Stat Team (REAL DATA) -->
-                <div class="stat-row-keka">
-                    <div class="stat-member-info">
-                        <div class="stat-member-avatar" style="background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); color: #7c3aed;">T</div>
-                        <div class="stat-member-details">
-                            <div class="name">My Team</div>
-                            <div class="role">{{ employee.company.name|default:"Organisation" }}</div>
+                <!-- Team Members Divider -->
+                <div style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin: 10px 0 8px 0; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-users" style="color: #5b47fb;"></i>
+                    My Team
+                    {% if team_members_data %}
+                    <span style="background: #ede9fe; color: #5b47fb; font-size: 0.65rem; font-weight: 800; padding: 1px 7px; border-radius: 20px; margin-left: 4px;">{{ team_members_data|length }}</span>
+                    {% endif %}
+                </div>
+
+                <!-- Team Member Rows -->
+                <div style="display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; padding-right: 4px;">
+                    {% if team_members_data %}
+                        {% for member in team_members_data %}
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 9px 10px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; transition: all 0.2s;"
+                             onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
+                            <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
+                                <!-- Avatar -->
+                                {% if member.profile_picture %}
+                                <img src="{{ member.profile_picture }}" alt="{{ member.name }}"
+                                     style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,0.08); flex-shrink:0;">
+                                {% else %}
+                                <div style="width:36px; height:36px; border-radius:50%; background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+                                            color: #5b47fb; font-size: 0.78rem; font-weight: 800;
+                                            display:flex; align-items:center; justify-content:center; flex-shrink:0;
+                                            border: 2px solid #fff; box-shadow: 0 2px 6px rgba(91,71,251,0.1);">
+                                    {{ member.initials }}
+                                </div>
+                                {% endif %}
+                                <!-- Name & designation -->
+                                <div style="min-width: 0;">
+                                    <div style="font-size: 0.8rem; font-weight: 700; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ member.name }}</div>
+                                    <div style="font-size: 0.68rem; color: #94a3b8; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ member.designation }}</div>
+                                </div>
+                            </div>
+                            <!-- Right side: stats -->
+                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; margin-left: 8px;">
+                                <span style="font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap;
+                                             background: {{ member.today_status_color }}1a; color: {{ member.today_status_color }}; border: 1px solid {{ member.today_status_color }}33;">
+                                    ● {{ member.today_status_label }}
+                                </span>
+                                <div style="display: flex; gap: 8px;">
+                                    <span style="font-size: 0.65rem; color: #64748b; font-weight: 600;">{{ member.avg_hours }}h avg</span>
+                                    <span style="font-size: 0.65rem; color: #10b981; font-weight: 700;">{{ member.on_time_pct }} on-time</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="d-flex gap-4">
-                        <div class="stat-number-block">
-                            <div class="label">AVG HRS / DAY</div>
-                            <div class="value">{{ team_avg_hours|default:"00:00" }}hrs</div>
+                        {% endfor %}
+                    {% else %}
+                        <div style="text-align: center; padding: 20px; color: #cbd5e1; font-size: 0.82rem; font-weight: 600;">
+                            <i class="fas fa-users" style="font-size: 1.5rem; margin-bottom: 8px; display: block; opacity: 0.4;"></i>
+                            No team members found
                         </div>
-                        <div class="stat-number-block">
-                            <div class="label">ON TIME</div>
-                            <div class="value">{{ team_on_time_percentage|default:"—" }}</div>
-                        </div>
-                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
+
+
 
         <!-- Column 2: Timings -->
         <div class="col-12 col-lg-4">
@@ -1064,6 +1099,51 @@
                         <span>Grace: <strong style="color: #334155; font-weight: 700;">{{ assigned_shift.grace_period_minutes|default:15 }} min</strong></span>
                         <span style="color: #cbd5e1;">·</span>
                         <span style="color: #10b981; font-weight: 700;">Flexible Shift</span>
+                    </div>
+
+                    <!-- Break & Refreshment Timings -->
+                    <div style="margin-bottom: 16px;">
+                        <div style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-coffee" style="color: #f59e0b;"></i> Break & Refreshment Timings
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            {% if shift_breaks %}
+                                {% for brk in shift_breaks %}
+                                <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 7px 12px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <i class="fas {% if 'lunch' in brk.name|lower %}fa-utensils{% elif 'tea' in brk.name|lower or 'coffee' in brk.name|lower %}fa-coffee{% elif 'dinner' in brk.name|lower %}fa-moon{% else %}fa-pause-circle{% endif %}"
+                                           style="font-size: 0.78rem; color: #64748b;"></i>
+                                        <span style="font-size: 0.8rem; font-weight: 700; color: #334155;">{{ brk.name }}</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="font-size: 0.78rem; font-weight: 600; color: #475569;">
+                                            {{ brk.start_time|time:"h:i A" }} – {{ brk.end_time|time:"h:i A" }}
+                                        </span>
+                                        {% if brk.duration_minutes %}
+                                        <span style="font-size: 0.7rem; font-weight: 700; background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 20px; border: 1px solid #fde68a;">
+                                            {{ brk.duration_minutes }}m
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% elif assigned_shift.lunch_break_start and assigned_shift.lunch_break_end %}
+                                <!-- Fallback: show lunch_break_start/end from the shift itself -->
+                                <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 7px 12px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <i class="fas fa-utensils" style="font-size: 0.78rem; color: #64748b;"></i>
+                                        <span style="font-size: 0.8rem; font-weight: 700; color: #334155;">Lunch Break</span>
+                                    </div>
+                                    <span style="font-size: 0.78rem; font-weight: 600; color: #475569;">
+                                        {{ assigned_shift.lunch_break_start|time:"h:i A" }} – {{ assigned_shift.lunch_break_end|time:"h:i A" }}
+                                    </span>
+                                </div>
+                            {% else %}
+                                <div style="font-size: 0.78rem; color: #cbd5e1; font-weight: 600; padding: 4px 0; text-align: center;">
+                                    No break timings configured
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
 
                     <!-- Real progress bar based on actual hours worked today -->
@@ -1432,71 +1512,7 @@
             </table>
         </div>
 
-        <!-- Floating Chatbot Button & Modern Dialog bubble -->
-        <div class="keka-chatbot-bubble animate__animated animate__bounceIn" onclick="toggleChatbot()">
-            <i class="fas fa-robot"></i>
-        </div>
 
-        <div id="keka-chatbot-panel" class="keka-chatbot-panel" style="display: none; position: fixed; bottom: 90px; right: 24px; width: 320px; height: 400px; background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 99999; flex-direction: column; overflow: hidden; border: 1px solid rgba(226,232,240,0.8); backdrop-filter: blur(20px);">
-            <div style="background: linear-gradient(135deg, #5b47fb 0%, #3b27db 100%); color: white; padding: 16px; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
-                <span style="display:flex; align-items:center; gap:8px;"><i class="fas fa-robot"></i> Keka AI Assistant</span>
-                <span onclick="toggleChatbot()" style="cursor:pointer; font-size:1.1rem;"><i class="fas fa-times"></i></span>
-            </div>
-            <div style="flex: 1; padding: 16px; overflow-y: auto; font-size: 0.85rem;" id="chatbot-messages">
-                <div style="background: #f1f5f9; padding: 10px 14px; border-radius: 12px 12px 12px 0; margin-bottom: 12px; width: fit-content; max-width: 85%;">
-                    Hello! I am your AI Assistant. How can I help you with your attendance today?
-                </div>
-            </div>
-            <div style="padding: 12px; border-top: 1px solid #ede9fe; display: flex; gap: 8px;">
-                <input type="text" id="chatbot-input" placeholder="Type a message..." style="flex: 1; border: 1px solid #cbd5e1; border-radius: 20px; padding: 6px 14px; font-size: 0.85rem; outline: none;">
-                <button onclick="sendChatbotMessage()" style="background: #5b47fb; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;"><i class="fas fa-paper-plane" style="font-size: 0.8rem;"></i></button>
-            </div>
-        </div>
-
-        <script>
-            function toggleChatbot() {
-                const panel = document.getElementById('keka-chatbot-panel');
-                if (panel.style.display === 'none') {
-                    panel.style.display = 'flex';
-                } else {
-                    panel.style.display = 'none';
-                }
-            }
-
-            function sendChatbotMessage() {
-                const input = document.getElementById('chatbot-input');
-                const text = input.value.trim();
-                if (!text) return;
-
-                const messages = document.getElementById('chatbot-messages');
-
-                // Add user message
-                const userDiv = document.createElement('div');
-                userDiv.style = "background: #e0e7ff; color: #1e1b4b; padding: 10px 14px; border-radius: 12px 12px 0 12px; margin-bottom: 12px; margin-left: auto; width: fit-content; max-width: 85%; font-weight: 600;";
-                userDiv.textContent = text;
-                messages.appendChild(userDiv);
-
-                input.value = '';
-                messages.scrollTop = messages.scrollHeight;
-
-                // Add bot typing response
-                setTimeout(() => {
-                    const botDiv = document.createElement('div');
-                    botDiv.style = "background: #f1f5f9; padding: 10px 14px; border-radius: 12px 12px 12px 0; margin-bottom: 12px; width: fit-content; max-width: 85%;";
-
-                    if (text.toLowerCase().includes('clock') || text.toLowerCase().includes('attendance')) {
-                        botDiv.textContent = "You can clock in or clock out directly from the 'Actions' card at the top of the page. Let me know if you need help regularising an old entry!";
-                    } else if (text.toLowerCase().includes('shift') || text.toLowerCase().includes('hour')) {
-                        botDiv.textContent = "Your current shift is Night Shift (US Location) from 11:30 PM to 08:00 AM. Your daily goal is 9 hours of work.";
-                    } else {
-                        botDiv.textContent = "That sounds interesting! I can help you check your clock-in timings, calculate your worked hours, or apply for regularisation.";
-                    }
-
-                    messages.appendChild(botDiv);
-                    messages.scrollTop = messages.scrollHeight;
-                }, 800);
-            }
-        </script>ody>
             </table>
         </div>
     </div>
