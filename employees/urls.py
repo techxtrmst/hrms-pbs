@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import inline_views, location_tracking_views, views
+from . import inline_views, location_tracking_views, support_views, views
 from .multi_step_views import add_employee_step0, add_employee_step1, add_employee_step2, add_employee_step3
 
 urlpatterns = [
@@ -130,4 +130,14 @@ urlpatterns = [
     ),
     path("api/birthday-wish/", views.send_birthday_wish, name="api_send_birthday_wish"),
     path("id-card/", views.employee_id_card, name="id_card"),
+    # Internal Support Ticket System
+    path("support/", support_views.support_ticket_list, name="support_ticket_list"),
+    path("support/create/", support_views.support_ticket_create, name="support_ticket_create"),
+    path("support/<int:ticket_id>/", support_views.support_ticket_detail, name="support_ticket_detail"),
+    path(
+        "support/<int:ticket_id>/status/",
+        support_views.support_ticket_update_status,
+        name="support_ticket_update_status",
+    ),
+    path("support/<int:ticket_id>/assign/", support_views.support_ticket_assign, name="support_ticket_assign"),
 ]

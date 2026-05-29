@@ -33,13 +33,16 @@ class EmployeeAdmin(ModelAdmin, ImportExportModelAdmin):
         "designation",
         "manager",
         "badge_id",
+        "is_support_agent",
     )
+    list_editable = ("is_support_agent",)
     list_filter = (
         "company",
         "department",
         "designation",
         "employment_status",
         "is_active",
+        "is_support_agent",
     )
     search_fields = ("user__email", "user__first_name", "user__last_name", "badge_id")
     inlines = [EmergencyContactInline]

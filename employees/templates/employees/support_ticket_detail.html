@@ -1,0 +1,344 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Ticket #{{ ticket.id }} - {{ ticket.subject }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{% url 'support_ticket_list' %}" class="btn btn-outline-secondary rounded-3 px-3 py-2 border-0 shadow-sm bg-white hover-scale">
+            <i class="fas fa-arrow-left me-2"></i>Back to Helpdesk Board
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <!-- LEFT PANEL: TICKET INFORMATION & CHAT -->
+        <div class="col-12 col-xl-8">
+            <!-- Ticket Info Card -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                        <div>
+                            <span class="badge bg-slate-100 text-slate-700 px-3 py-2 rounded-3 small mb-2 border">
+                                Ticket #{{ ticket.id }}
+                            </span>
+                            <h3 class="fw-bold text-dark mt-1 mb-2">{{ ticket.subject }}</h3>
+                            <div class="d-flex align-items-center gap-3 text-muted text-xs">
+                                <span><i class="far fa-calendar-alt me-1"></i>Created on {{ ticket.created_at|date:"M d, Y h:i A" }}</span>
+                                <span>•</span>
+                                <span>
+                                    {% if ticket.category == 'IT' %}
+                                        <i class="fas fa-laptop text-info me-1"></i> IT Support
+                                    {% elif ticket.category == 'HR' %}
+                                        <i class="fas fa-users-cog text-primary me-1"></i> HR Queries
+                                    {% elif ticket.category == 'PAYROLL' %}
+                                        <i class="fas fa-wallet text-success me-1"></i> Payroll
+                                    {% else %}
+                                        <i class="fas fa-headset text-secondary me-1"></i> General
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="badge
+                                {% if ticket.priority == 'HIGH' %}bg-danger text-white
+                                {% elif ticket.priority == 'MEDIUM' %}bg-warning text-dark
+                                {% else %}bg-primary text-white{% endif %} px-3 py-2 rounded-3">
+                                {{ ticket.get_priority_display }} Priority
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="bg-light p-3 rounded-4 border">
+                        <h6 class="fw-bold text-dark mb-2">Detailed Issue Description:</h6>
+                        <p class="mb-0 text-slate-800" style="white-space: pre-wrap; line-height: 1.6;">{{ ticket.description }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat & Discussion Thread -->
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header border-0 bg-transparent pt-4 px-4 pb-2">
+                    <h5 class="fw-bold text-dark mb-0"><i class="far fa-comments me-2 text-info"></i>Conversation History</h5>
+                </div>
+
+                <div class="card-body px-4 py-2">
+                    <!-- Chat box wrapper -->
+                    <div class="chat-thread p-3 rounded-4 border bg-slate-50 mb-3" style="max-height: 45vh; overflow-y: auto; min-height: 250px;">
+                        {% if messages %}
+                            {% for msg in messages %}
+                                <!-- System Message Check (starts with specific symbols) -->
+                                {% if "🔄" in msg.message or "👤" in msg.message %}
+                                    <div class="d-flex justify-content-center my-3">
+                                        <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill text-xs">
+                                            {{ msg.message }} <small class="text-muted ms-2">{{ msg.created_at|date:"h:i A" }}</small>
+                                        </span>
+                                    </div>
+                                {% else %}
+                                    <!-- Sender vs Receiver Bubbles -->
+                                    <div class="d-flex {% if msg.sender == request.user.employee_profile %}justify-content-end{% else %}justify-content-start{% endif %} mb-3">
+                                        <div class="d-flex flex-column max-w-75">
+                                            <div class="d-flex align-items-center gap-2 mb-1 px-2">
+                                                <span class="fw-bold text-xs text-dark">{{ msg.sender.user.get_full_name }}</span>
+                                                <span class="text-muted" style="font-size: 9px;">{{ msg.created_at|date:"h:i A" }}</span>
+                                            </div>
+                                            <div class="chat-bubble p-3 rounded-4 text-sm {% if msg.sender == request.user.employee_profile %}bg-indigo-600 text-white rounded-tr-0{% else %}bg-white border text-dark rounded-tl-0{% endif %} shadow-sm">
+                                                {{ msg.message|linebreaksbr }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-5 text-muted">
+                                <i class="far fa-comment-dots fa-3x mb-2 opacity-50"></i>
+                                <p class="small mb-0">No replies yet. Start the conversation below!</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Send Message Form -->
+                    <form action="" method="post" class="mb-2">
+                        {% csrf_token %}
+                        <div class="input-group mb-2">
+                            <textarea class="form-control rounded-4 border-end-0 shadow-sm" name="message" rows="2" placeholder="Type your reply here..." required style="border-top-right-radius: 0; border-bottom-right-radius: 0;"></textarea>
+                            <button class="btn btn-indigo text-white px-4 rounded-4 shadow-sm" type="submit" style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+                                <i class="fas fa-paper-plane me-2"></i>Send Reply
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL: JIRA CONTROLS -->
+        <div class="col-12 col-xl-4">
+            <div class="card border-0 shadow-sm rounded-4 sticky-xl-top" style="top: 24px;">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-dark mb-4 border-bottom pb-2">Ticket Controls</h5>
+
+                    <!-- STATUS SELECTOR (AJAX UPDATED) -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-muted text-xs text-uppercase">Ticket Status</label>
+                        <select class="form-select form-select-lg rounded-3 fw-bold border-2" id="ticketStatusSelect" style="
+                            {% if ticket.status == 'OPEN' %}border-color: #3b82f6; color: #3b82f6; background-color: #eff6ff;
+                            {% elif ticket.status == 'IN_PROGRESS' %}border-color: #f59e0b; color: #f59e0b; background-color: #fef3c7;
+                            {% else %}border-color: #10b981; color: #10b981; background-color: #ecfdf5;{% endif %}">
+                            <option value="OPEN" {% if ticket.status == 'OPEN' %}selected{% endif %}>🟢 Open / Pending</option>
+                            <option value="IN_PROGRESS" {% if ticket.status == 'IN_PROGRESS' %}selected{% endif %}>🟡 In Progress</option>
+                            <option value="DONE" {% if ticket.status == 'DONE' %}selected{% endif %}>✅ Done / Resolved</option>
+                        </select>
+                        <small class="text-muted d-block mt-1">Change to transition the ticket stage.</small>
+                    </div>
+
+                    <!-- ASSIGNEE SELECTOR (FOR SUPPORT STAFF / ADMINS ONLY) -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-muted text-xs text-uppercase">Assigned Agent</label>
+                        {% if is_support_staff %}
+                            <select class="form-select rounded-3" id="ticketAssignSelect">
+                                <option value="">-- Unassigned --</option>
+                                {% for agent in support_agents %}
+                                    <option value="{{ agent.id }}" {% if ticket.assigned_to == agent %}selected{% endif %}>
+                                        {{ agent.user.get_full_name }} ({{ agent.designation|default:"Support Staff" }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted d-block mt-1">Select an employee to assign resolution.</small>
+                        {% else %}
+                            <div class="p-3 bg-light rounded-3 border">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fas fa-user-shield text-indigo"></i>
+                                    <div>
+                                        <div class="fw-bold text-dark text-sm">
+                                            {% if ticket.assigned_to %}
+                                                {{ ticket.assigned_to.user.get_full_name }}
+                                            {% else %}
+                                                Unassigned
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-xs text-muted">
+                                            {% if ticket.assigned_to %}
+                                                {{ ticket.assigned_to.designation }}
+                                            {% else %}
+                                                Awaiting agent assignment
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- SUBMITTER PROFILE -->
+                    <div class="mb-4 border-top pt-3">
+                        <label class="form-label fw-bold text-muted text-xs text-uppercase mb-2">Ticket Owner</label>
+                        <div class="d-flex align-items-center gap-3">
+                            {% if ticket.employee.profile_picture %}
+                                <img src="{{ ticket.employee.profile_picture.url }}" class="rounded-circle" style="width: 48px; height: 48px; object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle bg-indigo-100 text-indigo-700 fw-bold d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 16px;">
+                                    {{ ticket.employee.user.first_name|slice:":1" }}{{ ticket.employee.user.last_name|slice:":1" }}
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h6 class="fw-bold text-dark mb-0">{{ ticket.employee.user.get_full_name }}</h6>
+                                <p class="text-xs text-muted mb-0">{{ ticket.employee.designation }}</p>
+                                <p class="text-xs text-muted mb-0">ID: {{ ticket.employee.badge_id }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AJAX INTERACTIVE CONTROLS JAVASCRIPT -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Scroll chat thread to bottom
+        const chatThread = document.querySelector(".chat-thread");
+        if (chatThread) {
+            chatThread.scrollTop = chatThread.scrollHeight;
+        }
+
+        // CSRF Token Helper
+        function getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]').value;
+        }
+
+        // Dynamic Status update
+        const statusSelect = document.getElementById("ticketStatusSelect");
+        if (statusSelect) {
+            statusSelect.addEventListener("change", function() {
+                const newStatus = this.value;
+                const url = "{% url 'support_ticket_update_status' ticket.id %}";
+
+                fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": getCSRFToken()
+                    },
+                    body: `status=${newStatus}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        // Dynamically update drop down styling
+                        if (newStatus === "OPEN") {
+                            statusSelect.style.borderColor = "#3b82f6";
+                            statusSelect.style.color = "#3b82f6";
+                            statusSelect.style.backgroundColor = "#eff6ff";
+                        } else if (newStatus === "IN_PROGRESS") {
+                            statusSelect.style.borderColor = "#f59e0b";
+                            statusSelect.style.color = "#f59e0b";
+                            statusSelect.style.backgroundColor = "#fef3c7";
+                        } else {
+                            statusSelect.style.borderColor = "#10b981";
+                            statusSelect.style.color = "#10b981";
+                            statusSelect.style.backgroundColor = "#ecfdf5";
+                        }
+
+                        // Reload page to show status update timeline comment
+                        window.location.reload();
+                    } else {
+                        alert("Error updating status: " + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("Something went wrong!");
+                });
+            });
+        }
+
+        // Dynamic Assignee Update
+        const assignSelect = document.getElementById("ticketAssignSelect");
+        if (assignSelect) {
+            assignSelect.addEventListener("change", function() {
+                const agentId = this.value;
+                const url = "{% url 'support_ticket_assign' ticket.id %}";
+
+                fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": getCSRFToken()
+                    },
+                    body: `agent_id=${agentId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        // Reload page to show assignment timeline message
+                        window.location.reload();
+                    } else {
+                        alert("Error assigning agent: " + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("Something went wrong!");
+                });
+            });
+        }
+    });
+</script>
+
+<style>
+    .chat-thread {
+        background-color: #f8fafc;
+        border-radius: 12px;
+    }
+    .chat-bubble {
+        max-width: 100%;
+        line-height: 1.5;
+        border-radius: 16px;
+    }
+    .rounded-tr-0 {
+        border-top-right-radius: 0 !important;
+    }
+    .rounded-tl-0 {
+        border-top-left-radius: 0 !important;
+    }
+    .bg-indigo-600 {
+        background-color: #5b47fb !important;
+    }
+    .btn-indigo {
+        background-color: #5b47fb !important;
+        border-color: #5b47fb !important;
+    }
+    .btn-indigo:hover {
+        background-color: #4b34eb !important;
+    }
+    .max-w-75 {
+        max-width: 75% !important;
+    }
+    .text-xs {
+        font-size: 0.75rem;
+    }
+    .text-sm {
+        font-size: 0.875rem;
+    }
+    .bg-slate-100 {
+        background-color: #f1f5f9;
+    }
+    .bg-slate-50 {
+        background-color: #f8fafc;
+    }
+    .text-slate-700 {
+        color: #334155;
+    }
+    .text-slate-800 {
+        color: #1e293b;
+    }
+    .hover-scale {
+        transition: transform 0.2s ease;
+    }
+    .hover-scale:hover {
+        transform: scale(1.02);
+    }
+</style>
+{% endblock %}

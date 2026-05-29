@@ -135,6 +135,9 @@ class Employee(models.Model):
         default=True,
         help_text="Whether employee is currently active in the organization",
     )
+    is_support_agent = models.BooleanField(
+        default=False, verbose_name="Support Agent", help_text="Designate this employee as a system support agent."
+    )
     biometric_id = models.CharField(
         max_length=50, null=True, blank=True, unique=True, help_text="ID as registered in the biometric machine"
     )
@@ -1779,3 +1782,59 @@ class WorkHistory(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.employee.user.get_full_name()}"
+
+
+class SupportTicket(models.Model):
+    STATUS_CHOICES = [
+        ("OPEN", "Open"),
+        ("IN_PROGRESS", "In Progress"),
+        ("DONE", "Done"),
+    ]
+    PRIORITY_CHOICES = [
+        ("LOW", "Low"),
+        ("MEDIUM", "Medium"),
+        ("HIGH", "High"),
+    ]
+    CATEGORY_CHOICES = [
+        ("HR", "HR Queries"),
+        ("IT", "IT & Hardware"),
+        ("PAYROLL", "Payroll & Salary"),
+        ("GENERAL", "General Support"),
+    ]
+
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="created_tickets")
+    assigned_to = models.ForeignKey(
+        Employee,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assigned_tickets",
+        help_text="Support agent handling this ticket",
+    )
+    subject = models.CharField(max_length=255)
+    description = models.TextField()
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default="GENERAL")
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default="MEDIUM")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="OPEN")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Ticket #{self.id} - {self.subject} ({self.status})"
+
+
+class TicketMessage(models.Model):
+    ticket = models.ForeignKey(SupportTicket, on_delete=models.CASCADE, related_name="messages")
+    sender = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"Msg by {self.sender.user.get_full_name()} on Ticket #{self.ticket.id}"

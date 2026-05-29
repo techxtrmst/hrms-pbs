@@ -75,7 +75,7 @@ class Command(BaseCommand):
                     self.style.WARNING(f"Using default rules for {company_name} (not in predefined rules)")
                 )
 
-            self.stdout.write(f"\n📍 Processing Company: {company_name}")
+            self.stdout.write(f"\n[Company] Processing Company: {company_name}")
             self.stdout.write(
                 f"   Rules: CL={rules['casual_leave_monthly']}/month, SL={rules['sick_leave_monthly']}/month"
             )
@@ -137,12 +137,12 @@ class Command(BaseCommand):
                     f"   {action} {employee.user.get_full_name()}: CL={total_cl}, SL={total_sl}, EL={total_el}"
                 )
 
-            self.stdout.write(self.style.SUCCESS(f"   ✅ {company_updated} employees updated for {company_name}"))
+            self.stdout.write(self.style.SUCCESS(f"   [OK] {company_updated} employees updated for {company_name}"))
 
-        self.stdout.write(self.style.SUCCESS(f"\n🎉 Total employees updated: {total_updated}"))
+        self.stdout.write(self.style.SUCCESS(f"\n[OK] Total employees updated: {total_updated}"))
 
         # Show summary by company
-        self.stdout.write("\n📊 LEAVE ALLOCATION SUMMARY:")
+        self.stdout.write("\n[Summary] LEAVE ALLOCATION SUMMARY:")
         for company in companies:
             company_name = company.name
             if company_name in leave_allocation_rules:
@@ -159,4 +159,4 @@ class Command(BaseCommand):
                 self.stdout.write(f"     Monthly: {monthly_cl} CL + {monthly_sl} SL")
                 self.stdout.write(f"     Total allocated ({months_elapsed} months): {total_cl} CL + {total_sl} SL")
 
-        self.stdout.write(self.style.SUCCESS("\n✅ Monthly leave allocation system setup completed!"))
+        self.stdout.write(self.style.SUCCESS("\n[OK] Monthly leave allocation system setup completed!"))

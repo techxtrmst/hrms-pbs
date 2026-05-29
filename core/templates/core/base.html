@@ -1776,6 +1776,12 @@
         </div>
         {% endif %}
 
+        <!-- Support Ticket Link (Jira-style Internal Support) -->
+        <a href="{% url 'support_ticket_list' %}"
+           class="{% if 'support' in request.path %}active{% endif %}">
+            <i class="fas fa-headset" style="color: #10b981;"></i> <span>Support Team</span>
+        </a>
+
         <!-- AI Features Section -->
         {% if user.role == 'COMPANY_ADMIN' or user.role == 'MANAGER' or user.role == 'SUPERADMIN' %}
         <a href="#menuAI" class="sidebar-dropdown-toggle d-flex justify-content-between align-items-center"
