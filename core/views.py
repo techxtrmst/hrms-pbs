@@ -1953,7 +1953,9 @@ def personal_home(request):
                 is_grace_used=True,
             ).count()
             context["grace_used_count"] = grace_used_count
-            context["late_logins_remaining"] = max(0, employee.assigned_shift.allowed_late_logins - grace_used_count)
+            context["late_logins_remaining"] = max(
+                0, (employee.assigned_shift.allowed_late_logins or 5) - grace_used_count
+            )
 
             # Timeline Calculations
             # Define Start and End (in minutes from midnight)
@@ -2004,7 +2006,7 @@ def personal_home(request):
                                 "percent": percent,
                                 "dot_class": dot_class,
                                 "show_time": show_time,
-                                "is_late": attendance.is_late if is_first else False,
+                                "is_late": (attendance.is_late if attendance else False) if is_first else False,
                             }
                         )
 
@@ -2038,7 +2040,9 @@ def personal_home(request):
                                 "percent": percent,
                                 "dot_class": dot_class,
                                 "show_time": show_time,
-                                "is_early": attendance.is_early_departure if is_last_recorded else False,
+                                "is_early": (attendance.is_early_departure if attendance else False)
+                                if is_last_recorded
+                                else False,
                             }
                         )
 
