@@ -206,5 +206,17 @@ jobs:
             # Start services
             docker compose up -d
 
+            # Wait for backend container to be healthy before running migrations
+            echo "⏳ Waiting for backend to be ready..."
+            timeout 120 bash -c 'until docker compose exec -T backend python manage.py check --deploy 2>/dev/null; do sleep 5; done' || true
+
+            # Run database migrations
+            echo "🗄️ Running database migrations..."
+            docker compose exec -T backend python manage.py migrate --noinput
+
+            # Collect static files
+            echo "📁 Collecting static files..."
+            docker compose exec -T backend python manage.py collectstatic --noinput --clear
+
             # Final check
             docker compose ps
