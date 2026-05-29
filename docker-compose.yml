@@ -39,7 +39,7 @@ services:
           cpus: "0.25"
 
   backend:
-    image: hrms-backend:latest
+    image: ghcr.io/techxtrmst/hrms-pbs:latest
     env_file:
       - .env
     environment:
