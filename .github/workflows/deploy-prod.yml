@@ -170,6 +170,17 @@ jobs:
           tar -czf ../backend-prod-config.tar.gz .
           mv ../backend-prod-config.tar.gz "${{ github.workspace }}/backend-prod-config.tar.gz"
 
+      - name: Upload deployment files
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USERNAME }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: ${{ secrets.STAGING_SSH_PORT }}
+          source: "backend-prod-config.tar.gz"
+          target: "/tmp/"
+          timeout: 5m
+
       - name: Deploy to production server
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -184,8 +195,15 @@ jobs:
             mkdir -p $DEPLOY_DIR
             cd $DEPLOY_DIR
 
-            # Stop services
-            docker compose down || true
+            # Stop services if docker-compose.yml exists
+            if [ -f "docker-compose.yml" ]; then
+              docker compose down --remove-orphans || true
+            fi
+
+            # Extract new deployment config
+            echo "📦 Extracting deployment configuration..."
+            tar -xzf /tmp/backend-prod-config.tar.gz -C .
+            rm -f /tmp/backend-prod-config.tar.gz
 
             # Pull latest image
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
