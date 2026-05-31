@@ -165,6 +165,10 @@ jobs:
               docker compose down --remove-orphans || true
             fi
 
+            # Force-release any ports that might be held by other containers
+            echo "🔌 Releasing any occupied ports..."
+            docker ps -q | xargs -r docker stop || true
+
             # Write docker-compose.yml from base64
             echo "📦 Writing deployment configuration..."
             echo "${{ steps.encode_files.outputs.compose_b64 }}" | base64 -d > docker-compose.yml
