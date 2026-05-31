@@ -5454,6 +5454,7 @@ def debug_error_log(request):
     """Temporary debug view - superadmin only - shows last 100 lines of errors.log"""
     if not request.user.is_superuser:
         from django.http import HttpResponseForbidden
+
         return HttpResponseForbidden("Superadmin only")
 
     import os
