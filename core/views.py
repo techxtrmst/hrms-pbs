@@ -1967,8 +1967,6 @@ def personal_home(request):
 
             timeline_items = []
 
-            from employees.models import AttendanceSession
-
             sessions = AttendanceSession.objects.filter(employee=employee, date=today).order_by("session_number")
 
             if sessions.exists():
