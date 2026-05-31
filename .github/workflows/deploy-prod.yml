@@ -175,7 +175,7 @@ jobs:
             echo "${{ steps.encode_files.outputs.nginx_b64 }}" | base64 -d > nginx.conf
 
             # Write .env file
-            cat > .env << 'ENVEOF'
+            cat > .env << ENVEOF
             DEBUG=${{ secrets.STAGING_DEBUG }}
             SECRET_KEY=${{ secrets.STAGING_SECRET_KEY }}
             APP_PORT=${{ secrets.STAGING_APP_PORT }}
