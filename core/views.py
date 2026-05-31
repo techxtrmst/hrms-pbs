@@ -1288,7 +1288,6 @@ def personal_home(request):
 
             tz = pytz.timezone(user_timezone)
             today = timezone.now().astimezone(tz).date()
-            # Ensure the view uses the correct active timezone for rendering
             timezone.activate(tz)
         except Exception:
             pass
@@ -2091,10 +2090,13 @@ def personal_home(request):
 
         else:
             # Fallback
-            from companies.models import ShiftTiming
+            try:
+                from companies.models import ShiftTiming
 
-            shift_timing, _ = ShiftTiming.objects.get_or_create(company=employee.company)
-            context["shift_timing"] = shift_timing
+                shift_timing, _ = ShiftTiming.objects.get_or_create(company=employee.company)
+                context["shift_timing"] = shift_timing
+            except Exception:
+                context["shift_timing"] = None
             context["timeline_items"] = []  # Empty for default
             context["timeline_ticks"] = ["9 AM", "12 PM", "3 PM", "6 PM"]
 
@@ -2104,13 +2106,17 @@ def personal_home(request):
             leave_balance.refresh_from_db()  # Force refresh to get latest data
             context["leave_balance"] = leave_balance
         except Exception:
-            # Create leave balance if it doesn't exist
-            from employees.models import LeaveBalance
+            # Create leave balance if it doesn't exist (use get_or_create to avoid race condition)
+            try:
+                from employees.models import LeaveBalance
 
-            leave_balance = LeaveBalance.objects.create(
-                employee=employee, casual_leave_allocated=0.0, sick_leave_allocated=0.0
-            )
-            context["leave_balance"] = leave_balance
+                leave_balance, _ = LeaveBalance.objects.get_or_create(
+                    employee=employee,
+                    defaults={"casual_leave_allocated": 0.0, "sick_leave_allocated": 0.0},
+                )
+                context["leave_balance"] = leave_balance
+            except Exception:
+                context["leave_balance"] = None
 
     return render(request, "core/personal_home.html", context)
 
