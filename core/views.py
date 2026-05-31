@@ -1736,8 +1736,6 @@ def personal_home(request):
                 # Query daily sessions for the current record date to render capsules
                 day_sessions = []
                 try:
-                    from employees.models import AttendanceSession
-
                     session_objs = AttendanceSession.objects.filter(employee=employee, date=record.date).order_by(
                         "session_number"
                     )
@@ -1968,8 +1966,6 @@ def personal_home(request):
                 total_duration += 24 * 60  # Overnight shift
 
             timeline_items = []
-
-            from employees.models import AttendanceSession
 
             sessions = AttendanceSession.objects.filter(employee=employee, date=today).order_by("session_number")
 
@@ -5461,11 +5457,12 @@ def debug_error_log(request):
         return HttpResponseForbidden("Superadmin only")
 
     import os
+
     from django.http import HttpResponse
 
     log_path = os.path.join(settings.BASE_DIR, "_logs", "errors.log")
     try:
-        with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+        with open(log_path, encoding="utf-8", errors="replace") as f:
             lines = f.readlines()
         last_lines = lines[-100:]
         content = "".join(last_lines)
