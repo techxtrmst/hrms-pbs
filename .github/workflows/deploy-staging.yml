@@ -349,6 +349,10 @@ jobs:
               echo "🛑 Stopping current services (preserving database volume)..."
               $DOCKER_COMPOSE_CMD down --remove-orphans || true
 
+              # Force-release any ports held by other containers
+              echo "🔌 Releasing any occupied ports..."
+              docker ps -q | xargs -r docker stop || true
+
               # Clean up stopped containers only
               echo "🧹 Cleaning up stopped containers..."
               docker container prune -f || true
