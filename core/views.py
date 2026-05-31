@@ -5451,3 +5451,27 @@ def all_announcements(request):
         "today": today,
     }
     return render(request, "core/all_announcements.html", context)
+
+
+@login_required
+def debug_error_log(request):
+    """Temporary debug view - superadmin only - shows last 100 lines of errors.log"""
+    if not request.user.is_superuser:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Superadmin only")
+
+    import os
+    from django.http import HttpResponse
+
+    log_path = os.path.join(settings.BASE_DIR, "_logs", "errors.log")
+    try:
+        with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+            lines = f.readlines()
+        last_lines = lines[-100:]
+        content = "".join(last_lines)
+    except FileNotFoundError:
+        content = f"Log file not found at: {log_path}"
+    except Exception as e:
+        content = f"Error reading log: {e}"
+
+    return HttpResponse(f"<pre style='font-size:12px;padding:20px'>{content}</pre>")

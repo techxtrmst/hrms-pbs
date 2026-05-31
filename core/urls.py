@@ -75,4 +75,6 @@ urlpatterns = [
     path("birthdays/", views.all_birthdays, name="all_birthdays"),
     path("anniversaries/", views.all_anniversaries, name="all_anniversaries"),
     path("announcements/", views.all_announcements, name="all_announcements"),
+    # Temporary debug endpoint - superadmin only
+    path("debug/errors/", views.debug_error_log, name="debug_error_log"),
 ]
