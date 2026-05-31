@@ -175,29 +175,28 @@ jobs:
             echo "${{ steps.encode_files.outputs.nginx_b64 }}" | base64 -d > nginx.conf
 
             # Write .env file
-            cat > .env << ENVEOF
-DEBUG=${{ secrets.STAGING_DEBUG }}
-SECRET_KEY=${{ secrets.STAGING_SECRET_KEY }}
-APP_PORT=${{ secrets.STAGING_APP_PORT }}
-DB_ENGINE=${{ secrets.STAGING_DB_ENGINE }}
-DB_NAME=${{ secrets.STAGING_DB_NAME }}
-DB_USER=${{ secrets.STAGING_DB_USER }}
-DB_PASSWORD=${{ secrets.STAGING_DB_PASSWORD }}
-DB_HOST=${{ secrets.STAGING_DB_HOST }}
-DB_PORT=${{ secrets.STAGING_DB_PORT }}
-ALLOWED_HOSTS=${{ secrets.STAGING_ALLOWED_HOSTS }}
-CSRF_TRUSTED_ORIGINS=${{ secrets.STAGING_CSRF_TRUSTED_ORIGINS }}
-CORS_ALLOW_ALL_ORIGINS=${{ secrets.STAGING_CORS_ALLOW_ALL_ORIGINS }}
-EMAIL_HOST=${{ secrets.STAGING_EMAIL_HOST }}
-EMAIL_PORT=${{ secrets.STAGING_EMAIL_PORT }}
-EMAIL_USE_TLS=${{ secrets.STAGING_EMAIL_USE_TLS }}
-EMAIL_HOST_USER=${{ secrets.STAGING_EMAIL_HOST_USER }}
-EMAIL_HOST_PASSWORD=${{ secrets.STAGING_EMAIL_HOST_PASSWORD }}
-DEFAULT_FROM_EMAIL=${{ secrets.STAGING_DEFAULT_FROM_EMAIL }}
-POSTHOG_API_KEY=${{ secrets.STAGING_POSTHOG_API_KEY }}
-POSTHOG_HOST=${{ secrets.STAGING_POSTHOG_HOST }}
-POSTHOG_ENABLED=${{ secrets.STAGING_POSTHOG_ENABLED }}
-ENVEOF
+            printf 'DEBUG=%s\nSECRET_KEY=%s\nAPP_PORT=%s\nDB_ENGINE=%s\nDB_NAME=%s\nDB_USER=%s\nDB_PASSWORD=%s\nDB_HOST=%s\nDB_PORT=%s\nALLOWED_HOSTS=%s\nCSRF_TRUSTED_ORIGINS=%s\nCORS_ALLOW_ALL_ORIGINS=%s\nEMAIL_HOST=%s\nEMAIL_PORT=%s\nEMAIL_USE_TLS=%s\nEMAIL_HOST_USER=%s\nEMAIL_HOST_PASSWORD=%s\nDEFAULT_FROM_EMAIL=%s\nPOSTHOG_API_KEY=%s\nPOSTHOG_HOST=%s\nPOSTHOG_ENABLED=%s\n' \
+              '${{ secrets.STAGING_DEBUG }}' \
+              '${{ secrets.STAGING_SECRET_KEY }}' \
+              '${{ secrets.STAGING_APP_PORT }}' \
+              '${{ secrets.STAGING_DB_ENGINE }}' \
+              '${{ secrets.STAGING_DB_NAME }}' \
+              '${{ secrets.STAGING_DB_USER }}' \
+              '${{ secrets.STAGING_DB_PASSWORD }}' \
+              '${{ secrets.STAGING_DB_HOST }}' \
+              '${{ secrets.STAGING_DB_PORT }}' \
+              '${{ secrets.STAGING_ALLOWED_HOSTS }}' \
+              '${{ secrets.STAGING_CSRF_TRUSTED_ORIGINS }}' \
+              '${{ secrets.STAGING_CORS_ALLOW_ALL_ORIGINS }}' \
+              '${{ secrets.STAGING_EMAIL_HOST }}' \
+              '${{ secrets.STAGING_EMAIL_PORT }}' \
+              '${{ secrets.STAGING_EMAIL_USE_TLS }}' \
+              '${{ secrets.STAGING_EMAIL_HOST_USER }}' \
+              '${{ secrets.STAGING_EMAIL_HOST_PASSWORD }}' \
+              '${{ secrets.STAGING_DEFAULT_FROM_EMAIL }}' \
+              '${{ secrets.STAGING_POSTHOG_API_KEY }}' \
+              '${{ secrets.STAGING_POSTHOG_HOST }}' \
+              '${{ secrets.STAGING_POSTHOG_ENABLED }}' > .env
 
             # Verify files exist before proceeding
             echo "✅ Verifying config files..."
