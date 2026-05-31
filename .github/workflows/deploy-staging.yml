@@ -434,14 +434,21 @@ jobs:
             # Wait for backend to be healthy (increased timeout for migrations)
             echo "⏳ Waiting for backend to be ready..."
             for i in {1..120}; do
-              if $DOCKER_COMPOSE_CMD exec -T backend curl -fsS http://localhost:8000/api/health/ >/dev/null 2>&1; then
+              # Try 127.0.0.1 first, fallback to localhost to handle potential ipv6/localhost name resolution issues
+              if $DOCKER_COMPOSE_CMD exec -T backend curl -fsS http://127.0.0.1:8000/api/health/ >/dev/null 2>&1 || \
+                 $DOCKER_COMPOSE_CMD exec -T backend curl -fsS http://localhost:8000/api/health/ >/dev/null 2>&1; then
                 echo "✅ Backend is healthy and responding"
                 break
               fi
               if [ $i -eq 120 ]; then
+                echo "📋 Diagnostic: capture health check curl error details:"
+                echo "--- curl to 127.0.0.1 ---"
+                $DOCKER_COMPOSE_CMD exec -T backend curl -v http://127.0.0.1:8000/api/health/ || true
+                echo "--- curl to localhost ---"
+                $DOCKER_COMPOSE_CMD exec -T backend curl -v http://localhost:8000/api/health/ || true
                 echo "❌ Backend failed to start within 120 seconds"
                 echo "📋 Backend logs:"
-                $DOCKER_COMPOSE_CMD logs backend --tail=20
+                $DOCKER_COMPOSE_CMD logs backend --tail=40
                 exit 1
               fi
               echo "⏳ Attempt $i/120 - waiting for backend..."

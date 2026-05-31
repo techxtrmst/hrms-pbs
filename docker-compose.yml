@@ -62,7 +62,7 @@ services:
       - media_volume:/app/media
       - logs_volume:/app/_logs
     healthcheck:
-      test: [ "CMD", "curl", "-fsS", "http://localhost:8000/api/health/" ]
+      test: [ "CMD", "curl", "-fsS", "http://127.0.0.1:8000/api/health/" ]
       interval: 10s
       timeout: 5s
       retries: 10

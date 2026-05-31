@@ -1,7 +1,14 @@
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import include, path
 
+
+def health_check(request):
+    return JsonResponse({"status": "ok"})
+
+
 urlpatterns = [
+    path("api/health/", health_check, name="health_check"),
     path("admin/", admin.site.urls),
     path("hijack/", include("hijack.urls")),  # User impersonation
     path("observability/", include("observability.urls", namespace="observability")),  # Observability dashboard
