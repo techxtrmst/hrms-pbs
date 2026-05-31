@@ -5458,8 +5458,6 @@ def debug_error_log(request):
 
     import os
 
-    from django.http import HttpResponse
-
     log_path = os.path.join(settings.BASE_DIR, "_logs", "errors.log")
     try:
         with open(log_path, encoding="utf-8", errors="replace") as f:
