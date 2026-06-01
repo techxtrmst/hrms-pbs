@@ -168,6 +168,7 @@ jobs:
           echo "POSTHOG_API_KEY=${{ secrets.STAGING_POSTHOG_API_KEY }}" >> /tmp/prod.env
           echo "POSTHOG_HOST=${{ secrets.STAGING_POSTHOG_HOST }}" >> /tmp/prod.env
           echo "POSTHOG_ENABLED=${{ secrets.STAGING_POSTHOG_ENABLED }}" >> /tmp/prod.env
+          echo "BACKEND_IMAGE=ghcr.io/techxtrmst/hrms-pbs:latest" >> /tmp/prod.env
           ENV_B64=$(base64 -w 0 /tmp/prod.env)
           echo "env_b64=$ENV_B64" >> $GITHUB_OUTPUT
 

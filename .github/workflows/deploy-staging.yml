@@ -221,6 +221,7 @@ jobs:
           POSTHOG_ENABLED=${{ secrets.STAGING_POSTHOG_ENABLED }}
           LOG_LEVEL=${{ secrets.STAGING_LOG_LEVEL }}
           LOG_DIR=/app/_logs
+          BACKEND_IMAGE=hrms-backend:latest
           EOF
           cd /tmp/deployment
           tar -czf ../backend-staging-config.tar.gz .

@@ -39,7 +39,7 @@ services:
           cpus: "0.25"
 
   backend:
-    image: ghcr.io/techxtrmst/hrms-pbs:latest
+    image: ${BACKEND_IMAGE:-ghcr.io/techxtrmst/hrms-pbs:latest}
     env_file:
       - .env
     environment:
