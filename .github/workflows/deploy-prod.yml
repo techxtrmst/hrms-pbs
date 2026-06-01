@@ -192,7 +192,7 @@ jobs:
 
             # Force-release any ports that might be held by other containers
             echo "🔌 Releasing any occupied ports..."
-            docker ps -q | xargs -r docker stop || true
+            docker ps --filter "label=com.docker.compose.project=hrms-pbs-prod" -q | xargs -r docker stop || true
 
             # Write docker-compose.yml from base64
             echo "📦 Writing deployment configuration..."
