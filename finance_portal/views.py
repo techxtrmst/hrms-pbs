@@ -66,6 +66,7 @@ def dashboard(request):
     ex_calculated_count = 0
 
     for emp in employees:
+        emp.monthly_ctc = float(emp.annual_ctc or 0.0) / 12
         slip = payslip_map.get(emp.id)
         is_active = emp.is_active and emp.employment_status == "ACTIVE" and emp.exit_date is None
         item = {"employee": emp, "payslip": slip}
@@ -395,9 +396,19 @@ def save_draft_payslip(request):
         payslip.professional_tax = float(data.get("professional_tax", payslip.professional_tax))
 
         # Dynamic salary calculations based on manual overrides
-        payslip.gross_salary = payslip.basic + payslip.hra + payslip.conveyance_allowance + payslip.special_allowance
-        payslip.monthly_gross = payslip.gross_salary
-        payslip.net_salary = payslip.gross_salary - payslip.employee_pf - payslip.professional_tax
+        if "gross_salary" in data:
+            payslip.gross_salary = float(data["gross_salary"])
+            payslip.monthly_gross = payslip.gross_salary
+        else:
+            payslip.gross_salary = (
+                payslip.basic + payslip.hra + payslip.conveyance_allowance + payslip.special_allowance
+            )
+            payslip.monthly_gross = payslip.gross_salary
+
+        if "net_salary" in data:
+            payslip.net_salary = float(data["net_salary"])
+        else:
+            payslip.net_salary = payslip.gross_salary - payslip.employee_pf - payslip.professional_tax
         payslip.save()
 
         # Also save annual_ctc to Employee if provided
@@ -514,7 +525,7 @@ def update_employee_ctc(request):
             {
                 "status": "success",
                 "annual_ctc": new_ctc,
-                "monthly_gross": round(monthly_gross, 2),
+                "monthly_gross": round(new_ctc / 12, 2),
                 "basic": round(basic, 2),
                 "hra": round(hra, 2),
                 "conveyance": round(conveyance, 2),
@@ -980,3 +991,212 @@ def preview_draft_payslip(request, payslip_id):
         return response
     else:
         return HttpResponse("Error generating draft preview PDF.", status=500)
+
+
+@finance_manager_required
+@csrf_exempt
+def recalculate_components(request):
+    """
+    AJAX endpoint called when Annual CTC or Worked Days change.
+    Recalculates the full payslip breakdown using the new/current CTC and worked days,
+    updates the draft payslip record in the database, and returns all recalculated components.
+    """
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "Only POST allowed"}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        payslip_id = data.get("payslip_id")
+        payslip = get_object_or_404(Payslip, id=payslip_id)
+        employee = payslip.employee
+
+        # If annual_ctc is passed, update it on the employee
+        new_ctc_val = data.get("annual_ctc")
+        if new_ctc_val is not None:
+            new_ctc = float(new_ctc_val)
+            employee.annual_ctc = new_ctc
+            employee.save(update_fields=["annual_ctc"])
+        else:
+            new_ctc = float(employee.annual_ctc or 0.0)
+
+        # Update worked_days
+        new_worked_days_val = data.get("worked_days")
+        if new_worked_days_val is not None:
+            worked_days = float(new_worked_days_val)
+            payslip.worked_days = worked_days
+            payslip.save(update_fields=["worked_days"])
+        else:
+            worked_days = float(payslip.worked_days or 0.0)
+
+        # Perform recalculation
+        month_obj = payslip.month
+        total_days = calendar.monthrange(month_obj.year, month_obj.month)[1]
+
+        breakdown = calculate_payslip_breakdown(
+            new_ctc,
+            worked_days,
+            total_days,
+            employee.pf_enabled,
+            location=employee.location,
+            company=employee.company,
+            month=month_obj.month,
+            year=month_obj.year,
+        )
+
+        if breakdown.get("country_code", "IN") == "IN":
+            conveyance = breakdown.get("lta", 0.0)
+            special = breakdown.get("other_allowance", 0.0)
+        else:
+            conveyance = breakdown.get("conveyance", 0.0)
+            special = breakdown.get("medical", 0.0)
+
+        basic = breakdown["basic"]
+        hra = breakdown["hra"]
+        employee_pf = breakdown["employee_pf"]
+        employer_pf = breakdown["employer_pf"]
+        professional_tax = breakdown["professional_tax"]
+        gross = breakdown["gross_monthly"]
+        net = breakdown["net_salary"]
+        monthly_gross = breakdown["full_monthly_gross"]
+
+        # Update payslip with recalculated values
+        payslip.basic = basic
+        payslip.hra = hra
+        payslip.conveyance_allowance = conveyance
+        payslip.special_allowance = special
+        payslip.employee_pf = employee_pf
+        payslip.employer_pf = employer_pf
+        payslip.professional_tax = professional_tax
+        payslip.gross_salary = gross
+        payslip.monthly_gross = monthly_gross
+        payslip.net_salary = net
+        payslip.save()
+
+        # Audit log
+        FinanceAuditLog.objects.create(
+            user=request.user,
+            company=employee.company,
+            action="RECALCULATE_DRAFT",
+            details=f"Recalculated draft payslip for {employee.user.get_full_name()} (CTC: {new_ctc}, Worked Days: {worked_days}). Net: {net}.",
+            ip_address=get_client_ip(request),
+        )
+
+        return JsonResponse(
+            {
+                "status": "success",
+                "annual_ctc": new_ctc,
+                "worked_days": worked_days,
+                "monthly_gross": round(new_ctc / 12, 2),
+                "basic": round(basic, 2),
+                "hra": round(hra, 2),
+                "conveyance": round(conveyance, 2),
+                "special": round(special, 2),
+                "employee_pf": round(employee_pf, 2),
+                "employer_pf": round(employer_pf, 2),
+                "professional_tax": round(professional_tax, 2),
+                "gross": round(gross, 2),
+                "net": round(net, 2),
+            }
+        )
+
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=400)
+
+
+@finance_manager_required
+def company_payroll_settings(request, company_id):
+    """
+    Configure statutory rules, salary component mapping, and per-location PT slabs
+    specifically for the given company_id. Accessible by finance managers.
+    """
+    from companies.models import LocationProfessionalTax, PayrollConfiguration
+
+    company = get_object_or_404(Company, id=company_id)
+    config, created = PayrollConfiguration.objects.get_or_create(company=company)
+
+    # Fetch all active locations for this company
+    locations = company.locations.filter(is_active=True).order_by("name")
+
+    # Ensure every location has a PT config row (auto-create with defaults)
+    for loc in locations:
+        LocationProfessionalTax.objects.get_or_create(location=loc)
+
+    # Reload with PT configs attached
+    location_pt_configs = (
+        LocationProfessionalTax.objects.filter(location__company=company, location__is_active=True)
+        .select_related("location")
+        .order_by("location__name")
+    )
+
+    if request.method == "POST":
+        # Extract decimal values safely
+        def get_decimal(key, default):
+            val = request.POST.get(key)
+            if val is None or val == "":
+                return default
+            try:
+                return float(val)
+            except ValueError:
+                return default
+
+        # India Rates
+        config.pf_employer_rate = get_decimal("pf_employer_rate", config.pf_employer_rate)
+        config.pf_employee_rate = get_decimal("pf_employee_rate", config.pf_employee_rate)
+        config.pf_ceiling = get_decimal("pf_ceiling", config.pf_ceiling)
+        config.esi_employer_rate = get_decimal("esi_employer_rate", config.esi_employer_rate)
+        config.esi_employee_rate = get_decimal("esi_employee_rate", config.esi_employee_rate)
+        config.esi_ceiling = get_decimal("esi_ceiling", config.esi_ceiling)
+        config.pt_threshold = get_decimal("pt_threshold", config.pt_threshold)
+        config.pt_amount_below = get_decimal("pt_amount_below", config.pt_amount_below)
+        config.pt_amount_above = get_decimal("pt_amount_above", config.pt_amount_above)
+
+        # Salary Components
+        config.basic_percentage = get_decimal("basic_percentage", config.basic_percentage)
+        config.hra_percentage = get_decimal("hra_percentage", config.hra_percentage)
+        config.lta_percentage = get_decimal("lta_percentage", config.lta_percentage)
+        config.special_allowance_percentage = get_decimal(
+            "special_allowance_percentage", config.special_allowance_percentage
+        )
+
+        # BD Rates
+        config.bd_basic_percentage = get_decimal("bd_basic_percentage", config.bd_basic_percentage)
+        config.bd_hra_percentage = get_decimal("bd_hra_percentage", config.bd_hra_percentage)
+        config.bd_medical_percentage = get_decimal("bd_medical_percentage", config.bd_medical_percentage)
+        config.bd_conveyance_percentage = get_decimal("bd_conveyance_percentage", config.bd_conveyance_percentage)
+
+        # US Rates
+        config.us_basic_percentage = get_decimal("us_basic_percentage", config.us_basic_percentage)
+        config.us_tax_percentage = get_decimal("us_tax_percentage", config.us_tax_percentage)
+
+        config.save()
+
+        # Save per-location PT configs
+        for lpt in location_pt_configs:
+            loc_id = lpt.location.id
+            lpt.pt_threshold = get_decimal(f"loc_pt_threshold_{loc_id}", lpt.pt_threshold)
+            lpt.pt_amount_below = get_decimal(f"loc_pt_below_{loc_id}", lpt.pt_amount_below)
+            lpt.pt_amount_above = get_decimal(f"loc_pt_above_{loc_id}", lpt.pt_amount_above)
+            lpt.is_active = request.POST.get(f"loc_pt_active_{loc_id}") == "on"
+            lpt.save()
+
+        # Log change to security audit log
+        FinanceAuditLog.objects.create(
+            user=request.user,
+            company=company,
+            action="UPDATE_PAYROLL_CONFIG",
+            details=f"Updated payroll configuration for {company.name}.",
+            ip_address=get_client_ip(request),
+        )
+
+        messages.success(request, f"Payroll configuration for {company.name} updated successfully.")
+        return redirect(f"/finance/?company={company.id}")
+
+    return render(
+        request,
+        "core/payroll_settings.html",
+        {
+            "config": config,
+            "company": company,
+            "location_pt_configs": location_pt_configs,
+        },
+    )
