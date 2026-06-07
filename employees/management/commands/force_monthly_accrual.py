@@ -36,6 +36,11 @@ class Command(BaseCommand):
             action="store_true",
             help="Force accrual even if already done for this month",
         )
+        parser.add_argument(
+            "--user-id",
+            type=int,
+            help="ID of the user running this manual accrual",
+        )
 
     def handle(self, *args, **options):
         # Get target month/year
@@ -43,6 +48,18 @@ class Command(BaseCommand):
         target_month = options.get("month") or now.month
         target_year = options.get("year") or now.year
         force = options.get("force", False)
+        user_id = options.get("user_id")
+
+        # Load user if provided
+        user = None
+        if user_id:
+            import contextlib
+
+            from django.contrib.auth import get_user_model
+
+            User = get_user_model()
+            with contextlib.suppress(User.DoesNotExist):
+                user = User.objects.get(pk=user_id)
 
         self.stdout.write(
             self.style.SUCCESS(f"Starting forced monthly leave accrual for {target_month}/{target_year}...")
@@ -56,6 +73,8 @@ class Command(BaseCommand):
         active_employees = Employee.objects.filter(is_active=True).select_related(
             "company", "location", "leave_balance"
         )
+
+        from employees.models import LeaveTransaction
 
         for employee in active_employees:
             try:
@@ -90,6 +109,23 @@ class Command(BaseCommand):
                         balance.casual_leave_allocated += 1.0
                         self.stdout.write(self.style.SUCCESS(f"✅ Accrued 1 SL & 1 CL for {employee} (Petabytz)"))
 
+                        LeaveTransaction.log(
+                            employee=employee,
+                            transaction_type="CREDIT",
+                            leave_type="SL",
+                            amount=1.0,
+                            reason=f"Monthly Accrual ({target_month}/{target_year})",
+                            created_by=user,
+                        )
+                        LeaveTransaction.log(
+                            employee=employee,
+                            transaction_type="CREDIT",
+                            leave_type="CL",
+                            amount=1.0,
+                            reason=f"Monthly Accrual ({target_month}/{target_year})",
+                            created_by=user,
+                        )
+
                     elif "bluebix" in company_name or "softstandard" in company_name:
                         # Bluebix & Softstandard: 1 combined SL/CL
                         balance.combined_sick_casual_allocated += 1.0
@@ -97,11 +133,37 @@ class Command(BaseCommand):
                             self.style.SUCCESS(f"✅ Accrued 1 Combined SL/CL for {employee} ({employee.company.name})")
                         )
 
+                        LeaveTransaction.log(
+                            employee=employee,
+                            transaction_type="CREDIT",
+                            leave_type="COMBINED",
+                            amount=1.0,
+                            reason=f"Monthly Accrual ({target_month}/{target_year})",
+                            created_by=user,
+                        )
+
                     else:
                         # Default fallback
                         balance.casual_leave_allocated += 1.0
                         balance.sick_leave_allocated += 1.0
                         self.stdout.write(self.style.SUCCESS(f"✅ Accrued 1 SL & 1 CL for {employee} (Default)"))
+
+                        LeaveTransaction.log(
+                            employee=employee,
+                            transaction_type="CREDIT",
+                            leave_type="SL",
+                            amount=1.0,
+                            reason=f"Monthly Accrual ({target_month}/{target_year})",
+                            created_by=user,
+                        )
+                        LeaveTransaction.log(
+                            employee=employee,
+                            transaction_type="CREDIT",
+                            leave_type="CL",
+                            amount=1.0,
+                            reason=f"Monthly Accrual ({target_month}/{target_year})",
+                            created_by=user,
+                        )
 
                     # Update tracking fields
                     balance.last_accrual_month = target_month

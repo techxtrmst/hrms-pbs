@@ -121,6 +121,140 @@
         min-width: 220px;
     }
     .filter-bar input:focus { border-color: #5b47fb; }
+
+    /* Segmented Control & Calendar styles */
+    .tab-btn {
+        color: #64748b;
+    }
+    .tab-btn.active {
+        background: white !important;
+        color: #5b47fb !important;
+        box-shadow: 0 2px 8px rgba(91,71,251,0.15);
+    }
+    .calendar-nav-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .calendar-nav-btn:hover {
+        background: #5b47fb;
+        color: white;
+        border-color: #5b47fb;
+        box-shadow: 0 4px 12px rgba(91,71,251,0.25);
+    }
+    .calendar-wrapper {
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        overflow: hidden;
+        background: #f8fafc;
+    }
+    .calendar-grid-header {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        background: #f1f5f9;
+        border-bottom: 1px solid #e2e8f0;
+        text-align: center;
+        font-weight: 700;
+        font-size: 0.8rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 12px 0;
+    }
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        grid-auto-rows: minmax(110px, 1fr);
+        gap: 1px;
+        background: #e2e8f0;
+    }
+    .calendar-day-cell {
+        background: white;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        position: relative;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    .calendar-day-cell:hover {
+        background: #f8fafc;
+        z-index: 2;
+        box-shadow: inset 0 0 0 2px #5b47fb;
+    }
+    .calendar-day-cell.other-month {
+        background: #f8fafc;
+    }
+    .calendar-day-cell.other-month .day-number {
+        color: #cbd5e1;
+    }
+    .calendar-day-cell.today {
+        background: #ede9fe;
+    }
+    .calendar-day-cell.today .day-number {
+        background: #5b47fb;
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+    .day-number {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 6px;
+        align-self: flex-start;
+    }
+    .calendar-events-container {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex-grow: 1;
+        overflow-y: auto;
+        max-height: 80px;
+        scrollbar-width: none;
+    }
+    .calendar-events-container::-webkit-scrollbar {
+        display: none;
+    }
+    .calendar-event-badge {
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: #ede9fe;
+        color: #5b47fb;
+        border: 1px solid rgba(91,71,251,0.1);
+        transition: all 0.15s ease;
+    }
+    .calendar-event-badge.is-today-event {
+        background: linear-gradient(135deg, #fee2e2, #ffedd5);
+        color: #ef4444;
+        border: 1px solid rgba(239,68,68,0.2);
+    }
+    .calendar-event-more {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #64748b;
+        text-align: center;
+        padding: 2px 0;
+    }
 </style>
 {% endblock %}
 
@@ -139,55 +273,135 @@
     </div>
 
     <!-- Filter Bar -->
-    <div class="filter-bar">
-        <i class="fas fa-search" style="color:#94a3b8;"></i>
-        <input type="text" id="searchInput" placeholder="Search by name or department…" oninput="filterCards()">
-        <span class="ms-auto text-muted" style="font-size:0.82rem;" id="countLabel">{{ birthdays|length }} result{{ birthdays|length|pluralize }}</span>
+    <div class="filter-bar d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width: 250px;">
+            <i class="fas fa-search" style="color:#94a3b8;"></i>
+            <input type="text" id="searchInput" placeholder="Search by name or department…" oninput="filterCards()" style="flex-grow: 1;">
+            <span class="text-muted small ms-2" id="countLabel">{{ birthdays|length }} result{{ birthdays|length|pluralize }}</span>
+        </div>
+        <div class="segmented-control p-1" style="background: #f1f5f9; border-radius: 30px; display: inline-flex; border: 1px solid #e2e8f0;">
+            <button type="button" class="tab-btn py-1 px-3 active" id="btn-list-view" onclick="switchView('list')" style="font-size: 0.85rem; font-weight: 600; padding: 6px 16px; border-radius: 30px; border: none; background: transparent; transition: all 0.2s;">
+                <i class="fas fa-th-large me-1"></i> Grid
+            </button>
+            <button type="button" class="tab-btn py-1 px-3" id="btn-calendar-view" onclick="switchView('calendar')" style="font-size: 0.85rem; font-weight: 600; padding: 6px 16px; border-radius: 30px; border: none; background: transparent; transition: all 0.2s;">
+                <i class="fas fa-calendar-alt me-1"></i> Calendar
+            </button>
+        </div>
     </div>
 
-    {% if birthdays %}
-        <div class="row g-3" id="birthdayGrid">
-            {% for item in birthdays %}
-            <div class="col-12 col-sm-6 col-md-4 col-lg-3 birthday-item"
-                 data-name="{{ item.employee.user.get_full_name|lower }}"
-                 data-dept="{{ item.employee.department|lower }}">
-                <div class="celebration-card p-3 h-100">
-                    <div class="d-flex align-items-center gap-3 mb-2">
-                        {% if item.employee.profile_picture %}
-                            <img src="{{ item.employee.profile_picture.url }}" alt="{{ item.employee.user.first_name }}" class="avatar-circle">
-                        {% else %}
-                            <div class="avatar-initials">{{ item.employee.user.first_name|first }}{{ item.employee.user.last_name|first }}</div>
-                        {% endif %}
-                        <div class="flex-grow-1 min-width-0">
-                            <div class="fw-bold text-truncate" style="font-size:0.92rem;color:#1e293b;">{{ item.employee.user.get_full_name }}</div>
-                            <div class="text-muted" style="font-size:0.75rem;">{{ item.employee.designation }}</div>
-                            <div class="text-muted" style="font-size:0.72rem;">{{ item.employee.department }}</div>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center justify-content-between mt-2">
-                        <div>
-                            <div style="font-size:0.8rem;color:#475569;"><i class="far fa-calendar-alt me-1"></i>{{ item.date|date:"d M Y" }}</div>
-                            {% if item.is_today %}
-                                <span class="badge-today mt-1 d-inline-block">🎉 Today!</span>
+    <!-- Grid View Container -->
+    <div id="grid-view-container">
+        {% if birthdays %}
+            <div class="row g-3" id="birthdayGrid">
+                {% for item in birthdays %}
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 birthday-item"
+                     data-name="{{ item.employee.user.get_full_name|lower }}"
+                     data-dept="{{ item.employee.department|lower }}"
+                     data-dob-month="{{ item.employee.dob|date:'n' }}"
+                     data-dob-day="{{ item.employee.dob|date:'j' }}"
+                     data-dob-year="{{ item.employee.dob|date:'Y' }}"
+                     data-dob-display="{{ item.employee.dob|date:'d M Y' }}"
+                     data-name-display="{{ item.employee.user.get_full_name }}"
+                     data-designation="{{ item.employee.designation }}"
+                     data-department="{{ item.employee.department }}"
+                     data-email="{{ item.employee.user.email }}"
+                     data-initials="{{ item.employee.user.first_name|first }}{{ item.employee.user.last_name|first }}"
+                     data-avatar="{% if item.employee.profile_picture %}{{ item.employee.profile_picture.url }}{% endif %}"
+                     data-id="{{ item.employee.id }}"
+                     data-first-name="{{ item.employee.user.first_name }}">
+                    <div class="celebration-card p-3 h-100">
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            {% if item.employee.profile_picture %}
+                                <img src="{{ item.employee.profile_picture.url }}" alt="{{ item.employee.user.first_name }}" class="avatar-circle">
                             {% else %}
-                                <span class="badge-soon mt-1 d-inline-block">in {{ item.days_left }} day{{ item.days_left|pluralize }}</span>
+                                <div class="avatar-initials">{{ item.employee.user.first_name|first }}{{ item.employee.user.last_name|first }}</div>
                             {% endif %}
+                            <div class="flex-grow-1 min-width-0">
+                                <div class="fw-bold text-truncate" style="font-size:0.92rem;color:#1e293b;">{{ item.employee.user.get_full_name }}</div>
+                                <div class="text-muted" style="font-size:0.75rem;">{{ item.employee.designation }}</div>
+                                <div class="text-muted" style="font-size:0.72rem;">{{ item.employee.department }}</div>
+                            </div>
                         </div>
-                        <button class="wish-btn" onclick="sendBirthdayWish('{{ item.employee.id }}', '{{ item.employee.user.first_name }}', 'birthday', this)">
-                            <i class="fas fa-heart me-1"></i>Wish
-                        </button>
+                        <div class="d-flex align-items-center justify-content-between mt-2">
+                            <div>
+                                <div style="font-size:0.8rem;color:#475569;"><i class="far fa-calendar-alt me-1"></i>{{ item.date|date:"d M Y" }}</div>
+                                {% if item.is_today %}
+                                    <span class="badge-today mt-1 d-inline-block">🎉 Today!</span>
+                                {% else %}
+                                    <span class="badge-soon mt-1 d-inline-block">in {{ item.days_left }} day{{ item.days_left|pluralize }}</span>
+                                {% endif %}
+                            </div>
+                            <button class="wish-btn" onclick="sendBirthdayWish('{{ item.employee.id }}', '{{ item.employee.user.first_name }}', 'birthday', this)">
+                                <i class="fas fa-heart me-1"></i>Wish
+                            </button>
+                        </div>
                     </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="emoji">🎈</div>
+                <h5 class="fw-bold" style="color:#1e1b4b;">No Upcoming Birthdays</h5>
+                <p class="text-muted">No birthdays found in the next 12 months. Make sure employees have their date of birth filled in.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Calendar View Container -->
+    <div id="calendar-view-container" style="display: none;">
+        <div class="card border-0 shadow-sm p-4" style="border-radius: 16px;">
+            <!-- Calendar Navigation Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <button type="button" class="calendar-nav-btn" onclick="navigateCalendar(-1)" title="Previous Month">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <h4 class="m-0 fw-bold text-dark" id="calendarMonthYearDisplay" style="min-width: 180px; text-align: center; font-size: 1.25rem;"></h4>
+                    <button type="button" class="calendar-nav-btn" onclick="navigateCalendar(1)" title="Next Month">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="text-muted small">
+                    <span class="badge-soon" style="background:#ede9fe; color:#5b47fb;"><i class="fas fa-birthday-cake me-1"></i>Birthdays Calendar</span>
+                </div>
+            </div>
+            <!-- Calendar Grid -->
+            <div class="calendar-wrapper">
+                <div class="calendar-grid-header">
+                    <div>Sun</div>
+                    <div>Mon</div>
+                    <div>Tue</div>
+                    <div>Wed</div>
+                    <div>Thu</div>
+                    <div>Fri</div>
+                    <div>Sat</div>
+                </div>
+                <div class="calendar-grid" id="calendarDaysGrid">
+                    <!-- Dynamically populated via JS -->
+                </div>
+            </div>
         </div>
-    {% else %}
-        <div class="empty-state">
-            <div class="emoji">🎈</div>
-            <h5 class="fw-bold" style="color:#1e1b4b;">No Upcoming Birthdays</h5>
-            <p class="text-muted">No birthdays found in the next 12 months. Make sure employees have their date of birth filled in.</p>
+    </div>
+
+</div>
+
+<!-- Birthday Details Modal -->
+<div class="modal fade" id="birthdayDayDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                <h4 class="modal-title fw-bold text-dark m-0" id="birthdayModalTitle">Birthdays</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="box-shadow: none;"></button>
+            </div>
+            <div class="modal-body p-4" id="birthdayModalBody" style="max-height: 400px; overflow-y: auto;">
+                <!-- Dynamically populated via JS -->
+            </div>
+            <div class="modal-footer border-0 pt-0 pb-4 px-4">
+                <button type="button" class="btn btn-light px-4 rounded-pill fw-bold" data-bs-dismiss="modal">Close</button>
+            </div>
         </div>
-    {% endif %}
+    </div>
 </div>
 
 <!-- Toast -->
@@ -196,6 +410,11 @@
 
 {% block extra_js %}
 <script>
+document.addEventListener("DOMContentLoaded", () => {
+    const savedView = localStorage.getItem('activeBirthdayView') || 'list';
+    switchView(savedView);
+});
+
 function filterCards() {
     const q = document.getElementById('searchInput').value.toLowerCase();
     const items = document.querySelectorAll('.birthday-item');
@@ -211,6 +430,12 @@ function filterCards() {
         }
     });
     document.getElementById('countLabel').textContent = visible + ' result' + (visible !== 1 ? 's' : '');
+
+    // Redraw calendar if in calendar view
+    const calView = document.getElementById('calendar-view-container');
+    if (calView && calView.style.display !== 'none') {
+        renderCalendar();
+    }
 }
 
 function sendBirthdayWish(receiverId, receiverName, type, element) {
@@ -253,6 +478,181 @@ function showToast(msg) {
     t.textContent = msg;
     t.style.display = 'block';
     setTimeout(() => { t.style.display = 'none'; }, 3500);
+}
+
+// Calendar view functions
+let currentCalendarDate = new Date();
+
+function switchView(view) {
+    const gridBtn = document.getElementById('btn-list-view');
+    const calBtn = document.getElementById('btn-calendar-view');
+    const gridView = document.getElementById('grid-view-container');
+    const calView = document.getElementById('calendar-view-container');
+
+    if (!gridBtn || !calBtn || !gridView || !calView) return;
+
+    if (view === 'list') {
+        gridBtn.classList.add('active');
+        calBtn.classList.remove('active');
+        gridView.style.display = 'block';
+        calView.style.display = 'none';
+        localStorage.setItem('activeBirthdayView', 'list');
+    } else {
+        gridBtn.classList.remove('active');
+        calBtn.classList.add('active');
+        gridView.style.display = 'none';
+        calView.style.display = 'block';
+        localStorage.setItem('activeBirthdayView', 'calendar');
+        renderCalendar();
+    }
+}
+
+function navigateCalendar(direction) {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
+    renderCalendar();
+}
+
+function renderCalendar() {
+    const grid = document.getElementById('calendarDaysGrid');
+    const display = document.getElementById('calendarMonthYearDisplay');
+    if (!grid || !display) return;
+
+    const options = { month: 'long', year: 'numeric' };
+    display.textContent = currentCalendarDate.toLocaleDateString('en-US', options);
+
+    grid.innerHTML = '';
+
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    const prevTotalDays = new Date(year, month, 0).getDate();
+
+    // Get all birthdays from list items
+    const birthdaysList = [];
+    const items = document.querySelectorAll('.birthday-item');
+    items.forEach(item => {
+        if (item.style.display !== 'none') {
+            birthdaysList.push({
+                id: item.getAttribute('data-id'),
+                name: item.getAttribute('data-name-display'),
+                firstName: item.getAttribute('data-first-name'),
+                designation: item.getAttribute('data-designation'),
+                department: item.getAttribute('data-department'),
+                email: item.getAttribute('data-email'),
+                initials: item.getAttribute('data-initials'),
+                avatar: item.getAttribute('data-avatar'),
+                dobDay: parseInt(item.getAttribute('data-dob-day')),
+                dobMonth: parseInt(item.getAttribute('data-dob-month')),
+                dobYear: parseInt(item.getAttribute('data-dob-year'))
+            });
+        }
+    });
+
+    // Populate calendar cells
+    for (let i = firstDayIndex; i > 0; i--) {
+        const day = prevTotalDays - i + 1;
+        const prevMonthDate = new Date(year, month - 1, day);
+        createDayCell(prevMonthDate, true, birthdaysList, grid);
+    }
+
+    const today = new Date();
+    for (let day = 1; day <= totalDays; day++) {
+        const currentDate = new Date(year, month, day);
+        const isToday = currentDate.getDate() === today.getDate() &&
+                        currentDate.getMonth() === today.getMonth() &&
+                        currentDate.getFullYear() === today.getFullYear();
+        createDayCell(currentDate, false, birthdaysList, grid, isToday);
+    }
+
+    const totalCells = grid.children.length;
+    const remainingCells = 42 - totalCells;
+    for (let day = 1; day <= remainingCells; day++) {
+        const nextMonthDate = new Date(year, month + 1, day);
+        createDayCell(nextMonthDate, true, birthdaysList, grid);
+    }
+}
+
+function createDayCell(date, isOtherMonth, birthdaysList, grid, isToday = false) {
+    const cell = document.createElement('div');
+    cell.className = 'calendar-day-cell';
+    if (isOtherMonth) cell.classList.add('other-month');
+    if (isToday) cell.classList.add('today');
+
+    const dayNum = date.getDate();
+    const dayMonth = date.getMonth() + 1; // 1-indexed
+    const dayYear = date.getFullYear();
+
+    cell.innerHTML = `<div class="day-number">${dayNum}</div>`;
+
+    // Filter birthdays on this day/month
+    const matches = birthdaysList.filter(b => b.dobDay === dayNum && b.dobMonth === dayMonth);
+
+    if (matches.length > 0) {
+        const evContainer = document.createElement('div');
+        evContainer.className = 'calendar-events-container';
+
+        matches.forEach(b => {
+            const badge = document.createElement('div');
+            badge.className = 'calendar-event-badge';
+
+            // Calculate age turned this year
+            const age = dayYear - b.dobYear;
+            badge.innerHTML = `🎂 ${b.name.split(' ')[0]} (${age})`;
+            evContainer.appendChild(badge);
+        });
+
+        cell.appendChild(evContainer);
+
+        cell.addEventListener('click', () => {
+            showBirthdayDayDetailsModal(date, matches);
+        });
+    }
+
+    grid.appendChild(cell);
+}
+
+function showBirthdayDayDetailsModal(date, matches) {
+    const modalTitle = document.getElementById('birthdayModalTitle');
+    const modalBody = document.getElementById('birthdayModalBody');
+    if (!modalTitle || !modalBody) return;
+
+    const displayDate = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    modalTitle.textContent = `Birthdays on ${displayDate}`;
+
+    modalBody.innerHTML = '';
+
+    matches.forEach(b => {
+        const age = date.getFullYear() - b.dobYear;
+        const div = document.createElement('div');
+        div.className = 'd-flex align-items-center justify-content-between p-3 border-bottom';
+
+        let avatarHTML = '';
+        if (b.avatar) {
+            avatarHTML = `<img src="${b.avatar}" class="avatar-circle" style="width:48px; height:48px;" alt="avatar">`;
+        } else {
+            avatarHTML = `<div class="avatar-initials" style="width:48px; height:48px; font-size:0.95rem; border: none; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #5b47fb 0%, #7c6bff 100%); color: white; font-weight: 700; border-radius: 50%;">${b.initials}</div>`;
+        }
+
+        div.innerHTML = `
+            <div class="d-flex align-items-center gap-3">
+                ${avatarHTML}
+                <div>
+                    <h6 class="mb-0 fw-bold text-dark" style="font-size:0.92rem;">${b.name}</h6>
+                    <small class="text-muted d-block" style="font-size:0.75rem;">${b.designation} &bull; ${b.department}</small>
+                    <span class="badge bg-light text-dark fw-bold border mt-1" style="font-size:0.7rem;">Turning ${age} years old</span>
+                </div>
+            </div>
+            <button class="wish-btn" onclick="sendBirthdayWish('${b.id}', '${b.firstName}', 'birthday', this)">
+                <i class="fas fa-heart me-1"></i>Wish
+            </button>
+        `;
+        modalBody.appendChild(div);
+    });
+
+    const bsModal = new bootstrap.Modal(document.getElementById('birthdayDayDetailsModal'));
+    bsModal.show();
 }
 </script>
 {% endblock %}

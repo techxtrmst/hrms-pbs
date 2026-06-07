@@ -610,6 +610,34 @@ def clock_in(request):
 
                     attendance.save()
 
+                    # Hook for Automated Extra Work Request (Week-Off Work)
+                    if session_number == 1 and employee.is_week_off(today):
+                        try:
+                            from .models import RegularizationRequest
+
+                            # Prevent duplicate request creation
+                            if not RegularizationRequest.objects.filter(
+                                employee=employee, date=today, change_type="WEEK_OFF_WORK"
+                            ).exists():
+                                # Create a pending RegularizationRequest under the hood
+                                reg_req = RegularizationRequest.objects.create(
+                                    employee=employee,
+                                    date=today,
+                                    change_type="WEEK_OFF_WORK",
+                                    check_in=session.clock_in.astimezone(tz).time(),
+                                    reason=f"Automated Request: Clocked in on designated week-off day ({today.strftime('%A')}).",
+                                    status="PENDING",
+                                )
+                                # Send email notification to manager
+                                try:
+                                    from core.email_utils import send_regularization_request_notification
+
+                                    send_regularization_request_notification(reg_req)
+                                except Exception as email_err:
+                                    logger.error(f"Failed to send automated week-off email: {email_err}")
+                        except Exception as req_error:
+                            logger.error(f"Failed to auto-create week-off regularization request: {req_error}")
+
             except Exception as db_error:
                 return JsonResponse(
                     {
@@ -817,6 +845,24 @@ def clock_out(request):
                 attendance.calculate_total_working_hours()
                 attendance.save()
 
+                # Update RegularizationRequest check_out if it is a week-off request
+                try:
+                    try:
+                        local_tz = pytz.timezone(user_timezone)
+                    except Exception:
+                        local_tz = pytz.timezone("Asia/Kolkata")
+
+                    from .models import RegularizationRequest
+
+                    reg_req = RegularizationRequest.objects.filter(
+                        employee=employee, date=attendance.date, change_type="WEEK_OFF_WORK", status="PENDING"
+                    ).first()
+                    if reg_req and not reg_req.check_out:
+                        reg_req.check_out = current_session.clock_out.astimezone(local_tz).time()
+                        reg_req.save(update_fields=["check_out"])
+                except Exception as e:
+                    logger.error(f"Error updating clock-out time in week-off regularization request: {e}")
+
                 return JsonResponse(
                     {
                         "status": "success",
@@ -868,6 +914,26 @@ def perform_auto_clock_out(attendance, session, lat, lng):
 
         attendance.calculate_total_working_hours()
         attendance.save()
+
+        # Update RegularizationRequest check_out if it is a week-off request
+        try:
+            import pytz
+
+            from core.utils import get_user_timezone
+
+            user_timezone = get_user_timezone(attendance.employee.user, attendance.employee.company) or "Asia/Kolkata"
+            local_tz = pytz.timezone(user_timezone)
+
+            from .models import RegularizationRequest
+
+            reg_req = RegularizationRequest.objects.filter(
+                employee=attendance.employee, date=attendance.date, change_type="WEEK_OFF_WORK", status="PENDING"
+            ).first()
+            if reg_req and not reg_req.check_out:
+                reg_req.check_out = current_time.astimezone(local_tz).time()
+                reg_req.save(update_fields=["check_out"])
+        except Exception as e:
+            logger.error(f"Error updating auto-clock-out time in week-off regularization request: {e}")
 
         return True
     except Exception as e:
@@ -3632,6 +3698,21 @@ def reject_regularization(request, pk):
         )  # Use manager_comment for rejection reason
         reg_request.save()
 
+        # If it was a week-off work request, reject means status goes back to WEEKLY_OFF
+        if reg_request.change_type == "WEEK_OFF_WORK":
+            try:
+                from .models import Attendance
+
+                attendance = Attendance.objects.filter(employee=reg_request.employee, date=reg_request.date).first()
+                if attendance:
+                    attendance.status = "WEEKLY_OFF"
+                    attendance.save(update_fields=["status"])
+            except Exception as e:
+                import logging
+
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error resetting attendance status for rejected week-off work: {e}")
+
         # Send Rejection Email asynchronously
         import threading
 
@@ -3732,6 +3813,16 @@ def leave_configuration(request):
     for y in [2024, 2025, 2026]:
         years_ctx.append({"value": y, "selected": "selected" if y == current_year else ""})
 
+    # Fetch leave transaction history
+    from .models import LeaveTransaction
+
+    if user.role == User.Role.MANAGER:
+        transactions = LeaveTransaction.objects.filter(employee__manager=user)
+    else:
+        transactions = LeaveTransaction.objects.filter(employee__company=company)
+
+    transactions = transactions.select_related("employee__user", "created_by").order_by("-created_at")
+
     return render(
         request,
         "employees/leave_configuration.html",
@@ -3739,6 +3830,7 @@ def leave_configuration(request):
             "employees": employees,
             "months_ctx": months_ctx,
             "years_ctx": years_ctx,
+            "transactions": transactions,
             "active_count": all_employees.filter(is_active=True, employment_status="ACTIVE").count(),
             "inactive_count": all_employees.filter(Q(is_active=False) | ~Q(employment_status="ACTIVE")).count(),
             "selected_status": status_filter,
@@ -3767,6 +3859,11 @@ def update_leave_balance(request, pk):
             return JsonResponse({"status": "error", "message": "Permission Denied"}, status=403)
 
         balance = employee.leave_balance
+
+        # Track old balances for transaction log
+        old_sick_allocated = balance.sick_leave_allocated
+        old_casual_allocated = balance.casual_leave_allocated
+        old_combined_allocated = balance.combined_sick_casual_allocated
 
         # Get data
         data = json.loads(request.body)
@@ -3818,6 +3915,45 @@ def update_leave_balance(request, pk):
 
         balance.save()
 
+        # Log Leave Transactions
+        from .models import LeaveTransaction
+
+        if employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]:
+            diff = balance.combined_sick_casual_allocated - old_combined_allocated
+            if diff != 0:
+                tx_type = "CREDIT" if diff > 0 else "DEBIT"
+                LeaveTransaction.log(
+                    employee=employee,
+                    transaction_type=tx_type,
+                    leave_type="COMBINED",
+                    amount=abs(diff),
+                    reason=f"Manual allocation change from {old_combined_allocated - balance.combined_sick_casual_used:.1f} to {balance.combined_sick_casual_allocated - balance.combined_sick_casual_used:.1f} (Allocated: {balance.combined_sick_casual_allocated:.1f}, Used: {balance.combined_sick_casual_used:.1f})",
+                    created_by=user,
+                )
+        else:
+            diff_sick = balance.sick_leave_allocated - old_sick_allocated
+            if diff_sick != 0:
+                tx_type = "CREDIT" if diff_sick > 0 else "DEBIT"
+                LeaveTransaction.log(
+                    employee=employee,
+                    transaction_type=tx_type,
+                    leave_type="SL",
+                    amount=abs(diff_sick),
+                    reason=f"Manual allocation change from {old_sick_allocated - balance.sick_leave_used:.1f} to {balance.sick_leave_allocated - balance.sick_leave_used:.1f} (Allocated: {balance.sick_leave_allocated:.1f}, Used: {balance.sick_leave_used:.1f})",
+                    created_by=user,
+                )
+            diff_casual = balance.casual_leave_allocated - old_casual_allocated
+            if diff_casual != 0:
+                tx_type = "CREDIT" if diff_casual > 0 else "DEBIT"
+                LeaveTransaction.log(
+                    employee=employee,
+                    transaction_type=tx_type,
+                    leave_type="CL",
+                    amount=abs(diff_casual),
+                    reason=f"Manual allocation change from {old_casual_allocated - balance.casual_leave_used:.1f} to {balance.casual_leave_allocated - balance.casual_leave_used:.1f} (Allocated: {balance.casual_leave_allocated:.1f}, Used: {balance.casual_leave_used:.1f})",
+                    created_by=user,
+                )
+
         return JsonResponse({"status": "success", "message": "Balance updated successfully"})
 
     except Employee.DoesNotExist:
@@ -3859,13 +3995,13 @@ def run_monthly_accrual(request):
 
         # Use force_monthly_accrual command for manual runs (bypasses date check)
         if month and year:
-            call_command("force_monthly_accrual", month=int(month), year=int(year))
+            call_command("force_monthly_accrual", month=int(month), year=int(year), user_id=user.id)
         else:
             # If no month/year specified, use current month
             from django.utils import timezone
 
             now = timezone.now()
-            call_command("force_monthly_accrual", month=now.month, year=now.year)
+            call_command("force_monthly_accrual", month=now.month, year=now.year, user_id=user.id)
             month_name = calendar.month_name[now.month]
             period_msg = f"for {month_name} {now.year}"
 
@@ -3938,6 +4074,11 @@ def bulk_leave_upload(request):
                                     "carry_forward_leave": 0.0,
                                 },
                             )
+
+                            # Track old balances
+                            old_sick_allocated = leave_balance.sick_leave_allocated
+                            old_casual_allocated = leave_balance.casual_leave_allocated
+                            old_combined_allocated = leave_balance.combined_sick_casual_allocated
 
                             # Log the data being processed for debugging
                             logger.info(
@@ -4021,6 +4162,45 @@ def bulk_leave_upload(request):
 
                             # Save the updated leave balance with validation
                             leave_balance.validate_and_save()
+
+                            # Log Leave Transactions
+                            from .models import LeaveTransaction
+
+                            if data.get("is_bluebix", False):
+                                diff = leave_balance.combined_sick_casual_allocated - old_combined_allocated
+                                if diff != 0:
+                                    tx_type = "CREDIT" if diff > 0 else "DEBIT"
+                                    LeaveTransaction.log(
+                                        employee=employee,
+                                        transaction_type=tx_type,
+                                        leave_type="COMBINED",
+                                        amount=abs(diff),
+                                        reason=f"Bulk upload (Mode: {update_mode}). Allocation changed from {old_combined_allocated - leave_balance.combined_sick_casual_used:.1f} to {leave_balance.combined_sick_casual_allocated - leave_balance.combined_sick_casual_used:.1f}",
+                                        created_by=user,
+                                    )
+                            else:
+                                diff_sick = leave_balance.sick_leave_allocated - old_sick_allocated
+                                if diff_sick != 0:
+                                    tx_type = "CREDIT" if diff_sick > 0 else "DEBIT"
+                                    LeaveTransaction.log(
+                                        employee=employee,
+                                        transaction_type=tx_type,
+                                        leave_type="SL",
+                                        amount=abs(diff_sick),
+                                        reason=f"Bulk upload (Mode: {update_mode}). Allocation changed from {old_sick_allocated - leave_balance.sick_leave_used:.1f} to {leave_balance.sick_leave_allocated - leave_balance.sick_leave_used:.1f}",
+                                        created_by=user,
+                                    )
+                                diff_casual = leave_balance.casual_leave_allocated - old_casual_allocated
+                                if diff_casual != 0:
+                                    tx_type = "CREDIT" if diff_casual > 0 else "DEBIT"
+                                    LeaveTransaction.log(
+                                        employee=employee,
+                                        transaction_type=tx_type,
+                                        leave_type="CL",
+                                        amount=abs(diff_casual),
+                                        reason=f"Bulk upload (Mode: {update_mode}). Allocation changed from {old_casual_allocated - leave_balance.casual_leave_used:.1f} to {leave_balance.casual_leave_allocated - leave_balance.casual_leave_used:.1f}",
+                                        created_by=user,
+                                    )
 
                             # Force refresh from database to ensure consistency
                             leave_balance.refresh_from_db()

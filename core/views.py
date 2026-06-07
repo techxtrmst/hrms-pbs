@@ -3262,7 +3262,9 @@ def attendance_report(request):
                 # Attendance record exists - check if employee actually clocked in
                 if att.clock_in:
                     # Employee clocked in - determine status
-                    if att.status == "WFH":
+                    if emp.is_week_off(dt):
+                        status_code = "WEEK_OFF_WORK"
+                    elif att.status == "WFH":
                         status_code = "WFH"  # Will be counted as Present
                     elif att.status == "PRESENT":
                         status_code = "PRESENT"
@@ -3301,7 +3303,11 @@ def attendance_report(request):
             # Map status to display value and count
             display_val = "-"
 
-            if status_code == "PRESENT":
+            if status_code == "WEEK_OFF_WORK":
+                display_val = "WOW"
+                emp_data["stats"]["present"] += 1
+                total_stats["present"] += 1
+            elif status_code == "PRESENT":
                 display_val = "P"
                 emp_data["stats"]["present"] += 1
                 total_stats["present"] += 1
@@ -3540,7 +3546,9 @@ def download_attendance(request):
                 # Attendance record exists - check if employee actually clocked in
                 if att.clock_in:
                     # Employee clocked in - determine status
-                    if att.status == "WFH":
+                    if emp.is_week_off(dt):
+                        status_code = "WEEK_OFF_WORK"
+                    elif att.status == "WFH":
                         status_code = "WFH"  # Will be counted as Present
                     elif att.status == "PRESENT":
                         status_code = "PRESENT"
@@ -3575,7 +3583,10 @@ def download_attendance(request):
 
             # Map status to display value and count
             display_val = "-"
-            if status_code == "PRESENT":
+            if status_code == "WEEK_OFF_WORK":
+                display_val = "WOW"
+                stats["present"] += 1
+            elif status_code == "PRESENT":
                 display_val = "P"
                 stats["present"] += 1
                 if att and att.is_late:

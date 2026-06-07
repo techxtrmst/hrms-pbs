@@ -148,6 +148,18 @@
         white-space: nowrap;
         font-size: 0.85rem;
         color: #374151;
+        cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.1s ease;
+        padding: 4px 8px;
+        border-radius: 6px;
+    }
+
+    .reason-text:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .reason-text:active {
+        transform: scale(0.97);
     }
 
     /* Status badges */
@@ -681,7 +693,7 @@
                                 </div>
                             </td>
                             <td>
-                                <div class="reason-text" title="{{ req.reason }}">
+                                <div class="reason-text" title="Click to view reason details" data-bs-toggle="modal" data-bs-target="#reasonModal{{ req.pk }}">
                                     <span class="badge bg-secondary mb-1">{{ req.get_change_type_display }}</span><br>
                                     {{ req.reason }}
                                 </div>
@@ -801,7 +813,7 @@
 
                 <div class="card-field">
                     <span class="card-field-label">Reason</span>
-                    <div class="card-field-value">{{ req.reason }}</div>
+                    <div class="card-field-value" data-bs-toggle="modal" data-bs-target="#reasonModal{{ req.pk }}" style="cursor: pointer; text-decoration: underline dotted #64748b; font-size: 0.85rem;">{{ req.reason }}</div>
                 </div>
             </div>
 
@@ -838,6 +850,70 @@
 
     <!-- Modals -->
     {% for req in requests %}
+    <!-- Reason Detail Modal -->
+    <div class="modal fade" id="reasonModal{{ req.pk }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark">Request Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-3">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-muted mb-1">Employee</label>
+                            <p class="mb-0 fw-semibold text-dark">{{ req.employee.user.get_full_name }}</p>
+                            <p class="text-muted small mb-0">{{ req.employee.designation }}</p>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-muted mb-1">Change Type</label>
+                            <div>
+                                <span class="badge bg-secondary px-2 py-1">{{ req.get_change_type_display }}</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-muted mb-1">Date</label>
+                            <p class="mb-0 fw-semibold text-dark">{{ req.date|date:"d M, Y" }}</p>
+                            <p class="text-muted small mb-0">{{ req.date|date:"l" }}</p>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-muted mb-1">Timings</label>
+                            <p class="mb-0 text-dark small">
+                                {% if req.check_in %}
+                                <i class="fas fa-sign-in-alt text-success me-1"></i> {{ req.check_in|time:"H:i" }}
+                                {% endif %}
+                                {% if req.check_out %}
+                                <br><i class="fas fa-sign-out-alt text-danger me-1"></i> {{ req.check_out|time:"H:i" }}
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-muted mb-1">Reason for Request</label>
+                            <div class="p-3 bg-light rounded text-dark fs-6" style="white-space: pre-wrap; word-break: break-word; line-height: 1.5;">{{ req.reason }}</div>
+                        </div>
+                        {% if req.manager_comment %}
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-muted mb-1">Manager's Comment / Feedback</label>
+                            <div class="p-3 bg-warning-subtle text-warning-emphasis rounded small" style="white-space: pre-wrap; word-break: break-word;">{{ req.manager_comment }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Close</button>
+                    {% if req.status == 'PENDING' %}
+                    <button type="button" class="btn btn-success btn-sm px-3" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#approveModal{{ req.pk }}">
+                        Approve...
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm px-3" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#rejectModal{{ req.pk }}">
+                        Reject...
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
     {% if req.status == 'PENDING' %}
     <!-- Approve Modal -->
     <div class="modal fade" id="approveModal{{ req.pk }}" tabindex="-1" aria-hidden="true">

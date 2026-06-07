@@ -9,6 +9,7 @@ from .models import (
     EmergencyContact,
     Employee,
     HandbookSection,
+    LeaveTransaction,
     PolicySection,
 )
 
@@ -117,3 +118,21 @@ class AttendanceSessionAdmin(ModelAdmin):
     list_filter = ("session_type", "date")
     search_fields = ("employee__user__first_name", "employee__user__last_name")
     date_hierarchy = "date"
+
+
+@admin.register(LeaveTransaction)
+class LeaveTransactionAdmin(ModelAdmin):
+    """Leave Transaction admin with Unfold styling."""
+
+    list_display = (
+        "employee",
+        "transaction_type",
+        "leave_type",
+        "amount",
+        "reason",
+        "created_by",
+        "created_at",
+    )
+    list_filter = ("transaction_type", "leave_type", "created_at")
+    search_fields = ("employee__user__first_name", "employee__user__last_name", "reason")
+    readonly_fields = ("created_at",)

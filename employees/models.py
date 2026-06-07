@@ -1468,6 +1468,70 @@ class LeaveRequest(models.Model):
                         },
                     )
                 current_date += timedelta(days=1)
+            # Log Leave Transactions
+            from .models import LeaveTransaction
+
+            if approval_type == "ONLY_AVAILABLE":
+                available = validation["available_balance"]
+                if available > 0:
+                    amount_deducted = 0.5 if self.duration == "HALF" else available
+                    LeaveTransaction.log(
+                        employee=self.employee,
+                        transaction_type="DEBIT",
+                        leave_type=self.leave_type,
+                        amount=float(amount_deducted),
+                        reason=f"Approved (Only Available Days) for Request #{self.id}: {self.get_leave_type_display()} from {self.start_date} to {self.end_date}",
+                        created_by=approved_by_user,
+                    )
+            elif self.leave_type == "UL" or approval_type == "WITH_LOP":
+                if self.leave_type == "UL":
+                    LeaveTransaction.log(
+                        employee=self.employee,
+                        transaction_type="DEBIT",
+                        leave_type="UL",
+                        amount=self.total_days,
+                        reason=f"Approved Unpaid Leave (LOP) for Request #{self.id} from {self.start_date} to {self.end_date}",
+                        created_by=approved_by_user,
+                    )
+                elif validation["will_be_lop"]:
+                    available = validation["available_balance"]
+                    lop_days = validation["shortfall"]
+                    if available > 0:
+                        LeaveTransaction.log(
+                            employee=self.employee,
+                            transaction_type="DEBIT",
+                            leave_type=self.leave_type,
+                            amount=available,
+                            reason=f"Approved with LOP (Paid Portion) for Request #{self.id}: {self.get_leave_type_display()} from {self.start_date} to {self.end_date}",
+                            created_by=approved_by_user,
+                        )
+                    if lop_days > 0:
+                        LeaveTransaction.log(
+                            employee=self.employee,
+                            transaction_type="DEBIT",
+                            leave_type="UL",
+                            amount=lop_days,
+                            reason=f"Approved with LOP (Unpaid Portion) for Request #{self.id} from {self.start_date} to {self.end_date}",
+                            created_by=approved_by_user,
+                        )
+                else:
+                    LeaveTransaction.log(
+                        employee=self.employee,
+                        transaction_type="DEBIT",
+                        leave_type=self.leave_type,
+                        amount=self.total_days,
+                        reason=f"Approved for Request #{self.id}: {self.get_leave_type_display()} from {self.start_date} to {self.end_date}",
+                        created_by=approved_by_user,
+                    )
+            else:
+                LeaveTransaction.log(
+                    employee=self.employee,
+                    transaction_type="DEBIT",
+                    leave_type=self.leave_type,
+                    amount=self.total_days,
+                    reason=f"Approved for Request #{self.id}: {self.get_leave_type_display()} from {self.start_date} to {self.end_date}",
+                    created_by=approved_by_user,
+                )
 
             return True
 
@@ -1478,6 +1542,54 @@ class LeaveRequest(models.Model):
 
     def __str__(self):
         return f"{self.get_leave_type_display()} - {self.employee.user.get_full_name()} ({self.start_date} to {self.end_date})"
+
+
+class LeaveTransaction(models.Model):
+    TRANSACTION_TYPES = [
+        ("CREDIT", "Credit"),
+        ("DEBIT", "Debit"),
+    ]
+    LEAVE_TYPES = [
+        ("CL", "Casual Leave"),
+        ("SL", "Sick Leave"),
+        ("COMBINED", "Combined Sick/Casual"),
+        ("UL", "Unpaid Leave (LOP)"),
+        ("OD", "On Duty"),
+        ("OT", "Others"),
+    ]
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="leave_transactions")
+    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
+    leave_type = models.CharField(max_length=10, choices=LEAVE_TYPES)
+    amount = models.FloatField(help_text="Number of days added or subtracted")
+    reason = models.TextField(blank=True, help_text="e.g., Monthly Accrual, Leave Request Approved, Manual adjustment")
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="processed_leave_transactions",
+        help_text="User who made the change. Null if system (accrual)",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.employee.user.get_full_name()} - {self.transaction_type} {self.amount} {self.leave_type} ({self.created_at.strftime('%Y-%m-%d')})"
+
+    @classmethod
+    def log(cls, employee, transaction_type, leave_type, amount, reason, created_by=None):
+        if amount == 0:
+            return None
+        return cls.objects.create(
+            employee=employee,
+            transaction_type=transaction_type,
+            leave_type=leave_type,
+            amount=amount,
+            reason=reason,
+            created_by=created_by,
+        )
 
 
 class Payslip(models.Model):
@@ -1601,6 +1713,7 @@ class RegularizationRequest(models.Model):
         ("SYSTEM_ERROR", "System Error"),
         ("WEB_CLONING", "Web Cloning"),
         ("REMOTE_CLOCK_IN", "Remote Clock-in"),
+        ("WEEK_OFF_WORK", "Week-Off Work"),
         ("OTHER", "Other"),
     ]
 

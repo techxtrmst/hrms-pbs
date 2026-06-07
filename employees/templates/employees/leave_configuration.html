@@ -1821,6 +1821,401 @@
             display: block !important;
         }
     }
+
+    /* Segmented Tab Control */
+    .tab-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 2rem;
+    }
+
+    .segmented-control {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        padding: 6px;
+        border-radius: 50px;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        box-shadow: var(--shadow-soft);
+        display: inline-flex;
+        gap: 6px;
+        position: relative;
+        z-index: 10;
+    }
+
+    .tab-btn {
+        border: none;
+        background: transparent;
+        padding: 10px 24px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .tab-btn i {
+        font-size: 1.05rem;
+        transition: transform 0.3s;
+    }
+
+    .tab-btn:hover {
+        color: var(--primary-brand);
+        background: rgba(79, 70, 229, 0.05);
+    }
+
+    .tab-btn.active {
+        background: var(--primary-brand);
+        color: white !important;
+        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.25);
+    }
+
+    .tab-btn.active i {
+        transform: scale(1.1);
+    }
+
+    /* History View UI */
+    .history-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-soft);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        overflow: hidden;
+        margin-bottom: 2rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    .history-filter-bar {
+        padding: 1.5rem;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .history-search {
+        flex: 1;
+        min-width: 250px;
+        position: relative;
+    }
+
+    .history-search input {
+        width: 100%;
+        padding: 10px 16px 10px 42px;
+        border-radius: 50px;
+        border: 1px solid #e2e8f0;
+        outline: none;
+        transition: all 0.2s;
+        font-size: 0.9rem;
+    }
+
+    .history-search input:focus {
+        border-color: var(--primary-brand);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .history-search i {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+    }
+
+    .history-select {
+        padding: 10px 32px 10px 16px;
+        border-radius: 50px;
+        border: 1px solid #e2e8f0;
+        background-color: white;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--text-main);
+        outline: none;
+        cursor: pointer;
+        min-width: 150px;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 16px center;
+        background-size: 10px;
+        transition: all 0.2s;
+    }
+
+    .history-select:focus {
+        border-color: var(--primary-brand);
+    }
+
+    /* History Table */
+    .history-table-container {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .history-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    .history-table th {
+        padding: 1.25rem 1.5rem;
+        background: #f8fafc;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .history-table td {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+        font-size: 0.9rem;
+    }
+
+    .history-table tr {
+        transition: background-color 0.2s;
+    }
+
+    .history-table tr:hover {
+        background-color: #fafafa;
+    }
+
+    /* Accordion / Collapsible Accrual Rows */
+    .history-summary-row {
+        transition: all 0.2s ease;
+    }
+
+    .history-summary-row:hover {
+        background-color: #f1f5f9 !important;
+    }
+
+    .accrual-detail-row {
+        animation: fadeIn 0.2s ease-out;
+    }
+
+    /* Badges & Tags */
+    .badge-tx {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+
+    .badge-tx.credit {
+        background: #dcfce7;
+        color: #15803d;
+        border: 1px solid rgba(21, 128, 61, 0.1);
+    }
+
+    .badge-tx.debit {
+        background: #fee2e2;
+        color: #b91c1c;
+        border: 1px solid rgba(185, 28, 28, 0.1);
+    }
+
+    .badge-leave-type {
+        display: inline-block;
+        padding: 4px 10px;
+        background: #f1f5f9;
+        color: #475569;
+        font-weight: 600;
+        font-size: 0.8rem;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .actor-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 1px solid rgba(29, 78, 216, 0.1);
+    }
+
+    .actor-badge.system {
+        background: #f1f5f9;
+        color: #64748b;
+        border-color: #e2e8f0;
+    }
+
+    /* Empty state */
+    .history-empty {
+        padding: 5rem 2rem;
+        text-align: center;
+        color: var(--text-muted);
+    }
+
+    .history-empty i {
+        font-size: 3rem;
+        color: #cbd5e1;
+        margin-bottom: 1rem;
+    }
+
+    .history-empty h4 {
+        color: var(--text-main);
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Calendar styles */
+    .calendar-nav-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .calendar-nav-btn:hover {
+        background: var(--primary-brand);
+        color: white;
+        border-color: var(--primary-brand);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        transform: scale(1.05);
+    }
+    .calendar-wrapper {
+        border: 1px solid #e2e8f0;
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        background: #f8fafc;
+        box-shadow: var(--shadow-soft);
+    }
+    .calendar-grid-header {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        background: #f1f5f9;
+        border-bottom: 1px solid #e2e8f0;
+        text-align: center;
+        font-weight: 700;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 12px 0;
+    }
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        grid-auto-rows: minmax(120px, 1fr);
+        gap: 1px;
+        background: #e2e8f0;
+    }
+    .calendar-day-cell {
+        background: white;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        position: relative;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    .calendar-day-cell:hover {
+        background: #f8fafc;
+        z-index: 2;
+        box-shadow: inset 0 0 0 2px var(--primary-brand);
+    }
+    .calendar-day-cell.other-month {
+        background: #f8fafc;
+    }
+    .calendar-day-cell.other-month .day-number {
+        color: #cbd5e1;
+    }
+    .calendar-day-cell.today {
+        background: #eff6ff;
+    }
+    .calendar-day-cell.today .day-number {
+        background: var(--primary-brand);
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        box-shadow: 0 2px 6px rgba(79, 70, 229, 0.2);
+    }
+    .day-number {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 6px;
+        align-self: flex-start;
+    }
+    .calendar-tx-container {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex-grow: 1;
+        overflow-y: auto;
+        max-height: 85px;
+        scrollbar-width: none;
+    }
+    .calendar-tx-container::-webkit-scrollbar {
+        display: none;
+    }
+    .calendar-tx-badge {
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 4px;
+        transition: all 0.15s ease;
+    }
+    .calendar-tx-badge.credit {
+        background: #dcfce7;
+        color: #15803d;
+        border: 1px solid rgba(21, 128, 61, 0.1);
+    }
+    .calendar-tx-badge.debit {
+        background: #fee2e2;
+        color: #b91c1c;
+        border: 1px solid rgba(185, 28, 28, 0.1);
+    }
+    .calendar-tx-badge.group-accrual {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid rgba(29, 78, 216, 0.1);
+    }
+    .calendar-tx-more {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-align: center;
+        padding: 2px 0;
+    }
 </style>
 {% endblock %}
 
@@ -1881,6 +2276,21 @@
             </div>
         </div>
     </div>
+
+    <!-- Tab Controls -->
+    <div class="tab-container">
+        <div class="segmented-control">
+            <button class="tab-btn active" id="tab-balances" onclick="switchTab('balances')">
+                <i class="fas fa-wallet"></i> Leave Balances
+            </button>
+            <button class="tab-btn" id="tab-history" onclick="switchTab('history')">
+                <i class="fas fa-history"></i> Leave History
+            </button>
+        </div>
+    </div>
+
+    <!-- Leave Balances View -->
+    <div id="balances-view-container">
 
     <!-- Action Bar -->
     <div class="action-bar">
@@ -2156,6 +2566,244 @@
         </div>
     </div>
 
+    </div> <!-- End balances-view-container -->
+
+    <!-- Leave Transaction History View -->
+    <div id="history-view-container" style="display: none; animation: fadeIn 0.4s ease-out;">
+        <div class="history-card">
+            <!-- Filter Bar -->
+            <div class="history-filter-bar d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div class="d-flex align-items-center flex-grow-1 gap-2 flex-wrap" style="min-width: 250px;">
+                    <div class="history-search flex-grow-1" style="min-width: 200px;">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="historySearchInput" placeholder="Search by employee name, reason, or actor...">
+                    </div>
+                    <div>
+                        <select id="historyFilterTxType" class="history-select">
+                            <option value="ALL">All Transactions</option>
+                            <option value="CREDIT">Credits only</option>
+                            <option value="DEBIT">Debits only</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select id="historyFilterLeaveType" class="history-select">
+                            <option value="ALL">All Leave Types</option>
+                            <option value="SL">Sick Leave (SL)</option>
+                            <option value="CL">Casual Leave (CL)</option>
+                            <option value="COMBINED">Combined (SL/CL)</option>
+                            <option value="UL">LOP / Unpaid (UL)</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- View Toggle Buttons -->
+                <div class="history-view-toggle">
+                    <div class="segmented-control p-1" style="background: #f1f5f9; border-radius: 30px; display: inline-flex; border: 1px solid #e2e8f0;">
+                        <button type="button" class="tab-btn py-1 px-3 active" id="btn-list-view" onclick="switchHistoryView('list')" style="font-size: 0.85rem; font-weight: 600; padding: 6px 16px; border-radius: 30px;">
+                            <i class="fas fa-list me-1"></i> List
+                        </button>
+                        <button type="button" class="tab-btn py-1 px-3" id="btn-calendar-view" onclick="switchHistoryView('calendar')" style="font-size: 0.85rem; font-weight: 600; padding: 6px 16px; border-radius: 30px;">
+                            <i class="fas fa-calendar-alt me-1"></i> Calendar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table View Container -->
+            <div id="history-table-view-container">
+                <div class="history-table-container">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Employee</th>
+                            <th>Type</th>
+                            <th>Leave Type</th>
+                            <th class="text-center">Days</th>
+                            <th>Description</th>
+                            <th>Performed By</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        {% for tx in transactions %}
+                        <tr class="history-row"
+                            data-employee="{{ tx.employee.user.get_full_name|lower }} {% if tx.employee.pseudo_name %}({{ tx.employee.pseudo_name|lower }}){% endif %} {{ tx.employee.user.email|lower }}"
+                            data-tx-type="{{ tx.transaction_type }}"
+                            data-leave-type="{{ tx.leave_type }}"
+                            data-reason="{{ tx.reason|lower }}"
+                            data-actor="{% if tx.created_by %}{{ tx.created_by.get_full_name|lower }}{% else %}system accrual{% endif %}"
+                            data-date="{{ tx.created_at|date:'Y-m-d' }}"
+                            data-date-display="{{ tx.created_at|date:'Y-m-d H:i' }}"
+                            data-employee-display-name="{{ tx.employee.user.get_full_name }}{% if tx.employee.pseudo_name %} ({{ tx.employee.pseudo_name }}){% endif %}"
+                            data-employee-email="{{ tx.employee.user.email }}"
+                            data-employee-initials="{{ tx.employee.user.first_name|first }}{% if tx.employee.user.last_name %}{{ tx.employee.user.last_name|first }}{% endif %}"
+                            data-employee-avatar="{% if tx.employee.profile_picture %}{{ tx.employee.profile_picture.url }}{% endif %}"
+                            data-amount="{{ tx.amount|floatformat:1 }}"
+                            data-leave-type-display="{{ tx.get_leave_type_display }}"
+                            data-actor-display="{% if tx.created_by %}{{ tx.created_by.get_full_name }}{% else %}System Accrual{% endif %}"
+                            data-actor-is-system="{% if tx.created_by %}false{% else %}true{% endif %}">
+                            <td class="text-nowrap" style="font-weight: 500; color: #475569;">
+                                {{ tx.created_at|date:"Y-m-d H:i" }}
+                            </td>
+                            <td>
+                                <div class="user-profile">
+                                    {% if tx.employee.profile_picture %}
+                                    <img src="{{ tx.employee.profile_picture.url }}" class="user-avatar" alt="pic">
+                                    {% else %}
+                                    <div class="user-initials" style="width: 38px; height: 38px; font-size: 0.9rem; border-radius: 8px;">
+                                        {{ tx.employee.user.first_name|first }}{{ tx.employee.user.last_name|first }}
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.85rem;">
+                                            {{ tx.employee.user.get_full_name }}
+                                            {% if tx.employee.pseudo_name %}({{ tx.employee.pseudo_name }}){% endif %}
+                                        </h6>
+                                        <small class="text-muted" style="font-size: 0.75rem;">{{ tx.employee.user.email }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge-tx {% if tx.transaction_type == 'CREDIT' %}credit{% else %}debit{% endif %}">
+                                    <i class="fas {% if tx.transaction_type == 'CREDIT' %}fa-plus-circle{% else %}fa-minus-circle{% endif %}"></i>
+                                    {{ tx.transaction_type }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge-leave-type">
+                                    {{ tx.get_leave_type_display }}
+                                </span>
+                            </td>
+                            <td class="text-center" style="font-weight: 700; font-size: 0.95rem; {% if tx.transaction_type == 'CREDIT' %}color: #16a34a;{% else %}color: #dc2626;{% endif %}">
+                                {% if tx.transaction_type == 'CREDIT' %}+{% else %}-{% endif %}{{ tx.amount|floatformat:1 }}
+                            </td>
+                            <td style="color: #334155; font-weight: 500; max-width: 300px; word-wrap: break-word;">
+                                {{ tx.reason }}
+                            </td>
+                            <td>
+                                {% if tx.created_by %}
+                                <span class="actor-badge">
+                                    <i class="fas fa-user-shield"></i>
+                                    {{ tx.created_by.get_full_name }}
+                                </span>
+                                {% else %}
+                                <span class="actor-badge system">
+                                    <i class="fas fa-robot"></i>
+                                    System Accrual
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr id="historyNoRecordsRow">
+                            <td colspan="7">
+                                <div class="history-empty">
+                                    <i class="fas fa-history"></i>
+                                    <h4>No Audit Trail Logs Found</h4>
+                                    <p class="text-muted small">All future automatic accruals, manual additions, and request deductions will appear here.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        <!-- Row shown when javascript filtering returns empty -->
+                        <tr id="historyNoMatchesRow" style="display: none;">
+                            <td colspan="7">
+                                <div class="history-empty">
+                                    <i class="fas fa-search"></i>
+                                    <h4>No Matching Records</h4>
+                                    <p class="text-muted small">Try adjusting your search query or filters.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div> <!-- End history-table-container -->
+            </div> <!-- End history-table-view-container -->
+
+            <!-- Calendar View Container -->
+            <div id="history-calendar-view-container" style="display: none; animation: fadeIn 0.4s ease-out;">
+                <div id="history-calendar-view" style="padding: 1.5rem; background: white; border-radius: 0 0 16px 16px;">
+                    <!-- Calendar Navigation & Info Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <button type="button" class="calendar-nav-btn" onclick="navigateCalendar(-1)" title="Previous Month">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <h4 class="m-0 fw-bold text-dark" id="calendarMonthYearDisplay" style="min-width: 180px; text-align: center; font-size: 1.25rem;"></h4>
+                            <button type="button" class="calendar-nav-btn" onclick="navigateCalendar(1)" title="Next Month">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="d-flex gap-3 align-items-center text-muted small">
+                            <div class="d-flex align-items-center gap-1">
+                                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #dcfce7; border: 1px solid #16a34a;"></span>
+                                <span>Credits</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #fee2e2; border: 1px solid #dc2626;"></span>
+                                <span>Debits</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #eff6ff; border: 1px solid #1d4ed8;"></span>
+                                <span>System Runs</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calendar Grid -->
+                    <div class="calendar-wrapper">
+                        <div class="calendar-grid-header">
+                            <div>Sun</div>
+                            <div>Mon</div>
+                            <div>Tue</div>
+                            <div>Wed</div>
+                            <div>Thu</div>
+                            <div>Fri</div>
+                            <div>Sat</div>
+                        </div>
+                        <div class="calendar-grid" id="calendarDaysGrid">
+                            <!-- Dynamically populated via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Calendar Day Details Modal -->
+<div class="modal fade" id="calendarDayDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                <h4 class="modal-title fw-bold text-dark m-0" id="calendarModalTitle">Transactions</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="box-shadow: none;"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle m-0" style="font-size: 0.9rem;">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Employee</th>
+                                <th>Type</th>
+                                <th>Leave Type</th>
+                                <th class="text-center">Days</th>
+                                <th>Description</th>
+                                <th>Performed By</th>
+                            </tr>
+                        </thead>
+                        <tbody id="calendarModalTableBody">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0 pb-4 px-4">
+                <button type="button" class="btn btn-light px-4 rounded-pill fw-bold" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Modal -->
@@ -2559,8 +3207,241 @@
             });
         });
 
+        // Restore active tab from localStorage
+        const savedTab = localStorage.getItem('activeLeaveConfigTab');
+        if (savedTab) {
+            switchTab(savedTab);
+        }
+
+        // Group Accrual Runs into clean accordions
+        function groupAccrualRuns() {
+            const tableBody = document.getElementById('historyTableBody');
+            if (!tableBody) return;
+
+            const rows = Array.from(tableBody.querySelectorAll('.history-row'));
+            const accrualGroups = {};
+
+            rows.forEach(row => {
+                const reason = row.getAttribute('data-reason') || '';
+                const txType = row.getAttribute('data-tx-type') || '';
+
+                if (txType === 'CREDIT' && reason.includes('monthly accrual')) {
+                    const key = reason.trim().toLowerCase();
+                    if (!accrualGroups[key]) {
+                        accrualGroups[key] = [];
+                    }
+                    accrualGroups[key].push(row);
+                }
+            });
+
+            Object.keys(accrualGroups).forEach((key, index) => {
+                const groupRows = accrualGroups[key];
+                if (groupRows.length === 0) return;
+
+                groupRows.sort((a, b) => {
+                    return a.getAttribute('data-employee').localeCompare(b.getAttribute('data-employee'));
+                });
+
+                const firstRow = groupRows[0];
+                const runId = `accrual-run-${index}`;
+
+                // Calculate total sum of days credited
+                let totalDays = 0;
+                groupRows.forEach(row => {
+                    const daysTd = row.cells[4];
+                    if (daysTd) {
+                        const val = parseFloat(daysTd.textContent.replace('+', '').replace('-', '').trim());
+                        if (!isNaN(val)) {
+                            totalDays += val;
+                        }
+                    }
+                });
+
+                // Get date, reason, and actor
+                const dateText = firstRow.cells[0].innerHTML;
+                const originalReason = firstRow.querySelector('td:nth-child(6)').textContent.trim();
+                const actorText = firstRow.cells[6].innerHTML;
+
+                // Create Summary Row
+                const summaryRow = document.createElement('tr');
+                summaryRow.className = 'history-summary-row';
+                summaryRow.style.cursor = 'pointer';
+                summaryRow.style.background = '#f8fafc';
+                summaryRow.style.fontWeight = '600';
+                summaryRow.setAttribute('data-run-id', runId);
+                summaryRow.setAttribute('data-tx-type', 'CREDIT');
+                summaryRow.setAttribute('data-reason', key);
+                summaryRow.setAttribute('data-employee', '');
+                summaryRow.setAttribute('data-actor', firstRow.getAttribute('data-actor'));
+
+                summaryRow.innerHTML = `
+                    <td class="text-nowrap" style="font-weight: 500; color: #475569;">
+                        ${dateText}
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="user-initials" style="width: 38px; height: 38px; font-size: 0.9rem; border-radius: 8px; background: #e0e7ff; color: #4f46e5; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-layer-group"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.85rem;">
+                                    Accrual Run Breakdown
+                                </h6>
+                                <small class="text-muted" style="font-size: 0.75rem; font-weight: 600;">
+                                    ${groupRows.length} Employees Credited <i class="fas fa-chevron-down ms-1" id="chevron-${runId}" style="transition: transform 0.2s;"></i>
+                                </small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge-tx credit">
+                            <i class="fas fa-plus-circle"></i> CREDIT
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge-leave-type" style="background: #e0f2fe; color: #0369a1; border-color: #bae6fd;">
+                            Monthly Run
+                        </span>
+                    </td>
+                    <td class="text-center" style="font-weight: 700; font-size: 0.95rem; color: #16a34a;">
+                        +${totalDays.toFixed(1)}
+                    </td>
+                    <td style="color: #334155; font-weight: 600;">
+                        ${originalReason}
+                    </td>
+                    <td>
+                        ${actorText}
+                    </td>
+                `;
+
+                // Insert summary row in the DOM before first row of group
+                firstRow.parentNode.insertBefore(summaryRow, firstRow);
+
+                // Set detail class and hide them by default
+                groupRows.forEach(row => {
+                    row.classList.add('accrual-detail-row');
+                    row.setAttribute('data-parent-run', runId);
+                    row.style.display = 'none';
+                    row.style.background = '#fafafa';
+
+                    const employeeCell = row.cells[1];
+                    if (employeeCell) {
+                        employeeCell.style.paddingLeft = '2.5rem';
+                    }
+                });
+
+                // Attach toggle click handler
+                summaryRow.addEventListener('click', () => {
+                    const isCollapsed = groupRows[0].style.display === 'none';
+                    const chevron = document.getElementById(`chevron-${runId}`);
+
+                    groupRows.forEach(row => {
+                        row.style.display = isCollapsed ? '' : 'none';
+                    });
+
+                    if (chevron) {
+                        chevron.style.transform = isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
+                    }
+                    summaryRow.style.background = isCollapsed ? '#f1f5f9' : '#f8fafc';
+                });
+            });
+        }
+
+        // Initialize accrual accordion grouping
+        groupAccrualRuns();
+
+        // Live filtering for Leave History Table
+        const historySearch = document.getElementById('historySearchInput');
+        const historyFilterTx = document.getElementById('historyFilterTxType');
+        const historyFilterLeave = document.getElementById('historyFilterLeaveType');
+        const historyRows = document.querySelectorAll('.history-row');
+        const noMatchesRow = document.getElementById('historyNoMatchesRow');
+
+        function filterHistory() {
+            if (!historySearch) return;
+            const query = historySearch.value.toLowerCase().trim();
+            const txType = historyFilterTx.value;
+            const leaveType = historyFilterLeave.value;
+
+            let matchCount = 0;
+            const isSearching = !!query || txType !== 'ALL' || leaveType !== 'ALL';
+
+            if (isSearching) {
+                // Flat list filtering when active
+                historyRows.forEach(row => {
+                    const employeeText = row.getAttribute('data-employee') || '';
+                    const rowTxType = row.getAttribute('data-tx-type') || '';
+                    const rowLeaveType = row.getAttribute('data-leave-type') || '';
+                    const reasonText = row.getAttribute('data-reason') || '';
+                    const actorText = row.getAttribute('data-actor') || '';
+
+                    const matchesQuery = !query ||
+                        employeeText.includes(query) ||
+                        reasonText.includes(query) ||
+                        actorText.includes(query);
+
+                    const matchesTx = txType === 'ALL' || rowTxType === txType;
+                    const matchesLeave = leaveType === 'ALL' || rowLeaveType === leaveType;
+
+                    if (matchesQuery && matchesTx && matchesLeave) {
+                        row.style.display = '';
+                        matchCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                // Hide all summary rows during search
+                document.querySelectorAll('.history-summary-row').forEach(sRow => {
+                    sRow.style.display = 'none';
+                });
+            } else {
+                // Restore grouped view when search cleared
+                document.querySelectorAll('.history-summary-row').forEach(sRow => {
+                    sRow.style.display = '';
+                    sRow.style.background = '#f8fafc';
+                    const runId = sRow.getAttribute('data-run-id');
+                    const chevron = document.getElementById(`chevron-${runId}`);
+                    if (chevron) chevron.style.transform = 'rotate(0deg)';
+                });
+
+                historyRows.forEach(row => {
+                    if (row.classList.contains('accrual-detail-row')) {
+                        row.style.display = 'none';
+                    } else {
+                        row.style.display = '';
+                    }
+                });
+                matchCount = historyRows.length;
+            }
+
+            if (historyRows.length > 0) {
+                if (matchCount === 0) {
+                    if (noMatchesRow) noMatchesRow.style.display = '';
+                } else {
+                    if (noMatchesRow) noMatchesRow.style.display = 'none';
+                }
+            }
+
+            // Render calendar if calendar view container is visible
+            const calContainer = document.getElementById('history-calendar-view-container');
+            if (calContainer && calContainer.style.display !== 'none') {
+                renderCalendar();
+            }
+        }
+
+        if (historySearch) {
+            historySearch.addEventListener('input', filterHistory);
+            historyFilterTx.addEventListener('change', filterHistory);
+            historyFilterLeave.addEventListener('change', filterHistory);
+        }
+
         // Check for bulk upload success and refresh data
         checkBulkUploadSuccess();
+
+        // Restore active history view (list vs calendar)
+        const savedHistoryView = localStorage.getItem('activeLeaveHistoryView') || 'list';
+        switchHistoryView(savedHistoryView);
     });
 
     // Function to check for bulk upload success and refresh data
@@ -2655,6 +3536,303 @@
             .catch(error => {
                 showToast('Error refreshing data. Please reload the page.', 'error');
             });
-    }
+     }
+
+      // Global tab switching logic
+      function switchTab(tabName) {
+          const balancesBtn = document.getElementById('tab-balances');
+          const historyBtn = document.getElementById('tab-history');
+          const balancesView = document.getElementById('balances-view-container');
+          const historyView = document.getElementById('history-view-container');
+
+          if (!balancesBtn || !historyBtn || !balancesView || !historyView) return;
+
+          if (tabName === 'balances') {
+              balancesBtn.classList.add('active');
+              historyBtn.classList.remove('active');
+              balancesView.style.display = 'block';
+              historyView.style.display = 'none';
+              localStorage.setItem('activeLeaveConfigTab', 'balances');
+          } else if (tabName === 'history') {
+              balancesBtn.classList.remove('active');
+              historyBtn.classList.add('active');
+              balancesView.style.display = 'none';
+              historyView.style.display = 'block';
+              localStorage.setItem('activeLeaveConfigTab', 'history');
+
+              // Trigger calendar view restoration/rendering
+              const activeView = localStorage.getItem('activeLeaveHistoryView') || 'list';
+              switchHistoryView(activeView);
+          }
+      }
+
+      // History Calendar View Logic
+      let currentCalendarDate = new Date();
+
+      function switchHistoryView(view) {
+          const listBtn = document.getElementById('btn-list-view');
+          const calBtn = document.getElementById('btn-calendar-view');
+          const listView = document.getElementById('history-table-view-container');
+          const calView = document.getElementById('history-calendar-view-container');
+
+          if (!listBtn || !calBtn || !listView || !calView) return;
+
+          if (view === 'list') {
+              listBtn.classList.add('active');
+              calBtn.classList.remove('active');
+              listView.style.display = 'block';
+              calView.style.display = 'none';
+              localStorage.setItem('activeLeaveHistoryView', 'list');
+          } else {
+              listBtn.classList.remove('active');
+              calBtn.classList.add('active');
+              listView.style.display = 'none';
+              calView.style.display = 'block';
+              localStorage.setItem('activeLeaveHistoryView', 'calendar');
+              renderCalendar();
+          }
+      }
+
+      function navigateCalendar(direction) {
+          currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
+          renderCalendar();
+      }
+
+      function renderCalendar() {
+          const grid = document.getElementById('calendarDaysGrid');
+          const display = document.getElementById('calendarMonthYearDisplay');
+          if (!grid || !display) return;
+
+          const options = { month: 'long', year: 'numeric' };
+          display.textContent = currentCalendarDate.toLocaleDateString('en-US', options);
+
+          grid.innerHTML = '';
+
+          const year = currentCalendarDate.getFullYear();
+          const month = currentCalendarDate.getMonth();
+
+          const firstDayIndex = new Date(year, month, 1).getDay();
+          const totalDays = new Date(year, month + 1, 0).getDate();
+          const prevTotalDays = new Date(year, month, 0).getDate();
+
+          const txByDate = {};
+          const historyRows = document.querySelectorAll('.history-row');
+          historyRows.forEach(row => {
+              if (row.style.display !== 'none') {
+                  const dateStr = row.getAttribute('data-date');
+                  if (dateStr) {
+                      if (!txByDate[dateStr]) {
+                          txByDate[dateStr] = [];
+                      }
+                      txByDate[dateStr].push({
+                          employee: row.getAttribute('data-employee-display-name'),
+                          email: row.getAttribute('data-employee-email'),
+                          initials: row.getAttribute('data-employee-initials'),
+                          avatar: row.getAttribute('data-employee-avatar'),
+                          txType: row.getAttribute('data-tx-type'),
+                          leaveType: row.getAttribute('data-leave-type-display'),
+                          amount: parseFloat(row.getAttribute('data-amount')),
+                          reason: row.getAttribute('data-reason'),
+                          actor: row.getAttribute('data-actor-display'),
+                          isSystem: row.getAttribute('data-actor-is-system') === 'true',
+                          dateDisplay: row.getAttribute('data-date-display')
+                      });
+                  }
+              }
+          });
+
+          for (let i = firstDayIndex; i > 0; i--) {
+              const day = prevTotalDays - i + 1;
+              const prevMonthDate = new Date(year, month - 1, day);
+              createDayCell(prevMonthDate, true, txByDate, grid);
+          }
+
+          const today = new Date();
+          for (let day = 1; day <= totalDays; day++) {
+              const currentDate = new Date(year, month, day);
+              const isToday = currentDate.getDate() === today.getDate() &&
+                              currentDate.getMonth() === today.getMonth() &&
+                              currentDate.getFullYear() === today.getFullYear();
+              createDayCell(currentDate, false, txByDate, grid, isToday);
+          }
+
+          const totalCells = grid.children.length;
+          const remainingCells = 42 - totalCells;
+          for (let day = 1; day <= remainingCells; day++) {
+              const nextMonthDate = new Date(year, month + 1, day);
+              createDayCell(nextMonthDate, true, txByDate, grid);
+          }
+      }
+
+      function createDayCell(date, isOtherMonth, txByDate, grid, isToday = false) {
+          const cell = document.createElement('div');
+          cell.className = 'calendar-day-cell';
+          if (isOtherMonth) cell.classList.add('other-month');
+          if (isToday) cell.classList.add('today');
+
+          const dayNum = date.getDate();
+          const dateStr = formatDateYYYYMMDD(date);
+
+          cell.innerHTML = `<div class="day-number">${dayNum}</div>`;
+
+          const dayTransactions = txByDate[dateStr] || [];
+          if (dayTransactions.length > 0) {
+              const txContainer = document.createElement('div');
+              txContainer.className = 'calendar-tx-container';
+
+              const systemAccruals = [];
+              const otherTx = [];
+
+              dayTransactions.forEach(tx => {
+                  const isSystemAccrual = tx.txType === 'CREDIT' && (tx.isSystem || tx.reason.toLowerCase().includes('monthly accrual'));
+                  if (isSystemAccrual) {
+                      systemAccruals.push(tx);
+                  } else {
+                      otherTx.push(tx);
+                  }
+              });
+
+              const displayItems = [];
+
+              if (systemAccruals.length > 0) {
+                  let totalAmount = 0;
+                  systemAccruals.forEach(t => totalAmount += t.amount);
+                  displayItems.push({
+                      type: 'group-accrual',
+                      text: `<i class="fas fa-robot"></i> Accrual: +${totalAmount.toFixed(1)} (${systemAccruals.length} Emp)`,
+                      transactions: systemAccruals
+                  });
+              }
+
+              otherTx.forEach(tx => {
+                  const prefix = tx.txType === 'CREDIT' ? '+' : '-';
+                  const badgeClass = tx.txType === 'CREDIT' ? 'credit' : 'debit';
+                  const icon = tx.txType === 'CREDIT' ? 'fa-plus-circle' : 'fa-minus-circle';
+                  const shortName = tx.employee.split(' ')[0];
+                  displayItems.push({
+                      type: badgeClass,
+                      text: `<i class="fas ${icon}"></i> ${prefix}${tx.amount.toFixed(1)} ${tx.leaveType.split(' ')[0]} (${shortName})`,
+                      transactions: [tx]
+                  });
+              });
+
+              const maxBadges = 2;
+              displayItems.forEach((item, index) => {
+                  if (index < maxBadges) {
+                      const badge = document.createElement('div');
+                      badge.className = `calendar-tx-badge ${item.type}`;
+                      badge.innerHTML = item.text;
+                      txContainer.appendChild(badge);
+                  }
+              });
+
+              if (displayItems.length > maxBadges) {
+                  const moreDiv = document.createElement('div');
+                  moreDiv.className = 'calendar-tx-more';
+                  moreDiv.textContent = `+${displayItems.length - maxBadges} more`;
+                  txContainer.appendChild(moreDiv);
+              }
+
+              cell.appendChild(txContainer);
+
+              cell.addEventListener('click', () => {
+                  showDayDetailsModal(dateStr, dayTransactions);
+              });
+          }
+
+          grid.appendChild(cell);
+      }
+
+      function formatDateYYYYMMDD(date) {
+          const yyyy = date.getFullYear();
+          const mm = String(date.getMonth() + 1).padStart(2, '0');
+          const dd = String(date.getDate()).padStart(2, '0');
+          return `${yyyy}-${mm}-${dd}`;
+      }
+
+      function showDayDetailsModal(dateStr, transactions) {
+          const modalTitle = document.getElementById('calendarModalTitle');
+          const tableBody = document.getElementById('calendarModalTableBody');
+          if (!modalTitle || !tableBody) return;
+
+          const dateObj = new Date(dateStr);
+          const displayDate = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+          modalTitle.textContent = `Transactions on ${displayDate}`;
+
+          tableBody.innerHTML = '';
+
+          transactions.forEach(tx => {
+              const row = document.createElement('tr');
+              const prefix = tx.txType === 'CREDIT' ? '+' : '-';
+              const color = tx.txType === 'CREDIT' ? '#16a34a' : '#dc2626';
+              const badgeClass = tx.txType === 'CREDIT' ? 'credit' : 'debit';
+              const icon = tx.txType === 'CREDIT' ? 'fa-plus-circle' : 'fa-minus-circle';
+
+              let employeeHTML = '';
+              if (tx.avatar) {
+                  employeeHTML = `
+                      <div class="d-flex align-items-center gap-2">
+                          <img src="${tx.avatar}" class="user-avatar" style="width: 32px; height: 32px; border-radius: 8px;" alt="pic">
+                          <div>
+                              <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.85rem;">${tx.employee}</h6>
+                              <small class="text-muted" style="font-size: 0.7rem;">${tx.email}</small>
+                          </div>
+                      </div>
+                  `;
+              } else {
+                  employeeHTML = `
+                      <div class="d-flex align-items-center gap-2">
+                          <div class="user-initials" style="width: 32px; height: 32px; font-size: 0.8rem; border-radius: 8px; background: #e0e7ff; color: var(--primary-brand); display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                              ${tx.initials}
+                          </div>
+                          <div>
+                              <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.85rem;">${tx.employee}</h6>
+                              <small class="text-muted" style="font-size: 0.7rem;">${tx.email}</small>
+                          </div>
+                      </div>
+                  `;
+              }
+
+              let actorHTML = '';
+              if (tx.isSystem) {
+                  actorHTML = `
+                      <span class="actor-badge system" style="padding: 2px 8px; font-size: 0.75rem;">
+                          <i class="fas fa-robot"></i> System Accrual
+                      </span>
+                  `;
+              } else {
+                  actorHTML = `
+                      <span class="actor-badge" style="padding: 2px 8px; font-size: 0.75rem;">
+                          <i class="fas fa-user-shield"></i> ${tx.actor}
+                      </span>
+                  `;
+              }
+
+              row.innerHTML = `
+                  <td>${employeeHTML}</td>
+                  <td>
+                      <span class="badge-tx ${badgeClass}" style="padding: 4px 10px; font-size: 0.75rem;">
+                          <i class="fas ${icon}"></i> ${tx.txType}
+                      </span>
+                  </td>
+                  <td>
+                      <span class="badge-leave-type" style="padding: 2px 8px; font-size: 0.75rem;">
+                          ${tx.leaveType}
+                      </span>
+                  </td>
+                  <td class="text-center" style="font-weight: 700; color: ${color}; font-size: 0.9rem;">
+                      ${prefix}${tx.amount.toFixed(1)}
+                  </td>
+                  <td style="color: #334155; font-weight: 500; max-width: 200px; word-wrap: break-word;">${tx.reason}</td>
+                  <td>${actorHTML}</td>
+              `;
+
+              tableBody.appendChild(row);
+          });
+
+          const modalElement = document.getElementById('calendarDayDetailsModal');
+          const bsModal = new bootstrap.Modal(modalElement);
+          bsModal.show();
+      }
 </script>
 {% endblock %}

@@ -83,9 +83,10 @@ def create_regularization_request_notification(sender, instance, created, **kwar
         content_type = ContentType.objects.get_for_model(RegularizationRequest)
 
         for recipient in recipients:
-            message = (
-                f"{instance.employee.user.get_full_name()} has requested attendance regularization for {instance.date}"
-            )
+            if instance.change_type == "WEEK_OFF_WORK":
+                message = f"Employee {instance.employee.user.get_full_name()} clocked in on their week-off today ({instance.date}). Please review and approve/reject this Extra Work Day Request."
+            else:
+                message = f"{instance.employee.user.get_full_name()} has requested attendance regularization for {instance.date}"
 
             Notification.objects.create(
                 recipient=recipient,

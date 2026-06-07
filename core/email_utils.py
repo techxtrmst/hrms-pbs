@@ -631,7 +631,10 @@ def send_regularization_request_notification(regularization_request):
         html_content = render_to_string("core/emails/regularization_request_notification.html", context)
 
         # Create email subject
-        subject = f"⏰ Attendance Regularization Request from {employee.user.get_full_name()}"
+        if regularization_request.change_type == "WEEK_OFF_WORK":
+            subject = f"⚠️ Extra Work Day Request: {employee.user.get_full_name()} clocked in on a Week-Off"
+        else:
+            subject = f"⏰ Attendance Regularization Request from {employee.user.get_full_name()}"
 
         # Build recipient list - Use company-specific HR email
         recipients = [company_hr_email]
@@ -840,20 +843,34 @@ def send_regularization_rejection_notification(reg_request):
             "company_name": company.name,
         }
 
-        html_content = f"""
-        <html>
-        <body style="font-family: sans-serif; color: #333;">
-            <h2 style="color: #d32f2f;">Regularization Request Rejected</h2>
-            <p>Dear {context["employee_name"]},</p>
-            <p>Your Attendance Regularization for <strong>{context["date"]}</strong> has been <strong>rejected</strong>.</p>
-            <p><strong>Reason:</strong> {context["reason"]}</p>
-            <br>
-            <p style="color: #666;">Regards,<br>{context["company_name"]} Team</p>
-        </body>
-        </html>
-        """
-
-        subject = f"❌ Regularization Rejected: {context['date']}"
+        if reg_request.change_type == "WEEK_OFF_WORK":
+            subject = f"❌ Extra Work Day Request Rejected: {context['date']}"
+            html_content = f"""
+            <html>
+            <body style="font-family: sans-serif; color: #333;">
+                <h2 style="color: #d32f2f;">Extra Work Day Request Rejected</h2>
+                <p>Dear {context["employee_name"]},</p>
+                <p>Your request to approve working on a week-off day on <strong>{context["date"]}</strong> has been <strong>rejected</strong>.</p>
+                <p><strong>Reason:</strong> {context["reason"]}</p>
+                <br>
+                <p style="color: #666;">Regards,<br>{context["company_name"]} Team</p>
+            </body>
+            </html>
+            """
+        else:
+            subject = f"❌ Regularization Rejected: {context['date']}"
+            html_content = f"""
+            <html>
+            <body style="font-family: sans-serif; color: #333;">
+                <h2 style="color: #d32f2f;">Regularization Request Rejected</h2>
+                <p>Dear {context["employee_name"]},</p>
+                <p>Your Attendance Regularization for <strong>{context["date"]}</strong> has been <strong>rejected</strong>.</p>
+                <p><strong>Reason:</strong> {context["reason"]}</p>
+                <br>
+                <p style="color: #666;">Regards,<br>{context["company_name"]} Team</p>
+            </body>
+            </html>
+            """
 
         email = EmailMultiAlternatives(subject, "", from_email, [employee.user.email], connection=connection)
         email.attach_alternative(html_content, "text/html")
@@ -941,20 +958,34 @@ def send_regularization_approval_notification(reg_request):
             "company_name": company.name,
         }
 
-        html_content = f"""
-        <html>
-        <body style="font-family: sans-serif; color: #333;">
-            <h2 style="color: #2e7d32;">Regularization Request Approved</h2>
-            <p>Dear {context["employee_name"]},</p>
-            <p>Your Attendance Regularization request for <strong>{context["date"]}</strong> has been <strong>APPROVED</strong>.</p>
-            <p>Your attendance records have been updated to 'Present' or 'On Duty' as requested.</p>
-            <br>
-            <p style="color: #666;">Regards,<br>{context["company_name"]} Team</p>
-        </body>
-        </html>
-        """
-
-        subject = f"✅ Regularization Approved: {context['date']}"
+        if reg_request.change_type == "WEEK_OFF_WORK":
+            subject = f"✅ Extra Work Day Request Approved: {context['date']}"
+            html_content = f"""
+            <html>
+            <body style="font-family: sans-serif; color: #333;">
+                <h2 style="color: #2e7d32;">Extra Work Day Request Approved</h2>
+                <p>Dear {context["employee_name"]},</p>
+                <p>Your request to approve working on a week-off day on <strong>{context["date"]}</strong> has been <strong>APPROVED</strong>.</p>
+                <p>Your attendance records have been updated to 'Present' for this day.</p>
+                <br>
+                <p style="color: #666;">Regards,<br>{context["company_name"]} Team</p>
+            </body>
+            </html>
+            """
+        else:
+            subject = f"✅ Regularization Approved: {context['date']}"
+            html_content = f"""
+            <html>
+            <body style="font-family: sans-serif; color: #333;">
+                <h2 style="color: #2e7d32;">Regularization Request Approved</h2>
+                <p>Dear {context["employee_name"]},</p>
+                <p>Your Attendance Regularization request for <strong>{context["date"]}</strong> has been <strong>APPROVED</strong>.</p>
+                <p>Your attendance records have been updated to 'Present' or 'On Duty' as requested.</p>
+                <br>
+                <p style="color: #666;">Regards,<br>{context["company_name"]} Team</p>
+            </body>
+            </html>
+            """
 
         email = EmailMultiAlternatives(subject, "", from_email, [employee.user.email], connection=connection)
         email.attach_alternative(html_content, "text/html")

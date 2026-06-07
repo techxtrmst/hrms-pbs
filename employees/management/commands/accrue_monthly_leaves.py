@@ -65,12 +65,29 @@ class Command(BaseCommand):
                 # Perform accrual based on company
                 company_name = employee.company.name.lower()
 
+                from employees.models import LeaveTransaction
+
                 with transaction.atomic():
                     if "petabytz" in company_name:
                         # Petabytz: 1 Sick and 1 Casual leave
                         balance.sick_leave_allocated += 1.0
                         balance.casual_leave_allocated += 1.0
                         self.stdout.write(self.style.SUCCESS(f"Accrued 1 SL & 1 CL for {employee} (Petabytz)"))
+
+                        LeaveTransaction.log(
+                            employee=employee,
+                            transaction_type="CREDIT",
+                            leave_type="SL",
+                            amount=1.0,
+                            reason=f"Monthly Accrual ({local_time.month}/{local_time.year})",
+                        )
+                        LeaveTransaction.log(
+                            employee=employee,
+                            transaction_type="CREDIT",
+                            leave_type="CL",
+                            amount=1.0,
+                            reason=f"Monthly Accrual ({local_time.month}/{local_time.year})",
+                        )
 
                     elif "bluebix" in company_name or "softstandard" in company_name:
                         # Bluebix & Softstandard: 1 combined SL/CL
@@ -79,11 +96,34 @@ class Command(BaseCommand):
                             self.style.SUCCESS(f"Accrued 1 Combined SL/CL for {employee} ({employee.company.name})")
                         )
 
+                        LeaveTransaction.log(
+                            employee=employee,
+                            transaction_type="CREDIT",
+                            leave_type="COMBINED",
+                            amount=1.0,
+                            reason=f"Monthly Accrual ({local_time.month}/{local_time.year})",
+                        )
+
                     else:
                         # Default fallback (optional, as per current code)
                         balance.casual_leave_allocated += 1.0
                         balance.sick_leave_allocated += 1.0
                         self.stdout.write(self.style.SUCCESS(f"Accrued 1 SL & 1 CL for {employee} (Default)"))
+
+                        LeaveTransaction.log(
+                            employee=employee,
+                            transaction_type="CREDIT",
+                            leave_type="SL",
+                            amount=1.0,
+                            reason=f"Monthly Accrual ({local_time.month}/{local_time.year})",
+                        )
+                        LeaveTransaction.log(
+                            employee=employee,
+                            transaction_type="CREDIT",
+                            leave_type="CL",
+                            amount=1.0,
+                            reason=f"Monthly Accrual ({local_time.month}/{local_time.year})",
+                        )
 
                     # Update tracking fields
                     balance.last_accrual_month = local_time.month
