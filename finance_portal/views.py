@@ -83,6 +83,15 @@ def dashboard(request):
     months = [{"value": i, "name": calendar.month_name[i]} for i in range(1, 13)]
     years = range(today.year - 2, today.year + 2)
 
+    # Add days in month to context for default worked days
+    days_in_month = num_days
+
+    # Payroll cycle: previous month's day count is used for calculation denominator
+    if selected_month == 1:
+        prev_month_days = calendar.monthrange(selected_year - 1, 12)[1]
+    else:
+        prev_month_days = calendar.monthrange(selected_year, selected_month - 1)[1]
+
     # Fetch recent payroll batches
     batches = PayrollBatch.objects.all().prefetch_related("companies")[:10]
     audit_logs = FinanceAuditLog.objects.all().select_related("user", "company")[:15]
@@ -101,17 +110,23 @@ def dashboard(request):
         "years": years,
         "batches": batches,
         "audit_logs": audit_logs,
+        "days_in_month": days_in_month,
+        "prev_month_days": prev_month_days,
     }
     return render(request, "finance_portal/dashboard.html", context)
 
 
-def generate_payslip_internal(employee, month, year, worked_days=None, monthly_gross=None, is_draft=False):
+def generate_payslip_internal(
+    employee, month, year, worked_days=None, monthly_gross=None, is_draft=False, travel_allowance=0.0, tds_deduction=0.0
+):
     """
     Core payroll generation helper (mirroring core/views.py process_payslip_generation).
     Calculates breakdown, saves Payslip, and optionally renders PDF (skipped if is_draft=True).
     """
     total_days = calendar.monthrange(year, month)[1]
     month_date = date(year, month, 1)
+    travel_allowance = float(travel_allowance or 0.0)
+    tds_deduction = float(tds_deduction or 0.0)
 
     if worked_days is None:
         worked_days = float(total_days)
@@ -129,6 +144,8 @@ def generate_payslip_internal(employee, month, year, worked_days=None, monthly_g
         company=employee.company,
         month=month,
         year=year,
+        travel_allowance=travel_allowance,
+        tds_deduction=tds_deduction,
     )
 
     payslip, created = Payslip.objects.get_or_create(employee=employee, month=month_date)
@@ -138,6 +155,8 @@ def generate_payslip_internal(employee, month, year, worked_days=None, monthly_g
     payslip.hra = breakdown["hra"]
     payslip.lta = breakdown["lta"]
     payslip.other_allowance = breakdown["other_allowance"]
+    payslip.travel_allowance = breakdown["travel_allowance"]
+    payslip.tds_deduction = breakdown["tds_deduction"]
 
     # Map location specific allowances
     if breakdown.get("country_code", "IN") == "IN":
@@ -277,8 +296,10 @@ def finalize_payslip_internal(payslip):
         "employer_pf_rounded": round(payslip.employer_pf or 0),
         "employee_pf_rounded": round(payslip.employee_pf or 0),
         "professional_tax_rounded": round(payslip.professional_tax or 0),
+        "tds_deduction_rounded": round(payslip.tds_deduction or 0),
         "total_earnings_ctc": round((payslip.gross_salary or 0) + (payslip.employer_pf or 0)),
         "total_contributions": round((payslip.employee_pf or 0) + (payslip.employer_pf or 0)),
+        "total_taxes_deductions_rounded": round((payslip.professional_tax or 0) + (payslip.tds_deduction or 0)),
         "net_salary_rounded": round(payslip.net_salary or 0),
         "payable_units": f"{int(payslip.worked_days)} Days",
     }
@@ -395,20 +416,35 @@ def save_draft_payslip(request):
         payslip.employer_pf = float(data.get("employer_pf", payslip.employer_pf))
         payslip.professional_tax = float(data.get("professional_tax", payslip.professional_tax))
 
+        if "travel_allowance" in data:
+            payslip.travel_allowance = float(data["travel_allowance"])
+        if "tds_deduction" in data:
+            payslip.tds_deduction = float(data["tds_deduction"])
+
         # Dynamic salary calculations based on manual overrides
         if "gross_salary" in data:
             payslip.gross_salary = float(data["gross_salary"])
             payslip.monthly_gross = payslip.gross_salary
         else:
             payslip.gross_salary = (
-                payslip.basic + payslip.hra + payslip.conveyance_allowance + payslip.special_allowance
+                payslip.basic
+                + payslip.hra
+                + payslip.conveyance_allowance
+                + payslip.special_allowance
+                + float(payslip.travel_allowance or 0.0)
             )
             payslip.monthly_gross = payslip.gross_salary
 
         if "net_salary" in data:
             payslip.net_salary = float(data["net_salary"])
         else:
-            payslip.net_salary = payslip.gross_salary - payslip.employee_pf - payslip.professional_tax
+            payslip.net_salary = (
+                payslip.gross_salary
+                - payslip.employee_pf
+                - payslip.employer_pf
+                - payslip.professional_tax
+                - float(payslip.tds_deduction or 0.0)
+            )
         payslip.save()
 
         # Also save annual_ctc to Employee if provided
@@ -978,8 +1014,10 @@ def preview_draft_payslip(request, payslip_id):
         "employer_pf_rounded": round(payslip.employer_pf or 0),
         "employee_pf_rounded": round(payslip.employee_pf or 0),
         "professional_tax_rounded": round(payslip.professional_tax or 0),
+        "tds_deduction_rounded": round(payslip.tds_deduction or 0),
         "total_earnings_ctc": round((payslip.gross_salary or 0) + (payslip.employer_pf or 0)),
         "total_contributions": round((payslip.employee_pf or 0) + (payslip.employer_pf or 0)),
+        "total_taxes_deductions_rounded": round((payslip.professional_tax or 0) + (payslip.tds_deduction or 0)),
         "net_salary_rounded": round(payslip.net_salary or 0),
         "payable_units": f"{int(payslip.worked_days)} Days",
     }
@@ -1059,6 +1097,18 @@ def recalculate_components(request):
         net = breakdown["net_salary"]
         monthly_gross = breakdown["full_monthly_gross"]
 
+        # Update travel_allowance & tds_deduction if passed or keep existing
+        travel_allowance_val = data.get("travel_allowance")
+        if travel_allowance_val is not None:
+            payslip.travel_allowance = float(travel_allowance_val)
+
+        tds_deduction_val = data.get("tds_deduction")
+        if tds_deduction_val is not None:
+            payslip.tds_deduction = float(tds_deduction_val)
+
+        travel_allowance = float(payslip.travel_allowance or 0.0)
+        tds_deduction = float(payslip.tds_deduction or 0.0)
+
         # Update payslip with recalculated values
         payslip.basic = basic
         payslip.hra = hra
@@ -1067,9 +1117,9 @@ def recalculate_components(request):
         payslip.employee_pf = employee_pf
         payslip.employer_pf = employer_pf
         payslip.professional_tax = professional_tax
-        payslip.gross_salary = gross
-        payslip.monthly_gross = monthly_gross
-        payslip.net_salary = net
+        payslip.gross_salary = gross + travel_allowance
+        payslip.monthly_gross = monthly_gross + travel_allowance
+        payslip.net_salary = net + travel_allowance - tds_deduction
         payslip.save()
 
         # Audit log
@@ -1077,7 +1127,7 @@ def recalculate_components(request):
             user=request.user,
             company=employee.company,
             action="RECALCULATE_DRAFT",
-            details=f"Recalculated draft payslip for {employee.user.get_full_name()} (CTC: {new_ctc}, Worked Days: {worked_days}). Net: {net}.",
+            details=f"Recalculated draft payslip for {employee.user.get_full_name()} (CTC: {new_ctc}, Worked Days: {worked_days}). Net: {payslip.net_salary}.",
             ip_address=get_client_ip(request),
         )
 
@@ -1094,8 +1144,10 @@ def recalculate_components(request):
                 "employee_pf": round(employee_pf, 2),
                 "employer_pf": round(employer_pf, 2),
                 "professional_tax": round(professional_tax, 2),
-                "gross": round(gross, 2),
-                "net": round(net, 2),
+                "gross": round(payslip.gross_salary, 2),
+                "net": round(payslip.net_salary, 2),
+                "travel_allowance": round(travel_allowance, 2),
+                "tds_deduction": round(tds_deduction, 2),
             }
         )
 
@@ -1200,3 +1252,173 @@ def company_payroll_settings(request, company_id):
             "location_pt_configs": location_pt_configs,
         },
     )
+
+
+@finance_manager_required
+def search_employees_finance(request):
+    """API endpoint for searching employees within the finance portal scope"""
+    query = request.GET.get("q", "").strip()
+    company_id = request.GET.get("company", "all")
+
+    month_val = request.GET.get("month")
+    year_val = request.GET.get("year")
+
+    if not query or len(query) < 1:
+        return JsonResponse({"employees": [], "debug": "Query too short"})
+
+    employees = Employee.objects.all()
+    if company_id and company_id != "all":
+        employees = employees.filter(company_id=company_id)
+
+    employees = employees.filter(
+        Q(user__first_name__icontains=query) | Q(user__last_name__icontains=query) | Q(badge_id__icontains=query)
+    ).select_related("user", "location", "company")[:15]
+
+    results = []
+    for emp in employees:
+        has_payslip = False
+        saved_worked_days = None
+        saved_travel_allowance = 0.0
+        saved_tds_deduction = 0.0
+        if month_val and year_val:
+            try:
+                from datetime import date
+
+                payslip_date = date(int(year_val), int(month_val), 1)
+                payslip = Payslip.objects.filter(employee=emp, month=payslip_date).first()
+                if payslip:
+                    has_payslip = True
+                    saved_worked_days = float(payslip.worked_days) if payslip.worked_days is not None else None
+                    saved_travel_allowance = float(payslip.travel_allowance or 0.0)
+                    saved_tds_deduction = float(payslip.tds_deduction or 0.0)
+            except (ValueError, TypeError):
+                pass
+
+        result = {
+            "id": emp.id,
+            "name": emp.user.get_full_name() or "No Name",
+            "employee_id": emp.badge_id or f"EMP-{emp.id}",
+            "department": emp.department or "N/A",
+            "location": emp.location.name if emp.location else "N/A",
+            "designation": emp.designation or "N/A",
+            "email": emp.user.email,
+            "phone": emp.mobile_number or "N/A",
+            "status": emp.employment_status,
+            "exit_date": emp.exit_date.strftime("%Y-%m-%d") if emp.exit_date else None,
+            "annual_ctc": float(emp.annual_ctc) if emp.annual_ctc else 0,
+            "pf_enabled": emp.pf_enabled,
+            "currency": emp.location.currency
+            if emp.location and hasattr(emp.location, "currency")
+            else emp.company.currency
+            if hasattr(emp.company, "currency")
+            else "INR",
+            "country_code": emp.location.country_code.upper()
+            if emp.location and hasattr(emp.location, "country_code")
+            else "IN",
+            "has_payslip": has_payslip,
+            "saved_worked_days": saved_worked_days,
+            "saved_travel_allowance": saved_travel_allowance,
+            "saved_tds_deduction": saved_tds_deduction,
+        }
+        results.append(result)
+
+    return JsonResponse({"employees": results, "count": len(results)})
+
+
+@finance_manager_required
+@csrf_exempt
+def calculate_payslip_preview(request):
+    """API to calculate payslip breakdown without saving in the finance portal"""
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            employee_id = data.get("employee_id")
+            annual_ctc = data.get("annual_ctc")
+            worked_days = data.get("worked_days")
+            month = int(data.get("month"))
+            year = int(data.get("year"))
+            pf_enabled = data.get("pf_enabled")
+            travel_allowance = float(data.get("travel_allowance", 0.0) or 0.0)
+            tds_deduction = float(data.get("tds_deduction", 0.0) or 0.0)
+
+            # A finance manager can manage any employee in the active companies
+            employee = get_object_or_404(Employee, id=employee_id)
+            if pf_enabled is None:
+                pf_enabled = employee.pf_enabled
+
+            total_days = calendar.monthrange(year, month)[1]
+
+            breakdown = calculate_payslip_breakdown(
+                annual_ctc,
+                worked_days,
+                total_days,
+                pf_enabled,
+                location=employee.location,
+                company=employee.company,
+                month=month,
+                year=year,
+                travel_allowance=travel_allowance,
+                tds_deduction=tds_deduction,
+            )
+            return JsonResponse({"status": "success", "breakdown": breakdown})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=400)
+    return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
+
+
+@finance_manager_required
+def process_single_payroll(request):
+    """Process single employee payroll from the calculator (generates draft payslip)"""
+    if request.method != "POST":
+        return redirect("finance_portal:dashboard")
+
+    employee_id = request.POST.get("employee_id")
+    annual_ctc = request.POST.get("annual_ctc")
+    worked_days = float(request.POST.get("worked_days") or 0)
+    month = int(request.POST.get("month"))
+    year = int(request.POST.get("year"))
+    pf_enabled = request.POST.get("pf_enabled") == "on"
+    travel_allowance = 0.0
+    if request.POST.get("travel_allowance_enabled") == "on":
+        travel_allowance = float(request.POST.get("travel_allowance") or 0.0)
+    tds_deduction = 0.0
+    if request.POST.get("tds_deduction_enabled") == "on":
+        tds_deduction = float(request.POST.get("tds_deduction") or 0.0)
+
+    try:
+        employee = get_object_or_404(Employee, id=employee_id)
+
+        # Update employee's annual CTC and PF status if changed in the calculator
+        if annual_ctc:
+            new_ctc = float(str(annual_ctc).replace(",", ""))
+            if float(employee.annual_ctc or 0) != new_ctc:
+                employee.annual_ctc = new_ctc
+        employee.pf_enabled = pf_enabled
+        employee.save()
+
+        # Generate Phase 1 draft payslip (is_draft=True)
+        generate_payslip_internal(
+            employee,
+            month,
+            year,
+            worked_days=worked_days,
+            travel_allowance=travel_allowance,
+            tds_deduction=tds_deduction,
+            is_draft=True,
+        )
+        messages.success(request, f"Successfully generated draft payslip for {employee.user.get_full_name()}!")
+
+        # Log change to security audit log
+        FinanceAuditLog.objects.create(
+            user=request.user,
+            company=employee.company,
+            action="SINGLE_PAYROLL_DRAFT",
+            details=f"Generated draft payslip for {employee.user.get_full_name()} ({month}/{year}) via calculator.",
+            ip_address=get_client_ip(request),
+        )
+
+    except Exception as e:
+        messages.error(request, f"Error generating payslip: {str(e)}")
+
+    selected_company_id = request.GET.get("company", "all")
+    return redirect(f"/finance/?company={selected_company_id}&month={month}&year={year}")

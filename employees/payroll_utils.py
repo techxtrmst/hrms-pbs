@@ -1,5 +1,14 @@
 def calculate_payslip_breakdown(
-    annual_ctc, worked_days, total_days, pf_enabled=True, location=None, company=None, month=None, year=None
+    annual_ctc,
+    worked_days,
+    total_days,
+    pf_enabled=True,
+    location=None,
+    company=None,
+    month=None,
+    year=None,
+    travel_allowance=0.0,
+    tds_deduction=0.0,
 ):
     """
     Calculates the payslip breakdown based on the user's provided logic.
@@ -15,6 +24,8 @@ def calculate_payslip_breakdown(
       So entering 29 for April (display=30, cycle=31) gives:
         absent=1, actual_worked=30, gross = round(monthly × 30/31)
     """
+    travel_allowance = float(travel_allowance or 0.0)
+    tds_deduction = float(tds_deduction or 0.0)
     import calendar as _calendar
 
     # Convert inputs to float/Decimal
@@ -195,8 +206,10 @@ def calculate_payslip_breakdown(
                     # Derive gross_monthly from CTC to ensure they always add up perfectly
                     gross_monthly = float(ctc_to_use - employer_pf)
                 else:
-                    employer_pf = float(round(pf_ceil * pf_er_rate))
-                    gross_monthly = float(round(ctc_to_use - employer_pf))
+                    # PF is capped — both employee and employer contribute 12% of PF ceiling.
+                    # employer_pf uses pf_ee_rate (12%) so total PF = 1800 + 1800 = 3600.
+                    employer_pf = float(round(pf_ceil * pf_ee_rate))
+                    gross_monthly = float(round(ctc_to_use))
                     basic = float(round(gross_monthly * b_pct))
 
                 # Employee PF
@@ -216,7 +229,8 @@ def calculate_payslip_breakdown(
             other_allowance = float(round(gross_monthly - (basic + hra + lta)))
 
             # -------- Net Salary --------
-            net_before_pt = float(round(gross_monthly - employee_pf))
+            # Deduct both Employee PF and Employer PF: total PF = 1800 + 1800 = 3600
+            net_before_pt = float(round(gross_monthly - employee_pf - employer_pf))
 
             # Professional Tax — use per-location config if available,
             # otherwise fall back to global PayrollConfiguration PT settings.
@@ -282,8 +296,8 @@ def calculate_payslip_breakdown(
     return {
         "monthly_ctc": monthly_ctc,
         "full_monthly_ctc": full_monthly_ctc,
-        "gross_monthly": prorated_breakdown["gross"],
-        "full_monthly_gross": full_breakdown["gross"],
+        "gross_monthly": prorated_breakdown["gross"] + travel_allowance,
+        "full_monthly_gross": full_breakdown["gross"] + travel_allowance,
         "basic": prorated_breakdown["basic"],
         "hra": prorated_breakdown["hra"],
         "lta": prorated_breakdown["lta"],
@@ -293,7 +307,7 @@ def calculate_payslip_breakdown(
         "employee_pf": prorated_breakdown["employee_pf"],
         "employer_pf": prorated_breakdown["employer_pf"],
         "professional_tax": float(prorated_breakdown["professional_tax"]),
-        "net_salary": prorated_breakdown["net_salary"],
+        "net_salary": prorated_breakdown["net_salary"] + travel_allowance - tds_deduction,
         "worked_days": worked_days,
         "actual_worked_days": actual_worked_days,
         "total_days": total_days,
@@ -302,6 +316,8 @@ def calculate_payslip_breakdown(
         "pf_enabled": pf_enabled,
         "country_code": country_code,
         "currency_symbol": currency_symbol,
+        "travel_allowance": travel_allowance,
+        "tds_deduction": tds_deduction,
     }
 
 

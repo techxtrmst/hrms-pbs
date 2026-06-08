@@ -172,6 +172,8 @@ def generate_payslip_pdf_with_generator(payslip_instance, output_dir="media/pays
             earnings.append({"name": "Conveyance Allowance", "amount": float(payslip_instance.conveyance_allowance)})
         if payslip_instance.special_allowance > 0:
             earnings.append({"name": "Special Allowance", "amount": float(payslip_instance.special_allowance)})
+        if hasattr(payslip_instance, "travel_allowance") and payslip_instance.travel_allowance > 0:
+            earnings.append({"name": "Travel Allowance", "amount": float(payslip_instance.travel_allowance)})
 
         # Prepare deductions data
         deductions = []
@@ -183,6 +185,8 @@ def generate_payslip_pdf_with_generator(payslip_instance, output_dir="media/pays
         # Check if there are additional deduction fields (TDS, LOP, etc.)
         if hasattr(payslip_instance, "tds") and payslip_instance.tds > 0:
             deductions.append({"name": "TDS", "amount": float(payslip_instance.tds)})
+        if hasattr(payslip_instance, "tds_deduction") and payslip_instance.tds_deduction > 0:
+            deductions.append({"name": "Total Income Tax", "amount": float(payslip_instance.tds_deduction)})
         if hasattr(payslip_instance, "lop_deduction") and payslip_instance.lop_deduction > 0:
             deductions.append({"name": "LOP Deduction", "amount": float(payslip_instance.lop_deduction)})
 
@@ -286,6 +290,23 @@ def _generate_payslip_pdf_fallback(payslip_instance):
             "branding": branding,
             "net_salary_words": net_salary_words,
             "currency": currency,
+            "basic_rounded": round(payslip_instance.basic or 0),
+            "hra_rounded": round(payslip_instance.hra or 0),
+            "conveyance_rounded": round(payslip_instance.conveyance_allowance or 0),
+            "special_rounded": round(payslip_instance.special_allowance or 0),
+            "employer_pf_rounded": round(payslip_instance.employer_pf or 0),
+            "employee_pf_rounded": round(payslip_instance.employee_pf or 0),
+            "professional_tax_rounded": round(payslip_instance.professional_tax or 0),
+            "tds_deduction_rounded": round(payslip_instance.tds_deduction or 0),
+            "total_earnings_ctc": round((payslip_instance.gross_salary or 0) + (payslip_instance.employer_pf or 0)),
+            "total_contributions": round((payslip_instance.employee_pf or 0) + (payslip_instance.employer_pf or 0)),
+            "total_taxes_deductions_rounded": round(
+                (payslip_instance.professional_tax or 0) + (payslip_instance.tds_deduction or 0)
+            ),
+            "net_salary_rounded": round(payslip_instance.net_salary or 0),
+            "payable_units": f"{int(payslip_instance.worked_days)} Days"
+            if payslip_instance.worked_days is not None
+            else "30 Days",
         }
 
         # Render HTML from the Django template

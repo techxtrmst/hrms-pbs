@@ -1641,6 +1641,7 @@ class Payslip(models.Model):
     special_allowance = models.DecimalField(
         max_digits=12, decimal_places=2, default=0, verbose_name="Medical Allowance"
     )
+    travel_allowance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     monthly_gross = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     gross_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
@@ -1648,6 +1649,7 @@ class Payslip(models.Model):
     employee_pf = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     employer_pf = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     professional_tax = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    tds_deduction = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     # Meta info
     worked_days = models.FloatField(default=0)

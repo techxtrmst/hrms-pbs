@@ -198,3 +198,205 @@ class FinancePortalTests(TestCase):
         log = FinanceAuditLog.objects.first()
         self.assertEqual(log.user, self.finance_user)
         self.assertEqual(log.action, "EXCEL_BULK_PAYROLL")
+
+    def test_travel_allowance_preview_and_generation(self):
+        """Test travel allowance preview calculation and draft payslip generation"""
+        self.client.login(username="finance@test.com", password="password123")
+
+        # 1. Test preview calculation API with travel allowance
+        preview_url = reverse("finance_portal:calculate_payslip_preview")
+        response = self.client.post(
+            preview_url,
+            {
+                "employee_id": self.employee.id,
+                "annual_ctc": 600000.0,
+                "worked_days": 30,
+                "pf_enabled": True,
+                "travel_allowance": 5000.0,
+                "month": 5,
+                "year": 2026,
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "success")
+        self.assertEqual(data["breakdown"]["travel_allowance"], 5000.0)
+
+        # Base net with May proration (30/31 worked days, 600000 CTC, PF enabled): 44533
+        # With 5,000 travel allowance: net should be 49533.0
+        self.assertEqual(data["breakdown"]["net_salary"], 49533.0)
+
+        # 2. Test draft generation via process_single_payroll
+        single_process_url = reverse("finance_portal:process_single_payroll")
+        response = self.client.post(
+            single_process_url,
+            {
+                "employee_id": self.employee.id,
+                "annual_ctc": 600000.0,
+                "worked_days": 30,
+                "pf_enabled": "on",
+                "travel_allowance_enabled": "on",
+                "travel_allowance": 5000.0,
+                "month": 5,
+                "year": 2026,
+            },
+        )
+        self.assertRedirects(response, "/finance/?company=all&month=5&year=2026")
+
+        # Verify payslip is generated with travel allowance saved to database
+        # Base net for 600000 CTC (PF enabled, full May) = 44533; +5000 travel = 49533
+        self.assertEqual(Payslip.objects.count(), 1)
+        payslip = Payslip.objects.first()
+        self.assertEqual(payslip.travel_allowance, 5000.0)
+        self.assertEqual(payslip.net_salary, 49533.0)
+
+    def test_tds_deduction_preview_and_generation(self):
+        """Test TDS deduction preview calculation and draft payslip generation"""
+        self.client.login(username="finance@test.com", password="password123")
+
+        # 1. Test preview calculation API with TDS deduction
+        preview_url = reverse("finance_portal:calculate_payslip_preview")
+        response = self.client.post(
+            preview_url,
+            {
+                "employee_id": self.employee.id,
+                "annual_ctc": 600000.0,
+                "worked_days": 30,
+                "pf_enabled": True,
+                "travel_allowance": 0.0,
+                "tds_deduction": 2000.0,
+                "month": 5,
+                "year": 2026,
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "success")
+        self.assertEqual(data["breakdown"]["tds_deduction"], 2000.0)
+
+        # Base Net with May proration (30/31 worked days): 44,533.0
+        # With 2,000 TDS deduction, net should be 42,533.0
+        self.assertEqual(data["breakdown"]["net_salary"], 42533.0)
+
+        # 2. Test draft generation via process_single_payroll
+        single_process_url = reverse("finance_portal:process_single_payroll")
+        response = self.client.post(
+            single_process_url,
+            {
+                "employee_id": self.employee.id,
+                "annual_ctc": 600000.0,
+                "worked_days": 30,
+                "pf_enabled": "on",
+                "tds_deduction_enabled": "on",
+                "tds_deduction": 2000.0,
+                "month": 5,
+                "year": 2026,
+            },
+        )
+        self.assertRedirects(response, "/finance/?company=all&month=5&year=2026")
+
+        # Verify payslip is generated with TDS deduction saved to database
+        # Base net for 600000 CTC (PF enabled, full May) = 44533; -2000 TDS = 42533
+        self.assertEqual(Payslip.objects.count(), 1)
+        payslip = Payslip.objects.first()
+        self.assertEqual(payslip.tds_deduction, 2000.0)
+        self.assertEqual(payslip.net_salary, 42533.0)
+
+    def test_save_draft_payslip_with_travel_and_tds(self):
+        """Test save_draft_payslip endpoint correctly saves and recalculates travel_allowance and tds_deduction"""
+        self.client.login(username="finance@test.com", password="password123")
+
+        # Create initial draft payslip via process_single_payroll
+        single_process_url = reverse("finance_portal:process_single_payroll")
+        self.client.post(
+            single_process_url,
+            {
+                "employee_id": self.employee.id,
+                "annual_ctc": 600000.0,
+                "worked_days": 30,
+                "pf_enabled": "on",
+                "month": 5,
+                "year": 2026,
+            },
+        )
+        payslip = Payslip.objects.get(employee=self.employee, month="2026-05-01")
+
+        # Now save draft with travel allowance and TDS deduction
+        save_draft_url = reverse("finance_portal:save_draft_payslip")
+        response = self.client.post(
+            save_draft_url,
+            {
+                "payslip_id": payslip.id,
+                "worked_days": 30,
+                "basic": 25000.0,
+                "hra": 10000.0,
+                "conveyance_allowance": 1600.0,
+                "special_allowance": 12783.0,
+                "travel_allowance": 4000.0,
+                "professional_tax": 200.0,
+                "employee_pf": 1800.0,
+                "employer_pf": 1800.0,
+                "tds_deduction": 3000.0,
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "success")
+
+        # Refresh from database and assert
+        payslip.refresh_from_db()
+        self.assertEqual(payslip.travel_allowance, 4000.0)
+        self.assertEqual(payslip.tds_deduction, 3000.0)
+        # Gross should be 25000 + 10000 + 1600 + 12783 + 4000 = 53383.0
+        self.assertEqual(payslip.gross_salary, 53383.0)
+        # Net = 53383 - 1800 (emp_pf) - 1800 (er_pf) - 200 (PT) - 3000 (TDS) = 46583.0
+        self.assertEqual(payslip.net_salary, 46583.0)
+
+    def test_recalculate_components_with_travel_and_tds(self):
+        """Test recalculate_components endpoint correctly preserves/updates travel_allowance and tds_deduction"""
+        self.client.login(username="finance@test.com", password="password123")
+
+        # Create initial draft payslip
+        single_process_url = reverse("finance_portal:process_single_payroll")
+        self.client.post(
+            single_process_url,
+            {
+                "employee_id": self.employee.id,
+                "annual_ctc": 600000.0,
+                "worked_days": 30,
+                "pf_enabled": "on",
+                "month": 5,
+                "year": 2026,
+            },
+        )
+        payslip = Payslip.objects.get(employee=self.employee, month="2026-05-01")
+
+        # Call recalculate endpoint with new ctc, travel allowance, and TDS
+        recalc_url = reverse("finance_portal:recalculate_components")
+        response = self.client.post(
+            recalc_url,
+            {
+                "payslip_id": payslip.id,
+                "annual_ctc": 720000.0,
+                "worked_days": 30,
+                "travel_allowance": 5000.0,
+                "tds_deduction": 4000.0,
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "success")
+
+        # Check values returned in response
+        self.assertEqual(data["travel_allowance"], 5000.0)
+        self.assertEqual(data["tds_deduction"], 4000.0)
+
+        # Refresh and verify database state
+        payslip.refresh_from_db()
+        self.assertEqual(payslip.travel_allowance, 5000.0)
+        self.assertEqual(payslip.tds_deduction, 4000.0)
+        self.assertEqual(payslip.employee.annual_ctc, 720000.0)

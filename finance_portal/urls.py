@@ -15,4 +15,7 @@ urlpatterns = [
     path("upload-bulk-excel/", views.process_bulk_excel_upload, name="process_bulk_excel_upload"),
     path("send-email/<int:payslip_id>/", views.send_single_payslip_email_view, name="send_single_payslip_email"),
     path("preview-draft/<int:payslip_id>/", views.preview_draft_payslip, name="preview_draft_payslip"),
+    path("api/search-employees/", views.search_employees_finance, name="search_employees_finance"),
+    path("calculate-preview/", views.calculate_payslip_preview, name="calculate_payslip_preview"),
+    path("process-single/", views.process_single_payroll, name="process_single_payroll"),
 ]
