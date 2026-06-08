@@ -223,9 +223,9 @@ class FinancePortalTests(TestCase):
         self.assertEqual(data["status"], "success")
         self.assertEqual(data["breakdown"]["travel_allowance"], 5000.0)
 
-        # Base net with May proration (30/31 worked days, 600000 CTC, PF enabled): 44533
-        # With 5,000 travel allowance: net should be 49533.0
-        self.assertEqual(data["breakdown"]["net_salary"], 49533.0)
+        # Base net with May proration (30/31 worked days, 600000 CTC, PF enabled): 44383
+        # With 5,000 travel allowance: net should be 49383.0
+        self.assertEqual(data["breakdown"]["net_salary"], 49383.0)
 
         # 2. Test draft generation via process_single_payroll
         single_process_url = reverse("finance_portal:process_single_payroll")
@@ -245,11 +245,11 @@ class FinancePortalTests(TestCase):
         self.assertRedirects(response, "/finance/?company=all&month=5&year=2026")
 
         # Verify payslip is generated with travel allowance saved to database
-        # Base net for 600000 CTC (PF enabled, full May) = 44533; +5000 travel = 49533
+        # Base net for 600000 CTC (PF enabled, full May) = 44383; +5000 travel = 49383
         self.assertEqual(Payslip.objects.count(), 1)
         payslip = Payslip.objects.first()
         self.assertEqual(payslip.travel_allowance, 5000.0)
-        self.assertEqual(payslip.net_salary, 49533.0)
+        self.assertEqual(payslip.net_salary, 49383.0)
 
     def test_tds_deduction_preview_and_generation(self):
         """Test TDS deduction preview calculation and draft payslip generation"""
@@ -276,9 +276,9 @@ class FinancePortalTests(TestCase):
         self.assertEqual(data["status"], "success")
         self.assertEqual(data["breakdown"]["tds_deduction"], 2000.0)
 
-        # Base Net with May proration (30/31 worked days): 44,533.0
-        # With 2,000 TDS deduction, net should be 42,533.0
-        self.assertEqual(data["breakdown"]["net_salary"], 42533.0)
+        # Base Net with May proration (30/31 worked days): 44,383.0
+        # With 2,000 TDS deduction, net should be 42,383.0
+        self.assertEqual(data["breakdown"]["net_salary"], 42383.0)
 
         # 2. Test draft generation via process_single_payroll
         single_process_url = reverse("finance_portal:process_single_payroll")
@@ -298,11 +298,11 @@ class FinancePortalTests(TestCase):
         self.assertRedirects(response, "/finance/?company=all&month=5&year=2026")
 
         # Verify payslip is generated with TDS deduction saved to database
-        # Base net for 600000 CTC (PF enabled, full May) = 44533; -2000 TDS = 42533
+        # Base net for 600000 CTC (PF enabled, full May) = 44383; -2000 TDS = 42383
         self.assertEqual(Payslip.objects.count(), 1)
         payslip = Payslip.objects.first()
         self.assertEqual(payslip.tds_deduction, 2000.0)
-        self.assertEqual(payslip.net_salary, 42533.0)
+        self.assertEqual(payslip.net_salary, 42383.0)
 
     def test_save_draft_payslip_with_travel_and_tds(self):
         """Test save_draft_payslip endpoint correctly saves and recalculates travel_allowance and tds_deduction"""
@@ -353,6 +353,7 @@ class FinancePortalTests(TestCase):
         # Gross should be 25000 + 10000 + 1600 + 12783 + 4000 = 53383.0
         self.assertEqual(payslip.gross_salary, 53383.0)
         # Net = 53383 - 1800 (emp_pf) - 1800 (er_pf) - 200 (PT) - 3000 (TDS) = 46583.0
+        # NOTE: test uses manually set employer_pf=1800 (from the draft payload), not auto-calculated 1950
         self.assertEqual(payslip.net_salary, 46583.0)
 
     def test_recalculate_components_with_travel_and_tds(self):

@@ -1586,10 +1586,11 @@
         const travelAllowance = parseFloat(row.querySelector('.travel-allowance-input').value) || 0;
         const pt = parseFloat(row.querySelector('.pt-input').value) || 0;
         const empPf = parseFloat(row.querySelector('.employee-pf-input').value) || 0;
+        const erPf = parseFloat(row.querySelector('.employer-pf-input').value) || 0;
         const tds = parseFloat(row.querySelector('.tds-input').value) || 0;
 
         const gross = basic + hra + conveyance + special + travelAllowance;
-        const net = gross - empPf - pt - tds;
+        const net = gross - empPf - erPf - pt - tds;
 
         document.getElementById(`gross-input-${id}`).value = gross.toFixed(2);
         document.getElementById(`net-input-${id}`).value = net.toFixed(2);
@@ -1604,6 +1605,7 @@
         const travelAllowance = parseFloat(row.querySelector('.travel-allowance-input').value) || 0;
         const pt = parseFloat(row.querySelector('.pt-input').value) || 0;
         const empPf = parseFloat(row.querySelector('.employee-pf-input').value) || 0;
+        const erPf = parseFloat(row.querySelector('.employer-pf-input').value) || 0;
         const tds = parseFloat(row.querySelector('.tds-input').value) || 0;
 
         // Calculate residual special allowance: Special = Gross - Basic - HRA - Conveyance - TravelAllowance
@@ -1613,8 +1615,8 @@
         }
         row.querySelector('.special-input').value = special.toFixed(2);
 
-        // Net = Gross - Employee PF - PT - TDS
-        const net = gross - empPf - pt - tds;
+        // Net = Gross - Employee PF - Employer PF - PT - TDS
+        const net = gross - empPf - erPf - pt - tds;
         document.getElementById(`net-input-${id}`).value = net.toFixed(2);
     }
 

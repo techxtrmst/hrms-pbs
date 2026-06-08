@@ -206,9 +206,10 @@ def calculate_payslip_breakdown(
                     # Derive gross_monthly from CTC to ensure they always add up perfectly
                     gross_monthly = float(ctc_to_use - employer_pf)
                 else:
-                    # PF is capped — both employee and employer contribute 12% of PF ceiling.
-                    # employer_pf uses pf_ee_rate (12%) so total PF = 1800 + 1800 = 3600.
-                    employer_pf = float(round(pf_ceil * pf_ee_rate))
+                    # PF is capped — use standard rates: employer 13% of ceiling = 1950.
+                    # Total PF = employee 1800 + employer 1950 = 3750.
+                    # Accounts team can override via draft editor for special cases (e.g. 3600).
+                    employer_pf = float(round(pf_ceil * pf_er_rate))
                     gross_monthly = float(round(ctc_to_use))
                     basic = float(round(gross_monthly * b_pct))
 
