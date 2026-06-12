@@ -332,7 +332,7 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <button class="wish-btn" onclick="sendBirthdayWish('{{ item.employee.id }}', '{{ item.employee.user.first_name }}', 'anniversary', this)">
+                            <button class="wish-btn" onclick="sendBirthdayWish('{{ item.employee.id }}', '{{ item.employee.user.first_name }}', 'anniversary', this)" {% if not item.is_today %}disabled style="opacity: 0.5; cursor: not-allowed; border-color: #cbd5e1; color: #94a3b8; pointer-events: none;"{% endif %}>
                                 <i class="fas fa-trophy me-1"></i>Wish
                             </button>
                         </div>
@@ -640,6 +640,12 @@ function showAnniversaryDayDetailsModal(date, matches) {
             avatarHTML = `<div class="avatar-initials" style="width:48px; height:48px; font-size:0.95rem; border: none; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; font-weight: 700; border-radius: 50%;">${a.initials}</div>`;
         }
 
+        const today = new Date();
+        const isToday = date.getDate() === today.getDate() &&
+                        date.getMonth() === today.getMonth() &&
+                        date.getFullYear() === today.getFullYear();
+        const disableAttr = isToday ? '' : 'disabled style="opacity: 0.5; cursor: not-allowed; border-color: #cbd5e1; color: #94a3b8; pointer-events: none;"';
+
         div.innerHTML = `
             <div class="d-flex align-items-center gap-3">
                 ${avatarHTML}
@@ -649,7 +655,7 @@ function showAnniversaryDayDetailsModal(date, matches) {
                     <span class="badge bg-light text-dark fw-bold border mt-1" style="font-size:0.7rem;">Completing ${years} Year${years !== 1 ? 's' : ''}</span>
                 </div>
             </div>
-            <button class="wish-btn" onclick="sendBirthdayWish('${a.id}', '${a.firstName}', 'anniversary', this)">
+            <button class="wish-btn" onclick="sendBirthdayWish('${a.id}', '${a.firstName}', 'anniversary', this)" ${disableAttr}>
                 <i class="fas fa-trophy me-1"></i>Wish
             </button>
         `;

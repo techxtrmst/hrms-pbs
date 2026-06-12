@@ -1776,6 +1776,11 @@
                             {% endif %}
                             <div style="font-size:0.7rem;font-weight:600;color:#1e1b4b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ item.employee.user.first_name }}</div>
                             <div style="font-size:0.62rem;color:#64748b;">{% if item.is_today %}<span style="color:#ef4444;font-weight:700;">Today 🎂</span>{% else %}{{ item.date|date:"d M" }}{% endif %}</div>
+                            {% if item.is_today %}
+                            <a href="javascript:void(0)" class="keka-wish-link" onclick="sendBirthdayWish('{{ item.employee.id }}', '{{ item.employee.user.first_name }}', 'birthday', this)" style="font-size: 0.72rem; font-weight: 700; color: #5b47fb; text-decoration: none; display: block; margin-top: 4px;">Wish</a>
+                            {% else %}
+                            <a href="javascript:void(0)" class="keka-wish-link disabled" style="opacity: 0.5; cursor: not-allowed; color: #94a3b8; pointer-events: none; text-decoration: none; font-size: 0.72rem; font-weight: 700; display: block; margin-top: 4px;">Wish</a>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     {% else %}
@@ -1812,6 +1817,11 @@
                             {% endif %}
                             <div style="font-size:0.7rem;font-weight:600;color:#1e1b4b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ item.employee.user.first_name }}</div>
                             <div style="font-size:0.62rem;color:#64748b;">{% if item.is_today %}<span style="color:#10b981;font-weight:700;">Today ({{ item.years }}y) 🎉</span>{% else %}{{ item.date|date:"d M" }} ({{ item.years }}y){% endif %}</div>
+                            {% if item.is_today %}
+                            <a href="javascript:void(0)" class="keka-wish-link" onclick="sendBirthdayWish('{{ item.employee.id }}', '{{ item.employee.user.first_name }}', 'anniversary', this)" style="font-size: 0.72rem; font-weight: 700; color: #5b47fb; text-decoration: none; display: block; margin-top: 4px;">Wish</a>
+                            {% else %}
+                            <a href="javascript:void(0)" class="keka-wish-link disabled" style="opacity: 0.5; cursor: not-allowed; color: #94a3b8; pointer-events: none; text-decoration: none; font-size: 0.72rem; font-weight: 700; display: block; margin-top: 4px;">Wish</a>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     {% else %}
@@ -2342,5 +2352,78 @@
             }, index * 200);
         });
     });
+
+    // Celebratory wishes handlers
+    function sendBirthdayWish(receiverId, receiverName, type, element) {
+        if (!receiverId) return;
+
+        // Visual loading feedback
+        const originalText = element.textContent;
+        element.style.pointerEvents = 'none';
+        element.style.opacity = '0.7';
+        element.textContent = 'Sending...';
+
+        fetch('/employees/api/birthday-wish/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                receiver_id: receiverId,
+                type: type
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                element.innerHTML = '<i class="fas fa-heart text-danger animate__animated animate__heartBeat"></i> Wished';
+                element.style.color = '#ef4444';
+                element.style.borderColor = '#fee2e2';
+                element.style.backgroundColor = '#fff5f5';
+                showCelebrationToast(`🎉 Sent warm wishes to ${receiverName}! 🌟`);
+            } else {
+                // If already wished
+                element.innerHTML = '<i class="fas fa-heart text-danger"></i> Wished';
+                element.style.color = '#ef4444';
+                element.style.borderColor = '#fee2e2';
+                showCelebrationToast(`💖 You have already wished ${receiverName} today!`);
+            }
+        })
+        .catch(error => {
+            console.error('Error wishing:', error);
+            element.style.pointerEvents = '';
+            element.style.opacity = '';
+            element.textContent = originalText;
+            showCelebrationToast('❌ Failed to send wishes. Please try again.');
+        });
+    }
+
+    function showCelebrationToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'animate__animated animate__fadeInUp';
+        toast.style.position = 'fixed';
+        toast.style.bottom = '24px';
+        toast.style.right = '24px';
+        toast.style.background = 'linear-gradient(135deg, #1b0f3a 0%, #3b1954 100%)';
+        toast.style.color = '#ffffff';
+        toast.style.padding = '14px 24px';
+        toast.style.borderRadius = '12px';
+        toast.style.boxShadow = '0 10px 30px rgba(59, 71, 251, 0.35)';
+        toast.style.zIndex = '99999';
+        toast.style.display = 'flex';
+        toast.style.alignItems = 'center';
+        toast.style.gap = '10px';
+        toast.style.fontSize = '0.85rem';
+        toast.style.fontWeight = '700';
+        toast.style.border = '1px solid rgba(236, 72, 153, 0.3)';
+        toast.innerHTML = `<i class="fas fa-magic" style="color: #ec4899; font-size: 1.1rem;"></i> <span>${message}</span>`;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.className = 'animate__animated animate__fadeOutDown';
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
 </script>
 {% endblock %}

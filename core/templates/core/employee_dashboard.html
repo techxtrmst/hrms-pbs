@@ -2850,7 +2850,11 @@
                             {{ item.date|date:"d M" }} (in {{ item.days_left }}d)
                         {% endif %}
                     </div>
+                    {% if item.is_today %}
                     <a href="javascript:void(0)" class="keka-wish-link" onclick="sendBirthdayWish('{{ item.employee.id }}', '{{ item.employee.user.first_name }}', 'birthday', this)">Wish</a>
+                    {% else %}
+                    <a href="javascript:void(0)" class="keka-wish-link disabled" style="opacity: 0.5; cursor: not-allowed; color: #94a3b8; pointer-events: none; text-decoration: none;">Wish</a>
+                    {% endif %}
                 </div>
                 {% endfor %}
             {% else %}
@@ -2900,7 +2904,11 @@
                             {{ item.date|date:"d M" }} ({{ item.years }}y)
                         {% endif %}
                     </div>
+                    {% if item.is_today %}
                     <a href="javascript:void(0)" class="keka-wish-link" onclick="sendBirthdayWish('{{ item.employee.id }}', '{{ item.employee.user.first_name }}', 'anniversary', this)">Wish</a>
+                    {% else %}
+                    <a href="javascript:void(0)" class="keka-wish-link disabled" style="opacity: 0.5; cursor: not-allowed; color: #94a3b8; pointer-events: none; text-decoration: none;">Wish</a>
+                    {% endif %}
                 </div>
                 {% endfor %}
             {% else %}

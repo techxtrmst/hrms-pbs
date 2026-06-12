@@ -525,7 +525,10 @@
                                             <span
                                                 class="badge bg-soft-success text-success rounded-pill px-2">Today</span>
                                         </div>
-                                        <div class="text-muted small mt-1">Happy Birthday! 🎂</div>
+                                        <div class="d-flex justify-content-between align-items-center mt-1">
+                                            <div class="text-muted small">Happy Birthday! 🎂</div>
+                                            <a href="javascript:void(0)" class="keka-wish-link fw-bold" onclick="sendBirthdayWish('{{ emp.id }}', '{{ emp.user.first_name }}', 'birthday', this)" style="font-size:0.75rem; color:#5b47fb; text-decoration:none;">Wish</a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -554,7 +557,10 @@
                                         {% endif %}
                                     </div>
                                     <div class="flex-grow-1 ms-3">
-                                        <h6 class="mb-0 fw-bold text-dark">{{ emp.user.get_full_name }}{% if emp.pseudo_name %} ({{ emp.pseudo_name }}){% endif %}</h6>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0 fw-bold text-dark">{{ emp.user.get_full_name }}{% if emp.pseudo_name %} ({{ emp.pseudo_name }}){% endif %}</h6>
+                                            <a href="javascript:void(0)" class="keka-wish-link fw-bold" onclick="sendBirthdayWish('{{ emp.id }}', '{{ emp.user.first_name }}', 'anniversary', this)" style="font-size:0.75rem; color:#5b47fb; text-decoration:none;">Wish</a>
+                                        </div>
                                         <div class="text-muted small mt-1">{{ emp.years_of_service }} Years Celebration!
                                             🌟</div>
                                     </div>
@@ -743,6 +749,9 @@
                                 </div>
                                 <h5 class="fw-bold text-dark">{{ emp.user.get_full_name }}{% if emp.pseudo_name %} ({{ emp.pseudo_name }}){% endif %}</h5>
                                 <div class="text-success fw-bold mt-2">Happy Birthday Today! 🎉</div>
+                                <button class="btn btn-sm btn-outline-primary mt-2" onclick="sendBirthdayWish('{{ emp.id }}', '{{ emp.user.first_name }}', 'birthday', this)">
+                                    <i class="fas fa-heart me-1"></i>Wish
+                                </button>
                             </div>
                         </div>
                         {% endfor %}
@@ -773,6 +782,9 @@
                                 <h5 class="fw-bold text-dark">{{ emp.user.get_full_name }}{% if emp.pseudo_name %} ({{ emp.pseudo_name }}){% endif %}</h5>
                                 <div class="text-muted mt-1">{{ emp.years_of_service }} Years of Service 🌟</div>
                                 <div class="mt-2 badge bg-soft-warning text-warning">{{ emp.date_of_joining|date:"d M Y" }}</div>
+                                <button class="btn btn-sm btn-outline-primary mt-2 d-block mx-auto" onclick="sendBirthdayWish('{{ emp.id }}', '{{ emp.user.first_name }}', 'anniversary', this)">
+                                    <i class="fas fa-medal me-1"></i>Wish
+                                </button>
                             </div>
                         </div>
                         {% endfor %}
@@ -984,6 +996,79 @@
         // Show next
         slides[currentAnnouncementIndex].classList.remove('d-none');
         slides[currentAnnouncementIndex].classList.add('animate-fade-in');
+    }
+
+    // Celebratory wishes handlers
+    function sendBirthdayWish(receiverId, receiverName, type, element) {
+        if (!receiverId) return;
+
+        // Visual loading feedback
+        const originalText = element.textContent;
+        element.style.pointerEvents = 'none';
+        element.style.opacity = '0.7';
+        element.textContent = 'Sending...';
+
+        fetch('/employees/api/birthday-wish/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                receiver_id: receiverId,
+                type: type
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                element.innerHTML = '<i class="fas fa-heart text-danger animate__animated animate__heartBeat"></i> Wished';
+                element.style.color = '#ef4444';
+                element.style.borderColor = '#fee2e2';
+                element.style.backgroundColor = '#fff5f5';
+                showCelebrationToast(`🎉 Sent warm wishes to ${receiverName}! 🌟`);
+            } else {
+                // If already wished
+                element.innerHTML = '<i class="fas fa-heart text-danger"></i> Wished';
+                element.style.color = '#ef4444';
+                element.style.borderColor = '#fee2e2';
+                showCelebrationToast(`💖 You have already wished ${receiverName} today!`);
+            }
+        })
+        .catch(error => {
+            console.error('Error wishing:', error);
+            element.style.pointerEvents = '';
+            element.style.opacity = '';
+            element.textContent = originalText;
+            showCelebrationToast('❌ Failed to send wishes. Please try again.');
+        });
+    }
+
+    function showCelebrationToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'animate__animated animate__fadeInUp';
+        toast.style.position = 'fixed';
+        toast.style.bottom = '24px';
+        toast.style.right = '24px';
+        toast.style.background = 'linear-gradient(135deg, #1b0f3a 0%, #3b1954 100%)';
+        toast.style.color = '#ffffff';
+        toast.style.padding = '14px 24px';
+        toast.style.borderRadius = '12px';
+        toast.style.boxShadow = '0 10px 30px rgba(59, 71, 251, 0.35)';
+        toast.style.zIndex = '99999';
+        toast.style.display = 'flex';
+        toast.style.alignItems = 'center';
+        toast.style.gap = '10px';
+        toast.style.fontSize = '0.85rem';
+        toast.style.fontWeight = '700';
+        toast.style.border = '1px solid rgba(236, 72, 153, 0.3)';
+        toast.innerHTML = `<i class="fas fa-magic" style="color: #ec4899; font-size: 1.1rem;"></i> <span>${message}</span>`;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.className = 'animate__animated animate__fadeOutDown';
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
     }
 </script>
 {% endblock %}

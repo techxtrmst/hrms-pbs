@@ -4737,6 +4737,40 @@ def send_birthday_wish(request):
             sender_employee = request.user.employee_profile
             receiver_employee = Employee.objects.get(id=receiver_id)
 
+            # Check if it is actually their birthday/anniversary today
+            today = timezone.localdate()
+            if wish_type == "birthday":
+                if not receiver_employee.dob:
+                    return JsonResponse(
+                        {"status": "error", "message": "Birthday not configured for this employee!"}, status=400
+                    )
+                try:
+                    this_year_bday = receiver_employee.dob.replace(year=today.year)
+                except ValueError:
+                    this_year_bday = receiver_employee.dob.replace(year=today.year, month=2, day=28)
+                if this_year_bday != today:
+                    return JsonResponse(
+                        {"status": "error", "message": "You can only send birthday wishes on the actual birthday!"},
+                        status=400,
+                    )
+            elif wish_type == "anniversary":
+                if not receiver_employee.date_of_joining:
+                    return JsonResponse(
+                        {"status": "error", "message": "Joining date not configured for this employee!"}, status=400
+                    )
+                try:
+                    this_year_anniv = receiver_employee.date_of_joining.replace(year=today.year)
+                except ValueError:
+                    this_year_anniv = receiver_employee.date_of_joining.replace(year=today.year, month=2, day=28)
+                if this_year_anniv != today:
+                    return JsonResponse(
+                        {
+                            "status": "error",
+                            "message": "You can only send anniversary wishes on the actual anniversary!",
+                        },
+                        status=400,
+                    )
+
             # Construct the special message to store sender details
             sender_name = sender_employee.user.get_full_name()
             sender_avatar = (
