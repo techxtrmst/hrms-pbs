@@ -18,4 +18,14 @@ urlpatterns = [
     path("api/search-employees/", views.search_employees_finance, name="search_employees_finance"),
     path("calculate-preview/", views.calculate_payslip_preview, name="calculate_payslip_preview"),
     path("process-single/", views.process_single_payroll, name="process_single_payroll"),
+    # Virtual Ledger & Auditing Routes
+    path("bank-accounts/", views.bank_accounts_list, name="bank_accounts"),
+    path("bank-accounts/create/", views.bank_account_create, name="bank_account_create"),
+    path("purchases/", views.purchases_list, name="purchases"),
+    path("purchases/create/", views.purchase_create, name="purchase_create"),
+    path("purchases/approve/", views.purchase_approve, name="purchase_approve"),
+    path("transactions/", views.transaction_submit, name="transaction_submit"),
+    path("reconcile/", views.reconcile_statement, name="reconcile_statement"),
+    path("reconcile/<int:pk>/", views.reconciliation_details, name="reconciliation_details"),
+    path("audit-logs/", views.audit_logs_list, name="audit_logs"),
 ]

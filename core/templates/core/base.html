@@ -1574,17 +1574,77 @@
         </div>
 
         <!-- Dashboard -->
-        <a href="{% url 'dashboard' %}"
-            class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-            <i class="fas fa-home"></i> <span>Dashboard</span>
-        </a>
+        {% if user.role != 'SUPERADMIN' %}
+            {% if user.role == 'FINANCE_MANAGER' or user.is_finance_manager %}
+            <a href="{% url 'finance_portal:dashboard' %}?view=payroll"
+                class="{% if request.resolver_match.namespace == 'finance_portal' and request.resolver_match.url_name == 'dashboard' and request.GET.view == 'payroll' or request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == '' %}active{% endif %}">
+                <i class="fas fa-home"></i> <span>Dashboard</span>
+            </a>
+            {% else %}
+            <a href="{% url 'dashboard' %}"
+                class="{% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == '' %}active{% endif %}">
+                <i class="fas fa-home"></i> <span>Dashboard</span>
+            </a>
+            {% endif %}
+        {% endif %}
 
         {% if user.role == 'SUPERADMIN' %}
         <!-- Super Admin Menu -->
         <div class="sidebar-section-title ps-0 mt-0 mb-0 py-1">Global Admin</div>
-        <a href="{% url 'superadmin:dashboard' %}" class="{% if 'superadmin' in request.path %}active{% endif %}">
+        <a href="{% url 'superadmin:dashboard' %}" class="{% if 'superadmin' in request.path and request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
             <i class="fas fa-globe"></i> <span>Global View</span>
         </a>
+
+        <!-- Power Hub Collapsible Menu -->
+        <a href="#menuPowerHub" class="sidebar-dropdown-toggle d-flex justify-content-between align-items-center collapsed"
+            data-bs-toggle="collapse" role="button" aria-expanded="false">
+            <span class="sidebar-section-title ps-0 mt-0 mb-0 py-1">⚡ Power Hub</span>
+            <i class="fas fa-chevron-down small text-muted"></i>
+        </a>
+        <div class="collapse" id="menuPowerHub">
+            <div class="sub-menu">
+                <!-- 1. System & Platform Control -->
+                <a href="{% url 'superadmin:companies' %}" class="{% if 'companies' in request.path and 'superadmin' in request.path %}active{% endif %}">
+                    <i class="fas fa-cogs"></i> System &amp; Platform
+                </a>
+                <!-- 2. RBAC Management -->
+                <a href="{% url 'companies:role_configuration' %}" class="{% if 'role-config' in request.path %}active{% endif %}">
+                    <i class="fas fa-user-shield"></i> RBAC Management
+                </a>
+                <!-- 3. Employee Governance -->
+                <a href="{% url 'superadmin:employees' %}" class="{% if 'employees' in request.path and 'superadmin' in request.path %}active{% endif %}">
+                    <i class="fas fa-address-book"></i> Employee Governance
+                </a>
+                <!-- 4. Attendance & Leave Ops -->
+                <a href="{% url 'superadmin:attendance_today' %}" class="{% if 'attendance-today' in request.path %}active{% endif %}">
+                    <i class="fas fa-stopwatch"></i> Attendance &amp; Leave Ops
+                </a>
+                <!-- 5. Payroll & Compliance -->
+                <a href="{% url 'payroll_settings' %}" class="{% if 'payroll-settings' in request.path %}active{% endif %}">
+                    <i class="fas fa-money-check-alt"></i> Payroll &amp; Compliance
+                </a>
+                <!-- 6. Analytics & Audit -->
+                <a href="{% url 'attendance_analytics' %}" class="{% if 'analytics' in request.path %}active{% endif %}">
+                    <i class="fas fa-chart-pie"></i> Analytics &amp; Audit
+                </a>
+                <!-- 7. Workflow & Approval -->
+                <a href="{% url 'superadmin:workflow_configuration' %}" class="{% if 'workflow' in request.path %}active{% endif %}">
+                    <i class="fas fa-project-diagram"></i> Workflow Engine
+                </a>
+                <!-- 8. Integrations & API -->
+                <a href="{% url 'superadmin:biometric_integration' %}" class="{% if 'biometric' in request.path %}active{% endif %}">
+                    <i class="fas fa-plug"></i> Integrations &amp; API
+                </a>
+                <!-- 9. Security & Hardening -->
+                <a href="{% url 'superadmin:platform_settings' %}" class="{% if 'platform-settings' in request.path %}active{% endif %}">
+                    <i class="fas fa-user-lock"></i> Security &amp; Hardening
+                </a>
+                <!-- 10. AI & Automation -->
+                <a href="{% url 'ai_hub' %}" class="{% if 'ai/' in request.path %}active{% endif %}">
+                    <i class="fas fa-brain"></i> AI &amp; Automation
+                </a>
+            </div>
+        </div>
         {% endif %}
 
         {% if user.role != 'SUPERADMIN' %}
@@ -1604,7 +1664,7 @@
             class="{% if 'regularization/apply' in request.path %}active{% endif %}">
             <i class="fas fa-clock"></i> <span>Regularize</span>
         </a>
-        <a href="{% url 'my_finance' %}" class="{% if 'finance' in request.path %}active{% endif %}">
+        <a href="{% url 'my_finance' %}" class="{% if request.resolver_match.url_name == 'my_finance' %}active{% endif %}">
             <i class="fas fa-rupee-sign"></i> <span>Finance</span>
         </a>
         <a href="{% url 'handbooks:handbook_list' %}" class="{% if 'handbooks' in request.path %}active{% endif %}">
@@ -1698,17 +1758,34 @@
         </a>
         {% endif %}
 
-        {% if user.is_finance_manager or user.role == 'FINANCE_MANAGER' %}
+        {% if user.is_finance_manager or user.role == 'FINANCE_MANAGER' or user.role == 'SUPERADMIN' or user.is_superuser %}
         <!-- Finance Manager Portal -->
         <a href="#menuFinancePortal" class="sidebar-dropdown-toggle d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse" role="button" aria-expanded="false">
             <span class="sidebar-section-title ps-0 mt-0 mb-0 py-1">🏦 Finance Portal</span>
-            <i class="fas fa-chevron-down small text-muted"></i>
+            <div class="d-flex align-items-center gap-2">
+                {% if pending_purchase_requests_count > 0 %}
+                <span style="background-color: #4f46e5; color: #ffffff; min-width: 24px; height: 24px; border-radius: 6px; font-weight: 600; font-size: 0.8rem; display: inline-flex; align-items: center; justify-content: center; line-height: 1;">{{ pending_purchase_requests_count }}</span>
+                {% endif %}
+                <i class="fas fa-chevron-down small text-muted"></i>
+            </div>
         </a>
-        <div class="collapse {% if 'finance/' in request.path %}show{% endif %}" id="menuFinancePortal">
+        <div class="collapse {% if request.resolver_match.namespace == 'finance_portal' %}show{% endif %}" id="menuFinancePortal">
             <div class="sub-menu">
-                <a href="{% url 'finance_portal:dashboard' %}" class="{% if 'finance/' in request.path %}active{% endif %}">
-                    <i class="fas fa-chart-line"></i> Dashboard
+                <a href="{% url 'finance_portal:bank_accounts' %}" class="{% if 'finance/bank-accounts' in request.path %}active{% endif %}">
+                    <i class="fas fa-university"></i> Bank Accounts
+                </a>
+                <a href="{% url 'finance_portal:purchases' %}" class="{% if 'finance/purchases' in request.path %}active{% endif %} d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-shopping-bag"></i> Purchase Requests</span>
+                    {% if pending_purchase_requests_count > 0 %}
+                    <span style="background-color: #4f46e5; color: #ffffff; min-width: 22px; height: 22px; border-radius: 6px; font-weight: 600; font-size: 0.75rem; display: inline-flex; align-items: center; justify-content: center; line-height: 1;">{{ pending_purchase_requests_count }}</span>
+                    {% endif %}
+                </a>
+                <a href="{% url 'finance_portal:transaction_submit' %}" class="{% if 'finance/transactions' in request.path %}active{% endif %}">
+                    <i class="fas fa-receipt"></i> Transactions
+                </a>
+                <a href="{% url 'finance_portal:reconcile_statement' %}" class="{% if 'finance/reconcile' in request.path %}active{% endif %}">
+                    <i class="fas fa-file-invoice"></i> Reconcile Statements
                 </a>
             </div>
         </div>
@@ -1783,7 +1860,7 @@
         </a>
 
         <!-- AI Features Section -->
-        {% if user.role == 'COMPANY_ADMIN' or user.role == 'MANAGER' or user.role == 'SUPERADMIN' %}
+        {% if user.role == 'COMPANY_ADMIN' or user.role == 'MANAGER' %}
         <a href="#menuAI" class="sidebar-dropdown-toggle d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse" role="button" aria-expanded="false">
             <span class="sidebar-section-title ps-0 mt-0 mb-0 py-1">🤖 AI Features</span>

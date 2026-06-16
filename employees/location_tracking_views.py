@@ -237,15 +237,27 @@ def get_employee_location_history(request, employee_id):
         logs = LocationLog.objects.filter(employee=employee)
 
         if from_date:
-            from datetime import datetime
+            from datetime import datetime, time
+
+            from django.conf import settings
+            from django.utils.timezone import make_aware
 
             from_dt = datetime.strptime(from_date, "%Y-%m-%d")
+            from_dt = datetime.combine(from_dt.date(), time.min)
+            if settings.USE_TZ:
+                from_dt = make_aware(from_dt)
             logs = logs.filter(timestamp__gte=from_dt)
 
         if to_date:
-            from datetime import datetime
+            from datetime import datetime, time
+
+            from django.conf import settings
+            from django.utils.timezone import make_aware
 
             to_dt = datetime.strptime(to_date, "%Y-%m-%d")
+            to_dt = datetime.combine(to_dt.date(), time.max)
+            if settings.USE_TZ:
+                to_dt = make_aware(to_dt)
             logs = logs.filter(timestamp__lte=to_dt)
 
         logs = logs.order_by("-timestamp")[:100]  # Limit to 100 most recent

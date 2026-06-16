@@ -98,6 +98,14 @@ class EmployeeListView(LoginRequiredMixin, ListView):
             queryset = queryset.filter(employment_status="TERMINATED")
         # 'all' shows everyone
 
+        # Apply month and year joining filters
+        joining_month = self.request.GET.get("joining_month")
+        joining_year = self.request.GET.get("joining_year")
+        if joining_month:
+            queryset = queryset.filter(date_of_joining__month=joining_month)
+        if joining_year:
+            queryset = queryset.filter(date_of_joining__year=joining_year)
+
         return queryset.select_related("user", "company", "manager", "location").order_by(
             "user__first_name", "user__last_name"
         )
@@ -108,6 +116,7 @@ class EmployeeListView(LoginRequiredMixin, ListView):
         departments = employees.values_list("department", flat=True).distinct()
         departments_count = len([d for d in departments if d])
         context["departments_count"] = departments_count
+        context["unique_departments"] = sorted({d for d in departments if d})
 
         # Add counts for different statuses
         user = self.request.user
@@ -135,6 +144,38 @@ class EmployeeListView(LoginRequiredMixin, ListView):
                 Q(company__name__icontains="bluebix") | Q(company__name__icontains="softstandard")
             ).exists()
         context["show_pseudo_name"] = show_pseudo_name
+
+        # Add month and year filters context
+        context["selected_month"] = self.request.GET.get("joining_month", "")
+        context["selected_year"] = self.request.GET.get("joining_year", "")
+
+        # Populate available years from database
+        joining_years = (
+            all_employees.exclude(date_of_joining__isnull=True)
+            .values_list("date_of_joining__year", flat=True)
+            .distinct()
+            .order_by("-date_of_joining__year")
+        )
+        years_list = [str(y) for y in joining_years]
+        if not years_list:
+            current_year = timezone.now().year
+            years_list = [str(y) for y in range(current_year, current_year - 5, -1)]
+        context["joining_years"] = years_list
+
+        context["months"] = [
+            {"value": "01", "name": "January"},
+            {"value": "02", "name": "February"},
+            {"value": "03", "name": "March"},
+            {"value": "04", "name": "April"},
+            {"value": "05", "name": "May"},
+            {"value": "06", "name": "June"},
+            {"value": "07", "name": "July"},
+            {"value": "08", "name": "August"},
+            {"value": "09", "name": "September"},
+            {"value": "10", "name": "October"},
+            {"value": "11", "name": "November"},
+            {"value": "12", "name": "December"},
+        ]
 
         return context
 

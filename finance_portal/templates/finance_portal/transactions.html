@@ -1,0 +1,335 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* Finvista Dashboard Wrapper */
+    .finvista-wrapper {
+        background-color: #f8fafc;
+        font-family: 'Inter', sans-serif;
+        width: 100%;
+    }
+
+    /* Main Content Wrapper */
+    .finvista-main {
+        background: #f8fafc;
+        width: 100%;
+    }
+
+    .payroll-table-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.015);
+    }
+
+    .btn-action-premium {
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 8px 16px;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-emerald-solid {
+        background: #10b981;
+        color: #ffffff;
+    }
+
+    .btn-emerald-solid:hover {
+        background: #059669;
+        color: #ffffff;
+    }
+
+    .btn-action {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+    }
+
+    .btn-process {
+        background: #10b981;
+        color: #ffffff;
+    }
+    .btn-process:hover {
+        background: #059669;
+        color: #ffffff;
+    }
+
+    .btn-view {
+        background: transparent;
+        color: #10b981;
+        border: 1px solid #10b981;
+    }
+    .btn-view:hover {
+        background: #10b981;
+        color: #ffffff;
+    }
+
+    .table-payroll {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .table-payroll th {
+        color: #94a3b8;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 10px;
+        letter-spacing: 0.5px;
+        padding: 12px 16px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .table-payroll td {
+        padding: 14px 16px;
+        font-size: 13px;
+        color: #334155;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+    .status-completed {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+    }
+    .status-pending {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+    }
+    .status-flagged {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+
+    .form-label {
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 6px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .form-control {
+        border-radius: 8px;
+        padding: 10px 14px;
+        border: 1px solid #cbd5e1;
+        font-size: 14px;
+    }
+    .form-control:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+    }
+
+    .nav-tabs {
+        border-bottom: 1.5px solid #cbd5e1 !important;
+        margin-bottom: 24px;
+    }
+    .nav-tabs .nav-link {
+        color: #64748b !important;
+        font-weight: 700;
+        padding: 12px 20px;
+        border: none;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s;
+    }
+    .nav-tabs .nav-link.active {
+        color: #10b981 !important;
+        border-bottom-color: #10b981 !important;
+        background: transparent !important;
+    }
+</style>
+
+<div class="finvista-wrapper">
+    <div class="finvista-main">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold text-slate-800 mb-1" style="font-size: 22px; color: #0f172a;">Ledger Transactions</h4>
+                <p class="text-muted small mb-0">Record and monitor bank ledger transaction records</p>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs">
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'finance_portal:dashboard' %}">Overview</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'finance_portal:bank_accounts' %}">Bank Accounts</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'finance_portal:purchases' %}">Purchase Requests</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="{% url 'finance_portal:transaction_submit' %}">Transactions</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'finance_portal:reconcile_statement' %}">Statement Reconciliation</a>
+            </li>
+        </ul>
+
+        <!-- Main Form & List View -->
+        <div class="row">
+            <!-- Submit Transaction -->
+            <div class="col-lg-4 col-md-12 mb-4">
+                <div class="payroll-table-card">
+                    <h5 class="fw-bold mb-4" style="color: #0f172a;">Submit Ledger Entry</h5>
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Linked Purchase Request (Optional)</label>
+                            <select id="purchaseRequestSelect" name="purchase_request_id" class="form-control">
+                                <option value="">-- Direct Ledger Entry --</option>
+                                {% for pr in purchases %}
+                                <option value="{{ pr.id }}" data-amount="{{ pr.estimated_amount }}">{{ pr.item_name }} (${{ pr.estimated_amount }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Company Bank Account</label>
+                            <select name="bank_account_id" class="form-control">
+                                <option value="">-- Unregistered Bank --</option>
+                                {% for acc in accounts %}
+                                <option value="{{ acc.id }}">{{ acc.bank_name }} - {{ acc.account_number }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Manual Bank Details (if Unregistered)</label>
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <input type="text" name="bank_name" class="form-control" placeholder="Bank Name">
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="text" name="account_number" class="form-control" placeholder="Account Number">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Transaction ID</label>
+                            <input type="text" name="transaction_id" class="form-control" placeholder="e.g. TXN98765432" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Actual Spent Amount</label>
+                            <input id="transactionAmountInput" type="number" name="amount" class="form-control" placeholder="0.00" step="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Payment Screenshot / Receipt</label>
+                            <input type="file" name="screenshot" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn-action-premium btn-emerald-solid w-100 justify-content-center mt-3">
+                            <i class="fas fa-check"></i> Submit Transaction
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Transactions Ledger Table -->
+            <div class="col-lg-8 col-md-12">
+                <div class="payroll-table-card">
+                    <h5 class="fw-bold mb-4" style="color: #0f172a;">Bookkeeping Entries</h5>
+                    <div class="table-responsive">
+                        <table class="table table-payroll">
+                            <thead>
+                                <tr>
+                                    <th>TXID / Date</th>
+                                    <th>Purchase Item</th>
+                                    <th>Bank Details</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Proof</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tx in transactions %}
+                                <tr>
+                                    <td>
+                                        <span class="fw-bold">TX-{{ tx.transaction_id|default:tx.id }}</span>
+                                        <div class="text-muted small">{{ tx.created_at|date:"Y-m-d H:i" }}</div>
+                                    </td>
+                                    <td>
+                                        {% if tx.purchase_request %}
+                                        <span class="fw-semibold">{{ tx.purchase_request.item_name }}</span>
+                                        {% else %}
+                                        <span class="text-muted italic">Manual ledger insertion</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ tx.bank_name }}</strong>
+                                        <div class="text-muted small">{{ tx.account_number }}</div>
+                                    </td>
+                                    <td class="fw-bold text-success">${{ tx.amount }}</td>
+                                    <td>
+                                        <span class="status-badge status-{{ tx.status }}">
+                                            {{ tx.status|title }}
+                                        </span>
+                                        {% if tx.mismatch_reason %}
+                                        <div class="text-danger small mt-1 italic" style="font-size: 11px;">"{{ tx.mismatch_reason }}"</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if tx.screenshot %}
+                                        <a href="{{ tx.screenshot.url }}" target="_blank" class="btn btn-action btn-view py-1 px-2">
+                                            <i class="fas fa-image"></i> View
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted small">No receipt</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5 text-muted">
+                                        <i class="fas fa-receipt fa-3x mb-3 opacity-25"></i>
+                                        <p class="mb-0">No transactions recorded yet.</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const purchaseSelect = document.getElementById("purchaseRequestSelect");
+        const amountInput = document.getElementById("transactionAmountInput");
+
+        if (purchaseSelect && amountInput) {
+            purchaseSelect.addEventListener("change", function() {
+                const selectedOption = purchaseSelect.options[purchaseSelect.selectedIndex];
+                const amount = selectedOption.getAttribute("data-amount");
+                if (amount) {
+                    amountInput.value = parseFloat(amount).toFixed(2);
+                } else {
+                    amountInput.value = "";
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

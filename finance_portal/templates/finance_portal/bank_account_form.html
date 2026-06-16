@@ -1,0 +1,150 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    :root {
+        --primary-color: #10b981;
+        --primary-hover: #059669;
+        --keka-bg: #f8fafc;
+        --keka-text-primary: #1e293b;
+    }
+    body {
+        background-color: #f8fafc !important;
+        color: #1e293b !important;
+        font-family: 'Inter', sans-serif;
+    }
+    .payroll-container {
+        padding: 2.5rem;
+        background: radial-gradient(circle at top, #ffffff 0%, #f1f5f9 100%);
+        min-height: calc(100vh - 60px);
+    }
+    .payroll-header {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        padding: 24px 32px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+    .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+    }
+    .payroll-table-card {
+        background: #ffffff;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+        padding: 32px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .form-label {
+        font-weight: 600;
+        color: var(--keka-text-primary);
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+    .form-control {
+        border-radius: 8px;
+        padding: 10px 14px;
+        border: 1px solid #cbd5e1;
+        font-size: 14px;
+    }
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+    }
+    .btn-action {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+    .btn-process {
+        background: var(--primary-color);
+        color: #ffffff;
+    }
+    .btn-process:hover {
+        background: var(--primary-hover);
+        color: #ffffff;
+    }
+    .btn-view {
+        background: transparent;
+        color: var(--primary-color);
+        border: 1.5px solid var(--primary-color);
+    }
+    .btn-view:hover {
+        background: var(--primary-color);
+        color: #ffffff;
+    }
+</style>
+
+<div class="payroll-container">
+    <!-- Header -->
+    <div class="payroll-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">Add Bank Account</h1>
+            <p class="text-muted mb-0 small">Register a new bank account in the system database</p>
+        </div>
+        <div>
+            <a href="{% url 'finance_portal:bank_accounts' %}" class="btn btn-action btn-view">
+                <i class="fas fa-arrow-left"></i> Back to Accounts
+            </a>
+        </div>
+    </div>
+
+    <div class="payroll-table-card">
+        <form method="POST">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label">Bank Name</label>
+                <input type="text" name="bank_name" class="form-control" placeholder="e.g. JPMorgan Chase, HDFC" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Account Number</label>
+                <input type="text" name="account_number" class="form-control" placeholder="e.g. 1234567890" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Branch Name</label>
+                <input type="text" name="branch_name" class="form-control" placeholder="e.g. Downtown Branch" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">IFSC Code / Routing Number</label>
+                <input type="text" name="ifsc_code" class="form-control" placeholder="e.g. IFSC0001234" required>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Currency</label>
+                    <select name="currency" class="form-control">
+                        <option value="USD">USD ($)</option>
+                        <option value="INR">INR (₹)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="GBP">GBP (£)</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Initial Balance</label>
+                    <input type="number" name="balance" class="form-control" placeholder="0.00" step="0.01" value="0.00">
+                </div>
+            </div>
+            <div class="mt-4 text-end">
+                <button type="submit" class="btn btn-action btn-process">
+                    <i class="fas fa-check"></i> Register Bank Account
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

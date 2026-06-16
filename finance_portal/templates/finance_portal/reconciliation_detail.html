@@ -1,0 +1,193 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    :root {
+        --primary-color: #10b981;
+        --primary-hover: #059669;
+        --keka-bg: #f8fafc;
+        --keka-text-primary: #1e293b;
+        --keka-text-secondary: #64748b;
+    }
+    body {
+        background-color: #f8fafc !important;
+        color: #1e293b !important;
+        font-family: 'Inter', sans-serif;
+    }
+    .payroll-container {
+        padding: 2.5rem;
+        background: radial-gradient(circle at top, #ffffff 0%, #f1f5f9 100%);
+        min-height: calc(100vh - 60px);
+    }
+    .payroll-header {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        padding: 24px 32px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+    .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+    }
+    .payroll-table-card {
+        background: #ffffff;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+        padding: 24px;
+        margin-bottom: 24px;
+        transition: all 0.3s ease;
+    }
+    .btn-action {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+    .btn-view {
+        background: transparent;
+        color: var(--primary-color);
+        border: 1.5px solid var(--primary-color);
+    }
+    .btn-view:hover {
+        background: var(--primary-color);
+        color: #ffffff;
+    }
+    .table-payroll {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .table-payroll th {
+        background: rgba(241, 245, 249, 0.8);
+        color: var(--keka-text-secondary);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+        padding: 16px;
+        border-bottom: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    .table-payroll td {
+        padding: 16px;
+        vertical-align: middle;
+        border-bottom: 1px solid #cbd5e1;
+        color: var(--keka-text-primary);
+    }
+    .status-badge {
+        display: inline-flex;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .status-matched {
+        background: rgba(16, 185, 129, 0.12);
+        color: #059669;
+        border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    .status-unrecognized {
+        background: rgba(245, 158, 11, 0.1);
+        color: #d97706;
+        border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+    .status-mismatch {
+        background: rgba(239, 68, 68, 0.1);
+        color: #dc2626;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+</style>
+
+<div class="payroll-container">
+    <!-- Header -->
+    <div class="payroll-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">Reconciliation Audit Log</h1>
+            <p class="text-muted mb-0 small">Comparing statement for: <strong>{{ statement.bank_account.bank_name }} ({{ statement.bank_account.account_number }})</strong></p>
+        </div>
+        <div>
+            <a href="{% url 'finance_portal:reconcile_statement' %}" class="btn btn-action btn-view">
+                <i class="fas fa-arrow-left"></i> Back to History
+            </a>
+        </div>
+    </div>
+
+    <!-- Reconciliation results list -->
+    <div class="payroll-table-card">
+        <h5 class="fw-bold mb-4">Statement Comparison Results</h5>
+        <div class="table-responsive">
+            <table class="table table-payroll">
+                <thead>
+                    <tr>
+                        <th>Entry Date</th>
+                        <th>Description / Details</th>
+                        <th>Amount</th>
+                        <th>Match Status</th>
+                        <th>Matched System Transaction</th>
+                        <th>Explanation / Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for res in results %}
+                    <tr>
+                        <td class="fw-semibold">{{ res.statement_entry_date }}</td>
+                        <td>{{ res.statement_entry_description }}</td>
+                        <td class="fw-bold text-success">${{ res.statement_entry_amount }}</td>
+                        <td>
+                            <span class="status-badge status-{{ res.match_status }}">
+                                {{ res.match_status|title }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if res.transaction %}
+                            <span class="fw-semibold">TX-{{ res.transaction.transaction_id|default:res.transaction.id }}</span>
+                            <div class="text-muted small">Submitted by: {{ res.transaction.submitted_by.get_full_name|default:res.transaction.submitted_by.username }}</div>
+                            {% else %}
+                            <span class="text-muted italic">Unlinked - No matching transaction found</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if res.match_status != 'matched' %}
+                                {% if res.explanation %}
+                                <div class="p-2 mb-2 rounded bg-light border-start border-emerald-solid small text-slate-700" style="border-left: 3px solid #10b981 !important;">
+                                    <strong>Reason:</strong> {{ res.explanation }}
+                                </div>
+                                {% endif %}
+                                <form method="POST" class="d-flex gap-2">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="result_id" value="{{ res.id }}">
+                                    <input type="text" name="explanation" class="form-control form-control-sm" placeholder="Explain discrepancy..." required style="font-size: 12px; height: 32px;" value="{{ res.explanation|default:'' }}">
+                                    <button type="submit" class="btn btn-sm btn-success d-inline-flex align-items-center justify-content-center" style="background-color: #10b981; border: none; height: 32px; font-size: 12px;">Save</button>
+                                </form>
+                            {% else %}
+                                <span class="text-muted small italic">Not required (reconciled)</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="fas fa-check-circle fa-3x mb-3 opacity-25"></i>
+                            <p class="mb-0">All statement entries successfully reconciled without anomalies.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

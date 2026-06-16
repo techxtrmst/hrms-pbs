@@ -1,0 +1,278 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* Finvista Dashboard Wrapper */
+    .finvista-wrapper {
+        background-color: #f8fafc;
+        font-family: 'Inter', sans-serif;
+        width: 100%;
+    }
+
+    /* Main Content Wrapper */
+    .finvista-main {
+        background: #f8fafc;
+        width: 100%;
+    }
+
+    .payroll-table-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.015);
+    }
+
+    .btn-action-premium {
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 8px 16px;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-emerald-solid {
+        background: #10b981;
+        color: #ffffff;
+    }
+
+    .btn-emerald-solid:hover {
+        background: #059669;
+        color: #ffffff;
+    }
+
+    .btn-action {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+    }
+
+    .btn-process {
+        background: #10b981;
+        color: #ffffff;
+    }
+    .btn-process:hover {
+        background: #059669;
+        color: #ffffff;
+    }
+
+    .btn-view {
+        background: transparent;
+        color: #10b981;
+        border: 1px solid #10b981;
+    }
+    .btn-view:hover {
+        background: #10b981;
+        color: #ffffff;
+    }
+
+    .table-payroll {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .table-payroll th {
+        color: #94a3b8;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 10px;
+        letter-spacing: 0.5px;
+        padding: 12px 16px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .table-payroll td {
+        padding: 14px 16px;
+        font-size: 13px;
+        color: #334155;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+    .status-matched {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+    }
+    .status-unreconciled {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+    }
+    .status-mismatch {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+
+    .form-label {
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 6px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .form-control {
+        border-radius: 8px;
+        padding: 10px 14px;
+        border: 1px solid #cbd5e1;
+        font-size: 14px;
+    }
+    .form-control:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+    }
+
+    .nav-tabs {
+        border-bottom: 1.5px solid #cbd5e1 !important;
+        margin-bottom: 24px;
+    }
+    .nav-tabs .nav-link {
+        color: #64748b !important;
+        font-weight: 700;
+        padding: 12px 20px;
+        border: none;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s;
+    }
+    .nav-tabs .nav-link.active {
+        color: #10b981 !important;
+        border-bottom-color: #10b981 !important;
+        background: transparent !important;
+    }
+</style>
+
+<div class="finvista-wrapper">
+    <div class="finvista-main">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold text-slate-800 mb-1" style="font-size: 22px; color: #0f172a;">Statement Reconciliation</h4>
+                <p class="text-muted small mb-0">Reconcile uploaded physical bank statements with virtual database ledgers</p>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs">
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'finance_portal:dashboard' %}">Overview</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'finance_portal:bank_accounts' %}">Bank Accounts</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'finance_portal:purchases' %}">Purchase Requests</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'finance_portal:transaction_submit' %}">Transactions</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="{% url 'finance_portal:reconcile_statement' %}">Statement Reconciliation</a>
+            </li>
+        </ul>
+
+        <!-- Main Form & List View -->
+        <div class="row">
+            <!-- Upload Form -->
+            <div class="col-lg-4 col-md-12 mb-4">
+                <div class="payroll-table-card">
+                    <h5 class="fw-bold mb-4" style="color: #0f172a;">Upload Statement</h5>
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Select Bank Account</label>
+                            <select name="bank_account_id" class="form-control" required>
+                                <option value="">-- Choose Account --</option>
+                                {% for acc in accounts %}
+                                <option value="{{ acc.id }}">{{ acc.bank_name }} - {{ acc.account_number }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Bank Statement File</label>
+                            <input type="file" name="statement_file" class="form-control" accept=".pdf,.csv,.xlsx,.xls" required>
+                            <small class="text-muted d-block mt-2">Supports PDF, CSV, Excel (.xlsx, .xls) formats.</small>
+                        </div>
+                        <button type="submit" class="btn-action-premium btn-emerald-solid w-100 justify-content-center mt-3">
+                            <i class="fas fa-magic"></i> Reconcile Statement
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- History list -->
+            <div class="col-lg-8 col-md-12">
+                <div class="payroll-table-card">
+                    <h5 class="fw-bold mb-4" style="color: #0f172a;">Reconciliation Logs</h5>
+                    <div class="table-responsive">
+                        <table class="table table-payroll">
+                            <thead>
+                                <tr>
+                                    <th>Account</th>
+                                    <th>Uploaded At</th>
+                                    <th>File Name</th>
+                                    <th>Reconcile Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stmt in statements %}
+                                <tr>
+                                    <td>
+                                        <span class="fw-bold">{{ stmt.bank_account.bank_name }}</span>
+                                        <div class="text-muted small">{{ stmt.bank_account.account_number }}</div>
+                                    </td>
+                                    <td>{{ stmt.uploaded_at|date:"Y-m-d H:i" }}</td>
+                                    <td>
+                                        <a href="{{ stmt.statement_file.url }}" target="_blank" class="text-decoration-none">
+                                            <i class="fas fa-file-alt text-success me-1"></i> View Original
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge status-{{ stmt.status }}">
+                                            {{ stmt.status|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'finance_portal:reconciliation_details' stmt.id %}" class="btn btn-action btn-view py-1 px-2">
+                                            <i class="fas fa-info-circle"></i> Details
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        <i class="fas fa-file-invoice fa-3x mb-3 opacity-25"></i>
+                                        <p class="mb-0">No statements uploaded for reconciliation yet.</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

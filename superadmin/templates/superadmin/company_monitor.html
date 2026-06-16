@@ -4,83 +4,268 @@
 {% block title %}{{ company.name }} - Company Monitor{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'superadmin/css/superadmin.css' %}">
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+body { font-family:'Inter',system-ui,sans-serif; background:#f0f2f8; }
+
+/* Breadcrumb */
+.cm-breadcrumb { display:flex; align-items:center; gap:6px; font-size:.82rem; color:#94a3b8; margin-bottom:20px; }
+.cm-breadcrumb a { color:#6366f1; text-decoration:none; } .cm-breadcrumb a:hover { text-decoration:underline; }
+.cm-breadcrumb .sep { color:#cbd5e0; }
+
+/* Company Hero */
+.cm-hero {
+    background:#fff;
+    border-radius:20px;
+    padding:32px 36px;
+    margin-bottom:24px;
+    box-shadow:0 2px 12px rgba(0,0,0,.06);
+    border:1px solid #e8ecf4;
+    position:relative; overflow:hidden;
+}
+.cm-hero::after {
+    content:'';
+    position:absolute; right:0; top:0; bottom:0; width:260px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 120'%3E%3Crect x='8' y='70' width='18' height='50' fill='%236366f1' opacity='.08'/%3E%3Crect x='30' y='50' width='24' height='70' fill='%236366f1' opacity='.08'/%3E%3Crect x='78' y='30' width='28' height='90' fill='%236366f1' opacity='.1'/%3E%3Crect x='132' y='35' width='26' height='85' fill='%236366f1' opacity='.09'/%3E%3Crect x='182' y='22' width='32' height='98' fill='%236366f1' opacity='.1'/%3E%3Crect x='220' y='45' width='20' height='75' fill='%236366f1' opacity='.08'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right center;
+    background-size: contain;
+    pointer-events: none;
+}
+.cm-hero-avatar {
+    width:64px; height:64px; border-radius:16px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.6rem; font-weight:800; color:#fff;
+    background:linear-gradient(135deg,#6366f1,#4f46e5);
+    flex-shrink:0;
+}
+.cm-hero h1 { font-size:1.7rem; font-weight:800; color:#1e293b; margin:0 0 4px; }
+.cm-hero p  { color:#64748b; font-size:.9rem; margin:0; }
+
+/* Stat Cards Row */
+.cm-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+.cm-stat {
+    background:#fff; border-radius:16px; padding:20px 24px;
+    box-shadow:0 2px 12px rgba(0,0,0,.06); border:1px solid #e8ecf4;
+}
+.cm-stat-label { font-size:.72rem; text-transform:uppercase; letter-spacing:.8px; color:#94a3b8; font-weight:600; margin-bottom:8px; }
+.cm-stat-value { font-size:1.9rem; font-weight:800; color:#1e293b; line-height:1; margin-bottom:4px; }
+.cm-stat-sub { font-size:.78rem; color:#64748b; }
+.cm-stat-icon { float:right; font-size:1.8rem; opacity:.15; }
+
+/* Card wrapper */
+.cm-card {
+    background:#fff; border-radius:16px; padding:24px;
+    box-shadow:0 2px 12px rgba(0,0,0,.06); border:1px solid #e8ecf4;
+    margin-bottom:20px;
+}
+.cm-card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+.cm-card-title { font-size:1rem; font-weight:700; color:#1e293b; margin:0; display:flex; align-items:center; gap:8px; }
+.cm-card-title i { color:#6366f1; }
+
+/* Table */
+.cm-table { width:100%; border-collapse:collapse; }
+.cm-table thead th {
+    padding:10px 14px; font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.7px; color:#94a3b8; font-weight:600;
+    border-bottom:1px solid #f1f5f9; white-space:nowrap;
+    background:#fafbff;
+}
+.cm-table tbody tr { border-bottom:1px solid #f8fafc; transition:background .15s; }
+.cm-table tbody tr:last-child { border-bottom:none; }
+.cm-table tbody tr:hover { background:#fafbff; }
+.cm-table tbody td { padding:12px 14px; font-size:.86rem; color:#334155; vertical-align:middle; }
+
+.emp-row { display:flex; align-items:center; gap:10px; }
+.emp-avatar {
+    width:32px; height:32px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:.8rem; font-weight:700; color:#fff; flex-shrink:0;
+}
+.emp-name { font-weight:600; color:#6366f1; font-size:.88rem; }
+.emp-name:hover { text-decoration:underline; }
+
+/* Attendance badge */
+.att-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:600; }
+.att-badge.hi  { background:#dcfce7; color:#16a34a; }
+.att-badge.mid { background:#fef9c3; color:#ca8a04; }
+.att-badge.lo  { background:#fee2e2; color:#dc2626; }
+.att-badge.zero { background:#f1f5f9; color:#94a3b8; }
+
+.lop-badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:.75rem; font-weight:600; background:#fee2e2; color:#dc2626; }
+
+/* Filter bar */
+.cm-filter-bar {
+    background:#fff; border-radius:14px; padding:16px 24px;
+    box-shadow:0 2px 8px rgba(0,0,0,.05); border:1px solid #e8ecf4;
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    margin-bottom:20px;
+}
+.cm-filter-bar label { font-size:.78rem; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.5px; white-space:nowrap; }
+.cm-filter-bar select {
+    border:1.5px solid #e2e8f0; border-radius:10px; padding:6px 12px;
+    font-size:.85rem; color:#334155; background:#fff; cursor:pointer;
+}
+.btn-apply {
+    background:#6366f1; color:#fff; border:none; padding:7px 20px;
+    border-radius:10px; font-size:.84rem; font-weight:600; cursor:pointer;
+    display:flex; align-items:center; gap:6px; transition:background .2s;
+}
+.btn-apply:hover { background:#4f46e5; }
+.btn-reset { color:#64748b; background:none; border:1.5px solid #e2e8f0; padding:7px 16px; border-radius:10px; font-size:.84rem; cursor:pointer; transition:all .2s; }
+.btn-reset:hover { border-color:#6366f1; color:#6366f1; }
+.btn-export {
+    background:#f8fafc; border:1.5px solid #e2e8f0; color:#475569;
+    padding:6px 16px; border-radius:10px; font-size:.82rem; font-weight:500;
+    text-decoration:none; display:inline-flex; align-items:center; gap:6px;
+    transition:all .2s;
+}
+.btn-export:hover { background:#ede9fe; border-color:#6366f1; color:#6366f1; }
+
+/* Two-column grid */
+.cm-two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
+
+/* Heatmap */
+.cm-heatmap-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.hm-cell {
+    aspect-ratio:1; border-radius:4px; display:flex; align-items:center;
+    justify-content:center; font-size:.62rem; font-weight:500; cursor:pointer;
+    transition:transform .15s; min-height:26px;
+}
+.hm-cell:hover { transform:scale(1.15); z-index:5; }
+.hm-cell.hdr { background:none; color:#94a3b8; font-weight:600; cursor:default; }
+.hm-cell.hdr:hover { transform:none; }
+.hm-cell.empty { background:transparent; cursor:default; } .hm-cell.empty:hover { transform:none; }
+.hm-cell[data-level="0"] { background:#f1f5f9; color:#cbd5e1; }
+.hm-cell[data-level="1"] { background:#fecaca; color:#991b1b; }
+.hm-cell[data-level="2"] { background:#fed7aa; color:#9a3412; }
+.hm-cell[data-level="3"] { background:#bfdbfe; color:#1e40af; }
+.hm-cell[data-level="4"] { background:#86efac; color:#166534; }
+.hm-cell.today-cell { border:2px solid #6366f1; font-weight:700; }
+.hm-legend { display:flex; align-items:center; gap:6px; font-size:.75rem; color:#94a3b8; }
+.hm-legend-dots { display:flex; gap:3px; }
+.hm-dot { width:10px; height:10px; border-radius:2px; }
+
+/* Late arrivals */
+.la-item { display:flex; align-items:center; gap:12px; padding:10px; border-radius:10px; transition:background .15s; }
+.la-item:hover { background:#f8fafc; }
+.la-info { flex:1; }
+.la-name { font-size:.88rem; font-weight:600; color:#1e293b; }
+.la-dept { font-size:.75rem; color:#94a3b8; }
+.la-count { background:#fff7ed; color:#ea580c; padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:600; white-space:nowrap; }
+
+/* Frequent takers */
+.ft-item { display:flex; align-items:center; gap:12px; padding:10px; border-bottom:1px solid #f8fafc; }
+.ft-item:last-child { border-bottom:none; }
+.ft-info { flex:1; }
+.ft-name { font-weight:600; color:#6366f1; font-size:.88rem; cursor:pointer; }
+.ft-dept { font-size:.75rem; color:#94a3b8; }
+.ft-badge { padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:600; background:#ede9fe; color:#7c3aed; white-space:nowrap; }
+
+/* Stat mini cards for heatmap */
+.cm-mini-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+.cm-mini { background:#fff; border-radius:14px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,.05); border:1px solid #e8ecf4; border-top:3px solid var(--c); }
+.cm-mini .mini-label { font-size:.72rem; color:#64748b; font-weight:600; text-transform:uppercase; margin-bottom:6px; }
+.cm-mini .mini-val { font-size:1.7rem; font-weight:800; color:#1e293b; }
+.cm-mini .mini-sub { font-size:.72rem; color:#94a3b8; margin-top:2px; }
+
+@media(max-width:900px) {
+    .cm-stats,.cm-mini-stats { grid-template-columns:repeat(2,1fr); }
+    .cm-two-col { grid-template-columns:1fr; }
+}
+
+/* ApexCharts label clip fix */
+#weeklyTrendsChart .apexcharts-svg,
+#weeklyTrendsChart .apexcharts-inner { overflow: visible !important; }
+
+/* Heatmap Tooltip */
+.heatmap-tooltip {
+    position: absolute;
+    background: #1e293b;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.76rem;
+    pointer-events: none;
+    z-index: 9999;
+    display: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    line-height: 1.4;
+}
+.heatmap-tooltip.show {
+    display: block;
+}
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="superadmin-container">
-    <!-- Breadcrumb -->
-    <nav class="sa-breadcrumb">
-        <a href="{% url 'superadmin:dashboard' %}" class="sa-breadcrumb-item">
-            <i class="fas fa-home"></i> Dashboard
-        </a>
-        <span class="sa-breadcrumb-separator">/</span>
-        <a href="{% url 'superadmin:companies' %}" class="sa-breadcrumb-item">Companies</a>
-        <span class="sa-breadcrumb-separator">/</span>
-        <span class="sa-breadcrumb-item active">{{ company.name }}</span>
-    </nav>
+<div class="container-fluid py-4 px-lg-5">
 
-    <!-- Company Header -->
-    <div class="sa-header mb-4">
-        <div class="d-flex align-items-center gap-3">
+    <!-- Breadcrumb -->
+    <div class="cm-breadcrumb">
+        <a href="{% url 'superadmin:dashboard' %}">Dashboard</a>
+        <span class="sep">/</span>
+        <a href="{% url 'superadmin:companies' %}">Companies</a>
+        <span class="sep">/</span>
+        <span>{{ company.name }}</span>
+    </div>
+
+    <!-- Company Hero -->
+    <div class="cm-hero">
+        <div class="d-flex align-items-center gap-4">
             {% if company.logo %}
-            <img src="{{ company.logo.url }}" alt="{{ company.name }}" class="rounded"
-                style="width: 64px; height: 64px; object-fit: cover;">
+            <img src="{{ company.logo.url }}" style="width:64px;height:64px;border-radius:16px;object-fit:contain;background:#f8fafc;" alt="">
             {% else %}
-            <div class="rounded d-flex align-items-center justify-content-center"
-                style="width: 64px; height: 64px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; font-weight: 800; font-size: 1.5rem;">
-                {{ company.name|slice:":1" }}
-            </div>
+            <div class="cm-hero-avatar">{{ company.name|slice:":1"|upper }}</div>
             {% endif %}
             <div>
-                <h1 class="sa-header-title mb-1">{{ company.name }}</h1>
-                <p class="sa-header-subtitle mb-0">
-                    {{ company.primary_domain }} • {{ company.get_location_display }}
-                </p>
+                <h1>{{ company.name }}</h1>
+                <p>{{ company.primary_domain }} &bull; {{ company.get_location_display }}</p>
             </div>
         </div>
     </div>
 
-    <!-- Company Summary Cards -->
-    <div class="sa-metric-cards mb-4">
-        <div class="sa-metric-card blue">
-            <div class="sa-metric-label">Total Employees</div>
-            <div class="sa-metric-value">{{ summary.total_employees }}</div>
-            <div class="sa-metric-subtitle">
-                {{ summary.active_employees }} active, {{ summary.inactive_employees }} inactive
-            </div>
+    <!-- Stat Cards -->
+    <div class="cm-stats">
+        <div class="cm-stat">
+            <i class="fas fa-users cm-stat-icon"></i>
+            <div class="cm-stat-label">Total Employees</div>
+            <div class="cm-stat-value">{{ summary.total_employees }}</div>
+            <div class="cm-stat-sub">{{ summary.active_employees }} active, {{ summary.inactive_employees }} inactive</div>
         </div>
-
-        <div class="sa-metric-card green">
-            <div class="sa-metric-label">Active Employees</div>
-            <div class="sa-metric-value">{{ summary.active_employees }}</div>
-            <div class="sa-metric-subtitle">Currently working</div>
+        <div class="cm-stat">
+            <i class="fas fa-user-check cm-stat-icon"></i>
+            <div class="cm-stat-label">Active Employees</div>
+            <div class="cm-stat-value">{{ summary.active_employees }}</div>
+            <div class="cm-stat-sub">Currently working</div>
         </div>
-
-        <div class="sa-metric-card amber">
-            <div class="sa-metric-label">Locations</div>
-            <div class="sa-metric-value">{{ summary.locations_count }}</div>
-            <div class="sa-metric-subtitle">Office locations</div>
+        <div class="cm-stat">
+            <i class="fas fa-map-marker-alt cm-stat-icon"></i>
+            <div class="cm-stat-label">Locations</div>
+            <div class="cm-stat-value">{{ summary.locations_count }}</div>
+            <div class="cm-stat-sub">Office locations</div>
         </div>
-
-        <div class="sa-metric-card cyan">
-            <div class="sa-metric-label">Currency</div>
-            <div class="sa-metric-value">{{ company.currency }}</div>
-            <div class="sa-metric-subtitle">Payroll currency</div>
+        <div class="cm-stat">
+            <i class="fas fa-coins cm-stat-icon"></i>
+            <div class="cm-stat-label">Currency</div>
+            <div class="cm-stat-value">{{ company.currency }}</div>
+            <div class="cm-stat-sub">Payroll currency</div>
         </div>
     </div>
+
 
     <!-- Employee Lifecycle Analytics -->
-    <div class="sa-chart-container mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="sa-chart-title mb-0">Employee Lifecycle Analytics</h2>
-            <a href="{% url 'superadmin:export_data' 'employees' %}?company_id={{ company.id }}" class="sa-btn-export">
+    <div class="cm-card">
+        <div class="cm-card-header">
+            <h2 class="cm-card-title"><i class="fas fa-chart-line"></i> Employee Lifecycle Analytics</h2>
+            <a href="{% url 'superadmin:export_data' 'employees' %}?company_id={{ company.id }}" class="btn-export">
                 <i class="fas fa-download"></i> Export
             </a>
         </div>
         <div class="table-responsive">
-            <table class="sa-table">
+            <table class="cm-table">
                 <thead>
                     <tr>
                         <th>Employee</th>
@@ -93,274 +278,182 @@
                 </thead>
                 <tbody>
                     {% for emp_data in employee_lifecycle %}
+                    {% with colors="#6366f1,#10b981,#f59e0b,#3b82f6,#a855f7,#ec4899,#14b8a6,#f97316" %}
                     <tr>
                         <td>
-                            <a href="{% url 'superadmin:employee_detail' emp_data.employee.id %}"
-                                class="text-decoration-none">
-                                <strong class="text-primary">{{ emp_data.name }}</strong>
-                            </a>
+                            <div class="emp-row">
+                                <div class="emp-avatar" style="background:{% cycle '#6366f1' '#10b981' '#f59e0b' '#3b82f6' '#a855f7' '#ec4899' '#14b8a6' '#f97316' %};">
+                                    {{ emp_data.name|slice:":1"|upper }}
+                                </div>
+                                <a href="{% url 'superadmin:employee_detail' emp_data.employee.id %}" class="emp-name">{{ emp_data.name }}</a>
+                            </div>
                         </td>
                         <td>{{ emp_data.join_date|date:"M d, Y"|default:"-" }}</td>
                         <td><strong>{{ emp_data.working_days }}</strong></td>
                         <td>{{ emp_data.leaves_taken }}</td>
                         <td>
                             {% if emp_data.lop_days > 0 %}
-                            <span class="sa-badge danger">{{ emp_data.lop_days }}</span>
-                            {% else %}
-                            {{ emp_data.lop_days }}
-                            {% endif %}
+                            <span class="lop-badge">{{ emp_data.lop_days }}</span>
+                            {% else %}0{% endif %}
                         </td>
                         <td>
-                            {% if emp_data.attendance_percentage >= 90 %}
-                            <span class="sa-badge success">{{ emp_data.attendance_percentage }}%</span>
+                            {% if emp_data.attendance_percentage == 0 %}
+                            <span class="att-badge zero">0%</span>
+                            {% elif emp_data.attendance_percentage >= 90 %}
+                            <span class="att-badge hi">{{ emp_data.attendance_percentage }}%</span>
                             {% elif emp_data.attendance_percentage >= 75 %}
-                            <span class="sa-badge warning">{{ emp_data.attendance_percentage }}%</span>
+                            <span class="att-badge mid">{{ emp_data.attendance_percentage }}%</span>
                             {% else %}
-                            <span class="sa-badge danger">{{ emp_data.attendance_percentage }}%</span>
+                            <span class="att-badge lo">{{ emp_data.attendance_percentage }}%</span>
                             {% endif %}
                         </td>
                     </tr>
+                    {% endwith %}
                     {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center py-4 text-muted">No employee data available</td>
-                    </tr>
+                    <tr><td colspan="6" class="text-center py-4" style="color:#94a3b8;">No employee data available</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- Filter Controls -->
-    <div class="card mb-4 border-0 shadow-sm">
-        <div class="card-body p-3">
-            <form method="get" class="row g-3 align-items-center">
-                <div class="col-auto">
-                    <label class="fw-bold mb-0 text-secondary small text-uppercase">Analysis Period:</label>
-                </div>
-                <div class="col-auto">
-                    <select name="month" class="form-select form-select-sm" style="min-width: 120px;">
-                        {% for m_num, m_name in months %}
-                        <option value="{{ m_num }}" {% if selected_month == m_num %}selected{% endif %}>{{ m_name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-auto">
-                    <select name="year" class="form-select form-select-sm" style="min-width: 100px;">
-                        {% for y in years %}
-                        <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-auto">
-                    <button type="submit" class="btn btn-primary btn-sm px-4">
-                        <i class="fas fa-filter me-1"></i> Apply
-                    </button>
-                    {% if selected_month or selected_year %}
-                    <a href="{% url 'superadmin:company_monitor' company.id %}"
-                        class="btn btn-outline-secondary btn-sm ms-2">
-                        <i class="fas fa-undo me-1"></i> Reset
-                    </a>
-                    {% endif %}
-                </div>
-            </form>
-        </div>
-    </div>
+    <!-- Filter Bar -->
+    <form method="get" class="cm-filter-bar">
+        <label>Analysis Period:</label>
+        <select name="month">
+            {% for m_num, m_name in months %}
+            <option value="{{ m_num }}" {% if selected_month == m_num %}selected{% endif %}>{{ m_name }}</option>
+            {% endfor %}
+        </select>
+        <select name="year">
+            {% for y in years %}
+            <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn-apply"><i class="fas fa-check"></i> Apply</button>
+        <a href="{% url 'superadmin:company_monitor' company.id %}" class="btn-reset">Reset</a>
+    </form>
 
-    <!-- Leave Analytics -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="sa-chart-container h-100">
-                <h2 class="sa-chart-title d-flex justify-content-between align-items-center">
-                    Leave Distribution
-                    <span class="badge bg-light text-dark fw-normal small">{{ current_month_display }}</span>
-                </h2>
-                <div id="leaveDistributionChart" style="min-height: 350px;"></div>
+    <!-- Leave Analytics (two columns) -->
+    <div class="cm-two-col">
+        <div class="cm-card" style="margin-bottom:0;">
+            <div class="cm-card-header">
+                <h2 class="cm-card-title"><i class="fas fa-pie-chart"></i> Leave Distribution</h2>
+                <span style="font-size:.78rem;color:#94a3b8;">{{ current_month_display }}</span>
             </div>
+            <div id="leaveDistributionChart" style="min-height:300px;"></div>
         </div>
-        <div class="col-md-6">
-            <div class="sa-chart-container h-100">
-                <h2 class="sa-chart-title d-flex justify-content-between align-items-center">
-                    Leave Trends
-                    <span class="badge bg-light text-dark fw-normal small">Daily Breakdown</span>
-                </h2>
-                <div id="monthlyTrendsChart" style="min-height: 350px;"></div>
+        <div class="cm-card" style="margin-bottom:0;">
+            <div class="cm-card-header">
+                <h2 class="cm-card-title"><i class="fas fa-chart-bar"></i> Leave Trends</h2>
+                <span style="font-size:.78rem;color:#94a3b8;">Daily Breakdown</span>
             </div>
+            <div id="monthlyTrendsChart" style="min-height:300px;"></div>
         </div>
     </div>
 
     <!-- Frequent Leave Takers -->
-    <div class="sa-chart-container mb-4">
-        <h2 class="sa-chart-title">Frequent Leave Takers (Last 6 Months)</h2>
-        <div class="table-responsive">
-            <table class="sa-table">
-                <thead>
-                    <tr>
-                        <th>Employee</th>
-                        <th>Department</th>
-                        <th>Total Leaves</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for emp in leave_analytics.frequent_takers %}
-                    <tr>
-                        <td>
-                            <a href="{% url 'superadmin:employee_detail' emp.id %}" class="text-decoration-none">
-                                <strong class="text-primary">{{ emp.user.get_full_name }}</strong>
-                            </a>
-                        </td>
-                        <td>{{ emp.department }}</td>
-                        <td>
-                            <span
-                                class="sa-badge {% if emp.leave_count > 10 %}danger{% elif emp.leave_count > 5 %}warning{% else %}info{% endif %}">
-                                {{ emp.leave_count }} leaves
-                            </span>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="3" class="text-center py-4 text-muted">No leave data available</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="cm-card" style="margin-top:20px;">
+        <div class="cm-card-header">
+            <h2 class="cm-card-title"><i class="fas fa-user-clock"></i> Frequent Leave Takers <span style="font-size:.75rem;font-weight:400;color:#94a3b8;">(Last 6 Months)</span></h2>
+        </div>
+        {% for emp in leave_analytics.frequent_takers %}
+        <div class="ft-item">
+            <div class="emp-avatar" style="background:{% cycle '#6366f1' '#10b981' '#f59e0b' '#3b82f6' '#a855f7' %};">{{ emp.user.get_full_name|slice:":1"|upper }}</div>
+            <div class="ft-info">
+                <a href="{% url 'superadmin:employee_detail' emp.id %}" class="ft-name">{{ emp.user.get_full_name }}</a>
+                <div class="ft-dept">{{ emp.department|default:"-" }}</div>
+            </div>
+            <span class="ft-badge">{{ emp.leave_count }} leaves</span>
+        </div>
+        {% empty %}
+        <div class="text-center py-4" style="color:#94a3b8;"><i class="fas fa-check-circle me-2"></i>No frequent leave takers</div>
+        {% endfor %}
+    </div>
+
+
+    <!-- Heatmap + Weekly Trends + Late Arrivals - single row -->
+    <div style="display:grid;grid-template-columns:1fr 380px;gap:20px;margin-top:20px;align-items:start;">
+
+        <!-- LEFT: Compact Heatmap card -->
+        <div class="cm-card" style="margin-bottom:0;">
+            <div class="cm-card-header" style="margin-bottom:12px;">
+                <h2 class="cm-card-title" style="font-size:.9rem;"><i class="fas fa-th"></i> Attendance Heatmap &ndash; {{ current_month }}</h2>
+                <div style="display:flex;gap:6px;">
+                    <a href="{% url 'superadmin:export_data' 'attendance' %}?company_id={{ company.id }}" class="btn-export" style="font-size:.75rem;padding:4px 10px;"><i class="fas fa-download"></i> Export</a>
+                </div>
+            </div>
+
+            <!-- 4 mini-stats in 2x2 grid (compact) -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+                <div style="background:#f0fdf4;border-radius:10px;padding:10px 14px;border-left:3px solid #10b981;">
+                    <div style="font-size:.68rem;color:#16a34a;font-weight:600;text-transform:uppercase;">Present Days</div>
+                    <div style="font-size:1.4rem;font-weight:800;color:#1e293b;line-height:1.1;">{{ heatmap_data.present_days|default:0 }}</div>
+                </div>
+                <div style="background:#fffbeb;border-radius:10px;padding:10px 14px;border-left:3px solid #f59e0b;">
+                    <div style="font-size:.68rem;color:#d97706;font-weight:600;text-transform:uppercase;">Late Logins</div>
+                    <div style="font-size:1.4rem;font-weight:800;color:#1e293b;line-height:1.1;">{{ heatmap_data.late_logins }}</div>
+                </div>
+                <div style="background:#fef2f2;border-radius:10px;padding:10px 14px;border-left:3px solid #ef4444;">
+                    <div style="font-size:.68rem;color:#dc2626;font-weight:600;text-transform:uppercase;">Absenteeism</div>
+                    <div style="font-size:1.4rem;font-weight:800;color:#1e293b;line-height:1.1;">{{ heatmap_data.absenteeism_percentage }}%</div>
+                </div>
+                <div style="background:#ede9fe;border-radius:10px;padding:10px 14px;border-left:3px solid #6366f1;">
+                    <div style="font-size:.68rem;color:#6366f1;font-weight:600;text-transform:uppercase;">Total Employees</div>
+                    <div style="font-size:1.4rem;font-weight:800;color:#1e293b;line-height:1.1;">{{ heatmap_data.total_employees }}</div>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:10px;font-size:.72rem;color:#94a3b8;">
+                <span>Less</span>
+                <div style="display:flex;gap:3px;">
+                    <div style="width:9px;height:9px;border-radius:2px;background:#f1f5f9;"></div>
+                    <div style="width:9px;height:9px;border-radius:2px;background:#fecaca;"></div>
+                    <div style="width:9px;height:9px;border-radius:2px;background:#fed7aa;"></div>
+                    <div style="width:9px;height:9px;border-radius:2px;background:#bfdbfe;"></div>
+                    <div style="width:9px;height:9px;border-radius:2px;background:#86efac;"></div>
+                </div>
+                <span>More</span>
+            </div>
+
+            <!-- Calendar grid (compact cells) -->
+            <div class="cm-heatmap-grid" id="attendanceHeatmap" style="gap:3px;"></div>
+        </div>
+
+        <!-- RIGHT: Weekly Trends + Top Late Arrivals stacked -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+            <!-- Weekly Trends -->
+            <div class="cm-card" style="margin-bottom:0;">
+                <div class="cm-card-header" style="margin-bottom:10px;">
+                    <h2 class="cm-card-title" style="font-size:.9rem;"><i class="fas fa-chart-area"></i> Weekly Trends</h2>
+                </div>
+                <div id="weeklyTrendsChart" style="height:160px;overflow:visible;"></div>
+            </div>
+
+            <!-- Top Late Arrivals -->
+            <div class="cm-card" style="margin-bottom:0;">
+                <div class="cm-card-header" style="margin-bottom:10px;">
+                    <h2 class="cm-card-title" style="font-size:.9rem;"><i class="fas fa-user-clock"></i> Top Late Arrivals</h2>
+                </div>
+                {% for emp in heatmap_data.late_arrivals %}
+                <div class="la-item" style="padding:8px;">
+                    <div class="emp-avatar" style="width:28px;height:28px;font-size:.72rem;background:{% cycle '#6366f1' '#10b981' '#f59e0b' '#3b82f6' '#a855f7' %};">{{ emp.user.get_full_name|slice:":1"|upper }}</div>
+                    <div class="la-info">
+                        <div class="la-name" style="font-size:.82rem;">{{ emp.user.get_full_name }}</div>
+                        <div class="la-dept" style="font-size:.7rem;">{{ emp.department|default:"N/A" }}</div>
+                    </div>
+                    <span class="la-count" style="font-size:.72rem;padding:2px 8px;">{{ emp.late_count }} times</span>
+                </div>
+                {% empty %}
+                <div class="text-center py-3" style="color:#94a3b8;font-size:.84rem;"><i class="fas fa-check-circle me-1"></i>No late arrivals</div>
+                {% endfor %}
+            </div>
+
         </div>
     </div>
 
-    <!-- Attendance Heatmap -->
-    <div class="sa-chart-container">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="sa-chart-title mb-0">Attendance Heatmap - {{ current_month }}</h2>
-            <div class="d-flex gap-2">
-                <button class="btn btn-outline-primary btn-sm" id="heatmapViewToggle">
-                    <i class="fas fa-calendar-alt me-1"></i> Calendar View
-                </button>
-                <button class="btn btn-outline-secondary btn-sm" id="exportHeatmap">
-                    <i class="fas fa-download me-1"></i> Export
-                </button>
-            </div>
-        </div>
-
-        <!-- Attendance Statistics Cards -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-3">
-                <div class="attendance-stat-card success">
-                    <div class="stat-icon">
-                        <i class="fas fa-user-check"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-label">Present Days</div>
-                        <div class="stat-value">{{ heatmap_data.present_days|default:0 }}</div>
-                        <div class="stat-trend">
-                            <i class="fas fa-arrow-up"></i> +2.5% from last month
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="attendance-stat-card warning">
-                    <div class="stat-icon">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-label">Late Logins</div>
-                        <div class="stat-value">{{ heatmap_data.late_logins }}</div>
-                        <div class="stat-trend">
-                            <i class="fas fa-arrow-down"></i> -1.2% from last month
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="attendance-stat-card danger">
-                    <div class="stat-icon">
-                        <i class="fas fa-user-times"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-label">Absenteeism</div>
-                        <div class="stat-value">{{ heatmap_data.absenteeism_percentage }}%</div>
-                        <div class="stat-trend">
-                            <i class="fas fa-arrow-up"></i> +0.8% from last month
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="attendance-stat-card info">
-                    <div class="stat-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-label">Total Employees</div>
-                        <div class="stat-value">{{ heatmap_data.total_employees }}</div>
-                        <div class="stat-trend">
-                            <i class="fas fa-minus"></i> No change
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Heatmap Calendar -->
-        <div class="attendance-heatmap-container">
-            <div class="heatmap-header">
-                <div class="heatmap-legend">
-                    <span class="legend-label">Less</span>
-                    <div class="legend-scale">
-                        <div class="legend-item" data-level="0" title="No data"></div>
-                        <div class="legend-item" data-level="1" title="1-25% attendance"></div>
-                        <div class="legend-item" data-level="2" title="26-50% attendance"></div>
-                        <div class="legend-item" data-level="3" title="51-75% attendance"></div>
-                        <div class="legend-item" data-level="4" title="76-100% attendance"></div>
-                    </div>
-                    <span class="legend-label">More</span>
-                </div>
-            </div>
-
-            <div class="heatmap-calendar" id="attendanceHeatmap">
-                <!-- Calendar will be generated by JavaScript -->
-            </div>
-        </div>
-
-        <!-- Detailed Analytics -->
-        <div class="row mt-4">
-            <div class="col-md-6">
-                <div class="analytics-card">
-                    <h5 class="analytics-title">
-                        <i class="fas fa-chart-line me-2"></i>
-                        Weekly Trends
-                    </h5>
-                    <div id="weeklyTrendsChart" style="height: 200px;"></div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="analytics-card">
-                    <h5 class="analytics-title">
-                        <i class="fas fa-user-clock me-2"></i>
-                        Top Late Arrivals
-                    </h5>
-                    <div class="late-arrivals-list">
-                        {% for emp in heatmap_data.late_arrivals %}
-                        <div class="late-arrival-item">
-                            <div class="employee-info">
-                                <div class="employee-name">{{ emp.user.get_full_name }}</div>
-                                <div class="employee-dept">{{ emp.department|default:"N/A" }}</div>
-                            </div>
-                            <div class="late-count">
-                                <span class="badge bg-warning">{{ emp.late_count }} times</span>
-                            </div>
-                        </div>
-                        {% empty %}
-                        <div class="text-center text-muted py-3">
-                            <i class="fas fa-check-circle me-2"></i>
-                            No late arrivals this month
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -525,337 +618,7 @@
     });
 </script>
 
-<style>
-/* Advanced Attendance Heatmap Styles */
-.attendance-stat-card {
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border: 1px solid #f1f5f9;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
 
-.attendance-stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
-}
-
-.attendance-stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, var(--card-color), var(--card-color-light));
-}
-
-.attendance-stat-card.success {
-    --card-color: #10b981;
-    --card-color-light: #34d399;
-}
-
-.attendance-stat-card.warning {
-    --card-color: #f59e0b;
-    --card-color-light: #fbbf24;
-}
-
-.attendance-stat-card.danger {
-    --card-color: #ef4444;
-    --card-color-light: #f87171;
-}
-
-.attendance-stat-card.info {
-    --card-color: #3b82f6;
-    --card-color-light: #60a5fa;
-}
-
-.stat-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, var(--card-color), var(--card-color-light));
-    color: white;
-    font-size: 1.25rem;
-    margin-bottom: 1rem;
-}
-
-.stat-content .stat-label {
-    font-size: 0.875rem;
-    color: #64748b;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-}
-
-.stat-content .stat-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 0.5rem;
-}
-
-.stat-content .stat-trend {
-    font-size: 0.75rem;
-    color: #64748b;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-}
-
-.stat-trend i.fa-arrow-up {
-    color: #10b981;
-}
-
-.stat-trend i.fa-arrow-down {
-    color: #ef4444;
-}
-
-.stat-trend i.fa-minus {
-    color: #64748b;
-}
-
-/* Heatmap Calendar Styles */
-.attendance-heatmap-container {
-    background: white;
-    border-radius: 12px;
-    padding: 2rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border: 1px solid #f1f5f9;
-}
-
-.heatmap-header {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 2rem;
-}
-
-.heatmap-legend {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-    color: #64748b;
-}
-
-.legend-scale {
-    display: flex;
-    gap: 2px;
-}
-
-.legend-item {
-    width: 12px;
-    height: 12px;
-    border-radius: 2px;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-}
-
-.legend-item:hover {
-    transform: scale(1.2);
-}
-
-.legend-item[data-level="0"] {
-    background: #f1f5f9;
-}
-
-.legend-item[data-level="1"] {
-    background: #fecaca;
-}
-
-.legend-item[data-level="2"] {
-    background: #fed7aa;
-}
-
-.legend-item[data-level="3"] {
-    background: #bfdbfe;
-}
-
-.legend-item[data-level="4"] {
-    background: #86efac;
-}
-
-.heatmap-calendar {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
-    max-width: 100%;
-}
-
-.heatmap-day {
-    aspect-ratio: 1;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    min-height: 32px;
-}
-
-.heatmap-day:hover {
-    transform: scale(1.1);
-    z-index: 10;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.heatmap-day.header {
-    background: none;
-    color: #64748b;
-    font-weight: 600;
-    cursor: default;
-}
-
-.heatmap-day.header:hover {
-    transform: none;
-    box-shadow: none;
-}
-
-.heatmap-day.empty {
-    background: transparent;
-    cursor: default;
-}
-
-.heatmap-day.empty:hover {
-    transform: none;
-    box-shadow: none;
-}
-
-.heatmap-day[data-level="0"] {
-    background: #f8fafc;
-    color: #cbd5e1;
-}
-
-.heatmap-day[data-level="1"] {
-    background: #fecaca;
-    color: #991b1b;
-}
-
-.heatmap-day[data-level="2"] {
-    background: #fed7aa;
-    color: #9a3412;
-}
-
-.heatmap-day[data-level="3"] {
-    background: #bfdbfe;
-    color: #1e40af;
-}
-
-.heatmap-day[data-level="4"] {
-    background: #86efac;
-    color: #166534;
-}
-
-.heatmap-day.today {
-    border: 2px solid #3b82f6;
-    font-weight: 700;
-}
-
-/* Analytics Cards */
-.analytics-card {
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border: 1px solid #f1f5f9;
-    height: 100%;
-}
-
-.analytics-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-}
-
-.late-arrivals-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.late-arrival-item {
-    display: flex;
-    justify-content: between;
-    align-items: center;
-    padding: 0.75rem;
-    background: #f8fafc;
-    border-radius: 8px;
-    transition: background 0.2s ease;
-}
-
-.late-arrival-item:hover {
-    background: #f1f5f9;
-}
-
-.employee-info {
-    flex: 1;
-}
-
-.employee-name {
-    font-weight: 600;
-    color: #1e293b;
-    font-size: 0.875rem;
-}
-
-.employee-dept {
-    font-size: 0.75rem;
-    color: #64748b;
-}
-
-.late-count {
-    margin-left: auto;
-}
-
-/* Tooltip Styles */
-.heatmap-tooltip {
-    position: absolute;
-    background: #1e293b;
-    color: white;
-    padding: 0.5rem 0.75rem;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    pointer-events: none;
-    z-index: 1000;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    white-space: nowrap;
-}
-
-.heatmap-tooltip.show {
-    opacity: 1;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .heatmap-calendar {
-        gap: 2px;
-    }
-
-    .heatmap-day {
-        min-height: 28px;
-        font-size: 0.625rem;
-    }
-
-    .attendance-stat-card {
-        padding: 1rem;
-    }
-
-    .stat-value {
-        font-size: 1.5rem !important;
-    }
-}
-</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -895,7 +658,7 @@ function generateHeatmapCalendar(container, year, month) {
     const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     dayHeaders.forEach(day => {
         const dayElement = document.createElement('div');
-        dayElement.className = 'heatmap-day header';
+        dayElement.className = 'hm-cell hdr';
         dayElement.textContent = day;
         container.appendChild(dayElement);
     });
@@ -903,29 +666,26 @@ function generateHeatmapCalendar(container, year, month) {
     // Add empty cells for days before month starts
     for (let i = 0; i < startingDayOfWeek; i++) {
         const emptyElement = document.createElement('div');
-        emptyElement.className = 'heatmap-day empty';
+        emptyElement.className = 'hm-cell empty';
         container.appendChild(emptyElement);
     }
 
     // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
         const dayElement = document.createElement('div');
-        dayElement.className = 'heatmap-day';
+        dayElement.className = 'hm-cell';
         dayElement.textContent = day;
 
-        // Simulate attendance data (replace with real data)
         const attendanceLevel = getAttendanceLevel(day);
         dayElement.setAttribute('data-level', attendanceLevel);
 
         // Mark today
         const today = new Date();
         if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
-            dayElement.classList.add('today');
+            dayElement.classList.add('today-cell');
         }
 
-        // Add click handler
-        dayElement.addEventListener('click', () => showDayDetails(year, month + 1, day));
-
+        // No alert click handler needed since details are shown on hover
         container.appendChild(dayElement);
     }
 
@@ -960,9 +720,15 @@ function getAttendanceText(level, day) {
         if (dailyData && dailyData[day]) {
             const data = dailyData[day];
             return `
-                <strong>Attendance: ${data.attendance_percentage}%</strong><br>
-                Present: ${data.present_count}/${data.total_employees}<br>
-                Late: ${data.late_count} | Early Exit: ${data.early_departure_count}
+                <div style="font-weight: 700; color: #38bdf8; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 4px;">
+                    Attendance: ${data.attendance_percentage}%
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 3px; font-size: 0.74rem;">
+                    <div>Present: <strong>${data.present_count}/${data.total_employees}</strong></div>
+                    <div>Absent: <strong>${data.absent_count}</strong></div>
+                    <div>Late Arrivals: <strong>${data.late_count}</strong></div>
+                    <div>Early Departures: <strong>${data.early_departure_count}</strong></div>
+                </div>
             `;
         }
     } catch (e) {
@@ -976,7 +742,7 @@ function getAttendanceText(level, day) {
         '3': 'Good attendance (51-75%)',
         '4': 'Excellent attendance (76-100%)'
     };
-    return texts[level] || 'No data';
+    return `<div style="color: #94a3b8;">${texts[level] || 'No data'}</div>`;
 }
 
 function initializeWeeklyTrendsChart() {
@@ -992,68 +758,55 @@ function initializeWeeklyTrendsChart() {
     }
 
     const options = {
-        series: [{
-            name: 'Attendance %',
-            data: weeklyData
-        }],
+        series: [{ name: 'Attendance %', data: weeklyData }],
         chart: {
             type: 'area',
-            height: 200,
+            height: 160,
             toolbar: { show: false },
-            fontFamily: 'Inter, sans-serif'
+            fontFamily: 'Inter, sans-serif',
+            parentHeightOffset: 0,
+            offsetX: 10
         },
-        colors: ['#3b82f6'],
+        colors: ['#6366f1'],
         dataLabels: { enabled: false },
-        stroke: {
-            curve: 'smooth',
-            width: 2
-        },
+        stroke: { curve: 'smooth', width: 2 },
         fill: {
             type: 'gradient',
-            gradient: {
-                shadeIntensity: 1,
-                opacityFrom: 0.4,
-                opacityTo: 0.1,
-                stops: [0, 90, 100]
-            }
+            gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.05, stops: [0, 90, 100] }
         },
         xaxis: {
             categories: ['Week 1', 'Week 2', 'Week 3', 'Week 4'].slice(0, weeklyData.length),
             axisBorder: { show: false },
-            axisTicks: { show: false }
+            axisTicks: { show: false },
+            labels: { style: { fontSize: '11px', colors: ['#94a3b8'] } }
         },
-        yaxis: {
-            show: false
-        },
-        grid: {
-            show: false
-        },
-        tooltip: {
-            theme: 'light',
-            y: {
-                formatter: function(val) {
-                    return val + '%'
-                }
-            }
-        }
+        yaxis: { show: false },
+        grid: { show: false, padding: { left: 24, right: 10, top: 0, bottom: 0 } },
+        tooltip: { theme: 'light', y: { formatter: val => val + '%' } }
     };
+
 
     new ApexCharts(chartElement, options).render();
 }
 
 function addHeatmapTooltip(container) {
-    const tooltip = document.createElement('div');
-    tooltip.className = 'heatmap-tooltip';
-    document.body.appendChild(tooltip);
+    let tooltip = document.querySelector('.heatmap-tooltip');
+    if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.className = 'heatmap-tooltip';
+        document.body.appendChild(tooltip);
+    }
 
     container.addEventListener('mouseover', (e) => {
-        if (e.target.classList.contains('heatmap-day') && !e.target.classList.contains('header') && !e.target.classList.contains('empty')) {
+        if (e.target.classList.contains('hm-cell') && !e.target.classList.contains('hdr') && !e.target.classList.contains('empty')) {
             const day = parseInt(e.target.textContent);
             const level = e.target.getAttribute('data-level');
             const attendanceText = getAttendanceText(level, day);
 
             tooltip.innerHTML = `
-                <strong>{{ current_month_display }} ${day}</strong><br>
+                <div style="font-weight: 800; font-size: 0.8rem; margin-bottom: 6px; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px;">
+                    ${day} {{ current_month_display }}
+                </div>
                 ${attendanceText}
             `;
             tooltip.classList.add('show');
@@ -1061,12 +814,12 @@ function addHeatmapTooltip(container) {
     });
 
     container.addEventListener('mousemove', (e) => {
-        tooltip.style.left = e.pageX + 10 + 'px';
-        tooltip.style.top = e.pageY - 10 + 'px';
+        tooltip.style.left = (e.pageX + 12) + 'px';
+        tooltip.style.top = (e.pageY - 12) + 'px';
     });
 
     container.addEventListener('mouseout', (e) => {
-        if (e.target.classList.contains('heatmap-day')) {
+        if (e.target.classList.contains('hm-cell')) {
             tooltip.classList.remove('show');
         }
     });

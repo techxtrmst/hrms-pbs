@@ -525,6 +525,7 @@
         </div>
 
         <form method="GET" class="filter-section">
+            <input type="hidden" name="view" value="payroll">
             <div class="d-flex align-items-center gap-2">
                 <span class="text-muted small fw-bold">Period:</span>
                 <select name="company" class="filter-select" onchange="this.form.submit()">
@@ -546,6 +547,13 @@
             </div>
         </form>
     </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link active" href="#">Payroll Batches</a>
+        </li>
+    </ul>
 
     <!-- 3-Card Layout -->
     <div class="row mb-4">
@@ -747,7 +755,7 @@
                     <input type="hidden" name="company_id" value="{{ selected_company_id }}">
                     <input type="hidden" name="month" value="{{ selected_month }}">
                     <input type="hidden" name="year" value="{{ selected_year }}">
-                    <input type="hidden" name="auto_send_email" id="excelAutoSendEmail" value="on">
+                    <input type="hidden" name="auto_send_email" id="excelAutoSendEmail" value="off">
 
                     <a href="{% url 'bulk_payroll_template' %}?month={{ selected_month }}&year={{ selected_year }}"
                         class="btn btn-view w-100 mb-3 py-2">
@@ -786,13 +794,6 @@
                 </div>
             </div>
             <div class="col-lg-6 col-md-12 d-flex flex-wrap align-items-center gap-3 justify-content-lg-end">
-                <div class="form-check form-switch me-2 py-2">
-                    <input class="form-check-input" type="checkbox" name="auto_send_email" id="autoSendEmail" checked>
-                    <label class="form-check-label small fw-semibold text-muted" for="autoSendEmail">
-                        Auto-email payslips
-                    </label>
-                </div>
-
                 <form id="draftPayrollForm" method="POST" action="{% url 'finance_portal:process_draft_payroll' %}">
                     {% csrf_token %}
                     <input type="hidden" name="company_id" value="{{ selected_company_id }}">
@@ -808,7 +809,7 @@
                     <input type="hidden" name="company_id" value="{{ selected_company_id }}">
                     <input type="hidden" name="month" value="{{ selected_month }}">
                     <input type="hidden" name="year" value="{{ selected_year }}">
-                    <input type="hidden" name="auto_send_email" id="bulkAutoSendEmail" value="on">
+                    <input type="hidden" name="auto_send_email" id="bulkAutoSendEmail" value="off">
                     <button type="button" onclick="confirmBulkProcess()" class="btn btn-action btn-process py-2 px-3">
                         <i class="fa-solid fa-bolt me-1"></i> Finalize Batch
                     </button>
@@ -1525,11 +1526,6 @@
 
 <!-- JavaScript Helpers -->
 <script>
-    document.getElementById('autoSendEmail').addEventListener('change', function(e) {
-        document.getElementById('bulkAutoSendEmail').value = e.target.checked ? 'on' : 'off';
-        const excelAuto = document.getElementById('excelAutoSendEmail');
-        if (excelAuto) excelAuto.value = e.target.checked ? 'on' : 'off';
-    });
 
     const activeTab = document.getElementById('active-tab');
     const exTab = document.getElementById('ex-tab');

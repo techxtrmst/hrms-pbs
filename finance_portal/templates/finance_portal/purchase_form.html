@@ -1,0 +1,137 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block block_title %}New Purchase Request{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --primary-color: #10b981;
+        --primary-hover: #059669;
+        --keka-bg: #f8fafc;
+        --keka-text-primary: #1e293b;
+    }
+    body {
+        background-color: #f8fafc !important;
+        color: #1e293b !important;
+        font-family: 'Inter', sans-serif;
+    }
+    .payroll-container {
+        padding: 2.5rem;
+        background: radial-gradient(circle at top, #ffffff 0%, #f1f5f9 100%);
+        min-height: calc(100vh - 60px);
+    }
+    .payroll-header {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        padding: 24px 32px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+    .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+    }
+    .payroll-table-card {
+        background: #ffffff;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+        padding: 32px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .form-label {
+        font-weight: 600;
+        color: var(--keka-text-primary);
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+    .form-control {
+        border-radius: 8px;
+        padding: 10px 14px;
+        border: 1px solid #cbd5e1;
+        font-size: 14px;
+    }
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+    }
+    .btn-action {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+    .btn-process {
+        background: var(--primary-color);
+        color: #ffffff;
+    }
+    .btn-process:hover {
+        background: var(--primary-hover);
+        color: #ffffff;
+    }
+    .btn-view {
+        background: transparent;
+        color: var(--primary-color);
+        border: 1.5px solid var(--primary-color);
+    }
+    .btn-view:hover {
+        background: var(--primary-color);
+        color: #ffffff;
+    }
+</style>
+
+<div class="payroll-container">
+    <!-- Header -->
+    <div class="payroll-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">New Purchase Request</h1>
+            <p class="text-muted mb-0 small">Create a request for fund authorization</p>
+        </div>
+        <div>
+            <a href="{% url 'finance_portal:purchases' %}" class="btn btn-action btn-view">
+                <i class="fas fa-arrow-left"></i> Back to Requests
+            </a>
+        </div>
+    </div>
+
+    <div class="payroll-table-card">
+        <form method="POST">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label">Item Name</label>
+                <input type="text" name="item_name" class="form-control" placeholder="e.g. AWS Cloud Infrastructure Credits" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control" rows="3" placeholder="Provide technical specifications or details of the items..." required></textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Estimated Amount (USD)</label>
+                <input type="number" name="estimated_amount" class="form-control" placeholder="0.00" step="0.01" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Reason / Justification</label>
+                <textarea name="reason" class="form-control" rows="3" placeholder="Why is this purchase necessary for the company?" required></textarea>
+            </div>
+            <div class="mt-4 text-end">
+                <button type="submit" class="btn btn-action btn-process">
+                    <i class="fas fa-paper-plane"></i> Submit Request
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

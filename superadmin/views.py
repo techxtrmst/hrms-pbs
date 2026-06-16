@@ -32,6 +32,8 @@ def superadmin_dashboard(request, selected_company=None, selected_company_id=Non
     """
     Main SuperAdmin dashboard with company context switching
     """
+    from companies.models import BiometricDevice
+
     # Get all companies for dropdown
     companies = Company.objects.filter(is_active=True).order_by("name")
 
@@ -49,12 +51,44 @@ def superadmin_dashboard(request, selected_company=None, selected_company_id=Non
         .order_by("name")
     )
 
+    # --- Extra real data for the new dashboard design ---
+    today = timezone.localtime().date()
+
+    # Employee distribution (active / on-leave / inactive)
+    total_emp = Employee.objects.count()
+    active_emp = Employee.objects.filter(is_active=True, employment_status="ACTIVE").count()
+    on_leave_count = LeaveRequest.objects.filter(start_date__lte=today, end_date__gte=today, status="APPROVED").count()
+    inactive_emp = total_emp - active_emp
+
+    active_pct = round((active_emp / total_emp * 100), 1) if total_emp > 0 else 0
+    on_leave_pct = round((on_leave_count / total_emp * 100), 1) if total_emp > 0 else 0
+    inactive_pct = round((inactive_emp / total_emp * 100), 1) if total_emp > 0 else 0
+
+    # Active biometric / kiosk devices across all orgs
+    active_devices = BiometricDevice.objects.filter(is_active=True).count()
+
+    # Pending leave requests (not yet actioned) across all orgs
+    pending_requests = LeaveRequest.objects.filter(status="PENDING").count()
+
+    # Live (clocked-in right now) users — employees with a clock_in today but no clock_out
+    live_users = Attendance.objects.filter(date=today, clock_in__isnull=False, clock_out__isnull=True).count()
+
     context = {
         "companies": companies,
         "selected_company": selected_company,
         "selected_company_id": selected_company_id,
         "metrics": metrics,
         "company_overview": company_overview,
+        # extra
+        "active_emp": active_emp,
+        "on_leave_count": on_leave_count,
+        "inactive_emp": inactive_emp,
+        "active_pct": active_pct,
+        "on_leave_pct": on_leave_pct,
+        "inactive_pct": inactive_pct,
+        "active_devices": active_devices,
+        "pending_requests": pending_requests,
+        "live_users": live_users,
     }
 
     return render(request, "superadmin/dashboard.html", context)
@@ -512,6 +546,150 @@ def employee_detail_view(request, employee_id):
         "on_time_percentage": analytics["attendance_stats"]["on_time_percentage"],
     }
 
+    # --- Real PetaBytz-style data calculations ---
+    import calendar
+    import json
+    from datetime import date, timedelta
+
+    from django.db.models import Q
+
+    from companies.models import Holiday
+
+    # Date Handling for filtering heatmap and monthly summary
+    now = timezone.localtime()
+    try:
+        selected_month = int(request.GET.get("month", now.month))
+        selected_year = int(request.GET.get("year", now.year))
+    except (ValueError, TypeError):
+        selected_month = now.month
+        selected_year = now.year
+
+    today = now.date()
+
+    # 1. 6-Month Attendance Trend
+    months_labels = []
+    attendance_trend_data = []
+    for i in range(5, -1, -1):
+        year_offset = (today.month - i - 1) // 12
+        m = (today.month - i - 1) % 12 + 1
+        y = today.year + year_offset
+
+        first_day = date(y, m, 1)
+        last_day = date(y, m, calendar.monthrange(y, m)[1])
+
+        # Total working days for this employee in this month (not week off)
+        total_work_days = 0
+        curr_d = first_day
+        while curr_d <= last_day:
+            if not employee.is_week_off(curr_d):
+                total_work_days += 1
+            curr_d += timedelta(days=1)
+
+        recs_count = Attendance.objects.filter(
+            employee=employee, date__range=[first_day, last_day], status__in=["PRESENT", "WFH", "ON_DUTY", "HALF_DAY"]
+        ).count()
+
+        rate = round((recs_count / total_work_days * 100), 1) if total_work_days > 0 else 0
+        months_labels.append(calendar.month_abbr[m])
+        attendance_trend_data.append(rate)
+
+    # 2. Selected Month Summary
+    first_of_month = date(selected_year, selected_month, 1)
+    last_of_month = date(selected_year, selected_month, calendar.monthrange(selected_year, selected_month)[1])
+
+    month_recs = Attendance.objects.filter(employee=employee, date__range=[first_of_month, last_of_month])
+    present_this_month = month_recs.filter(status__in=["PRESENT", "WFH", "ON_DUTY", "HALF_DAY"]).count()
+    late_this_month = month_recs.filter(is_late=True).count()
+    on_time_this_month = max(0, present_this_month - late_this_month)
+
+    # Calculate approved leave days this month
+    leaves_this_month = LeaveRequest.objects.filter(
+        employee=employee, status="APPROVED", start_date__lte=last_of_month, end_date__gte=first_of_month
+    )
+    leave_days_this_month = 0
+    approved_leave_dates = set()
+    for leave in leaves_this_month:
+        curr = max(leave.start_date, first_of_month)
+        while curr <= min(leave.end_date, last_of_month):
+            approved_leave_dates.add(curr)
+            if not employee.is_week_off(curr):
+                leave_days_this_month += 1
+            curr += timedelta(days=1)
+
+    this_month_summary = {
+        "present_days": present_this_month,
+        "on_time_arrivals": on_time_this_month,
+        "late_arrivals": late_this_month,
+        "leaves_taken": leave_days_this_month,
+    }
+
+    # 3. Attendance Heatmap
+    first_weekday_idx = (first_of_month.weekday() + 1) % 7  # Sunday = 0
+    grid_days = []
+
+    # Pad prefix days
+    for _ in range(first_weekday_idx):
+        grid_days.append({"day": "", "status": "empty", "tooltip": ""})
+
+    # Get holidays for location/company
+    holiday_q = Q(location__isnull=True)
+    if employee.location:
+        holiday_q |= Q(location=employee.location)
+    holidays_this_month = Holiday.objects.filter(
+        company=employee.company, date__range=[first_of_month, last_of_month], is_active=True
+    ).filter(holiday_q)
+    holiday_dates = {h.date: h.name for h in holidays_this_month}
+
+    attendance_by_date = {att.date: att for att in month_recs}
+    curr_d = first_of_month
+    while curr_d <= last_of_month:
+        day_status = "ABSENT"
+        tooltip = "Absent"
+
+        if curr_d in attendance_by_date:
+            att = attendance_by_date[curr_d]
+            if att.status in ["PRESENT", "HALF_DAY", "WFH", "ON_DUTY"]:
+                in_time = att.clock_in.strftime("%I:%M %p") if att.clock_in else "N/A"
+                out_time = att.clock_out.strftime("%I:%M %p") if att.clock_out else "N/A"
+                hours = f"{att.effective_hours} hrs" if att.effective_hours else "N/A"
+                if att.is_late:
+                    day_status = "LATE"
+                    tooltip = f"Late Clock-In: {in_time} | Out: {out_time} ({hours})"
+                else:
+                    day_status = "PRESENT"
+                    tooltip = f"Present | In: {in_time} | Out: {out_time} ({hours})"
+            elif att.status == "ABSENT":
+                day_status = "ABSENT"
+                tooltip = "Absent"
+            elif att.status == "LEAVE":
+                day_status = "LEAVE"
+                tooltip = "Approved Leave"
+        else:
+            if curr_d in approved_leave_dates:
+                day_status = "LEAVE"
+                tooltip = "Approved Leave"
+            elif employee.is_week_off(curr_d):
+                day_status = "WEEK_OFF"
+                tooltip = "Week Off"
+            elif curr_d in holiday_dates:
+                day_status = "HOLIDAY"
+                tooltip = f"Holiday: {holiday_dates[curr_d]}"
+            elif curr_d > today:
+                day_status = "FUTURE"
+                tooltip = "Future Date"
+            else:
+                day_status = "ABSENT"
+                tooltip = "Absent"
+
+        grid_days.append({"day": curr_d.day, "status": day_status, "tooltip": tooltip})
+        curr_d += timedelta(days=1)
+
+    heatmap_month_name = calendar.month_name[selected_month]
+    heatmap_month_year = f"{heatmap_month_name} {selected_year}"
+
+    month_list = [(i, calendar.month_name[i]) for i in range(1, 13)]
+    year_list = range(2024, today.year + 2)
+
     context = {
         "employee": employee,
         "personal_info": analytics["personal_info"],
@@ -524,6 +702,16 @@ def employee_detail_view(request, employee_id):
         "recent_activity": analytics["recent_activity"],
         "quick_stats": quick_stats,
         "roles": User.Role.choices,
+        # Real customized properties
+        "attendance_trend_labels": json.dumps(months_labels),
+        "attendance_trend_data": json.dumps(attendance_trend_data),
+        "this_month_summary": this_month_summary,
+        "heatmap_grid_days": grid_days,
+        "heatmap_month_year": heatmap_month_year,
+        "months": month_list,
+        "years": year_list,
+        "selected_month": selected_month,
+        "selected_year": selected_year,
     }
 
     return render(request, "superadmin/employee_detail.html", context)

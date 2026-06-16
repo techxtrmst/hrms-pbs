@@ -1,12 +1,14 @@
 import calendar
 import json
 from datetime import date
+from decimal import Decimal
 
 from django.contrib import messages
 from django.db.models import Q
 from django.db.models.functions import Lower
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
 from companies.models import Company
@@ -16,7 +18,16 @@ from employees.models import Employee, Payslip
 from employees.payroll_utils import calculate_payslip_breakdown, num2words_flexible
 
 from .decorators import finance_manager_required
-from .models import FinanceAuditLog, PayrollBatch
+from .models import (
+    BankAccount,
+    BankStatement,
+    FinanceAuditLog,
+    PayrollBatch,
+    PurchaseRequest,
+    ReconciliationResult,
+    Transaction,
+)
+from .reconciliation import ReconciliationService
 
 
 def get_client_ip(request):
@@ -28,6 +39,125 @@ def get_client_ip(request):
 @finance_manager_required
 def dashboard(request):
     """Centralized Finance Portal Dashboard for cross-company payroll"""
+    if request.GET.get("view") != "payroll":
+        companies = Company.objects.filter(is_active=True).order_by("name")
+
+        # Accounts & Cash
+        accounts = BankAccount.objects.all().order_by("-balance")
+        total_balance = sum(acc.balance for acc in accounts)
+        active_accounts_count = accounts.filter(status="active").count()
+
+        # Purchases
+        pending_purchases = PurchaseRequest.objects.filter(status="pending")
+        pending_purchases_count = pending_purchases.count()
+        pending_purchases_amount = sum(req.estimated_amount for req in pending_purchases)
+
+        approved_purchases = PurchaseRequest.objects.filter(status="approved")
+        approved_purchases_count = approved_purchases.count()
+        rejected_purchases_count = PurchaseRequest.objects.filter(status="rejected").count()
+
+        total_purchases = pending_purchases_count + approved_purchases_count + rejected_purchases_count
+        if total_purchases > 0:
+            pending_purchases_pct = round((pending_purchases_count / total_purchases) * 100)
+            approved_purchases_pct = round((approved_purchases_count / total_purchases) * 100)
+            rejected_purchases_pct = 100 - pending_purchases_pct - approved_purchases_pct
+        else:
+            pending_purchases_pct = 0
+            approved_purchases_pct = 0
+            rejected_purchases_pct = 0
+
+        # Transactions
+        transactions = Transaction.objects.all().order_by("-created_at")
+        total_transactions_count = transactions.count()
+        total_transactions_amount = sum(tx.amount for tx in transactions)
+        flagged_transactions_count = transactions.filter(status="flagged").count()
+        pending_review_transactions_count = transactions.filter(status="pending_review").count()
+        completed_transactions_count = transactions.filter(status="completed").count()
+
+        # Historical Transactions (last 6 months)
+        import datetime
+
+        today_date = datetime.date.today()
+        month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        last_6_months_labels = []
+        last_6_months_data = []
+        for i in range(5, -1, -1):
+            m = today_date.month - i
+            y = today_date.year
+            if m <= 0:
+                m += 12
+                y -= 1
+            month_label = month_names[m - 1]
+            last_6_months_labels.append(month_label)
+            month_txs = Transaction.objects.filter(created_at__year=y, created_at__month=m)
+            tx_sum = sum(tx.amount for tx in month_txs)
+            last_6_months_data.append(float(tx_sum))
+
+        # Statements & Reconciliations
+        BankStatement.objects.all().order_by("-uploaded_at")
+        mismatched_reconciliations_count = ReconciliationResult.objects.filter(match_status="mismatch").count()
+        matched_reconciliations_count = ReconciliationResult.objects.filter(match_status="matched").count()
+
+        # Recent Security Alert logs
+        security_audit_logs = FinanceAuditLog.objects.filter(action="SECURITY_FLAG").order_by("-timestamp")[:5]
+        general_audit_logs = FinanceAuditLog.objects.all().select_related("user", "company").order_by("-timestamp")[:10]
+
+        # Prepare Charts Data
+        bank_labels = [f"{acc.bank_name} ({acc.account_number[-4:]})" for acc in accounts]
+        bank_balances = [float(acc.balance) for acc in accounts]
+
+        purchase_labels = ["Pending", "Approved", "Rejected"]
+        purchase_counts = [pending_purchases_count, approved_purchases_count, rejected_purchases_count]
+
+        transaction_labels = ["Completed", "Pending Review", "Flagged"]
+        transaction_counts = [
+            completed_transactions_count,
+            pending_review_transactions_count,
+            flagged_transactions_count,
+        ]
+
+        reconciliation_labels = ["Matched", "Mismatched"]
+        reconciliation_counts = [matched_reconciliations_count, mismatched_reconciliations_count]
+
+        charts_data = {
+            "bank_labels": bank_labels,
+            "bank_balances": bank_balances,
+            "purchase_labels": purchase_labels,
+            "purchase_counts": purchase_counts,
+            "transaction_labels": transaction_labels,
+            "transaction_counts": transaction_counts,
+            "reconciliation_labels": reconciliation_labels,
+            "reconciliation_counts": reconciliation_counts,
+            "transaction_breakdown_labels": last_6_months_labels,
+            "transaction_breakdown_data": last_6_months_data,
+        }
+
+        context = {
+            "title": "Finance Executive Overview Dashboard",
+            "companies": companies,
+            "accounts": accounts,
+            "total_balance": total_balance,
+            "active_accounts_count": active_accounts_count,
+            "pending_purchases_count": pending_purchases_count,
+            "pending_purchases_amount": pending_purchases_amount,
+            "approved_purchases_count": approved_purchases_count,
+            "rejected_purchases_count": rejected_purchases_count,
+            "pending_purchases_pct": pending_purchases_pct,
+            "approved_purchases_pct": approved_purchases_pct,
+            "rejected_purchases_pct": rejected_purchases_pct,
+            "total_transactions_count": total_transactions_count,
+            "total_transactions_amount": total_transactions_amount,
+            "flagged_transactions_count": flagged_transactions_count,
+            "mismatched_reconciliations_count": mismatched_reconciliations_count,
+            "matched_reconciliations_count": matched_reconciliations_count,
+            "security_audit_logs": security_audit_logs,
+            "general_audit_logs": general_audit_logs,
+            "recent_transactions": transactions[:5],
+            "recent_pending_purchases": pending_purchases[:5],
+            "charts_data_json": json.dumps(charts_data),
+        }
+        return render(request, "finance_portal/superadmin_dashboard.html", context)
+
     companies = Company.objects.filter(is_active=True).order_by("name")
 
     today = date.today()
@@ -1422,3 +1552,266 @@ def process_single_payroll(request):
 
     selected_company_id = request.GET.get("company", "all")
     return redirect(f"/finance/?company={selected_company_id}&month={month}&year={year}")
+
+
+@finance_manager_required
+def bank_accounts_list(request):
+    accounts = BankAccount.objects.all().order_by("-created_at")
+    total_balance = sum(acc.balance for acc in accounts)
+    active_count = accounts.filter(status="active").count()
+    inactive_count = accounts.filter(status="inactive").count()
+    return render(
+        request,
+        "finance_portal/bank_accounts.html",
+        {
+            "accounts": accounts,
+            "total_balance": total_balance,
+            "active_count": active_count,
+            "inactive_count": inactive_count,
+        },
+    )
+
+
+@finance_manager_required
+def bank_account_create(request):
+    if request.method == "POST":
+        bank_name = request.POST.get("bank_name")
+        account_number = request.POST.get("account_number")
+        branch_name = request.POST.get("branch_name")
+        ifsc_code = request.POST.get("ifsc_code")
+        currency = request.POST.get("currency", "USD")
+        balance = request.POST.get("balance", "0.0")
+
+        BankAccount.objects.create(
+            bank_name=bank_name,
+            account_number=account_number,
+            branch_name=branch_name,
+            ifsc_code=ifsc_code,
+            currency=currency,
+            balance=Decimal(str(balance or "0.0")),
+        )
+        messages.success(request, "Bank account added successfully!")
+        return redirect("finance_portal:bank_accounts")
+    return render(request, "finance_portal/bank_account_form.html")
+
+
+@finance_manager_required
+def purchases_list(request):
+    purchases = PurchaseRequest.objects.all().order_by("-created_at")
+    pending_amount = sum(p.estimated_amount for p in purchases.filter(status="pending"))
+    pending_count = purchases.filter(status="pending").count()
+    approved_amount = sum(p.estimated_amount for p in purchases.filter(status="approved"))
+    approved_count = purchases.filter(status="approved").count()
+    return render(
+        request,
+        "finance_portal/purchases.html",
+        {
+            "purchases": purchases,
+            "pending_amount": pending_amount,
+            "pending_count": pending_count,
+            "approved_amount": approved_amount,
+            "approved_count": approved_count,
+        },
+    )
+
+
+@finance_manager_required
+def purchase_create(request):
+    if request.method == "POST":
+        item_name = request.POST.get("item_name")
+        description = request.POST.get("description")
+        estimated_amount = request.POST.get("estimated_amount")
+        reason = request.POST.get("reason")
+
+        PurchaseRequest.objects.create(
+            raised_by=request.user,
+            item_name=item_name,
+            description=description,
+            estimated_amount=Decimal(str(estimated_amount or "0.0")),
+            reason=reason,
+        )
+        messages.success(request, "Purchase request raised successfully!")
+        return redirect("finance_portal:purchases")
+    return render(request, "finance_portal/purchase_form.html")
+
+
+@finance_manager_required
+def purchase_approve(request):
+    if not (request.user.role == "SUPERADMIN" or request.user.is_superuser):
+        messages.error(
+            request, "Access Denied: Only platform superadmins are permitted to approve or reject purchase requests."
+        )
+        return redirect("finance_portal:purchases")
+
+    if request.method == "POST":
+        pk = request.POST.get("purchase_id")
+        action = request.POST.get("action")  # 'approve' or 'reject'
+        comment = request.POST.get("admin_comment")
+
+        purchase = get_object_or_404(PurchaseRequest, pk=pk)
+        if action == "approve":
+            purchase.status = "approved"
+        else:
+            purchase.status = "rejected"
+        purchase.admin_comment = comment
+        purchase.approved_by = request.user
+        purchase.approved_at = timezone.now()
+        purchase.save()
+
+        FinanceAuditLog.objects.create(
+            user=request.user,
+            action=f"PURCHASE_{action.upper()}",
+            details=f"Purchase Request ID {purchase.id} ({purchase.item_name}) has been {action}d.",
+        )
+        messages.success(request, f"Purchase request {action}d successfully!")
+    return redirect("finance_portal:purchases")
+
+
+@finance_manager_required
+def transaction_submit(request):
+    exclude_ids = Transaction.objects.filter(purchase_request__isnull=False).values_list(
+        "purchase_request_id", flat=True
+    )
+    purchases = PurchaseRequest.objects.filter(status="approved").exclude(id__in=exclude_ids).order_by("-created_at")
+    accounts = BankAccount.objects.filter(status="active").order_by("bank_name")
+
+    if request.method == "POST":
+        purchase_id = request.POST.get("purchase_request_id")
+        bank_account_id = request.POST.get("bank_account_id")
+        transaction_id = request.POST.get("transaction_id")
+        amount_str = request.POST.get("amount")
+        screenshot = request.FILES.get("screenshot")
+
+        purchase = get_object_or_404(PurchaseRequest, pk=purchase_id) if purchase_id else None
+        bank_acc = get_object_or_404(BankAccount, pk=bank_account_id) if bank_account_id else None
+        amount = Decimal(str(amount_str or "0.0"))
+
+        status = "completed" if bank_acc else "pending_review"
+        mismatch_reason = "" if bank_acc else "Unregistered bank account details provided"
+
+        tx = Transaction.objects.create(
+            purchase_request=purchase,
+            bank_account=bank_acc,
+            bank_name=bank_acc.bank_name if bank_acc else request.POST.get("bank_name", "Unknown"),
+            account_number=bank_acc.account_number if bank_acc else request.POST.get("account_number", "Unknown"),
+            transaction_id=transaction_id,
+            amount=amount,
+            screenshot=screenshot,
+            status=status,
+            mismatch_reason=mismatch_reason,
+            submitted_by=request.user,
+        )
+
+        if bank_acc:
+            bank_acc.balance -= amount
+            bank_acc.save()
+            FinanceAuditLog.objects.create(
+                user=request.user,
+                action="BALANCE_DEDUCTION",
+                details=f"Deducted {amount} from account {bank_acc} for transaction {tx.id}.",
+            )
+            messages.success(request, "Transaction recorded and balance auto-deducted successfully!")
+        else:
+            messages.warning(
+                request, "Transaction recorded. Marked for Admin review due to unregistered bank account details."
+            )
+
+        return redirect("finance_portal:transaction_submit")
+
+    transactions = Transaction.objects.all().order_by("-created_at")
+    total_tx_amount = sum(t.amount for t in transactions)
+    completed_count = transactions.filter(status="completed").count()
+    flagged_count = transactions.filter(status="flagged").count()
+    return render(
+        request,
+        "finance_portal/transactions.html",
+        {
+            "transactions": transactions,
+            "purchases": purchases,
+            "accounts": accounts,
+            "total_tx_amount": total_tx_amount,
+            "completed_count": completed_count,
+            "flagged_count": flagged_count,
+        },
+    )
+
+
+@finance_manager_required
+def reconcile_statement(request):
+    accounts = BankAccount.objects.filter(status="active").order_by("bank_name")
+    if request.method == "POST":
+        bank_account_id = request.POST.get("bank_account_id")
+        statement_file = request.FILES.get("statement_file")
+
+        bank_acc = get_object_or_404(BankAccount, pk=bank_account_id)
+
+        statement = BankStatement.objects.create(bank_account=bank_acc, statement_file=statement_file, status="pending")
+
+        try:
+            results = ReconciliationService.reconcile(
+                statement_id=statement.id,
+                file_path=statement.statement_file.path,
+                bank_account_id=bank_acc.id,
+                user=request.user,
+            )
+            messages.success(
+                request,
+                f"Reconciliation completed! Total: {results['total']}, Flagged/Mismatches: {results['flagged']}.",
+            )
+        except Exception as e:
+            messages.error(request, f"Error during reconciliation process: {str(e)}")
+
+        return redirect("finance_portal:reconcile_statement")
+
+    statements = BankStatement.objects.all().order_by("-uploaded_at")
+    total_statements = statements.count()
+    mismatches = ReconciliationResult.objects.filter(match_status="mismatch").count()
+    matches = ReconciliationResult.objects.filter(match_status="match").count()
+    return render(
+        request,
+        "finance_portal/reconciliation.html",
+        {
+            "statements": statements,
+            "accounts": accounts,
+            "total_statements": total_statements,
+            "mismatches": mismatches,
+            "matches": matches,
+        },
+    )
+
+
+@finance_manager_required
+def reconciliation_details(request, pk):
+    statement = get_object_or_404(BankStatement, pk=pk)
+
+    if request.method == "POST":
+        result_id = request.POST.get("result_id")
+        explanation_text = request.POST.get("explanation", "").strip()
+
+        result = get_object_or_404(ReconciliationResult, pk=result_id, bank_statement=statement)
+        result.explanation = explanation_text
+        result.save()
+
+        FinanceAuditLog.objects.create(
+            user=request.user,
+            action="RECONCILE_EXPLANATION",
+            details=f"Explanation provided for Reconciliation Result ID {result.id}: {explanation_text[:100]}...",
+        )
+
+        messages.success(request, "Explanation submitted successfully!")
+        return redirect("finance_portal:reconciliation_details", pk=pk)
+
+    results = statement.reconciliation_results.all().order_by("statement_entry_date")
+    return render(request, "finance_portal/reconciliation_detail.html", {"statement": statement, "results": results})
+
+
+@finance_manager_required
+def audit_logs_list(request):
+    logs = FinanceAuditLog.objects.all().select_related("user", "company").order_by("-timestamp")
+
+    # Simple search filter
+    query = request.GET.get("q", "").strip()
+    if query:
+        logs = logs.filter(Q(action__icontains=query) | Q(details__icontains=query) | Q(user__email__icontains=query))
+
+    return render(request, "finance_portal/audit_logs.html", {"logs": logs, "query": query})

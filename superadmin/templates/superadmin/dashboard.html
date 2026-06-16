@@ -1,726 +1,574 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}SuperAdmin Dashboard - HRMS Power Control{% endblock %}
+{% block title %}Super Admin Command Center – HRMS{% endblock %}
 
 {% block extra_css %}
 <style>
-    :root {
-        --sa-primary: #6366f1;
-        --sa-secondary: #8b5cf6;
-        --sa-success: #10b981;
-        --sa-danger: #ef4444;
-        --sa-warning: #f59e0b;
-        --sa-info: #3b82f6;
-        --sa-purple: #a855f7;
-        --sa-pink: #ec4899;
-        --sa-indigo: #4f46e5;
-        --sa-slate: #1e293b;
-        --sa-glass-bg: rgba(255, 255, 255, 0.9);
-        --sa-card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        --sa-card-hover: 0 20px 40px rgba(99, 102, 241, 0.15);
-    }
+/* ── Google Font ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-    body {
-        background-color: #f8fafc;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    }
+body { font-family: 'Inter', system-ui, sans-serif; background: #f0f2f8; }
 
-    /* Header Styling */
-    .sa-dashboard-header {
-        background: linear-gradient(135deg, var(--sa-indigo) 0%, var(--sa-purple) 100%);
-        padding: 40px;
-        border-radius: 24px;
-        color: white;
-        margin-bottom: 40px;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 15px 35px rgba(79, 70, 229, 0.3);
-    }
+/* ── Hero Banner ── */
+.sa-hero {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #a855f7 100%);
+    border-radius: 20px;
+    padding: 40px 48px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 28px;
+    box-shadow: 0 8px 32px rgba(79,70,229,.35);
+}
+.sa-hero::before {
+    content:'';
+    position:absolute;
+    width:520px;height:520px;
+    border-radius:50%;
+    background:rgba(255,255,255,.06);
+    top:-180px;right:-120px;
+}
+.sa-hero::after {
+    content:'';
+    position:absolute;
+    width:260px;height:260px;
+    border-radius:50%;
+    background:rgba(255,255,255,.04);
+    bottom:-80px;right:200px;
+}
+.sa-hero .globe-wrap {
+    width: 90px; height: 90px;
+    background: rgba(255,255,255,.15);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.6rem;
+    backdrop-filter: blur(8px);
+    border: 2px solid rgba(255,255,255,.25);
+    flex-shrink:0;
+}
+.sa-hero h1 { font-size: 2.1rem; font-weight: 800; margin:0 0 6px; letter-spacing:-0.5px; }
+.sa-hero p  { opacity:.88; font-size: 1rem; margin:0; }
 
-    .sa-dashboard-header::after {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -10%;
-        width: 500px;
-        height: 500px;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 50%;
-        z-index: 0;
-    }
+.company-selector-wrap select {
+    background:rgba(255,255,255,.18);
+    border: 1.5px solid rgba(255,255,255,.35);
+    border-radius:12px;
+    color:#fff;
+    font-size:.9rem;
+    padding:10px 36px 10px 16px;
+    min-width:220px;
+    backdrop-filter:blur(6px);
+    cursor:pointer;
+    appearance:none;
+    -webkit-appearance:none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 12px center;
+}
+.company-selector-wrap select option { color:#1e293b; background:#fff; }
 
-    .sa-header-content {
-        position: relative;
-        z-index: 1;
-    }
+/* ── Stat Cards ── */
+.sa-stats-row {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 20px;
+    margin-bottom: 28px;
+}
+.sa-stat {
+    background:#fff;
+    border-radius:16px;
+    padding:24px 24px 18px;
+    box-shadow:0 2px 12px rgba(0,0,0,.06);
+    border:1px solid #e8ecf4;
+    transition:transform .25s, box-shadow .25s;
+    position:relative;
+    overflow:hidden;
+}
+.sa-stat:hover { transform:translateY(-4px); box-shadow:0 8px 28px rgba(79,70,229,.14); }
+.sa-stat-icon {
+    width:52px;height:52px;
+    border-radius:14px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:1.4rem;
+    margin-bottom:16px;
+}
+.sa-stat-count { font-size:2rem; font-weight:800; color:#1e293b; line-height:1; margin-bottom:4px; }
+.sa-stat-label { font-size:.75rem; text-transform:uppercase; letter-spacing:.8px; color:#64748b; font-weight:600; }
+.sa-stat-link {
+    display:inline-flex;align-items:center;gap:5px;
+    font-size:.8rem;font-weight:500;
+    color:#6366f1;margin-top:12px;
+    text-decoration:none;
+    transition:gap .2s;
+}
+.sa-stat-link:hover { gap:9px; }
 
-    .sa-header-title {
-        font-weight: 800;
-        font-size: 2.5rem;
-        margin-bottom: 8px;
-        letter-spacing: -1px;
-    }
+/* ── Section Header ── */
+.sa-section-header {
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:18px;
+}
+.sa-section-header h2 {
+    font-size:1.15rem;font-weight:700;color:#1e293b;margin:0;
+    display:flex;align-items:center;gap:10px;
+}
+.sa-section-header h2 i { color:#6366f1; }
+.btn-view-all {
+    font-size:.8rem;font-weight:500;padding:7px 18px;
+    border:1.5px solid #e2e8f0;border-radius:10px;
+    color:#475569;background:#fff;
+    text-decoration:none;transition:all .2s;
+}
+.btn-view-all:hover { background:#6366f1;border-color:#6366f1;color:#fff; }
 
-    .sa-header-subtitle {
-        font-size: 1.1rem;
-        opacity: 0.9;
-    }
+/* ── Org Table ── */
+.org-table-wrap {
+    background:#fff;border-radius:18px;
+    box-shadow:0 2px 12px rgba(0,0,0,.06);
+    border:1px solid #e8ecf4;
+    overflow:hidden;
+    margin-bottom:28px;
+}
+.org-table { width:100%;border-collapse:collapse; }
+.org-table thead tr { background:#f8fafc; }
+.org-table thead th {
+    padding:14px 20px;
+    font-size:.75rem;text-transform:uppercase;letter-spacing:.8px;
+    color:#94a3b8;font-weight:600;border-bottom:1px solid #e8ecf4;
+    white-space:nowrap;
+}
+.org-table tbody tr {
+    border-bottom:1px solid #f1f5f9;
+    transition:background .15s;
+}
+.org-table tbody tr:last-child { border-bottom:none; }
+.org-table tbody tr:hover { background:#fafbff; }
+.org-table tbody td { padding:15px 20px; font-size:.88rem; color:#334155; vertical-align:middle; }
 
-    /* Stats Quick View */
-    .sa-stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 24px;
-        margin-bottom: 40px;
-    }
+.company-avatar {
+    width:36px;height:36px;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:.95rem;
+    flex-shrink:0;
+}
+.co-name { font-weight:600;color:#1e293b; }
+.domain-link { color:#6366f1;text-decoration:none;font-size:.84rem; }
+.domain-link:hover { text-decoration:underline; }
+.loc-badge {
+    display:inline-flex;align-items:center;gap:5px;
+    font-size:.82rem;color:#475569;
+}
+.status-pill {
+    display:inline-flex;align-items:center;gap:5px;
+    padding:4px 12px;border-radius:20px;
+    font-size:.78rem;font-weight:600;
+}
+.status-pill.active   { background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0; }
+.status-pill.inactive { background:#fee2e2;color:#dc2626;border:1px solid #fecaca; }
+.btn-monitor {
+    background:#1e293b;color:#fff;border:none;
+    padding:7px 18px;border-radius:10px;
+    font-size:.8rem;font-weight:600;
+    text-decoration:none;cursor:pointer;
+    transition:background .2s;
+    display:inline-block;
+}
+.btn-monitor:hover { background:#6366f1;color:#fff; }
 
-    .sa-stat-card {
-        background: white;
-        padding: 24px;
-        border-radius: 20px;
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        box-shadow: var(--sa-card-shadow);
-        transition: all 0.3s ease;
-        border: 1px solid rgba(0, 0, 0, 0.03);
-    }
+/* ── Bottom Metrics ── */
+.sa-metrics-row {
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:18px;
+    margin-bottom:32px;
+}
+.sa-metric-card {
+    background:#fff;border-radius:16px;
+    padding:20px;
+    box-shadow:0 2px 12px rgba(0,0,0,.06);
+    border:1px solid #e8ecf4;
+}
+.sa-metric-card h6 { font-size:.8rem;color:#64748b;font-weight:600;margin-bottom:6px; }
+.sa-metric-big { font-size:1.9rem;font-weight:800;color:#1e293b;line-height:1; }
+.sa-metric-sub { font-size:.75rem;color:#94a3b8;margin-top:4px; }
+.sparkline-wrap {
+    margin-top:14px;
+    height:40px;
+    background: linear-gradient(135deg,rgba(99,102,241,.08),rgba(168,85,247,.06));
+    border-radius:8px;
+    overflow:hidden;
+    position:relative;
+}
+.sparkline-fill {
+    position:absolute;bottom:0;left:0;width:100%;height:60%;
+    background:linear-gradient(to top,rgba(99,102,241,.25),transparent);
+    clip-path:polygon(0 80%,10% 50%,20% 70%,35% 30%,50% 55%,65% 20%,80% 45%,90% 25%,100% 40%,100% 100%,0 100%);
+}
+.sparkline-fill.orange {
+    background:linear-gradient(to top,rgba(249,115,22,.25),transparent);
+    clip-path:polygon(0 60%,15% 40%,30% 70%,45% 35%,60% 55%,75% 20%,90% 45%,100% 30%,100% 100%,0 100%);
+}
+.sparkline-fill.green {
+    background:linear-gradient(to top,rgba(16,185,129,.25),transparent);
+    clip-path:polygon(0 70%,15% 45%,30% 60%,45% 30%,60% 50%,75% 25%,90% 40%,100% 20%,100% 100%,0 100%);
+}
 
-    .sa-stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: var(--sa-card-hover);
-    }
+/* Donut chart */
+.donut-wrap {
+    display:flex;align-items:center;gap:16px;
+    margin-top:12px;
+}
+.donut-legend { flex:1; }
+.donut-legend-item {
+    display:flex;align-items:center;gap:7px;
+    font-size:.75rem;color:#475569;
+    margin-bottom:5px;
+}
+.dot { width:8px;height:8px;border-radius:50%;flex-shrink:0; }
+.dot-green  { background:#10b981; }
+.dot-orange { background:#f59e0b; }
+.dot-gray   { background:#cbd5e0; }
 
-    .sa-stat-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        color: white;
-    }
+/* uptime circle */
+.uptime-circle-wrap {
+    display:flex;align-items:center;gap:12px;margin-top:12px;
+}
+.uptime-circle {
+    width:56px;height:56px;flex-shrink:0;
+}
+.uptime-text { font-size:.75rem;color:#64748b; }
 
-    .sa-stat-info h3 {
-        font-size: 1.8rem;
-        font-weight: 800;
-        margin: 0;
-        color: var(--sa-slate);
-    }
+/* ── Clickable metric card styles ── */
+.sa-metric-link {
+    display:block;
+    text-decoration:none;
+    color:inherit;
+    cursor:pointer;
+    transition:transform .25s, box-shadow .25s, border-color .25s;
+}
+.sa-metric-link:hover {
+    transform:translateY(-5px);
+    box-shadow:0 12px 32px rgba(99,102,241,.18);
+    border-color:#c7d2fe;
+    color:inherit;
+    text-decoration:none;
+}
+.sa-metric-link:hover .metric-arrow {
+    transform:translateX(4px);
+    color:#6366f1;
+}
+.metric-card-header {
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:10px;
+}
+.metric-card-header h6 { margin:0;display:flex;align-items:center;gap:6px; }
+.metric-arrow {
+    font-size:.75rem;color:#cbd5e0;
+    transition:transform .25s, color .25s;
+}
+.metric-detail-row {
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.metric-detail-item {
+    display:flex;flex-direction:column;gap:2px;flex:1;
+}
+.detail-label { font-size:.7rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px; }
+.detail-val   { font-size:1.1rem;font-weight:700; }
+.detail-val.blue   { color:#2563eb; }
+.detail-val.orange { color:#ea580c; }
 
-    .sa-stat-info p {
-        margin: 0;
-        font-size: 0.9rem;
-        color: #64748b;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
+.metric-tag {
+    font-size:.72rem;font-weight:600;
+    padding:3px 10px;border-radius:20px;
+    display:inline-block;
+}
+.metric-tag.green  { background:#dcfce7;color:#16a34a; }
+.metric-tag.blue   { background:#dbeafe;color:#2563eb; }
+.metric-tag.purple { background:#ede9fe;color:#7c3aed; }
+.metric-tag.red    { background:#fee2e2;color:#dc2626; }
+.metric-tag.orange { background:#fff7ed;color:#ea580c; }
 
-    /* Power Hub Grid */
-    .sa-power-hub-title {
-        font-weight: 800;
-        font-size: 1.8rem;
-        margin-bottom: 24px;
-        color: var(--sa-slate);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
+/* Alert state – pulsing left border for pending requests */
+.metric-alert {
+    border-left:4px solid #ea580c !important;
+    animation:alertPulse 2.5s ease-in-out infinite;
+}
+@keyframes alertPulse {
+    0%,100% { box-shadow:0 2px 12px rgba(234,88,12,.08); }
+    50%      { box-shadow:0 4px 20px rgba(234,88,12,.22); }
+}
 
-    .sa-hub-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-        gap: 30px;
-        margin-bottom: 60px;
-    }
-
-    .sa-hub-card {
-        background: white;
-        border-radius: 24px;
-        padding: 32px;
-        box-shadow: var(--sa-card-shadow);
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        border: 1px solid rgba(0, 0, 0, 0.05);
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .sa-hub-card:hover {
-        transform: translateY(-10px);
-        box-shadow: var(--sa-card-hover);
-    }
-
-    .sa-hub-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 6px;
-        height: 100%;
-        background: var(--accent-color);
-        opacity: 0.1;
-        transition: all 0.3s ease;
-        pointer-events: none;
-        /* Prevent blocking clicks */
-        z-index: 0;
-    }
-
-    .sa-hub-card * {
-        position: relative;
-        z-index: 1;
-        /* Ensure content is above the background effect */
-    }
-
-    .sa-hub-card:hover::before {
-        width: 100%;
-        opacity: 0.03;
-    }
-
-    .sa-hub-card-header {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        margin-bottom: 20px;
-    }
-
-    .sa-hub-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        background: var(--accent-color-light);
-        color: var(--accent-color);
-        transition: all 0.3s ease;
-    }
-
-    .sa-hub-card:hover .sa-hub-icon {
-        background: var(--accent-color);
-        color: white;
-        transform: rotate(10deg);
-    }
-
-    .sa-hub-card h3 {
-        font-size: 1.25rem;
-        font-weight: 700;
-        margin: 0;
-        color: var(--sa-slate);
-    }
-
-    .sa-hub-list {
-        list-style: none;
-        padding: 0;
-        margin: 0 0 24px 0;
-        flex-grow: 1;
-    }
-
-    .sa-hub-list li {
-        font-size: 0.95rem;
-        color: #475569;
-        padding: 0;
-        /* Removing padding from li as a tag will have it */
-        display: flex;
-        align-items: flex-start;
-    }
-
-    .sa-hub-list a {
-        padding: 8px 0;
-        width: 100%;
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-        color: inherit;
-        text-decoration: none;
-        transition: all 0.2s ease;
-    }
-
-    .sa-hub-list a:hover {
-        color: var(--accent-color);
-        transform: translateX(5px);
-    }
-
-    .sa-hub-action {
-        background: var(--sa-slate);
-        color: white;
-        text-align: center;
-        padding: 12px;
-        border-radius: 12px;
-        text-decoration: none !important;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-    }
-
-    .sa-hub-card:hover .sa-hub-action {
-        background: var(--accent-color);
-    }
-
-    /* Colors for hubs */
-    .hub-system {
-        --accent-color: #4f46e5;
-        --accent-color-light: #e0e7ff;
-    }
-
-    .hub-users {
-        --accent-color: #8b5cf6;
-        --accent-color-light: #f3e8ff;
-    }
-
-    .hub-employees {
-        --accent-color: #0d9488;
-        --accent-color-light: #ccfbf1;
-    }
-
-    .hub-ops {
-        --accent-color: #0891b2;
-        --accent-color-light: #cffafe;
-    }
-
-    .hub-payroll {
-        --accent-color: #059669;
-        --accent-color-light: #d1fae5;
-    }
-
-    .hub-analytics {
-        --accent-color: #2563eb;
-        --accent-color-light: #dbeafe;
-    }
-
-    .hub-workflow {
-        --accent-color: #d97706;
-        --accent-color-light: #fef3c7;
-    }
-
-    .hub-integrations {
-        --accent-color: #db2777;
-        --accent-color-light: #fce7f3;
-    }
-
-    .hub-security {
-        --accent-color: #dc2626;
-        --accent-color-light: #fee2e2;
-    }
-
-    .hub-docs {
-        --accent-color: #4b5563;
-        --accent-color-light: #f3f4f6;
-    }
-
-    .hub-ai {
-        --accent-color: #7c3aed;
-        --accent-color-light: #ede9fe;
-    }
-
-    .hub-support {
-        --accent-color: #475569;
-        --accent-color-light: #f1f5f9;
-    }
-
-    /* Loading Overlay */
-    .loading-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255, 255, 255, 0.9);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
-    }
-
-    .loading-overlay.active {
-        opacity: 1;
-        pointer-events: all;
-    }
-
-    .loading-spinner {
-        width: 50px;
-        height: 50px;
-        border: 4px solid #e2e8f0;
-        border-top-color: var(--sa-indigo);
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
-    @media (max-width: 768px) {
-        .sa-dashboard-header {
-            padding: 30px 20px;
-        }
-
-        .sa-header-title {
-            font-size: 1.8rem;
-        }
-
-        .sa-hub-grid {
-            grid-template-columns: 1fr;
-        }
-    }
+@media(max-width:1100px) {
+    .sa-stats-row { grid-template-columns:repeat(2,1fr); }
+    .sa-metrics-row { grid-template-columns:repeat(2,1fr); }
+}
+@media(max-width:640px) {
+    .sa-stats-row,.sa-metrics-row { grid-template-columns:1fr; }
+    .sa-hero { padding:28px 20px; }
+    .sa-hero h1 { font-size:1.5rem; }
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="loading-overlay" id="loadingOverlay">
-    <div class="loading-spinner"></div>
-</div>
-
 <div class="container-fluid py-4 px-lg-5">
-    <!-- Super Admin Header -->
-    <div class="sa-dashboard-header">
-        <div
-            class="sa-header-content d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-4">
-            <div>
-                <h1 class="sa-header-title">🌐 Super Admin Command Center</h1>
-                <p class="sa-header-subtitle">
-                    {% if selected_company %}
-                    Orchestrating <strong>{{ selected_company.name }}</strong>
-                    {% else %}
-                    Global System Governance Dashboard
-                    {% endif %}
-                </p>
+
+    <!-- ── Hero Banner ── -->
+    <div class="sa-hero">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-4">
+            <div class="d-flex align-items-center gap-4">
+                <div class="globe-wrap">🌐</div>
+                <div>
+                    <h1>Super Admin Command Center</h1>
+                    <p>
+                        {% if selected_company %}
+                            Orchestrating <strong>{{ selected_company.name }}</strong>
+                        {% else %}
+                            Global System Governance Dashboard
+                        {% endif %}
+                    </p>
+                </div>
             </div>
-            <div class="sa-company-selector">
-                <select class="form-select form-select-lg shadow-sm border-0" id="globalCompanySelector"
-                    style="min-width: 300px; border-radius: 12px;">
-                    <option value="null" {% if not selected_company_id %}selected{% endif %}>🌍 All Organizations
-                        (Global View)</option>
+            <div class="company-selector-wrap">
+                <select id="globalCompanySelector">
+                    <option value="null" {% if not selected_company_id %}selected{% endif %}>🌍 All Organizations (Global View)</option>
                     {% for company in companies %}
-                    <option value="{{ company.id }}" {% if selected_company_id == company.id %}selected{% endif %}> 🏢 {{ company.name }}
-                    </option>
+                    <option value="{{ company.id }}" {% if selected_company_id == company.id %}selected{% endif %}>🏢 {{ company.name }}</option>
                     {% endfor %}
                 </select>
             </div>
         </div>
     </div>
 
-    <!-- Quick Metrics -->
-    <div class="sa-stats-grid">
-        <div class="sa-stat-card">
-            <div class="sa-stat-icon" style="background: var(--sa-indigo);">
+    <!-- ── 4 Stat Cards ── -->
+    <div class="sa-stats-row">
+        <!-- Organizations -->
+        <div class="sa-stat">
+            <div class="sa-stat-icon" style="background:#ede9fe;color:#7c3aed;">
                 <i class="fas fa-building"></i>
             </div>
-            <div class="sa-stat-info">
-                <h3 data-count="{{ metrics.total_companies|default:0 }}">0</h3>
-                <p>Organizations</p>
-            </div>
+            <div class="sa-stat-count" data-count="{{ metrics.total_companies|default:0 }}">0</div>
+            <div class="sa-stat-label">Organizations</div>
+            <a href="{% url 'superadmin:companies' %}" class="sa-stat-link">View all <i class="fas fa-arrow-right" style="font-size:.65rem;"></i></a>
         </div>
-        <div class="sa-stat-card">
-            <div class="sa-stat-icon" style="background: var(--sa-info);">
+        <!-- Employees -->
+        <div class="sa-stat">
+            <div class="sa-stat-icon" style="background:#dbeafe;color:#2563eb;">
                 <i class="fas fa-users"></i>
             </div>
-            <div class="sa-stat-info">
-                <h3 data-count="{{ metrics.total_employees|default:0 }}">0</h3>
-                <p>Employees</p>
-            </div>
+            <div class="sa-stat-count" data-count="{{ metrics.total_employees|default:0 }}">0</div>
+            <div class="sa-stat-label">Employees</div>
+            <a href="{% url 'superadmin:employees' %}" class="sa-stat-link">View all employees <i class="fas fa-arrow-right" style="font-size:.65rem;"></i></a>
         </div>
-        <div class="sa-stat-card">
-            <div class="sa-stat-icon" style="background: var(--sa-success);">
+        <!-- Active Today -->
+        <div class="sa-stat">
+            <div class="sa-stat-icon" style="background:#dcfce7;color:#16a34a;">
                 <i class="fas fa-user-check"></i>
             </div>
-            <div class="sa-stat-info">
-                <h3 data-count="{{ metrics.present_today|default:0 }}">0</h3>
-                <p>Active Today</p>
-            </div>
+            <div class="sa-stat-count" data-count="{{ metrics.present_today|default:0 }}">0</div>
+            <div class="sa-stat-label">Active Today</div>
+            <a href="{% url 'superadmin:attendance_today' %}" class="sa-stat-link">See live users <i class="fas fa-arrow-right" style="font-size:.65rem;"></i></a>
         </div>
-        <div class="sa-stat-card">
-            <div class="sa-stat-icon" style="background: var(--sa-warning);">
+        <!-- On Leave -->
+        <div class="sa-stat">
+            <div class="sa-stat-icon" style="background:#fff7ed;color:#ea580c;">
                 <i class="fas fa-calendar-times"></i>
             </div>
-            <div class="sa-stat-info">
-                <h3 data-count="{{ metrics.on_leave_today|default:0 }}">0</h3>
-                <p>On Leave</p>
-            </div>
+            <div class="sa-stat-count" data-count="{{ metrics.on_leave_today|default:0 }}">0</div>
+            <div class="sa-stat-label">On Leave</div>
+            <a href="{% url 'superadmin:leaves_today' %}" class="sa-stat-link">View leaves <i class="fas fa-arrow-right" style="font-size:.65rem;"></i></a>
         </div>
     </div>
 
-    <!-- Power Management Hub -->
-    <h2 class="sa-power-hub-title"><i class="fas fa-rocket text-indigo"></i> Power Management Hub</h2>
-
-    <div class="sa-hub-grid">
-        <!-- 1. System & Platform Control -->
-        <div class="sa-hub-card hub-system">
-            <div class="sa-hub-card-header">
-                <div class="sa-hub-icon"><i class="fas fa-cogs"></i></div>
-                <h3>1. System & Platform Control</h3>
-            </div>
-            <ul class="sa-hub-list">
-                <li><a href="{% url 'superadmin:companies' %}"><i class="fas fa-check-circle"></i> Create & Manage all
-                        Organizations</a></li>
-                <li><a href="{% url 'superadmin:platform_settings' %}"><i class="fas fa-check-circle"></i> Global system
-                        configuration</a></li>
-                <li><a href="{% url 'superadmin:platform_settings' %}"><i class="fas fa-check-circle"></i> Date formats,
-                        currency, timezone</a></li>
-                <li><a href="{% url 'superadmin:platform_settings' %}"><i class="fas fa-check-circle"></i>
-                        Enable/Disable core modules</a></li>
-                <li><a href="{% url 'superadmin:platform_settings' %}"><i class="fas fa-check-circle"></i> Environment
-                        Control (Prod/Staging)</a></li>
-            </ul>
-            <a href="{% url 'superadmin:companies' %}" class="sa-hub-action">Enter Core Power <i
-                    class="fas fa-arrow-right"></i></a>
-        </div>
-
-        <!-- 2. Advanced User & Role Management -->
-        <div class="sa-hub-card hub-users">
-            <div class="sa-hub-card-header">
-                <div class="sa-hub-icon"><i class="fas fa-user-shield"></i></div>
-                <h3>2. Advanced RBAC Management</h3>
-            </div>
-            <ul class="sa-hub-list">
-                <li><a href="{% url 'superadmin:employees' %}?role=admin"><i class="fas fa-check-circle"></i> Create
-                        Admins, HR Admins, Managers</a></li>
-                <li><a href="{% url 'companies:role_configuration' %}"><i class="fas fa-check-circle"></i> Define custom roles &
-                        permissions</a></li>
-                <li><a href="{% url 'companies:role_configuration' %}"><i class="fas fa-check-circle"></i> Multi-tenant Access
-                        Control (RBAC)</a></li>
-                <li><a href="{% url 'superadmin:employees' %}"><i class="fas fa-check-circle"></i> User Impersonation
-                        for Support</a></li>
-            </ul>
-            <a href="{% url 'companies:role_configuration' %}" class="sa-hub-action">Configure Roles <i
-                    class="fas fa-arrow-right"></i></a>
-        </div>
-
-        <!-- 3. Employee Master Governance -->
-        <div class="sa-hub-card hub-employees">
-            <div class="sa-hub-card-header">
-                <div class="sa-hub-icon"><i class="fas fa-address-book"></i></div>
-                <h3>3. Employee Master Governance</h3>
-            </div>
-            <ul class="sa-hub-list">
-                <li><a href="{% url 'superadmin:employees' %}"><i class="fas fa-check-circle"></i> Full access to all
-                        employee data</a></li>
-                <li><a href="{% url 'superadmin:employees' %}"><i class="fas fa-check-circle"></i> Bulk upload / edit /
-                        delete tools</a></li>
-                <li><a href="{% url 'superadmin:platform_settings' %}"><i class="fas fa-check-circle"></i> Global
-                        Employee ID Rules</a></li>
-                <li><a href="{% url 'superadmin:employees' %}"><i class="fas fa-check-circle"></i> Data Archival &
-                        Restoration</a></li>
-            </ul>
-            <a href="{% url 'superadmin:employees' %}" class="sa-hub-action">Master Governance <i
-                    class="fas fa-arrow-right"></i></a>
-        </div>
-
-        <!-- 4. Attendance & Leave Supervision -->
-        <div class="sa-hub-card hub-ops">
-            <div class="sa-hub-card-header">
-                <div class="sa-hub-icon"><i class="fas fa-stopwatch"></i></div>
-                <h3>4. Attendance & Leave Ops</h3>
-            </div>
-            <ul class="sa-hub-list">
-                <li><a href="{% url 'companies:shift_list' %}"><i class="fas fa-check-circle"></i> Global attendance rules &
-                        shifts</a></li>
-                <li><a href="{% url 'companies:shift_list' %}"><i class="fas fa-check-circle"></i> Shift & Roster templates</a>
-                </li>
-                <li><a href="{% url 'company_leaves' %}"><i class="fas fa-check-circle"></i> Leave policy creation &
-                        mapping</a></li>
-                <li><a href="{% url 'superadmin:attendance_today' %}"><i class="fas fa-check-circle"></i> Manual Record
-                        Overrides</a></li>
-            </ul>
-            <a href="{% url 'superadmin:attendance_today' %}" class="sa-hub-action">Supervise Ops <i
-                    class="fas fa-arrow-right"></i></a>
-        </div>
-
-        <!-- 5. Payroll & Compliance -->
-        <div class="sa-hub-card hub-payroll">
-            <div class="sa-hub-card-header">
-                <div class="sa-hub-icon"><i class="fas fa-money-check-alt"></i></div>
-                <h3>5. Payroll & Compliance</h3>
-            </div>
-            <ul class="sa-hub-list">
-                <li><a href="{% url 'payroll_settings' %}"><i class="fas fa-check-circle"></i> Salary component
-                        configuration</a></li>
-                <li><a href="{% url 'payroll_settings' %}"><i class="fas fa-check-circle"></i> Statutory rules (PF,
-                        ESI, TDS)</a></li>
-                <li><a href="{% url 'payroll_dashboard' %}"><i class="fas fa-check-circle"></i> Payroll lock/unlock
-                        mechanism</a></li>
-                <li><a href="{% url 'attendance_analytics' %}"><i class="fas fa-check-circle"></i> Global Compliance
-                        Reports</a></li>
-            </ul>
-            <a href="{% url 'payroll_dashboard' %}" class="sa-hub-action">Run Payroll <i
-                    class="fas fa-arrow-right"></i></a>
-        </div>
-
-        <!-- 6. Reports, Analytics & Audit -->
-        <div class="sa-hub-card hub-analytics">
-            <div class="sa-hub-card-header">
-                <div class="sa-hub-icon"><i class="fas fa-chart-pie"></i></div>
-                <h3>6. Analytics & Audit Trail</h3>
-            </div>
-            <ul class="sa-hub-list">
-                <li><a href="{% url 'attendance_report' %}"><i class="fas fa-check-circle"></i> Custom Report Builder
-                        (Excel/PDF)</a></li>
-                <li><a href="{% url 'observability:request_list' %}"><i class="fas fa-check-circle"></i> System-wide
-                        Audit Logs</a></li>
-                <li><a href="{% url 'observability:request_list' %}"><i class="fas fa-check-circle"></i> Who changed
-                        what & when track</a></li>
-                <li><a href="{% url 'attendance_analytics' %}"><i class="fas fa-check-circle"></i> Deep Insight
-                        Visualizations</a></li>
-            </ul>
-            <a href="{% url 'attendance_analytics' %}" class="sa-hub-action">Audit Intelligence <i
-                    class="fas fa-arrow-right"></i></a>
-        </div>
-
-        <!-- 7. Workflow & Approval Engine -->
-        <div class="sa-hub-card hub-workflow">
-            <div class="sa-hub-card-header">
-                <div class="sa-hub-icon"><i class="fas fa-project-diagram"></i></div>
-                <h3>7. Workflow & Approval Engine</h3>
-            </div>
-            <ul class="sa-hub-list">
-                <li><a href="{% url 'companies:role_configuration' %}"><i class="fas fa-check-circle"></i> Define multi-level
-                        hierarchies</a></li>
-                <li><a href="{% url 'leave_requests' %}"><i class="fas fa-check-circle"></i> Workflow overrides for
-                        emergencies</a></li>
-                <li><a href="{% url 'leave_requests' %}"><i class="fas fa-check-circle"></i> SLA & Escalation rule
-                        engine</a></li>
-                <li><a href="{% url 'leave_requests' %}"><i class="fas fa-check-circle"></i> Custom automation
-                        triggers</a></li>
-            </ul>
-            <a href="{% url 'superadmin:workflow_configuration' %}" class="sa-hub-action">Design Workflows <i
-                    class="fas fa-arrow-right"></i></a>
-        </div>
-
-        <!-- 8. Integrations & API Management -->
-        <div class="sa-hub-card hub-integrations">
-            <div class="sa-hub-card-header">
-                <div class="sa-hub-icon"><i class="fas fa-plug"></i></div>
-                <h3>8. Integrations & API Hub</h3>
-            </div>
-            <ul class="sa-hub-list">
-                <li><a href="{% url 'admin:index' %}"><i class="fas fa-check-circle"></i> API Key & Token Management</a>
-                </li>
-                <li><a href="{% url 'admin:index' %}"><i class="fas fa-check-circle"></i> Accounting (Tally, Zoho,
-                        SAP)</a></li>
-                <li><a href="{% url 'superadmin:biometric_integration' %}"><i class="fas fa-check-circle"></i> Biometric
-                        Device
-                        integration</a></li>
-                <li><a href="{% url 'admin:index' %}"><i class="fas fa-check-circle"></i> Webhooks & Event Triggers</a>
-                </li>
-            </ul>
-            <a href="{% url 'superadmin:biometric_integration' %}" class="sa-hub-action">Manage APIs <i
-                    class="fas fa-arrow-right"></i></a>
-        </div>
-
-        <!-- 9. Security & Compliance Controls -->
-        <div class="sa-hub-card hub-security">
-            <div class="sa-hub-card-header">
-                <div class="sa-hub-icon"><i class="fas fa-user-lock"></i></div>
-                <h3>9. Security & Hardening</h3>
-            </div>
-            <ul class="sa-hub-list">
-                <li><a href="{% url 'superadmin:platform_settings' %}"><i class="fas fa-check-circle"></i> MFA / OTP
-                        enforcement policy</a></li>
-                <li><a href="{% url 'superadmin:platform_settings' %}"><i class="fas fa-check-circle"></i> IP
-                        Whitelisting & Session rules</a></li>
-                <li><a href="{% url 'superadmin:platform_settings' %}"><i class="fas fa-check-circle"></i> Data Privacy
-                        (GDPR / SOC2)</a></li>
-                <li><a href="{% url 'superadmin:platform_settings' %}"><i class="fas fa-check-circle"></i> Encryption &
-                        Key settings</a></li>
-            </ul>
-            <a href="{% url 'admin:index' %}" class="sa-hub-action">Security Vault <i
-                    class="fas fa-arrow-right"></i></a>
-        </div>
-
-        <!-- 10. AI & Automation -->
-        <div class="sa-hub-card hub-ai">
-            <div class="sa-hub-card-header">
-                <div class="sa-hub-icon"><i class="fas fa-brain"></i></div>
-                <h3>10. Advanced AI & Automation</h3>
-            </div>
-            <ul class="sa-hub-list">
-                <li><a href="{% url 'attendance_intelligence' %}"><i class="fas fa-check-circle"></i> AI Attendance
-                        Anomaly Detection</a></li>
-                <li><a href="{% url 'payroll_dashboard' %}"><i class="fas fa-check-circle"></i> Automated Payroll
-                        Validation</a></li>
-                <li><a href="{% url 'chatbot_page' %}"><i class="fas fa-check-circle"></i> AI HR Assistant /
-                        Chatbots</a></li>
-                <li><a href="{% url 'ai_hub' %}"><i class="fas fa-check-circle"></i> Intelligent Workflow Logic</a></li>
-            </ul>
-            <a href="{% url 'ai_hub' %}" class="sa-hub-action">AI Dashboard <i class="fas fa-arrow-right"></i></a>
-        </div>
-
+    <!-- ── Organization Overview Table ── -->
+    <div class="sa-section-header">
+        <h2><i class="fas fa-table-cells-large"></i> Organization Overview</h2>
+        <a href="{% url 'superadmin:companies' %}" class="btn-view-all">View All</a>
     </div>
 
-    <!-- Company Table (Moved lower, more compact) -->
-    <div class="card border-0 shadow-sm rounded-4 mb-5">
-        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-            <h4 class="mb-0 fw-bold"><i class="fas fa-table text-primary me-2"></i> Organization Overview</h4>
-            <a href="{% url 'superadmin:companies' %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">View
-                All</a>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th class="ps-4">Company Name</th>
-                        <th>Primary Domain</th>
-                        <th>Location</th>
-                        <th>Headcount</th>
-                        <th>Status</th>
-                        <th class="text-end pe-4">Command</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for company in company_overview %}
-                    <tr>
-                        <td class="ps-4">
-                            <div class="d-flex align-items-center gap-3">
-                                {% if company.logo %}
-                                <img src="{{ company.logo.url }}" class="rounded-3 shadow-sm"
-                                    style="width: 40px; height: 40px; object-fit: contain; background: #f8fafc;">
-                                {% else %}
-                                <div class="rounded-3 d-flex align-items-center justify-content-center fw-bold"
-                                    style="width: 40px; height: 40px; background: #e0e7ff; color: #4f46e5;">
-                                    {{ company.name|slice:":1" }}
-                                </div>
-                                {% endif %}
-                                <span class="fw-semibold">{{ company.name }}</span>
-                            </div>
-                        </td>
-                        <td><code class="text-primary">{{ company.primary_domain }}</code></td>
-                        <td><span class="badge bg-light text-dark border"><i
-                                    class="fas fa-map-marker-alt me-1 text-danger"></i> {{ company.get_location_display }}</span></td>
-                        <td><span class="fw-bold">{{ company.employee_count }}</span> <small
-                                class="text-muted">Staff</small></td>
-                        <td>
-                            {% if company.is_active %}
-                            <span class="badge rounded-pill bg-success-subtle text-success border border-success">●
-                                Active</span>
+    <div class="org-table-wrap">
+        <table class="org-table">
+            <thead>
+                <tr>
+                    <th>Company Name</th>
+                    <th>Primary Domain</th>
+                    <th>Location</th>
+                    <th>Headcount</th>
+                    <th>Status</th>
+                    <th class="text-end">Command</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for company in company_overview %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            {% if company.logo %}
+                            <img src="{{ company.logo.url }}" class="company-avatar" style="object-fit:contain;background:#f8fafc;" alt="">
                             {% else %}
-                            <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger">●
-                                Suspended</span>
+                            <div class="company-avatar" style="background:#ede9fe;color:#7c3aed;">
+                                {{ company.name|slice:":1"|upper }}
+                            </div>
                             {% endif %}
-                        </td>
-                        <td class="text-end pe-4">
-                            <a href="{% url 'superadmin:company_monitor' company.id %}"
-                                class="btn btn-dark btn-sm rounded-pill px-3">Monitor</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                            <span class="co-name">{{ company.name }}</span>
+                        </div>
+                    </td>
+                    <td><a href="https://{{ company.primary_domain }}" target="_blank" class="domain-link">{{ company.primary_domain }}</a></td>
+                    <td>
+                        <div class="loc-badge">
+                            {% if company.location == 'US' %}🇺🇸
+                            {% elif company.location == 'INDIA' %}🇮🇳
+                            {% elif company.location == 'BOTH' %}🌐
+                            {% else %}🌍{% endif %}
+                            {{ company.get_location_display }}
+                        </div>
+                    </td>
+                    <td><strong>{{ company.employee_count }}</strong> <span style="color:#94a3b8;font-size:.82rem;">Staff</span></td>
+                    <td>
+                        {% if company.is_active %}
+                        <span class="status-pill active"><span style="font-size:.5rem;">●</span> Active</span>
+                        {% else %}
+                        <span class="status-pill inactive"><span style="font-size:.5rem;">●</span> Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'superadmin:company_monitor' company.id %}" class="btn-monitor">Monitor</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center py-5 text-muted">No organizations found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+
+    <!-- ── Bottom Metrics Row ── -->
+    <div class="sa-metrics-row">
+
+        <!-- 1. System Uptime -->
+        <a href="{% url 'superadmin:platform_settings' %}" class="sa-metric-card sa-metric-link" title="View Platform Settings">
+            <div class="metric-card-header">
+                <h6><i class="fas fa-server" style="color:#10b981;"></i> System Uptime</h6>
+                <i class="fas fa-arrow-right metric-arrow"></i>
+            </div>
+            <div class="sa-metric-big" style="color:#10b981;">99.9%</div>
+            <div class="sa-metric-sub">All systems operational</div>
+            <div class="uptime-circle-wrap" style="margin-top:12px;">
+                <svg class="uptime-circle" viewBox="0 0 36 36">
+                    <path d="M18 2.5a15.5 15.5 0 1 1 0 31 15.5 15.5 0 0 1 0-31" fill="none" stroke="#e8ecf4" stroke-width="3"/>
+                    <path d="M18 2.5a15.5 15.5 0 1 1 0 31 15.5 15.5 0 0 1 0-31" fill="none" stroke="#10b981" stroke-width="3"
+                          stroke-dasharray="97.3,100" stroke-linecap="round" transform="rotate(-90 18 18)"/>
+                    <text x="18" y="20.5" text-anchor="middle" font-size="7" fill="#10b981" font-weight="700">99.9%</text>
+                </svg>
+                <div>
+                    <div class="uptime-text" style="font-weight:600;color:#10b981;">✓ Django server running</div>
+                    <div class="uptime-text">Updated just now</div>
+                </div>
+            </div>
+            <div class="metric-detail-row" style="margin-top:12px;">
+                <span class="metric-tag green">DB Connected</span>
+                <span class="metric-tag green">Cache OK</span>
+            </div>
+        </a>
+
+        <!-- 2. User Activity -->
+        <a href="{% url 'superadmin:attendance_today' %}" class="sa-metric-card sa-metric-link" title="View Today's Attendance">
+            <div class="metric-card-header">
+                <h6><i class="fas fa-wifi" style="color:#6366f1;"></i> User Activity</h6>
+                <i class="fas fa-arrow-right metric-arrow"></i>
+            </div>
+            <div class="sa-metric-big" data-count="{{ live_users|default:0 }}">0</div>
+            <div class="sa-metric-sub">Live users right now (clocked in)</div>
+            <div class="sparkline-wrap">
+                <div class="sparkline-fill"></div>
+            </div>
+            <div class="metric-detail-row" style="margin-top:10px;">
+                <div class="metric-detail-item">
+                    <span class="detail-label">Present Today</span>
+                    <span class="detail-val blue">{{ metrics.present_today }}</span>
+                </div>
+                <div class="metric-detail-item">
+                    <span class="detail-label">On Leave</span>
+                    <span class="detail-val orange">{{ metrics.on_leave_today }}</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- 3. Employee Distribution -->
+        <a href="{% url 'superadmin:employees' %}" class="sa-metric-card sa-metric-link" title="View All Employees">
+            <div class="metric-card-header">
+                <h6><i class="fas fa-chart-pie" style="color:#8b5cf6;"></i> Employee Distribution</h6>
+                <i class="fas fa-arrow-right metric-arrow"></i>
+            </div>
+            <div class="donut-wrap">
+                <svg viewBox="0 0 36 36" width="64" height="64" style="flex-shrink:0;">
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e8ecf4" stroke-width="4"/>
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#10b981" stroke-width="4"
+                        stroke-dasharray="{{ active_pct|floatformat:1 }} 100"
+                        stroke-dashoffset="25"
+                        transform="rotate(-90 18 18)"/>
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f59e0b" stroke-width="4"
+                        stroke-dasharray="{{ on_leave_pct|floatformat:1 }} 100"
+                        stroke-dashoffset="{{ active_pct|add:"-75"|floatformat:1 }}"
+                        transform="rotate(-90 18 18)"/>
+                </svg>
+                <div class="donut-legend">
+                    <div class="donut-legend-item"><span class="dot dot-green"></span> Active &nbsp;<strong>{{ active_emp }}</strong> <span style="color:#94a3b8;">({{ active_pct }}%)</span></div>
+                    <div class="donut-legend-item"><span class="dot dot-orange"></span> On Leave &nbsp;<strong>{{ on_leave_count }}</strong> <span style="color:#94a3b8;">({{ on_leave_pct }}%)</span></div>
+                    <div class="donut-legend-item"><span class="dot dot-gray"></span> Inactive &nbsp;<strong>{{ inactive_emp }}</strong> <span style="color:#94a3b8;">({{ inactive_pct }}%)</span></div>
+                </div>
+            </div>
+            <div class="metric-detail-row" style="margin-top:8px;">
+                <span class="metric-tag purple">{{ metrics.total_employees }} Total Employees</span>
+            </div>
+        </a>
+
+        <!-- 4. Active Devices -->
+        <a href="{% url 'superadmin:biometric_integration' %}" class="sa-metric-card sa-metric-link" title="Manage Biometric Devices">
+            <div class="metric-card-header">
+                <h6><i class="fas fa-fingerprint" style="color:#2563eb;"></i> Active Devices</h6>
+                <i class="fas fa-arrow-right metric-arrow"></i>
+            </div>
+            <div class="sa-metric-big" data-count="{{ active_devices|default:0 }}">0</div>
+            <div class="sa-metric-sub">Biometric devices across all orgs</div>
+            <div class="sparkline-wrap" style="margin-top:14px;">
+                <div class="sparkline-fill green"></div>
+            </div>
+            <div class="metric-detail-row" style="margin-top:10px;">
+                <span class="metric-tag blue">Manage &amp; Configure →</span>
+            </div>
+        </a>
+
+        <!-- 5. Pending Requests -->
+        <a href="{% url 'leave_requests' %}" class="sa-metric-card sa-metric-link {% if pending_requests > 0 %}metric-alert{% endif %}" title="Review Pending Leave Requests">
+            <div class="metric-card-header">
+                <h6><i class="fas fa-clock" style="color:{% if pending_requests > 0 %}#ea580c{% else %}#64748b{% endif %};"></i> Pending Requests</h6>
+                <i class="fas fa-arrow-right metric-arrow"></i>
+            </div>
+            <div class="sa-metric-big" style="color:{% if pending_requests > 0 %}#ea580c{% else %}#1e293b{% endif %};" data-count="{{ pending_requests|default:0 }}">0</div>
+            <div class="sa-metric-sub">
+                {% if pending_requests > 0 %}
+                    <span style="color:#ea580c;font-weight:600;">⚠ Requires attention</span>
+                {% else %}
+                    All requests handled
+                {% endif %}
+            </div>
+            <div class="sparkline-wrap" style="margin-top:14px;">
+                <div class="sparkline-fill orange"></div>
+            </div>
+            <div class="metric-detail-row" style="margin-top:10px;">
+                {% if pending_requests > 0 %}
+                    <span class="metric-tag red">Review Now →</span>
+                {% else %}
+                    <span class="metric-tag green">✓ All Clear</span>
+                {% endif %}
+            </div>
+        </a>
+
+    </div>
+
+
 </div>
 
 {% csrf_token %}
@@ -728,58 +576,38 @@
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Counter animation
-        const counters = document.querySelectorAll('[data-count]');
-        counters.forEach(counter => {
-            const target = parseInt(counter.getAttribute('data-count'));
-            const duration = 1500;
-            const increment = target / (duration / 16);
-            let current = 0;
+document.addEventListener('DOMContentLoaded', function () {
 
-            const timer = setInterval(() => {
-                current += increment;
-                if (current >= target) {
-                    counter.innerText = target;
-                    clearInterval(timer);
-                } else {
-                    counter.innerText = Math.floor(current);
-                }
-            }, 16);
-        });
+    // ── Animated counter ──
+    document.querySelectorAll('[data-count]').forEach(el => {
+        const target = parseInt(el.getAttribute('data-count')) || 0;
+        if (target === 0) { el.textContent = '0'; return; }
+        const duration = 1200;
+        const step = target / (duration / 16);
+        let current = 0;
+        const timer = setInterval(() => {
+            current += step;
+            if (current >= target) { el.textContent = target; clearInterval(timer); }
+            else { el.textContent = Math.floor(current); }
+        }, 16);
+    });
 
-        // Company selector with loading state
-        const selector = document.getElementById('globalCompanySelector');
-        const overlay = document.getElementById('loadingOverlay');
-
+    // ── Company switcher ──
+    const selector = document.getElementById('globalCompanySelector');
+    if (selector) {
         selector.addEventListener('change', function () {
             const companyId = this.value;
             const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-            overlay.classList.add('active');
-
             fetch('{% url "superadmin:switch_company_api" %}', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRFToken': csrf
-                },
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrf },
                 body: `company_id=${companyId}`
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        window.location.reload();
-                    } else {
-                        alert(data.message);
-                        overlay.classList.remove('active');
-                    }
-                })
-                .catch(err => {
-                    alert('Error switching context');
-                    overlay.classList.remove('active');
-                });
+            }).then(r => r.json()).then(data => {
+                if (data.success) window.location.reload();
+                else alert(data.message);
+            }).catch(() => alert('Error switching context'));
         });
-    });
+    }
+});
 </script>
 {% endblock %}

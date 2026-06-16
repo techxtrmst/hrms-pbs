@@ -577,9 +577,9 @@
         }
 
         /* Hide less important columns on tablets */
-        .employees-table th:nth-child(6),
-        .employees-table td:nth-child(6) {
-            display: none;
+        .col-joining-date,
+        .col-pseudo-name {
+            display: none !important;
         }
 
         .employee-avatar {
@@ -676,11 +676,11 @@
         }
 
         /* Hide more columns on mobile */
-        .employees-table th:nth-child(3),
-        .employees-table td:nth-child(3),
-        .employees-table th:nth-child(5),
-        .employees-table td:nth-child(5) {
-            display: none;
+        .col-email,
+        .col-department,
+        .col-joining-date,
+        .col-pseudo-name {
+            display: none !important;
         }
 
         .employee-avatar {
@@ -763,9 +763,8 @@
         }
 
         /* Show only essential columns on very small screens */
-        .employees-table th:nth-child(4),
-        .employees-table td:nth-child(4) {
-            display: none;
+        .col-designation {
+            display: none !important;
         }
 
         .employee-avatar {
@@ -1396,20 +1395,32 @@
 
         <select class="filter-select" id="departmentFilter" onchange="filterTable()">
             <option value="">All Departments</option>
-            {% for employee in employees %}
-            {% if employee.department %}
-            <option value="{{ employee.department }}">{{ employee.department }}</option>
-            {% endif %}
+            {% for dept in unique_departments %}
+            <option value="{{ dept }}">{{ dept }}</option>
             {% endfor %}
         </select>
 
-        <select class="filter-select" id="statusFilter" onchange="window.location.href='?status=' + this.value">
+        <select class="filter-select" id="statusFilter" onchange="applyStatusFilter(this.value)">
             <option value="active" {% if selected_filter == 'active' %}selected{% endif %}>Active Employees</option>
             <option value="all" {% if selected_filter == 'all' %}selected{% endif %}>All Employees</option>
             <option value="inactive" {% if selected_filter == 'inactive' %}selected{% endif %}>Ex-Employees</option>
             <option value="resigned" {% if selected_filter == 'resigned' %}selected{% endif %}>Resigned</option>
             <option value="absconded" {% if selected_filter == 'absconded' %}selected{% endif %}>Absconded</option>
             <option value="terminated" {% if selected_filter == 'terminated' %}selected{% endif %}>Terminated</option>
+        </select>
+
+        <select class="filter-select" id="monthFilter" onchange="applyJoiningFilters()">
+            <option value="">All Joining Months</option>
+            {% for m in months %}
+            <option value="{{ m.value }}" {% if selected_month == m.value %}selected{% endif %}>{{ m.name }}</option>
+            {% endfor %}
+        </select>
+
+        <select class="filter-select" id="yearFilter" onchange="applyJoiningFilters()">
+            <option value="">All Joining Years</option>
+            {% for y in joining_years %}
+            <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
         </select>
 
         {% if user.role == "COMPANY_ADMIN" or user.role == "EMPLOYEE_MANAGER" %}
@@ -1431,27 +1442,28 @@
             <table class="employees-table" id="employeesTable">
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Designation</th>
-                        <th>Department</th>
+                        <th class="col-hash">#</th>
+                        <th class="col-name">Name</th>
+                        <th class="col-email">Email</th>
+                        <th class="col-designation">Designation</th>
+                        <th class="col-department">Department</th>
+                        <th class="col-joining-date">Joining Date</th>
                         {% if show_pseudo_name %}
-                        <th>Pseudo Name</th>
+                        <th class="col-pseudo-name">Pseudo Name</th>
                         {% endif %}
-                        <th>Manager</th>
+                        <th class="col-manager">Manager</th>
                         {% if user.role == "COMPANY_ADMIN" or user.role == "EMPLOYEE_MANAGER" %}
-                        <th>Actions</th>
+                        <th class="col-actions">Actions</th>
                         {% endif %}
                     </tr>
                 </thead>
                 <tbody>
                     {% for employee in employees %}
                     <tr class="{% if not employee.is_active or employee.employment_status != 'ACTIVE' %}employee-row-inactive{% endif %}">
-                        <td>
+                        <td class="col-hash">
                             <span class="employee-number">{{ forloop.counter }}</span>
                         </td>
-                        <td>
+                        <td class="col-name">
                             <div class="employee-name">
                                 <div class="employee-avatar">
                                     {% if employee.profile_picture %}
@@ -1472,19 +1484,22 @@
                                 </div>
                             </div>
                         </td>
-                        <td>{{ employee.user.email }}</td>
-                        <td>
+                        <td class="col-email">{{ employee.user.email }}</td>
+                        <td class="col-designation">
                             <span class="badge-designation">{{ employee.designation|default:"-" }}</span>
                         </td>
-                        <td>
+                        <td class="col-department">
                             <span class="badge-department">{{ employee.department|default:"-" }}</span>
                         </td>
+                        <td class="col-joining-date">
+                            <span style="font-weight: 500; color: #475569;">{{ employee.date_of_joining|date:"d M Y"|default:"-" }}</span>
+                        </td>
                         {% if show_pseudo_name %}
-                        <td>{{ employee.pseudo_name|default:"-" }}</td>
+                        <td class="col-pseudo-name">{{ employee.pseudo_name|default:"-" }}</td>
                         {% endif %}
-                        <td>{{ employee.manager.get_full_name|default:"-" }}{% if employee.manager.employee and employee.manager.employee.pseudo_name %} ({{ employee.manager.employee.pseudo_name }}){% endif %}</td>
+                        <td class="col-manager">{{ employee.manager.get_full_name|default:"-" }}{% if employee.manager.employee and employee.manager.employee.pseudo_name %} ({{ employee.manager.employee.pseudo_name }}){% endif %}</td>
                         {% if user.role == "COMPANY_ADMIN" or user.role == "EMPLOYEE_MANAGER" %}
-                        <td>
+                        <td class="col-actions">
                             <div class="action-buttons">
                                 <a href="{% url 'employee_detail' employee.pk %}" class="btn-action btn-edit"
                                     style="background:#e0e7ff; color:#4338ca; border-color:#c7d2fe;">
@@ -1516,7 +1531,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7">
+                        <td colspan="10">
                             <div class="empty-state">
                                 <i class="fas fa-users-slash"></i>
                                 <h3>No employees found</h3>
@@ -1532,6 +1547,36 @@
 </div>
 
 <script>
+    function applyJoiningFilters() {
+        const month = document.getElementById('monthFilter').value;
+        const year = document.getElementById('yearFilter').value;
+        const urlParams = new URLSearchParams(window.location.search);
+
+        if (month) {
+            urlParams.set('joining_month', month);
+        } else {
+            urlParams.delete('joining_month');
+        }
+
+        if (year) {
+            urlParams.set('joining_year', year);
+        } else {
+            urlParams.delete('joining_year');
+        }
+
+        window.location.href = window.location.pathname + '?' + urlParams.toString();
+    }
+
+    function applyStatusFilter(status) {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (status) {
+            urlParams.set('status', status);
+        } else {
+            urlParams.delete('status');
+        }
+        window.location.href = window.location.pathname + '?' + urlParams.toString();
+    }
+
     function filterTable() {
         const searchInput = document.getElementById('searchInput').value.toLowerCase();
         const departmentFilter = document.getElementById('departmentFilter').value.toLowerCase();

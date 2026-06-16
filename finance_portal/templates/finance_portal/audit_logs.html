@@ -1,0 +1,219 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    :root {
+        --primary-color: #10b981;
+        --primary-hover: #059669;
+        --keka-bg: #f8fafc;
+        --keka-text-primary: #1e293b;
+        --keka-text-secondary: #64748b;
+    }
+    body {
+        background-color: #f8fafc !important;
+        color: #1e293b !important;
+        font-family: 'Inter', sans-serif;
+    }
+    .payroll-container {
+        padding: 2.5rem;
+        background: radial-gradient(circle at top, #ffffff 0%, #f1f5f9 100%);
+        min-height: calc(100vh - 60px);
+    }
+    .payroll-header {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        padding: 24px 32px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+    .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+    }
+    .payroll-table-card {
+        background: #ffffff;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+        padding: 24px;
+        margin-bottom: 24px;
+        transition: all 0.3s ease;
+    }
+    .btn-action {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+    .btn-view {
+        background: transparent;
+        color: var(--primary-color);
+        border: 1.5px solid var(--primary-color);
+    }
+    .btn-view:hover {
+        background: var(--primary-color);
+        color: #ffffff;
+    }
+    .table-payroll {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .table-payroll th {
+        background: rgba(241, 245, 249, 0.8);
+        color: var(--keka-text-secondary);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+        padding: 16px;
+        border-bottom: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    .table-payroll td {
+        padding: 16px;
+        vertical-align: middle;
+        border-bottom: 1px solid #cbd5e1;
+        color: var(--keka-text-primary);
+    }
+    .action-badge {
+        display: inline-flex;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .badge-security {
+        background: rgba(239, 68, 68, 0.1);
+        color: #dc2626;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+    .badge-balance {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+    .badge-explanation {
+        background: rgba(59, 130, 246, 0.1);
+        color: #2563eb;
+        border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+    .badge-default {
+        background: rgba(100, 116, 139, 0.1);
+        color: #475569;
+        border: 1px solid rgba(100, 116, 139, 0.2);
+    }
+</style>
+
+<div class="payroll-container">
+    <!-- Header -->
+    <div class="payroll-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h1 class="page-title">Audit Activity Logs</h1>
+            <p class="text-muted mb-0 small">Comprehensive financial actions and security logs</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'finance_portal:dashboard' %}" class="btn btn-action btn-view">
+                <i class="fas fa-arrow-left"></i> Dashboard Overview
+            </a>
+        </div>
+    </div>
+
+    <!-- Search Form -->
+    <div class="payroll-table-card mb-4">
+        <form method="GET" action="" class="row g-3 align-items-center">
+            <div class="col-md-9">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" name="q" class="form-control border-start-0" placeholder="Search by Action, Details, User email..." value="{{ query }}">
+                </div>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-action btn-view w-100 justify-content-center" style="background: var(--primary-color); color: #fff;">
+                    Apply Search
+                </button>
+                {% if query %}
+                <a href="{% url 'finance_portal:audit_logs' %}" class="btn btn-action btn-view text-slate-600 border-slate-300">
+                    Clear
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Audit Logs List -->
+    <div class="payroll-table-card">
+        <div class="table-responsive">
+            <table class="table table-payroll">
+                <thead>
+                    <tr>
+                        <th style="width: 180px;">Timestamp</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Details</th>
+                        <th>IP Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td class="fw-semibold small">{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+                        <td>
+                            {% if log.user %}
+                            <span class="fw-semibold text-slate-800">{{ log.user.get_full_name|default:log.user.username }}</span>
+                            <div class="text-muted small" style="font-size: 11px;">{{ log.user.email }}</div>
+                            {% else %}
+                            <span class="text-muted italic">System Automated</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.action == "SECURITY_FLAG" %}
+                            <span class="action-badge badge-security">
+                                <i class="fas fa-shield-halved me-1"></i> Security Flag
+                            </span>
+                            {% elif log.action == "BALANCE_DEDUCTION" %}
+                            <span class="action-badge badge-balance">
+                                <i class="fas fa-wallet me-1"></i> Balance minus
+                            </span>
+                            {% elif log.action == "RECONCILE_EXPLANATION" %}
+                            <span class="action-badge badge-explanation">
+                                <i class="fas fa-comment-dots me-1"></i> Explanation
+                            </span>
+                            {% else %}
+                            <span class="action-badge badge-default">
+                                {{ log.action }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="small text-slate-700">{{ log.details }}</td>
+                        <td class="text-muted small">{{ log.ip_address|default:"127.0.0.1" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="fas fa-history fa-3x mb-3 opacity-25"></i>
+                            <p class="mb-0">No audit activity logs recorded yet.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
