@@ -71,6 +71,115 @@ class EmployeeListView(LoginRequiredMixin, ListView):
     template_name = "employees/employee_list.html"
     context_object_name = "employees"
 
+    def get(self, request, *args, **kwargs):
+        if request.GET.get("export") == "true":
+            queryset = self.get_queryset()
+
+            # Apply search and department filter on the backend for exporting
+            search_query = request.GET.get("search")
+            if search_query:
+                queryset = queryset.filter(
+                    Q(user__first_name__icontains=search_query)
+                    | Q(user__last_name__icontains=search_query)
+                    | Q(user__email__icontains=search_query)
+                    | Q(designation__icontains=search_query)
+                    | Q(pseudo_name__icontains=search_query)
+                )
+
+            department_filter = request.GET.get("department")
+            if department_filter:
+                queryset = queryset.filter(department__iexact=department_filter)
+
+            return self.export_to_csv(queryset)
+        return super().get(request, *args, **kwargs)
+
+    def export_to_csv(self, queryset):
+        import csv
+
+        from django.http import HttpResponse
+        from django.utils import timezone
+
+        response = HttpResponse(content_type="text/csv; charset=utf-8-sig")
+        date_str = timezone.now().strftime("%Y-%m-%d")
+        response["Content-Disposition"] = f'attachment; filename="employees_export_{date_str}.csv"'
+
+        writer = csv.writer(response)
+
+        headers = [
+            "Employee ID",
+            "First Name",
+            "Last Name",
+            "Full Name",
+            "Email",
+            "Mobile Number",
+            "Personal Email",
+            "Gender",
+            "Marital Status",
+            "Date of Birth",
+            "Permanent Address",
+            "Current Address",
+            "Designation",
+            "Pseudo Name",
+            "Department",
+            "Work Type",
+            "Date of Joining",
+            "Manager",
+            "Bank Name",
+            "Account Number",
+            "IFSC Code",
+            "UAN",
+            "PAN Number",
+            "Provident Fund Enabled",
+            "Annual CTC",
+            "Employment Status",
+            "Exit Date",
+            "Exit Note",
+            "Is Active",
+            "Biometric ID",
+            "Created At",
+        ]
+
+        writer.writerow(headers)
+
+        for emp in queryset:
+            writer.writerow(
+                [
+                    emp.badge_id or "",
+                    emp.user.first_name or "",
+                    emp.user.last_name or "",
+                    emp.user.get_full_name() or "",
+                    emp.user.email or "",
+                    emp.mobile_number or "",
+                    emp.personal_email or "",
+                    emp.get_gender_display() if emp.gender else "",
+                    emp.get_marital_status_display() if emp.marital_status else "",
+                    emp.dob.strftime("%Y-%m-%d") if emp.dob else "",
+                    emp.permanent_address or "",
+                    emp.current_address or "",
+                    emp.designation or "",
+                    emp.pseudo_name or "",
+                    emp.department or "",
+                    emp.get_work_type_display() or "",
+                    emp.date_of_joining.strftime("%Y-%m-%d") if emp.date_of_joining else "",
+                    emp.manager.get_full_name() if emp.manager else "",
+                    emp.bank_name or "",
+                    emp.account_number or "",
+                    emp.ifsc_code or "",
+                    emp.uan or "",
+                    emp.pan_number or "",
+                    "Yes" if emp.pf_enabled else "No",
+                    str(emp.annual_ctc) if emp.annual_ctc is not None else "",
+                    emp.get_employment_status_display() or "",
+                    emp.exit_date.strftime("%Y-%m-%d") if emp.exit_date else "",
+                    emp.exit_note or "",
+                    "Yes" if emp.is_active else "No",
+                    emp.biometric_id or "",
+                    emp.created_at.strftime("%Y-%m-%d %H:%M:%S") if emp.created_at else "",
+                ]
+            )
+
+        return response
+
     def get_queryset(self):
         user = self.request.user
 

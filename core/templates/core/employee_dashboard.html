@@ -1226,9 +1226,42 @@
         margin-bottom: 24px;
     }
 
+    /* Prevent CSS Grid items from expanding beyond their fr allocation due to child content */
+    .keka-bottom-row > .keka-card {
+        min-width: 0;
+    }
+
+    /* Clean modern thin scrollbar for birthday/anniversary grids */
+    .keka-birthday-grid::-webkit-scrollbar {
+        height: 5px;
+    }
+    .keka-birthday-grid::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.02);
+        border-radius: 10px;
+    }
+    .keka-birthday-grid::-webkit-scrollbar-thumb {
+        background: rgba(91, 71, 251, 0.2);
+        border-radius: 10px;
+    }
+    .keka-birthday-grid::-webkit-scrollbar-thumb:hover {
+        background: rgba(91, 71, 251, 0.4);
+    }
+
+    @media (max-width: 1400px) {
+        .keka-bottom-row {
+            grid-template-columns: 1fr 1fr;
+        }
+        .keka-bottom-row > .keka-card:first-child {
+            grid-column: span 2;
+        }
+    }
+
     @media (max-width: 991px) {
         .keka-bottom-row {
             grid-template-columns: 1fr;
+        }
+        .keka-bottom-row > .keka-card:first-child {
+            grid-column: span 1;
         }
     }
 
@@ -2835,7 +2868,7 @@
 
         <div class="keka-birthday-grid" style="min-height: 110px;">
             {% if upcoming_birthdays %}
-                {% for item in upcoming_birthdays %}
+                {% for item in upcoming_birthdays|slice:":5" %}
                 <div class="keka-birthday-user animate__animated animate__fadeInUp">
                     {% if item.employee.profile_picture %}
                     <img src="{{ item.employee.profile_picture.url }}" alt="Avatar" class="keka-bday-avatar">
@@ -2889,7 +2922,7 @@
 
         <div class="keka-birthday-grid" style="margin-top: 8px; min-height: 110px;">
             {% if upcoming_anniversaries %}
-                {% for item in upcoming_anniversaries %}
+                {% for item in upcoming_anniversaries|slice:":5" %}
                 <div class="keka-birthday-user animate__animated animate__fadeInUp">
                     {% if item.employee.profile_picture %}
                     <img src="{{ item.employee.profile_picture.url }}" alt="Avatar" class="keka-bday-avatar">

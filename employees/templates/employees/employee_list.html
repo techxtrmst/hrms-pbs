@@ -1429,10 +1429,21 @@
             <i class="fas fa-file-import"></i>
             Bulk Import
         </a>
+        <button onclick="exportFilteredEmployees()" class="btn-add-employee"
+            style="background: white; color: #10b981; border: 1px solid #a7f3d0; margin-right: 8px;">
+            <i class="fas fa-file-export"></i>
+            Export
+        </button>
         <a href="{% url 'add_employee_step0' %}" class="btn-add-employee">
             <i class="fas fa-plus"></i>
             Add Employee
         </a>
+        {% elif user.role == "MANAGER" %}
+        <button onclick="exportFilteredEmployees()" class="btn-add-employee"
+            style="background: white; color: #10b981; border: 1px solid #a7f3d0; margin-right: 8px;">
+            <i class="fas fa-file-export"></i>
+            Export
+        </button>
         {% endif %}
     </div>
 
@@ -1459,7 +1470,14 @@
                 </thead>
                 <tbody>
                     {% for employee in employees %}
-                    <tr class="{% if not employee.is_active or employee.employment_status != 'ACTIVE' %}employee-row-inactive{% endif %}">
+                    <tr class="{% if not employee.is_active or employee.employment_status != 'ACTIVE' %}employee-row-inactive{% endif %}"
+                        data-name="{{ employee.user.get_full_name }}"
+                        data-email="{{ employee.user.email }}"
+                        data-designation="{{ employee.designation|default:"-" }}"
+                        data-department="{{ employee.department|default:"-" }}"
+                        data-joining-date="{{ employee.date_of_joining|date:"d M Y"|default:"-" }}"
+                        data-pseudo-name="{{ employee.pseudo_name|default:"-" }}"
+                        data-manager="{{ employee.manager.get_full_name|default:"-" }}">
                         <td class="col-hash">
                             <span class="employee-number">{{ forloop.counter }}</span>
                         </td>
@@ -1547,6 +1565,28 @@
 </div>
 
 <script>
+    function exportFilteredEmployees() {
+        const searchInput = document.getElementById('searchInput').value;
+        const departmentFilter = document.getElementById('departmentFilter').value;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('export', 'true');
+
+        if (searchInput) {
+            urlParams.set('search', searchInput);
+        } else {
+            urlParams.delete('search');
+        }
+
+        if (departmentFilter) {
+            urlParams.set('department', departmentFilter);
+        } else {
+            urlParams.delete('department');
+        }
+
+        window.location.href = window.location.pathname + '?' + urlParams.toString();
+    }
+
     function applyJoiningFilters() {
         const month = document.getElementById('monthFilter').value;
         const year = document.getElementById('yearFilter').value;

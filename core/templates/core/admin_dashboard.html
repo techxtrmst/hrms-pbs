@@ -1767,7 +1767,7 @@
                 </div>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:12px;min-height:90px;">
                     {% if upcoming_birthdays %}
-                        {% for item in upcoming_birthdays|slice:":6" %}
+                        {% for item in upcoming_birthdays|slice:":5" %}
                         <div style="text-align:center;">
                             {% if item.employee.profile_picture %}
                             <img src="{{ item.employee.profile_picture.url }}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.1);margin-bottom:4px;">
@@ -1808,7 +1808,7 @@
                 </div>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:12px;min-height:90px;">
                     {% if upcoming_anniversaries %}
-                        {% for item in upcoming_anniversaries|slice:":6" %}
+                        {% for item in upcoming_anniversaries|slice:":5" %}
                         <div style="text-align:center;">
                             {% if item.employee.profile_picture %}
                             <img src="{{ item.employee.profile_picture.url }}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.1);margin-bottom:4px;">
