@@ -40,6 +40,42 @@ from .models import Notification, PasswordResetOTP
 from .utils import save_pdf_to_model
 
 
+def get_wished_users_today(user, today):
+    """
+    Returns a tuple of sets: (wished_birthdays_recipient_user_ids, wished_anniversaries_recipient_user_ids)
+    for wishes sent by `user` on `today`.
+    """
+    wished_birthdays = set()
+    wished_anniversaries = set()
+    if not user or not user.is_authenticated:
+        return wished_birthdays, wished_anniversaries
+    try:
+        sender_employee = user.employee_profile
+    except Exception:
+        return wished_birthdays, wished_anniversaries
+
+    from django.contrib.contenttypes.models import ContentType
+
+    from core.models import Notification
+
+    emp_ct = ContentType.objects.get_for_model(sender_employee)
+    today_wishes = Notification.objects.filter(
+        notification_type="BIRTHDAY_WISH",
+        content_type=emp_ct,
+        object_id=sender_employee.id,
+        created_at__date=today,
+    )
+    for wish in today_wishes:
+        parts = wish.message.split("|||")
+        if len(parts) >= 3:
+            wish_type = parts[2]
+            if wish_type == "birthday":
+                wished_birthdays.add(wish.recipient_id)
+            elif wish_type == "anniversary":
+                wished_anniversaries.add(wish.recipient_id)
+    return wished_birthdays, wished_anniversaries
+
+
 def service_worker(request):
     """Serve the service worker file with correct MIME type and root scope capability"""
     import os
@@ -185,6 +221,15 @@ def manager_dashboard(request):
         # If manager has no location, show no holidays
         upcoming_holidays = Holiday.objects.none()
 
+    wished_b, wished_a = get_wished_users_today(request.user, today)
+    birthdays_list = list(birthdays)
+    for emp in birthdays_list:
+        emp.has_wished = emp.user.id in wished_b
+
+    work_anniversaries_list = list(work_anniversaries)
+    for emp in work_anniversaries_list:
+        emp.has_wished = emp.user.id in wished_a
+
     context = {
         "title": "Manager Dashboard",
         "manager": manager_profile,
@@ -198,8 +243,8 @@ def manager_dashboard(request):
         "pending_leaves": pending_leaves,
         "recent_activity": recent_activity,
         "announcements": announcements,
-        "birthdays": birthdays,
-        "work_anniversaries": work_anniversaries,
+        "birthdays": birthdays_list,
+        "work_anniversaries": work_anniversaries_list,
         "upcoming_holidays": upcoming_holidays,
     }
 
@@ -633,6 +678,17 @@ def admin_dashboard(request):
     # Sort birthdays and anniversaries by days_left (ascending order)
     upcoming_birthdays.sort(key=lambda x: x["days_left"])
     upcoming_anniversaries.sort(key=lambda x: x["days_left"])
+
+    wished_b, wished_a = get_wished_users_today(request.user, today)
+    for item in upcoming_birthdays:
+        emp = item["employee"]
+        item["has_wished"] = emp.user.id in wished_b if item["is_today"] else False
+        emp.has_wished = item["has_wished"]
+
+    for item in upcoming_anniversaries:
+        emp = item["employee"]
+        item["has_wished"] = emp.user.id in wished_a if item["is_today"] else False
+        emp.has_wished = item["has_wished"]
 
     # 3. Announcements
     from companies.models import Announcement
@@ -1093,6 +1149,17 @@ def employee_dashboard(request):
 
     upcoming_birthdays.sort(key=lambda x: x["days_left"])
     upcoming_anniversaries.sort(key=lambda x: x["days_left"])
+
+    wished_b, wished_a = get_wished_users_today(request.user, today)
+    for item in upcoming_birthdays:
+        emp = item["employee"]
+        item["has_wished"] = emp.user.id in wished_b if item["is_today"] else False
+        emp.has_wished = item["has_wished"]
+
+    for item in upcoming_anniversaries:
+        emp = item["employee"]
+        item["has_wished"] = emp.user.id in wished_a if item["is_today"] else False
+        emp.has_wished = item["has_wished"]
 
     # 3. Upcoming Holidays (filtered by employee's location ONLY - no company-wide)
     if employee.location:
@@ -5357,6 +5424,12 @@ def all_birthdays(request):
 
     upcoming_birthdays.sort(key=lambda x: x["days_left"])
 
+    wished_b, wished_a = get_wished_users_today(request.user, today)
+    for item in upcoming_birthdays:
+        emp = item["employee"]
+        item["has_wished"] = emp.user.id in wished_b if item["is_today"] else False
+        emp.has_wished = item["has_wished"]
+
     context = {
         "title": "All Birthdays",
         "birthdays": upcoming_birthdays,
@@ -5420,6 +5493,12 @@ def all_anniversaries(request):
             )
 
     upcoming_anniversaries.sort(key=lambda x: x["days_left"])
+
+    wished_b, wished_a = get_wished_users_today(request.user, today)
+    for item in upcoming_anniversaries:
+        emp = item["employee"]
+        item["has_wished"] = emp.user.id in wished_a if item["is_today"] else False
+        emp.has_wished = item["has_wished"]
 
     context = {
         "title": "All Work Anniversaries",

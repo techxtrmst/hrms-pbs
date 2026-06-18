@@ -64,6 +64,7 @@ urlpatterns = [
     path("attendance/<int:pk>/map/", views.attendance_map, name="attendance_map"),
     # Employee Exit Actions
     path("<int:pk>/exit-action/", views.employee_exit_action, name="employee_exit_action"),
+    path("<int:pk>/rejoin/", views.rejoin_employee, name="employee_rejoin"),
     path("exit-initiatives/", views.exit_initiatives_list, name="exit_initiatives_list"),
     path(
         "exit-initiatives/<int:pk>/approve/",

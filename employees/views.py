@@ -4965,3 +4965,127 @@ def send_birthday_wish(request):
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
     return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
+
+
+@login_required
+def rejoin_employee(request, pk):
+    """
+    Rejoin a resigned/inactive employee, reactivating their user profile
+    and logging changes in work history.
+    """
+    from datetime import datetime
+
+    from django.contrib import messages
+    from django.shortcuts import get_object_or_404, redirect, render
+
+    from accounts.models import User
+
+    from .models import Employee, WorkHistory
+
+    user_role = request.user.role
+    is_admin = user_role in [User.Role.COMPANY_ADMIN, User.Role.SUPERADMIN, User.Role.EMPLOYEE_MANAGER]
+    if not is_admin:
+        messages.error(request, "Permission denied. Only Admin can rejoin employees.")
+        return redirect("employee_list")
+
+    # Fetch employee
+    if request.user.role == User.Role.SUPERADMIN:
+        employee = get_object_or_404(Employee, pk=pk)
+    else:
+        employee = get_object_or_404(Employee, pk=pk, company=request.user.company)
+
+    # Check if already active
+    if employee.is_active and employee.employment_status == "ACTIVE":
+        messages.warning(request, f"{employee.user.get_full_name()} is already active.")
+        return redirect("employee_detail", pk=employee.pk)
+
+    if request.method == "POST":
+        date_of_joining_str = request.POST.get("date_of_joining")
+        rejoin_note = request.POST.get("rejoin_note", "").strip()
+        designation = request.POST.get("designation", "").strip()
+        department = request.POST.get("department", "").strip()
+        annual_ctc_str = request.POST.get("annual_ctc", "").strip()
+
+        if not date_of_joining_str:
+            messages.error(request, "Joining date is required.")
+            return redirect("employee_rejoin", pk=employee.pk)
+
+        try:
+            new_joining_date = datetime.strptime(date_of_joining_str, "%Y-%m-%d").date()
+        except ValueError:
+            messages.error(request, "Invalid date format.")
+            return redirect("employee_rejoin", pk=employee.pk)
+
+        # Parse CTC
+        new_ctc = None
+        if annual_ctc_str:
+            try:
+                new_ctc = float(annual_ctc_str)
+            except ValueError:
+                messages.error(request, "Invalid CTC amount.")
+                return redirect("employee_rejoin", pk=employee.pk)
+
+        # Activate profiles
+        employee.is_active = True
+        employee.employment_status = "ACTIVE"
+        employee.exit_date = None
+        employee.exit_note = ""
+
+        # Update designation/department/CTC and log changes if they are different
+        if designation and designation != employee.designation:
+            WorkHistory.objects.create(
+                employee=employee,
+                event_type="DESIGNATION",
+                title="Designation Updated on Rejoining",
+                description=f"Designation updated from {employee.designation or '-'} to {designation}",
+                previous_value=employee.designation,
+                new_value=designation,
+                date=new_joining_date,
+                reason=rejoin_note,
+            )
+            employee.designation = designation
+
+        if department and department != employee.department:
+            employee.department = department
+
+        if new_ctc is not None and new_ctc != employee.annual_ctc:
+            WorkHistory.objects.create(
+                employee=employee,
+                event_type="CTC",
+                title="CTC Updated on Rejoining",
+                description=f"CTC updated from {employee.annual_ctc or '-'} to {new_ctc}",
+                previous_value=str(employee.annual_ctc) if employee.annual_ctc else None,
+                new_value=str(new_ctc),
+                date=new_joining_date,
+                reason=rejoin_note,
+            )
+            employee.annual_ctc = new_ctc
+
+        employee.date_of_joining = new_joining_date
+        employee.save()
+
+        # Reactivate User account
+        emp_user = employee.user
+        emp_user.is_active = True
+        emp_user.save()
+
+        # Log joining event in WorkHistory
+        WorkHistory.objects.create(
+            employee=employee,
+            event_type="JOINING",
+            title="Employee Rejoined",
+            description=f"Rejoined as {employee.designation} in {employee.department}",
+            reason=rejoin_note or "Rejoined the organization.",
+            date=new_joining_date,
+        )
+
+        messages.success(
+            request, f"✓ {employee.user.get_full_name()} has successfully rejoined and login access is restored."
+        )
+        return redirect("employee_detail", pk=employee.pk)
+
+    context = {
+        "employee": employee,
+        "today_date": timezone.localdate().strftime("%Y-%m-%d"),
+    }
+    return render(request, "employees/employee_rejoin.html", context)

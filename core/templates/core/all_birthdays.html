@@ -308,7 +308,8 @@
                      data-initials="{{ item.employee.user.first_name|first }}{{ item.employee.user.last_name|first }}"
                      data-avatar="{% if item.employee.profile_picture %}{{ item.employee.profile_picture.url }}{% endif %}"
                      data-id="{{ item.employee.id }}"
-                     data-first-name="{{ item.employee.user.first_name }}">
+                     data-first-name="{{ item.employee.user.first_name }}"
+                     data-has-wished="{% if item.has_wished %}true{% else %}false{% endif %}">
                     <div class="celebration-card p-3 h-100">
                         <div class="d-flex align-items-center gap-3 mb-2">
                             {% if item.employee.profile_picture %}
@@ -331,9 +332,21 @@
                                     <span class="badge-soon mt-1 d-inline-block">in {{ item.days_left }} day{{ item.days_left|pluralize }}</span>
                                 {% endif %}
                             </div>
-                            <button class="wish-btn" onclick="sendBirthdayWish('{{ item.employee.id }}', '{{ item.employee.user.first_name }}', 'birthday', this)" {% if not item.is_today %}disabled style="opacity: 0.5; cursor: not-allowed; border-color: #cbd5e1; color: #94a3b8; pointer-events: none;"{% endif %}>
-                                <i class="fas fa-heart me-1"></i>Wish
-                            </button>
+                            {% if item.is_today %}
+                                {% if item.has_wished %}
+                                    <button class="wish-btn disabled" disabled style="opacity: 0.5; cursor: not-allowed; border-color: #fee2e2; color: #ef4444; background-color: #fff5f5; pointer-events: none;">
+                                        <i class="fas fa-heart text-danger me-1"></i>Wished
+                                    </button>
+                                {% else %}
+                                    <button class="wish-btn" onclick="sendBirthdayWish('{{ item.employee.id }}', '{{ item.employee.user.first_name }}', 'birthday', this)">
+                                        <i class="fas fa-heart me-1"></i>Wish
+                                    </button>
+                                {% endif %}
+                            {% else %}
+                                <button class="wish-btn" disabled style="opacity: 0.5; cursor: not-allowed; border-color: #cbd5e1; color: #94a3b8; pointer-events: none;">
+                                    <i class="fas fa-heart me-1"></i>Wish
+                                </button>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -440,9 +453,32 @@ function filterCards() {
 
 function sendBirthdayWish(receiverId, receiverName, type, element) {
     if (!receiverId) return;
-    const originalHTML = element.innerHTML;
-    element.disabled = true;
-    element.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Sending…';
+
+    const allRelatedElements = [];
+    document.querySelectorAll('[onclick*="sendBirthdayWish"]').forEach(el => {
+        if (el.getAttribute('onclick').includes(`'${receiverId}'`) || el.getAttribute('onclick').includes(`"${receiverId}"`)) {
+            allRelatedElements.push(el);
+        }
+    });
+
+    const originalStates = allRelatedElements.map(el => ({
+        el: el,
+        html: el.innerHTML,
+        disabled: el.disabled,
+        pointerEvents: el.style.pointerEvents,
+        opacity: el.style.opacity
+    }));
+
+    allRelatedElements.forEach(el => {
+        el.disabled = true;
+        el.style.pointerEvents = 'none';
+        el.style.opacity = '0.7';
+        if (el.tagName === 'BUTTON') {
+            el.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Sending…';
+        } else {
+            el.textContent = 'Sending...';
+        }
+    });
 
     fetch('/employees/api/birthday-wish/', {
         method: 'POST',
@@ -450,26 +486,81 @@ function sendBirthdayWish(receiverId, receiverName, type, element) {
             'Content-Type': 'application/json',
             'X-CSRFToken': '{{ csrf_token }}'
         },
-        body: JSON.stringify({ receiver_id: receiverId, type: type })
+        body: JSON.stringify({
+            receiver_id: receiverId,
+            type: type
+        })
     })
-    .then(r => r.json())
+    .then(response => response.json())
     .then(data => {
-        if (data.status === 'success') {
-            element.innerHTML = '<i class="fas fa-heart text-danger me-1"></i>Wished';
-            element.style.borderColor = '#fee2e2';
-            element.style.color = '#ef4444';
-            showToast('🎉 Sent warm wishes to ' + receiverName + '!');
+        if (data.status === 'success' || data.message.includes('already')) {
+            const itemSelector = type === 'anniversary' ? '.anniv-item' : '.birthday-item';
+            document.querySelectorAll(`${itemSelector}[data-id="${receiverId}"]`).forEach(item => {
+                item.setAttribute('data-has-wished', 'true');
+            });
+
+            allRelatedElements.forEach(el => {
+                el.disabled = true;
+                el.style.pointerEvents = 'none';
+                el.style.opacity = '0.5';
+                el.style.cursor = 'not-allowed';
+
+                if (type === 'anniversary') {
+                    el.innerHTML = '<i class="fas fa-trophy me-1"></i>Wished';
+                    el.style.borderColor = '#d1fae5';
+                    el.style.color = '#059669';
+                    el.style.backgroundColor = '#f0fdf4';
+                } else {
+                    el.innerHTML = '<i class="fas fa-heart text-danger me-1"></i>Wished';
+                    el.style.borderColor = '#fee2e2';
+                    el.style.color = '#ef4444';
+                    el.style.backgroundColor = '#fff5f5';
+                }
+            });
+
+            const calView = document.getElementById('calendar-view-container');
+            if (calView && calView.style.display !== 'none' && typeof renderCalendar === 'function') {
+                renderCalendar();
+            }
+
+            const toastMsg = data.status === 'success'
+                ? (type === 'anniversary' ? `🌟 Sent warm wishes to ${receiverName}! 🌟` : `🎉 Sent warm wishes to ${receiverName}! 🌟`)
+                : (type === 'anniversary' ? `💚 You already wished ${receiverName} today!` : `💖 You already wished ${receiverName} today!`);
+
+            if (typeof showCelebrationToast === 'function') {
+                showCelebrationToast(toastMsg);
+            } else if (typeof showToast === 'function') {
+                showToast(toastMsg);
+            }
         } else {
-            element.innerHTML = '<i class="fas fa-heart text-danger me-1"></i>Wished';
-            element.style.borderColor = '#fee2e2';
-            element.style.color = '#ef4444';
-            showToast('💖 You already wished ' + receiverName + ' today!');
+            originalStates.forEach(state => {
+                state.el.disabled = state.disabled;
+                state.el.style.pointerEvents = state.pointerEvents;
+                state.el.style.opacity = state.opacity;
+                state.el.innerHTML = state.html;
+            });
+            const errorMsg = `❌ Error: ${data.message}`;
+            if (typeof showCelebrationToast === 'function') {
+                showCelebrationToast(errorMsg);
+            } else if (typeof showToast === 'function') {
+                showToast(errorMsg);
+            }
         }
     })
-    .catch(() => {
-        element.disabled = false;
-        element.innerHTML = originalHTML;
-        showToast('❌ Failed to send wish. Try again.');
+    .catch(error => {
+        console.error('Error wishing:', error);
+        originalStates.forEach(state => {
+            state.el.disabled = state.disabled;
+            state.el.style.pointerEvents = state.pointerEvents;
+            state.el.style.opacity = state.opacity;
+            state.el.innerHTML = state.html;
+        });
+        const errorMsg = '❌ Failed to send wishes. Please try again.';
+        if (typeof showCelebrationToast === 'function') {
+            showCelebrationToast(errorMsg);
+        } else if (typeof showToast === 'function') {
+            showToast(errorMsg);
+        }
     });
 }
 
@@ -545,7 +636,8 @@ function renderCalendar() {
                 avatar: item.getAttribute('data-avatar'),
                 dobDay: parseInt(item.getAttribute('data-dob-day')),
                 dobMonth: parseInt(item.getAttribute('data-dob-month')),
-                dobYear: parseInt(item.getAttribute('data-dob-year'))
+                dobYear: parseInt(item.getAttribute('data-dob-year')),
+                hasWished: item.getAttribute('data-has-wished') === 'true'
             });
         }
     });
@@ -639,7 +731,13 @@ function showBirthdayDayDetailsModal(date, matches) {
         const isToday = date.getDate() === today.getDate() &&
                         date.getMonth() === today.getMonth() &&
                         date.getFullYear() === today.getFullYear();
-        const disableAttr = isToday ? '' : 'disabled style="opacity: 0.5; cursor: not-allowed; border-color: #cbd5e1; color: #94a3b8; pointer-events: none;"';
+        const hasWished = b.hasWished;
+        const disableAttr = isToday
+            ? (hasWished ? 'disabled style="opacity: 0.5; cursor: not-allowed; border-color: #fee2e2; color: #ef4444; background-color: #fff5f5; pointer-events: none;"' : '')
+            : 'disabled style="opacity: 0.5; cursor: not-allowed; border-color: #cbd5e1; color: #94a3b8; pointer-events: none;"';
+        const btnText = hasWished
+            ? '<i class="fas fa-heart text-danger me-1"></i>Wished'
+            : '<i class="fas fa-heart me-1"></i>Wish';
 
         div.innerHTML = `
             <div class="d-flex align-items-center gap-3">
@@ -651,7 +749,7 @@ function showBirthdayDayDetailsModal(date, matches) {
                 </div>
             </div>
             <button class="wish-btn" onclick="sendBirthdayWish('${b.id}', '${b.firstName}', 'birthday', this)" ${disableAttr}>
-                <i class="fas fa-heart me-1"></i>Wish
+                ${btnText}
             </button>
         `;
         modalBody.appendChild(div);

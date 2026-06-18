@@ -2884,9 +2884,15 @@
                         {% endif %}
                     </div>
                     {% if item.is_today %}
-                    <a href="javascript:void(0)" class="keka-wish-link" onclick="sendBirthdayWish('{{ item.employee.id }}', '{{ item.employee.user.first_name }}', 'birthday', this)">Wish</a>
+                        {% if item.has_wished %}
+                            <a href="javascript:void(0)" class="keka-wish-link disabled" style="opacity: 0.5; cursor: not-allowed; color: #ef4444; border-color: #fee2e2; background-color: #fff5f5; pointer-events: none; text-decoration: none;">
+                                <i class="fas fa-heart text-danger"></i> Wished
+                            </a>
+                        {% else %}
+                            <a href="javascript:void(0)" class="keka-wish-link" onclick="sendBirthdayWish('{{ item.employee.id }}', '{{ item.employee.user.first_name }}', 'birthday', this)">Wish</a>
+                        {% endif %}
                     {% else %}
-                    <a href="javascript:void(0)" class="keka-wish-link disabled" style="opacity: 0.5; cursor: not-allowed; color: #94a3b8; pointer-events: none; text-decoration: none;">Wish</a>
+                        <a href="javascript:void(0)" class="keka-wish-link disabled" style="opacity: 0.5; cursor: not-allowed; color: #94a3b8; pointer-events: none; text-decoration: none;">Wish</a>
                     {% endif %}
                 </div>
                 {% endfor %}
@@ -2938,9 +2944,15 @@
                         {% endif %}
                     </div>
                     {% if item.is_today %}
-                    <a href="javascript:void(0)" class="keka-wish-link" onclick="sendBirthdayWish('{{ item.employee.id }}', '{{ item.employee.user.first_name }}', 'anniversary', this)">Wish</a>
+                        {% if item.has_wished %}
+                            <a href="javascript:void(0)" class="keka-wish-link disabled" style="opacity: 0.5; cursor: not-allowed; color: #059669; border-color: #d1fae5; background-color: #f0fdf4; pointer-events: none; text-decoration: none;">
+                                <i class="fas fa-trophy text-success"></i> Wished
+                            </a>
+                        {% else %}
+                            <a href="javascript:void(0)" class="keka-wish-link" onclick="sendBirthdayWish('{{ item.employee.id }}', '{{ item.employee.user.first_name }}', 'anniversary', this)">Wish</a>
+                        {% endif %}
                     {% else %}
-                    <a href="javascript:void(0)" class="keka-wish-link disabled" style="opacity: 0.5; cursor: not-allowed; color: #94a3b8; pointer-events: none; text-decoration: none;">Wish</a>
+                        <a href="javascript:void(0)" class="keka-wish-link disabled" style="opacity: 0.5; cursor: not-allowed; color: #94a3b8; pointer-events: none; text-decoration: none;">Wish</a>
                     {% endif %}
                 </div>
                 {% endfor %}
@@ -3244,11 +3256,31 @@
     function sendBirthdayWish(receiverId, receiverName, type, element) {
         if (!receiverId) return;
 
-        // Visual loading feedback
-        const originalText = element.textContent;
-        element.style.pointerEvents = 'none';
-        element.style.opacity = '0.7';
-        element.textContent = 'Sending...';
+        const allRelatedElements = [];
+        document.querySelectorAll('[onclick*="sendBirthdayWish"]').forEach(el => {
+            if (el.getAttribute('onclick').includes(`'${receiverId}'`) || el.getAttribute('onclick').includes(`"${receiverId}"`)) {
+                allRelatedElements.push(el);
+            }
+        });
+
+        const originalStates = allRelatedElements.map(el => ({
+            el: el,
+            html: el.innerHTML,
+            disabled: el.disabled,
+            pointerEvents: el.style.pointerEvents,
+            opacity: el.style.opacity
+        }));
+
+        allRelatedElements.forEach(el => {
+            el.disabled = true;
+            el.style.pointerEvents = 'none';
+            el.style.opacity = '0.7';
+            if (el.tagName === 'BUTTON') {
+                el.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Sending…';
+            } else {
+                el.textContent = 'Sending...';
+            }
+        });
 
         fetch('/employees/api/birthday-wish/', {
             method: 'POST',
@@ -3263,26 +3295,74 @@
         })
         .then(response => response.json())
         .then(data => {
-            if (data.status === 'success') {
-                element.innerHTML = '<i class="fas fa-heart text-danger animate__animated animate__heartBeat"></i> Wished';
-                element.style.color = '#ef4444';
-                element.style.borderColor = '#fee2e2';
-                element.style.backgroundColor = '#fff5f5';
-                showCelebrationToast(`🎉 Sent warm wishes to ${receiverName}! 🌟`);
+            if (data.status === 'success' || data.message.includes('already')) {
+                const itemSelector = type === 'anniversary' ? '.anniv-item' : '.birthday-item';
+                document.querySelectorAll(`${itemSelector}[data-id="${receiverId}"]`).forEach(item => {
+                    item.setAttribute('data-has-wished', 'true');
+                });
+
+                allRelatedElements.forEach(el => {
+                    el.disabled = true;
+                    el.style.pointerEvents = 'none';
+                    el.style.opacity = '0.5';
+                    el.style.cursor = 'not-allowed';
+
+                    if (type === 'anniversary') {
+                        el.innerHTML = '<i class="fas fa-trophy text-success me-1"></i>Wished';
+                        el.style.borderColor = '#d1fae5';
+                        el.style.color = '#059669';
+                        el.style.backgroundColor = '#f0fdf4';
+                    } else {
+                        el.innerHTML = '<i class="fas fa-heart text-danger me-1"></i>Wished';
+                        el.style.borderColor = '#fee2e2';
+                        el.style.color = '#ef4444';
+                        el.style.backgroundColor = '#fff5f5';
+                    }
+                });
+
+                const calView = document.getElementById('calendar-view-container');
+                if (calView && calView.style.display !== 'none' && typeof renderCalendar === 'function') {
+                    renderCalendar();
+                }
+
+                const toastMsg = data.status === 'success'
+                    ? (type === 'anniversary' ? `🌟 Sent warm wishes to ${receiverName}! 🌟` : `🎉 Sent warm wishes to ${receiverName}! 🌟`)
+                    : (type === 'anniversary' ? `💚 You already wished ${receiverName} today!` : `💖 You already wished ${receiverName} today!`);
+
+                if (typeof showCelebrationToast === 'function') {
+                    showCelebrationToast(toastMsg);
+                } else if (typeof showToast === 'function') {
+                    showToast(toastMsg);
+                }
             } else {
-                // If already wished
-                element.innerHTML = '<i class="fas fa-heart text-danger"></i> Wished';
-                element.style.color = '#ef4444';
-                element.style.borderColor = '#fee2e2';
-                showCelebrationToast(`💖 You have already wished ${receiverName} today!`);
+                originalStates.forEach(state => {
+                    state.el.disabled = state.disabled;
+                    state.el.style.pointerEvents = state.pointerEvents;
+                    state.el.style.opacity = state.opacity;
+                    state.el.innerHTML = state.html;
+                });
+                const errorMsg = `❌ Error: ${data.message}`;
+                if (typeof showCelebrationToast === 'function') {
+                    showCelebrationToast(errorMsg);
+                } else if (typeof showToast === 'function') {
+                    showToast(errorMsg);
+                }
             }
         })
         .catch(error => {
             console.error('Error wishing:', error);
-            element.style.pointerEvents = '';
-            element.style.opacity = '';
-            element.textContent = originalText;
-            showCelebrationToast('❌ Failed to send wishes. Please try again.');
+            originalStates.forEach(state => {
+                state.el.disabled = state.disabled;
+                state.el.style.pointerEvents = state.pointerEvents;
+                state.el.style.opacity = state.opacity;
+                state.el.innerHTML = state.html;
+            });
+            const errorMsg = '❌ Failed to send wishes. Please try again.';
+            if (typeof showCelebrationToast === 'function') {
+                showCelebrationToast(errorMsg);
+            } else if (typeof showToast === 'function') {
+                showToast(errorMsg);
+            }
         });
     }
 

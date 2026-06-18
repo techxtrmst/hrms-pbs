@@ -620,7 +620,7 @@
 
     <!-- Exit Banner -->
     {% if not employee.is_active %}
-    <div class="exit-banner">
+    <div class="exit-banner d-flex justify-content-between align-items-center">
         <div class="exit-banner-content">
             <i class="fas fa-info-circle"></i>
             <div>
@@ -633,6 +633,13 @@
                 </div>
             </div>
         </div>
+        {% if user.role == 'COMPANY_ADMIN' or user.role == 'SUPERADMIN' or user.role == 'EMPLOYEE_MANAGER' %}
+        <div>
+            <a href="{% url 'employee_rejoin' employee.pk %}" class="btn btn-success" style="background-color: #10b981; border-color: #10b981; border-radius: 8px; font-weight: 600; padding: 0.5rem 1.25rem;">
+                <i class="fas fa-user-plus me-2"></i> Rejoin Employee
+            </a>
+        </div>
+        {% endif %}
     </div>
     {% endif %}
 
@@ -683,6 +690,7 @@
             </button>
 
             <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 mt-2">
+                {% if employee.is_active %}
                 <li>
                     <h6 class="dropdown-header text-uppercase small text-muted fw-bold px-3 py-2">Exit Actions</h6>
                 </li>
@@ -701,6 +709,16 @@
                         <i class="fas fa-user-slash me-2 fa-fw"></i> Mark Absconded
                     </a>
                 </li>
+                {% else %}
+                <li>
+                    <h6 class="dropdown-header text-uppercase small text-muted fw-bold px-3 py-2">Rejoin Actions</h6>
+                </li>
+                <li>
+                    <a class="dropdown-item px-3 py-2 text-success fw-bold" href="{% url 'employee_rejoin' employee.pk %}">
+                        <i class="fas fa-user-plus me-2 fa-fw"></i> Rejoin Employee
+                    </a>
+                </li>
+                {% endif %}
                 <li>
                     <hr class="dropdown-divider">
                 </li>

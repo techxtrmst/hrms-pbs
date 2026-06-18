@@ -527,7 +527,11 @@
                                         </div>
                                         <div class="d-flex justify-content-between align-items-center mt-1">
                                             <div class="text-muted small">Happy Birthday! 🎂</div>
-                                            <a href="javascript:void(0)" class="keka-wish-link fw-bold" onclick="sendBirthdayWish('{{ emp.id }}', '{{ emp.user.first_name }}', 'birthday', this)" style="font-size:0.75rem; color:#5b47fb; text-decoration:none;">Wish</a>
+                                            {% if emp.has_wished %}
+                                                <a href="javascript:void(0)" class="keka-wish-link disabled" style="font-size:0.75rem; color:#ef4444; text-decoration:none; opacity: 0.5; cursor: not-allowed; pointer-events: none;"><i class="fas fa-heart text-danger"></i> Wished</a>
+                                            {% else %}
+                                                <a href="javascript:void(0)" class="keka-wish-link fw-bold" onclick="sendBirthdayWish('{{ emp.id }}', '{{ emp.user.first_name }}', 'birthday', this)" style="font-size:0.75rem; color:#5b47fb; text-decoration:none;">Wish</a>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>
@@ -559,7 +563,11 @@
                                     <div class="flex-grow-1 ms-3">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <h6 class="mb-0 fw-bold text-dark">{{ emp.user.get_full_name }}{% if emp.pseudo_name %} ({{ emp.pseudo_name }}){% endif %}</h6>
-                                            <a href="javascript:void(0)" class="keka-wish-link fw-bold" onclick="sendBirthdayWish('{{ emp.id }}', '{{ emp.user.first_name }}', 'anniversary', this)" style="font-size:0.75rem; color:#5b47fb; text-decoration:none;">Wish</a>
+                                            {% if emp.has_wished %}
+                                                <a href="javascript:void(0)" class="keka-wish-link disabled" style="font-size:0.75rem; color:#059669; text-decoration:none; opacity: 0.5; cursor: not-allowed; pointer-events: none;"><i class="fas fa-medal text-success"></i> Wished</a>
+                                            {% else %}
+                                                <a href="javascript:void(0)" class="keka-wish-link fw-bold" onclick="sendBirthdayWish('{{ emp.id }}', '{{ emp.user.first_name }}', 'anniversary', this)" style="font-size:0.75rem; color:#5b47fb; text-decoration:none;">Wish</a>
+                                            {% endif %}
                                         </div>
                                         <div class="text-muted small mt-1">{{ emp.years_of_service }} Years Celebration!
                                             🌟</div>
@@ -749,9 +757,15 @@
                                 </div>
                                 <h5 class="fw-bold text-dark">{{ emp.user.get_full_name }}{% if emp.pseudo_name %} ({{ emp.pseudo_name }}){% endif %}</h5>
                                 <div class="text-success fw-bold mt-2">Happy Birthday Today! 🎉</div>
-                                <button class="btn btn-sm btn-outline-primary mt-2" onclick="sendBirthdayWish('{{ emp.id }}', '{{ emp.user.first_name }}', 'birthday', this)">
-                                    <i class="fas fa-heart me-1"></i>Wish
-                                </button>
+                                {% if emp.has_wished %}
+                                    <button class="btn btn-sm btn-outline-danger mt-2 disabled" disabled style="opacity: 0.5; cursor: not-allowed; pointer-events: none;">
+                                        <i class="fas fa-heart text-danger me-1"></i>Wished
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="sendBirthdayWish('{{ emp.id }}', '{{ emp.user.first_name }}', 'birthday', this)">
+                                        <i class="fas fa-heart me-1"></i>Wish
+                                    </button>
+                                {% endif %}
                             </div>
                         </div>
                         {% endfor %}
@@ -782,9 +796,15 @@
                                 <h5 class="fw-bold text-dark">{{ emp.user.get_full_name }}{% if emp.pseudo_name %} ({{ emp.pseudo_name }}){% endif %}</h5>
                                 <div class="text-muted mt-1">{{ emp.years_of_service }} Years of Service 🌟</div>
                                 <div class="mt-2 badge bg-soft-warning text-warning">{{ emp.date_of_joining|date:"d M Y" }}</div>
-                                <button class="btn btn-sm btn-outline-primary mt-2 d-block mx-auto" onclick="sendBirthdayWish('{{ emp.id }}', '{{ emp.user.first_name }}', 'anniversary', this)">
-                                    <i class="fas fa-medal me-1"></i>Wish
-                                </button>
+                                {% if emp.has_wished %}
+                                    <button class="btn btn-sm btn-outline-success mt-2 d-block mx-auto disabled" disabled style="opacity: 0.5; cursor: not-allowed; pointer-events: none;">
+                                        <i class="fas fa-medal me-1"></i>Wished
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-sm btn-outline-primary mt-2 d-block mx-auto" onclick="sendBirthdayWish('{{ emp.id }}', '{{ emp.user.first_name }}', 'anniversary', this)">
+                                        <i class="fas fa-medal me-1"></i>Wish
+                                    </button>
+                                {% endif %}
                             </div>
                         </div>
                         {% endfor %}
@@ -1002,11 +1022,31 @@
     function sendBirthdayWish(receiverId, receiverName, type, element) {
         if (!receiverId) return;
 
-        // Visual loading feedback
-        const originalText = element.textContent;
-        element.style.pointerEvents = 'none';
-        element.style.opacity = '0.7';
-        element.textContent = 'Sending...';
+        const allRelatedElements = [];
+        document.querySelectorAll('[onclick*="sendBirthdayWish"]').forEach(el => {
+            if (el.getAttribute('onclick').includes(`'${receiverId}'`) || el.getAttribute('onclick').includes(`"${receiverId}"`)) {
+                allRelatedElements.push(el);
+            }
+        });
+
+        const originalStates = allRelatedElements.map(el => ({
+            el: el,
+            html: el.innerHTML,
+            disabled: el.disabled,
+            pointerEvents: el.style.pointerEvents,
+            opacity: el.style.opacity
+        }));
+
+        allRelatedElements.forEach(el => {
+            el.disabled = true;
+            el.style.pointerEvents = 'none';
+            el.style.opacity = '0.7';
+            if (el.tagName === 'BUTTON') {
+                el.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Sending…';
+            } else {
+                el.textContent = 'Sending...';
+            }
+        });
 
         fetch('/employees/api/birthday-wish/', {
             method: 'POST',
@@ -1021,26 +1061,82 @@
         })
         .then(response => response.json())
         .then(data => {
-            if (data.status === 'success') {
-                element.innerHTML = '<i class="fas fa-heart text-danger animate__animated animate__heartBeat"></i> Wished';
-                element.style.color = '#ef4444';
-                element.style.borderColor = '#fee2e2';
-                element.style.backgroundColor = '#fff5f5';
-                showCelebrationToast(`🎉 Sent warm wishes to ${receiverName}! 🌟`);
+            if (data.status === 'success' || data.message.includes('already')) {
+                const itemSelector = type === 'anniversary' ? '.anniv-item' : '.birthday-item';
+                document.querySelectorAll(`${itemSelector}[data-id="${receiverId}"]`).forEach(item => {
+                    item.setAttribute('data-has-wished', 'true');
+                });
+
+                allRelatedElements.forEach(el => {
+                    el.disabled = true;
+                    el.style.pointerEvents = 'none';
+                    el.style.opacity = '0.5';
+                    el.style.cursor = 'not-allowed';
+
+                    if (type === 'anniversary') {
+                        if (el.tagName === 'BUTTON') {
+                            el.innerHTML = '<i class="fas fa-medal me-1"></i>Wished';
+                            el.className = el.className.replace('btn-outline-primary', 'btn-outline-success') + ' disabled';
+                        } else {
+                            el.innerHTML = '<i class="fas fa-medal text-success"></i> Wished';
+                            el.className += ' disabled';
+                            el.style.color = '#059669';
+                        }
+                    } else {
+                        if (el.tagName === 'BUTTON') {
+                            el.innerHTML = '<i class="fas fa-heart text-danger me-1"></i>Wished';
+                            el.className = el.className.replace('btn-outline-primary', 'btn-outline-danger') + ' disabled';
+                        } else {
+                            el.innerHTML = '<i class="fas fa-heart text-danger"></i> Wished';
+                            el.className += ' disabled';
+                            el.style.color = '#ef4444';
+                        }
+                    }
+                });
+
+                const calView = document.getElementById('calendar-view-container');
+                if (calView && calView.style.display !== 'none' && typeof renderCalendar === 'function') {
+                    renderCalendar();
+                }
+
+                const toastMsg = data.status === 'success'
+                    ? (type === 'anniversary' ? `🌟 Sent warm wishes to ${receiverName}! 🌟` : `🎉 Sent warm wishes to ${receiverName}! 🌟`)
+                    : (type === 'anniversary' ? `💚 You already wished ${receiverName} today!` : `💖 You already wished ${receiverName} today!`);
+
+                if (typeof showCelebrationToast === 'function') {
+                    showCelebrationToast(toastMsg);
+                } else if (typeof showToast === 'function') {
+                    showToast(toastMsg);
+                }
             } else {
-                // If already wished
-                element.innerHTML = '<i class="fas fa-heart text-danger"></i> Wished';
-                element.style.color = '#ef4444';
-                element.style.borderColor = '#fee2e2';
-                showCelebrationToast(`💖 You have already wished ${receiverName} today!`);
+                originalStates.forEach(state => {
+                    state.el.disabled = state.disabled;
+                    state.el.style.pointerEvents = state.pointerEvents;
+                    state.el.style.opacity = state.opacity;
+                    state.el.innerHTML = state.html;
+                });
+                const errorMsg = `❌ Error: ${data.message}`;
+                if (typeof showCelebrationToast === 'function') {
+                    showCelebrationToast(errorMsg);
+                } else if (typeof showToast === 'function') {
+                    showToast(errorMsg);
+                }
             }
         })
         .catch(error => {
             console.error('Error wishing:', error);
-            element.style.pointerEvents = '';
-            element.style.opacity = '';
-            element.textContent = originalText;
-            showCelebrationToast('❌ Failed to send wishes. Please try again.');
+            originalStates.forEach(state => {
+                state.el.disabled = state.disabled;
+                state.el.style.pointerEvents = state.pointerEvents;
+                state.el.style.opacity = state.opacity;
+                state.el.innerHTML = state.html;
+            });
+            const errorMsg = '❌ Failed to send wishes. Please try again.';
+            if (typeof showCelebrationToast === 'function') {
+                showCelebrationToast(errorMsg);
+            } else if (typeof showToast === 'function') {
+                showToast(errorMsg);
+            }
         });
     }
 
