@@ -1634,29 +1634,10 @@ class LeaveApplyView(LoginRequiredMixin, CreateView):
         # Proceed with normal save
         response = super().form_valid(form)
 
-        # Send email notifications asynchronously to avoid blocking the response
-        import threading
+        # Send email notification immediately using Celery task to avoid delay and web server thread issues
+        from core.tasks import send_leave_request_notification_task
 
-        def send_email_async():
-            try:
-                import logging
-
-                from core.email_utils import send_leave_request_notification
-
-                logger = logging.getLogger(__name__)
-                result = send_leave_request_notification(self.object)
-                if not result.get("hr", False):
-                    logger.error(f"Failed to send leave request email to HR for {self.object.id}")
-            except Exception as e:
-                import logging
-
-                logger = logging.getLogger(__name__)
-                logger.error(f"Leave request email error: {str(e)}")
-
-        # Start email sending in background thread
-        email_thread = threading.Thread(target=send_email_async)
-        email_thread.daemon = True
-        email_thread.start()
+        send_leave_request_notification_task.delay(self.object.id)
 
         return response
 
@@ -1797,28 +1778,10 @@ def approve_leave(request, pk):
                 att_record.save()
                 current_date += timedelta(days=1)
 
-            # Send Approval Email with approval type info asynchronously
-            import threading
+            # Send Approval Email immediately using Celery task
+            from core.tasks import send_leave_approval_notification_task
 
-            def send_email_async():
-                try:
-                    import logging
-
-                    from core.email_utils import send_leave_approval_notification
-
-                    logger = logging.getLogger(__name__)
-                    if not send_leave_approval_notification(leave_request):
-                        logger.warning("Leave approval email notification failed")
-                except Exception as e:
-                    import logging
-
-                    logger = logging.getLogger(__name__)
-                    logger.error(f"Leave approval email error: {str(e)}")
-
-            # Start email sending in background thread
-            email_thread = threading.Thread(target=send_email_async)
-            email_thread.daemon = True
-            email_thread.start()
+            send_leave_approval_notification_task.delay(leave_request.id)
 
             # Show success message immediately
             approval_msg = {
@@ -1855,28 +1818,10 @@ def reject_leave(request, pk):
         leave_request.approved_at = timezone.now()
         leave_request.save()
 
-        # Send Rejection Email asynchronously
-        import threading
+        # Send Rejection Email immediately using Celery task
+        from core.tasks import send_leave_rejection_notification_task
 
-        def send_email_async():
-            try:
-                import logging
-
-                from core.email_utils import send_leave_rejection_notification
-
-                logger = logging.getLogger(__name__)
-                if not send_leave_rejection_notification(leave_request):
-                    logger.warning("Leave rejection email notification failed")
-            except Exception as e:
-                import logging
-
-                logger = logging.getLogger(__name__)
-                logger.error(f"Error sending rejection email: {e}")
-
-        # Start email sending in background thread
-        email_thread = threading.Thread(target=send_email_async)
-        email_thread.daemon = True
-        email_thread.start()
+        send_leave_rejection_notification_task.delay(leave_request.id)
 
         messages.success(request, "Leave rejected. Notification will be sent.")
 
@@ -3659,29 +3604,10 @@ class RegularizationCreateView(LoginRequiredMixin, CreateView):
         form.instance.employee = employee
         response = super().form_valid(form)
 
-        # Send Email Notification asynchronously to avoid blocking the response
-        import threading
+        # Send Email Notification immediately using Celery task
+        from core.tasks import send_regularization_request_notification_task
 
-        def send_email_async():
-            try:
-                import logging
-
-                from core.email_utils import send_regularization_request_notification
-
-                logger = logging.getLogger(__name__)
-                result = send_regularization_request_notification(self.object)
-                if not result.get("hr", False):
-                    logger.error(f"Failed to send regularization request email to HR for {self.object.id}")
-            except Exception as e:
-                import logging
-
-                logger = logging.getLogger(__name__)
-                logger.error(f"Error calling regularization email utility: {e}")
-
-        # Start email sending in background thread
-        email_thread = threading.Thread(target=send_email_async)
-        email_thread.daemon = True
-        email_thread.start()
+        send_regularization_request_notification_task.delay(self.object.id)
 
         return response
 
@@ -3798,28 +3724,10 @@ def approve_regularization(request, pk):
 
         attendance.save()
 
-        # Send Approval Email asynchronously
-        import threading
+        # Send Approval Email immediately using Celery task
+        from core.tasks import send_regularization_approval_notification_task
 
-        def send_email_async():
-            try:
-                import logging
-
-                from core.email_utils import send_regularization_approval_notification
-
-                logger = logging.getLogger(__name__)
-                if not send_regularization_approval_notification(reg_request):
-                    logger.warning("Regularization approval email notification failed")
-            except Exception as e:
-                import logging
-
-                logger = logging.getLogger(__name__)
-                logger.error(f"Error sending regularization approval email: {e}")
-
-        # Start email sending in background thread
-        email_thread = threading.Thread(target=send_email_async)
-        email_thread.daemon = True
-        email_thread.start()
+        send_regularization_approval_notification_task.delay(reg_request.id)
 
         messages.success(request, "Regularization approved. Notification will be sent.")
 
@@ -3863,28 +3771,10 @@ def reject_regularization(request, pk):
                 logger = logging.getLogger(__name__)
                 logger.error(f"Error resetting attendance status for rejected week-off work: {e}")
 
-        # Send Rejection Email asynchronously
-        import threading
+        # Send Rejection Email immediately using Celery task
+        from core.tasks import send_regularization_rejection_notification_task
 
-        def send_email_async():
-            try:
-                import logging
-
-                from core.email_utils import send_regularization_rejection_notification
-
-                logger = logging.getLogger(__name__)
-                if not send_regularization_rejection_notification(reg_request):
-                    logger.warning("Regularization rejection email notification failed")
-            except Exception as e:
-                import logging
-
-                logger = logging.getLogger(__name__)
-                logger.error(f"Error sending regularization rejection email: {e}")
-
-        # Start email sending in background thread
-        email_thread = threading.Thread(target=send_email_async)
-        email_thread.daemon = True
-        email_thread.start()
+        send_regularization_rejection_notification_task.delay(reg_request.id)
 
         messages.success(request, "Regularization rejected. Notification will be sent.")
 
@@ -3981,6 +3871,7 @@ def leave_configuration(request):
             "months_ctx": months_ctx,
             "years_ctx": years_ctx,
             "transactions": transactions,
+            "locations": company.locations.filter(is_active=True).order_by("name"),
             "active_count": all_employees.filter(is_active=True, employment_status="ACTIVE").count(),
             "inactive_count": all_employees.filter(Q(is_active=False) | ~Q(employment_status="ACTIVE")).count(),
             "selected_status": status_filter,
@@ -4128,6 +4019,8 @@ def run_monthly_accrual(request):
     try:
         month = request.POST.get("month")
         year = request.POST.get("year")
+        location_id = request.POST.get("location_id")
+        force_accrual = request.POST.get("force") == "true"
 
         period_msg = ""
         month_name = ""
@@ -4144,16 +4037,34 @@ def run_monthly_accrual(request):
                 )
 
         # Use force_monthly_accrual command for manual runs (bypasses date check)
+        # Use request.company (set by CompanyIsolationMiddleware) — more reliable than user.company
+        company = getattr(request, "company", None) or user.company
+        if not company:
+            messages.error(request, "Cannot run accrual: no company context found for your account.")
+            return redirect("leave_configuration")
+        company_id = company.id
+
+        cmd_kwargs = {"user_id": user.id}
         if month and year:
-            call_command("force_monthly_accrual", month=int(month), year=int(year), user_id=user.id)
+            cmd_kwargs["month"] = int(month)
+            cmd_kwargs["year"] = int(year)
         else:
-            # If no month/year specified, use current month
             from django.utils import timezone
 
             now = timezone.now()
-            call_command("force_monthly_accrual", month=now.month, year=now.year, user_id=user.id)
+            cmd_kwargs["month"] = now.month
+            cmd_kwargs["year"] = now.year
             month_name = calendar.month_name[now.month]
             period_msg = f"for {month_name} {now.year}"
+
+        if company_id:
+            cmd_kwargs["company_id"] = company_id
+        if location_id:
+            cmd_kwargs["location_id"] = int(location_id)
+        if force_accrual:
+            cmd_kwargs["force"] = True
+
+        call_command("force_monthly_accrual", **cmd_kwargs)
 
         success_msg = (
             f"Monthly accrual processed {period_msg}: +1 Sick and +1 Casual leave added to eligible employees."
@@ -4169,6 +4080,54 @@ def run_monthly_accrual(request):
         messages.error(request, f"Error running accrual: {str(e)}")
 
     return redirect("leave_configuration")
+
+
+@login_required
+def check_accrual_status(request):
+    user = request.user
+    if user.role not in [User.Role.COMPANY_ADMIN, User.Role.MANAGER]:
+        return JsonResponse({"error": "Permission Denied"}, status=403)
+
+    # Use request.company (set by CompanyIsolationMiddleware) — more reliable than user.company
+    company = getattr(request, "company", None) or user.company
+    if not company:
+        return JsonResponse({"error": "No company context found for your account"}, status=403)
+    month = request.GET.get("month")
+    year = request.GET.get("year")
+    location_id = request.GET.get("location_id")
+
+    if not month or not year:
+        return JsonResponse({"error": "Month and Year are required"}, status=400)
+
+    try:
+        month = int(month)
+        year = int(year)
+    except ValueError:
+        return JsonResponse({"error": "Invalid month or year"}, status=400)
+
+    # Filter active employees in this company (and location if provided)
+    employees_query = Employee.objects.filter(company=company, is_active=True)
+    if location_id:
+        with contextlib.suppress(ValueError):
+            employees_query = employees_query.filter(location_id=int(location_id))
+
+    # Check for existing credit transaction for these employees
+    from employees.models import LeaveTransaction
+
+    accrual_reason = f"Monthly Accrual ({month}/{year})"
+    txs = LeaveTransaction.objects.filter(
+        employee__in=employees_query, transaction_type="CREDIT", reason__icontains=accrual_reason
+    ).select_related("created_by")
+
+    if txs.exists():
+        run_by = "System Accrual"
+        for tx in txs:
+            if tx.created_by:
+                run_by = tx.created_by.get_full_name() or tx.created_by.username
+                break
+        return JsonResponse({"already_run": True, "run_by": run_by})
+
+    return JsonResponse({"already_run": False})
 
 
 @login_required

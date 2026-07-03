@@ -88,6 +88,11 @@ urlpatterns = [
         name="run_monthly_accrual",
     ),
     path(
+        "leave/configuration/accrue/check/",
+        views.check_accrual_status,
+        name="check_accrual_status",
+    ),
+    path(
         "leave/balance/<int:pk>/update/",
         views.update_leave_balance,
         name="update_leave_balance",

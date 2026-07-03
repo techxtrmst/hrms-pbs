@@ -20,10 +20,9 @@ from django.db import transaction
 from django.utils import timezone
 
 from core.email_utils import (
-    send_anniversary_announcement,
     send_anniversary_email,
-    send_birthday_announcement,
     send_birthday_email,
+    send_consolidated_celebrations_announcement,
     send_probation_completion_email,
 )
 from employees.models import Employee
@@ -65,8 +64,7 @@ class Command(BaseCommand):
         probation_count = 0
         birthday_emails_sent = 0
         anniversary_emails_sent = 0
-        birthday_announcements_sent = 0
-        anniversary_announcements_sent = 0
+        consolidated_announcements_sent = 0
         probation_emails_sent = 0
 
         # Get all active employees with their locations
@@ -87,6 +85,9 @@ class Command(BaseCommand):
 
         # Process each employee based on their location timezone
         processed_locations = set()
+
+        # Accumulate for consolidated announcements: {company_id: {'company': Company, 'birthdays': [], 'anniversaries': []}}
+        consolidated_announcements = {}
 
         for emp in all_employees:
             # Get employee's timezone using central utility
@@ -143,21 +144,27 @@ class Command(BaseCommand):
                                     birthday_emails_sent += 1
                                     self.stdout.write(f"   [OK] Birthday email sent to: {emp.user.email}")
 
-                                # Send company-wide announcement
-                                company_employees = companies[emp.company.id]["employees"]
-                                announcement_count = send_birthday_announcement(emp_locked, company_employees)
-                                if announcement_count > 0:
-                                    birthday_announcements_sent += announcement_count
-                                    self.stdout.write(f"   [OK] Announcement sent to {announcement_count} employees")
+                                # Accumulate for consolidated announcement
+                                if emp.company.id not in consolidated_announcements:
+                                    consolidated_announcements[emp.company.id] = {
+                                        "company": emp.company,
+                                        "birthdays": [],
+                                        "anniversaries": [],
+                                    }
+                                consolidated_announcements[emp.company.id]["birthdays"].append(emp_locked)
 
                                 # Mark as sent
                                 emp_locked.last_birthday_email_year = local_date.year
                                 emp_locked.save(update_fields=["last_birthday_email_year"])
                             else:
                                 self.stdout.write(f"   Would send birthday email to: {emp.user.email}")
-                                company_employees = companies[emp.company.id]["employees"]
-                                recipient_count = len([e for e in company_employees if e.user.email and e.id != emp.id])
-                                self.stdout.write(f"   Would send announcement to {recipient_count} employees")
+                                if emp.company.id not in consolidated_announcements:
+                                    consolidated_announcements[emp.company.id] = {
+                                        "company": emp.company,
+                                        "birthdays": [],
+                                        "anniversaries": [],
+                                    }
+                                consolidated_announcements[emp.company.id]["birthdays"].append(emp_locked)
                 except Exception as e:
                     self.stdout.write(
                         self.style.ERROR(f"Error processing birthday details for {emp.user.get_full_name()}: {str(e)}")
@@ -200,21 +207,27 @@ class Command(BaseCommand):
                                     anniversary_emails_sent += 1
                                     self.stdout.write(f"   [OK] Anniversary email sent to: {emp.user.email}")
 
-                                # Send company-wide announcement
-                                company_employees = companies[emp.company.id]["employees"]
-                                announcement_count = send_anniversary_announcement(emp_locked, years, company_employees)
-                                if announcement_count > 0:
-                                    anniversary_announcements_sent += announcement_count
-                                    self.stdout.write(f"   [OK] Announcement sent to {announcement_count} employees")
+                                # Accumulate for consolidated announcement
+                                if emp.company.id not in consolidated_announcements:
+                                    consolidated_announcements[emp.company.id] = {
+                                        "company": emp.company,
+                                        "birthdays": [],
+                                        "anniversaries": [],
+                                    }
+                                consolidated_announcements[emp.company.id]["anniversaries"].append((emp_locked, years))
 
                                 # Mark as sent
                                 emp_locked.last_anniversary_email_year = local_date.year
                                 emp_locked.save(update_fields=["last_anniversary_email_year"])
                             else:
                                 self.stdout.write(f"   Would send anniversary email to: {emp.user.email}")
-                                company_employees = companies[emp.company.id]["employees"]
-                                recipient_count = len([e for e in company_employees if e.user.email and e.id != emp.id])
-                                self.stdout.write(f"   Would send announcement to {recipient_count} employees")
+                                if emp.company.id not in consolidated_announcements:
+                                    consolidated_announcements[emp.company.id] = {
+                                        "company": emp.company,
+                                        "birthdays": [],
+                                        "anniversaries": [],
+                                    }
+                                consolidated_announcements[emp.company.id]["anniversaries"].append((emp_locked, years))
                 except Exception as e:
                     self.stdout.write(
                         self.style.ERROR(
@@ -245,6 +258,38 @@ class Command(BaseCommand):
                     else:
                         self.stdout.write(f"   Would send probation completion email to: {emp.user.email}")
 
+        # Send consolidated announcements per company
+        for company_id, data in consolidated_announcements.items():
+            company = data["company"]
+            birthdays = data["birthdays"]
+            anniversaries = data["anniversaries"]
+            company_employees = companies[company_id]["employees"]
+
+            if not birthdays and not anniversaries:
+                continue
+
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"\n📢 Sending consolidated announcement for {company.name} "
+                    f"({len(birthdays)} birthdays, {len(anniversaries)} anniversaries)..."
+                )
+            )
+
+            if not test_mode:
+                announcement_count = send_consolidated_celebrations_announcement(
+                    company, birthdays, anniversaries, company_employees
+                )
+                if announcement_count > 0:
+                    consolidated_announcements_sent += 1
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            f"   [OK] Consolidated announcement email sent to {announcement_count} employees"
+                        )
+                    )
+            else:
+                recipient_count = len([e for e in company_employees if e.user.email])
+                self.stdout.write(f"   Would send consolidated announcement to {recipient_count} employees")
+
         # Print summary
         self.stdout.write(self.style.SUCCESS("\n\n=== Summary ==="))
         self.stdout.write(f"Birthdays found (at target hour): {birthday_count}")
@@ -253,19 +298,17 @@ class Command(BaseCommand):
 
         if not test_mode:
             self.stdout.write(f"\nBirthday emails sent: {birthday_emails_sent}")
-            self.stdout.write(f"Birthday announcements sent to: {birthday_announcements_sent} employees")
             self.stdout.write(f"Anniversary emails sent: {anniversary_emails_sent}")
-            self.stdout.write(f"Anniversary announcements sent to: {anniversary_announcements_sent} employees")
+            self.stdout.write(f"Consolidated announcement emails sent: {consolidated_announcements_sent}")
             self.stdout.write(f"Probation completion emails sent: {probation_emails_sent}")
 
-            total_emails = (
+            (
                 birthday_emails_sent
                 + anniversary_emails_sent
-                + birthday_announcements_sent
-                + anniversary_announcements_sent
+                + (consolidated_announcements_sent * len(all_employees))
                 + probation_emails_sent
             )
-            self.stdout.write(self.style.SUCCESS(f"\n[OK] Total emails sent: {total_emails}"))
+            self.stdout.write(self.style.SUCCESS("\n[OK] Execution completed"))
         else:
             self.stdout.write(self.style.WARNING("\nNo emails sent (test mode)"))
 

@@ -1575,7 +1575,13 @@
 
         <!-- Dashboard -->
         {% if user.role != 'SUPERADMIN' %}
-            {% if user.role == 'FINANCE_MANAGER' or user.is_finance_manager %}
+            {% if user.role == 'COMPANY_ADMIN' %}
+            {# COMPANY_ADMIN always goes to the admin dashboard, even if they also have is_finance_manager=True #}
+            <a href="{% url 'dashboard' %}"
+                class="{% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == '' %}active{% endif %}">
+                <i class="fas fa-home"></i> <span>Dashboard</span>
+            </a>
+            {% elif user.role == 'FINANCE_MANAGER' or user.is_finance_manager %}
             <a href="{% url 'finance_portal:dashboard' %}?view=payroll"
                 class="{% if request.resolver_match.namespace == 'finance_portal' and request.resolver_match.url_name == 'dashboard' and request.GET.view == 'payroll' or request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == '' %}active{% endif %}">
                 <i class="fas fa-home"></i> <span>Dashboard</span>

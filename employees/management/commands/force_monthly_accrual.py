@@ -41,6 +41,16 @@ class Command(BaseCommand):
             type=int,
             help="ID of the user running this manual accrual",
         )
+        parser.add_argument(
+            "--company-id",
+            type=int,
+            help="ID of the company/entity to filter employees",
+        )
+        parser.add_argument(
+            "--location-id",
+            type=int,
+            help="ID of the location to filter employees",
+        )
 
     def handle(self, *args, **options):
         # Get target month/year
@@ -49,6 +59,8 @@ class Command(BaseCommand):
         target_year = options.get("year") or now.year
         force = options.get("force", False)
         user_id = options.get("user_id")
+        company_id = options.get("company_id")
+        location_id = options.get("location_id")
 
         # Load user if provided
         user = None
@@ -69,10 +81,34 @@ class Command(BaseCommand):
         skipped_count = 0
         error_count = 0
 
-        # Get all active employees with leave balances
-        active_employees = Employee.objects.filter(is_active=True).select_related(
-            "company", "location", "leave_balance"
+        # Safety: if a user triggered this manually but no company was provided,
+        # refuse to run — better to fail loudly than to accrue all companies.
+        if user_id and not company_id:
+            self.stdout.write(
+                self.style.ERROR(
+                    "ERROR: Manual accrual triggered (user_id provided) but --company-id is missing. "
+                    "Refusing to run to prevent cross-company data bleed. "
+                    "Pass --company-id to scope the accrual correctly."
+                )
+            )
+            return
+
+        # Get active employees — ALWAYS scoped to a company for manual runs
+        active_employees = Employee.objects.filter(
+            is_active=True,
+            employment_status="ACTIVE",
         )
+        if company_id:
+            active_employees = active_employees.filter(company_id=company_id)
+            self.stdout.write(f"Scoping accrual to company_id={company_id}")
+        else:
+            self.stdout.write(
+                self.style.WARNING("WARNING: No company_id filter — running for ALL companies (automated mode only).")
+            )
+        if location_id:
+            active_employees = active_employees.filter(location_id=location_id)
+            self.stdout.write(f"Further scoping to location_id={location_id}")
+        active_employees = active_employees.select_related("company", "location", "leave_balance")
 
         from employees.models import LeaveTransaction
 

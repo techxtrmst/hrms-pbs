@@ -2498,6 +2498,10 @@ def cancel_leave_request(request, pk):
         messages.error(request, "You are not authorized to cancel this request.")
         return redirect("my_leaves")
 
+    if leave_request.has_passed:
+        messages.error(request, "Cannot cancel a leave request whose end date has passed.")
+        return redirect("my_leaves")
+
     if leave_request.status == "PENDING":
         leave_request.delete()
         messages.success(request, "Leave request cancelled successfully.")

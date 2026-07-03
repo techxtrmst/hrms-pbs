@@ -41,16 +41,16 @@ def safe_alter_locationlog(apps, schema_editor):
         # Add accuracy column if missing
         if not column_exists(table, "accuracy"):
             cursor.execute(f"ALTER TABLE {table} ADD COLUMN accuracy DOUBLE PRECISION NULL")
-            print("✅ Added accuracy column")
+            print("[OK] Added accuracy column")
         else:
-            print("ℹ️ accuracy column already exists")
+            print("[INFO] accuracy column already exists")
 
         # Add address column if missing
         if not column_exists(table, "address"):
             cursor.execute(f"ALTER TABLE {table} ADD COLUMN address TEXT NULL")
-            print("✅ Added address column")
+            print("[OK] Added address column")
         else:
-            print("ℹ️ address column already exists")
+            print("[INFO] address column already exists")
 
         # Add attendance_session_id FK if missing
         if not column_exists(table, "attendance_session_id"):
@@ -64,9 +64,9 @@ def safe_alter_locationlog(apps, schema_editor):
                 DEFERRABLE INITIALLY DEFERRED
                 """
             )
-            print("✅ Added attendance_session_id FK")
+            print("[OK] Added attendance_session_id FK")
         else:
-            print("ℹ️ attendance_session_id column already exists")
+            print("[INFO] attendance_session_id column already exists")
 
         # Add created_at column if missing
         if not column_exists(table, "created_at"):
@@ -77,16 +77,16 @@ def safe_alter_locationlog(apps, schema_editor):
                 DEFAULT NOW() NOT NULL
                 """
             )
-            print("✅ Added created_at column")
+            print("[OK] Added created_at column")
         else:
-            print("ℹ️ created_at column already exists")
+            print("[INFO] created_at column already exists")
 
         # Add is_valid column if missing
         if not column_exists(table, "is_valid"):
             cursor.execute(f"ALTER TABLE {table} ADD COLUMN is_valid BOOLEAN DEFAULT TRUE NOT NULL")
-            print("✅ Added is_valid column")
+            print("[OK] Added is_valid column")
         else:
-            print("ℹ️ is_valid column already exists")
+            print("[INFO] is_valid column already exists")
 
         # Add log_type column if missing
         if not column_exists(table, "log_type"):
@@ -96,26 +96,26 @@ def safe_alter_locationlog(apps, schema_editor):
                 ADD COLUMN log_type VARCHAR(20) DEFAULT 'MANUAL' NOT NULL
                 """
             )
-            print("✅ Added log_type column")
+            print("[OK] Added log_type column")
         else:
-            print("ℹ️ log_type column already exists")
+            print("[INFO] log_type column already exists")
 
         # Add indexes if missing
         idx1 = "employees_l_employe_d862f5_idx"
         if not index_exists(idx1):
             cursor.execute(f"CREATE INDEX {idx1} ON {table} (employee_id, timestamp)")
-            print(f"✅ Created index {idx1}")
+            print(f"[OK] Created index {idx1}")
         else:
-            print(f"ℹ️ Index {idx1} already exists")
+            print(f"[INFO] Index {idx1} already exists")
 
         idx2 = "employees_l_attenda_bc2cae_idx"
         if not index_exists(idx2):
             cursor.execute(f"CREATE INDEX {idx2} ON {table} (attendance_session_id, log_type)")
-            print(f"✅ Created index {idx2}")
+            print(f"[OK] Created index {idx2}")
         else:
-            print(f"ℹ️ Index {idx2} already exists")
+            print(f"[INFO] Index {idx2} already exists")
 
-    print("✅ LocationLog schema update complete")
+    print("[OK] LocationLog schema update complete")
 
 
 class Migration(migrations.Migration):

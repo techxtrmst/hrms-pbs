@@ -2810,8 +2810,9 @@
 <div class="modal fade" id="accrualModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
-            <form action="{% url 'run_monthly_accrual' %}" method="post">
+            <form action="{% url 'run_monthly_accrual' %}" method="post" id="accrualForm">
                 {% csrf_token %}
+                <input type="hidden" name="force" id="accrualForceInput" value="false">
                 <div class="modal-body p-5 text-center">
                     <div class="mb-4 d-inline-flex align-items-center justify-content-center"
                         style="width: 80px; height: 80px; background: #e0e7ff; border-radius: 50%; color: #4338ca;">
@@ -2823,7 +2824,7 @@
                         <div class="row g-2">
                             <div class="col-8">
                                 <label class="small fw-bold text-muted mb-1">Select Month</label>
-                                <select name="month" class="form-select form-select-sm fw-bold">
+                                <select name="month" class="form-select form-select-sm fw-bold" id="accrualMonthSelect">
                                     {% for m in months_ctx %}
                                     <option value="{{ m.value }}" {{ m.selected }}>{{ m.name }}</option>
                                     {% endfor %}
@@ -2831,9 +2832,20 @@
                             </div>
                             <div class="col-4">
                                 <label class="small fw-bold text-muted mb-1">Year</label>
-                                <select name="year" class="form-select form-select-sm fw-bold">
+                                <select name="year" class="form-select form-select-sm fw-bold" id="accrualYearSelect">
                                     {% for y in years_ctx %}
                                     <option value="{{ y.value }}" {{ y.selected }}>{{ y.value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row g-2 mt-2">
+                            <div class="col-12">
+                                <label class="small fw-bold text-muted mb-1 d-block">Select Location</label>
+                                <select name="location_id" class="form-select form-select-sm fw-bold" id="accrualLocationSelect">
+                                    <option value="">All Locations</option>
+                                    {% for loc in locations %}
+                                    <option value="{{ loc.id }}">{{ loc.name }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -3434,6 +3446,53 @@
             historySearch.addEventListener('input', filterHistory);
             historyFilterTx.addEventListener('change', filterHistory);
             historyFilterLeave.addEventListener('change', filterHistory);
+        }
+
+        // Intercept Accrual Form submission to check if already run
+        const accrualForm = document.getElementById('accrualForm');
+        if (accrualForm) {
+            accrualForm.addEventListener('submit', function (e) {
+                // If force input is set to true, allow the submit to proceed
+                const forceInput = document.getElementById('accrualForceInput');
+                if (forceInput && forceInput.value === 'true') {
+                    return;
+                }
+
+                // Otherwise, prevent default and check status
+                e.preventDefault();
+
+                const month = document.getElementById('accrualMonthSelect').value;
+                const year = document.getElementById('accrualYearSelect').value;
+                const locationId = document.getElementById('accrualLocationSelect').value;
+
+                // Build query params
+                let checkUrl = `{% url 'check_accrual_status' %}?month=${month}&year=${year}`;
+                if (locationId) {
+                    checkUrl += `&location_id=${locationId}`;
+                }
+
+                fetch(checkUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.already_run) {
+                            const runBy = data.run_by || 'System Accrual';
+                            const confirmMsg = `Monthly accrual has already been run for this period by ${runBy}.\n\nDo you want to run it again or cancel?`;
+                            if (confirm(confirmMsg)) {
+                                if (forceInput) {
+                                    forceInput.value = 'true';
+                                }
+                                accrualForm.submit();
+                            }
+                        } else {
+                            accrualForm.submit();
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error checking accrual status:', err);
+                        // Fallback: submit normally if request fails
+                        accrualForm.submit();
+                    });
+            });
         }
 
         // Check for bulk upload success and refresh data

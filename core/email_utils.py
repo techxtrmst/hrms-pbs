@@ -292,6 +292,85 @@ def send_anniversary_announcement(employee, years, company_employees, recipient_
         return 0
 
 
+def send_consolidated_celebrations_announcement(company, birthdays, anniversaries, company_employees):
+    """
+    Send a consolidated email containing all birthdays and work anniversaries today to all company employees.
+    """
+    try:
+        from_email = "Petabytz HR <hrms@petabytz.com>"
+        connection = get_hr_email_connection()
+
+        # Format lists for template context
+        birthday_list = []
+        for emp in birthdays:
+            birthday_list.append(
+                {
+                    "name": emp.user.get_full_name(),
+                    "designation": emp.designation,
+                    "department": emp.department,
+                }
+            )
+
+        anniversary_list = []
+        for emp, years in anniversaries:
+            anniversary_list.append(
+                {
+                    "name": emp.user.get_full_name(),
+                    "designation": emp.designation,
+                    "department": emp.department,
+                    "years": years,
+                }
+            )
+
+        context = {
+            "company_name": company.name,
+            "birthdays": birthday_list,
+            "anniversaries": anniversary_list,
+        }
+
+        # Render HTML email
+        html_content = render_to_string("core/emails/consolidated_celebrations_announcement.html", context)
+
+        # Subject building
+        celebrating_names = []
+        if birthdays:
+            celebrating_names.extend([emp.user.first_name for emp in birthdays])
+        if anniversaries:
+            celebrating_names.extend([emp.user.first_name for emp, _ in anniversaries])
+
+        names_str = ", ".join(celebrating_names)
+        if len(celebrating_names) > 3:
+            names_str = f"{', '.join(celebrating_names[:3])} and others"
+
+        subject = f"🎉 Today's Celebrations! Let's wish {names_str}"
+
+        # Get recipient list: all company employees (excluding those without email)
+        recipient_list = [emp.user.email for emp in company_employees if emp.user.email]
+        recipient_list = list({email for email in recipient_list if email})
+
+        if not recipient_list:
+            logger.warning(f"No recipients found for consolidated celebration announcement for company {company.name}")
+            return 0
+
+        # Send email
+        email = EmailMultiAlternatives(subject, "", from_email, recipient_list, connection=connection)
+        email.attach_alternative(html_content, "text/html")
+        email.send()
+
+        logger.info(
+            f"Consolidated announcement sent to {len(recipient_list)} employees for company {company.name} "
+            f"({len(birthdays)} birthdays, {len(anniversaries)} anniversaries)"
+        )
+        return len(recipient_list)
+
+    except Exception as e:
+        logger.error(f"Failed to send consolidated announcement for company {company.name}: {str(e)}")
+        import traceback
+
+        logger.error(traceback.format_exc())
+        return 0
+
+
 def send_probation_completion_email(employee):
     """
     Send probation completion email to an employee using hrms@petabytz.com

@@ -1283,6 +1283,36 @@ class LeaveRequest(models.Model):
         ordering = ["-created_at"]
 
     @property
+    def has_passed(self):
+        """Check if the leave request end date has passed based on employee's timezone"""
+        try:
+            import pytz
+
+            from core.utils import get_user_timezone
+
+            tz_name = get_user_timezone(self.employee.user, self.employee.company)
+            tz = pytz.timezone(tz_name)
+            today = timezone.now().astimezone(tz).date()
+        except Exception:
+            today = timezone.localdate()
+
+        end = self.end_date
+        from datetime import datetime
+
+        if isinstance(end, str):
+            try:
+                end = datetime.strptime(end, "%Y-%m-%d").date()
+            except ValueError:
+                try:
+                    end = datetime.fromisoformat(end).date()
+                except (ValueError, TypeError):
+                    return False
+        elif isinstance(end, datetime):
+            end = end.date()
+
+        return end < today
+
+    @property
     def total_days(self):
         """Calculate total leave days"""
         from datetime import datetime

@@ -327,3 +327,111 @@ def run_monthly_leave_accrual(self):
     except Exception as e:
         logger.error(f"Error in run_monthly_leave_accrual task: {e}")
         return {"status": "error", "message": str(e)}
+
+
+@shared_task(bind=True, max_retries=3)
+def send_leave_request_notification_task(self, leave_request_id):
+    """Send leave request notification immediately to manager/HR."""
+    from core.email_utils import send_leave_request_notification
+    from employees.models import LeaveRequest
+
+    try:
+        leave_request = LeaveRequest.objects.get(pk=leave_request_id)
+        result = send_leave_request_notification(leave_request)
+        return {"status": "success", "result": result}
+    except LeaveRequest.DoesNotExist:
+        logger.error(f"LeaveRequest {leave_request_id} not found.")
+        return {"status": "error", "message": "Leave request not found"}
+    except Exception as e:
+        logger.error(f"Error sending leave request email: {e}")
+        raise self.retry(exc=e, countdown=60)
+
+
+@shared_task(bind=True, max_retries=3)
+def send_leave_approval_notification_task(self, leave_request_id):
+    """Send leave approval notification immediately to employee."""
+    from core.email_utils import send_leave_approval_notification
+    from employees.models import LeaveRequest
+
+    try:
+        leave_request = LeaveRequest.objects.get(pk=leave_request_id)
+        result = send_leave_approval_notification(leave_request)
+        return {"status": "success", "sent": result}
+    except LeaveRequest.DoesNotExist:
+        logger.error(f"LeaveRequest {leave_request_id} not found.")
+        return {"status": "error", "message": "Leave request not found"}
+    except Exception as e:
+        logger.error(f"Error sending leave approval email: {e}")
+        raise self.retry(exc=e, countdown=60)
+
+
+@shared_task(bind=True, max_retries=3)
+def send_leave_rejection_notification_task(self, leave_request_id):
+    """Send leave rejection notification immediately to employee."""
+    from core.email_utils import send_leave_rejection_notification
+    from employees.models import LeaveRequest
+
+    try:
+        leave_request = LeaveRequest.objects.get(pk=leave_request_id)
+        result = send_leave_rejection_notification(leave_request)
+        return {"status": "success", "sent": result}
+    except LeaveRequest.DoesNotExist:
+        logger.error(f"LeaveRequest {leave_request_id} not found.")
+        return {"status": "error", "message": "Leave request not found"}
+    except Exception as e:
+        logger.error(f"Error sending leave rejection email: {e}")
+        raise self.retry(exc=e, countdown=60)
+
+
+@shared_task(bind=True, max_retries=3)
+def send_regularization_request_notification_task(self, regularization_request_id):
+    """Send regularization request notification immediately to manager/HR."""
+    from core.email_utils import send_regularization_request_notification
+    from employees.models import RegularizationRequest
+
+    try:
+        reg_request = RegularizationRequest.objects.get(pk=regularization_request_id)
+        result = send_regularization_request_notification(reg_request)
+        return {"status": "success", "result": result}
+    except RegularizationRequest.DoesNotExist:
+        logger.error(f"RegularizationRequest {regularization_request_id} not found.")
+        return {"status": "error", "message": "Regularization request not found"}
+    except Exception as e:
+        logger.error(f"Error sending regularization request email: {e}")
+        raise self.retry(exc=e, countdown=60)
+
+
+@shared_task(bind=True, max_retries=3)
+def send_regularization_approval_notification_task(self, regularization_request_id):
+    """Send regularization approval notification immediately to employee."""
+    from core.email_utils import send_regularization_approval_notification
+    from employees.models import RegularizationRequest
+
+    try:
+        reg_request = RegularizationRequest.objects.get(pk=regularization_request_id)
+        result = send_regularization_approval_notification(reg_request)
+        return {"status": "success", "sent": result}
+    except RegularizationRequest.DoesNotExist:
+        logger.error(f"RegularizationRequest {regularization_request_id} not found.")
+        return {"status": "error", "message": "Regularization request not found"}
+    except Exception as e:
+        logger.error(f"Error sending regularization approval email: {e}")
+        raise self.retry(exc=e, countdown=60)
+
+
+@shared_task(bind=True, max_retries=3)
+def send_regularization_rejection_notification_task(self, regularization_request_id):
+    """Send regularization rejection notification immediately to employee."""
+    from core.email_utils import send_regularization_rejection_notification
+    from employees.models import RegularizationRequest
+
+    try:
+        reg_request = RegularizationRequest.objects.get(pk=regularization_request_id)
+        result = send_regularization_rejection_notification(reg_request)
+        return {"status": "success", "sent": result}
+    except RegularizationRequest.DoesNotExist:
+        logger.error(f"RegularizationRequest {regularization_request_id} not found.")
+        return {"status": "error", "message": "Regularization request not found"}
+    except Exception as e:
+        logger.error(f"Error sending regularization rejection email: {e}")
+        raise self.retry(exc=e, countdown=60)

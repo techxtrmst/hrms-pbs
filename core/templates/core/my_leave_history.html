@@ -424,13 +424,21 @@
                                 {{ req.admin_comment|truncatechars:40 }}
                             </span>
                             {% elif req.status == 'PENDING' %}
-                            <form method="post" action="{% url 'cancel_my_leave_request' req.id %}"
-                                  onsubmit="return confirm('Cancel this leave request?');" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-link text-danger p-0 text-decoration-none small fw-semibold">
+                                {% if req.has_passed %}
+                                <button class="btn btn-link text-muted p-0 text-decoration-none small fw-semibold"
+                                    style="opacity: 0.6; cursor: not-allowed;" disabled
+                                    title="Cannot cancel a leave request whose end date has passed">
                                     <i class="fas fa-times me-1"></i>Cancel
                                 </button>
-                            </form>
+                                {% else %}
+                                <form method="post" action="{% url 'cancel_my_leave_request' req.id %}"
+                                      onsubmit="return confirm('Cancel this leave request?');" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-link text-danger p-0 text-decoration-none small fw-semibold">
+                                        <i class="fas fa-times me-1"></i>Cancel
+                                    </button>
+                                </form>
+                                {% endif %}
                             {% else %}
                             <span class="text-muted small">—</span>
                             {% endif %}

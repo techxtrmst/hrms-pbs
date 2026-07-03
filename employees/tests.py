@@ -144,3 +144,266 @@ class AutomatedWeekOffRequestTestCase(TestCase):
         # Verify the Attendance status is WEEKLY_OFF
         attendance.refresh_from_db()
         self.assertEqual(attendance.status, "WEEKLY_OFF")
+
+
+class LeaveRequestCancelTestCase(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name="Test Company", hr_email="hr@test.com")
+        self.employee_user = User.objects.create_user(
+            username="employee_cancel",
+            email="employee_cancel@test.com",
+            password="password",
+            role=User.Role.EMPLOYEE,
+            company=self.company,
+            must_change_password=False,
+        )
+        self.employee = Employee.objects.create(
+            user=self.employee_user,
+            company=self.company,
+            designation="Developer",
+            department="Engineering",
+            badge_id="EMP002",
+        )
+        from employees.models import LeaveBalance
+
+        self.balance, _ = LeaveBalance.objects.get_or_create(employee=self.employee)
+        self.balance.casual_leave_allocated = 10
+        self.balance.save()
+        self.client = Client()
+        self.client.login(username="employee_cancel@test.com", password="password")
+
+    def test_cancel_active_or_future_leave_request(self):
+        from datetime import timedelta
+
+        from employees.models import LeaveRequest
+
+        # Leave request in the future
+        tomorrow = timezone.localdate() + timedelta(days=1)
+        leave = LeaveRequest.objects.create(
+            employee=self.employee,
+            leave_type="CL",
+            start_date=tomorrow,
+            end_date=tomorrow,
+            status="PENDING",
+        )
+        self.assertFalse(leave.has_passed)
+
+        # Cancel it
+        response = self.client.post(f"/me/leaves/cancel/{leave.pk}/")
+        self.assertEqual(response.status_code, 302)
+        # Verify it is deleted (cancelled)
+        self.assertFalse(LeaveRequest.objects.filter(pk=leave.pk).exists())
+
+    def test_cancel_past_leave_request_fails(self):
+        from datetime import timedelta
+
+        from employees.models import LeaveRequest
+
+        # Leave request in the past
+        yesterday = timezone.localdate() - timedelta(days=1)
+        leave = LeaveRequest.objects.create(
+            employee=self.employee,
+            leave_type="CL",
+            start_date=yesterday,
+            end_date=yesterday,
+            status="PENDING",
+        )
+        self.assertTrue(leave.has_passed)
+
+        # Attempt to cancel it
+        response = self.client.post(f"/me/leaves/cancel/{leave.pk}/")
+        self.assertEqual(response.status_code, 302)
+        # Verify it still exists
+        self.assertTrue(LeaveRequest.objects.filter(pk=leave.pk).exists())
+
+
+class MonthlyLeaveAccrualTestCase(TestCase):
+    def setUp(self):
+        from dateutil.relativedelta import relativedelta
+
+        # Create two companies with unique slugs, primary_domains and email_domains
+        self.company_a = Company.objects.create(
+            name="Petabytz",
+            slug="petabytz",
+            primary_domain="petabytz.com",
+            email_domain="petabytz.com",
+            hr_email="hr_a@test.com",
+        )
+        self.company_b = Company.objects.create(
+            name="Bluebix",
+            slug="bluebix",
+            primary_domain="bluebix.com",
+            email_domain="bluebix.com",
+            hr_email="hr_b@test.com",
+        )
+
+        # Create locations
+        self.location_a = Location.objects.create(company=self.company_a, name="A Office", timezone="Asia/Kolkata")
+        self.location_b = Location.objects.create(company=self.company_b, name="B Office", timezone="Asia/Kolkata")
+
+        # Create company admin for Company A
+        self.admin_user_a = User.objects.create_user(
+            username="admin_a",
+            email="admin_a@test.com",
+            password="password",
+            role=User.Role.COMPANY_ADMIN,
+            company=self.company_a,
+            must_change_password=False,
+        )
+
+        # Create active employee in Company A (probation completed)
+        self.emp_user_a = User.objects.create_user(
+            username="emp_a",
+            email="emp_a@test.com",
+            password="password",
+            role=User.Role.EMPLOYEE,
+            company=self.company_a,
+            must_change_password=False,
+        )
+        self.emp_a = Employee.objects.create(
+            user=self.emp_user_a,
+            company=self.company_a,
+            location=self.location_a,
+            designation="Developer",
+            date_of_joining=timezone.now().date() - relativedelta(months=4),
+            badge_id="EMPA001",
+        )
+
+        # Create active employee in Company B (probation completed)
+        self.emp_user_b = User.objects.create_user(
+            username="emp_b",
+            email="emp_b@test.com",
+            password="password",
+            role=User.Role.EMPLOYEE,
+            company=self.company_b,
+            must_change_password=False,
+        )
+        self.emp_b = Employee.objects.create(
+            user=self.emp_user_b,
+            company=self.company_b,
+            location=self.location_b,
+            designation="Developer",
+            date_of_joining=timezone.now().date() - relativedelta(months=4),
+            badge_id="EMPB002",
+        )
+
+        from employees.models import LeaveBalance
+
+        self.balance_a, _ = LeaveBalance.objects.get_or_create(employee=self.emp_a)
+        self.balance_a.sick_leave_allocated = 0.0
+        self.balance_a.casual_leave_allocated = 0.0
+        self.balance_a.save()
+
+        self.balance_b, _ = LeaveBalance.objects.get_or_create(employee=self.emp_b)
+        self.balance_b.combined_sick_casual_allocated = 0.0
+        self.balance_b.save()
+
+        self.client = Client()
+
+    def test_run_monthly_accrual_filters_by_company(self):
+        # Login as Admin of Company A
+        self.client.login(username="admin_a@test.com", password="password")
+
+        # Run monthly accrual
+        response = self.client.post(
+            "/employees/leave/configuration/accrue/", {"month": timezone.now().month, "year": timezone.now().year}
+        )
+        self.assertEqual(response.status_code, 302)
+
+        # Refresh leave balances from DB
+        self.balance_a.refresh_from_db()
+        self.balance_b.refresh_from_db()
+
+        # Company A (Petabytz) employee should have leaves accrued (+1 SL, +1 CL)
+        self.assertEqual(self.balance_a.sick_leave_allocated, 1.0)
+        self.assertEqual(self.balance_a.casual_leave_allocated, 1.0)
+
+        # Company B (Bluebix) employee should have NO leaves accrued (remains 0)
+        self.assertEqual(self.balance_b.combined_sick_casual_allocated, 0.0)
+
+    def test_run_monthly_accrual_filters_by_location(self):
+        from dateutil.relativedelta import relativedelta
+
+        # Create second location for Company A
+        location_a2 = Location.objects.create(company=self.company_a, name="A2 Office", timezone="Asia/Kolkata")
+
+        # Create second active employee in Company A, in location_a2
+        emp_user_a2 = User.objects.create_user(
+            username="emp_a2",
+            email="emp_a2@test.com",
+            password="password",
+            role=User.Role.EMPLOYEE,
+            company=self.company_a,
+            must_change_password=False,
+        )
+        emp_a2 = Employee.objects.create(
+            user=emp_user_a2,
+            company=self.company_a,
+            location=location_a2,
+            designation="Developer",
+            date_of_joining=timezone.now().date() - relativedelta(months=4),
+            badge_id="EMPA002",
+        )
+        from employees.models import LeaveBalance
+
+        balance_a2, _ = LeaveBalance.objects.get_or_create(employee=emp_a2)
+        balance_a2.sick_leave_allocated = 0.0
+        balance_a2.casual_leave_allocated = 0.0
+        balance_a2.save()
+
+        # Login as Admin of Company A
+        self.client.login(username="admin_a@test.com", password="password")
+
+        # Run monthly accrual for location_a only
+        month = timezone.now().month
+        year = timezone.now().year
+        response = self.client.post(
+            "/employees/leave/configuration/accrue/", {"month": month, "year": year, "location_id": self.location_a.id}
+        )
+        self.assertEqual(response.status_code, 302)
+
+        # Refresh from DB
+        self.balance_a.refresh_from_db()
+        balance_a2.refresh_from_db()
+
+        # emp_a in location_a should have accrued
+        self.assertEqual(self.balance_a.sick_leave_allocated, 1.0)
+        # emp_a2 in location_a2 should NOT have accrued
+        self.assertEqual(balance_a2.sick_leave_allocated, 0.0)
+
+    def test_check_accrual_status_and_double_run(self):
+        # Login as Admin of Company A
+        self.client.login(username="admin_a@test.com", password="password")
+        month = timezone.now().month
+        year = timezone.now().year
+
+        # Initially, check endpoint should say not already run
+        response = self.client.get("/employees/leave/configuration/accrue/check/", {"month": month, "year": year})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertFalse(data["already_run"])
+
+        # Run accrual first time
+        response = self.client.post("/employees/leave/configuration/accrue/", {"month": month, "year": year})
+        self.assertEqual(response.status_code, 302)
+
+        # Check status endpoint now
+        response = self.client.get("/employees/leave/configuration/accrue/check/", {"month": month, "year": year})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["already_run"])
+        self.assertEqual(data["run_by"], self.admin_user_a.get_full_name() or self.admin_user_a.username)
+
+        # Attempt to run accrual again without force
+        response = self.client.post("/employees/leave/configuration/accrue/", {"month": month, "year": year})
+        self.assertEqual(response.status_code, 302)
+        self.balance_a.refresh_from_db()
+        self.assertEqual(self.balance_a.sick_leave_allocated, 1.0)
+
+        # Run accrual with force=true
+        response = self.client.post(
+            "/employees/leave/configuration/accrue/", {"month": month, "year": year, "force": "true"}
+        )
+        self.assertEqual(response.status_code, 302)
+        self.balance_a.refresh_from_db()
+        self.assertEqual(self.balance_a.sick_leave_allocated, 2.0)
