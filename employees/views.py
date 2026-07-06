@@ -1635,9 +1635,9 @@ class LeaveApplyView(LoginRequiredMixin, CreateView):
         response = super().form_valid(form)
 
         # Send email notification immediately using Celery task to avoid delay and web server thread issues
-        from core.tasks import send_leave_request_notification_task
+        from core.tasks import safe_delay, send_leave_request_notification_task
 
-        send_leave_request_notification_task.delay(self.object.id)
+        safe_delay(send_leave_request_notification_task, self.object.id)
 
         return response
 
@@ -1779,9 +1779,9 @@ def approve_leave(request, pk):
                 current_date += timedelta(days=1)
 
             # Send Approval Email immediately using Celery task
-            from core.tasks import send_leave_approval_notification_task
+            from core.tasks import safe_delay, send_leave_approval_notification_task
 
-            send_leave_approval_notification_task.delay(leave_request.id)
+            safe_delay(send_leave_approval_notification_task, leave_request.id)
 
             # Show success message immediately
             approval_msg = {
@@ -1819,9 +1819,9 @@ def reject_leave(request, pk):
         leave_request.save()
 
         # Send Rejection Email immediately using Celery task
-        from core.tasks import send_leave_rejection_notification_task
+        from core.tasks import safe_delay, send_leave_rejection_notification_task
 
-        send_leave_rejection_notification_task.delay(leave_request.id)
+        safe_delay(send_leave_rejection_notification_task, leave_request.id)
 
         messages.success(request, "Leave rejected. Notification will be sent.")
 
@@ -3605,9 +3605,9 @@ class RegularizationCreateView(LoginRequiredMixin, CreateView):
         response = super().form_valid(form)
 
         # Send Email Notification immediately using Celery task
-        from core.tasks import send_regularization_request_notification_task
+        from core.tasks import safe_delay, send_regularization_request_notification_task
 
-        send_regularization_request_notification_task.delay(self.object.id)
+        safe_delay(send_regularization_request_notification_task, self.object.id)
 
         return response
 
@@ -3725,9 +3725,9 @@ def approve_regularization(request, pk):
         attendance.save()
 
         # Send Approval Email immediately using Celery task
-        from core.tasks import send_regularization_approval_notification_task
+        from core.tasks import safe_delay, send_regularization_approval_notification_task
 
-        send_regularization_approval_notification_task.delay(reg_request.id)
+        safe_delay(send_regularization_approval_notification_task, reg_request.id)
 
         messages.success(request, "Regularization approved. Notification will be sent.")
 
@@ -3772,9 +3772,9 @@ def reject_regularization(request, pk):
                 logger.error(f"Error resetting attendance status for rejected week-off work: {e}")
 
         # Send Rejection Email immediately using Celery task
-        from core.tasks import send_regularization_rejection_notification_task
+        from core.tasks import safe_delay, send_regularization_rejection_notification_task
 
-        send_regularization_rejection_notification_task.delay(reg_request.id)
+        safe_delay(send_regularization_rejection_notification_task, reg_request.id)
 
         messages.success(request, "Regularization rejected. Notification will be sent.")
 

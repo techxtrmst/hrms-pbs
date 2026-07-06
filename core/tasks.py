@@ -435,3 +435,22 @@ def send_regularization_rejection_notification_task(self, regularization_request
     except Exception as e:
         logger.error(f"Error sending regularization rejection email: {e}")
         raise self.retry(exc=e, countdown=60)
+
+
+def safe_delay(task, *args, **kwargs):
+    """
+    Safely execute task.delay(). If Redis/Celery broker is down or raises an exception,
+    execute task.apply() synchronously so that the request does not crash.
+    """
+    try:
+        return task.delay(*args, **kwargs)
+    except Exception as e:
+        logger.warning(
+            f"Failed to queue task {task.name} asynchronously (Redis might be down): {e}. "
+            f"Executing synchronously instead."
+        )
+        try:
+            return task.apply(args=args, kwargs=kwargs)
+        except Exception as sync_err:
+            logger.error(f"Failed to execute task {task.name} synchronously: {sync_err}")
+            return None
