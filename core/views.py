@@ -3763,7 +3763,10 @@ def leave_requests(request):
         approval_type = request.POST.get("approval_type", "FULL")
 
         try:
-            leave_request = LeaveRequest.objects.get(id=leave_id, employee__company=request.user.company)
+            if request.user.role == User.Role.MANAGER and not request.user.is_superuser:
+                leave_request = LeaveRequest.objects.get(id=leave_id, employee__manager=request.user)
+            else:
+                leave_request = LeaveRequest.objects.get(id=leave_id, employee__company=request.user.company)
 
             if action == "approve":
                 prev_status = leave_request.status
@@ -3849,9 +3852,14 @@ def leave_requests(request):
 
     # Base query
 
-    leave_requests = LeaveRequest.objects.filter(employee__company=request.user.company).select_related(
-        "employee__user", "employee__manager", "approved_by"
-    )
+    if request.user.role == User.Role.MANAGER and not request.user.is_superuser:
+        leave_requests = LeaveRequest.objects.filter(employee__manager=request.user).select_related(
+            "employee__user", "employee__manager", "approved_by"
+        )
+    else:
+        leave_requests = LeaveRequest.objects.filter(employee__company=request.user.company).select_related(
+            "employee__user", "employee__manager", "approved_by"
+        )
 
     # Apply filters
 
@@ -3873,7 +3881,12 @@ def leave_requests(request):
 
     # Get unique departments for filter dropdown
 
-    departments = Employee.objects.filter(company=request.user.company).values_list("department", flat=True).distinct()
+    if request.user.role == User.Role.MANAGER and not request.user.is_superuser:
+        departments = Employee.objects.filter(manager=request.user).values_list("department", flat=True).distinct()
+    else:
+        departments = (
+            Employee.objects.filter(company=request.user.company).values_list("department", flat=True).distinct()
+        )
 
     return render(
         request,
@@ -3963,9 +3976,18 @@ def leave_history(request):
 
     # Get unique departments and years for filters
 
-    departments = Employee.objects.filter(company=request.user.company).values_list("department", flat=True).distinct()
-
-    years = LeaveRequest.objects.filter(employee__company=request.user.company).dates("start_date", "year").distinct()
+    if request.user.role == User.Role.MANAGER:
+        manager_profile = safe_get_employee_profile(request.user)
+        employees = Employee.objects.filter(manager=request.user) if manager_profile else Employee.objects.none()
+        departments = employees.values_list("department", flat=True).distinct()
+        years = LeaveRequest.objects.filter(employee__in=employees).dates("start_date", "year").distinct()
+    else:
+        departments = (
+            Employee.objects.filter(company=request.user.company).values_list("department", flat=True).distinct()
+        )
+        years = (
+            LeaveRequest.objects.filter(employee__company=request.user.company).dates("start_date", "year").distinct()
+        )
 
     return render(
         request,
