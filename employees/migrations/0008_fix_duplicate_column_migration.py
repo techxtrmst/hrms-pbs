@@ -25,9 +25,9 @@ def check_and_add_columns_safely(apps, schema_editor):
                 ALTER TABLE employees_attendance
                 ADD COLUMN current_session_type VARCHAR(20) NULL
             """)
-            print("✅ Added current_session_type column")
+            print("[OK] Added current_session_type column")
         else:
-            print("✅ current_session_type column already exists, skipping")
+            print("[OK] current_session_type column already exists, skipping")
 
         # Check if daily_sessions_count column exists
         cursor.execute("""
@@ -43,9 +43,9 @@ def check_and_add_columns_safely(apps, schema_editor):
                 ALTER TABLE employees_attendance
                 ADD COLUMN daily_sessions_count INTEGER DEFAULT 0 NOT NULL
             """)
-            print("✅ Added daily_sessions_count column")
+            print("[OK] Added daily_sessions_count column")
         else:
-            print("✅ daily_sessions_count column already exists, skipping")
+            print("[OK] daily_sessions_count column already exists, skipping")
 
         # Check if max_daily_sessions column exists
         cursor.execute("""
@@ -61,9 +61,9 @@ def check_and_add_columns_safely(apps, schema_editor):
                 ALTER TABLE employees_attendance
                 ADD COLUMN max_daily_sessions INTEGER DEFAULT 3 NOT NULL
             """)
-            print("✅ Added max_daily_sessions column")
+            print("[OK] Added max_daily_sessions column")
         else:
-            print("✅ max_daily_sessions column already exists, skipping")
+            print("[OK] max_daily_sessions column already exists, skipping")
 
             # Update existing records to have max 3 sessions
             cursor.execute("""
@@ -72,7 +72,7 @@ def check_and_add_columns_safely(apps, schema_editor):
                 WHERE max_daily_sessions > 3
             """)
             updated_count = cursor.rowcount
-            print(f"✅ Updated {updated_count} records to max_daily_sessions=3")
+            print(f"Updated {updated_count} attendance records to max_daily_sessions=3")
 
         # Check if total_working_hours column exists
         cursor.execute("""
@@ -88,16 +88,16 @@ def check_and_add_columns_safely(apps, schema_editor):
                 ALTER TABLE employees_attendance
                 ADD COLUMN total_working_hours DECIMAL(5,2) DEFAULT 0.00 NOT NULL
             """)
-            print("✅ Added total_working_hours column")
+            print("[OK] Added total_working_hours column")
         else:
-            print("✅ total_working_hours column already exists, skipping")
+            print("[OK] total_working_hours column already exists, skipping")
 
 
 def reverse_column_additions(apps, schema_editor):
     """
     Reverse the column additions - but be careful not to drop if they were already there
     """
-    print("⚠️ Reverse migration - columns will be preserved to avoid data loss")
+    print("[WARNING] Reverse migration - columns will be preserved to avoid data loss")
     print("Manual cleanup required if columns need to be removed")
 
 

@@ -13,7 +13,7 @@ def reset_staging_migration_state(apps, schema_editor):
     """
     from django.db import connection
 
-    print("🔄 Resetting migration state for staging deployment...")
+    print("Resetting migration state for staging deployment...")
 
     with connection.cursor() as cursor:
         # Get current table structure
@@ -27,7 +27,7 @@ def reset_staging_migration_state(apps, schema_editor):
         columns = cursor.fetchall()
         column_names = [col[0] for col in columns]
 
-        print(f"📋 Current attendance table columns: {len(column_names)}")
+        print(f"Current attendance table columns: {len(column_names)}")
         for col in columns:
             print(
                 f"  - {col[0]} ({col[1]}) {'NULL' if col[2] == 'YES' else 'NOT NULL'}"
@@ -46,13 +46,13 @@ def reset_staging_migration_state(apps, schema_editor):
 
         for col_name, col_definition in required_columns.items():
             if col_name not in column_names:
-                print(f"➕ Adding missing column: {col_name}")
+                print(f"Adding missing column: {col_name}")
                 cursor.execute(f"""
                     ALTER TABLE employees_attendance
                     ADD COLUMN {col_name} {col_definition}
                 """)
             else:
-                print(f"✅ Column exists: {col_name}")
+                print(f"[OK] Column exists: {col_name}")
 
         # Update max_daily_sessions to 3 for existing records
         cursor.execute("""
@@ -62,7 +62,7 @@ def reset_staging_migration_state(apps, schema_editor):
         """)
         updated_count = cursor.rowcount
         if updated_count > 0:
-            print(f"📝 Updated {updated_count} records to max_daily_sessions=3")
+            print(f"Updated {updated_count} records to max_daily_sessions=3")
 
         # Ensure user_timezone has default value
         cursor.execute("""
@@ -72,16 +72,16 @@ def reset_staging_migration_state(apps, schema_editor):
         """)
         timezone_updated = cursor.rowcount
         if timezone_updated > 0:
-            print(f"🌍 Set timezone for {timezone_updated} records")
+            print(f"Set timezone for {timezone_updated} records")
 
-        print("✅ Staging database state reset completed successfully")
+        print("[OK] Staging database state reset completed successfully")
 
 
 def reverse_staging_reset(apps, schema_editor):
     """
     Reverse operation - minimal since we don't want to break existing data
     """
-    print("⚠️ Reverse migration - preserving existing database state")
+    print("[WARNING] Reverse migration - preserving existing database state")
     pass
 
 

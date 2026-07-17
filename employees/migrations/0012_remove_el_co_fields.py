@@ -32,11 +32,11 @@ def safe_remove_el_co_fields(apps, schema_editor):
         for column in columns_to_remove:
             if column_exists("employees_leavebalance", column):
                 cursor.execute(f"ALTER TABLE employees_leavebalance DROP COLUMN {column}")
-                print(f"✅ Removed column {column}")
+                print(f"[OK] Removed column {column}")
             else:
-                print(f"ℹ️ Column {column} already removed")
+                print(f"[INFO] Column {column} already removed")
 
-    print("✅ EL/CO fields migration complete")
+    print("[OK] EL/CO fields migration complete")
 
 
 class Migration(migrations.Migration):

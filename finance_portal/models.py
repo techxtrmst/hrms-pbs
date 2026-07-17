@@ -104,11 +104,16 @@ class Transaction(models.Model):
         ("pending_review", "Pending Review"),
         ("flagged", "Flagged"),
     ]
+    TRANSACTION_TYPES = [
+        ("debit", "Debit (Expense)"),
+        ("credit", "Credit (Deposit)"),
+    ]
     purchase_request = models.ForeignKey(PurchaseRequest, on_delete=models.SET_NULL, null=True, blank=True)
     bank_account = models.ForeignKey(BankAccount, on_delete=models.SET_NULL, null=True, blank=True)
     bank_name = models.CharField(max_length=255)
     account_number = models.CharField(max_length=50)
     transaction_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES, default="debit")
     amount = models.DecimalField(max_digits=15, decimal_places=2)
     screenshot = models.FileField(upload_to="finance/screenshots/", null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending_review")

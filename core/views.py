@@ -110,6 +110,10 @@ def dashboard(request):
     if user.role == "FINANCE_MANAGER" or getattr(user, "is_finance_manager", False):
         return redirect("finance_portal:dashboard")
 
+    # Tech Support goes to Finance Portal (read-only overview)
+    if user.role == "TECH_SUPPORT":
+        return redirect("finance_portal:dashboard")
+
     if user.role == User.Role.MANAGER:
         return manager_dashboard(request)
 

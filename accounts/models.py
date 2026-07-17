@@ -11,6 +11,7 @@ class User(AbstractUser):
         EMPLOYEE_MANAGER = "EMPLOYEE_MANAGER", "HR"
         MANAGER = "MANAGER", "Manager"
         EMPLOYEE = "EMPLOYEE", "Employee"
+        TECH_SUPPORT = "TECH_SUPPORT", "Tech Support"
 
     email = models.EmailField(unique=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="users", null=True, blank=True)

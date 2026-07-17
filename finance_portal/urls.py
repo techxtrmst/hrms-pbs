@@ -21,6 +21,7 @@ urlpatterns = [
     # Virtual Ledger & Auditing Routes
     path("bank-accounts/", views.bank_accounts_list, name="bank_accounts"),
     path("bank-accounts/create/", views.bank_account_create, name="bank_account_create"),
+    path("bank-accounts/edit-balance/", views.bank_account_edit_balance, name="bank_account_edit_balance"),
     path("purchases/", views.purchases_list, name="purchases"),
     path("purchases/create/", views.purchase_create, name="purchase_create"),
     path("purchases/approve/", views.purchase_approve, name="purchase_approve"),

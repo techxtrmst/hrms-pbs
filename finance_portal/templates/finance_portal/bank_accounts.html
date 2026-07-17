@@ -3,107 +3,42 @@
 
 {% block content %}
 <style>
-    /* Finvista Dashboard Wrapper */
-    .finvista-wrapper {
-        background-color: #f8fafc;
-        font-family: 'Inter', sans-serif;
-        width: 100%;
-    }
-
-    /* Main Content Wrapper */
-    .finvista-main {
-        background: #f8fafc;
-        width: 100%;
-    }
-
+    .finvista-wrapper { background-color: #f8fafc; font-family: 'Inter', sans-serif; width: 100%; }
+    .finvista-main { background: #f8fafc; width: 100%; }
     .payroll-table-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 24px;
-        margin-bottom: 24px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.015);
+        background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;
+        padding: 24px; margin-bottom: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.015);
     }
-
     .btn-action-premium {
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 700;
-        padding: 8px 16px;
-        transition: all 0.2s;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        border: none;
-        cursor: pointer;
+        border-radius: 8px; font-size: 13px; font-weight: 700; padding: 8px 16px;
+        transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+        border: none; cursor: pointer;
     }
-
-    .btn-emerald-solid {
-        background: #10b981;
-        color: #ffffff;
-    }
-
-    .btn-emerald-solid:hover {
-        background: #059669;
-        color: #ffffff;
-    }
-
-    .table-payroll {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-    }
+    .btn-emerald-solid { background: #10b981; color: #ffffff; }
+    .btn-emerald-solid:hover { background: #059669; color: #ffffff; }
+    .table-payroll { width: 100%; border-collapse: separate; border-spacing: 0; }
     .table-payroll th {
-        color: #94a3b8;
-        font-weight: 700;
-        text-transform: uppercase;
-        font-size: 10px;
-        letter-spacing: 0.5px;
-        padding: 12px 16px;
-        border-bottom: 1px solid #f1f5f9;
+        color: #94a3b8; font-weight: 700; text-transform: uppercase; font-size: 10px;
+        letter-spacing: 0.5px; padding: 12px 16px; border-bottom: 1px solid #f1f5f9;
     }
-    .table-payroll td {
-        padding: 14px 16px;
-        font-size: 13px;
-        color: #334155;
-        border-bottom: 1px solid #f1f5f9;
-        vertical-align: middle;
+    .table-payroll td { padding: 14px 16px; font-size: 13px; color: #334155; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .status-badge { display: inline-flex; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .status-active { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+    .status-inactive { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+    .btn-edit-balance {
+        background: rgba(59, 130, 246, 0.08); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.25);
+        border-radius: 6px; font-size: 11px; font-weight: 700; padding: 4px 10px;
+        cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px;
     }
-
-    .status-badge {
-        display: inline-flex;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 700;
-    }
-    .status-active {
-        background: rgba(16, 185, 129, 0.12);
-        color: #10b981;
-    }
-    .status-inactive {
-        background: rgba(239, 68, 68, 0.1);
-        color: #ef4444;
-    }
-
-    .nav-tabs {
-        border-bottom: 1.5px solid #cbd5e1 !important;
-        margin-bottom: 24px;
-    }
-    .nav-tabs .nav-link {
-        color: #64748b !important;
-        font-weight: 700;
-        padding: 12px 20px;
-        border: none;
-        border-bottom: 3px solid transparent;
-        transition: all 0.2s;
-    }
-    .nav-tabs .nav-link.active {
-        color: #10b981 !important;
-        border-bottom-color: #10b981 !important;
-        background: transparent !important;
-    }
+    .btn-edit-balance:hover { background: #3b82f6; color: #fff; }
+    .nav-tabs { border-bottom: 1.5px solid #cbd5e1 !important; margin-bottom: 24px; }
+    .nav-tabs .nav-link { color: #64748b !important; font-weight: 700; padding: 12px 20px; border: none; border-bottom: 3px solid transparent; transition: all 0.2s; }
+    .nav-tabs .nav-link.active { color: #10b981 !important; border-bottom-color: #10b981 !important; background: transparent !important; }
+    /* Modal overrides */
+    .modal-content { border-radius: 16px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.12); }
+    .modal-header { border-bottom: 1px solid #f1f5f9; padding: 20px 24px; }
+    .modal-body { padding: 24px; }
+    .modal-footer { border-top: 1px solid #f1f5f9; padding: 16px 24px; }
 </style>
 
 <div class="finvista-wrapper">
@@ -115,30 +50,38 @@
                 <p class="text-muted small mb-0">Manage company virtual bank accounts and monitoring statistics</p>
             </div>
             <div>
+                {% if not is_finance_readonly %}
                 <a href="{% url 'finance_portal:bank_account_create' %}" class="btn-action-premium btn-emerald-solid">
                     <i class="fa-solid fa-plus"></i> Add Account
                 </a>
+                {% else %}
+                <span class="badge text-bg-secondary py-2 px-3" style="font-size: 12px; border-radius: 8px;">
+                    <i class="fas fa-eye me-1"></i> View Only
+                </span>
+                {% endif %}
             </div>
         </div>
 
         <!-- Navigation Tabs -->
         <ul class="nav nav-tabs">
-            <li class="nav-item">
-                <a class="nav-link" href="{% url 'finance_portal:dashboard' %}">Overview</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link active" href="{% url 'finance_portal:bank_accounts' %}">Bank Accounts</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{% url 'finance_portal:purchases' %}">Purchase Requests</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{% url 'finance_portal:transaction_submit' %}">Transactions</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{% url 'finance_portal:reconcile_statement' %}">Statement Reconciliation</a>
-            </li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'finance_portal:dashboard' %}">Overview</a></li>
+            <li class="nav-item"><a class="nav-link active" href="{% url 'finance_portal:bank_accounts' %}">Bank Accounts</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'finance_portal:purchases' %}">Purchase Requests</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'finance_portal:transaction_submit' %}">Transactions</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'finance_portal:reconcile_statement' %}">Statement Reconciliation</a></li>
         </ul>
+
+        <!-- Messages -->
+        {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% else %}success{% endif %} d-flex align-items-center gap-2 rounded-3 py-2 px-4" style="font-size: 13px; font-weight: 600; border: none;">
+                <i class="fas {% if message.tags == 'error' %}fa-circle-xmark text-danger{% elif message.tags == 'warning' %}fa-triangle-exclamation text-warning{% else %}fa-circle-check text-success{% endif %}"></i>
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
 
         <!-- Statistics Bar -->
         <div class="row mb-4">
@@ -148,9 +91,7 @@
                         <span class="text-muted small fw-bold text-uppercase d-block mb-1" style="font-size: 11px; letter-spacing: 0.5px;">Total Treasury</span>
                         <h4 class="fw-bold mb-0 text-slate-800">${{ total_balance }}</h4>
                     </div>
-                    <div class="rounded-3 p-3 bg-light text-success">
-                        <i class="fa-solid fa-vault fa-xl"></i>
-                    </div>
+                    <div class="rounded-3 p-3 bg-light text-success"><i class="fa-solid fa-vault fa-xl"></i></div>
                 </div>
             </div>
             <div class="col-md-4 mb-3 mb-md-0">
@@ -159,9 +100,7 @@
                         <span class="text-muted small fw-bold text-uppercase d-block mb-1" style="font-size: 11px; letter-spacing: 0.5px;">Active Accounts</span>
                         <h4 class="fw-bold mb-0 text-slate-800">{{ active_count }}</h4>
                     </div>
-                    <div class="rounded-3 p-3 bg-light text-success">
-                        <i class="fa-solid fa-circle-check fa-xl"></i>
-                    </div>
+                    <div class="rounded-3 p-3 bg-light text-success"><i class="fa-solid fa-circle-check fa-xl"></i></div>
                 </div>
             </div>
             <div class="col-md-4">
@@ -170,9 +109,7 @@
                         <span class="text-muted small fw-bold text-uppercase d-block mb-1" style="font-size: 11px; letter-spacing: 0.5px;">Inactive Accounts</span>
                         <h4 class="fw-bold mb-0 text-slate-800">{{ inactive_count }}</h4>
                     </div>
-                    <div class="rounded-3 p-3 bg-light text-danger">
-                        <i class="fa-solid fa-snowflake fa-xl"></i>
-                    </div>
+                    <div class="rounded-3 p-3 bg-light text-danger"><i class="fa-solid fa-snowflake fa-xl"></i></div>
                 </div>
             </div>
         </div>
@@ -191,6 +128,7 @@
                             <th>Virtual Balance</th>
                             <th>Status</th>
                             <th>Created At</th>
+                            <th class="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -203,15 +141,29 @@
                             <td class="fw-semibold">{{ acc.currency }}</td>
                             <td class="text-success fw-bold">{{ acc.currency }} {{ acc.balance }}</td>
                             <td>
-                                <span class="status-badge status-{{ acc.status }}">
-                                    {{ acc.status|title }}
-                                </span>
+                                <span class="status-badge status-{{ acc.status }}">{{ acc.status|title }}</span>
                             </td>
                             <td class="text-muted small">{{ acc.created_at|date:"Y-m-d H:i" }}</td>
+                            <td class="text-center">
+                                {% if not is_finance_readonly %}
+                                <button class="btn-edit-balance"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editBalanceModal"
+                                    data-acc-id="{{ acc.id }}"
+                                    data-acc-name="{{ acc.bank_name }}"
+                                    data-acc-number="{{ acc.account_number }}"
+                                    data-acc-balance="{{ acc.balance }}"
+                                    data-acc-currency="{{ acc.currency }}">
+                                    <i class="fas fa-pen"></i> Edit Balance
+                                </button>
+                                {% else %}
+                                <span class="text-muted small">—</span>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="8" class="text-center py-5 text-muted">
+                            <td colspan="9" class="text-center py-5 text-muted">
                                 <i class="fas fa-university fa-3x mb-3 opacity-25"></i>
                                 <p class="mb-0">No bank accounts registered yet.</p>
                             </td>
@@ -223,4 +175,68 @@
         </div>
     </div>
 </div>
+
+<!-- Edit Balance Modal -->
+<div class="modal fade" id="editBalanceModal" tabindex="-1" aria-labelledby="editBalanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title fw-bold mb-0" id="editBalanceModalLabel" style="font-size: 16px; color: #0f172a;">
+                        <i class="fas fa-pen-to-square text-primary me-2"></i>Edit Account Balance
+                    </h5>
+                    <p class="text-muted small mb-0 mt-1" id="editBalanceSubtitle">Update the virtual balance for this account</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'finance_portal:bank_account_edit_balance' %}">
+                {% csrf_token %}
+                <input type="hidden" name="account_id" id="editAccId">
+                <div class="modal-body">
+                    <!-- Current balance display -->
+                    <div class="p-3 rounded-3 mb-4" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                        <span class="text-muted small fw-bold text-uppercase" style="font-size: 10px; letter-spacing: 0.5px;">Current Balance</span>
+                        <div class="fw-bold text-success mt-1" style="font-size: 22px;" id="editCurrentBalance">—</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #334155;">New Balance</label>
+                        <input type="number" name="new_balance" id="editNewBalance" class="form-control" placeholder="Enter new balance amount" step="0.01" min="0" required style="border-radius: 8px; padding: 10px 14px; font-size: 15px; font-weight: 600; border: 1.5px solid #cbd5e1;">
+                        <small class="text-muted d-block mt-1">Enter the corrected balance figure for this account.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #334155;">Reason for Adjustment <span class="text-danger">*</span></label>
+                        <textarea name="reason" class="form-control" rows="3" placeholder="e.g. Manual correction after bank statement reconciliation" required style="border-radius: 8px; font-size: 13px; border: 1.5px solid #cbd5e1; resize: none;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal" style="border-radius: 8px; font-size: 13px;">Cancel</button>
+                    <button type="submit" class="btn btn-primary fw-bold" style="border-radius: 8px; font-size: 13px; background: #3b82f6; border: none; padding: 8px 20px;">
+                        <i class="fas fa-save me-1"></i> Save Balance
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("editBalanceModal");
+    if (modal) {
+        modal.addEventListener("show.bs.modal", function (event) {
+            const btn = event.relatedTarget;
+            const id       = btn.getAttribute("data-acc-id");
+            const name     = btn.getAttribute("data-acc-name");
+            const number   = btn.getAttribute("data-acc-number");
+            const balance  = btn.getAttribute("data-acc-balance");
+            const currency = btn.getAttribute("data-acc-currency");
+
+            document.getElementById("editAccId").value          = id;
+            document.getElementById("editNewBalance").value     = parseFloat(balance).toFixed(2);
+            document.getElementById("editCurrentBalance").innerText = currency + " " + parseFloat(balance).toLocaleString("en-IN", {minimumFractionDigits: 2});
+            document.getElementById("editBalanceSubtitle").innerText = name + " — " + number;
+        });
+    }
+});
+</script>
 {% endblock %}

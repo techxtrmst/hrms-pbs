@@ -69,7 +69,15 @@ class ReconciliationService:
                         amount = abs(float(amount_str))
                         if amount > 0:
                             normalized = cls.normalize_date(date_match.group(1))
-                            entries.append({"date": normalized, "amount": amount, "description": line[:200]})
+                            line_lower = line.lower()
+                            entry_type = (
+                                "credit"
+                                if any(kw in line_lower for kw in ["credit", "cr", "deposit", "dep"])
+                                else "debit"
+                            )
+                            entries.append(
+                                {"date": normalized, "amount": amount, "description": line[:200], "type": entry_type}
+                            )
                     except ValueError:
                         continue
 
@@ -133,6 +141,10 @@ class ReconciliationService:
                                     break
 
                         desc = " ".join(desc_parts).strip()
+                        desc_lower = desc.lower()
+                        entry_type = (
+                            "credit" if any(kw in desc_lower for kw in ["credit", "cr", "deposit", "dep"]) else "debit"
+                        )
 
                         if amount is not None:
                             entries.append(
@@ -141,6 +153,7 @@ class ReconciliationService:
                                     "amount": amount,
                                     "description": desc or "Bank Transaction",
                                     "transaction_id": tx_id,
+                                    "type": entry_type,
                                 }
                             )
                         # Advance index
@@ -245,9 +258,11 @@ class ReconciliationService:
                 except ValueError:
                     pass
 
+            entry_type = "debit"
             if debit_found or credit_found:
                 amount = max(debit_val, credit_val)
                 amount_found = True
+                entry_type = "credit" if credit_val > debit_val else "debit"
 
             # If not found or amount is 0, fall back to single amount column
             if (
@@ -261,11 +276,22 @@ class ReconciliationService:
                     if a_str:
                         amount = abs(float(a_str))
                         amount_found = True
+                        desc_lower = desc.lower() if desc else ""
+                        if any(kw in desc_lower for kw in ["credit", "cr", "deposit", "dep"]):
+                            entry_type = "credit"
                 except ValueError:
                     pass
 
             if amount > 0:
-                entries.append({"date": entry_date, "amount": amount, "description": desc, "transaction_id": tx_id})
+                entries.append(
+                    {
+                        "date": entry_date,
+                        "amount": amount,
+                        "description": desc,
+                        "transaction_id": tx_id,
+                        "type": entry_type,
+                    }
+                )
         return entries
 
     @classmethod
@@ -368,12 +394,16 @@ class ReconciliationService:
 
             for entry in entries:
                 matched_tx = None
+                entry_type = entry.get("type", "debit")
 
                 # 1. Match by Transaction ID (if present)
                 tx_id = entry.get("transaction_id")
                 if tx_id:
                     matched_tx = Transaction.objects.filter(
-                        transaction_id=tx_id, bank_account=bank_acc, reconciliationresult__isnull=True
+                        transaction_id=tx_id,
+                        bank_account=bank_acc,
+                        transaction_type=entry_type,
+                        reconciliationresult__isnull=True,
                     ).first()
 
                 # 2. Match by Amount & Date range (within 7 days)
@@ -388,14 +418,19 @@ class ReconciliationService:
                     matched_tx = Transaction.objects.filter(
                         bank_account=bank_acc,
                         amount=Decimal(str(entry["amount"])),
+                        transaction_type=entry_type,
                         created_at__date__range=(min_date, max_date),
                         reconciliationresult__isnull=True,
                     ).first()
 
-                # Verify if matched transaction has a purchase request approved by the superadmin
+                # Verify if matched transaction is valid (credits don't require PR, debits require approved PR)
                 is_valid_match = False
                 if matched_tx:
-                    if matched_tx.purchase_request and matched_tx.purchase_request.status == "approved":
+                    if (
+                        matched_tx.transaction_type == "credit"
+                        or matched_tx.purchase_request
+                        and matched_tx.purchase_request.status == "approved"
+                    ):
                         is_valid_match = True
                     else:
                         is_valid_match = False
@@ -405,7 +440,12 @@ class ReconciliationService:
                     flagged_count += 1
                     if matched_tx:
                         matched_tx.status = "flagged"
-                        matched_tx.mismatch_reason = "Transaction lacks an approved purchase request from Superadmin"
+                        if matched_tx.transaction_type == "debit":
+                            matched_tx.mismatch_reason = (
+                                "Transaction lacks an approved purchase request from Superadmin"
+                            )
+                        else:
+                            matched_tx.mismatch_reason = "Credit transaction unrecognized discrepancy"
                         matched_tx.save()
 
                 # Create Reconciliation Result

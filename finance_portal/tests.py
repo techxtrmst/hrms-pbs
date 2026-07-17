@@ -6,7 +6,7 @@ from django.urls import reverse
 from accounts.models import User
 from companies.models import Company, Location
 from employees.models import Employee, Payslip
-from finance_portal.models import FinanceAuditLog, PayrollBatch
+from finance_portal.models import BankAccount, FinanceAuditLog, PayrollBatch, PurchaseRequest, Transaction
 
 
 class FinancePortalTests(TestCase):
@@ -401,3 +401,105 @@ class FinancePortalTests(TestCase):
         self.assertEqual(payslip.travel_allowance, 5000.0)
         self.assertEqual(payslip.tds_deduction, 4000.0)
         self.assertEqual(payslip.employee.annual_ctc, 720000.0)
+
+
+class TransactionTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.company = Company.objects.create(name="Test Corp", slug="test-corp", is_active=True)
+        self.finance_user = User.objects.create_user(
+            email="finance2@test.com",
+            username="finance2",
+            password="password123",
+            role=User.Role.EMPLOYEE,
+            is_finance_manager=True,
+            company=self.company,
+            must_change_password=False,
+        )
+        self.bank_account = BankAccount.objects.create(
+            bank_name="Test Bank",
+            account_number="1234567890",
+            branch_name="Main Branch",
+            ifsc_code="TEST0001234",
+            balance=10000.00,
+            status="active",
+        )
+        self.purchase_request = PurchaseRequest.objects.create(
+            raised_by=self.finance_user,
+            item_name="Office Chair",
+            description="Ergonomic office chair for developer",
+            reason="Old chair is broken",
+            estimated_amount=1500.00,
+            status="approved",
+        )
+        self.submit_url = reverse("finance_portal:transaction_submit")
+
+    def test_submit_debit_transaction(self):
+        self.client.login(username="finance2@test.com", password="password123")
+        import io
+
+        screenshot = io.BytesIO(b"dummy screenshot content")
+        screenshot.name = "receipt.jpg"
+
+        response = self.client.post(
+            self.submit_url,
+            {
+                "purchase_request_id": self.purchase_request.id,
+                "bank_account_id": self.bank_account.id,
+                "transaction_id": "TXNDEB123",
+                "amount": "1500.00",
+                "transaction_type": "debit",
+                "screenshot": screenshot,
+            },
+        )
+        self.assertRedirects(response, self.submit_url)
+
+        # Verify bank account balance was deducted
+        self.bank_account.refresh_from_db()
+        self.assertEqual(self.bank_account.balance, 8500.00)
+
+        # Verify transaction was created
+        tx = Transaction.objects.get(transaction_id="TXNDEB123")
+        self.assertEqual(tx.transaction_type, "debit")
+        self.assertEqual(tx.amount, 1500.00)
+        self.assertEqual(tx.status, "completed")
+
+        # Verify audit log
+        log = FinanceAuditLog.objects.filter(action="BALANCE_DEDUCTION").first()
+        self.assertIsNotNone(log)
+        self.assertIn("Deducted 1500.00", log.details)
+
+    def test_submit_credit_transaction(self):
+        self.client.login(username="finance2@test.com", password="password123")
+        import io
+
+        screenshot = io.BytesIO(b"dummy screenshot content")
+        screenshot.name = "deposit.jpg"
+
+        response = self.client.post(
+            self.submit_url,
+            {
+                "bank_account_id": self.bank_account.id,
+                "transaction_id": "TXNCRD123",
+                "amount": "5000.00",
+                "transaction_type": "credit",
+                "screenshot": screenshot,
+            },
+        )
+        self.assertRedirects(response, self.submit_url)
+
+        # Verify bank account balance was added
+        self.bank_account.refresh_from_db()
+        self.assertEqual(self.bank_account.balance, 15000.00)
+
+        # Verify transaction was created
+        tx = Transaction.objects.get(transaction_id="TXNCRD123")
+        self.assertEqual(tx.transaction_type, "credit")
+        self.assertEqual(tx.amount, 5000.00)
+        self.assertEqual(tx.status, "completed")
+        self.assertIsNone(tx.purchase_request)
+
+        # Verify audit log
+        log = FinanceAuditLog.objects.filter(action="BALANCE_ADDITION").first()
+        self.assertIsNotNone(log)
+        self.assertIn("Credited 5000.00", log.details)

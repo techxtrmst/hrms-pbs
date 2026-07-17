@@ -1586,6 +1586,11 @@
                 class="{% if request.resolver_match.namespace == 'finance_portal' and request.resolver_match.url_name == 'dashboard' and request.GET.view == 'payroll' or request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == '' %}active{% endif %}">
                 <i class="fas fa-home"></i> <span>Dashboard</span>
             </a>
+            {% elif user.role == 'TECH_SUPPORT' %}
+            <a href="{% url 'finance_portal:dashboard' %}"
+                class="{% if request.resolver_match.namespace == 'finance_portal' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="fas fa-home"></i> <span>Dashboard</span>
+            </a>
             {% else %}
             <a href="{% url 'dashboard' %}"
                 class="{% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == '' %}active{% endif %}">
@@ -1764,7 +1769,7 @@
         </a>
         {% endif %}
 
-        {% if user.is_finance_manager or user.role == 'FINANCE_MANAGER' or user.role == 'SUPERADMIN' or user.is_superuser %}
+        {% if user.is_finance_manager or user.role == 'FINANCE_MANAGER' or user.role == 'SUPERADMIN' or user.is_superuser or user.role == 'TECH_SUPPORT' %}
         <!-- Finance Manager Portal -->
         <a href="#menuFinancePortal" class="sidebar-dropdown-toggle d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse" role="button" aria-expanded="false">
@@ -1772,6 +1777,9 @@
             <div class="d-flex align-items-center gap-2">
                 {% if pending_purchase_requests_count > 0 %}
                 <span style="background-color: #4f46e5; color: #ffffff; min-width: 24px; height: 24px; border-radius: 6px; font-weight: 600; font-size: 0.8rem; display: inline-flex; align-items: center; justify-content: center; line-height: 1;">{{ pending_purchase_requests_count }}</span>
+                {% endif %}
+                {% if user.role == 'TECH_SUPPORT' %}
+                <span style="font-size: 10px; background: rgba(245,158,11,0.15); color: #f59e0b; border-radius: 4px; padding: 1px 5px; font-weight: 600;">VIEW</span>
                 {% endif %}
                 <i class="fas fa-chevron-down small text-muted"></i>
             </div>

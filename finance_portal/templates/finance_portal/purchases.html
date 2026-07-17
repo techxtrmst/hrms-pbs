@@ -160,7 +160,12 @@
                 <h4 class="fw-bold text-slate-800 mb-1" style="font-size: 22px; color: #0f172a;">Purchase Requests</h4>
                 <p class="text-muted small mb-0">Track and review company purchase requisitions</p>
             </div>
-            <div>
+            <div class="d-flex align-items-center gap-2">
+                {% if is_finance_readonly %}
+                <span class="badge py-2 px-3" style="font-size: 12px; border-radius: 8px; background: rgba(245,158,11,0.12); color: #f59e0b; font-weight: 700;">
+                    <i class="fas fa-paper-plane me-1"></i> Request Only
+                </span>
+                {% endif %}
                 <a href="{% url 'finance_portal:purchase_create' %}" class="btn-action-premium btn-emerald-solid">
                     <i class="fa-solid fa-plus"></i> New Request
                 </a>
@@ -262,7 +267,7 @@
                             </td>
                             <td>
                                 {% if req.status == 'pending' %}
-                                {% if user.role == 'SUPERADMIN' or user.is_superuser %}
+                                {% if not is_finance_readonly and user.role in 'SUPERADMIN COMPANY_ADMIN' or user.is_superuser or user.is_finance_manager %}
                                 <div class="d-flex gap-2">
                                     <button type="button" class="btn btn-action btn-view py-1 px-2" data-bs-toggle="modal" data-bs-target="#approveModal{{ req.id }}">
                                         <i class="fas fa-gavel"></i> Act

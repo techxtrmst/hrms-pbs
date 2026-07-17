@@ -244,7 +244,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Pending Requests -->
             <div class="col-xl-3 col-md-6 mb-4 mb-xl-0">
                 <div class="kpi-card-finvista d-flex align-items-center justify-content-between bg-white">
@@ -510,9 +510,20 @@
                                 {% for tx in recent_transactions %}
                                 <tr>
                                     <td><code>{{ tx.transaction_id|default:tx.id }}</code></td>
-                                    <td>{{ tx.purchase_request.item_name|default:"Direct Ledger Entry" }}</td>
+                                    <td>
+                                        {{ tx.purchase_request.item_name|default:"Direct Ledger Entry" }}
+                                        <div class="mt-1">
+                                            {% if tx.transaction_type == 'credit' %}
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 9px; font-weight: 700; padding: 2px 6px;">Credit</span>
+                                            {% else %}
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 9px; font-weight: 700; padding: 2px 6px;">Debit</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
                                     <td>{{ tx.bank_name }}</td>
-                                    <td class="text-end fw-bold">${{ tx.amount|floatformat:2 }}</td>
+                                    <td class="text-end fw-bold {% if tx.transaction_type == 'credit' %}text-success{% else %}text-danger{% endif %}">
+                                        {% if tx.transaction_type == 'credit' %}+{% else %}-{% endif %}${{ tx.amount|floatformat:2 }}
+                                    </td>
                                     <td class="text-center">
                                         <span class="badge-finvista-active {% if tx.status == 'flagged' %}bg-danger text-white{% endif %}">
                                             {{ tx.status|title }}
@@ -542,7 +553,7 @@
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const rawData = JSON.parse('{{ charts_data_json|escapejs }}');
-        
+
         function formatCurrency(val) {
             if (val >= 1000000) {
                 return '$' + (val / 1000000).toFixed(2) + 'M';
@@ -555,7 +566,7 @@
 
         // 1. Bank Accounts Allocation Doughnut
         const colors = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
-        
+
         // Create accounts legend list
         const legendContainer = document.getElementById('accountsLegend');
         const totalBankBalance = rawData.bank_balances.reduce((a,b) => a+b, 0);
@@ -563,7 +574,7 @@
             rawData.bank_labels.forEach((label, idx) => {
                 const balanceVal = rawData.bank_balances[idx];
                 const percentage = totalBankBalance > 0 ? ((balanceVal / totalBankBalance) * 100).toFixed(1) : '0.0';
-                
+
                 const legendItem = document.createElement('div');
                 legendItem.className = 'd-flex align-items-center gap-2 mb-1';
                 legendItem.innerHTML = `
@@ -635,7 +646,7 @@
         const totalReconciled = matched + mismatched;
         const matchedPercent = totalReconciled > 0 ? Math.round((matched / totalReconciled) * 100) : 100;
         const mismatchedPercent = totalReconciled > 0 ? Math.round((mismatched / totalReconciled) * 100) : 0;
-        
+
         let healthText = "Excellent";
         let healthClass = "text-success";
         if (matchedPercent < 70) {

@@ -39,6 +39,12 @@ def get_client_ip(request):
 @finance_manager_required
 def dashboard(request):
     """Centralized Finance Portal Dashboard for cross-company payroll"""
+    is_readonly = getattr(request, "is_finance_readonly", False)
+
+    # Tech Support must not access the payroll view — redirect to the overview
+    if is_readonly and request.GET.get("view") == "payroll":
+        return redirect("finance_portal:dashboard")
+
     if request.GET.get("view") != "payroll":
         companies = Company.objects.filter(is_active=True).order_by("name")
 
@@ -155,6 +161,7 @@ def dashboard(request):
             "recent_transactions": transactions[:5],
             "recent_pending_purchases": pending_purchases[:5],
             "charts_data_json": json.dumps(charts_data),
+            "is_finance_readonly": is_readonly,
         }
         return render(request, "finance_portal/superadmin_dashboard.html", context)
 
@@ -242,6 +249,7 @@ def dashboard(request):
         "audit_logs": audit_logs,
         "days_in_month": days_in_month,
         "prev_month_days": prev_month_days,
+        "is_finance_readonly": is_readonly,
     }
     return render(request, "finance_portal/dashboard.html", context)
 
@@ -1568,12 +1576,17 @@ def bank_accounts_list(request):
             "total_balance": total_balance,
             "active_count": active_count,
             "inactive_count": inactive_count,
+            "is_finance_readonly": getattr(request, "is_finance_readonly", False),
         },
     )
 
 
 @finance_manager_required
 def bank_account_create(request):
+    # Tech Support cannot create bank accounts
+    if getattr(request, "is_finance_readonly", False):
+        messages.error(request, "Access Denied: Tech Support cannot create bank accounts.")
+        return redirect("finance_portal:bank_accounts")
     if request.method == "POST":
         bank_name = request.POST.get("bank_name")
         account_number = request.POST.get("account_number")
@@ -1596,12 +1609,61 @@ def bank_account_create(request):
 
 
 @finance_manager_required
+def bank_account_edit_balance(request):
+    # Tech Support cannot edit bank balances
+    if getattr(request, "is_finance_readonly", False):
+        messages.error(request, "Access Denied: Tech Support cannot edit account balances.")
+        return redirect("finance_portal:bank_accounts")
+    if request.method == "POST":
+        account_id = request.POST.get("account_id")
+        new_balance_str = request.POST.get("new_balance", "").strip()
+        reason = request.POST.get("reason", "").strip()
+
+        if not account_id or not new_balance_str:
+            messages.error(request, "Account and new balance are required.")
+            return redirect("finance_portal:bank_accounts")
+
+        if not reason:
+            messages.error(request, "Please provide a reason for the balance adjustment.")
+            return redirect("finance_portal:bank_accounts")
+
+        try:
+            new_balance = Decimal(str(new_balance_str))
+            if new_balance < 0:
+                raise ValueError("Negative balance")
+        except Exception:
+            messages.error(request, "Invalid balance amount. Please enter a valid positive number.")
+            return redirect("finance_portal:bank_accounts")
+
+        bank_acc = get_object_or_404(BankAccount, pk=account_id)
+        old_balance = bank_acc.balance
+        bank_acc.balance = new_balance
+        bank_acc.save()
+
+        FinanceAuditLog.objects.create(
+            user=request.user,
+            action="MANUAL_BALANCE_ADJUSTMENT",
+            details=(
+                f"Balance for '{bank_acc.bank_name} ({bank_acc.account_number})' "
+                f"manually updated from {old_balance} to {new_balance}. "
+                f"Reason: {reason}"
+            ),
+        )
+        messages.success(
+            request,
+            f"Balance for {bank_acc.bank_name} updated from {bank_acc.currency} {old_balance} → {bank_acc.currency} {new_balance}.",
+        )
+    return redirect("finance_portal:bank_accounts")
+
+
+@finance_manager_required
 def purchases_list(request):
     purchases = PurchaseRequest.objects.all().order_by("-created_at")
     pending_amount = sum(p.estimated_amount for p in purchases.filter(status="pending"))
     pending_count = purchases.filter(status="pending").count()
     approved_amount = sum(p.estimated_amount for p in purchases.filter(status="approved"))
     approved_count = purchases.filter(status="approved").count()
+    total_value = pending_amount + approved_amount
     return render(
         request,
         "finance_portal/purchases.html",
@@ -1611,12 +1673,15 @@ def purchases_list(request):
             "pending_count": pending_count,
             "approved_amount": approved_amount,
             "approved_count": approved_count,
+            "total_value": total_value,
+            "is_finance_readonly": getattr(request, "is_finance_readonly", False),
         },
     )
 
 
 @finance_manager_required
 def purchase_create(request):
+    # Tech Support CAN submit purchase requests — this is their only write action
     if request.method == "POST":
         item_name = request.POST.get("item_name")
         description = request.POST.get("description")
@@ -1637,7 +1702,15 @@ def purchase_create(request):
 
 @finance_manager_required
 def purchase_approve(request):
-    if not (request.user.role == "SUPERADMIN" or request.user.is_superuser):
+    # Tech Support cannot approve or reject purchase requests
+    if getattr(request, "is_finance_readonly", False):
+        messages.error(request, "Access Denied: Tech Support cannot approve or reject purchase requests.")
+        return redirect("finance_portal:purchases")
+    if not (
+        request.user.role in {"SUPERADMIN", "COMPANY_ADMIN"}
+        or request.user.is_superuser
+        or getattr(request.user, "is_finance_manager", False)
+    ):
         messages.error(
             request, "Access Denied: Only platform superadmins are permitted to approve or reject purchase requests."
         )
@@ -1669,6 +1742,10 @@ def purchase_approve(request):
 
 @finance_manager_required
 def transaction_submit(request):
+    # Tech Support cannot submit transactions — block any POST attempts
+    if getattr(request, "is_finance_readonly", False) and request.method == "POST":
+        messages.error(request, "Access Denied: Tech Support cannot create transactions.")
+        return redirect("finance_portal:transaction_submit")
     exclude_ids = Transaction.objects.filter(purchase_request__isnull=False).values_list(
         "purchase_request_id", flat=True
     )
@@ -1681,44 +1758,93 @@ def transaction_submit(request):
         transaction_id = request.POST.get("transaction_id")
         amount_str = request.POST.get("amount")
         screenshot = request.FILES.get("screenshot")
+        transaction_type = request.POST.get("transaction_type", "debit")
 
-        purchase = get_object_or_404(PurchaseRequest, pk=purchase_id) if purchase_id else None
+        purchase = (
+            get_object_or_404(PurchaseRequest, pk=purchase_id)
+            if (purchase_id and transaction_type == "debit")
+            else None
+        )
         bank_acc = get_object_or_404(BankAccount, pk=bank_account_id) if bank_account_id else None
         amount = Decimal(str(amount_str or "0.0"))
 
-        status = "completed" if bank_acc else "pending_review"
-        mismatch_reason = "" if bank_acc else "Unregistered bank account details provided"
-
-        tx = Transaction.objects.create(
-            purchase_request=purchase,
-            bank_account=bank_acc,
-            bank_name=bank_acc.bank_name if bank_acc else request.POST.get("bank_name", "Unknown"),
-            account_number=bank_acc.account_number if bank_acc else request.POST.get("account_number", "Unknown"),
-            transaction_id=transaction_id,
-            amount=amount,
-            screenshot=screenshot,
-            status=status,
-            mismatch_reason=mismatch_reason,
-            submitted_by=request.user,
-        )
-
-        if bank_acc:
-            bank_acc.balance -= amount
-            bank_acc.save()
-            FinanceAuditLog.objects.create(
-                user=request.user,
-                action="BALANCE_DEDUCTION",
-                details=f"Deducted {amount} from account {bank_acc} for transaction {tx.id}.",
-            )
-            messages.success(request, "Transaction recorded and balance auto-deducted successfully!")
+        if transaction_type == "credit":
+            # Credits are always auto-completed — no approval needed
+            status = "completed"
+            mismatch_reason = ""
         else:
-            messages.warning(
-                request, "Transaction recorded. Marked for Admin review due to unregistered bank account details."
+            # Debits require a registered bank account; else flagged for review
+            status = "completed" if bank_acc else "pending_review"
+            mismatch_reason = "" if bank_acc else "Unregistered bank account details provided"
+
+        # Validate amount
+        if amount <= 0:
+            messages.error(request, "Amount must be greater than zero.")
+            return redirect("finance_portal:transaction_submit")
+
+        # Check for duplicate transaction_id before inserting
+        if transaction_id and Transaction.objects.filter(transaction_id=transaction_id).exists():
+            messages.error(
+                request, f"Transaction ID '{transaction_id}' already exists. Please use a unique Transaction ID."
             )
+            return redirect("finance_portal:transaction_submit")
+
+        try:
+            tx = Transaction.objects.create(
+                purchase_request=purchase,
+                bank_account=bank_acc,
+                bank_name=bank_acc.bank_name if bank_acc else request.POST.get("bank_name", "Unknown"),
+                account_number=bank_acc.account_number if bank_acc else request.POST.get("account_number", "Unknown"),
+                transaction_id=transaction_id or None,
+                transaction_type=transaction_type,
+                amount=amount,
+                screenshot=screenshot,
+                status=status,
+                mismatch_reason=mismatch_reason,
+                submitted_by=request.user,
+            )
+        except Exception as e:
+            messages.error(request, f"Failed to record transaction: {e}")
+            return redirect("finance_portal:transaction_submit")
+
+        if transaction_type == "credit":
+            if bank_acc:
+                # Registered account — credit the balance directly
+                bank_acc.balance += amount
+                bank_acc.save()
+                FinanceAuditLog.objects.create(
+                    user=request.user,
+                    action="BALANCE_ADDITION",
+                    details=f"Credited {amount} to registered account {bank_acc} for transaction {tx.id}.",
+                )
+            else:
+                # Manual/unregistered bank — still record as completed credit
+                FinanceAuditLog.objects.create(
+                    user=request.user,
+                    action="CREDIT_RECORDED",
+                    details=f"Credit of {amount} recorded for unregistered bank '{request.POST.get('bank_name', 'Unknown')}' (transaction {tx.id}). Manual balance update may be required.",
+                )
+            messages.success(request, f"Credit of ${amount} recorded successfully! Balance has been updated.")
+        else:
+            if bank_acc:
+                bank_acc.balance -= amount
+                bank_acc.save()
+                FinanceAuditLog.objects.create(
+                    user=request.user,
+                    action="BALANCE_DEDUCTION",
+                    details=f"Deducted {amount} from account {bank_acc} for transaction {tx.id}.",
+                )
+                messages.success(request, "Transaction recorded and balance auto-deducted successfully!")
+            else:
+                messages.warning(
+                    request, "Transaction recorded. Marked for Admin review due to unregistered bank account details."
+                )
 
         return redirect("finance_portal:transaction_submit")
 
     transactions = Transaction.objects.all().order_by("-created_at")
+
+    # Calculate ledger volume considering transaction types (credits - debits, or sum? Let's display total credits/debits if needed, but total_tx_amount can be net or total sum. Let's make it net cash flow or volume. Let's calculate total debits and credits for context if needed, but for simplicity, let's keep total_tx_amount as total transactions sum or total spent. Let's keep it as sum of all amounts for volume.)
     total_tx_amount = sum(t.amount for t in transactions)
     completed_count = transactions.filter(status="completed").count()
     flagged_count = transactions.filter(status="flagged").count()
@@ -1732,12 +1858,17 @@ def transaction_submit(request):
             "total_tx_amount": total_tx_amount,
             "completed_count": completed_count,
             "flagged_count": flagged_count,
+            "is_finance_readonly": getattr(request, "is_finance_readonly", False),
         },
     )
 
 
 @finance_manager_required
 def reconcile_statement(request):
+    # Tech Support cannot upload statements or trigger reconciliation
+    if getattr(request, "is_finance_readonly", False) and request.method == "POST":
+        messages.error(request, "Access Denied: Tech Support cannot perform reconciliation.")
+        return redirect("finance_portal:reconcile_statement")
     accounts = BankAccount.objects.filter(status="active").order_by("bank_name")
     if request.method == "POST":
         bank_account_id = request.POST.get("bank_account_id")
@@ -1776,6 +1907,7 @@ def reconcile_statement(request):
             "total_statements": total_statements,
             "mismatches": mismatches,
             "matches": matches,
+            "is_finance_readonly": getattr(request, "is_finance_readonly", False),
         },
     )
 
