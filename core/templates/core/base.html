@@ -3229,7 +3229,7 @@
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.addEventListener('message', function (event) {
                 if (event.data && event.data.type === 'CLOCKOUT_REMINDER_CLICKED') {
-                    // Play the beep again and show popup when user returns from OS notification
+                    // Show popup when user returns from OS notification
                     if (window._hrmsClockoutTrigger) window._hrmsClockoutTrigger();
                 }
             });

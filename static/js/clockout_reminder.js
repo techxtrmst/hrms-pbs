@@ -108,42 +108,8 @@
     // reason: 'dynamic' | 'shift_end'
     // shiftEndTime: ISO string or undefined
     function triggerReminder(elapsedMs, reason, shiftEndTime) {
-        playUrgentBeeps();
         showOSNotification(elapsedMs, reason, shiftEndTime);
         showInPagePopup(elapsedMs, reason, shiftEndTime);
-    }
-
-    // ── Sound: Urgent Beeps (Web Audio API) ───────────────────────────────────
-    function playUrgentBeeps() {
-        try {
-            const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            if (!AudioCtx) return;
-            const ctx = new AudioCtx();
-
-            function beep(freq, startSec, durSec, vol) {
-                const osc  = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.type = 'square';
-                osc.frequency.value = freq;
-                gain.gain.setValueAtTime(vol, ctx.currentTime + startSec);
-                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + startSec + durSec);
-                osc.start(ctx.currentTime + startSec);
-                osc.stop(ctx.currentTime + startSec + durSec);
-            }
-
-            // Pattern: fast triple beep × 2, then a long high note
-            beep(1400, 0.00, 0.14, 0.25);
-            beep(1400, 0.18, 0.14, 0.25);
-            beep(1400, 0.36, 0.14, 0.25);
-            beep(1400, 0.60, 0.14, 0.25);
-            beep(1400, 0.78, 0.14, 0.25);
-            beep(1400, 0.96, 0.14, 0.25);
-            beep(1700, 1.20, 0.55, 0.22);   // final high tone
-        } catch (e) {
-            // Web Audio not available — silent fallback
-        }
     }
 
     // ── OS-level Browser Notification ────────────────────────────────────────
