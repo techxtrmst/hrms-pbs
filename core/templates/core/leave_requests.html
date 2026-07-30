@@ -61,11 +61,11 @@
         color: var(--keka-text-secondary);
         text-transform: uppercase; letter-spacing: 1px;
         margin-bottom: 16px;
-        display: flex; align-items: center; gap: 8px;
+        display: flex; align-items: center; justify-content: space-between;
     }
     .filter-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
+        grid-template-columns: repeat(auto-fit, minmax(160px,1fr));
         gap: 14px; align-items: end;
     }
     .form-label {
@@ -95,6 +95,36 @@
         box-shadow: 0 4px 12px rgba(91,71,251,.3);
     }
     .btn-filter:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(91,71,251,.35); }
+    .btn-clear {
+        background: #f1f5f9; color: #64748b; border: 1px solid var(--keka-border);
+        border-radius: 10px; padding: 11px 16px; font-size: 0.87rem; font-weight: 600;
+        cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+        text-decoration: none; transition: all 0.2s;
+    }
+    .btn-clear:hover { background: #e2e8f0; color: #334155; }
+
+    /* ── Bulk Action Bar ─────────────────────────── */
+    .bulk-action-bar {
+        background: #ffffff;
+        border: 1.5px solid var(--keka-primary);
+        border-radius: 14px;
+        padding: 14px 20px;
+        margin-bottom: 20px;
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 16px; flex-wrap: wrap;
+        box-shadow: 0 4px 16px rgba(91,71,251,0.12);
+    }
+    .bulk-action-left {
+        display: flex; align-items: center; gap: 14px;
+    }
+    .bulk-count-badge {
+        background: #ede9ff; color: #5b47fb;
+        padding: 4px 12px; border-radius: 20px;
+        font-weight: 700; font-size: 0.82rem;
+    }
+    .bulk-action-right {
+        display: flex; align-items: center; gap: 10px;
+    }
 
     /* ── Leave Cards ─────────────────────────────── */
     .leave-card {
@@ -108,6 +138,18 @@
         display: flex; align-items: flex-start; gap: 16px;
     }
     .leave-card:hover { box-shadow: 0 8px 24px rgba(91,71,251,.13); transform: translateY(-2px); }
+
+    .card-select-checkbox {
+        display: flex; align-items: center; justify-content: center;
+        padding-top: 12px; flex-shrink: 0;
+    }
+    .card-select-checkbox .form-check-input {
+        width: 20px; height: 20px; cursor: pointer;
+        border: 2px solid #cbd5e1; border-radius: 6px;
+    }
+    .card-select-checkbox .form-check-input:checked {
+        background-color: var(--keka-primary); border-color: var(--keka-primary);
+    }
 
     .emp-avatar {
         width: 48px; height: 48px; border-radius: 12px; flex-shrink: 0;
@@ -207,7 +249,10 @@
     <!-- ── Filter Card ── -->
     <div class="lr-filter-card">
         <div class="lr-filter-title">
-            <i class="fas fa-sliders-h"></i> Filters
+            <span><i class="fas fa-sliders-h me-1"></i> Search & Filters</span>
+            {% if status_filter or employee_filter or department_filter or leave_type_filter or start_date_filter or end_date_filter %}
+            <a href="{% url 'leave_requests' %}" class="text-decoration-none text-muted small"><i class="fas fa-undo me-1"></i> Reset Filters</a>
+            {% endif %}
         </div>
         <form method="get" class="filter-grid">
             <div>
@@ -215,8 +260,8 @@
                     Status <i class="fas fa-info-circle tip-icon" data-bs-toggle="tooltip" title="Filter by request status"></i>
                 </label>
                 <select name="status" class="form-select">
-                    <option value="">All Status</option>
-                    <option value="PENDING"   {% if status_filter == 'PENDING'   %}selected{% endif %}>Pending</option>
+                    <option value="ALL" {% if status_filter == 'ALL' %}selected{% endif %}>All Status</option>
+                    <option value="PENDING"   {% if status_filter == 'PENDING' or not status_filter %}selected{% endif %}>Pending</option>
                     <option value="APPROVED"  {% if status_filter == 'APPROVED'  %}selected{% endif %}>Approved</option>
                     <option value="REJECTED"  {% if status_filter == 'REJECTED'  %}selected{% endif %}>Rejected</option>
                     <option value="CANCELLED" {% if status_filter == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
@@ -227,6 +272,18 @@
                     Employee <i class="fas fa-info-circle tip-icon" data-bs-toggle="tooltip" title="Search by name or badge ID"></i>
                 </label>
                 <input type="text" name="employee" class="form-control" placeholder="Name or ID…" value="{{ employee_filter }}">
+            </div>
+            <div>
+                <label class="form-label">
+                    From Date <i class="fas fa-calendar-alt tip-icon" data-bs-toggle="tooltip" title="Start date boundary"></i>
+                </label>
+                <input type="date" name="start_date" class="form-control" value="{{ start_date_filter }}">
+            </div>
+            <div>
+                <label class="form-label">
+                    To Date <i class="fas fa-calendar-alt tip-icon" data-bs-toggle="tooltip" title="End date boundary"></i>
+                </label>
+                <input type="date" name="end_date" class="form-control" value="{{ end_date_filter }}">
             </div>
             <div>
                 <label class="form-label">
@@ -252,83 +309,117 @@
                     <option value="OT" {% if leave_type_filter == 'OT' %}selected{% endif %}>Others</option>
                 </select>
             </div>
-            <div>
-                <label class="form-label">&nbsp;</label>
-                <button type="submit" class="btn-filter">
-                    <i class="fas fa-filter"></i> Apply Filters
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn-filter flex-grow-1">
+                    <i class="fas fa-filter"></i> Filter
                 </button>
+                <a href="{% url 'leave_requests' %}" class="btn-clear" title="Clear Filters">
+                    <i class="fas fa-times"></i>
+                </a>
             </div>
         </form>
     </div>
 
-    <!-- ── Leave List ── -->
+    <!-- ── Bulk Actions Form & List ── -->
     {% if leave_requests %}
-        {% for leave in leave_requests %}
-        <div class="leave-card">
+        <form id="bulkLeaveForm" method="post" action="{% url 'leave_requests' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" id="bulkLeaveAction" value="">
+            <input type="hidden" name="admin_comment" id="bulkLeaveReason" value="">
 
-            <!-- Avatar -->
-            <div class="emp-avatar">
-                {% if leave.employee.profile_picture %}
-                    <img src="{{ leave.employee.profile_picture.url }}" alt="">
-                {% else %}
-                    {{ leave.employee.user.first_name|first }}{{ leave.employee.user.last_name|first }}
-                {% endif %}
+            <!-- Bulk Action Toolbar -->
+            <div class="bulk-action-bar">
+                <div class="bulk-action-left">
+                    <div class="form-check m-0 d-flex align-items-center gap-2">
+                        <input class="form-check-input" type="checkbox" id="selectAllLeaves" style="width: 20px; height: 20px; cursor: pointer;">
+                        <label class="form-check-label fw-bold text-dark" for="selectAllLeaves" style="cursor: pointer; font-size: 0.9rem;">
+                            Select All Pending
+                        </label>
+                    </div>
+                    <span class="bulk-count-badge" id="selectedLeavesBadge">0 selected</span>
+                </div>
+                <div class="bulk-action-right">
+                    <button type="button" class="btn btn-success btn-sm px-3 fw-bold rounded-3" id="btnBulkApprove" disabled>
+                        <i class="fas fa-check-double me-1"></i> Approve Selected
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm px-3 fw-bold rounded-3" id="btnBulkReject" disabled>
+                        <i class="fas fa-times-circle me-1"></i> Reject Selected
+                    </button>
+                </div>
             </div>
 
-            <!-- Info -->
-            <div class="leave-info">
-                <div class="leave-info-top">
-                    <span class="emp-name">{{ leave.employee.user.get_full_name }}</span>
-                    <span class="leave-type-badge lt-{{ leave.leave_type }}">{{ leave.get_leave_type_display }}</span>
-                </div>
-                <div class="leave-dates">
-                    <i class="fas fa-calendar-alt me-1"></i>
-                    {{ leave.start_date|date:"d M Y" }} → {{ leave.end_date|date:"d M Y" }}
-                    &nbsp;·&nbsp; <strong>{{ leave.total_days }} day{{ leave.total_days|pluralize }}</strong>
-                </div>
-                {% if leave.reason %}
-                <div class="leave-reason">
-                    <i class="fas fa-comment-dots me-1"></i>{{ leave.reason|truncatechars:100 }}
+            <!-- Leave Cards Loop -->
+            {% for leave in leave_requests %}
+            <div class="leave-card">
+
+                {% if leave.status == 'PENDING' %}
+                <div class="card-select-checkbox">
+                    <input type="checkbox" name="leave_ids" value="{{ leave.id }}" class="leave-chk form-check-input">
                 </div>
                 {% endif %}
-                {% if leave.status == 'PENDING' and leave.leave_type != 'UL' and leave.leave_type != 'OD' and leave.leave_type != 'OT' %}
-                    {% with v=leave.validate_leave_application %}
-                    {% if v.will_be_lop %}
-                    <div class="lop-warning mt-1">
-                        <i class="fas fa-exclamation-triangle me-1"></i>
-                        Balance: <strong>{{ v.available_balance }} day{{ v.available_balance|floatformat:0|default:"0" }}</strong> available &mdash;
-                        <strong>{{ v.shortfall }} day{{ v.shortfall|floatformat:0|default:"0" }}</strong> will be marked as <span style="color:#ff647c;font-weight:700;">LOP</span>
-                    </div>
+
+                <!-- Avatar -->
+                <div class="emp-avatar">
+                    {% if leave.employee.profile_picture %}
+                        <img src="{{ leave.employee.profile_picture.url }}" alt="">
                     {% else %}
-                    <div class="balance-ok mt-1">
-                        <i class="fas fa-check-circle me-1"></i>
-                        Balance sufficient &mdash; <strong>{{ v.available_balance }} day{{ v.available_balance|floatformat:0|default:"0" }}</strong> available
+                        {{ leave.employee.user.first_name|first }}{{ leave.employee.user.last_name|first }}
+                    {% endif %}
+                </div>
+
+                <!-- Info -->
+                <div class="leave-info">
+                    <div class="leave-info-top">
+                        <span class="emp-name">{{ leave.employee.user.get_full_name }}</span>
+                        <span class="leave-type-badge lt-{{ leave.leave_type }}">{{ leave.get_leave_type_display }}</span>
+                    </div>
+                    <div class="leave-dates">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        {{ leave.start_date|date:"d M Y" }} → {{ leave.end_date|date:"d M Y" }}
+                        &nbsp;·&nbsp; <strong>{{ leave.total_days }} day{{ leave.total_days|pluralize }}</strong>
+                    </div>
+                    {% if leave.reason %}
+                    <div class="leave-reason">
+                        <i class="fas fa-comment-dots me-1"></i>{{ leave.reason|truncatechars:100 }}
                     </div>
                     {% endif %}
-                    {% endwith %}
-                {% endif %}
-            </div>
-
-            <!-- Actions -->
-            <div class="leave-actions">
-                {% if leave.status == 'PENDING' %}
-                <div class="action-btns">
-                    <form method="post" action="{% url 'approve_leave' leave.id %}" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn-approve"><i class="fas fa-check me-1"></i>Approve</button>
-                    </form>
-                    <form method="post" action="{% url 'reject_leave' leave.id %}" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn-reject"><i class="fas fa-times me-1"></i>Reject</button>
-                    </form>
+                    {% if leave.status == 'PENDING' and leave.leave_type != 'UL' and leave.leave_type != 'OD' and leave.leave_type != 'OT' %}
+                        {% with v=leave.validate_leave_application %}
+                        {% if v.will_be_lop %}
+                        <div class="lop-warning mt-1">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            Balance: <strong>{{ v.available_balance }} day{{ v.available_balance|floatformat:0|default:"0" }}</strong> available &mdash;
+                            <strong>{{ v.shortfall }} day{{ v.shortfall|floatformat:0|default:"0" }}</strong> will be marked as <span style="color:#ff647c;font-weight:700;">LOP</span>
+                        </div>
+                        {% else %}
+                        <div class="balance-ok mt-1">
+                            <i class="fas fa-check-circle me-1"></i>
+                            Balance sufficient &mdash; <strong>{{ v.available_balance }} day{{ v.available_balance|floatformat:0|default:"0" }}</strong> available
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+                    {% endif %}
                 </div>
-                {% else %}
-                <span class="status-badge s-{{ leave.status }}">{{ leave.get_status_display }}</span>
-                {% endif %}
-            </div>
 
-        </div>
-        {% endfor %}
+                <!-- Actions -->
+                <div class="leave-actions">
+                    {% if leave.status == 'PENDING' %}
+                    <div class="action-btns">
+                        <button type="button" class="btn-approve" onclick="singleLeaveAction({{ leave.id }}, 'approve')">
+                            <i class="fas fa-check me-1"></i>Approve
+                        </button>
+                        <button type="button" class="btn-reject" onclick="singleLeaveAction({{ leave.id }}, 'reject')">
+                            <i class="fas fa-times me-1"></i>Reject
+                        </button>
+                    </div>
+                    {% else %}
+                    <span class="status-badge s-{{ leave.status }}">{{ leave.get_status_display }}</span>
+                    {% endif %}
+                </div>
+
+            </div>
+            {% endfor %}
+        </form>
 
     {% else %}
     <div class="empty-state">
@@ -339,12 +430,131 @@
 
 </div>
 
+<!-- Bulk Rejection Reason Modal -->
+<div class="modal fade" id="bulkRejectLeaveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 14px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger"><i class="fas fa-times-circle me-2"></i>Reject Selected Leaves</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <p class="text-muted small mb-2">Please provide a rejection comment for the selected leave request(s):</p>
+                <textarea id="modalBulkRejectReason" class="form-control" rows="3" placeholder="Enter reason for rejection..." required></textarea>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger btn-sm px-4 fw-bold" id="confirmBulkRejectBtn">Confirm Rejection</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Single Action Form (hidden) -->
+<form id="singleLeaveForm" method="post" action="{% url 'leave_requests' %}">
+    {% csrf_token %}
+    <input type="hidden" name="action" id="singleActionType">
+    <input type="hidden" name="leave_id" id="singleLeaveId">
+    <input type="hidden" name="admin_comment" id="singleAdminComment">
+</form>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     // Bootstrap tooltips
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
         new bootstrap.Tooltip(el, { placement: 'top', trigger: 'hover' });
     });
+
+    const selectAllChk = document.getElementById('selectAllLeaves');
+    const leaveChks = document.querySelectorAll('.leave-chk');
+    const badge = document.getElementById('selectedLeavesBadge');
+    const btnApprove = document.getElementById('btnBulkApprove');
+    const btnReject = document.getElementById('btnBulkReject');
+    const form = document.getElementById('bulkLeaveForm');
+    const actionInput = document.getElementById('bulkLeaveAction');
+    const reasonInput = document.getElementById('bulkLeaveReason');
+
+    function updateSelection() {
+        const checked = document.querySelectorAll('.leave-chk:checked');
+        const count = checked.length;
+        if (badge) badge.textContent = `${count} selected`;
+
+        if (btnApprove) btnApprove.disabled = count === 0;
+        if (btnReject) btnReject.disabled = count === 0;
+
+        if (selectAllChk && leaveChks.length > 0) {
+            selectAllChk.checked = (count === leaveChks.length);
+        }
+    }
+
+    if (selectAllChk) {
+        selectAllChk.addEventListener('change', (e) => {
+            leaveChks.forEach(chk => chk.checked = e.target.checked);
+            updateSelection();
+        });
+    }
+
+    leaveChks.forEach(chk => {
+        chk.addEventListener('change', updateSelection);
+    });
+
+    if (btnApprove) {
+        btnApprove.addEventListener('click', () => {
+            const count = document.querySelectorAll('.leave-chk:checked').length;
+            if (count === 0) return;
+            if (confirm(`Are you sure you want to approve ${count} selected leave request(s)?`)) {
+                actionInput.value = 'bulk_approve';
+                form.submit();
+            }
+        });
+    }
+
+    if (btnReject) {
+        btnReject.addEventListener('click', () => {
+            const count = document.querySelectorAll('.leave-chk:checked').length;
+            if (count === 0) return;
+            const modal = new bootstrap.Modal(document.getElementById('bulkRejectLeaveModal'));
+            modal.show();
+        });
+    }
+
+    const confirmRejectBtn = document.getElementById('confirmBulkRejectBtn');
+    if (confirmRejectBtn) {
+        confirmRejectBtn.addEventListener('click', () => {
+            const reason = document.getElementById('modalBulkRejectReason').value.trim();
+            if (!reason) {
+                alert('Please enter a rejection reason.');
+                return;
+            }
+            actionInput.value = 'bulk_reject';
+            reasonInput.value = reason;
+            form.submit();
+        });
+    }
 });
+
+function singleLeaveAction(leaveId, action) {
+    const sForm = document.getElementById('singleLeaveForm');
+    const sAction = document.getElementById('singleActionType');
+    const sId = document.getElementById('singleLeaveId');
+    const sComment = document.getElementById('singleAdminComment');
+
+    sId.value = leaveId;
+    sAction.value = action;
+
+    if (action === 'reject') {
+        const reason = prompt('Please enter rejection reason:');
+        if (reason === null) return;
+        if (!reason.trim()) {
+            alert('Rejection reason is required.');
+            return;
+        }
+        sComment.value = reason;
+    } else {
+        sComment.value = 'Approved';
+    }
+
+    sForm.submit();
+}
 </script>
 {% endblock %}

@@ -3584,6 +3584,92 @@ class RegularizationCreateView(LoginRequiredMixin, CreateView):
         return reverse_lazy("personal_home")  # Or wherever "My Regularizations" are shown
 
 
+def _process_regularization_approval(reg_request, user, comment=""):
+    reg_request.status = "APPROVED"
+    reg_request.approved_by = user
+    reg_request.approved_at = timezone.now()
+    if comment:
+        reg_request.manager_comment = comment
+    reg_request.save()
+
+    # Update Attendance
+    attendance, created = Attendance.objects.get_or_create(employee=reg_request.employee, date=reg_request.date)
+
+    from core.utils import get_user_timezone
+
+    tz_name = get_user_timezone(reg_request.employee.user, reg_request.employee.company)
+    attendance.user_timezone = tz_name
+
+    import pytz
+
+    local_tz = pytz.timezone(tz_name)
+
+    if reg_request.check_in:
+        local_dt = timezone.datetime.combine(reg_request.date, reg_request.check_in)
+        attendance.clock_in = local_tz.localize(local_dt)
+
+    if reg_request.check_out:
+        local_dt = timezone.datetime.combine(reg_request.date, reg_request.check_out)
+        if reg_request.check_in and reg_request.check_out < reg_request.check_in:
+            local_dt += timedelta(days=1)
+        attendance.clock_out = local_tz.localize(local_dt)
+
+    attendance.status = "PRESENT"
+
+    if reg_request.check_in and reg_request.check_out:
+        existing_session = AttendanceSession.objects.filter(
+            employee=reg_request.employee, date=reg_request.date
+        ).first()
+
+        if existing_session:
+            existing_session.clock_in = attendance.clock_in
+            existing_session.clock_out = attendance.clock_out
+            existing_session.session_type = "WEB"
+            existing_session.save()
+        else:
+            AttendanceSession.objects.create(
+                employee=reg_request.employee,
+                date=reg_request.date,
+                session_number=1,
+                clock_in=attendance.clock_in,
+                clock_out=attendance.clock_out,
+                session_type="WEB",
+                is_active=False,
+                location_validated=True,
+            )
+
+    attendance.calculate_late_arrival()
+    attendance.calculate_early_departure()
+    attendance.calculate_total_working_hours()
+    attendance.save()
+
+    from core.tasks import safe_delay, send_regularization_approval_notification_task
+
+    safe_delay(send_regularization_approval_notification_task, reg_request.id)
+
+
+def _process_regularization_rejection(reg_request, user, reason=""):
+    reg_request.status = "REJECTED"
+    if reason:
+        reg_request.manager_comment = reason
+    reg_request.save()
+
+    if reg_request.change_type == "WEEK_OFF_WORK":
+        try:
+            attendance = Attendance.objects.filter(employee=reg_request.employee, date=reg_request.date).first()
+            if attendance:
+                attendance.status = "WEEKLY_OFF"
+                attendance.save(update_fields=["status"])
+        except Exception as e:
+            import logging
+
+            logging.getLogger(__name__).error(f"Error resetting attendance status for rejected week-off work: {e}")
+
+    from core.tasks import safe_delay, send_regularization_rejection_notification_task
+
+    safe_delay(send_regularization_rejection_notification_task, reg_request.id)
+
+
 class RegularizationListView(LoginRequiredMixin, ListView):
     model = RegularizationRequest
     template_name = "employees/regularization_list.html"
@@ -3592,26 +3678,69 @@ class RegularizationListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         user = self.request.user
-        qs = RegularizationRequest.objects.all()
+        qs = RegularizationRequest.objects.select_related("employee__user", "employee__location", "approved_by").all()
 
-        if user.role == User.Role.COMPANY_ADMIN:
-            return qs.filter(employee__company=user.company)
+        if user.role == User.Role.COMPANY_ADMIN or user.is_superuser:
+            qs = qs.filter(employee__company=user.company)
         elif user.role == User.Role.MANAGER:
-            # Show requests from subordinates
-            return qs.filter(employee__manager=user)
+            qs = qs.filter(employee__manager=user)
         else:
-            # Employees see their own
             employee = safe_get_employee_profile(user)
-            if employee:
-                return qs.filter(employee=employee)
-            return qs.none()
+            qs = qs.filter(employee=employee) if employee else qs.none()
+
+        # Filtering
+        status_filter = self.request.GET.get("status", "PENDING")
+        employee_filter = self.request.GET.get("employee", "")
+        start_date_filter = self.request.GET.get("start_date", "")
+        end_date_filter = self.request.GET.get("end_date", "")
+        change_type_filter = self.request.GET.get("change_type", "")
+
+        if status_filter and status_filter != "ALL":
+            qs = qs.filter(status=status_filter)
+
+        if employee_filter:
+            from django.db.models import Q
+
+            qs = qs.filter(
+                Q(employee__user__first_name__icontains=employee_filter)
+                | Q(employee__user__last_name__icontains=employee_filter)
+                | Q(employee__badge_id__icontains=employee_filter)
+            )
+
+        if start_date_filter:
+            qs = qs.filter(date__gte=start_date_filter)
+
+        if end_date_filter:
+            qs = qs.filter(date__lte=end_date_filter)
+
+        if change_type_filter:
+            qs = qs.filter(change_type=change_type_filter)
+
+        return qs.order_by("-created_at")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        context["status_filter"] = self.request.GET.get("status", "PENDING")
+        context["employee_filter"] = self.request.GET.get("employee", "")
+        context["start_date_filter"] = self.request.GET.get("start_date", "")
+        context["end_date_filter"] = self.request.GET.get("end_date", "")
+        context["change_type_filter"] = self.request.GET.get("change_type", "")
+
+        if user.role == User.Role.COMPANY_ADMIN or user.is_superuser:
+            context["employees"] = Employee.objects.filter(company=user.company, is_active=True).select_related("user")
+        elif user.role == User.Role.MANAGER:
+            context["employees"] = Employee.objects.filter(manager=user, is_active=True).select_related("user")
+        else:
+            context["employees"] = []
+
+        return context
 
 
 @login_required
 def approve_regularization(request, pk):
     if request.method == "POST":
         reg_request = RegularizationRequest.objects.get(pk=pk)
-
         user = request.user
         is_admin = user.role == User.Role.COMPANY_ADMIN or user.is_superuser
         is_manager = (
@@ -3621,84 +3750,13 @@ def approve_regularization(request, pk):
         if not (is_admin or is_manager):
             return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
 
-        # Approve
-        reg_request.status = "APPROVED"
-        reg_request.approved_by = user
-        reg_request.approved_at = timezone.now()
-        reg_request.manager_comment = request.POST.get("manager_comment", "")
-        reg_request.save()
+        comment = request.POST.get("manager_comment", "")
+        from django.db import transaction
 
-        # Update Attendance
-        # We need to find or create the attendance record for that date
-        attendance, created = Attendance.objects.get_or_create(employee=reg_request.employee, date=reg_request.date)
+        with transaction.atomic():
+            _process_regularization_approval(reg_request, user, comment)
 
-        # Get employee location timezone
-        from core.utils import get_user_timezone
-
-        tz_name = get_user_timezone(reg_request.employee.user, reg_request.employee.company)
-        attendance.user_timezone = tz_name
-
-        import pytz
-
-        local_tz = pytz.timezone(tz_name)
-
-        if reg_request.check_in:
-            # Combine date and time, then localize to employee's timezone
-            local_dt = timezone.datetime.combine(reg_request.date, reg_request.check_in)
-            attendance.clock_in = local_tz.localize(local_dt)
-
-        if reg_request.check_out:
-            local_dt = timezone.datetime.combine(reg_request.date, reg_request.check_out)
-            # Handle possible overnight shift if check_out < check_in (though form currently validates against this)
-            if reg_request.check_in and reg_request.check_out < reg_request.check_in:
-                local_dt += timedelta(days=1)
-            attendance.clock_out = local_tz.localize(local_dt)
-
-        # Update status to Present if not already (or whatever logic user wants, implicitly if regulating, they were present)
-        attendance.status = "PRESENT"
-
-        # Create or update AttendanceSession for consistency
-        if reg_request.check_in and reg_request.check_out:
-            # Check if there's already a session for this date
-            existing_session = AttendanceSession.objects.filter(
-                employee=reg_request.employee, date=reg_request.date
-            ).first()
-
-            if existing_session:
-                # Update existing session
-                existing_session.clock_in = attendance.clock_in
-                existing_session.clock_out = attendance.clock_out
-                existing_session.session_type = "WEB"  # Default to web for regularized entries
-                existing_session.save()
-            else:
-                # Create new session
-                AttendanceSession.objects.create(
-                    employee=reg_request.employee,
-                    date=reg_request.date,
-                    session_number=1,
-                    clock_in=attendance.clock_in,
-                    clock_out=attendance.clock_out,
-                    session_type="WEB",
-                    is_active=False,
-                    location_validated=True,  # Assume validated for regularized entries
-                )
-
-        # Re-calc late/early
-        attendance.calculate_late_arrival()
-        attendance.calculate_early_departure()
-
-        # Recalculate working hours after regularization
-        attendance.calculate_total_working_hours()
-
-        attendance.save()
-
-        # Send Approval Email immediately using Celery task
-        from core.tasks import safe_delay, send_regularization_approval_notification_task
-
-        safe_delay(send_regularization_approval_notification_task, reg_request.id)
-
-        messages.success(request, "Regularization approved. Notification will be sent.")
-
+        messages.success(request, "Regularization approved successfully.")
         return redirect(request.META.get("HTTP_REFERER", "regularization_list"))
 
     return redirect("regularization_list")
@@ -3708,7 +3766,6 @@ def approve_regularization(request, pk):
 def reject_regularization(request, pk):
     if request.method == "POST":
         reg_request = RegularizationRequest.objects.get(pk=pk)
-
         user = request.user
         is_admin = user.role == User.Role.COMPANY_ADMIN or user.is_superuser
         is_manager = (
@@ -3718,37 +3775,64 @@ def reject_regularization(request, pk):
         if not (is_admin or is_manager):
             return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
 
-        reg_request.status = "REJECTED"
-        reg_request.manager_comment = request.POST.get(
-            "rejection_reason", ""
-        )  # Use manager_comment for rejection reason
-        reg_request.save()
+        reason = request.POST.get("rejection_reason", "")
+        from django.db import transaction
 
-        # If it was a week-off work request, reject means status goes back to WEEKLY_OFF
-        if reg_request.change_type == "WEEK_OFF_WORK":
-            try:
-                from .models import Attendance
+        with transaction.atomic():
+            _process_regularization_rejection(reg_request, user, reason)
 
-                attendance = Attendance.objects.filter(employee=reg_request.employee, date=reg_request.date).first()
-                if attendance:
-                    attendance.status = "WEEKLY_OFF"
-                    attendance.save(update_fields=["status"])
-            except Exception as e:
-                import logging
-
-                logger = logging.getLogger(__name__)
-                logger.error(f"Error resetting attendance status for rejected week-off work: {e}")
-
-        # Send Rejection Email immediately using Celery task
-        from core.tasks import safe_delay, send_regularization_rejection_notification_task
-
-        safe_delay(send_regularization_rejection_notification_task, reg_request.id)
-
-        messages.success(request, "Regularization rejected. Notification will be sent.")
-
+        messages.success(request, "Regularization rejected.")
         return redirect(request.META.get("HTTP_REFERER", "regularization_list"))
 
     return redirect("regularization_list")
+
+
+@login_required
+def bulk_regularization_action(request):
+    if request.method == "POST":
+        user = request.user
+        action = request.POST.get("action")
+        req_ids = request.POST.getlist("request_ids")
+        manager_comment = request.POST.get("manager_comment", "")
+        rejection_reason = request.POST.get("rejection_reason", "Bulk rejected by manager")
+
+        if not req_ids:
+            messages.error(request, "No regularization requests selected.")
+            return redirect("regularization_list")
+
+        is_admin = user.role == User.Role.COMPANY_ADMIN or user.is_superuser
+        is_manager = user.role == User.Role.MANAGER
+
+        if not (is_admin or is_manager):
+            messages.error(request, "Permission denied.")
+            return redirect("regularization_list")
+
+        qs = RegularizationRequest.objects.filter(id__in=req_ids, status="PENDING")
+        if not user.is_superuser and user.role == User.Role.COMPANY_ADMIN:
+            qs = qs.filter(employee__company=user.company)
+        elif user.role == User.Role.MANAGER:
+            qs = qs.filter(employee__manager=user)
+
+        requests_to_process = list(qs)
+        count = 0
+
+        from django.db import transaction
+
+        with transaction.atomic():
+            for reg_req in requests_to_process:
+                if action == "approve":
+                    _process_regularization_approval(reg_req, user, manager_comment)
+                    count += 1
+                elif action == "reject":
+                    _process_regularization_rejection(reg_req, user, rejection_reason)
+                    count += 1
+
+        if action == "approve":
+            messages.success(request, f"Successfully approved {count} regularization request(s).")
+        else:
+            messages.success(request, f"Successfully rejected {count} regularization request(s).")
+
+    return redirect(request.META.get("HTTP_REFERER", "regularization_list"))
 
 
 # --- Leave Configuration ---

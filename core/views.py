@@ -3816,24 +3816,96 @@ def download_attendance(request):
 
 @login_required
 @manager_required
+@login_required
+@manager_required
 def leave_requests(request):
-    """Admin view for managing leave requests"""
+    """Admin/Manager view for managing leave requests with filtering and bulk actions"""
 
     if not hasattr(request.user, "company") or not request.user.company:
         messages.error(request, "Restricted access.")
-
         return redirect("dashboard")
 
-    # Handle approve/reject actions
-
+    # Handle approve/reject/bulk actions
     if request.method == "POST":
         action = request.POST.get("action")
-
         leave_id = request.POST.get("leave_id")
-
+        leave_ids = request.POST.getlist("leave_ids")
         admin_comment = request.POST.get("admin_comment", "")
         approval_type = request.POST.get("approval_type", "FULL")
 
+        from django.db import transaction
+
+        from core.tasks import safe_delay, send_leave_approval_notification_task, send_leave_rejection_notification_task
+
+        # Bulk Actions
+        if action == "bulk_approve":
+            if not leave_ids:
+                messages.error(request, "No leave requests selected.")
+                return redirect("leave_requests")
+
+            approved_count = 0
+            with transaction.atomic():
+                for lid in leave_ids:
+                    try:
+                        if request.user.role == User.Role.MANAGER and not request.user.is_superuser:
+                            lreq = LeaveRequest.objects.get(id=lid, employee__manager=request.user)
+                        else:
+                            lreq = LeaveRequest.objects.get(id=lid, employee__company=request.user.company)
+
+                        if lreq.status != "APPROVED":
+                            if lreq.approve_leave(request.user, approval_type=approval_type):
+                                if admin_comment:
+                                    lreq.admin_comment = admin_comment
+                                lreq.save()
+
+                            safe_delay(send_leave_approval_notification_task, lreq.id)
+                            approved_count += 1
+                    except LeaveRequest.DoesNotExist:
+                        continue
+                    except Exception as e:
+                        import logging
+
+                        logging.getLogger(__name__).error(f"Error in bulk approve leave {lid}: {e}")
+
+            messages.success(request, f"Successfully approved {approved_count} leave request(s).")
+            return redirect("leave_requests")
+
+        elif action == "bulk_reject":
+            if not leave_ids:
+                messages.error(request, "No leave requests selected.")
+                return redirect("leave_requests")
+
+            rejected_count = 0
+            reason_text = admin_comment or "Bulk rejected by manager"
+            with transaction.atomic():
+                for lid in leave_ids:
+                    try:
+                        if request.user.role == User.Role.MANAGER and not request.user.is_superuser:
+                            lreq = LeaveRequest.objects.get(id=lid, employee__manager=request.user)
+                        else:
+                            lreq = LeaveRequest.objects.get(id=lid, employee__company=request.user.company)
+
+                        if lreq.status == "PENDING":
+                            lreq.status = "REJECTED"
+                            lreq.approved_by = request.user
+                            lreq.approved_at = timezone.now()
+                            lreq.rejection_reason = reason_text
+                            lreq.admin_comment = reason_text
+                            lreq.save()
+
+                            safe_delay(send_leave_rejection_notification_task, lreq.id)
+                            rejected_count += 1
+                    except LeaveRequest.DoesNotExist:
+                        continue
+                    except Exception as e:
+                        import logging
+
+                        logging.getLogger(__name__).error(f"Error in bulk reject leave {lid}: {e}")
+
+            messages.success(request, f"Successfully rejected {rejected_count} leave request(s).")
+            return redirect("leave_requests")
+
+        # Single Request Actions
         try:
             if request.user.role == User.Role.MANAGER and not request.user.is_superuser:
                 leave_request = LeaveRequest.objects.get(id=leave_id, employee__manager=request.user)
@@ -3843,9 +3915,7 @@ def leave_requests(request):
             if action == "approve":
                 prev_status = leave_request.status
 
-                # Only transition and deduct if this wasn't already approved
                 if prev_status != "APPROVED":
-                    # Use the model's approve_leave method to handle all balance updates properly
                     if leave_request.approve_leave(request.user, approval_type=approval_type):
                         leave_request.admin_comment = admin_comment
                         leave_request.save()
@@ -3857,34 +3927,18 @@ def leave_requests(request):
                 else:
                     messages.info(request, "Leave request was already approved earlier.")
 
-                # Send Approval Email
-                try:
-                    from core.email_utils import send_leave_approval_notification
-
-                    if not send_leave_approval_notification(leave_request):
-                        messages.warning(request, "Leave approved, but email notification failed.")
-                except Exception as e:
-                    import logging
-
-                    logger = logging.getLogger(__name__)
-                    logger.error(f"Error sending approval email: {e}")
+                safe_delay(send_leave_approval_notification_task, leave_request.id)
 
             elif action == "reject":
                 if not admin_comment:
                     messages.error(request, "Admin comment is mandatory for rejection.")
-
                     return redirect("leave_requests")
 
                 leave_request.status = "REJECTED"
-
                 leave_request.approved_by = request.user
-
                 leave_request.approved_at = timezone.now()
-
                 leave_request.rejection_reason = admin_comment
-
                 leave_request.admin_comment = admin_comment
-
                 leave_request.save()
 
                 messages.success(
@@ -3892,38 +3946,24 @@ def leave_requests(request):
                     f"Leave request rejected for {leave_request.employee.user.get_full_name()}",
                 )
 
-                # Send Rejection Email
-                try:
-                    from core.email_utils import send_leave_rejection_notification
-
-                    if not send_leave_rejection_notification(leave_request):
-                        messages.warning(request, "Leave rejected, but email notification failed.")
-                except Exception as e:
-                    import logging
-
-                    logger = logging.getLogger(__name__)
-                    logger.error(f"Error sending rejection email: {e}")
+                safe_delay(send_leave_rejection_notification_task, leave_request.id)
 
         except LeaveRequest.DoesNotExist:
             messages.error(request, "Leave request not found.")
-
         except Exception as e:
             messages.error(request, f"Error processing request: {e}")
 
         return redirect("leave_requests")
 
     # Filter parameters
-
     status_filter = request.GET.get("status", "PENDING")
-
     employee_filter = request.GET.get("employee", "")
-
     department_filter = request.GET.get("department", "")
-
     leave_type_filter = request.GET.get("leave_type", "")
+    start_date_filter = request.GET.get("start_date", "")
+    end_date_filter = request.GET.get("end_date", "")
 
     # Base query
-
     if request.user.role == User.Role.MANAGER and not request.user.is_superuser:
         leave_requests = LeaveRequest.objects.filter(employee__manager=request.user).select_related(
             "employee__user", "employee__manager", "approved_by"
@@ -3934,8 +3974,7 @@ def leave_requests(request):
         )
 
     # Apply filters
-
-    if status_filter:
+    if status_filter and status_filter != "ALL":
         leave_requests = leave_requests.filter(status=status_filter)
 
     if employee_filter:
@@ -3951,8 +3990,15 @@ def leave_requests(request):
     if leave_type_filter:
         leave_requests = leave_requests.filter(leave_type=leave_type_filter)
 
-    # Get unique departments for filter dropdown
+    if start_date_filter:
+        leave_requests = leave_requests.filter(end_date__gte=start_date_filter)
 
+    if end_date_filter:
+        leave_requests = leave_requests.filter(start_date__lte=end_date_filter)
+
+    leave_requests = leave_requests.order_by("-created_at")
+
+    # Get unique departments for filter dropdown
     if request.user.role == User.Role.MANAGER and not request.user.is_superuser:
         departments = Employee.objects.filter(manager=request.user).values_list("department", flat=True).distinct()
     else:
@@ -3971,6 +4017,8 @@ def leave_requests(request):
             "employee_filter": employee_filter,
             "department_filter": department_filter,
             "leave_type_filter": leave_type_filter,
+            "start_date_filter": start_date_filter,
+            "end_date_filter": end_date_filter,
         },
     )
 

@@ -118,6 +118,11 @@ urlpatterns = [
         views.reject_regularization,
         name="regularization_reject",
     ),
+    path(
+        "regularization/bulk-action/",
+        views.bulk_regularization_action,
+        name="regularization_bulk_action",
+    ),
     # Emergency Contacts
     path(
         "emergency-contact/add/",
