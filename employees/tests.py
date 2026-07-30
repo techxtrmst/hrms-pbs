@@ -98,52 +98,17 @@ class AutomatedWeekOffRequestTestCase(TestCase):
             self.assertIsNotNone(attendance)
             self.assertTrue(attendance.is_currently_clocked_in)
 
-            # Check if RegularizationRequest with change_type WEEK_OFF_WORK was created
-            reg_req = RegularizationRequest.objects.filter(
+            # Assert that NO RegularizationRequest with change_type WEEK_OFF_WORK was created
+            reg_req_exists = RegularizationRequest.objects.filter(
                 employee=self.employee, date=monday_date, change_type="WEEK_OFF_WORK"
-            ).first()
-            self.assertIsNotNone(reg_req)
-            self.assertEqual(reg_req.status, "PENDING")
-            self.assertEqual(reg_req.check_in, mock_now.time())
+            ).exists()
+            self.assertFalse(reg_req_exists)
 
-            # Check if Notification was created for manager
-            notification = Notification.objects.filter(
+            # Assert that NO Notification was created for manager
+            notification_exists = Notification.objects.filter(
                 recipient=self.manager_user, notification_type="REGULARIZATION_REQUEST"
-            ).first()
-            self.assertIsNotNone(notification)
-            self.assertIn("clocked in on their week-off", notification.message)
-
-            # Let's test clock out updates the check_out time on the request
-            mock_checkout_now = tz.localize(timezone.datetime(2026, 6, 8, 18, 0, 0))
-            with patch("django.utils.timezone.now", return_value=mock_checkout_now):
-                response_out = self.client.post(
-                    "/employees/api/clock-out/",
-                    {"latitude": 12.9716, "longitude": 77.5946, "accuracy": 10, "force_clockout": True},
-                    content_type="application/json",
-                )
-
-                self.assertEqual(response_out.status_code, 200)
-
-                # Verify request check_out is updated
-                reg_req.refresh_from_db()
-                self.assertEqual(reg_req.check_out, mock_checkout_now.time())
-
-        # Test Rejecting the request updates the Attendance record status to WEEKLY_OFF
-        # Let's log in as the manager
-        self.client.login(username="manager@test.com", password="password")
-        response_reject = self.client.post(
-            f"/employees/regularization/{reg_req.pk}/reject/", {"rejection_reason": "Not approved"}
-        )
-        self.assertEqual(response_reject.status_code, 302)
-
-        # Verify the request status is REJECTED
-        reg_req.refresh_from_db()
-        self.assertEqual(reg_req.status, "REJECTED")
-        self.assertEqual(reg_req.manager_comment, "Not approved")
-
-        # Verify the Attendance status is WEEKLY_OFF
-        attendance.refresh_from_db()
-        self.assertEqual(attendance.status, "WEEKLY_OFF")
+            ).exists()
+            self.assertFalse(notification_exists)
 
 
 class LeaveRequestCancelTestCase(TestCase):

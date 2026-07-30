@@ -122,6 +122,24 @@
         border: 1px dashed #b7791f;
     }
 
+    .status-sl {
+        color: #c05621;
+        font-weight: bold;
+        background-color: #feebc8;
+    }
+
+    .status-pl {
+        color: #276749;
+        font-weight: bold;
+        background-color: #c6f6d5;
+    }
+
+    .status-lop {
+        color: #9b2c2c;
+        font-weight: bold;
+        background-color: #fed7d7;
+    }
+
     .status-mp {
         color: #c53030;
         font-weight: bold;
@@ -250,8 +268,17 @@
                 <div class="legend-item">
                     <span class="legend-color status-l"></span> L - Leave
                 </div>
+                <div class="legend-item">
+                    <span class="legend-color status-sl"></span> SL - Sick Leave
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color status-pl"></span> PL - Casual/Paid Leave
+                </div>
             </div>
             <div class="col-md-6">
+                <div class="legend-item">
+                    <span class="legend-color status-lop"></span> LOP - Loss of Pay
+                </div>
                 <div class="legend-item">
                     <span class="legend-color status-hd"></span> HD - Half Day
                 </div>
@@ -313,7 +340,7 @@
 
                         {% for status in item.days %}
                         <td
-                            class="{% if status == 'P' %}status-p{% elif status == 'A' %}status-a{% elif status == 'L' %}status-l{% elif status == 'HD' %}status-hd{% elif status == 'WO' %}status-wo{% elif status == 'H' %}status-h{% elif status == 'WOW' %}status-wow{% endif %}">
+                            class="{% if status == 'P' %}status-p{% elif status == 'A' %}status-a{% elif status == 'SL' %}status-sl{% elif status == 'PL' %}status-pl{% elif status == 'LOP' %}status-lop{% elif status == 'L' %}status-l{% elif status == 'HD' %}status-hd{% elif status == 'WO' %}status-wo{% elif status == 'H' %}status-h{% elif status == 'WOW' %}status-wow{% endif %}">
                             {{ status }}
                         </td>
                         {% endfor %}

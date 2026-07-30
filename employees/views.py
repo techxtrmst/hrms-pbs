@@ -760,33 +760,7 @@ def clock_in(request):
 
                     attendance.save()
 
-                    # Hook for Automated Extra Work Request (Week-Off Work)
-                    if session_number == 1 and employee.is_week_off(today):
-                        try:
-                            from .models import RegularizationRequest
-
-                            # Prevent duplicate request creation
-                            if not RegularizationRequest.objects.filter(
-                                employee=employee, date=today, change_type="WEEK_OFF_WORK"
-                            ).exists():
-                                # Create a pending RegularizationRequest under the hood
-                                reg_req = RegularizationRequest.objects.create(
-                                    employee=employee,
-                                    date=today,
-                                    change_type="WEEK_OFF_WORK",
-                                    check_in=session.clock_in.astimezone(tz).time(),
-                                    reason=f"Automated Request: Clocked in on designated week-off day ({today.strftime('%A')}).",
-                                    status="PENDING",
-                                )
-                                # Send email notification to manager
-                                try:
-                                    from core.email_utils import send_regularization_request_notification
-
-                                    send_regularization_request_notification(reg_req)
-                                except Exception as email_err:
-                                    logger.error(f"Failed to send automated week-off email: {email_err}")
-                        except Exception as req_error:
-                            logger.error(f"Failed to auto-create week-off regularization request: {req_error}")
+                    pass
 
             except Exception as db_error:
                 return JsonResponse(
@@ -995,23 +969,7 @@ def clock_out(request):
                 attendance.calculate_total_working_hours()
                 attendance.save()
 
-                # Update RegularizationRequest check_out if it is a week-off request
-                try:
-                    try:
-                        local_tz = pytz.timezone(user_timezone)
-                    except Exception:
-                        local_tz = pytz.timezone("Asia/Kolkata")
-
-                    from .models import RegularizationRequest
-
-                    reg_req = RegularizationRequest.objects.filter(
-                        employee=employee, date=attendance.date, change_type="WEEK_OFF_WORK", status="PENDING"
-                    ).first()
-                    if reg_req and not reg_req.check_out:
-                        reg_req.check_out = current_session.clock_out.astimezone(local_tz).time()
-                        reg_req.save(update_fields=["check_out"])
-                except Exception as e:
-                    logger.error(f"Error updating clock-out time in week-off regularization request: {e}")
+                pass
 
                 return JsonResponse(
                     {
@@ -1065,25 +1023,7 @@ def perform_auto_clock_out(attendance, session, lat, lng):
         attendance.calculate_total_working_hours()
         attendance.save()
 
-        # Update RegularizationRequest check_out if it is a week-off request
-        try:
-            import pytz
-
-            from core.utils import get_user_timezone
-
-            user_timezone = get_user_timezone(attendance.employee.user, attendance.employee.company) or "Asia/Kolkata"
-            local_tz = pytz.timezone(user_timezone)
-
-            from .models import RegularizationRequest
-
-            reg_req = RegularizationRequest.objects.filter(
-                employee=attendance.employee, date=attendance.date, change_type="WEEK_OFF_WORK", status="PENDING"
-            ).first()
-            if reg_req and not reg_req.check_out:
-                reg_req.check_out = current_time.astimezone(local_tz).time()
-                reg_req.save(update_fields=["check_out"])
-        except Exception as e:
-            logger.error(f"Error updating auto-clock-out time in week-off regularization request: {e}")
+        pass
 
         return True
     except Exception as e:
@@ -1747,6 +1687,17 @@ def approve_leave(request, pk):
                 # Final level reached, proceed to actual approval
                 pass
 
+        # Auto-detect insufficient balance and switch to WITH_LOP so partial
+        # approvals (e.g. 1 SL + 1 LOP for a 2-day request with 1 SL balance)
+        # are handled automatically without the approver having to choose manually.
+        pre_validation = leave_request.validate_leave_application()
+        if (
+            approval_type == "FULL"
+            and leave_request.leave_type not in ("UL", "OD", "OT")
+            and pre_validation.get("will_be_lop")
+        ):
+            approval_type = "WITH_LOP"
+
         # Use the new approval method from the model
         if leave_request.approve_leave(user, approval_type=approval_type):
             # Update Attendance Records
@@ -1784,11 +1735,28 @@ def approve_leave(request, pk):
             safe_delay(send_leave_approval_notification_task, leave_request.id)
 
             # Show success message immediately
-            approval_msg = {
-                "FULL": "Leave approved successfully (Full Balance).",
-                "WITH_LOP": "Leave approved with LOP for excess days.",
-                "ONLY_AVAILABLE": "Leave approved for available days only.",
-            }.get(approval_type, "Leave approved successfully.")
+            if approval_type == "WITH_LOP" and pre_validation.get("will_be_lop"):
+                available_days = pre_validation.get("available_balance", 0)
+                lop_days = pre_validation.get("shortfall", 0)
+                paid_days = available_days
+                leave_type_label = leave_request.get_leave_type_display()
+                if paid_days > 0:
+                    approval_msg = (
+                        f"Leave approved with partial LOP: "
+                        f"{paid_days} day(s) as {leave_type_label}, "
+                        f"{lop_days} day(s) as LOP (Loss of Pay)."
+                    )
+                else:
+                    approval_msg = (
+                        f"Leave approved as LOP: {lop_days} day(s) marked as Loss of Pay "
+                        f"(no {leave_type_label} balance available)."
+                    )
+            else:
+                approval_msg = {
+                    "FULL": "Leave approved successfully (Full Balance).",
+                    "WITH_LOP": "Leave approved with LOP for excess days.",
+                    "ONLY_AVAILABLE": "Leave approved for available days only.",
+                }.get(approval_type, "Leave approved successfully.")
             messages.success(
                 request,
                 f"{approval_msg} Notification will be sent to {leave_request.employee.user.first_name}.",
@@ -5020,8 +4988,33 @@ def rejoin_employee(request, pk):
             )
             employee.annual_ctc = new_ctc
 
+        # ── Rejoining employee: capture original joining date & mark as rejoining ──
+        # Save the old (first-ever) joining date before overwriting with new date.
+        # This is used by get_probation_status() and leave accrual to recognise
+        # that this employee already served time and should not be in probation again.
+        if not employee.original_joining_date and employee.date_of_joining:
+            employee.original_joining_date = employee.date_of_joining
+        employee.is_rejoining = True
+
         employee.date_of_joining = new_joining_date
         employee.save()
+
+        # ── Reset leave balance for new tenure ────────────────────────────────
+        # Ensure a leave balance record exists and reset it to 0 so the admin
+        # can allocate fresh leaves via Leave Configuration after rejoining.
+        from .models import LeaveBalance
+
+        leave_balance, lb_created = LeaveBalance.objects.get_or_create(employee=employee)
+        if not lb_created:
+            # Employee had an old leave balance — reset for new tenure
+            leave_balance.casual_leave_allocated = 0.0
+            leave_balance.sick_leave_allocated = 0.0
+            leave_balance.casual_leave_used = 0.0
+            leave_balance.sick_leave_used = 0.0
+            leave_balance.carry_forward_leave = 0.0
+            leave_balance.combined_sick_casual_allocated = 0.0
+            leave_balance.combined_sick_casual_used = 0.0
+            leave_balance.save()
 
         # Reactivate User account
         emp_user = employee.user

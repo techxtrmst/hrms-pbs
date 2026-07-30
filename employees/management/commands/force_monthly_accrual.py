@@ -116,7 +116,7 @@ class Command(BaseCommand):
             try:
                 # Check if employee has completed probation period (3 months)
                 if not employee.is_probation_completed():
-                    self.stdout.write(f"⏭️  Skipping {employee}: Still in probation period.")
+                    self.stdout.write(f"Skipping {employee}: Still in probation period.")
                     skipped_count += 1
                     continue
 
@@ -130,7 +130,7 @@ class Command(BaseCommand):
                     and balance.last_accrual_year == target_year
                 ):
                     self.stdout.write(
-                        f"⏭️  Skipping {employee}: Already accrued for {target_month}/{target_year} (use --force to override)"
+                        f"Skipping {employee}: Already accrued for {target_month}/{target_year} (use --force to override)"
                     )
                     skipped_count += 1
                     continue
@@ -143,7 +143,7 @@ class Command(BaseCommand):
                         # Petabytz: 1 Sick and 1 Casual leave
                         balance.sick_leave_allocated += 1.0
                         balance.casual_leave_allocated += 1.0
-                        self.stdout.write(self.style.SUCCESS(f"✅ Accrued 1 SL & 1 CL for {employee} (Petabytz)"))
+                        self.stdout.write(self.style.SUCCESS(f"Accrued 1 SL & 1 CL for {employee} (Petabytz)"))
 
                         LeaveTransaction.log(
                             employee=employee,
@@ -166,7 +166,7 @@ class Command(BaseCommand):
                         # Bluebix & Softstandard: 1 combined SL/CL
                         balance.combined_sick_casual_allocated += 1.0
                         self.stdout.write(
-                            self.style.SUCCESS(f"✅ Accrued 1 Combined SL/CL for {employee} ({employee.company.name})")
+                            self.style.SUCCESS(f"Accrued 1 Combined SL/CL for {employee} ({employee.company.name})")
                         )
 
                         LeaveTransaction.log(
@@ -182,7 +182,7 @@ class Command(BaseCommand):
                         # Default fallback
                         balance.casual_leave_allocated += 1.0
                         balance.sick_leave_allocated += 1.0
-                        self.stdout.write(self.style.SUCCESS(f"✅ Accrued 1 SL & 1 CL for {employee} (Default)"))
+                        self.stdout.write(self.style.SUCCESS(f"Accrued 1 SL & 1 CL for {employee} (Default)"))
 
                         LeaveTransaction.log(
                             employee=employee,
@@ -208,19 +208,19 @@ class Command(BaseCommand):
                     updated_count += 1
 
             except Exception as e:
-                self.stdout.write(self.style.ERROR(f"❌ Error processing {employee}: {str(e)}"))
+                self.stdout.write(self.style.ERROR(f"Error processing {employee}: {str(e)}"))
                 logger.error(f"Error during forced accrual for {employee}: {str(e)}")
                 error_count += 1
 
         self.stdout.write("\n" + "=" * 70)
         self.stdout.write(
             self.style.SUCCESS(
-                f"✅ Finished! Accrued leaves for {updated_count} employees for {target_month}/{target_year}"
+                f"Finished! Accrued leaves for {updated_count} employees for {target_month}/{target_year}"
             )
         )
-        self.stdout.write(f"⏭️  Skipped: {skipped_count} employees")
+        self.stdout.write(f"Skipped: {skipped_count} employees")
         if error_count > 0:
-            self.stdout.write(self.style.ERROR(f"❌ Errors: {error_count} employees"))
+            self.stdout.write(self.style.ERROR(f"Errors: {error_count} employees"))
         self.stdout.write("=" * 70)
 
         logger.info(

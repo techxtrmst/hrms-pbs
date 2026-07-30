@@ -178,6 +178,36 @@ def get_location_tracking_status(request):
                     # Should not trigger if clocked in properly
                     needs_location = True
 
+            # ── Shift end time for frontend shift-end reminder ───────────────
+            shift_end_iso = None
+            shift_start_iso = None
+            try:
+                from datetime import datetime
+                from datetime import timedelta as td
+
+                import pytz
+
+                shift = employee.assigned_shift
+                if shift and attendance.clock_in:
+                    # Resolve the employee's timezone
+                    tz_name = attendance.user_timezone or "Asia/Kolkata"
+                    local_tz = pytz.timezone(tz_name)
+                    local_clock_in = attendance.clock_in.astimezone(local_tz)
+                    work_date = local_clock_in.date()
+
+                    # Build aware shift start/end datetimes in local tz
+                    s_start = local_tz.localize(datetime.combine(work_date, shift.start_time))
+                    s_end = local_tz.localize(datetime.combine(work_date, shift.end_time))
+
+                    # Overnight shift — end is next day
+                    if s_end <= s_start:
+                        s_end += td(days=1)
+
+                    shift_end_iso = s_end.isoformat()
+                    shift_start_iso = s_start.isoformat()
+            except Exception:
+                pass  # Non-critical — JS falls back to 8h55m only
+
             return JsonResponse(
                 {
                     "status": "success",
@@ -189,6 +219,8 @@ def get_location_tracking_status(request):
                     "tracking_stopped": tracking_stopped,
                     "clock_in_time": attendance.clock_in.isoformat() if attendance.clock_in else None,
                     "last_log_time": last_log.timestamp.isoformat() if last_log else None,
+                    "shift_end_time": shift_end_iso,
+                    "shift_start_time": shift_start_iso,
                     "message": "Shift completed" if tracking_stopped else "Tracking active",
                 }
             )

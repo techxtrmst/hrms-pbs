@@ -3294,16 +3294,51 @@ def attendance_report(request):
     # Fetch all approved leaves for the period to determine leave types (SL, PL, LOP)
     leaves = LeaveRequest.objects.filter(
         employee__in=employees, status="APPROVED", start_date__lte=end_date, end_date__gte=start_date
-    ).values("employee_id", "start_date", "end_date", "leave_type")
+    ).values("id", "employee_id", "start_date", "end_date", "leave_type", "approval_type")
+
+    # For WITH_LOP leaves, look up how many paid days were deducted via LeaveTransaction
+    from employees.models import LeaveTransaction
+
+    lop_paid_days_map = {}  # {leave_request_id: paid_days_count}
+    with_lop_ids = [leave["id"] for leave in leaves if leave["approval_type"] == "WITH_LOP"]
+    if with_lop_ids:
+        for lt in LeaveTransaction.objects.filter(
+            employee_id__in=[leave["employee_id"] for leave in leaves if leave["approval_type"] == "WITH_LOP"],
+            reason__contains="(Paid Portion)",
+        ).values("employee_id", "amount", "reason"):
+            # Extract request id from reason string e.g. "... for Request #42: ..."
+            import re
+
+            m = re.search(r"Request #(\d+)", lt["reason"])
+            if m:
+                req_id = int(m.group(1))
+                if req_id in with_lop_ids:
+                    lop_paid_days_map[req_id] = lt["amount"]
 
     leave_type_detail_map = {}
     for leave in leaves:
-        curr = max(leave["start_date"], start_date)
-        while curr <= min(leave["end_date"], end_date):
-            if leave["employee_id"] not in leave_type_detail_map:
-                leave_type_detail_map[leave["employee_id"]] = {}
-            leave_type_detail_map[leave["employee_id"]][curr] = leave["leave_type"]
-            curr += timedelta(days=1)
+        emp_id = leave["employee_id"]
+        leave_start = max(leave["start_date"], start_date)
+        leave_end = min(leave["end_date"], end_date)
+
+        if leave["approval_type"] == "WITH_LOP":
+            # Split days: first paid_days as the original leave type, rest as UL (LOP)
+            paid_days = int(lop_paid_days_map.get(leave["id"], 0))
+            curr = leave_start
+            day_index = 0
+            while curr <= leave_end:
+                if emp_id not in leave_type_detail_map:
+                    leave_type_detail_map[emp_id] = {}
+                leave_type_detail_map[emp_id][curr] = leave["leave_type"] if day_index < paid_days else "UL"
+                curr += timedelta(days=1)
+                day_index += 1
+        else:
+            curr = leave_start
+            while curr <= leave_end:
+                if emp_id not in leave_type_detail_map:
+                    leave_type_detail_map[emp_id] = {}
+                leave_type_detail_map[emp_id][curr] = leave["leave_type"]
+                curr += timedelta(days=1)
 
     reports = []
     total_stats = {
@@ -3573,16 +3608,49 @@ def download_attendance(request):
     # Fetch all approved leaves for the period to determine leave types (SL, PL, LOP)
     leaves = LeaveRequest.objects.filter(
         employee__in=employees, status="APPROVED", start_date__lte=end_date, end_date__gte=start_date
-    ).values("employee_id", "start_date", "end_date", "leave_type")
+    ).values("id", "employee_id", "start_date", "end_date", "leave_type", "approval_type")
+
+    # For WITH_LOP leaves, look up how many paid days were deducted via LeaveTransaction
+    import re as _re
+
+    from employees.models import LeaveTransaction as LT2
+
+    lop_paid_days_map2 = {}
+    with_lop_ids2 = [leave["id"] for leave in leaves if leave["approval_type"] == "WITH_LOP"]
+    if with_lop_ids2:
+        for lt in LT2.objects.filter(
+            employee_id__in=[leave["employee_id"] for leave in leaves if leave["approval_type"] == "WITH_LOP"],
+            reason__contains="(Paid Portion)",
+        ).values("employee_id", "amount", "reason"):
+            m = _re.search(r"Request #(\d+)", lt["reason"])
+            if m:
+                req_id = int(m.group(1))
+                if req_id in with_lop_ids2:
+                    lop_paid_days_map2[req_id] = lt["amount"]
 
     leave_type_detail_map = {}
     for leave in leaves:
-        curr = max(leave["start_date"], start_date)
-        while curr <= min(leave["end_date"], end_date):
-            if leave["employee_id"] not in leave_type_detail_map:
-                leave_type_detail_map[leave["employee_id"]] = {}
-            leave_type_detail_map[leave["employee_id"]][curr] = leave["leave_type"]
-            curr += timedelta(days=1)
+        emp_id = leave["employee_id"]
+        leave_start = max(leave["start_date"], start_date)
+        leave_end = min(leave["end_date"], end_date)
+
+        if leave["approval_type"] == "WITH_LOP":
+            paid_days = int(lop_paid_days_map2.get(leave["id"], 0))
+            curr = leave_start
+            day_index = 0
+            while curr <= leave_end:
+                if emp_id not in leave_type_detail_map:
+                    leave_type_detail_map[emp_id] = {}
+                leave_type_detail_map[emp_id][curr] = leave["leave_type"] if day_index < paid_days else "UL"
+                curr += timedelta(days=1)
+                day_index += 1
+        else:
+            curr = leave_start
+            while curr <= leave_end:
+                if emp_id not in leave_type_detail_map:
+                    leave_type_detail_map[emp_id] = {}
+                leave_type_detail_map[emp_id][curr] = leave["leave_type"]
+                curr += timedelta(days=1)
 
     # 3. Write Rows
     row_num = 2

@@ -44,6 +44,37 @@ self.addEventListener('message', event => {
         case 'SYNC_LOCATION_NOW':
             syncLocationData();
             break;
+        case 'CLOCKOUT_REMINDER':
+            // Fired by clockout_reminder.js via swRegistration.showNotification()
+            // No extra handling needed here; the notification is shown directly.
+            break;
+    }
+});
+
+// Handle clicks on clock-out reminder OS notification
+self.addEventListener('notificationclick', event => {
+    const notification = event.notification;
+    notification.close();
+
+    if (notification.tag === 'hrms-clockout-reminder') {
+        const action = event.action;
+
+        event.waitUntil(
+            self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+                // Try to focus an existing HRMS tab
+                for (const client of clients) {
+                    if (client.url.includes(self.location.origin)) {
+                        client.focus();
+                        client.postMessage({ type: 'CLOCKOUT_REMINDER_CLICKED', action });
+                        return;
+                    }
+                }
+                // No tab open — open a new one pointing to personal home
+                if (action !== 'dismiss') {
+                    self.clients.openWindow('/');
+                }
+            })
+        );
     }
 });
 

@@ -81,6 +81,18 @@ class Employee(models.Model):
     )
     date_of_joining = models.DateField(null=True, blank=True)
 
+    # Rejoining Fields
+    is_rejoining = models.BooleanField(
+        default=False,
+        help_text="True if this employee is a rejoining ex-employee. Bypasses probation period check.",
+    )
+    original_joining_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Original Joining Date",
+        help_text="The very first date this employee joined the organization (before any exit). Used to calculate total service tenure for rejoining employees.",
+    )
+
     # Location (for holiday filtering)
     location = models.ForeignKey(
         "companies.Location",
@@ -179,19 +191,35 @@ class Employee(models.Model):
 
     def get_probation_status(self):
         """
-        Get probation status for the employee
+        Get probation status for the employee.
         Returns:
         - 'IN_PROBATION': Employee is still in probation period (< 3 months)
         - 'COMPLETED': Employee has completed probation period (>= 3 months)
         - 'COMPLETED_TODAY': Employee completed probation today (exactly 3 months)
-        """
-        if not self.date_of_joining:
-            return "IN_PROBATION"
 
+        For rejoining employees (is_rejoining=True), we use original_joining_date
+        to calculate total service tenure. If their combined prior + current service
+        already exceeds 3 months, probation is treated as COMPLETED immediately.
+        """
         from dateutil.relativedelta import relativedelta
         from django.utils import timezone
 
         today = timezone.now().date()
+
+        # --- Rejoining employees: use original_joining_date for probation check ---
+        if self.is_rejoining and self.original_joining_date:
+            probation_end_date = self.original_joining_date + relativedelta(months=3)
+            if today < probation_end_date:
+                return "IN_PROBATION"
+            elif today == probation_end_date:
+                return "COMPLETED_TODAY"
+            else:
+                return "COMPLETED"
+
+        # --- Regular (new) employees: use date_of_joining ---
+        if not self.date_of_joining:
+            return "IN_PROBATION"
+
         probation_end_date = self.date_of_joining + relativedelta(months=3)
 
         if today < probation_end_date:
@@ -202,11 +230,18 @@ class Employee(models.Model):
             return "COMPLETED"
 
     def get_probation_end_date(self):
-        """Get the exact date when probation period ends (3 months from joining)"""
+        """
+        Get the exact date when probation period ends (3 months from joining).
+        For rejoining employees, uses original_joining_date to reflect true tenure.
+        """
+        from dateutil.relativedelta import relativedelta
+
+        # Rejoining: probation calculated from original (first-ever) joining date
+        if self.is_rejoining and self.original_joining_date:
+            return self.original_joining_date + relativedelta(months=3)
+
         if not self.date_of_joining:
             return None
-
-        from dateutil.relativedelta import relativedelta
 
         return self.date_of_joining + relativedelta(months=3)
 

@@ -345,23 +345,45 @@ def send_consolidated_celebrations_announcement(company, birthdays, anniversarie
         subject = f"🎉 Today's Celebrations! Let's wish {names_str}"
 
         # Get recipient list: all company employees (excluding those without email)
-        recipient_list = [emp.user.email for emp in company_employees if emp.user.email]
-        recipient_list = list({email for email in recipient_list if email})
+        all_emails = {emp.user.email for emp in company_employees if emp.user.email}
+        all_emails = {email for email in all_emails if email}
 
-        if not recipient_list:
-            logger.warning(f"No recipients found for consolidated celebration announcement for company {company.name}")
-            return 0
+        # Find celebrating employees' emails
+        celebrating_emails = set()
+        for emp in birthdays:
+            if emp.user.email:
+                celebrating_emails.add(emp.user.email)
+        for emp, _ in anniversaries:
+            if emp.user.email:
+                celebrating_emails.add(emp.user.email)
+
+        # To: celebrating employees
+        to_emails = list(celebrating_emails)
+        # Cc: the rest of the company
+        cc_emails = list(all_emails - celebrating_emails)
+
+        # Fallback if no celebrating employees have valid emails
+        if not to_emails:
+            if all_emails:
+                to_emails = [list(all_emails)[0]]
+                cc_emails = list(all_emails - set(to_emails))
+            else:
+                logger.warning(
+                    f"No recipients found for consolidated celebration announcement for company {company.name}"
+                )
+                return 0
 
         # Send email
-        email = EmailMultiAlternatives(subject, "", from_email, recipient_list, connection=connection)
+        email = EmailMultiAlternatives(subject, "", from_email, to=to_emails, cc=cc_emails, connection=connection)
         email.attach_alternative(html_content, "text/html")
         email.send()
 
+        total_recipients = len(to_emails) + len(cc_emails)
         logger.info(
-            f"Consolidated announcement sent to {len(recipient_list)} employees for company {company.name} "
-            f"({len(birthdays)} birthdays, {len(anniversaries)} anniversaries)"
+            f"Consolidated announcement sent to {total_recipients} employees (To: {len(to_emails)}, Cc: {len(cc_emails)}) "
+            f"for company {company.name} ({len(birthdays)} birthdays, {len(anniversaries)} anniversaries)"
         )
-        return len(recipient_list)
+        return total_recipients
 
     except Exception as e:
         logger.error(f"Failed to send consolidated announcement for company {company.name}: {str(e)}")

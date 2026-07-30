@@ -171,6 +171,22 @@
 
     /* Tooltip icon style */
     .tip-icon { cursor: help; color: var(--keka-primary); opacity: 0.6; font-size: 0.75rem; }
+
+    /* Balance warning / ok pills */
+    .lop-warning {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: #fff4e6; color: #c47600;
+        border-radius: 6px; padding: 3px 10px;
+        font-size: 0.78rem; font-weight: 500;
+    }
+    .lop-warning i { color: #ffa26b; }
+    .balance-ok {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: #e0faf4; color: #007a5a;
+        border-radius: 6px; padding: 3px 10px;
+        font-size: 0.78rem; font-weight: 500;
+    }
+    .balance-ok i { color: #00c48c; }
 </style>
 {% endblock %}
 
@@ -274,6 +290,22 @@
                 <div class="leave-reason">
                     <i class="fas fa-comment-dots me-1"></i>{{ leave.reason|truncatechars:100 }}
                 </div>
+                {% endif %}
+                {% if leave.status == 'PENDING' and leave.leave_type != 'UL' and leave.leave_type != 'OD' and leave.leave_type != 'OT' %}
+                    {% with v=leave.validate_leave_application %}
+                    {% if v.will_be_lop %}
+                    <div class="lop-warning mt-1">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Balance: <strong>{{ v.available_balance }} day{{ v.available_balance|floatformat:0|default:"0" }}</strong> available &mdash;
+                        <strong>{{ v.shortfall }} day{{ v.shortfall|floatformat:0|default:"0" }}</strong> will be marked as <span style="color:#ff647c;font-weight:700;">LOP</span>
+                    </div>
+                    {% else %}
+                    <div class="balance-ok mt-1">
+                        <i class="fas fa-check-circle me-1"></i>
+                        Balance sufficient &mdash; <strong>{{ v.available_balance }} day{{ v.available_balance|floatformat:0|default:"0" }}</strong> available
+                    </div>
+                    {% endif %}
+                    {% endwith %}
                 {% endif %}
             </div>
 

@@ -3216,6 +3216,26 @@
         })();
     </script>
     {% endif %}
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         Clock-Out Reminder System
+         Works on EVERY page. Fires at 8h 55m of actual clock-in time.
+         Urgent beep + OS notification + in-page popup.
+    ═══════════════════════════════════════════════════════════════ -->
+    {% if user.is_authenticated %}
+    <script src="{% static 'js/clockout_reminder.js' %}"></script>
+    <script>
+        // Listen for SW → page messages (e.g. user clicked OS notification "Go to HRMS")
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', function (event) {
+                if (event.data && event.data.type === 'CLOCKOUT_REMINDER_CLICKED') {
+                    // Play the beep again and show popup when user returns from OS notification
+                    if (window._hrmsClockoutTrigger) window._hrmsClockoutTrigger();
+                }
+            });
+        }
+    </script>
+    {% endif %}
 </body>
 
 </html>
