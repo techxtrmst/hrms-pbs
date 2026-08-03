@@ -3,9 +3,8 @@
  * ================================
  * - Polls /employees/api/location/status/ every 60 seconds
  * - When user has been clocked in for >= 8h 55m → fires:
- *     1. Urgent beep sound (Web Audio API — no file needed)
- *     2. OS-level Browser Notification (works even when tab is not active)
- *     3. In-page popup card (visible when user is on any HRMS page)
+ *     1. OS-level Browser Notification (works even when tab is not active)
+ *     2. In-page popup card (visible when user is on any HRMS page)
  * - "Remind in 5 min" snoozes the alert for 5 minutes
  * - Clears itself once user clocks out
  */
@@ -27,10 +26,7 @@
 
     // ── Boot ───────────────────────────────────────────────────────────────────
     function init() {
-        injectPopupHTML();
-        requestNotifPermission();
-        registerSW();
-        startPolling();
+        // Deactivated: No polling, no notifications, and no popup HTML injection.
     }
 
     // ── Service Worker registration ────────────────────────────────────────────
@@ -55,6 +51,45 @@
         pollTimer = setInterval(checkStatus, POLL_INTERVAL);
     }
 
+    function getDateString(isoString) {
+        if (isoString) {
+            try {
+                const d = new Date(isoString);
+                const year  = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day   = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            } catch (e) {}
+        }
+        const now = new Date();
+        const year  = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day   = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function cleanupOldDateKeys(currentDateStr) {
+        try {
+            const prefix = 'hrms_clockout_notif_fired_date_';
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith(prefix)) {
+                    if (key !== prefix + currentDateStr) {
+                        localStorage.removeItem(key);
+                    }
+                }
+            }
+            // Clean up legacy per-session keys if present
+            const legacyPrefix = 'hrms_clockout_notif_fired_';
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith(legacyPrefix) && !key.startsWith(prefix)) {
+                    localStorage.removeItem(key);
+                }
+            }
+        } catch (e) {}
+    }
+
     function checkStatus() {
         fetch(STATUS_API, { credentials: 'same-origin' })
             .then(r => r.json())
@@ -64,13 +99,18 @@
                     return;
                 }
 
+                const todayStr = getDateString(data.clock_in_time);
+                cleanupOldDateKeys(todayStr);
+
                 const clockInMs  = new Date(data.clock_in_time).getTime();
                 const elapsedMs  = Date.now() - clockInMs;
                 const nowMs      = Date.now();
 
-                // ── Guard: don't re-fire within 5-min cooldown ────────────────
-                const cooldownPassed = nowMs - lastFiredAt >= 5 * 60 * 1000;
-                const notSnoozed     = nowMs >= snoozeUntil;
+                const dayKey = 'hrms_clockout_notif_fired_date_' + todayStr;
+                const alreadyFiredToday = localStorage.getItem(dayKey) === 'true';
+
+                const isSnoozed     = snoozeUntil > 0;
+                const snoozeExpired = isSnoozed && nowMs >= snoozeUntil;
 
                 let shouldFire   = false;
                 let fireReason   = '';
@@ -94,10 +134,22 @@
                     }
                 }
 
-                if (shouldFire && cooldownPassed && notSnoozed) {
-                    lastFiredAt = nowMs;
-                    triggerReminder(elapsedMs, fireReason, data.shift_end_time);
-                } else if (!shouldFire) {
+                // Fire notification ONCE PER DAY (at 8h 55m)
+                if (shouldFire) {
+                    if (!alreadyFiredToday) {
+                        try {
+                            localStorage.setItem(dayKey, 'true');
+                        } catch (e) {}
+                        lastFiredAt = nowMs;
+                        // First time reaching 8h 55m today: trigger OS Notification and visual popup
+                        showOSNotification(elapsedMs, fireReason, data.shift_end_time);
+                        showInPagePopup(elapsedMs, fireReason, data.shift_end_time);
+                    } else if (snoozeExpired) {
+                        snoozeUntil = 0; // reset snooze timer
+                        // If snoozed, show visual in-page popup only
+                        showInPagePopup(elapsedMs, fireReason, data.shift_end_time);
+                    }
+                } else {
                     hidePopup();
                 }
             })
@@ -134,7 +186,7 @@
                 badge: '/static/img/petabytz_logo.jpg',
                 tag: NOTIF_TAG,
                 requireInteraction: true,
-                vibrate: [200, 100, 200, 100, 400],
+                silent: true,
                 actions: [
                     { action: 'goto', title: '🕒 Go to HRMS' },
                     { action: 'dismiss', title: 'Dismiss' }
@@ -151,7 +203,8 @@
                 body,
                 icon: '/static/img/petabytz_logo.jpg',
                 tag: NOTIF_TAG,
-                requireInteraction: true
+                requireInteraction: true,
+                silent: true
             });
             n.onclick = () => { window.focus(); n.close(); };
         }
@@ -349,6 +402,72 @@
             window.location.href = base + '/';   // adjust if your home URL is different
         };
     }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    window.hrmsBreakIn = function (breakType, btnEl) {
+        if (btnEl) {
+            btnEl.disabled = true;
+            btnEl.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Processing...';
+        }
+        return fetch('/employees/api/break-in/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken') || ''
+            },
+            body: JSON.stringify({ break_type: breakType || 'GENERAL' })
+        }).then(r => r.json()).then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert(data.message || 'Could not start break.');
+                if (btnEl) btnEl.disabled = false;
+            }
+            return data;
+        }).catch(err => {
+            alert('Error starting break: ' + err.message);
+            if (btnEl) btnEl.disabled = false;
+        });
+    };
+
+    window.hrmsBreakOut = function (btnEl) {
+        if (btnEl) {
+            btnEl.disabled = true;
+            btnEl.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Processing...';
+        }
+        return fetch('/employees/api/break-out/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken') || ''
+            }
+        }).then(r => r.json()).then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert(data.message || 'Could not end break.');
+                if (btnEl) btnEl.disabled = false;
+            }
+            return data;
+        }).catch(err => {
+            alert('Error ending break: ' + err.message);
+            if (btnEl) btnEl.disabled = false;
+        });
+    };
 
     // ── Start ─────────────────────────────────────────────────────────────────
     if (document.readyState === 'loading') {
