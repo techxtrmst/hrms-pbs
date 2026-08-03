@@ -3118,7 +3118,7 @@
          OS notification + in-page popup.
     ═══════════════════════════════════════════════════════════════ -->
     {% if user.is_authenticated %}
-    <script src="{% static 'js/clockout_reminder.js' %}"></script>
+    <script src="{% static 'js/clockout_reminder.js' %}?v=2"></script>
     <script>
         // Listen for SW → page messages (e.g. user clicked OS notification "Go to HRMS")
         if ('serviceWorker' in navigator) {
