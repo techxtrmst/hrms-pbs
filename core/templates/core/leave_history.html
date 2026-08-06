@@ -333,6 +333,7 @@
                         <th>Status</th>
                         <th>Applied On</th>
                         <th>Approved By</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -351,11 +352,27 @@
                         <td><span class="status-badge status-{{ leave.status|lower }}">{{ leave.get_status_display }}</span></td>
                         <td>{{ leave.created_at|date:"d M, Y" }}</td>
                         <td>{{ leave.approved_by.get_full_name|default:"-" }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary"
+                                    data-id="{{ leave.id }}"
+                                    data-employee="{{ leave.employee.user.get_full_name }}"
+                                    data-start-date="{{ leave.start_date|date:'Y-m-d' }}"
+                                    data-end-date="{{ leave.end_date|date:'Y-m-d' }}"
+                                    data-leave-type="{{ leave.leave_type }}"
+                                    data-duration="{{ leave.duration }}"
+                                    data-status="{{ leave.status }}"
+                                    data-admin-comment="{{ leave.admin_comment|default:'' }}"
+                                    data-rejection-reason="{{ leave.rejection_reason|default:'' }}"
+                                    data-approval-type="{{ leave.approval_type|default:'FULL' }}"
+                                    onclick="openEditModal(this)">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                        </td>
                     </tr>
                     {% endfor %}
                     {% else %}
                     <tr>
-                        <td colspan="9" class="text-center py-5">
+                        <td colspan="10" class="text-center py-5">
                             <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                             <p class="text-muted">No leave history found</p>
                         </td>
@@ -367,12 +384,152 @@
     </div>
 </div>
 
+<!-- Edit Leave Modal -->
+<div id="editLeaveModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="m-0 fw-bold"><i class="fas fa-edit me-2"></i>Edit Leave Request</h5>
+            <span class="close" onclick="closeEditModal()">&times;</span>
+        </div>
+        <form id="editLeaveForm" method="post">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Employee</label>
+                        <input type="text" id="modal_employee_name" class="form-control form-control-sm" readonly style="background-color: #f8f9fa;">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Leave Type</label>
+                        <select name="leave_type" id="modal_leave_type" class="form-select form-select-sm" required>
+                            <option value="CL">Casual Leave</option>
+                            <option value="SL">Sick Leave</option>
+                            <option value="EL">Earned Leave</option>
+                            <option value="CO">Comp Off</option>
+                            <option value="UL">Unpaid Leave (LOP)</option>
+                            <option value="OD">On Duty</option>
+                            <option value="OT">Others</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Start Date</label>
+                        <input type="date" name="start_date" id="modal_start_date" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">End Date</label>
+                        <input type="date" name="end_date" id="modal_end_date" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Duration</label>
+                        <select name="duration" id="modal_duration" class="form-select form-select-sm" required>
+                            <option value="FULL">Full Day</option>
+                            <option value="FIRST_HALF">First Half</option>
+                            <option value="SECOND_HALF">Second Half</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Status</label>
+                        <select name="status" id="modal_status" class="form-select form-select-sm" required onchange="onStatusChange()">
+                            <option value="PENDING">Pending</option>
+                            <option value="APPROVED">Approved</option>
+                            <option value="REJECTED">Rejected</option>
+                            <option value="CANCELLED">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="col-12" id="approval_type_container">
+                        <label class="form-label fw-bold">Approval Type</label>
+                        <select name="approval_type" id="modal_approval_type" class="form-select form-select-sm">
+                            <option value="FULL">Approved (Full Balance)</option>
+                            <option value="WITH_LOP">Approved with LOP</option>
+                            <option value="ONLY_AVAILABLE">Approved (Only Available Days)</option>
+                        </select>
+                    </div>
+                    <div class="col-12" id="rejection_reason_container" style="display: none;">
+                        <label class="form-label fw-bold text-danger">Rejection Reason</label>
+                        <textarea name="rejection_reason" id="modal_rejection_reason" class="form-control form-control-sm" rows="2" placeholder="Provide reason for rejection..."></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-bold">Admin Remarks / Comment</label>
+                        <textarea name="admin_comment" id="modal_admin_comment" class="form-control form-control-sm" rows="2" placeholder="Add remarks..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer p-3 bg-light d-flex justify-content-end gap-2" style="border-radius: 0 0 12px 12px;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeEditModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <script>
-
     function exportToExcel() {
         alert('Export to Excel functionality will be implemented soon!');
     }
 
+    function openEditModal(button) {
+        const id = button.getAttribute('data-id');
+        const employee = button.getAttribute('data-employee');
+        const startDate = button.getAttribute('data-start-date');
+        const endDate = button.getAttribute('data-end-date');
+        const leaveType = button.getAttribute('data-leave-type');
+        const duration = button.getAttribute('data-duration');
+        const status = button.getAttribute('data-status');
+        const adminComment = button.getAttribute('data-admin-comment');
+        const rejectionReason = button.getAttribute('data-rejection-reason');
+        const approvalType = button.getAttribute('data-approval-type');
+
+        // Set values
+        document.getElementById('modal_employee_name').value = employee;
+        document.getElementById('modal_start_date').value = startDate;
+        document.getElementById('modal_end_date').value = endDate;
+        document.getElementById('modal_leave_type').value = leaveType;
+        document.getElementById('modal_duration').value = duration;
+        document.getElementById('modal_status').value = status;
+        document.getElementById('modal_admin_comment').value = adminComment;
+        document.getElementById('modal_rejection_reason').value = rejectionReason;
+        document.getElementById('modal_approval_type').value = approvalType;
+
+        // Set form action URL
+        document.getElementById('editLeaveForm').action = "/leaves/history/edit/" + id + "/";
+
+        // Toggle conditional fields
+        onStatusChange();
+
+        // Show modal
+        document.getElementById('editLeaveModal').style.display = 'block';
+    }
+
+    function closeEditModal() {
+        document.getElementById('editLeaveModal').style.display = 'none';
+    }
+
+    function onStatusChange() {
+        const status = document.getElementById('modal_status').value;
+        const approvalContainer = document.getElementById('approval_type_container');
+        const rejectionContainer = document.getElementById('rejection_reason_container');
+
+        if (status === 'APPROVED') {
+            approvalContainer.style.display = 'block';
+            rejectionContainer.style.display = 'none';
+            document.getElementById('modal_rejection_reason').removeAttribute('required');
+        } else if (status === 'REJECTED') {
+            approvalContainer.style.display = 'none';
+            rejectionContainer.style.display = 'block';
+            document.getElementById('modal_rejection_reason').setAttribute('required', 'required');
+        } else {
+            approvalContainer.style.display = 'none';
+            rejectionContainer.style.display = 'none';
+            document.getElementById('modal_rejection_reason').removeAttribute('required');
+        }
+    }
+
+    // Close modal when clicking outside of it
+    window.onclick = function(event) {
+        const modal = document.getElementById('editLeaveModal');
+        if (event.target === modal) {
+            closeEditModal();
+        }
+    }
 </script>
 {% endblock %}

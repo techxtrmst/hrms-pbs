@@ -1605,6 +1605,49 @@ class LeaveRequest(models.Model):
             logger.error(f"Error approving leave: {e}")
             return False
 
+    def reverse_leave_deduction(self):
+        """Reverse the leave deduction if the leave was approved."""
+        if self.status != "APPROVED":
+            return False
+
+        try:
+            balance = self.employee.leave_balance
+            transactions = LeaveTransaction.objects.filter(
+                employee=self.employee, transaction_type="DEBIT", reason__contains=f"Request #{self.id}"
+            )
+
+            for tx in transactions:
+                # Revert the used balance
+                if self.employee.company.name.lower() in ["bluebix", "softstandard", "softstandard solutions"]:
+                    if tx.leave_type in ["CL", "SL"]:
+                        balance.combined_sick_casual_used = max(
+                            0.0, (balance.combined_sick_casual_used or 0.0) - tx.amount
+                        )
+                    elif tx.leave_type == "UL":
+                        balance.unpaid_leave = max(0.0, (balance.unpaid_leave or 0.0) - tx.amount)
+                else:
+                    if tx.leave_type == "CL":
+                        balance.casual_leave_used = max(0.0, (balance.casual_leave_used or 0.0) - tx.amount)
+                    elif tx.leave_type == "SL":
+                        balance.sick_leave_used = max(0.0, (balance.sick_leave_used or 0.0) - tx.amount)
+                    elif tx.leave_type == "UL":
+                        balance.unpaid_leave = max(0.0, (balance.unpaid_leave or 0.0) - tx.amount)
+                tx.delete()
+
+            balance.save()
+
+            # Delete attendance records created for this leave request
+            from .models import Attendance
+
+            Attendance.objects.filter(
+                employee=self.employee, date__range=(self.start_date, self.end_date), status__in=["LEAVE", "HALF_DAY"]
+            ).delete()
+
+            return True
+        except Exception as e:
+            logger.error(f"Error reversing leave deduction: {e}")
+            return False
+
     def __str__(self):
         return f"{self.get_leave_type_display()} - {self.employee.user.get_full_name()} ({self.start_date} to {self.end_date})"
 

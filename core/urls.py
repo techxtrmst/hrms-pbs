@@ -39,6 +39,7 @@ urlpatterns = [
     # Leaves (Admin)
     path("leaves/requests/", views.leave_requests, name="leave_requests"),
     path("leaves/history/", views.leave_history, name="leave_history"),
+    path("leaves/history/edit/<int:pk>/", views.edit_leave_history, name="edit_leave_history"),
     # Payroll
     path("payroll/", views.payroll_dashboard, name="payroll_dashboard"),
     path("payroll/upload/", views.upload_payslip, name="upload_payslip"),

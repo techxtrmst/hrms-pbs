@@ -4127,6 +4127,92 @@ def leave_history(request):
     )
 
 
+@login_required
+@manager_required
+def edit_leave_history(request, pk):
+    from datetime import datetime
+
+    from django.shortcuts import get_object_or_404
+    from django.utils import timezone
+
+    from employees.models import LeaveRequest
+
+    leave_request = get_object_or_404(LeaveRequest, pk=pk)
+
+    # Ensure manager/admin has access to this employee
+    if request.user.role == User.Role.MANAGER and not request.user.is_superuser:
+        if leave_request.employee.manager != request.user:
+            messages.error(request, "You are not authorized to edit this request.")
+            return redirect("leave_history")
+    else:
+        if leave_request.employee.company != request.user.company:
+            messages.error(request, "You are not authorized to edit this request.")
+            return redirect("leave_history")
+
+    if request.method == "POST":
+        start_date_str = request.POST.get("start_date")
+        end_date_str = request.POST.get("end_date")
+        leave_type = request.POST.get("leave_type")
+        duration = request.POST.get("duration", "FULL")
+        status = request.POST.get("status")
+        admin_comment = request.POST.get("admin_comment", "")
+        rejection_reason = request.POST.get("rejection_reason", "")
+        approval_type = request.POST.get("approval_type", "FULL")
+
+        try:
+            # Parse dates
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+
+            # 1. Revert previous balance changes if it was approved
+            if leave_request.status == "APPROVED":
+                leave_request.reverse_leave_deduction()
+
+            # 2. Update the fields
+            leave_request.start_date = start_date
+            leave_request.end_date = end_date
+            leave_request.leave_type = leave_type
+            leave_request.duration = duration
+            leave_request.admin_comment = admin_comment
+            leave_request.rejection_reason = rejection_reason
+
+            # Save basic fields first
+            leave_request.save()
+
+            # 3. Apply new status logic
+            if status == "APPROVED":
+                # Temporarily set status to PENDING so approve_leave will execute
+                leave_request.status = "PENDING"
+                leave_request.save()
+
+                success = leave_request.approve_leave(request.user, approval_type=approval_type)
+                if not success:
+                    messages.error(request, "Failed to approve leave request (check leave balance).")
+                    # Revert to pending
+                    leave_request.status = "PENDING"
+                    leave_request.save()
+                else:
+                    messages.success(request, "Leave request updated and approved successfully.")
+            else:
+                leave_request.status = status
+                if status == "REJECTED":
+                    leave_request.rejection_reason = rejection_reason or admin_comment
+                    leave_request.approved_by = request.user
+                    leave_request.approved_at = timezone.now()
+                elif status == "CANCELLED":
+                    leave_request.approved_by = request.user
+                    leave_request.approved_at = timezone.now()
+                leave_request.save()
+                messages.success(request, "Leave request updated successfully.")
+
+        except ValueError:
+            messages.error(request, "Invalid date format.")
+        except Exception as e:
+            messages.error(request, f"Error updating leave request: {e}")
+
+    return redirect("leave_history")
+
+
 # --- Payroll Section Stubs ---
 
 
