@@ -99,12 +99,21 @@ class EmployeeCreationForm(forms.ModelForm):
 
         # Filtering Managers: Only show managers from the same company
         if self.user and self.user.company:
+            from django.db.models import Q
+
             # Allow cross-company manager assignment
-            # Show managers and admins from ALL companies
+            # Show managers and admins from ALL companies who are currently active (not exited)
             all_managers = User.objects.filter(
                 role__in=[User.Role.MANAGER, User.Role.COMPANY_ADMIN],
+                is_active=True,
+            ).filter(
+                Q(employee_profile__isnull=True)
+                | (Q(employee_profile__is_active=True) & Q(employee_profile__employment_status="ACTIVE"))
             )
-            super_admins = User.objects.filter(role=User.Role.SUPERADMIN)
+            super_admins = User.objects.filter(role=User.Role.SUPERADMIN, is_active=True).filter(
+                Q(employee_profile__isnull=True)
+                | (Q(employee_profile__is_active=True) & Q(employee_profile__employment_status="ACTIVE"))
+            )
 
             self.fields["manager"].queryset = all_managers | super_admins
 

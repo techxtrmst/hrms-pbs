@@ -205,10 +205,12 @@ class JobDetailsForm(forms.ModelForm):
 
         if self.company:
             # Allow cross-company manager assignment
-            # Show all eligible managers from all companies
-            self.fields["manager_selection"].queryset = Employee.objects.exclude(
-                user__role=User.Role.EMPLOYEE
-            ).select_related("company", "user")
+            # Show all eligible managers from all companies who are currently active (not exited)
+            self.fields["manager_selection"].queryset = (
+                Employee.objects.filter(is_active=True, employment_status="ACTIVE")
+                .exclude(user__role=User.Role.EMPLOYEE)
+                .select_related("company", "user")
+            )
 
             # Customize label to show manager name, role, and company
             self.fields["manager_selection"].label_from_instance = lambda obj: (

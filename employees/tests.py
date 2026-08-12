@@ -372,3 +372,104 @@ class MonthlyLeaveAccrualTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
         self.balance_a.refresh_from_db()
         self.assertEqual(self.balance_a.sick_leave_allocated, 2.0)
+
+
+class ManagerFilteringTestCase(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name="Test Company", hr_email="hr@test.com")
+        self.location = Location.objects.create(company=self.company, name="Main Office", timezone="Asia/Kolkata")
+
+        # Current user (admin)
+        self.admin_user = User.objects.create_user(
+            username="admin",
+            email="admin@test.com",
+            password="password",
+            role=User.Role.COMPANY_ADMIN,
+            company=self.company,
+            must_change_password=False,
+        )
+        self.admin_employee = Employee.objects.create(
+            user=self.admin_user, company=self.company, designation="Admin", department="HR", badge_id="ADM001"
+        )
+
+        # 1. Active manager
+        self.active_mgr_user = User.objects.create_user(
+            username="active_mgr",
+            email="active_mgr@test.com",
+            password="password",
+            role=User.Role.MANAGER,
+            company=self.company,
+            must_change_password=False,
+        )
+        self.active_mgr_emp = Employee.objects.create(
+            user=self.active_mgr_user,
+            company=self.company,
+            designation="Manager",
+            department="Engineering",
+            badge_id="MGR002",
+        )
+
+        # 2. Inactive manager (exited: is_active=False)
+        self.inactive_mgr_user = User.objects.create_user(
+            username="inactive_mgr",
+            email="inactive_mgr@test.com",
+            password="password",
+            role=User.Role.MANAGER,
+            company=self.company,
+            is_active=False,
+            must_change_password=False,
+        )
+        self.inactive_mgr_emp = Employee.objects.create(
+            user=self.inactive_mgr_user,
+            company=self.company,
+            designation="Manager",
+            department="Engineering",
+            badge_id="MGR003",
+            is_active=False,
+            employment_status="TERMINATED",
+        )
+
+        # 3. Resigned manager (exited: employment_status="RESIGNED")
+        self.resigned_mgr_user = User.objects.create_user(
+            username="resigned_mgr",
+            email="resigned_mgr@test.com",
+            password="password",
+            role=User.Role.MANAGER,
+            company=self.company,
+            must_change_password=False,
+        )
+        self.resigned_mgr_emp = Employee.objects.create(
+            user=self.resigned_mgr_user,
+            company=self.company,
+            designation="Manager",
+            department="Engineering",
+            badge_id="MGR004",
+            is_active=True,
+            employment_status="RESIGNED",
+        )
+
+    def test_employee_creation_form_filters_out_exited_managers(self):
+        from employees.forms import EmployeeCreationForm
+
+        form = EmployeeCreationForm(user=self.admin_user)
+        queryset = form.fields["manager"].queryset
+
+        # The admin themselves and the active manager should be in the queryset.
+        # The inactive and resigned managers should NOT be in the queryset.
+        self.assertIn(self.active_mgr_user, queryset)
+        self.assertIn(self.admin_user, queryset)
+        self.assertNotIn(self.inactive_mgr_user, queryset)
+        self.assertNotIn(self.resigned_mgr_user, queryset)
+
+    def test_job_details_form_filters_out_exited_managers(self):
+        from employees.multi_step_forms import JobDetailsForm
+
+        form = JobDetailsForm(user=self.admin_user, company_id=self.company.id)
+        queryset = form.fields["manager_selection"].queryset
+
+        # The admin employee and the active manager employee should be in the queryset.
+        # The inactive and resigned manager employees should NOT be in the queryset.
+        self.assertIn(self.active_mgr_emp, queryset)
+        self.assertIn(self.admin_employee, queryset)
+        self.assertNotIn(self.inactive_mgr_emp, queryset)
+        self.assertNotIn(self.resigned_mgr_emp, queryset)
