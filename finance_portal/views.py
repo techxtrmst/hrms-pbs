@@ -478,7 +478,7 @@ def process_draft_payroll(request):
 
     if not employees.exists():
         messages.error(request, "No eligible employees found for the selected company/companies.")
-        return redirect(f"/finance/?company={company_id}&month={month}&year={year}")
+        return redirect(f"/finance/?view=payroll&company={company_id}&month={month}&year={year}")
 
     from employees.models import Attendance
 
@@ -525,7 +525,7 @@ def process_draft_payroll(request):
     else:
         messages.success(request, f"Successfully generated Phase 1 Draft payroll for {processed_count} employees!")
 
-    return redirect(f"/finance/?company={company_id}&month={month}&year={year}")
+    return redirect(f"/finance/?view=payroll&company={company_id}&month={month}&year={year}")
 
 
 @finance_manager_required
@@ -579,7 +579,6 @@ def save_draft_payslip(request):
             payslip.net_salary = (
                 payslip.gross_salary
                 - payslip.employee_pf
-                - payslip.employer_pf
                 - payslip.professional_tax
                 - float(payslip.tds_deduction or 0.0)
             )
@@ -745,7 +744,7 @@ def process_bulk_payroll(request):
 
     if not employees.exists():
         messages.error(request, "No eligible employees found for the selected company/companies.")
-        return redirect(f"/finance/?company={company_id}&month={month}&year={year}")
+        return redirect(f"/finance/?view=payroll&company={company_id}&month={month}&year={year}")
 
     # Check for existing draft payslips for this employee subset and period
     draft_payslips = Payslip.objects.filter(employee__in=employees, month__month=month, month__year=year, is_draft=True)
@@ -812,7 +811,7 @@ def process_bulk_payroll(request):
         else:
             messages.success(request, f"Successfully finalized and sent payroll for {processed_count} employees!")
 
-        return redirect(f"/finance/?company={company_id}&month={month}&year={year}")
+        return redirect(f"/finance/?view=payroll&company={company_id}&month={month}&year={year}")
 
     # Fallback to direct bulk process if no drafts exist
     # Create the Batch record
@@ -881,7 +880,7 @@ def process_bulk_payroll(request):
     else:
         messages.success(request, f"Successfully processed payroll batch for {processed_count} employees!")
 
-    return redirect(f"/finance/?company={company_id}&month={month}&year={year}")
+    return redirect(f"/finance/?view=payroll&company={company_id}&month={month}&year={year}")
 
 
 @finance_manager_required
@@ -1086,7 +1085,7 @@ def process_bulk_excel_upload(request):
         traceback.print_exc()
         messages.error(request, f"Failed to read or parse Excel file: {str(e)}")
 
-    return redirect(f"/finance/?company={company_id}&month={month}&year={year}")
+    return redirect(f"/finance/?view=payroll&company={company_id}&month={month}&year={year}")
 
 
 @finance_manager_required
@@ -1204,6 +1203,17 @@ def recalculate_components(request):
         else:
             worked_days = float(payslip.worked_days or 0.0)
 
+        # Allow frontend to override pf_enabled per-draft (falls back to employee setting)
+        pf_enabled_override = data.get("pf_enabled")
+        if pf_enabled_override is not None:
+            pf_enabled = bool(pf_enabled_override)
+            # Persist the override to the employee record so subsequent reloads are consistent
+            if employee.pf_enabled != pf_enabled:
+                employee.pf_enabled = pf_enabled
+                employee.save(update_fields=["pf_enabled"])
+        else:
+            pf_enabled = employee.pf_enabled
+
         # Perform recalculation
         month_obj = payslip.month
         total_days = calendar.monthrange(month_obj.year, month_obj.month)[1]
@@ -1212,7 +1222,7 @@ def recalculate_components(request):
             new_ctc,
             worked_days,
             total_days,
-            employee.pf_enabled,
+            pf_enabled,
             location=employee.location,
             company=employee.company,
             month=month_obj.month,
@@ -1286,6 +1296,7 @@ def recalculate_components(request):
                 "net": round(payslip.net_salary, 2),
                 "travel_allowance": round(travel_allowance, 2),
                 "tds_deduction": round(tds_deduction, 2),
+                "pf_enabled": pf_enabled,
             }
         )
 
@@ -1559,7 +1570,7 @@ def process_single_payroll(request):
         messages.error(request, f"Error generating payslip: {str(e)}")
 
     selected_company_id = request.GET.get("company", "all")
-    return redirect(f"/finance/?company={selected_company_id}&month={month}&year={year}")
+    return redirect(f"/finance/?view=payroll&company={selected_company_id}&month={month}&year={year}")
 
 
 @finance_manager_required

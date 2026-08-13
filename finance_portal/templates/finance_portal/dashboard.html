@@ -1025,6 +1025,18 @@
                                                 <input type="number" step="0.5" class="form-control worked-days-input"
                                                        value="{{ item.payslip.worked_days }}" data-id="{{ item.payslip.id }}" oninput="triggerAutoRecalculate('{{ item.payslip.id }}')">
                                             </div>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold text-muted d-flex align-items-center gap-2">
+                                                    <span>PF Enabled</span>
+                                                    <div class="form-check form-switch mb-0">
+                                                        <input class="form-check-input pf-enabled-toggle" type="checkbox" role="switch"
+                                                               id="pf-toggle-{{ item.payslip.id }}"
+                                                               {% if item.employee.pf_enabled %}checked{% endif %}
+                                                               onchange="triggerAutoRecalculate('{{ item.payslip.id }}')">
+                                                    </div>
+                                                </label>
+                                                <small class="text-muted" style="font-size:0.72rem;">Toggle to include/exclude Employee & Employer PF contributions</small>
+                                            </div>
                                         </div>
                                         <div class="col-md-4">
                                             <h6 class="fw-bold text-slate-800 mb-3"><i class="fa-solid fa-money-bill-wave me-1 text-success"></i> Earnings</h6>
@@ -1288,6 +1300,18 @@
                                                 <label class="form-label small fw-semibold text-muted">Worked Days (Pre-calculated)</label>
                                                 <input type="number" step="0.5" class="form-control worked-days-input"
                                                        value="{{ item.payslip.worked_days }}" data-id="{{ item.payslip.id }}" oninput="triggerAutoRecalculate('{{ item.payslip.id }}')">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold text-muted d-flex align-items-center gap-2">
+                                                    <span>PF Enabled</span>
+                                                    <div class="form-check form-switch mb-0">
+                                                        <input class="form-check-input pf-enabled-toggle" type="checkbox" role="switch"
+                                                               id="pf-toggle-{{ item.payslip.id }}"
+                                                               {% if item.employee.pf_enabled %}checked{% endif %}
+                                                               onchange="triggerAutoRecalculate('{{ item.payslip.id }}')">
+                                                    </div>
+                                                </label>
+                                                <small class="text-muted" style="font-size:0.72rem;">Toggle to include/exclude Employee &amp; Employer PF contributions</small>
                                             </div>
                                         </div>
                                         <div class="col-md-4">
@@ -1586,7 +1610,7 @@
         const tds = parseFloat(row.querySelector('.tds-input').value) || 0;
 
         const gross = basic + hra + conveyance + special + travelAllowance;
-        const net = gross - empPf - erPf - pt - tds;
+        const net = gross - empPf - pt - tds;
 
         document.getElementById(`gross-input-${id}`).value = gross.toFixed(2);
         document.getElementById(`net-input-${id}`).value = net.toFixed(2);
@@ -1611,8 +1635,8 @@
         }
         row.querySelector('.special-input').value = special.toFixed(2);
 
-        // Net = Gross - Employee PF - Employer PF - PT - TDS
-        const net = gross - empPf - erPf - pt - tds;
+        // Net = Gross - Employee PF - PT - TDS
+        const net = gross - empPf - pt - tds;
         document.getElementById(`net-input-${id}`).value = net.toFixed(2);
     }
 
@@ -1640,9 +1664,11 @@
         const ctcInput = document.getElementById(`ctc-annual-${id}`);
         const workedDaysInput = row.querySelector('.worked-days-input');
         const monthlyInput = document.getElementById(`ctc-monthly-${id}`);
+        const pfToggle = document.getElementById(`pf-toggle-${id}`);
 
         const newCTC = parseFloat(ctcInput.value) || 0;
         const workedDays = parseFloat(workedDaysInput.value) || 0;
+        const pfEnabled = pfToggle ? pfToggle.checked : false;
 
         if (newCTC <= 0) {
             monthlyInput.value = "";
@@ -1660,7 +1686,8 @@
                 annual_ctc: newCTC,
                 worked_days: workedDays,
                 travel_allowance: parseFloat(row.querySelector('.travel-allowance-input').value) || 0,
-                tds_deduction: parseFloat(row.querySelector('.tds-input').value) || 0
+                tds_deduction: parseFloat(row.querySelector('.tds-input').value) || 0,
+                pf_enabled: pfEnabled
             })
         })
         .then(res => res.json())
@@ -1676,6 +1703,11 @@
                 row.querySelector('.pt-input').value = data.professional_tax;
                 row.querySelector('.travel-allowance-input').value = data.travel_allowance.toFixed(2);
                 row.querySelector('.tds-input').value = data.tds_deduction.toFixed(2);
+
+                // Sync PF toggle state from server response
+                if (pfToggle && data.pf_enabled !== undefined) {
+                    pfToggle.checked = data.pf_enabled;
+                }
 
                 // Update gross/net inputs
                 document.getElementById(`gross-input-${id}`).value = data.gross.toFixed(2);

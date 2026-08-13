@@ -230,8 +230,8 @@ def calculate_payslip_breakdown(
             other_allowance = float(round(gross_monthly - (basic + hra + lta)))
 
             # -------- Net Salary --------
-            # Deduct both Employee PF and Employer PF: total PF = 1800 + 1800 = 3600
-            net_before_pt = float(round(gross_monthly - employee_pf - employer_pf))
+            # Deduct Employee PF: Employer PF is paid by the employer
+            net_before_pt = float(round(gross_monthly - employee_pf))
 
             # Professional Tax — use per-location config if available,
             # otherwise fall back to global PayrollConfiguration PT settings.
