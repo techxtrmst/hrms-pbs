@@ -3905,6 +3905,88 @@ def leave_requests(request):
             messages.success(request, f"Successfully rejected {rejected_count} leave request(s).")
             return redirect("leave_requests")
 
+        elif action == "bulk_delete":
+            if not leave_ids:
+                messages.error(request, "No leave requests selected.")
+                return redirect("leave_requests")
+
+            deleted_count = 0
+            reason_text = admin_comment or "Marked as LOP"
+
+            with transaction.atomic():
+                for lid in leave_ids:
+                    try:
+                        if request.user.role == User.Role.MANAGER and not request.user.is_superuser:
+                            lreq = LeaveRequest.objects.get(id=lid, employee__manager=request.user)
+                        else:
+                            lreq = LeaveRequest.objects.get(id=lid, employee__company=request.user.company)
+
+                        emp = lreq.employee
+                        s_date = lreq.start_date
+                        e_date = lreq.end_date
+
+                        if lreq.status == "APPROVED":
+                            lreq.reverse_leave_deduction()
+
+                        if "lop" in reason_text.lower():
+                            from datetime import timedelta
+
+                            from employees.models import Attendance, LeaveTransaction
+
+                            curr = s_date
+                            while curr <= e_date:
+                                if not emp.is_week_off(curr):
+                                    Attendance.objects.update_or_create(
+                                        employee=emp,
+                                        date=curr,
+                                        defaults={
+                                            "status": "LEAVE",
+                                            "clock_in": None,
+                                            "clock_out": None,
+                                        },
+                                    )
+                                curr += timedelta(days=1)
+
+                            total_days = lreq.total_days
+                            if hasattr(emp, "leave_balance") and emp.leave_balance:
+                                emp.leave_balance.unpaid_leave = (emp.leave_balance.unpaid_leave or 0.0) + total_days
+                                emp.leave_balance.save()
+
+                            LeaveTransaction.log(
+                                employee=emp,
+                                transaction_type="DEBIT",
+                                leave_type="UL",
+                                amount=total_days,
+                                reason=f"Marked as LOP via Bulk Delete ({s_date} to {e_date})",
+                                created_by=request.user,
+                            )
+
+                            LeaveRequest.objects.create(
+                                employee=emp,
+                                leave_type="UL",
+                                start_date=s_date,
+                                end_date=e_date,
+                                duration=lreq.duration,
+                                reason=f"Marked as LOP: {lreq.reason or ''}",
+                                status="APPROVED",
+                                approved_by=request.user,
+                                approved_at=timezone.now(),
+                                admin_comment=reason_text,
+                                approval_type="WITH_LOP",
+                            )
+
+                        lreq.delete()
+                        deleted_count += 1
+                    except LeaveRequest.DoesNotExist:
+                        continue
+                    except Exception as e:
+                        import logging
+
+                        logging.getLogger(__name__).error(f"Error bulk deleting leave request {lid}: {e}")
+
+            messages.success(request, f"Successfully deleted {deleted_count} leave request(s) ({reason_text}).")
+            return redirect("leave_requests")
+
         # Single Request Actions
         try:
             if request.user.role == User.Role.MANAGER and not request.user.is_superuser:
@@ -3947,6 +4029,65 @@ def leave_requests(request):
                 )
 
                 safe_delay(send_leave_rejection_notification_task, leave_request.id)
+
+            elif action == "delete":
+                reason_text = admin_comment or "Marked as LOP"
+                emp = leave_request.employee
+                s_date = leave_request.start_date
+                e_date = leave_request.end_date
+
+                if leave_request.status == "APPROVED":
+                    leave_request.reverse_leave_deduction()
+
+                if "lop" in reason_text.lower():
+                    from datetime import timedelta
+
+                    from employees.models import Attendance, LeaveTransaction
+
+                    curr = s_date
+                    while curr <= e_date:
+                        if not emp.is_week_off(curr):
+                            Attendance.objects.update_or_create(
+                                employee=emp,
+                                date=curr,
+                                defaults={
+                                    "status": "LEAVE",
+                                    "clock_in": None,
+                                    "clock_out": None,
+                                },
+                            )
+                        curr += timedelta(days=1)
+
+                    total_days = leave_request.total_days
+                    if hasattr(emp, "leave_balance") and emp.leave_balance:
+                        emp.leave_balance.unpaid_leave = (emp.leave_balance.unpaid_leave or 0.0) + total_days
+                        emp.leave_balance.save()
+
+                    LeaveTransaction.log(
+                        employee=emp,
+                        transaction_type="DEBIT",
+                        leave_type="UL",
+                        amount=total_days,
+                        reason=f"Marked as LOP via Delete action ({s_date} to {e_date})",
+                        created_by=request.user,
+                    )
+
+                    LeaveRequest.objects.create(
+                        employee=emp,
+                        leave_type="UL",
+                        start_date=s_date,
+                        end_date=e_date,
+                        duration=leave_request.duration,
+                        reason=f"Marked as LOP: {leave_request.reason or ''}",
+                        status="APPROVED",
+                        approved_by=request.user,
+                        approved_at=timezone.now(),
+                        admin_comment=reason_text,
+                        approval_type="WITH_LOP",
+                    )
+
+                leave_request.delete()
+                messages.success(request, f"Leave request deleted ({reason_text}).")
 
         except LeaveRequest.DoesNotExist:
             messages.error(request, "Leave request not found.")
