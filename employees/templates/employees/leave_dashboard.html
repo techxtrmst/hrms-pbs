@@ -929,11 +929,11 @@
                 <div class="modal-body modal-body-premium">
 
                     <div class="notice-box">
-                        <i class="fas fa-info-circle mt-1"></i>
+                        <i class="fas fa-bolt mt-1 text-warning"></i>
                         <div>
-                            You can apply for <strong>Casual Leave</strong>, <strong>Sick Leave</strong>, or
-                            <strong>Unpaid Leave (LOP)</strong>.
-                            <br>Unpaid Leave will result in Loss of Pay for the selected duration.
+                            <strong>⚡ Instant Auto-Approval:</strong>
+                            Leaves are automatically approved upon submission based on your available leave bucket.
+                            If balance is insufficient, excess days will automatically be processed as <strong>Unpaid Leave (Loss of Pay - LOP)</strong>.
                         </div>
                     </div>
 
@@ -944,13 +944,13 @@
                                     class="text-danger">*</span></label>
                             <div class="row g-3">
                                 <div class="col-md-4">
-                                    <input type="radio" class="btn-check" name="leave_type" id="type_cl" value="CL"
-                                        {% if balance.casual_leave_balance > 0 %}checked{% endif %}>
+                                    <input type="radio" class="btn-check" name="leave_type" id="type_cl" value="CL" checked>
                                     <label
                                         class="btn btn-outline-primary w-100 p-3 h-100 d-flex flex-column align-items-center gap-2 rounded-3"
                                         for="type_cl">
                                         <i class="fas fa-mug-hot fs-4"></i>
                                         <span class="fw-bold">Casual Leave</span>
+                                        <small class="text-muted">({{ balance.casual_leave_balance|floatformat:1 }} days left)</small>
                                     </label>
                                 </div>
                                 <div class="col-md-4">
@@ -960,6 +960,7 @@
                                         for="type_sl">
                                         <i class="fas fa-first-aid fs-4"></i>
                                         <span class="fw-bold">Sick Leave</span>
+                                        <small class="text-muted">({{ balance.sick_leave_balance|floatformat:1 }} days left)</small>
                                     </label>
                                 </div>
                                 <div class="col-md-4">
@@ -1055,29 +1056,6 @@
         const slRadio = document.getElementById('type_sl');
         const ulRadio = document.getElementById('type_ul');
 
-        // Helper to disable option
-        function disableOption(radio, balance) {
-            if (balance <= 0 && radio) {
-                radio.disabled = true;
-                const label = document.querySelector(`label[for="${radio.id}"]`);
-                if (label) {
-                    label.classList.add('opacity-50', 'pe-none'); // Bootstrap utility classes
-                    label.setAttribute('title', 'Insufficient Balance');
-                }
-            }
-        }
-
-        // Apply restrictions
-        disableOption(clRadio, clBalance);
-        disableOption(slRadio, slBalance);
-
-        // Auto-select Unpaid Leave if no balance (or if currently selected option is disabled)
-        if ((clBalance <= 0 && slBalance <= 0) || (clRadio.checked && clBalance <= 0) || (slRadio.checked && slBalance <= 0)) {
-            if (ulRadio) {
-                ulRadio.click();
-            }
-        }
-
         const startInput = document.getElementById('start_date');
         const endInput = document.getElementById('end_date');
         const reasonInput = document.getElementById('reasonInput');
@@ -1086,31 +1064,45 @@
         const durationSelect = document.getElementById('durationSelect');
         const durationTypeHelp = document.getElementById('durationTypeHelp');
 
+        const weekOffs = {
+            0: {{ user.employee_profile.week_off_sunday|yesno:"true,false"|default:"true" }},
+            1: {{ user.employee_profile.week_off_monday|yesno:"true,false"|default:"false" }},
+            2: {{ user.employee_profile.week_off_tuesday|yesno:"true,false"|default:"false" }},
+            3: {{ user.employee_profile.week_off_wednesday|yesno:"true,false"|default:"false" }},
+            4: {{ user.employee_profile.week_off_thursday|yesno:"true,false"|default:"false" }},
+            5: {{ user.employee_profile.week_off_friday|yesno:"true,false"|default:"false" }},
+            6: {{ user.employee_profile.week_off_saturday|yesno:"true,false"|default:"true" }}
+        };
+
         function calculateDuration() {
             const startStr = startInput.value;
             const endStr = endInput.value;
 
             if (startStr && endStr) {
-                const start = new Date(startStr);
-                const end = new Date(endStr);
+                const start = new Date(startStr + 'T00:00:00');
+                const end = new Date(endStr + 'T00:00:00');
 
                 if (end >= start) {
-                    const diffTime = Math.abs(end - start);
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                    let workingDays = 0;
+                    let curr = new Date(start);
+                    while (curr <= end) {
+                        const dayOfWeek = curr.getDay(); // 0=Sun, 6=Sat
+                        if (!weekOffs[dayOfWeek]) {
+                            workingDays++;
+                        }
+                        curr.setDate(curr.getDate() + 1);
+                    }
 
-                    // Check if it's a single day
-                    const isSingleDay = diffDays === 1;
+                    const isSingleDay = (startStr === endStr);
 
                     if (isSingleDay) {
-                        // Show duration type selection for single day
                         durationTypeSection.style.display = 'block';
-                        durationDisplay.innerText = '1 Day';
+                        durationDisplay.innerText = workingDays === 1 ? '1 Working Day' : '0 Days (Selected date is a Week-off)';
                         durationTypeHelp.textContent = 'Select Full Day, First Half (Morning), or Second Half (Afternoon).';
                     } else {
-                        // Hide duration type selection for multiple days
                         durationTypeSection.style.display = 'none';
-                        durationSelect.value = 'FULL'; // Reset to full day
-                        durationDisplay.innerText = diffDays + ' Days';
+                        durationSelect.value = 'FULL';
+                        durationDisplay.innerText = workingDays + ' Working Day' + (workingDays === 1 ? '' : 's') + ' (Week-offs excluded)';
                     }
 
                     durationDisplay.classList.remove('text-danger');

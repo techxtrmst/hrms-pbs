@@ -223,9 +223,9 @@ class FinancePortalTests(TestCase):
         self.assertEqual(data["status"], "success")
         self.assertEqual(data["breakdown"]["travel_allowance"], 5000.0)
 
-        # Base net with May proration (30/31 worked days, 600000 CTC, PF enabled): 46333
-        # With 5,000 travel allowance: net should be 51333.0
-        self.assertEqual(data["breakdown"]["net_salary"], 51333.0)
+        # Base net with May proration (30/31 worked days, 600000 CTC, PF enabled): 44383
+        # With 5,000 travel allowance: net should be 49383.0
+        self.assertEqual(data["breakdown"]["net_salary"], 49383.0)
 
         # 2. Test draft generation via process_single_payroll
         single_process_url = reverse("finance_portal:process_single_payroll")
@@ -245,11 +245,10 @@ class FinancePortalTests(TestCase):
         self.assertRedirects(response, "/finance/?view=payroll&company=all&month=5&year=2026")
 
         # Verify payslip is generated with travel allowance saved to database
-        # Base net for 600000 CTC (PF enabled, full May) = 46333; +5000 travel = 51333
         self.assertEqual(Payslip.objects.count(), 1)
         payslip = Payslip.objects.first()
         self.assertEqual(payslip.travel_allowance, 5000.0)
-        self.assertEqual(payslip.net_salary, 51333.0)
+        self.assertEqual(payslip.net_salary, 49383.0)
 
     def test_tds_deduction_preview_and_generation(self):
         """Test TDS deduction preview calculation and draft payslip generation"""
@@ -276,9 +275,9 @@ class FinancePortalTests(TestCase):
         self.assertEqual(data["status"], "success")
         self.assertEqual(data["breakdown"]["tds_deduction"], 2000.0)
 
-        # Base Net with May proration (30/31 worked days): 46,333.0
-        # With 2,000 TDS deduction, net should be 44,383.0
-        self.assertEqual(data["breakdown"]["net_salary"], 44333.0)
+        # Base Net with May proration (30/31 worked days): 44,383.0
+        # With 2,000 TDS deduction, net should be 42,383.0
+        self.assertEqual(data["breakdown"]["net_salary"], 42383.0)
 
         # 2. Test draft generation via process_single_payroll
         single_process_url = reverse("finance_portal:process_single_payroll")
@@ -298,11 +297,10 @@ class FinancePortalTests(TestCase):
         self.assertRedirects(response, "/finance/?view=payroll&company=all&month=5&year=2026")
 
         # Verify payslip is generated with TDS deduction saved to database
-        # Base net for 600000 CTC (PF enabled, full May) = 46333; -2000 TDS = 44333
         self.assertEqual(Payslip.objects.count(), 1)
         payslip = Payslip.objects.first()
         self.assertEqual(payslip.tds_deduction, 2000.0)
-        self.assertEqual(payslip.net_salary, 44333.0)
+        self.assertEqual(payslip.net_salary, 42383.0)
 
     def test_save_draft_payslip_with_travel_and_tds(self):
         """Test save_draft_payslip endpoint correctly saves and recalculates travel_allowance and tds_deduction"""
@@ -352,9 +350,8 @@ class FinancePortalTests(TestCase):
         self.assertEqual(payslip.tds_deduction, 3000.0)
         # Gross should be 25000 + 10000 + 1600 + 12783 + 4000 = 53383.0
         self.assertEqual(payslip.gross_salary, 53383.0)
-        # Net = 53383 - 1800 (emp_pf) - 200 (PT) - 3000 (TDS) = 48383.0
-        # NOTE: test uses manually set employer_pf=1800 (from the draft payload), not auto-calculated 1950
-        self.assertEqual(payslip.net_salary, 48383.0)
+        # Net = 53383 - 1800 (emp_pf) - 1800 (er_pf) - 200 (PT) - 3000 (TDS) = 46583.0
+        self.assertEqual(payslip.net_salary, 46583.0)
 
     def test_recalculate_components_with_travel_and_tds(self):
         """Test recalculate_components endpoint correctly preserves/updates travel_allowance and tds_deduction"""
@@ -401,6 +398,180 @@ class FinancePortalTests(TestCase):
         self.assertEqual(payslip.travel_allowance, 5000.0)
         self.assertEqual(payslip.tds_deduction, 4000.0)
         self.assertEqual(payslip.employee.annual_ctc, 720000.0)
+
+    def test_arrears_positive_preview_and_generation(self):
+        """Test positive arrears preview calculation and draft payslip generation (+ adds to gross & net)"""
+        self.client.login(username="finance@test.com", password="password123")
+
+        # 1. Preview calculation with positive arrears
+        preview_url = reverse("finance_portal:calculate_payslip_preview")
+        response = self.client.post(
+            preview_url,
+            {
+                "employee_id": self.employee.id,
+                "annual_ctc": 600000.0,
+                "worked_days": 30,
+                "pf_enabled": True,
+                "arrears": 3000.0,
+                "arrears_type": "plus",
+                "month": 5,
+                "year": 2026,
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "success")
+        self.assertEqual(data["breakdown"]["arrears"], 3000.0)
+        # Base net for 30/31 days = 44383; with +3000 arrears = 47383.0
+        self.assertEqual(data["breakdown"]["net_salary"], 47383.0)
+
+        # 2. Draft generation via process_single_payroll with + arrears
+        single_process_url = reverse("finance_portal:process_single_payroll")
+        response = self.client.post(
+            single_process_url,
+            {
+                "employee_id": self.employee.id,
+                "annual_ctc": 600000.0,
+                "worked_days": 30,
+                "pf_enabled": "on",
+                "arrears_enabled": "on",
+                "arrears_type": "plus",
+                "arrears": 3000.0,
+                "month": 5,
+                "year": 2026,
+            },
+        )
+        self.assertRedirects(response, "/finance/?view=payroll&company=all&month=5&year=2026")
+
+        self.assertEqual(Payslip.objects.count(), 1)
+        payslip = Payslip.objects.first()
+        self.assertEqual(payslip.arrears, 3000.0)
+        self.assertEqual(payslip.net_salary, 47383.0)
+
+    def test_arrears_negative_preview_and_generation(self):
+        """Test negative arrears preview calculation and draft payslip generation (- deducts from net)"""
+        self.client.login(username="finance@test.com", password="password123")
+
+        # 1. Preview calculation with negative arrears
+        preview_url = reverse("finance_portal:calculate_payslip_preview")
+        response = self.client.post(
+            preview_url,
+            {
+                "employee_id": self.employee.id,
+                "annual_ctc": 600000.0,
+                "worked_days": 30,
+                "pf_enabled": True,
+                "arrears": 1500.0,
+                "arrears_type": "minus",
+                "month": 5,
+                "year": 2026,
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "success")
+        self.assertEqual(data["breakdown"]["arrears"], -1500.0)
+        # Base net for 30/31 days = 44383; with -1500 arrears = 42883.0
+        self.assertEqual(data["breakdown"]["net_salary"], 42883.0)
+
+        # 2. Draft generation via process_single_payroll with - arrears
+        single_process_url = reverse("finance_portal:process_single_payroll")
+        response = self.client.post(
+            single_process_url,
+            {
+                "employee_id": self.employee.id,
+                "annual_ctc": 600000.0,
+                "worked_days": 30,
+                "pf_enabled": "on",
+                "arrears_enabled": "on",
+                "arrears_type": "minus",
+                "arrears": 1500.0,
+                "month": 5,
+                "year": 2026,
+            },
+        )
+        self.assertRedirects(response, "/finance/?view=payroll&company=all&month=5&year=2026")
+
+        self.assertEqual(Payslip.objects.count(), 1)
+        payslip = Payslip.objects.first()
+        self.assertEqual(payslip.arrears, -1500.0)
+        self.assertEqual(payslip.net_salary, 42883.0)
+
+    def test_save_draft_payslip_with_arrears(self):
+        """Test save_draft_payslip endpoint correctly saves positive and negative arrears"""
+        self.client.login(username="finance@test.com", password="password123")
+
+        # Create initial draft payslip
+        single_process_url = reverse("finance_portal:process_single_payroll")
+        self.client.post(
+            single_process_url,
+            {
+                "employee_id": self.employee.id,
+                "annual_ctc": 600000.0,
+                "worked_days": 30,
+                "pf_enabled": "on",
+                "month": 5,
+                "year": 2026,
+            },
+        )
+        payslip = Payslip.objects.get(employee=self.employee, month="2026-05-01")
+
+        # Save draft with positive arrears
+        save_draft_url = reverse("finance_portal:save_draft_payslip")
+        response = self.client.post(
+            save_draft_url,
+            {
+                "payslip_id": payslip.id,
+                "worked_days": 30,
+                "basic": 25000.0,
+                "hra": 10000.0,
+                "conveyance_allowance": 1600.0,
+                "special_allowance": 12783.0,
+                "travel_allowance": 0.0,
+                "arrears": 2000.0,
+                "professional_tax": 200.0,
+                "employee_pf": 1800.0,
+                "employer_pf": 1800.0,
+                "tds_deduction": 0.0,
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        payslip.refresh_from_db()
+        self.assertEqual(payslip.arrears, 2000.0)
+        # Gross = 25000 + 10000 + 1600 + 12783 + 2000 = 51383.0
+        self.assertEqual(payslip.gross_salary, 51383.0)
+        # Net = 51383 - 1800 - 1800 - 200 = 47583.0
+        self.assertEqual(payslip.net_salary, 47583.0)
+
+        # Save draft with negative arrears (deduction)
+        response = self.client.post(
+            save_draft_url,
+            {
+                "payslip_id": payslip.id,
+                "worked_days": 30,
+                "basic": 25000.0,
+                "hra": 10000.0,
+                "conveyance_allowance": 1600.0,
+                "special_allowance": 12783.0,
+                "travel_allowance": 0.0,
+                "arrears": -1000.0,
+                "professional_tax": 200.0,
+                "employee_pf": 1800.0,
+                "employer_pf": 1800.0,
+                "tds_deduction": 0.0,
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        payslip.refresh_from_db()
+        self.assertEqual(payslip.arrears, -1000.0)
+        # Gross (base components only) = 25000 + 10000 + 1600 + 12783 = 49383.0
+        self.assertEqual(payslip.gross_salary, 49383.0)
+        # Net = 49383 - 1800 - 1800 - 200 - 1000 = 44583.0
+        self.assertEqual(payslip.net_salary, 44583.0)
 
 
 class TransactionTests(TestCase):

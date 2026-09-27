@@ -9,6 +9,7 @@ def calculate_payslip_breakdown(
     year=None,
     travel_allowance=0.0,
     tds_deduction=0.0,
+    arrears=0.0,
 ):
     """
     Calculates the payslip breakdown based on the user's provided logic.
@@ -26,6 +27,7 @@ def calculate_payslip_breakdown(
     """
     travel_allowance = float(travel_allowance or 0.0)
     tds_deduction = float(tds_deduction or 0.0)
+    arrears = float(arrears or 0.0)
     import calendar as _calendar
 
     # Convert inputs to float/Decimal
@@ -118,8 +120,9 @@ def calculate_payslip_breakdown(
             hra = float(round(gross_monthly * hra_rate))  # House Rent
             medical = float(round(gross_monthly * med_rate))
             conveyance = float(round(gross_monthly * conv_rate))
-            lta = 0.00
+            lta = conveyance
             other_allowance = 0.00
+            special_allowance = 0.00
 
             if is_pf_enabled:
                 employee_pf = float(round(basic * 0.10))  # Typical BD PF is 10%
@@ -137,104 +140,62 @@ def calculate_payslip_breakdown(
                 "hra": hra,
                 "medical": medical,
                 "conveyance": conveyance,
+                "conveyance_allowance": conveyance,
                 "lta": lta,
+                "special_allowance": special_allowance,
                 "other_allowance": other_allowance,
                 "employee_pf": employee_pf,
                 "employer_pf": employer_pf,
                 "professional_tax": professional_tax,
                 "net_salary": net_salary,
             }
-        elif country == "US":
-            # -------- US Logic (Simplified) --------
-            basic_rate = float(config.us_basic_percentage) / 100 if config else 0.70
-            tax_rate = float(config.us_tax_percentage) / 100 if config else 0.15
+        else:
+            # -------- Standard / India / US / Global Logic --------
+            # Rates: Basic 50%, HRA 20%, Conveyance Allowance 20%, Special Allowance remainder (10%)
+            b_pct = float(config.basic_percentage) / 100 if config and config.basic_percentage else 0.50
+            h_pct = float(config.hra_percentage) / 100 if config and config.hra_percentage else 0.20
+            conv_pct = 0.20
+            if (
+                config
+                and hasattr(config, "lta_percentage")
+                and config.lta_percentage
+                and float(config.lta_percentage) not in [10.0, 0.0]
+            ):
+                conv_pct = float(config.lta_percentage) / 100
+
+            pf_er_rate = float(config.pf_employer_rate) / 100 if config and config.pf_employer_rate else 0.13
+            pf_ee_rate = float(config.pf_employee_rate) / 100 if config and config.pf_employee_rate else 0.12
+            pf_ceil = float(config.pf_ceiling) if config and config.pf_ceiling else 15000.0
+
+            pt_thresh = float(config.pt_threshold) if config and config.pt_threshold else 20000.0
+            pt_low = float(config.pt_amount_below) if config and config.pt_amount_below else 150.0
+            pt_high = float(config.pt_amount_above) if config and config.pt_amount_above else 200.0
 
             gross_monthly = float(round(ctc_to_use))
-            basic = float(round(gross_monthly * basic_rate))
-            hra = 0.00
-            medical = float(round(gross_monthly * 0.15))
-            conveyance = 0.00
-            lta = 0.00
-            other_allowance = float(round(gross_monthly - (basic + medical)))
-            # Simplified US Tax/Social Security (placeholder, usually handles via withholdings)
-            # 7.65% for FICA (Social Security + Medicare)
-            employee_pf = float(round(gross_monthly * 0.0765))
-            employer_pf = employee_pf
-            professional_tax = 0.00
-            # Total withholdings (Federal/State Tax placeholder)
-            income_tax = float(round(gross_monthly * tax_rate))
-            net_salary = float(round(gross_monthly - employee_pf - income_tax))
 
-            return {
-                "gross": gross_monthly,
-                "basic": basic,
-                "hra": hra,
-                "medical": medical,
-                "conveyance": conveyance,
-                "lta": lta,
-                "other_allowance": other_allowance,
-                "employee_pf": employee_pf,
-                "employer_pf": employer_pf,
-                "professional_tax": income_tax,  # Mapping Federal/State Tax to Professional Tax field
-                "net_salary": net_salary,
-            }
-        else:
-            # -------- India Logic (Default) --------
-            # Rates from config
-            b_pct = float(config.basic_percentage) / 100 if config else 0.50
-            h_pct = float(config.hra_percentage) / 100 if config else 0.20
-            l_pct = float(config.lta_percentage) / 100 if config else 0.10
+            # -------- Earnings Breakdown --------
+            basic = float(round(gross_monthly * b_pct))
+            hra = float(round(gross_monthly * h_pct))
+            conveyance = float(round(gross_monthly * conv_pct))
+            # Special allowance is the exact remainder so earnings add up perfectly to gross_monthly
+            special_allowance = float(round(gross_monthly - (basic + hra + conveyance)))
+            lta = conveyance
+            other_allowance = special_allowance
 
-            pf_er_rate = float(config.pf_employer_rate) / 100 if config else 0.13
-            pf_ee_rate = float(config.pf_employee_rate) / 100 if config else 0.12
-            pf_ceil = float(config.pf_ceiling) if config else 15000.0
-
-            pt_thresh = float(config.pt_threshold) if config else 20000.0
-            pt_low = float(config.pt_amount_below) if config else 150.0
-            pt_high = float(config.pt_amount_above) if config else 200.0
-
+            # -------- Provident Fund --------
             if is_pf_enabled:
-                # Step 1: Compute Gross from Monthly CTC
-                # Factor accounts for Employer PF being part of CTC
-                pf_factor = 1 + (pf_er_rate * b_pct)
-                gross_case1 = ctc_to_use / pf_factor
-
-                if (gross_case1 * b_pct) < pf_ceil:
-                    # Calculate basic from the fractional gross to maintain precision
-                    basic = float(round(gross_case1 * b_pct))
-                    employer_pf = float(round(basic * pf_er_rate))
-                    # Derive gross_monthly from CTC to ensure they always add up perfectly
-                    gross_monthly = float(ctc_to_use - employer_pf)
-                else:
-                    # PF is capped — use standard rates: employer 13% of ceiling = 1950.
-                    # Total PF = employee 1800 + employer 1950 = 3750.
-                    # Accounts team can override via draft editor for special cases (e.g. 3600).
+                if basic >= pf_ceil:
+                    # PF is capped at standard rates (Employer: 13% of 15000 = 1950, Employee: 12% of 15000 = 1800, Total = 3750)
                     employer_pf = float(round(pf_ceil * pf_er_rate))
-                    gross_monthly = float(round(ctc_to_use))
-                    basic = float(round(gross_monthly * b_pct))
-
-                # Employee PF
-                employee_pf = (
-                    float(round(basic * pf_ee_rate)) if basic < pf_ceil else float(round(pf_ceil * pf_ee_rate))
-                )
+                    employee_pf = float(round(pf_ceil * pf_ee_rate))
+                else:
+                    employer_pf = float(round(basic * pf_er_rate))
+                    employee_pf = float(round(basic * pf_ee_rate))
             else:
-                # -------- No PF --------
-                gross_monthly = float(round(ctc_to_use))
-                basic = float(round(gross_monthly * b_pct))
                 employer_pf = 0.00
                 employee_pf = 0.00
 
-            # -------- Allowances --------
-            hra = float(round(gross_monthly * h_pct))
-            lta = float(round(gross_monthly * l_pct))
-            other_allowance = float(round(gross_monthly - (basic + hra + lta)))
-
-            # -------- Net Salary --------
-            # Deduct Employee PF: Employer PF is paid by the employer
-            net_before_pt = float(round(gross_monthly - employee_pf))
-
-            # Professional Tax — use per-location config if available,
-            # otherwise fall back to global PayrollConfiguration PT settings.
+            # -------- Professional Tax --------
             pt_config = None
             if location and hasattr(location, "professional_tax_config"):
                 try:
@@ -248,38 +209,34 @@ def calculate_payslip_breakdown(
                 pt_high_val = float(pt_config.pt_amount_above)
                 should_apply_pt = True
             else:
-                # Fall back to global config / company-level rules
-                is_special_entity = False
-                if target_company:
-                    cname = str(target_company.name).upper()
-                    if "BLUEBIX" in cname or "SOFTSTANDARD" in cname:
-                        is_special_entity = True
-
-                should_apply_pt = country == "IN" or is_special_entity
-
                 pt_thresh_val = pt_thresh if pt_thresh > 0 else 20000.0
                 pt_low_val = pt_low if pt_low > 0 else 150.0
                 pt_high_val = pt_high if pt_high > 0 else 200.0
+                should_apply_pt = True
 
             professional_tax = (
-                (pt_low_val if gross_monthly < pt_thresh_val else pt_high_val) if should_apply_pt else 0.0
+                (pt_low_val if gross_monthly < pt_thresh_val else pt_high_val)
+                if should_apply_pt and gross_monthly > 0
+                else 0.0
             )
 
-            # Net Take Home Salary
-            net_salary = float(round(net_before_pt - professional_tax))
+            # -------- Net Salary --------
+            net_salary = float(round(gross_monthly - employee_pf - employer_pf - professional_tax))
 
             return {
                 "gross": gross_monthly,
                 "basic": basic,
                 "hra": hra,
+                "conveyance": conveyance,
+                "conveyance_allowance": conveyance,
                 "lta": lta,
+                "special_allowance": special_allowance,
                 "other_allowance": other_allowance,
                 "employee_pf": employee_pf,
                 "employer_pf": employer_pf,
                 "professional_tax": professional_tax,
                 "net_salary": net_salary,
                 "medical": 0.00,
-                "conveyance": 0.00,
             }
 
     # Monthly CTC (Full)
@@ -294,21 +251,29 @@ def calculate_payslip_breakdown(
         monthly_ctc = 0.0
         prorated_breakdown = dict.fromkeys(full_breakdown, 0.0)
 
+    positive_arrears = arrears if arrears > 0 else 0.0
+
     return {
         "monthly_ctc": monthly_ctc,
         "full_monthly_ctc": full_monthly_ctc,
-        "gross_monthly": prorated_breakdown["gross"] + travel_allowance,
-        "full_monthly_gross": full_breakdown["gross"] + travel_allowance,
+        "gross_monthly": prorated_breakdown["gross"] + travel_allowance + positive_arrears,
+        "full_monthly_gross": full_breakdown["gross"] + travel_allowance + positive_arrears,
         "basic": prorated_breakdown["basic"],
         "hra": prorated_breakdown["hra"],
-        "lta": prorated_breakdown["lta"],
-        "medical": prorated_breakdown.get("medical", 0.00),
         "conveyance": prorated_breakdown.get("conveyance", 0.00),
-        "other_allowance": prorated_breakdown["other_allowance"],
+        "conveyance_allowance": prorated_breakdown.get(
+            "conveyance_allowance", prorated_breakdown.get("conveyance", 0.00)
+        ),
+        "lta": prorated_breakdown.get("lta", 0.00),
+        "special_allowance": prorated_breakdown.get(
+            "special_allowance", prorated_breakdown.get("other_allowance", 0.00)
+        ),
+        "other_allowance": prorated_breakdown.get("other_allowance", 0.00),
+        "medical": prorated_breakdown.get("medical", 0.00),
         "employee_pf": prorated_breakdown["employee_pf"],
         "employer_pf": prorated_breakdown["employer_pf"],
         "professional_tax": float(prorated_breakdown["professional_tax"]),
-        "net_salary": prorated_breakdown["net_salary"] + travel_allowance - tds_deduction,
+        "net_salary": prorated_breakdown["net_salary"] + travel_allowance + arrears - tds_deduction,
         "worked_days": worked_days,
         "actual_worked_days": actual_worked_days,
         "total_days": total_days,
@@ -319,6 +284,7 @@ def calculate_payslip_breakdown(
         "currency_symbol": currency_symbol,
         "travel_allowance": travel_allowance,
         "tds_deduction": tds_deduction,
+        "arrears": arrears,
     }
 
 

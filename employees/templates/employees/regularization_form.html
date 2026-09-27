@@ -418,12 +418,19 @@
             }
         });
 
-        // Current Date Validation
+        // Current Date Validation & URL Param Prefill
         const dateInput = document.querySelector('input[type="date"]');
         if (dateInput) {
             // Prevent future dates
             const today = new Date().toISOString().split('T')[0];
             dateInput.setAttribute('max', today);
+
+            // Prefill date from URL query parameter if not already populated
+            const urlParams = new URLSearchParams(window.location.search);
+            const dateParam = urlParams.get('date');
+            if (dateParam && !dateInput.value) {
+                dateInput.value = dateParam;
+            }
         }
 
         // Duration Calculator

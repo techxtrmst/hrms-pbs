@@ -51,6 +51,10 @@ class Command(BaseCommand):
         self.stdout.write(f"Checking {employees.count()} active employees...")
 
         for employee in employees:
+            # Bluebix has no probation period — skip
+            if employee.company and "bluebix" in employee.company.name.lower():
+                continue
+
             # Calculate probation end date (exactly 3 months from joining)
             probation_end_date = employee.date_of_joining + relativedelta(months=3)
 

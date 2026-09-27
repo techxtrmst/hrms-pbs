@@ -212,28 +212,29 @@
         position: absolute;
         top: 20px;
         right: 20px;
-        z-index: 1000;
+        z-index: 99999;
         background: white;
         border: 1px solid #e2e8f0;
         width: 40px;
         height: 40px;
         border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
         text-decoration: none;
         color: #64748b;
-        font-size: 16px;
+        font-size: 18px;
         transition: all 0.2s;
+        pointer-events: auto;
     }
 
     .btn-close-view:hover {
         background: #f8fafc;
         color: #ef4444;
         transform: translateY(-1px);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
     }
 
     /* Mobile Toggle Button */
@@ -865,9 +866,9 @@
         </button>
 
         <!-- Close Button -->
-        <a href="javascript:history.back()" class="btn-close-view" title="Close Map View">
+        <button type="button" onclick="handleCloseMapView()" class="btn-close-view" title="Close Map View" aria-label="Close Map View">
             <i class="fas fa-times"></i>
-        </a>
+        </button>
     </div>
 </div>
 {% endblock %}
@@ -1144,5 +1145,22 @@
             });
         });
     }
+
+    // Close Map View handler with tab close and referrer fallback
+    window.handleCloseMapView = function() {
+        if (window.opener && !window.opener.closed) {
+            window.close();
+            return;
+        }
+        if (window.history.length > 1 && document.referrer && document.referrer.indexOf(window.location.host) !== -1) {
+            window.history.back();
+        } else {
+            {% if request.user.role == 'EMPLOYEE' %}
+            window.location.href = "{% url 'personal_home' %}";
+            {% else %}
+            window.location.href = "{% url 'dashboard' %}";
+            {% endif %}
+        }
+    };
 </script>
 {% endblock %}

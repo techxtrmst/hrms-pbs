@@ -197,10 +197,14 @@ class Employee(models.Model):
         - 'COMPLETED': Employee has completed probation period (>= 3 months)
         - 'COMPLETED_TODAY': Employee completed probation today (exactly 3 months)
 
+        Bluebix employees have NO probation period — they receive leaves and are active from Day 1.
         For rejoining employees (is_rejoining=True), we use original_joining_date
         to calculate total service tenure. If their combined prior + current service
         already exceeds 3 months, probation is treated as COMPLETED immediately.
         """
+        if self.company and "bluebix" in self.company.name.lower():
+            return "COMPLETED"
+
         from dateutil.relativedelta import relativedelta
         from django.utils import timezone
 
@@ -232,8 +236,12 @@ class Employee(models.Model):
     def get_probation_end_date(self):
         """
         Get the exact date when probation period ends (3 months from joining).
+        For Bluebix, no probation period exists (returns date_of_joining).
         For rejoining employees, uses original_joining_date to reflect true tenure.
         """
+        if self.company and "bluebix" in self.company.name.lower():
+            return self.date_of_joining
+
         from dateutil.relativedelta import relativedelta
 
         # Rejoining: probation calculated from original (first-ever) joining date
@@ -247,6 +255,8 @@ class Employee(models.Model):
 
     def is_probation_completed(self):
         """Check if employee has completed probation period"""
+        if self.company and "bluebix" in self.company.name.lower():
+            return True
         status = self.get_probation_status()
         return status in ["COMPLETED", "COMPLETED_TODAY"]
 
@@ -1135,8 +1145,8 @@ class LeaveBalance(models.Model):
         if leave_type == "UL":  # Unpaid Leave (LOP) - always allowed
             return {
                 "can_apply": True,
-                "available": float("inf"),
-                "shortfall": 0.0,
+                "available": 0.0,
+                "shortfall": days_requested,
                 "will_be_lop": True,
             }
 
@@ -1349,8 +1359,8 @@ class LeaveRequest(models.Model):
 
     @property
     def total_days(self):
-        """Calculate total leave days"""
-        from datetime import datetime
+        """Calculate total leave days excluding employee's week-offs"""
+        from datetime import datetime, timedelta
 
         if self.duration in ["FIRST_HALF", "SECOND_HALF", "HALF"]:  # Include legacy "HALF" option
             return 0.5
@@ -1378,6 +1388,19 @@ class LeaveRequest(models.Model):
         end = to_date(self.end_date)
 
         if start and end:
+            try:
+                emp = self.employee
+                if emp:
+                    count = 0.0
+                    curr = start
+                    while curr <= end:
+                        if not emp.is_week_off(curr):
+                            count += 1.0
+                        curr += timedelta(days=1)
+                    return count
+            except Exception:
+                pass
+
             days = (end - start).days + 1
             return float(days)
 
@@ -1418,18 +1441,176 @@ class LeaveRequest(models.Model):
     def _generate_validation_message(self, leave_check):
         """Generate user-friendly validation message"""
         if self.leave_type == "UL":
-            return f"Approving this Unpaid Leave (LOP) application for {self.total_days} days will result in LOP."
+            return f"Unpaid Leave (LOP) application for {self.total_days} day(s) will be automatically approved as Loss of Pay."
 
-        if leave_check["can_apply"]:
-            return f"Leave application can be approved. You have {leave_check['available']} days available."
+        if self.leave_type in ["OD", "OT"]:
+            return f"{self.get_leave_type_display()} application for {self.total_days} day(s) will be automatically approved."
+
+        available = leave_check.get("available", 0.0)
+        shortfall = leave_check.get("shortfall", 0.0)
+
+        if not leave_check.get("will_be_lop"):
+            return f"Leave application will be automatically approved as Paid Leave ({self.total_days} day(s) available in your {self.get_leave_type_display()} bucket)."
         else:
-            available = leave_check["available"]
-            shortfall = leave_check["shortfall"]
-
-            if available == 0:
-                return f"You don't have any {self.get_leave_type_display()} balance. Approving this leave will result in {self.total_days} days of LOP."
+            if available <= 0:
+                return f"You have 0 {self.get_leave_type_display()} balance. This leave will be automatically approved as {self.total_days} day(s) of Loss of Pay (LOP)."
             else:
-                return f"You only have {available} days of {self.get_leave_type_display()} available. Approving this leave will result in {shortfall} days of LOP."
+                return f"You have {available} day(s) of {self.get_leave_type_display()} available. {available} day(s) will be approved as Paid Leave and {shortfall} day(s) will be automatically processed as Loss of Pay (LOP)."
+
+    def process_auto_approval(self, user_or_system=None):
+        """
+        Auto-approves the leave request based on the employee's available leave bucket.
+        - If sufficient balance available: Approved as FULL (deducted from leave type balance).
+        - If partial balance available: Approved as WITH_LOP (available deducted from leave balance, remainder to UL).
+        - If 0 balance available or leave_type == 'UL': Approved as WITH_LOP / FULL UL (deducted from UL).
+        - If OD/OT: Approved as FULL without bucket deduction.
+
+        Updates attendance records, logs LeaveTransactions, sets status='APPROVED', and saves.
+        """
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from .models import Attendance, LeaveBalance, LeaveTransaction
+
+        balance, _ = LeaveBalance.objects.get_or_create(employee=self.employee)
+        requested_days = self.total_days
+        leave_label = self.get_leave_type_display()
+
+        paid_days = 0.0
+        lop_days = 0.0
+
+        if self.leave_type == "UL":
+            approval_type = "WITH_LOP"
+            lop_days = requested_days
+            balance.apply_leave_deduction("UL", lop_days)
+            LeaveTransaction.log(
+                employee=self.employee,
+                transaction_type="DEBIT",
+                leave_type="UL",
+                amount=lop_days,
+                reason=f"Auto-approved Unpaid Leave (LOP) for Request #{self.id} ({self.start_date} to {self.end_date})",
+                created_by=user_or_system
+                if (user_or_system and getattr(user_or_system, "is_authenticated", False))
+                else None,
+            )
+            comment = f"Auto-approved as Unpaid Leave (LOP) for {lop_days} day(s)."
+            msg = f"Your Unpaid Leave (LOP) request for {lop_days} day(s) has been automatically approved."
+
+        elif self.leave_type in ["OD", "OT"]:
+            approval_type = "FULL"
+            paid_days = requested_days
+            comment = f"Auto-approved {leave_label} for {requested_days} day(s)."
+            msg = f"Your {leave_label} request for {requested_days} day(s) has been automatically approved."
+
+        else:
+            available = balance.get_available_balance(self.leave_type)
+            if available >= requested_days:
+                approval_type = "FULL"
+                paid_days = requested_days
+                balance.apply_leave_deduction(self.leave_type, paid_days)
+                LeaveTransaction.log(
+                    employee=self.employee,
+                    transaction_type="DEBIT",
+                    leave_type=self.leave_type,
+                    amount=paid_days,
+                    reason=f"Auto-approved {leave_label} for Request #{self.id} ({self.start_date} to {self.end_date})",
+                    created_by=user_or_system
+                    if (user_or_system and getattr(user_or_system, "is_authenticated", False))
+                    else None,
+                )
+                comment = f"Auto-approved as Paid Leave ({paid_days} day(s) from {leave_label} bucket)."
+                msg = f"Your leave request for {paid_days} day(s) has been automatically approved as Paid Leave."
+
+            elif available > 0:
+                approval_type = "WITH_LOP"
+                paid_days = available
+                lop_days = requested_days - available
+                balance.apply_leave_deduction(self.leave_type, paid_days)
+                balance.apply_leave_deduction("UL", lop_days)
+
+                created_user = (
+                    user_or_system if (user_or_system and getattr(user_or_system, "is_authenticated", False)) else None
+                )
+                LeaveTransaction.log(
+                    employee=self.employee,
+                    transaction_type="DEBIT",
+                    leave_type=self.leave_type,
+                    amount=paid_days,
+                    reason=f"Auto-approved (Paid Portion) for Request #{self.id}: {leave_label} ({self.start_date} to {self.end_date})",
+                    created_by=created_user,
+                )
+                LeaveTransaction.log(
+                    employee=self.employee,
+                    transaction_type="DEBIT",
+                    leave_type="UL",
+                    amount=lop_days,
+                    reason=f"Auto-approved (LOP Portion) for Request #{self.id} ({self.start_date} to {self.end_date})",
+                    created_by=created_user,
+                )
+                comment = f"Auto-approved: {paid_days} day(s) {leave_label} (Paid) and {lop_days} day(s) Loss of Pay (LOP) due to balance limit."
+                msg = f"Your leave request has been automatically approved: {paid_days} day(s) Paid Leave and {lop_days} day(s) Loss of Pay (LOP)."
+
+            else:
+                approval_type = "WITH_LOP"
+                lop_days = requested_days
+                balance.apply_leave_deduction("UL", lop_days)
+                LeaveTransaction.log(
+                    employee=self.employee,
+                    transaction_type="DEBIT",
+                    leave_type="UL",
+                    amount=lop_days,
+                    reason=f"Auto-approved as LOP for Request #{self.id}: Insufficient {leave_label} balance ({self.start_date} to {self.end_date})",
+                    created_by=user_or_system
+                    if (user_or_system and getattr(user_or_system, "is_authenticated", False))
+                    else None,
+                )
+                comment = (
+                    f"Auto-approved as Loss of Pay (LOP) for {lop_days} day(s) due to exhausted {leave_label} balance."
+                )
+                msg = f"Your leave request for {lop_days} day(s) has been automatically approved as Loss of Pay (LOP) since your {leave_label} balance is exhausted."
+
+        self.status = "APPROVED"
+        self.approval_type = approval_type
+        self.approved_at = timezone.now()
+        self.approved_by = (
+            user_or_system if (user_or_system and getattr(user_or_system, "is_authenticated", False)) else None
+        )
+        if not self.admin_comment:
+            self.admin_comment = comment
+        else:
+            self.admin_comment = f"{self.admin_comment} | {comment}"
+        self.save()
+
+        # Create attendance records for each day of the leave
+        current_date = self.start_date
+        while current_date <= self.end_date:
+            if not self.employee.is_week_off(current_date):
+                if self.leave_type == "OD":
+                    attendance_status = "ON_DUTY"
+                elif self.duration in ["FIRST_HALF", "SECOND_HALF", "HALF"]:
+                    attendance_status = "HALF_DAY"
+                else:
+                    attendance_status = "LEAVE"
+
+                Attendance.objects.update_or_create(
+                    employee=self.employee,
+                    date=current_date,
+                    defaults={
+                        "status": attendance_status,
+                        "clock_in": None,
+                        "clock_out": None,
+                    },
+                )
+            current_date += timedelta(days=1)
+
+        return {
+            "status": "APPROVED",
+            "approval_type": approval_type,
+            "paid_days": paid_days,
+            "lop_days": lop_days,
+            "message": msg,
+        }
 
     def save(self, *args, **kwargs):
         """Override save to validate leave application"""
@@ -1441,12 +1622,12 @@ class LeaveRequest(models.Model):
 
         super().save(*args, **kwargs)
 
-    def approve_leave(self, approved_by_user, approval_type="FULL"):
+    def approve_leave(self, approved_by_user=None, approval_type="FULL"):
         """
         Approve leave and deduct from balance
 
         Args:
-            approved_by_user: User who is approving
+            approved_by_user: User who is approving (can be None for system)
             approval_type: 'FULL', 'WITH_LOP', or 'ONLY_AVAILABLE'
         """
         if self.status != "PENDING":

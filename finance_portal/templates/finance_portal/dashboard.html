@@ -637,6 +637,23 @@
                         </div>
                     </div>
 
+                    <div class="mb-4">
+                        <div class="form-check form-switch py-1 mb-2">
+                            <input class="form-check-input" type="checkbox" id="calc_arrears_enabled" name="arrears_enabled" onchange="toggleArrearsInput()">
+                            <label class="form-check-label fw-bold text-slate-700 small" for="calc_arrears_enabled">Calculate with Arrears</label>
+                        </div>
+                        <div id="arrears_container" style="display: none;">
+                            <div class="input-group">
+                                <select class="form-select text-center fw-bold" style="max-width: 80px;" name="arrears_type" id="calc_arrears_type" onchange="calculatePayslip()">
+                                    <option value="+" selected>+ (Add)</option>
+                                    <option value="-">- (Deduct)</option>
+                                </select>
+                                <input type="number" name="arrears" id="calc_arrears" class="form-control"
+                                    placeholder="Arrears Amount" step="0.01" value="0.00">
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-view flex-grow-1 py-2" onclick="calculatePayslip()">
                             <i class="fas fa-calculator me-1"></i> Calculate
@@ -686,6 +703,10 @@
                         <span class="text-muted small">Travel Allowance:</span>
                         <span id="res_travel_allowance" class="fw-semibold text-success fw-bold"></span>
                     </div>
+                    <div id="res_arrears_earnings_section" class="d-flex justify-content-between mb-2" style="display: none !important;">
+                        <span class="text-muted small">Arrears (+):</span>
+                        <span id="res_arrears_earnings" class="fw-semibold text-success fw-bold"></span>
+                    </div>
                     <div class="d-flex justify-content-between mb-2 fw-bold text-success">
                         <span class="text-muted small">Total Earnings (A):</span>
                         <span id="res_gross" class="fw-bold"></span>
@@ -696,6 +717,10 @@
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted small">PF Employee:</span>
                             <span id="res_pf" class="fw-semibold text-danger"></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted small">PF Employer:</span>
+                            <span id="res_employer_pf" class="fw-semibold text-danger"></span>
                         </div>
                         <div class="d-flex justify-content-between mb-2 fw-bold text-danger">
                             <span class="text-muted small">Total Contributions (B):</span>
@@ -708,6 +733,10 @@
                         <div id="res_tds_pf_section" class="d-flex justify-content-between mb-2" style="display: none !important;">
                             <span class="text-muted small">TDS Deduction:</span>
                             <span id="res_tds_pf" class="fw-semibold text-danger"></span>
+                        </div>
+                        <div id="res_arrears_deduction_pf_section" class="d-flex justify-content-between mb-2" style="display: none !important;">
+                            <span class="text-muted small">Arrears Deduction (-):</span>
+                            <span id="res_arrears_deduction_pf" class="fw-semibold text-danger"></span>
                         </div>
                         <div class="d-flex justify-content-between mb-2 fw-bold text-danger">
                             <span class="text-muted small">Total Taxes & Deductions (C):</span>
@@ -724,6 +753,10 @@
                         <div id="res_tds_no_pf_section" class="d-flex justify-content-between mb-2" style="display: none !important;">
                             <span class="text-muted small">TDS Deduction:</span>
                             <span id="res_tds_no_pf" class="fw-semibold text-danger"></span>
+                        </div>
+                        <div id="res_arrears_deduction_no_pf_section" class="d-flex justify-content-between mb-2" style="display: none !important;">
+                            <span class="text-muted small">Arrears Deduction (-):</span>
+                            <span id="res_arrears_deduction_no_pf" class="fw-semibold text-danger"></span>
                         </div>
                         <div class="d-flex justify-content-between mb-2 fw-bold text-danger">
                             <span class="text-muted small">Total Taxes & Deductions (B):</span>
@@ -959,6 +992,16 @@
                                             <a href="{% url 'finance_portal:preview_draft_payslip' item.payslip.id %}" target="_blank" class="btn btn-action btn-view py-1 px-2" title="View Draft Document">
                                                 <i class="fa-solid fa-file-pdf me-1"></i> View Draft
                                             </a>
+                                            <form method="POST" action="{% url 'finance_portal:process_draft_payroll' %}" class="d-inline m-0" onsubmit="return confirm('Recalculate draft from attendance and CTC for {{ item.employee.user.get_full_name|escapejs }}?');">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="company_id" value="{{ selected_company_id }}">
+                                                <input type="hidden" name="month" value="{{ selected_month }}">
+                                                <input type="hidden" name="year" value="{{ selected_year }}">
+                                                <input type="hidden" name="employee_id" value="{{ item.employee.id }}">
+                                                <button type="submit" class="btn btn-action btn-view py-1 px-2 text-muted" title="Recalculate and refresh draft">
+                                                    <i class="fa-solid fa-rotate"></i>
+                                                </button>
+                                            </form>
                                             {% else %}
                                                 {% if item.payslip.pdf_file %}
                                                 <a href="{{ item.payslip.pdf_file.url }}" target="_blank" class="btn btn-action btn-view py-1 px-2" title="View PDF">
@@ -970,7 +1013,16 @@
                                                 </button>
                                             {% endif %}
                                         {% else %}
-                                        <span class="text-muted small italic">Run batch to calculate</span>
+                                        <form method="POST" action="{% url 'finance_portal:process_draft_payroll' %}" class="d-inline m-0">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="company_id" value="{{ selected_company_id }}">
+                                            <input type="hidden" name="month" value="{{ selected_month }}">
+                                            <input type="hidden" name="year" value="{{ selected_year }}">
+                                            <input type="hidden" name="employee_id" value="{{ item.employee.id }}">
+                                            <button type="submit" class="btn btn-action btn-view py-1 px-2 text-success" title="Generate Phase 1 Draft for this employee">
+                                                <i class="fa-solid fa-file-invoice me-1"></i> Generate Draft
+                                            </button>
+                                        </form>
                                         {% endif %}
                                     </div>
                                 </td>
@@ -1065,6 +1117,17 @@
                                                     <label class="form-label small text-muted">Travel Allowance</label>
                                                     <input type="number" step="0.01" class="form-control travel-allowance-input"
                                                            value="{{ item.payslip.travel_allowance|default:'0.00' }}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')">
+                                                </div>
+                                                <div class="col-12 mb-2">
+                                                    <label class="form-label small text-muted">Arrears (+/-)</label>
+                                                    <div class="input-group input-group-sm">
+                                                        <select class="form-select text-center fw-bold arrears-type-input" style="max-width: 65px;" data-id="{{ item.payslip.id }}" onchange="updateSummary('{{ item.payslip.id }}')">
+                                                            <option value="+" {% if item.payslip.arrears >= 0 %}selected{% endif %}>+</option>
+                                                            <option value="-" {% if item.payslip.arrears < 0 %}selected{% endif %}>-</option>
+                                                        </select>
+                                                        <input type="number" step="0.01" class="form-control arrears-input"
+                                                               value="{% if item.payslip.arrears < 0 %}{{ item.payslip.arrears|floatformat:2|slice:'1:' }}{% else %}{{ item.payslip.arrears|floatformat:2 }}{% endif %}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')">
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1235,6 +1298,16 @@
                                             <a href="{% url 'finance_portal:preview_draft_payslip' item.payslip.id %}" target="_blank" class="btn btn-action btn-view py-1 px-2" title="View Draft Document">
                                                 <i class="fa-solid fa-file-pdf me-1"></i> View Draft
                                             </a>
+                                            <form method="POST" action="{% url 'finance_portal:process_draft_payroll' %}" class="d-inline m-0" onsubmit="return confirm('Recalculate draft from attendance and CTC for {{ item.employee.user.get_full_name|escapejs }}?');">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="company_id" value="{{ selected_company_id }}">
+                                                <input type="hidden" name="month" value="{{ selected_month }}">
+                                                <input type="hidden" name="year" value="{{ selected_year }}">
+                                                <input type="hidden" name="employee_id" value="{{ item.employee.id }}">
+                                                <button type="submit" class="btn btn-action btn-view py-1 px-2 text-muted" title="Recalculate and refresh draft">
+                                                    <i class="fa-solid fa-rotate"></i>
+                                                </button>
+                                            </form>
                                             {% else %}
                                                 {% if item.payslip.pdf_file %}
                                                 <a href="{{ item.payslip.pdf_file.url }}" target="_blank" class="btn btn-action btn-view py-1 px-2" title="View PDF">
@@ -1246,7 +1319,16 @@
                                                 </button>
                                             {% endif %}
                                         {% else %}
-                                        <span class="text-muted small italic">Run batch to calculate</span>
+                                        <form method="POST" action="{% url 'finance_portal:process_draft_payroll' %}" class="d-inline m-0">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="company_id" value="{{ selected_company_id }}">
+                                            <input type="hidden" name="month" value="{{ selected_month }}">
+                                            <input type="hidden" name="year" value="{{ selected_year }}">
+                                            <input type="hidden" name="employee_id" value="{{ item.employee.id }}">
+                                            <button type="submit" class="btn btn-action btn-view py-1 px-2 text-success" title="Generate Phase 1 Draft for this employee">
+                                                <i class="fa-solid fa-file-invoice me-1"></i> Generate Draft
+                                            </button>
+                                        </form>
                                         {% endif %}
                                     </div>
                                 </td>
@@ -1341,6 +1423,17 @@
                                                     <label class="form-label small text-muted">Travel Allowance</label>
                                                     <input type="number" step="0.01" class="form-control travel-allowance-input"
                                                            value="{{ item.payslip.travel_allowance|default:'0.00' }}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')">
+                                                </div>
+                                                <div class="col-12 mb-2">
+                                                    <label class="form-label small text-muted">Arrears (+/-)</label>
+                                                    <div class="input-group input-group-sm">
+                                                        <select class="form-select text-center fw-bold arrears-type-input" style="max-width: 65px;" data-id="{{ item.payslip.id }}" onchange="updateSummary('{{ item.payslip.id }}')">
+                                                            <option value="+" {% if item.payslip.arrears >= 0 %}selected{% endif %}>+</option>
+                                                            <option value="-" {% if item.payslip.arrears < 0 %}selected{% endif %}>-</option>
+                                                        </select>
+                                                        <input type="number" step="0.01" class="form-control arrears-input"
+                                                               value="{% if item.payslip.arrears < 0 %}{{ item.payslip.arrears|floatformat:2|slice:'1:' }}{% else %}{{ item.payslip.arrears|floatformat:2 }}{% endif %}" data-id="{{ item.payslip.id }}" oninput="updateSummary('{{ item.payslip.id }}')">
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1609,8 +1702,13 @@
         const erPf = parseFloat(row.querySelector('.employer-pf-input').value) || 0;
         const tds = parseFloat(row.querySelector('.tds-input').value) || 0;
 
-        const gross = basic + hra + conveyance + special + travelAllowance;
-        const net = gross - empPf - pt - tds;
+        const arrearsType = row.querySelector('.arrears-type-input') ? row.querySelector('.arrears-type-input').value : '+';
+        const rawArrears = parseFloat(row.querySelector('.arrears-input') ? row.querySelector('.arrears-input').value : 0) || 0;
+        const arrears = arrearsType === '-' ? -Math.abs(rawArrears) : Math.abs(rawArrears);
+        const positiveArrears = arrears > 0 ? arrears : 0;
+
+        const gross = basic + hra + conveyance + special + travelAllowance + positiveArrears;
+        const net = (basic + hra + conveyance + special + travelAllowance + arrears) - empPf - erPf - pt - tds;
 
         document.getElementById(`gross-input-${id}`).value = gross.toFixed(2);
         document.getElementById(`net-input-${id}`).value = net.toFixed(2);
@@ -1628,15 +1726,20 @@
         const erPf = parseFloat(row.querySelector('.employer-pf-input').value) || 0;
         const tds = parseFloat(row.querySelector('.tds-input').value) || 0;
 
-        // Calculate residual special allowance: Special = Gross - Basic - HRA - Conveyance - TravelAllowance
-        let special = gross - basic - hra - conveyance - travelAllowance;
+        const arrearsType = row.querySelector('.arrears-type-input') ? row.querySelector('.arrears-type-input').value : '+';
+        const rawArrears = parseFloat(row.querySelector('.arrears-input') ? row.querySelector('.arrears-input').value : 0) || 0;
+        const arrears = arrearsType === '-' ? -Math.abs(rawArrears) : Math.abs(rawArrears);
+        const positiveArrears = arrears > 0 ? arrears : 0;
+
+        // Calculate residual special allowance: Special = Gross - Basic - HRA - Conveyance - TravelAllowance - positiveArrears
+        let special = gross - basic - hra - conveyance - travelAllowance - positiveArrears;
         if (special < 0) {
             special = 0;
         }
         row.querySelector('.special-input').value = special.toFixed(2);
 
-        // Net = Gross - Employee PF - PT - TDS
-        const net = gross - empPf - pt - tds;
+        // Net = (Basic + HRA + Conveyance + Special + TravelAllowance + Arrears) - Employee PF - Employer PF - PT - TDS
+        const net = (basic + hra + conveyance + special + travelAllowance + arrears) - empPf - erPf - pt - tds;
         document.getElementById(`net-input-${id}`).value = net.toFixed(2);
     }
 
@@ -1670,6 +1773,10 @@
         const workedDays = parseFloat(workedDaysInput.value) || 0;
         const pfEnabled = pfToggle ? pfToggle.checked : false;
 
+        const arrearsType = row.querySelector('.arrears-type-input') ? row.querySelector('.arrears-type-input').value : '+';
+        const rawArrears = parseFloat(row.querySelector('.arrears-input') ? row.querySelector('.arrears-input').value : 0) || 0;
+        const arrears = arrearsType === '-' ? -Math.abs(rawArrears) : Math.abs(rawArrears);
+
         if (newCTC <= 0) {
             monthlyInput.value = "";
             return;
@@ -1687,6 +1794,7 @@
                 worked_days: workedDays,
                 travel_allowance: parseFloat(row.querySelector('.travel-allowance-input').value) || 0,
                 tds_deduction: parseFloat(row.querySelector('.tds-input').value) || 0,
+                arrears: arrears,
                 pf_enabled: pfEnabled
             })
         })
@@ -1703,6 +1811,20 @@
                 row.querySelector('.pt-input').value = data.professional_tax;
                 row.querySelector('.travel-allowance-input').value = data.travel_allowance.toFixed(2);
                 row.querySelector('.tds-input').value = data.tds_deduction.toFixed(2);
+
+                if (data.arrears !== undefined) {
+                    const arrInput = row.querySelector('.arrears-input');
+                    const arrType = row.querySelector('.arrears-type-input');
+                    if (arrInput && arrType) {
+                        if (data.arrears < 0) {
+                            arrType.value = '-';
+                            arrInput.value = Math.abs(data.arrears).toFixed(2);
+                        } else {
+                            arrType.value = '+';
+                            arrInput.value = data.arrears.toFixed(2);
+                        }
+                    }
+                }
 
                 // Sync PF toggle state from server response
                 if (pfToggle && data.pf_enabled !== undefined) {
@@ -1734,6 +1856,10 @@
         saveBtn.disabled = true;
         saveBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Saving...`;
 
+        const arrearsType = row.querySelector('.arrears-type-input') ? row.querySelector('.arrears-type-input').value : '+';
+        const rawArrears = parseFloat(row.querySelector('.arrears-input') ? row.querySelector('.arrears-input').value : 0) || 0;
+        const arrears = arrearsType === '-' ? -Math.abs(rawArrears) : Math.abs(rawArrears);
+
         const payload = {
             payslip_id: id,
             worked_days: parseFloat(row.querySelector('.worked-days-input').value) || 0,
@@ -1742,6 +1868,7 @@
             conveyance_allowance: parseFloat(row.querySelector('.conveyance-input').value) || 0,
             special_allowance: parseFloat(row.querySelector('.special-input').value) || 0,
             travel_allowance: parseFloat(row.querySelector('.travel-allowance-input').value) || 0,
+            arrears: arrears,
             professional_tax: parseFloat(row.querySelector('.pt-input').value) || 0,
             employee_pf: parseFloat(row.querySelector('.employee-pf-input').value) || 0,
             employer_pf: parseFloat(row.querySelector('.employer-pf-input').value) || 0,
@@ -2043,6 +2170,17 @@
             });
         }
 
+        // Arrears input handler
+        const arrearsInput = document.getElementById('calc_arrears');
+        if (arrearsInput) {
+            arrearsInput.addEventListener('input', function () {
+                const calcResults = document.getElementById('calcResults');
+                if (calcResults && calcResults.style.display !== 'none') {
+                    calculatePayslip();
+                }
+            });
+        }
+
         // Hide results on outside click
         document.addEventListener('click', function (e) {
             if (searchInput && resultsBox && !searchInput.contains(e.target) && !resultsBox.contains(e.target)) {
@@ -2208,6 +2346,31 @@
                 toggleTdsDeductionInputSilent();
             }
 
+            // Restore or reset Arrears when selecting employee
+            const arrearsEnabledInput = document.getElementById('calc_arrears_enabled');
+            const arrearsInput = document.getElementById('calc_arrears');
+            const arrearsTypeInput = document.getElementById('calc_arrears_type');
+            if (arrearsEnabledInput) {
+                if (emp.has_payslip && emp.saved_arrears > 0) {
+                    arrearsEnabledInput.checked = true;
+                    if (arrearsInput) {
+                        arrearsInput.value = emp.saved_arrears.toFixed(2);
+                    }
+                    if (arrearsTypeInput) {
+                        arrearsTypeInput.value = emp.saved_arrears_type || '+';
+                    }
+                } else {
+                    arrearsEnabledInput.checked = false;
+                    if (arrearsInput) {
+                        arrearsInput.value = '0.00';
+                    }
+                    if (arrearsTypeInput) {
+                        arrearsTypeInput.value = '+';
+                    }
+                }
+                toggleArrearsInputSilent();
+            }
+
             resultsBox.classList.remove('show');
 
             if (emp.annual_ctc) {
@@ -2229,6 +2392,16 @@
     function toggleTdsDeductionInputSilent() {
         const isChecked = document.getElementById('calc_tds_deduction_enabled').checked;
         const container = document.getElementById('tds_deduction_container');
+        if (isChecked) {
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'none';
+        }
+    }
+
+    function toggleArrearsInputSilent() {
+        const isChecked = document.getElementById('calc_arrears_enabled').checked;
+        const container = document.getElementById('arrears_container');
         if (isChecked) {
             container.style.display = 'block';
         } else {
@@ -2272,6 +2445,24 @@
         }
     }
 
+    function toggleArrearsInput() {
+        const isChecked = document.getElementById('calc_arrears_enabled').checked;
+        const container = document.getElementById('arrears_container');
+        const input = document.getElementById('calc_arrears');
+        if (isChecked) {
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'none';
+            input.value = '0.00';
+        }
+
+        // Trigger recalculation if already calculated and showing results
+        const calcResults = document.getElementById('calcResults');
+        if (calcResults && calcResults.style.display !== 'none') {
+            calculatePayslip();
+        }
+    }
+
     function calculatePayslip() {
         const employeeId = document.getElementById('calc_employee_id').value;
         const annualCTC = document.getElementById('calc_annual_ctc').value;
@@ -2281,6 +2472,9 @@
         const travelAllowance = travelAllowanceEnabled ? (parseFloat(document.getElementById('calc_travel_allowance').value) || 0) : 0;
         const tdsDeductionEnabled = document.getElementById('calc_tds_deduction_enabled').checked;
         const tdsDeduction = tdsDeductionEnabled ? (parseFloat(document.getElementById('calc_tds_deduction').value) || 0) : 0;
+        const arrearsEnabled = document.getElementById('calc_arrears_enabled').checked;
+        const arrears = arrearsEnabled ? (parseFloat(document.getElementById('calc_arrears').value) || 0) : 0;
+        const arrearsType = arrearsEnabled ? document.getElementById('calc_arrears_type').value : '+';
         const month = "{{ selected_month }}";
         const year = "{{ selected_year }}";
 
@@ -2302,6 +2496,8 @@
                 pf_enabled: pfEnabled,
                 travel_allowance: travelAllowance,
                 tds_deduction: tdsDeduction,
+                arrears: arrears,
+                arrears_type: arrearsType,
                 month: month,
                 year: year
             })
@@ -2340,18 +2536,33 @@
                     travelAllowanceSection.style.setProperty('display', 'none', 'important');
                 }
 
+                // Arrears in earnings (if positive)
+                const arrearsEarningsSection = document.getElementById('res_arrears_earnings_section');
+                const arrearsVal = res.arrears || 0;
+                if (arrearsVal > 0) {
+                    arrearsEarningsSection.style.setProperty('display', 'flex', 'important');
+                    document.getElementById('res_arrears_earnings').innerText = symbol + arrearsVal.toLocaleString();
+                } else {
+                    arrearsEarningsSection.style.setProperty('display', 'none', 'important');
+                }
+
                 document.getElementById('res_gross').innerText = symbol + res.gross_monthly.toLocaleString();
                 document.getElementById('res_net').innerText = symbol + res.net_salary.toLocaleString();
 
                 const pfEnabledSection = document.getElementById('pf_enabled_section');
                 const pfDisabledSection = document.getElementById('pf_disabled_section');
 
+                const negativeArrearsVal = arrearsVal < 0 ? Math.abs(arrearsVal) : 0;
+
                 if (pfEnabled) {
                     pfEnabledSection.style.display = 'block';
                     pfDisabledSection.style.display = 'none';
 
-                    document.getElementById('res_pf').innerText = symbol + (res.employee_pf || 0).toLocaleString();
-                    document.getElementById('res_contributions_total').innerText = symbol + (res.employee_pf || 0).toLocaleString();
+                    const empPf = res.employee_pf || 0;
+                    const erPf = res.employer_pf || 0;
+                    document.getElementById('res_pf').innerText = symbol + empPf.toLocaleString();
+                    document.getElementById('res_employer_pf').innerText = symbol + erPf.toLocaleString();
+                    document.getElementById('res_contributions_total').innerText = symbol + (empPf + erPf).toLocaleString();
                     document.getElementById('res_professional_tax_pf').innerText = symbol + (res.professional_tax || 0).toLocaleString();
 
                     const tdsPfSection = document.getElementById('res_tds_pf_section');
@@ -2363,7 +2574,15 @@
                         tdsPfSection.style.setProperty('display', 'none', 'important');
                     }
 
-                    const totalTaxesPf = (res.professional_tax || 0) + tdsVal;
+                    const arrearsPfSection = document.getElementById('res_arrears_deduction_pf_section');
+                    if (negativeArrearsVal > 0) {
+                        arrearsPfSection.style.setProperty('display', 'flex', 'important');
+                        document.getElementById('res_arrears_deduction_pf').innerText = symbol + negativeArrearsVal.toLocaleString();
+                    } else {
+                        arrearsPfSection.style.setProperty('display', 'none', 'important');
+                    }
+
+                    const totalTaxesPf = (res.professional_tax || 0) + tdsVal + negativeArrearsVal;
                     document.getElementById('res_taxes_total_pf').innerText = symbol + totalTaxesPf.toLocaleString();
                 } else {
                     pfEnabledSection.style.display = 'none';
@@ -2380,7 +2599,15 @@
                         tdsNoPfSection.style.setProperty('display', 'none', 'important');
                     }
 
-                    const totalTaxesNoPf = (res.professional_tax || 0) + tdsVal;
+                    const arrearsNoPfSection = document.getElementById('res_arrears_deduction_no_pf_section');
+                    if (negativeArrearsVal > 0) {
+                        arrearsNoPfSection.style.setProperty('display', 'flex', 'important');
+                        document.getElementById('res_arrears_deduction_no_pf').innerText = symbol + negativeArrearsVal.toLocaleString();
+                    } else {
+                        arrearsNoPfSection.style.setProperty('display', 'none', 'important');
+                    }
+
+                    const totalTaxesNoPf = (res.professional_tax || 0) + tdsVal + negativeArrearsVal;
                     document.getElementById('res_taxes_total_no_pf').innerText = symbol + totalTaxesNoPf.toLocaleString();
                 }
             } else {

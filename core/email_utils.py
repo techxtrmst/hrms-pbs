@@ -1004,7 +1004,9 @@ def send_leave_approval_notification(leave_request):
             "start_date": leave_request.start_date.strftime("%d %B %Y"),
             "end_date": leave_request.end_date.strftime("%d %B %Y"),
             "total_days": leave_request.total_days,
-            "approved_by": leave_request.approved_by.get_full_name() if leave_request.approved_by else "Manager",
+            "approved_by": leave_request.approved_by.get_full_name()
+            if leave_request.approved_by
+            else "System (Auto-Approved)",
             "company_name": company.name,
         }
 

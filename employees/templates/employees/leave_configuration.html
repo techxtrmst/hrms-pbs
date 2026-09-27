@@ -1878,197 +1878,759 @@
     }
 
     /* History View UI */
-    .history-card {
-        background: white;
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-soft);
-        border: 1px solid rgba(226, 232, 240, 0.8);
-        overflow: hidden;
-        margin-bottom: 2rem;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    .history-filter-bar {
-        padding: 1.5rem;
-        background: #f8fafc;
-        border-bottom: 1px solid #e2e8f0;
+    .leave-breadcrumb {
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 1rem;
         display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
         align-items: center;
+        gap: 6px;
+    }
+    .leave-breadcrumb a {
+        color: #64748b;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .leave-breadcrumb a:hover {
+        color: var(--primary-brand);
+    }
+    .leave-breadcrumb .separator {
+        color: #94a3b8;
+        font-size: 0.75rem;
+    }
+    .leave-breadcrumb .current {
+        color: #0f172a;
+        font-weight: 600;
     }
 
-    .history-search {
+    /* Hero Banner Card matching screenshot */
+    .hero-leave-card {
+        background: #ffffff;
+        border-radius: 20px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+        padding: 1.75rem 2rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+    .hero-leave-top-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.5rem;
+        width: 100%;
+    }
+    .hero-leave-info {
         flex: 1;
         min-width: 250px;
-        position: relative;
+        z-index: 2;
     }
-
-    .history-search input {
+    .hero-leave-info h2 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 0.35rem;
+        letter-spacing: -0.02em;
+    }
+    .hero-leave-info p {
+        color: #64748b;
+        font-size: 0.95rem;
+        margin-bottom: 0;
+        font-weight: 400;
+    }
+    .hero-leave-graphic {
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .hero-leave-bottom-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.85rem;
         width: 100%;
-        padding: 10px 16px 10px 42px;
+        position: relative;
+        z-index: 2;
+    }
+    .balances-header-stats {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    /* When in Leave History tab, hide balances employee filter pills */
+    .hero-leave-card[data-active-tab="history"] .balances-header-stats {
+        display: none !important;
+    }
+    .hero-leave-card[data-active-tab="history"] .hero-leave-bottom-row {
+        justify-content: flex-end;
+    }
+    .hero-leave-card[data-active-tab="balances"] .balances-header-stats {
+        display: flex !important;
+    }
+    /* Action Buttons (Run Monthly Accrual & Bulk Upload) + Pill Tabs */
+    .hero-leave-actions-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+    }
+    .hero-action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.45rem 1.1rem;
+        border-radius: 50px;
+        font-size: 0.84rem;
+        font-weight: 600;
+        min-height: 40px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        border: 1px solid transparent;
+        line-height: 1.4;
+    }
+    .hero-action-btn-primary {
+        background: #4f46e5;
+        color: #ffffff !important;
+        box-shadow: 0 3px 10px rgba(79, 70, 229, 0.28);
+    }
+    .hero-action-btn-primary:hover {
+        background: #4338ca;
+        box-shadow: 0 4px 14px rgba(79, 70, 229, 0.38);
+        transform: translateY(-1px);
+        color: #ffffff !important;
+    }
+    .hero-action-btn-secondary {
+        background: #ffffff;
+        color: #334155 !important;
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    }
+    .hero-action-btn-secondary:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        color: #0f172a !important;
+        transform: translateY(-1px);
+    }
+    .hero-action-btn-secondary i {
+        color: #4f46e5;
+    }
+    .hero-leave-tabs-wrapper {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: #f1f5f9;
+        padding: 4px;
         border-radius: 50px;
         border: 1px solid #e2e8f0;
-        outline: none;
-        transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+    .hero-pill-tab {
+        border: none;
+        background: transparent;
+        color: #64748b;
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 7px 18px;
+        border-radius: 50px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        white-space: nowrap;
+        line-height: 1.4;
+    }
+    .hero-pill-tab:hover {
+        color: #1e293b;
+    }
+    .hero-pill-tab.active {
+        background: #4f46e5;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+    .hero-pill-tab.active i {
+        color: #ffffff;
+    }
+
+    @media (max-width: 768px) {
+        .hero-leave-top-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .hero-leave-graphic {
+            display: none;
+        }
+        .hero-leave-bottom-row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .hero-leave-tabs-wrapper {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    /* History Toolbar / Filter Bar */
+    .history-toolbar-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+    .history-search-box {
+        position: relative;
+        flex: 1;
+        min-width: 280px;
+        max-width: 480px;
+    }
+    .history-search-box input {
+        width: 100%;
+        padding: 11px 18px 11px 44px;
+        border-radius: 50px;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
         font-size: 0.9rem;
+        color: #1e293b;
+        outline: none;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     }
-
-    .history-search input:focus {
-        border-color: var(--primary-brand);
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    .history-search-box input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
     }
-
-    .history-search i {
+    .history-search-box i {
         position: absolute;
-        left: 16px;
+        left: 17px;
         top: 50%;
         transform: translateY(-50%);
-        color: var(--text-muted);
+        color: #94a3b8;
+        font-size: 0.95rem;
     }
-
-    .history-select {
-        padding: 10px 32px 10px 16px;
+    .history-filter-select {
+        padding: 10px 34px 10px 18px;
         border-radius: 50px;
         border: 1px solid #e2e8f0;
-        background-color: white;
-        font-size: 0.9rem;
-        font-weight: 500;
-        color: var(--text-main);
+        background-color: #ffffff;
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #334155;
         outline: none;
         cursor: pointer;
-        min-width: 150px;
+        min-width: 160px;
         appearance: none;
         background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
         background-repeat: no-repeat;
-        background-position: right 16px center;
+        background-position: right 14px center;
         background-size: 10px;
-        transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        transition: all 0.2s ease;
+    }
+    .history-filter-select:focus {
+        border-color: #6366f1;
     }
 
-    .history-select:focus {
-        border-color: var(--primary-brand);
+    /* List vs Calendar Toggle */
+    .view-toggle-pill {
+        display: inline-flex;
+        background: #f1f5f9;
+        padding: 4px;
+        border-radius: 50px;
+        border: 1px solid #e2e8f0;
+    }
+    .view-toggle-btn {
+        border: none;
+        background: transparent;
+        color: #64748b;
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 6px 16px;
+        border-radius: 50px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+    }
+    .view-toggle-btn.active {
+        background: #4f46e5;
+        color: #ffffff !important;
+        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
     }
 
-    /* History Table */
-    .history-table-container {
-        width: 100%;
-        overflow-x: auto;
+    /* Leave History Table Card */
+    .leave-history-table-card {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
     }
-
-    .history-table {
+    .leave-history-table {
         width: 100%;
         border-collapse: collapse;
         text-align: left;
     }
-
-    .history-table th {
-        padding: 1.25rem 1.5rem;
-        background: #f8fafc;
-        font-size: 0.75rem;
+    .leave-history-table th {
+        padding: 1rem 1.25rem;
+        background: #fafbfc;
+        font-size: 0.72rem;
         font-weight: 700;
         text-transform: uppercase;
-        color: var(--text-muted);
+        color: #64748b;
         letter-spacing: 0.05em;
         border-bottom: 1px solid #e2e8f0;
+        white-space: nowrap;
     }
-
-    .history-table td {
-        padding: 1.25rem 1.5rem;
+    .leave-history-table td {
+        padding: 1.1rem 1.25rem;
         border-bottom: 1px solid #f1f5f9;
         vertical-align: middle;
-        font-size: 0.9rem;
+        font-size: 0.88rem;
+    }
+    .leave-history-table tbody tr {
+        transition: all 0.15s ease;
+        cursor: pointer;
+    }
+    .leave-history-table tbody tr:hover {
+        background-color: #f8fafc;
     }
 
-    .history-table tr {
-        transition: background-color 0.2s;
+    /* Batch Employee Cell */
+    .batch-icon-box {
+        width: 38px;
+        height: 38px;
+        background: #e0e7ff;
+        color: #4f46e5;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+    .user-avatar-sm {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+    .user-initials-sm {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: #e0e7ff;
+        color: #4f46e5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.85rem;
+        flex-shrink: 0;
     }
 
-    .history-table tr:hover {
-        background-color: #fafafa;
-    }
-
-    /* Accordion / Collapsible Accrual Rows */
-    .history-summary-row {
-        transition: all 0.2s ease;
-    }
-
-    .history-summary-row:hover {
-        background-color: #f1f5f9 !important;
-    }
-
-    .accrual-detail-row {
-        animation: fadeIn 0.2s ease-out;
-    }
-
-    /* Badges & Tags */
-    .badge-tx {
+    /* Badges */
+    .badge-pill-credit {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 6px 14px;
+        gap: 5px;
+        padding: 4px 12px;
+        background: #dcfce7;
+        color: #166534;
         border-radius: 50px;
         font-weight: 700;
-        font-size: 0.8rem;
+        font-size: 0.72rem;
+        letter-spacing: 0.03em;
         text-transform: uppercase;
-        letter-spacing: 0.02em;
     }
-
-    .badge-tx.credit {
-        background: #dcfce7;
-        color: #15803d;
-        border: 1px solid rgba(21, 128, 61, 0.1);
-    }
-
-    .badge-tx.debit {
-        background: #fee2e2;
-        color: #b91c1c;
-        border: 1px solid rgba(185, 28, 28, 0.1);
-    }
-
-    .badge-leave-type {
+    .dot-credit {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #16a34a;
         display: inline-block;
-        padding: 4px 10px;
+    }
+    .badge-pill-debit {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 12px;
+        background: #fee2e2;
+        color: #991b1b;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 0.72rem;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+    }
+    .dot-debit {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #dc2626;
+        display: inline-block;
+    }
+    .badge-pill-monthly {
+        display: inline-block;
+        padding: 3px 10px;
+        background: #e0f2fe;
+        color: #0284c7;
+        font-weight: 600;
+        font-size: 0.78rem;
+        border-radius: 20px;
+    }
+    .badge-pill-lop {
+        display: inline-block;
+        padding: 3px 10px;
         background: #f1f5f9;
         color: #475569;
         font-weight: 600;
-        font-size: 0.8rem;
-        border-radius: 6px;
-        border: 1px solid #e2e8f0;
+        font-size: 0.78rem;
+        border-radius: 20px;
     }
-
-    .actor-badge {
+    .days-val {
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+    .days-val.credit {
+        color: #16a34a;
+    }
+    .days-val.debit {
+        color: #dc2626;
+    }
+    .actor-system {
+        color: #475569;
+        font-weight: 500;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .actor-admin-pill {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 4px 10px;
+        padding: 4px 12px;
         background: #eff6ff;
-        color: #1d4ed8;
+        color: #2563eb;
         border-radius: 50px;
         font-size: 0.8rem;
         font-weight: 600;
-        border: 1px solid rgba(29, 78, 216, 0.1);
+    }
+    .btn-row-action {
+        width: 32px;
+        height: 32px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .btn-row-action:hover {
+        background: #4f46e5;
+        color: #ffffff;
+        border-color: #4f46e5;
     }
 
-    .actor-badge.system {
-        background: #f1f5f9;
+    /* Table Footer & Pagination */
+    .history-table-footer {
+        padding: 1rem 1.5rem;
+        background: #fafbfc;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        font-size: 0.85rem;
         color: #64748b;
-        border-color: #e2e8f0;
+    }
+    .history-pagination {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .page-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        color: #475569;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .page-btn:hover:not(:disabled) {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+    }
+    .page-btn.active {
+        background: #4f46e5;
+        color: #ffffff;
+        border-color: #4f46e5;
+    }
+    .page-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    /* ========================================================
+       SLIDE-OVER DRAWER (Leave Transaction Details)
+       ======================================================== */
+    .slide-drawer-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(2px);
+        z-index: 1050;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .slide-drawer-backdrop.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .slide-drawer-panel {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 460px;
+        max-width: 92vw;
+        height: 100vh;
+        background: #ffffff;
+        z-index: 1060;
+        box-shadow: -10px 0 35px rgba(0, 0, 0, 0.12);
+        transform: translateX(100%);
+        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+    }
+    .slide-drawer-panel.active {
+        transform: translateX(0);
+    }
+    .slide-drawer-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        background: #ffffff;
+        z-index: 10;
+    }
+    .slide-drawer-header h5 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+    .btn-close-drawer {
+        border: none;
+        background: transparent;
+        color: #64748b;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: all 0.2s;
+    }
+    .btn-close-drawer:hover {
+        color: #0f172a;
+        background: #f1f5f9;
+    }
+    .slide-drawer-body {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        flex: 1;
+    }
+
+    /* Drawer Top Summary Card */
+    .drawer-top-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 1.25rem;
+        border-bottom: 1px solid #f1f5f9;
+        gap: 1rem;
+    }
+    .drawer-summary-left {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        min-width: 0;
+    }
+    .drawer-icon-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: #eff6ff;
+        color: #3b82f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+    .drawer-summary-titles {
+        min-width: 0;
+    }
+    .drawer-summary-titles h4 {
+        margin: 0 0 2px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #0f172a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .drawer-summary-titles span {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+
+    /* Drawer Sections */
+    .drawer-section-heading {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .drawer-info-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+    }
+    .drawer-info-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        padding: 4px 0;
+    }
+    .drawer-info-label {
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+    }
+    .drawer-info-label i {
+        color: #94a3b8;
+        width: 16px;
+        text-align: center;
+    }
+    .drawer-info-val {
+        font-weight: 600;
+        color: #1e293b;
+        text-align: right;
+    }
+
+    /* Drawer Nested Table */
+    .drawer-table-wrap {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+        max-height: 260px;
+        overflow-y: auto;
+    }
+    .drawer-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+    }
+    .drawer-table th {
+        background: #f8fafc;
+        padding: 8px 12px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #64748b;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .drawer-table td {
+        padding: 8px 12px;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+    .drawer-table tr:last-child td {
+        border-bottom: none;
+    }
+    .drawer-user-cell {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .drawer-user-cell .user-initials-xs {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: #e0e7ff;
+        color: #4338ca;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.7rem;
+        flex-shrink: 0;
+    }
+    .drawer-user-cell img {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
     }
 
     /* Empty state */
     .history-empty {
-        padding: 5rem 2rem;
+        padding: 4rem 2rem;
         text-align: center;
         color: var(--text-muted);
     }
-
     .history-empty i {
-        font-size: 3rem;
+        font-size: 2.8rem;
         color: #cbd5e1;
         margin-bottom: 1rem;
     }
-
     .history-empty h4 {
         color: var(--text-main);
         font-weight: 700;
@@ -2221,71 +2783,110 @@
 
 {% block content %}
 <div data-is-bluebix="{% if is_bluebix %}true{% else %}false{% endif %}" data-csrf-token="{{ csrf_token }}">
-    <div class="config-container"></div>
+    <div class="config-container">
 
-    <!-- Header -->
-    <div class="header-card">
-        <div class="header-content">
-            <div class="header-info">
-                <h2><span class="d-none d-sm-inline">Leave Configuration</span><span class="d-sm-none">Leave
-                        Config</span></h2>
-                <p class="d-none d-sm-block">
-                    Manage leave allocations for all employees. Automated monthly accruals run on the 1st of every
-                    month.
-                </p>
-                <p class="d-sm-none">
-                    Manage employee leave allocations.
-                </p>
-                <div class="header-stats">
-                    <a href="?status=active"
-                        class="stat-badge {% if selected_status == 'active' %}active-filter{% endif %}"
-                        title="Show Active Employees">
-                        <i class="fas fa-user-check"></i> <span class="d-none d-sm-inline">{{ active_count }}
-                            Active</span><span class="d-sm-none">{{ active_count }}</span>
-                    </a>
-                    <a href="?status=inactive"
-                        class="stat-badge {% if selected_status == 'inactive' %}inactive-filter{% endif %}"
-                        title="Show Ex-Employees">
-                        <i class="fas fa-user-slash"></i> <span class="d-none d-sm-inline">{{ inactive_count }}
-                            Ex-Employees</span><span class="d-sm-none">{{ inactive_count }}</span>
-                    </a>
-                    <a href="?status=all" class="stat-badge {% if selected_status == 'all' %}all-filter{% endif %}"
-                        title="Show All Records">
-                        <i class="fas fa-users"></i> <span class="d-none d-sm-inline">Show All</span><span
-                            class="d-sm-none">All</span>
-                    </a>
-                    <a href="#" class="stat-badge" data-bs-toggle="modal" data-bs-target="#accrualModal"
-                        title="Click to select month">
-                        <i class="fas fa-calendar-alt"></i> <span class="d-none d-sm-inline">Select Period</span><span
-                            class="d-sm-none">Period</span>
-                    </a>
-                </div>
-            </div>
-            <div class="header-actions">
-                <div class="d-flex flex-column flex-sm-row gap-3">
-                    <button class="btn-hero" data-bs-toggle="modal" data-bs-target="#accrualModal">
-                        <i class="fas fa-magic"></i>
-                        <span class="d-none d-sm-inline">Run Monthly Accrual</span><span class="d-sm-none">Run
-                            Accrual</span>
-                    </button>
-                    <a href="{% url 'bulk_leave_upload' %}" class="btn-hero btn-secondary">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <span class="d-none d-sm-inline">Bulk Upload</span><span class="d-sm-none">Upload</span>
-                    </a>
-                </div>
-            </div>
-        </div>
+    <!-- Breadcrumb -->
+    <div class="leave-breadcrumb">
+        <a href="#" onclick="switchTab('balances'); return false;">Leave</a>
+        <span class="separator">&gt;</span>
+        <span class="current" id="breadcrumbActiveText">Leave Balances</span>
     </div>
 
-    <!-- Tab Controls -->
-    <div class="tab-container">
-        <div class="segmented-control">
-            <button class="tab-btn active" id="tab-balances" onclick="switchTab('balances')">
-                <i class="fas fa-wallet"></i> Leave Balances
-            </button>
-            <button class="tab-btn" id="tab-history" onclick="switchTab('history')">
-                <i class="fas fa-history"></i> Leave History
-            </button>
+    <!-- Hero Header Card matching screenshot -->
+    <div class="hero-leave-card" id="heroLeaveCard" data-active-tab="balances">
+        <!-- Top Row: Title + Graphic Artwork -->
+        <div class="hero-leave-top-row">
+            <div class="hero-leave-info">
+                <h2 id="heroCardTitle">Leave Balances</h2>
+                <p id="heroCardSubtitle">Manage leave allocations for all employees. Automated monthly accruals run on the 2nd of every month.</p>
+            </div>
+
+            <!-- Stylized Graphic Artwork (Calendar & Documents) -->
+            <div class="hero-leave-graphic">
+                <svg width="220" height="120" viewBox="0 0 220 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Soft background aura -->
+                    <circle cx="110" cy="65" r="50" fill="#EEF2FF" />
+                    <ellipse cx="150" cy="85" rx="45" ry="25" fill="#E0F2FE" />
+                    <!-- Calendar Card -->
+                    <rect x="70" y="24" width="70" height="64" rx="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" />
+                    <path d="M70 36C70 29.3726 75.3726 24 82 24H128C134.627 24 140 29.3726 140 36V40H70V36Z" fill="#6366F1" />
+                    <!-- Spiral Rings -->
+                    <rect x="84" y="20" width="4" height="8" rx="2" fill="#4338CA" />
+                    <rect x="102" y="20" width="4" height="8" rx="2" fill="#4338CA" />
+                    <rect x="120" y="20" width="4" height="8" rx="2" fill="#4338CA" />
+                    <!-- Calendar Grid Dots -->
+                    <rect x="80" y="50" width="8" height="6" rx="2" fill="#E0E7FF" />
+                    <rect x="94" y="50" width="8" height="6" rx="2" fill="#E0E7FF" />
+                    <rect x="108" y="50" width="8" height="6" rx="2" fill="#E0E7FF" />
+                    <rect x="122" y="50" width="8" height="6" rx="2" fill="#818CF8" />
+                    <rect x="80" y="62" width="8" height="6" rx="2" fill="#E0E7FF" />
+                    <rect x="94" y="62" width="8" height="6" rx="2" fill="#4F46E5" />
+                    <rect x="108" y="62" width="8" height="6" rx="2" fill="#E0E7FF" />
+                    <rect x="122" y="62" width="8" height="6" rx="2" fill="#E0E7FF" />
+                    <rect x="80" y="74" width="8" height="6" rx="2" fill="#E0E7FF" />
+                    <rect x="94" y="74" width="8" height="6" rx="2" fill="#E0E7FF" />
+                    <rect x="108" y="74" width="8" height="6" rx="2" fill="#818CF8" />
+                    <!-- Checklist / Document next to calendar -->
+                    <rect x="145" y="16" width="55" height="74" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" />
+                    <rect x="155" y="28" width="35" height="4" rx="2" fill="#94A3B8" />
+                    <rect x="155" y="38" width="25" height="4" rx="2" fill="#CBD5E1" />
+                    <rect x="155" y="48" width="30" height="4" rx="2" fill="#CBD5E1" />
+                    <circle cx="160" cy="62" r="3" fill="#10B981" />
+                    <rect x="168" y="60" width="22" height="4" rx="2" fill="#CBD5E1" />
+                    <circle cx="160" cy="74" r="3" fill="#10B981" />
+                    <rect x="168" y="72" width="18" height="4" rx="2" fill="#CBD5E1" />
+                    <!-- Floating Leaves & Decorative sparkles -->
+                    <path d="M45 80C45 80 50 68 62 70C62 70 60 82 45 80Z" fill="#34D399" opacity="0.8" />
+                    <path d="M55 75C55 75 62 85 58 95C58 95 48 90 55 75Z" fill="#6EE7B7" opacity="0.9" />
+                    <circle cx="68" cy="40" r="3" fill="#818CF8" />
+                    <circle cx="205" cy="50" r="2.5" fill="#38BDF8" />
+                    <circle cx="140" cy="100" r="2" fill="#A7F3D0" />
+                </svg>
+            </div>
+        </div>
+
+        <!-- Bottom Row: Balances Status Badges (Left) + Action Buttons & Tab Switcher (Right) -->
+        <div class="hero-leave-bottom-row">
+            <!-- Balances-specific status badges -->
+            <div id="balancesHeaderStats" class="balances-header-stats">
+                <a href="?status=active"
+                    class="stat-badge {% if selected_status == 'active' %}active-filter{% endif %}"
+                    title="Show Active Employees">
+                    <i class="fas fa-user-check"></i> <span class="d-none d-sm-inline">{{ active_count }} Active</span><span class="d-sm-none">{{ active_count }}</span>
+                </a>
+                <a href="?status=inactive"
+                    class="stat-badge {% if selected_status == 'inactive' %}inactive-filter{% endif %}"
+                    title="Show Ex-Employees">
+                    <i class="fas fa-user-slash"></i> <span class="d-none d-sm-inline">{{ inactive_count }} Ex-Employees</span><span class="d-sm-none">{{ inactive_count }}</span>
+                </a>
+                <a href="?status=all" class="stat-badge {% if selected_status == 'all' %}all-filter{% endif %}"
+                    title="Show All Records">
+                    <i class="fas fa-users"></i> <span class="d-none d-sm-inline">Show All</span><span class="d-sm-none">All</span>
+                </a>
+                <a href="#" class="stat-badge" data-bs-toggle="modal" data-bs-target="#accrualModal"
+                    title="Click to select month">
+                    <i class="fas fa-calendar-alt"></i> <span class="d-none d-sm-inline">Select Period</span><span class="d-sm-none">Period</span>
+                </a>
+            </div>
+
+            <!-- Action Buttons (Run Monthly Accrual & Bulk Upload) + Pill Tabs Switcher (Always on right) -->
+            <div class="hero-leave-actions-group ms-auto">
+                <button type="button" class="hero-action-btn hero-action-btn-primary" data-bs-toggle="modal" data-bs-target="#accrualModal" title="Run Monthly Accrual">
+                    <i class="fas fa-magic"></i> <span>Run Monthly Accrual</span>
+                </button>
+                <a href="{% url 'bulk_leave_upload' %}" class="hero-action-btn hero-action-btn-secondary" title="Bulk Upload Leaves">
+                    <i class="fas fa-cloud-upload-alt"></i> <span>Bulk Upload</span>
+                </a>
+
+                <div class="hero-leave-tabs-wrapper">
+                    <button type="button" class="hero-pill-tab active" id="tab-balances" onclick="switchTab('balances')">
+                        <i class="fas fa-wallet"></i> Leave Balances
+                    </button>
+                    <button type="button" class="hero-pill-tab" id="tab-history" onclick="switchTab('history')">
+                        <i class="fas fa-history"></i> Leave History
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -2570,200 +3171,348 @@
 
     <!-- Leave Transaction History View -->
     <div id="history-view-container" style="display: none; animation: fadeIn 0.4s ease-out;">
-        <div class="history-card">
-            <!-- Filter Bar -->
-            <div class="history-filter-bar d-flex align-items-center justify-content-between flex-wrap gap-3">
-                <div class="d-flex align-items-center flex-grow-1 gap-2 flex-wrap" style="min-width: 250px;">
-                    <div class="history-search flex-grow-1" style="min-width: 200px;">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="historySearchInput" placeholder="Search by employee name, reason, or actor...">
+        <!-- History Toolbar / Filters -->
+        <div class="history-toolbar-wrap">
+            <div class="history-search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="historySearchInput" placeholder="Search by employee name, reason, or actor..." oninput="filterHistoryTable()">
+            </div>
+
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <select id="historyFilterTxType" class="history-filter-select" onchange="filterHistoryTable()">
+                    <option value="ALL">All Transactions</option>
+                    <option value="CREDIT">Credits only</option>
+                    <option value="DEBIT">Debits only</option>
+                </select>
+
+                <select id="historyFilterLeaveType" class="history-filter-select" onchange="filterHistoryTable()">
+                    <option value="ALL">All Leave Types</option>
+                    <option value="MONTHLY_RUN">Monthly Run</option>
+                    <option value="UL">Unpaid Leave (LOP)</option>
+                    <option value="SL">Sick Leave</option>
+                    <option value="CL">Casual Leave</option>
+                    <option value="COMBINED">Combined Sick/Casual</option>
+                </select>
+
+                <!-- View Toggle (List vs Calendar) -->
+                <div class="view-toggle-pill">
+                    <button type="button" class="view-toggle-btn active" id="btn-list-view" onclick="switchHistoryView('list')">
+                        <i class="fas fa-list-ul"></i> List
+                    </button>
+                    <button type="button" class="view-toggle-btn" id="btn-calendar-view" onclick="switchHistoryView('calendar')">
+                        <i class="fas fa-calendar-alt"></i> Calendar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table View Card -->
+        <div id="history-table-view-container">
+            <div class="leave-history-table-card">
+                <div class="table-responsive">
+                    <table class="leave-history-table">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Employee</th>
+                                <th>Type</th>
+                                <th>Leave Type</th>
+                                <th>Days</th>
+                                <th>Description</th>
+                                <th>Performed By</th>
+                                <th style="width: 48px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            {% for item in history_items %}
+                            <tr class="history-data-row"
+                                id="row_{{ item.id }}"
+                                data-id="{{ item.id }}"
+                                data-tx-type="{{ item.tx_type }}"
+                                data-leave-type-code="{{ item.leave_type_code }}"
+                                data-search="{{ item.search_text }}"
+                                onclick="openTransactionDrawer('{{ item.id }}')">
+                                <!-- Date & Time -->
+                                <td class="text-nowrap" style="color: #475569; font-weight: 500; font-size: 0.86rem;">
+                                    {{ item.date_display }}
+                                </td>
+
+                                <!-- Employee -->
+                                <td>
+                                    {% if item.is_batch %}
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="batch-icon-box">
+                                            <i class="fas fa-layer-group"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark" style="font-size: 0.88rem;">{{ item.title }}</div>
+                                            <div class="text-muted small d-flex align-items-center gap-1" style="font-size: 0.76rem;">
+                                                <span>{{ item.subtitle }}</span>
+                                                <i class="fas fa-chevron-down" style="font-size: 0.65rem;"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <div class="d-flex align-items-center gap-3">
+                                        {% if item.employee_avatar %}
+                                        <img src="{{ item.employee_avatar }}" class="user-avatar-sm" alt="pic">
+                                        {% else %}
+                                        <div class="user-initials-sm">{{ item.employee_initials }}</div>
+                                        {% endif %}
+                                        <div>
+                                            <div class="fw-bold text-dark" style="font-size: 0.88rem;">{{ item.employee_name }}</div>
+                                            <div class="text-muted small" style="font-size: 0.76rem;">{{ item.employee_email }}</div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </td>
+
+                                <!-- Type -->
+                                <td>
+                                    {% if item.tx_type == 'CREDIT' %}
+                                    <span class="badge-pill-credit"><span class="dot-credit"></span> CREDIT</span>
+                                    {% else %}
+                                    <span class="badge-pill-debit"><span class="dot-debit"></span> DEBIT</span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- Leave Type -->
+                                <td>
+                                    {% if item.leave_type_code == 'MONTHLY_RUN' %}
+                                    <span class="badge-pill-monthly">Monthly Run</span>
+                                    {% elif item.leave_type_code == 'UL' %}
+                                    <span class="badge-pill-lop">Unpaid Leave (LOP)</span>
+                                    {% else %}
+                                    <span style="font-weight: 500; color: #334155; font-size: 0.86rem;">{{ item.leave_type_display }}</span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- Days -->
+                                <td>
+                                    <span class="days-val {% if item.tx_type == 'CREDIT' %}credit{% else %}debit{% endif %}">
+                                        {{ item.days_display }}
+                                    </span>
+                                </td>
+
+                                <!-- Description -->
+                                <td style="color: #334155; font-weight: 500; font-size: 0.86rem; max-width: 320px;">
+                                    {{ item.description }}
+                                </td>
+
+                                <!-- Performed By -->
+                                <td>
+                                    {% if item.is_system %}
+                                    <span class="actor-system">
+                                        <i class="fas fa-cog"></i> System Accrual
+                                    </span>
+                                    {% else %}
+                                    <span class="actor-admin-pill">
+                                        <i class="fas fa-user"></i> {{ item.actor_display }}
+                                    </span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- Action Arrow -->
+                                <td class="text-end pe-3" onclick="event.stopPropagation(); openTransactionDrawer('{{ item.id }}');">
+                                    <button type="button" class="btn-row-action" title="View details">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr id="historyNoRecordsRow">
+                                <td colspan="8">
+                                    <div class="history-empty">
+                                        <i class="fas fa-history"></i>
+                                        <h4>No Transaction Logs Found</h4>
+                                        <p class="text-muted small">All leave accruals, approved requests, and adjustments will appear here.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+
+                            <!-- Row for no search filter results -->
+                            <tr id="historyNoMatchesRow" style="display: none;">
+                                <td colspan="8">
+                                    <div class="history-empty">
+                                        <i class="fas fa-search"></i>
+                                        <h4>No Matching Records</h4>
+                                        <p class="text-muted small">Try adjusting your search query or filters.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Footer with showing count & pagination -->
+                <div class="history-table-footer">
+                    <div id="historyShowingCountText">
+                        Showing 1 – {{ history_items|length|default:"0" }} of {{ total_history_count|default:"0" }} transactions
                     </div>
-                    <div>
-                        <select id="historyFilterTxType" class="history-select">
-                            <option value="ALL">All Transactions</option>
-                            <option value="CREDIT">Credits only</option>
-                            <option value="DEBIT">Debits only</option>
-                        </select>
-                    </div>
-                    <div>
-                        <select id="historyFilterLeaveType" class="history-select">
-                            <option value="ALL">All Leave Types</option>
-                            <option value="SL">Sick Leave (SL)</option>
-                            <option value="CL">Casual Leave (CL)</option>
-                            <option value="COMBINED">Combined (SL/CL)</option>
-                            <option value="UL">LOP / Unpaid (UL)</option>
-                        </select>
+                    <div class="history-pagination" id="historyPaginationControls">
+                        <button type="button" class="page-btn" id="btnPrevPage" onclick="changeHistoryPage(-1)" disabled>&lt;</button>
+                        <button type="button" class="page-btn active" id="btnCurrentPage">1</button>
+                        <button type="button" class="page-btn" id="btnNextPage" onclick="changeHistoryPage(1)" disabled>&gt;</button>
                     </div>
                 </div>
-                <!-- View Toggle Buttons -->
-                <div class="history-view-toggle">
-                    <div class="segmented-control p-1" style="background: #f1f5f9; border-radius: 30px; display: inline-flex; border: 1px solid #e2e8f0;">
-                        <button type="button" class="tab-btn py-1 px-3 active" id="btn-list-view" onclick="switchHistoryView('list')" style="font-size: 0.85rem; font-weight: 600; padding: 6px 16px; border-radius: 30px;">
-                            <i class="fas fa-list me-1"></i> List
+            </div>
+        </div>
+
+        <!-- Calendar View Container -->
+        <div id="history-calendar-view-container" style="display: none; animation: fadeIn 0.4s ease-out;">
+            <div id="history-calendar-view" style="padding: 1.5rem; background: white; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 16px -2px rgba(0,0,0,0.04);">
+                <!-- Calendar Navigation & Legend -->
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <button type="button" class="calendar-nav-btn" onclick="navigateCalendar(-1)" title="Previous Month">
+                            <i class="fas fa-chevron-left"></i>
                         </button>
-                        <button type="button" class="tab-btn py-1 px-3" id="btn-calendar-view" onclick="switchHistoryView('calendar')" style="font-size: 0.85rem; font-weight: 600; padding: 6px 16px; border-radius: 30px;">
-                            <i class="fas fa-calendar-alt me-1"></i> Calendar
+                        <h4 class="m-0 fw-bold text-dark" id="calendarMonthYearDisplay" style="min-width: 180px; text-align: center; font-size: 1.2rem;"></h4>
+                        <button type="button" class="calendar-nav-btn" onclick="navigateCalendar(1)" title="Next Month">
+                            <i class="fas fa-chevron-right"></i>
                         </button>
+                    </div>
+                    <div class="d-flex gap-3 align-items-center text-muted small">
+                        <div class="d-flex align-items-center gap-1">
+                            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #dcfce7; border: 1px solid #16a34a;"></span>
+                            <span>Credits</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #fee2e2; border: 1px solid #dc2626;"></span>
+                            <span>Debits</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #eff6ff; border: 1px solid #1d4ed8;"></span>
+                            <span>System Runs</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendar Grid -->
+                <div class="calendar-wrapper">
+                    <div class="calendar-grid-header">
+                        <div>Sun</div>
+                        <div>Mon</div>
+                        <div>Tue</div>
+                        <div>Wed</div>
+                        <div>Thu</div>
+                        <div>Fri</div>
+                        <div>Sat</div>
+                    </div>
+                    <div class="calendar-grid" id="calendarDaysGrid">
+                        <!-- Dynamically populated via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================
+         SLIDE-OVER SIDE DRAWER (Leave Transaction Details)
+         ======================================================== -->
+    <div class="slide-drawer-backdrop" id="transactionDrawerBackdrop" onclick="closeTransactionDrawer()"></div>
+    <div class="slide-drawer-panel" id="transactionDrawerPanel">
+        <!-- Header -->
+        <div class="slide-drawer-header">
+            <h5>Leave Transaction Details</h5>
+            <button type="button" class="btn-close-drawer" onclick="closeTransactionDrawer()" aria-label="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="slide-drawer-body">
+            <!-- Top Summary Card -->
+            <div class="drawer-top-summary">
+                <div class="drawer-summary-left">
+                    <div id="drawerSummaryIconBox" class="drawer-icon-box">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <div class="drawer-summary-titles">
+                        <h4 id="drawerSummaryTitle">Accrual Run Breakdown</h4>
+                        <span id="drawerSummarySubtitle">Monthly Accrual (9/2026)</span>
+                    </div>
+                </div>
+                <div id="drawerSummaryBadgeWrap">
+                    <span class="badge-pill-credit" id="drawerSummaryBadge"><span class="dot-credit"></span> CREDIT</span>
+                </div>
+            </div>
+
+            <!-- Transaction Information Section -->
+            <div>
+                <div class="drawer-section-heading">Transaction Information</div>
+                <div class="drawer-info-grid">
+                    <div class="drawer-info-row">
+                        <span class="drawer-info-label"><i class="far fa-calendar-alt"></i> Date & Time</span>
+                        <span class="drawer-info-val" id="drawerInfoDateTime">2026-09-27 19:26</span>
+                    </div>
+                    <div class="drawer-info-row">
+                        <span class="drawer-info-label"><i class="far fa-credit-card"></i> Transaction Type</span>
+                        <span class="drawer-info-val" id="drawerInfoTxType">
+                            <span class="badge-pill-credit"><span class="dot-credit"></span> CREDIT</span>
+                        </span>
+                    </div>
+                    <div class="drawer-info-row">
+                        <span class="drawer-info-label"><i class="far fa-clipboard"></i> Leave Type</span>
+                        <span class="drawer-info-val" id="drawerInfoLeaveType">
+                            <span class="badge-pill-monthly">Monthly Run</span>
+                        </span>
+                    </div>
+                    <div class="drawer-info-row">
+                        <span class="drawer-info-label"><i class="fas fa-chart-bar"></i> Days</span>
+                        <span class="drawer-info-val days-val credit" id="drawerInfoDays">+7.0</span>
+                    </div>
+                    <div class="drawer-info-row">
+                        <span class="drawer-info-label"><i class="far fa-file-alt"></i> Description</span>
+                        <span class="drawer-info-val" id="drawerInfoDescription" style="max-width: 220px; font-weight: 500;">Monthly Accrual (9/2026)</span>
+                    </div>
+                    <div class="drawer-info-row">
+                        <span class="drawer-info-label"><i class="far fa-user"></i> Performed By</span>
+                        <span class="drawer-info-val" id="drawerInfoPerformedBy">System Accrual</span>
+                    </div>
+                    <div class="drawer-info-row">
+                        <span class="drawer-info-label"><i class="fas fa-users"></i> Affected Employees</span>
+                        <span class="drawer-info-val" id="drawerInfoAffectedCount">7 Employees</span>
+                    </div>
+                    <div class="drawer-info-row">
+                        <span class="drawer-info-label"><i class="fas fa-redo-alt"></i> Reference</span>
+                        <span class="drawer-info-val" id="drawerInfoReference" style="color: #64748b; font-family: monospace; font-size: 0.82rem;">Accrual Job #ACR-2026-09</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Table View Container -->
-            <div id="history-table-view-container">
-                <div class="history-table-container">
-                <table class="history-table">
-                    <thead>
-                        <tr>
-                            <th>Date & Time</th>
-                            <th>Employee</th>
-                            <th>Type</th>
-                            <th>Leave Type</th>
-                            <th class="text-center">Days</th>
-                            <th>Description</th>
-                            <th>Performed By</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyTableBody">
-                        {% for tx in transactions %}
-                        <tr class="history-row"
-                            data-employee="{{ tx.employee.user.get_full_name|lower }} {% if tx.employee.pseudo_name %}({{ tx.employee.pseudo_name|lower }}){% endif %} {{ tx.employee.user.email|lower }}"
-                            data-tx-type="{{ tx.transaction_type }}"
-                            data-leave-type="{{ tx.leave_type }}"
-                            data-reason="{{ tx.reason|lower }}"
-                            data-actor="{% if tx.created_by %}{{ tx.created_by.get_full_name|lower }}{% else %}system accrual{% endif %}"
-                            data-date="{{ tx.created_at|date:'Y-m-d' }}"
-                            data-date-display="{{ tx.created_at|date:'Y-m-d H:i' }}"
-                            data-employee-display-name="{{ tx.employee.user.get_full_name }}{% if tx.employee.pseudo_name %} ({{ tx.employee.pseudo_name }}){% endif %}"
-                            data-employee-email="{{ tx.employee.user.email }}"
-                            data-employee-initials="{{ tx.employee.user.first_name|first }}{% if tx.employee.user.last_name %}{{ tx.employee.user.last_name|first }}{% endif %}"
-                            data-employee-avatar="{% if tx.employee.profile_picture %}{{ tx.employee.profile_picture.url }}{% endif %}"
-                            data-amount="{{ tx.amount|floatformat:1 }}"
-                            data-leave-type-display="{{ tx.get_leave_type_display }}"
-                            data-actor-display="{% if tx.created_by %}{{ tx.created_by.get_full_name }}{% else %}System Accrual{% endif %}"
-                            data-actor-is-system="{% if tx.created_by %}false{% else %}true{% endif %}">
-                            <td class="text-nowrap" style="font-weight: 500; color: #475569;">
-                                {{ tx.created_at|date:"Y-m-d H:i" }}
-                            </td>
-                            <td>
-                                <div class="user-profile">
-                                    {% if tx.employee.profile_picture %}
-                                    <img src="{{ tx.employee.profile_picture.url }}" class="user-avatar" alt="pic">
-                                    {% else %}
-                                    <div class="user-initials" style="width: 38px; height: 38px; font-size: 0.9rem; border-radius: 8px;">
-                                        {{ tx.employee.user.first_name|first }}{{ tx.employee.user.last_name|first }}
-                                    </div>
-                                    {% endif %}
-                                    <div>
-                                        <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.85rem;">
-                                            {{ tx.employee.user.get_full_name }}
-                                            {% if tx.employee.pseudo_name %}({{ tx.employee.pseudo_name }}){% endif %}
-                                        </h6>
-                                        <small class="text-muted" style="font-size: 0.75rem;">{{ tx.employee.user.email }}</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="badge-tx {% if tx.transaction_type == 'CREDIT' %}credit{% else %}debit{% endif %}">
-                                    <i class="fas {% if tx.transaction_type == 'CREDIT' %}fa-plus-circle{% else %}fa-minus-circle{% endif %}"></i>
-                                    {{ tx.transaction_type }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge-leave-type">
-                                    {{ tx.get_leave_type_display }}
-                                </span>
-                            </td>
-                            <td class="text-center" style="font-weight: 700; font-size: 0.95rem; {% if tx.transaction_type == 'CREDIT' %}color: #16a34a;{% else %}color: #dc2626;{% endif %}">
-                                {% if tx.transaction_type == 'CREDIT' %}+{% else %}-{% endif %}{{ tx.amount|floatformat:1 }}
-                            </td>
-                            <td style="color: #334155; font-weight: 500; max-width: 300px; word-wrap: break-word;">
-                                {{ tx.reason }}
-                            </td>
-                            <td>
-                                {% if tx.created_by %}
-                                <span class="actor-badge">
-                                    <i class="fas fa-user-shield"></i>
-                                    {{ tx.created_by.get_full_name }}
-                                </span>
-                                {% else %}
-                                <span class="actor-badge system">
-                                    <i class="fas fa-robot"></i>
-                                    System Accrual
-                                </span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr id="historyNoRecordsRow">
-                            <td colspan="7">
-                                <div class="history-empty">
-                                    <i class="fas fa-history"></i>
-                                    <h4>No Audit Trail Logs Found</h4>
-                                    <p class="text-muted small">All future automatic accruals, manual additions, and request deductions will appear here.</p>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
+            <!-- Employees Credited / Affected Section -->
+            <div id="drawerEmployeesSection">
+                <div class="drawer-section-heading" id="drawerEmployeesSectionHeading">Employees Credited (7)</div>
+                <div class="drawer-table-wrap">
+                    <table class="drawer-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Role</th>
+                                <th class="text-center" id="drawerColDaysLabel">Days Credited</th>
+                                <th class="text-end">New Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="drawerEmployeesTableBody">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-                        <!-- Row shown when javascript filtering returns empty -->
-                        <tr id="historyNoMatchesRow" style="display: none;">
-                            <td colspan="7">
-                                <div class="history-empty">
-                                    <i class="fas fa-search"></i>
-                                    <h4>No Matching Records</h4>
-                                    <p class="text-muted small">Try adjusting your search query or filters.</p>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div> <!-- End history-table-container -->
-            </div> <!-- End history-table-view-container -->
-
-            <!-- Calendar View Container -->
-            <div id="history-calendar-view-container" style="display: none; animation: fadeIn 0.4s ease-out;">
-                <div id="history-calendar-view" style="padding: 1.5rem; background: white; border-radius: 0 0 16px 16px;">
-                    <!-- Calendar Navigation & Info Header -->
-                    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-                        <div class="d-flex align-items-center gap-3">
-                            <button type="button" class="calendar-nav-btn" onclick="navigateCalendar(-1)" title="Previous Month">
-                                <i class="fas fa-chevron-left"></i>
-                            </button>
-                            <h4 class="m-0 fw-bold text-dark" id="calendarMonthYearDisplay" style="min-width: 180px; text-align: center; font-size: 1.25rem;"></h4>
-                            <button type="button" class="calendar-nav-btn" onclick="navigateCalendar(1)" title="Next Month">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
-                        <div class="d-flex gap-3 align-items-center text-muted small">
-                            <div class="d-flex align-items-center gap-1">
-                                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #dcfce7; border: 1px solid #16a34a;"></span>
-                                <span>Credits</span>
-                            </div>
-                            <div class="d-flex align-items-center gap-1">
-                                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #fee2e2; border: 1px solid #dc2626;"></span>
-                                <span>Debits</span>
-                            </div>
-                            <div class="d-flex align-items-center gap-1">
-                                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #eff6ff; border: 1px solid #1d4ed8;"></span>
-                                <span>System Runs</span>
-                            </div>
-                        </div>
+            <!-- Related Information Section -->
+            <div>
+                <div class="drawer-section-heading">Related Information</div>
+                <div class="drawer-info-grid">
+                    <div class="drawer-info-row">
+                        <span class="drawer-info-label"><i class="far fa-clock"></i> Period</span>
+                        <span class="drawer-info-val" id="drawerInfoPeriod">September 2026</span>
                     </div>
-
-                    <!-- Calendar Grid -->
-                    <div class="calendar-wrapper">
-                        <div class="calendar-grid-header">
-                            <div>Sun</div>
-                            <div>Mon</div>
-                            <div>Tue</div>
-                            <div>Wed</div>
-                            <div>Thu</div>
-                            <div>Fri</div>
-                            <div>Sat</div>
-                        </div>
-                        <div class="calendar-grid" id="calendarDaysGrid">
-                            <!-- Dynamically populated via JS -->
-                        </div>
+                    <div class="drawer-info-row">
+                        <span class="drawer-info-label"><i class="fas fa-tag"></i> Accrual Rule</span>
+                        <span class="drawer-info-val" id="drawerInfoRule" style="font-weight: 500;">Monthly Accrual – Default Policy</span>
                     </div>
                 </div>
             </div>
@@ -3597,32 +4346,334 @@
             });
      }
 
+      // Embedded History Data Map for Side Drawer and Interactions
+      const historyDataMap = {
+          {% for item in history_items %}
+          "{{ item.id }}": {
+              id: "{{ item.id }}",
+              isBatch: {% if item.is_batch %}true{% else %}false{% endif %},
+              title: "{{ item.title|escapejs }}",
+              subtitle: "{{ item.subtitle|escapejs }}",
+              employeeName: "{{ item.employee_name|default:item.title|escapejs }}",
+              employeeEmail: "{{ item.employee_email|default:''|escapejs }}",
+              employeeRole: "{{ item.employee_role|default:'Staff'|escapejs }}",
+              employeeAvatar: "{{ item.employee_avatar|default:''|escapejs }}",
+              employeeInitials: "{{ item.employee_initials|default:'EM'|escapejs }}",
+              txType: "{{ item.tx_type }}",
+              leaveTypeDisplay: "{{ item.leave_type_display|escapejs }}",
+              leaveTypeCode: "{{ item.leave_type_code }}",
+              daysDisplay: "{{ item.days_display }}",
+              daysVal: {{ item.days_val|default:0 }},
+              description: "{{ item.description|escapejs }}",
+              actorDisplay: "{{ item.actor_display|escapejs }}",
+              isSystem: {% if item.is_system %}true{% else %}false{% endif %},
+              affectedCount: {{ item.affected_count }},
+              reference: "{{ item.reference|escapejs }}",
+              period: "{{ item.period|escapejs }}",
+              accrualRule: "{{ item.accrual_rule|escapejs }}",
+              dateDisplay: "{{ item.date_display }}",
+              dateIso: "{{ item.date_iso }}",
+              employeesCredited: [
+                  {% for emp in item.employees_credited %}
+                  {
+                      id: "{{ emp.id }}",
+                      name: "{{ emp.name|escapejs }}",
+                      email: "{{ emp.email|escapejs }}",
+                      role: "{{ emp.role|escapejs }}",
+                      avatar: "{{ emp.avatar|escapejs }}",
+                      initials: "{{ emp.initials|escapejs }}",
+                      days: "{{ emp.days }}",
+                      newBalance: "{{ emp.new_balance }}"
+                  }{% if not forloop.last %},{% endif %}
+                  {% endfor %}
+              ]
+          }{% if not forloop.last %},{% endif %}
+          {% endfor %}
+      };
+
       // Global tab switching logic
       function switchTab(tabName) {
           const balancesBtn = document.getElementById('tab-balances');
           const historyBtn = document.getElementById('tab-history');
           const balancesView = document.getElementById('balances-view-container');
           const historyView = document.getElementById('history-view-container');
+          const breadcrumbText = document.getElementById('breadcrumbActiveText');
+          const heroTitle = document.getElementById('heroCardTitle');
+          const heroSubtitle = document.getElementById('heroCardSubtitle');
+          const balancesHeaderStats = document.getElementById('balancesHeaderStats');
+          const heroCard = document.getElementById('heroLeaveCard');
 
           if (!balancesBtn || !historyBtn || !balancesView || !historyView) return;
+
+          if (heroCard) {
+              heroCard.setAttribute('data-active-tab', tabName);
+          }
 
           if (tabName === 'balances') {
               balancesBtn.classList.add('active');
               historyBtn.classList.remove('active');
               balancesView.style.display = 'block';
               historyView.style.display = 'none';
+              if (breadcrumbText) breadcrumbText.textContent = 'Leave Balances';
+              if (heroTitle) heroTitle.textContent = 'Leave Balances';
+              if (heroSubtitle) heroSubtitle.textContent = 'Manage leave allocations for all employees. Automated monthly accruals run on the 2nd of every month.';
+              if (balancesHeaderStats) {
+                  balancesHeaderStats.style.setProperty('display', 'flex', 'important');
+              }
               localStorage.setItem('activeLeaveConfigTab', 'balances');
           } else if (tabName === 'history') {
               balancesBtn.classList.remove('active');
               historyBtn.classList.add('active');
               balancesView.style.display = 'none';
               historyView.style.display = 'block';
+              if (breadcrumbText) breadcrumbText.textContent = 'Leave History';
+              if (heroTitle) heroTitle.textContent = 'Leave History';
+              if (heroSubtitle) heroSubtitle.textContent = 'View all leave transactions and changes for employees.';
+              if (balancesHeaderStats) {
+                  balancesHeaderStats.style.setProperty('display', 'none', 'important');
+              }
               localStorage.setItem('activeLeaveConfigTab', 'history');
 
-              // Trigger calendar view restoration/rendering
+              filterHistoryTable();
+
+              // Trigger calendar view restoration if calendar view was active
               const activeView = localStorage.getItem('activeLeaveHistoryView') || 'list';
               switchHistoryView(activeView);
           }
+      }
+
+      // Open / Close Slide-over Side Drawer (Leave Transaction Details)
+      function openTransactionDrawer(itemId) {
+          const item = historyDataMap[itemId];
+          if (!item) return;
+
+          const drawerPanel = document.getElementById('transactionDrawerPanel');
+          const backdrop = document.getElementById('transactionDrawerBackdrop');
+          if (!drawerPanel || !backdrop) return;
+
+          // Top Summary
+          const iconBox = document.getElementById('drawerSummaryIconBox');
+          const title = document.getElementById('drawerSummaryTitle');
+          const subtitle = document.getElementById('drawerSummarySubtitle');
+          const badgeWrap = document.getElementById('drawerSummaryBadgeWrap');
+
+          if (item.isBatch) {
+              iconBox.innerHTML = '<i class="fas fa-layer-group"></i>';
+              iconBox.className = 'drawer-icon-box';
+              iconBox.style.background = '#eff6ff';
+              iconBox.style.color = '#3b82f6';
+              title.textContent = item.title;
+              subtitle.textContent = item.description || item.subtitle;
+          } else {
+              if (item.employeeAvatar) {
+                  iconBox.innerHTML = `<img src="${item.employeeAvatar}" style="width: 100%; height: 100%; border-radius: 12px; object-fit: cover;" alt="pic">`;
+                  iconBox.className = 'drawer-icon-box p-0';
+              } else {
+                  iconBox.innerHTML = item.employeeInitials;
+                  iconBox.className = 'drawer-icon-box';
+                  iconBox.style.background = '#e0e7ff';
+                  iconBox.style.color = '#4338ca';
+                  iconBox.style.fontWeight = '700';
+              }
+              title.textContent = item.employeeName;
+              subtitle.textContent = item.employeeEmail;
+          }
+
+          if (item.txType === 'CREDIT') {
+              badgeWrap.innerHTML = '<span class="badge-pill-credit"><span class="dot-credit"></span> CREDIT</span>';
+          } else {
+              badgeWrap.innerHTML = '<span class="badge-pill-debit"><span class="dot-debit"></span> DEBIT</span>';
+          }
+
+          // Transaction Information Section
+          document.getElementById('drawerInfoDateTime').textContent = item.dateDisplay;
+
+          const txTypeEl = document.getElementById('drawerInfoTxType');
+          if (item.txType === 'CREDIT') {
+              txTypeEl.innerHTML = '<span class="badge-pill-credit"><span class="dot-credit"></span> CREDIT</span>';
+          } else {
+              txTypeEl.innerHTML = '<span class="badge-pill-debit"><span class="dot-debit"></span> DEBIT</span>';
+          }
+
+          const leaveTypeEl = document.getElementById('drawerInfoLeaveType');
+          if (item.leaveTypeCode === 'MONTHLY_RUN') {
+              leaveTypeEl.innerHTML = '<span class="badge-pill-monthly">Monthly Run</span>';
+          } else if (item.leaveTypeCode === 'UL') {
+              leaveTypeEl.innerHTML = '<span class="badge-pill-lop">Unpaid Leave (LOP)</span>';
+          } else {
+              leaveTypeEl.textContent = item.leaveTypeDisplay;
+          }
+
+          const daysEl = document.getElementById('drawerInfoDays');
+          daysEl.textContent = item.daysDisplay;
+          daysEl.className = `drawer-info-val days-val ${item.txType === 'CREDIT' ? 'credit' : 'debit'}`;
+
+          document.getElementById('drawerInfoDescription').textContent = item.description;
+          document.getElementById('drawerInfoPerformedBy').textContent = item.actorDisplay;
+          document.getElementById('drawerInfoAffectedCount').textContent = `${item.affectedCount} Employee${item.affectedCount > 1 ? 's' : ''}`;
+          document.getElementById('drawerInfoReference').textContent = item.reference;
+
+          // Employees Section
+          const empSectionHeading = document.getElementById('drawerEmployeesSectionHeading');
+          const daysColLabel = document.getElementById('drawerColDaysLabel');
+          if (item.isBatch) {
+              empSectionHeading.textContent = `Employees Credited (${item.employeesCredited.length})`;
+              daysColLabel.textContent = 'Days Credited';
+          } else {
+              empSectionHeading.textContent = 'Employee Details';
+              daysColLabel.textContent = item.txType === 'CREDIT' ? 'Days Credited' : 'Days Deducted';
+          }
+
+          const tableBody = document.getElementById('drawerEmployeesTableBody');
+          tableBody.innerHTML = '';
+
+          item.employeesCredited.forEach(emp => {
+              const tr = document.createElement('tr');
+              let avatarHtml = '';
+              if (emp.avatar) {
+                  avatarHtml = `<img src="${emp.avatar}" alt="pic">`;
+              } else {
+                  avatarHtml = `<div class="user-initials-xs">${emp.initials}</div>`;
+              }
+
+              const daysClass = emp.days.startsWith('+') ? 'text-success' : 'text-danger';
+
+              tr.innerHTML = `
+                  <td>
+                      <div class="drawer-user-cell">
+                          ${avatarHtml}
+                          <div>
+                              <div class="fw-bold text-dark" style="font-size: 0.82rem;">${emp.name}</div>
+                          </div>
+                      </div>
+                  </td>
+                  <td style="color: #64748b; font-size: 0.78rem;">${emp.role}</td>
+                  <td class="text-center fw-bold ${daysClass}" style="font-size: 0.82rem;">${emp.days}</td>
+                  <td class="text-end fw-bold text-dark" style="font-size: 0.82rem;">${emp.newBalance}</td>
+              `;
+              tableBody.appendChild(tr);
+          });
+
+          // Related Information
+          document.getElementById('drawerInfoPeriod').textContent = item.period;
+          document.getElementById('drawerInfoRule').textContent = item.accrualRule;
+
+          // Slide drawer open
+          backdrop.classList.add('active');
+          drawerPanel.classList.add('active');
+          document.body.style.overflow = 'hidden';
+      }
+
+      function closeTransactionDrawer() {
+          const drawerPanel = document.getElementById('transactionDrawerPanel');
+          const backdrop = document.getElementById('transactionDrawerBackdrop');
+          if (drawerPanel) drawerPanel.classList.remove('active');
+          if (backdrop) backdrop.classList.remove('active');
+          document.body.style.overflow = '';
+      }
+
+      // Close on Escape key
+      document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape') {
+              closeTransactionDrawer();
+          }
+      });
+
+      // History Table Client-side Search, Filtering & Pagination
+      let historyCurrentPage = 1;
+      const historyPageSize = 15;
+      let historyFilteredRows = [];
+
+      function filterHistoryTable() {
+          const searchInput = document.getElementById('historySearchInput');
+          const txTypeSelect = document.getElementById('historyFilterTxType');
+          const leaveTypeSelect = document.getElementById('historyFilterLeaveType');
+
+          const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+          const txType = txTypeSelect ? txTypeSelect.value : 'ALL';
+          const leaveType = leaveTypeSelect ? leaveTypeSelect.value : 'ALL';
+
+          const rows = Array.from(document.querySelectorAll('.history-data-row'));
+          historyFilteredRows = [];
+
+          rows.forEach(row => {
+              const rowTxType = row.getAttribute('data-tx-type');
+              const rowLeaveType = row.getAttribute('data-leave-type-code');
+              const rowSearch = row.getAttribute('data-search') || '';
+
+              let matchesSearch = true;
+              if (query) {
+                  matchesSearch = rowSearch.includes(query);
+              }
+
+              let matchesTxType = true;
+              if (txType !== 'ALL') {
+                  matchesTxType = (rowTxType === txType);
+              }
+
+              let matchesLeaveType = true;
+              if (leaveType !== 'ALL') {
+                  matchesLeaveType = (rowLeaveType === leaveType);
+              }
+
+              if (matchesSearch && matchesTxType && matchesLeaveType) {
+                  historyFilteredRows.push(row);
+              } else {
+                  row.style.display = 'none';
+              }
+          });
+
+          historyCurrentPage = 1;
+          renderHistoryPagination();
+      }
+
+      function renderHistoryPagination() {
+          const totalFiltered = historyFilteredRows.length;
+          const totalPages = Math.ceil(totalFiltered / historyPageSize) || 1;
+
+          if (historyCurrentPage > totalPages) historyCurrentPage = totalPages;
+          if (historyCurrentPage < 1) historyCurrentPage = 1;
+
+          const startIndex = (historyCurrentPage - 1) * historyPageSize;
+          const endIndex = Math.min(startIndex + historyPageSize, totalFiltered);
+
+          historyFilteredRows.forEach((row, idx) => {
+              if (idx >= startIndex && idx < endIndex) {
+                  row.style.display = '';
+              } else {
+                  row.style.display = 'none';
+              }
+          });
+
+          // Empty row handling
+          const noMatchesRow = document.getElementById('historyNoMatchesRow');
+          if (noMatchesRow) {
+              noMatchesRow.style.display = totalFiltered === 0 ? '' : 'none';
+          }
+
+          // Update footer count text
+          const showingCountText = document.getElementById('historyShowingCountText');
+          if (showingCountText) {
+              if (totalFiltered === 0) {
+                  showingCountText.textContent = 'Showing 0 transactions';
+              } else {
+                  showingCountText.textContent = `Showing ${startIndex + 1} – ${endIndex} of ${totalFiltered} transactions`;
+              }
+          }
+
+          // Update pagination buttons
+          const prevBtn = document.getElementById('btnPrevPage');
+          const nextBtn = document.getElementById('btnNextPage');
+          const currPageBtn = document.getElementById('btnCurrentPage');
+
+          if (prevBtn) prevBtn.disabled = historyCurrentPage <= 1;
+          if (nextBtn) nextBtn.disabled = historyCurrentPage >= totalPages;
+          if (currPageBtn) currPageBtn.textContent = historyCurrentPage;
+      }
+
+      function changeHistoryPage(delta) {
+          historyCurrentPage += delta;
+          renderHistoryPagination();
       }
 
       // History Calendar View Logic
@@ -3675,28 +4726,13 @@
           const prevTotalDays = new Date(year, month, 0).getDate();
 
           const txByDate = {};
-          const historyRows = document.querySelectorAll('.history-row');
-          historyRows.forEach(row => {
-              if (row.style.display !== 'none') {
-                  const dateStr = row.getAttribute('data-date');
-                  if (dateStr) {
-                      if (!txByDate[dateStr]) {
-                          txByDate[dateStr] = [];
-                      }
-                      txByDate[dateStr].push({
-                          employee: row.getAttribute('data-employee-display-name'),
-                          email: row.getAttribute('data-employee-email'),
-                          initials: row.getAttribute('data-employee-initials'),
-                          avatar: row.getAttribute('data-employee-avatar'),
-                          txType: row.getAttribute('data-tx-type'),
-                          leaveType: row.getAttribute('data-leave-type-display'),
-                          amount: parseFloat(row.getAttribute('data-amount')),
-                          reason: row.getAttribute('data-reason'),
-                          actor: row.getAttribute('data-actor-display'),
-                          isSystem: row.getAttribute('data-actor-is-system') === 'true',
-                          dateDisplay: row.getAttribute('data-date-display')
-                      });
+          Object.values(historyDataMap).forEach(item => {
+              const dateStr = item.dateIso;
+              if (dateStr) {
+                  if (!txByDate[dateStr]) {
+                      txByDate[dateStr] = [];
                   }
+                  txByDate[dateStr].push(item);
               }
           });
 
@@ -3734,68 +4770,44 @@
 
           cell.innerHTML = `<div class="day-number">${dayNum}</div>`;
 
-          const dayTransactions = txByDate[dateStr] || [];
-          if (dayTransactions.length > 0) {
+          const dayItems = txByDate[dateStr] || [];
+          if (dayItems.length > 0) {
               const txContainer = document.createElement('div');
               txContainer.className = 'calendar-tx-container';
 
-              const systemAccruals = [];
-              const otherTx = [];
-
-              dayTransactions.forEach(tx => {
-                  const isSystemAccrual = tx.txType === 'CREDIT' && (tx.isSystem || tx.reason.toLowerCase().includes('monthly accrual'));
-                  if (isSystemAccrual) {
-                      systemAccruals.push(tx);
-                  } else {
-                      otherTx.push(tx);
-                  }
-              });
-
-              const displayItems = [];
-
-              if (systemAccruals.length > 0) {
-                  let totalAmount = 0;
-                  systemAccruals.forEach(t => totalAmount += t.amount);
-                  displayItems.push({
-                      type: 'group-accrual',
-                      text: `<i class="fas fa-robot"></i> Accrual: +${totalAmount.toFixed(1)} (${systemAccruals.length} Emp)`,
-                      transactions: systemAccruals
-                  });
-              }
-
-              otherTx.forEach(tx => {
-                  const prefix = tx.txType === 'CREDIT' ? '+' : '-';
-                  const badgeClass = tx.txType === 'CREDIT' ? 'credit' : 'debit';
-                  const icon = tx.txType === 'CREDIT' ? 'fa-plus-circle' : 'fa-minus-circle';
-                  const shortName = tx.employee.split(' ')[0];
-                  displayItems.push({
-                      type: badgeClass,
-                      text: `<i class="fas ${icon}"></i> ${prefix}${tx.amount.toFixed(1)} ${tx.leaveType.split(' ')[0]} (${shortName})`,
-                      transactions: [tx]
-                  });
-              });
-
               const maxBadges = 2;
-              displayItems.forEach((item, index) => {
+              dayItems.forEach((item, index) => {
                   if (index < maxBadges) {
                       const badge = document.createElement('div');
-                      badge.className = `calendar-tx-badge ${item.type}`;
-                      badge.innerHTML = item.text;
+                      if (item.isBatch) {
+                          badge.className = 'calendar-tx-badge group-accrual';
+                          badge.innerHTML = `<i class="fas fa-layer-group"></i> Accrual: ${item.daysDisplay} (${item.affectedCount})`;
+                      } else {
+                          const badgeClass = item.txType === 'CREDIT' ? 'credit' : 'debit';
+                          const icon = item.txType === 'CREDIT' ? 'fa-plus-circle' : 'fa-minus-circle';
+                          const shortName = item.employeeName.split(' ')[0];
+                          badge.className = `calendar-tx-badge ${badgeClass}`;
+                          badge.innerHTML = `<i class="fas ${icon}"></i> ${item.daysDisplay} (${shortName})`;
+                      }
                       txContainer.appendChild(badge);
                   }
               });
 
-              if (displayItems.length > maxBadges) {
+              if (dayItems.length > maxBadges) {
                   const moreDiv = document.createElement('div');
                   moreDiv.className = 'calendar-tx-more';
-                  moreDiv.textContent = `+${displayItems.length - maxBadges} more`;
+                  moreDiv.textContent = `+${dayItems.length - maxBadges} more`;
                   txContainer.appendChild(moreDiv);
               }
 
               cell.appendChild(txContainer);
 
               cell.addEventListener('click', () => {
-                  showDayDetailsModal(dateStr, dayTransactions);
+                  if (dayItems.length === 1) {
+                      openTransactionDrawer(dayItems[0].id);
+                  } else {
+                      showDayDetailsModal(dateStr, dayItems);
+                  }
               });
           }
 
@@ -3809,7 +4821,7 @@
           return `${yyyy}-${mm}-${dd}`;
       }
 
-      function showDayDetailsModal(dateStr, transactions) {
+      function showDayDetailsModal(dateStr, items) {
           const modalTitle = document.getElementById('calendarModalTitle');
           const tableBody = document.getElementById('calendarModalTableBody');
           if (!modalTitle || !tableBody) return;
@@ -3820,72 +4832,52 @@
 
           tableBody.innerHTML = '';
 
-          transactions.forEach(tx => {
+          items.forEach(item => {
               const row = document.createElement('tr');
-              const prefix = tx.txType === 'CREDIT' ? '+' : '-';
-              const color = tx.txType === 'CREDIT' ? '#16a34a' : '#dc2626';
-              const badgeClass = tx.txType === 'CREDIT' ? 'credit' : 'debit';
-              const icon = tx.txType === 'CREDIT' ? 'fa-plus-circle' : 'fa-minus-circle';
+              row.style.cursor = 'pointer';
+              row.onclick = () => {
+                  const modalElement = document.getElementById('calendarDayDetailsModal');
+                  const bsModal = bootstrap.Modal.getInstance(modalElement);
+                  if (bsModal) bsModal.hide();
+                  openTransactionDrawer(item.id);
+              };
 
               let employeeHTML = '';
-              if (tx.avatar) {
+              if (item.isBatch) {
                   employeeHTML = `
                       <div class="d-flex align-items-center gap-2">
-                          <img src="${tx.avatar}" class="user-avatar" style="width: 32px; height: 32px; border-radius: 8px;" alt="pic">
+                          <div class="batch-icon-box" style="width: 30px; height: 30px; font-size: 0.8rem;"><i class="fas fa-layer-group"></i></div>
                           <div>
-                              <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.85rem;">${tx.employee}</h6>
-                              <small class="text-muted" style="font-size: 0.7rem;">${tx.email}</small>
+                              <div class="fw-bold text-dark" style="font-size: 0.84rem;">${item.title}</div>
+                              <small class="text-muted" style="font-size: 0.72rem;">${item.subtitle}</small>
                           </div>
                       </div>
                   `;
               } else {
+                  let avatar = item.employeeAvatar ? `<img src="${item.employeeAvatar}" class="user-avatar" style="width: 30px; height: 30px; border-radius: 6px;" alt="pic">` : `<div class="user-initials" style="width: 30px; height: 30px; font-size: 0.75rem; border-radius: 6px;">${item.employeeInitials}</div>`;
                   employeeHTML = `
                       <div class="d-flex align-items-center gap-2">
-                          <div class="user-initials" style="width: 32px; height: 32px; font-size: 0.8rem; border-radius: 8px; background: #e0e7ff; color: var(--primary-brand); display: flex; align-items: center; justify-content: center; font-weight: 700;">
-                              ${tx.initials}
-                          </div>
+                          ${avatar}
                           <div>
-                              <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.85rem;">${tx.employee}</h6>
-                              <small class="text-muted" style="font-size: 0.7rem;">${tx.email}</small>
+                              <div class="fw-bold text-dark" style="font-size: 0.84rem;">${item.employeeName}</div>
+                              <small class="text-muted" style="font-size: 0.72rem;">${item.employeeEmail}</small>
                           </div>
                       </div>
                   `;
               }
 
-              let actorHTML = '';
-              if (tx.isSystem) {
-                  actorHTML = `
-                      <span class="actor-badge system" style="padding: 2px 8px; font-size: 0.75rem;">
-                          <i class="fas fa-robot"></i> System Accrual
-                      </span>
-                  `;
-              } else {
-                  actorHTML = `
-                      <span class="actor-badge" style="padding: 2px 8px; font-size: 0.75rem;">
-                          <i class="fas fa-user-shield"></i> ${tx.actor}
-                      </span>
-                  `;
-              }
+              const badgeClass = item.txType === 'CREDIT' ? 'badge-pill-credit' : 'badge-pill-debit';
+              const dotClass = item.txType === 'CREDIT' ? 'dot-credit' : 'dot-debit';
+              const daysColor = item.txType === 'CREDIT' ? '#16a34a' : '#dc2626';
 
               row.innerHTML = `
                   <td>${employeeHTML}</td>
-                  <td>
-                      <span class="badge-tx ${badgeClass}" style="padding: 4px 10px; font-size: 0.75rem;">
-                          <i class="fas ${icon}"></i> ${tx.txType}
-                      </span>
-                  </td>
-                  <td>
-                      <span class="badge-leave-type" style="padding: 2px 8px; font-size: 0.75rem;">
-                          ${tx.leaveType}
-                      </span>
-                  </td>
-                  <td class="text-center" style="font-weight: 700; color: ${color}; font-size: 0.9rem;">
-                      ${prefix}${tx.amount.toFixed(1)}
-                  </td>
-                  <td style="color: #334155; font-weight: 500; max-width: 200px; word-wrap: break-word;">${tx.reason}</td>
-                  <td>${actorHTML}</td>
+                  <td><span class="${badgeClass}"><span class="${dotClass}"></span> ${item.txType}</span></td>
+                  <td><span style="font-size: 0.8rem; font-weight: 500;">${item.leaveTypeDisplay}</span></td>
+                  <td class="text-center" style="font-weight: 700; color: ${daysColor}; font-size: 0.88rem;">${item.daysDisplay}</td>
+                  <td style="color: #334155; font-weight: 500; font-size: 0.82rem; max-width: 200px; word-wrap: break-word;">${item.description}</td>
+                  <td style="font-size: 0.8rem;">${item.actorDisplay}</td>
               `;
-
               tableBody.appendChild(row);
           });
 
@@ -3893,5 +4885,19 @@
           const bsModal = new bootstrap.Modal(modalElement);
           bsModal.show();
       }
+
+      // Initialize active tab from URL params or localStorage on load
+      document.addEventListener('DOMContentLoaded', function() {
+          const urlParams = new URLSearchParams(window.location.search);
+          const tabParam = urlParams.get('tab');
+          if (tabParam === 'history') {
+              switchTab('history');
+          } else if (tabParam === 'balances' || urlParams.has('status')) {
+              switchTab('balances');
+          } else {
+              const savedTab = localStorage.getItem('activeLeaveConfigTab') || 'balances';
+              switchTab(savedTab);
+          }
+      });
 </script>
 {% endblock %}

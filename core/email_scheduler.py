@@ -50,11 +50,16 @@ class EmailSchedulerService:
                     f"[INFO] Checking for birthdays/anniversaries at {current_time.strftime('%Y-%m-%d %H:%M:%S')}"
                 )
 
-                # Run the management command
-                # Run the management command
+                # Run the birthday/anniversary email check
                 call_command("send_birthday_anniversary_emails", hour=9)
 
-                logger.info("[OK] Email check completed")
+                # Run automated monthly leave accrual (checks if 2nd of the month for each employee's timezone)
+                try:
+                    call_command("accrue_monthly_leaves")
+                except Exception as accrual_err:
+                    logger.error(f"[ERROR] Automated monthly leave accrual failed: {accrual_err}")
+
+                logger.info("[OK] Background scheduled tasks completed successfully")
 
             except Exception as e:
                 logger.error(f"[ERROR] Error in email scheduler: {str(e)}")

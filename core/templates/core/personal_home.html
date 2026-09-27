@@ -1486,12 +1486,12 @@
                                                      <span class="red">{{ record.clock_out|time:"h:i A" }}</span>
                                                  </div>
                                                  {% endif %}
-                                                 <a href="{% url 'regularization_apply' %}" class="popover-regularise-btn">Regularise</a>
+                                                 <a href="{% url 'regularization_apply' %}?date={{ record.date|date:'Y-m-d' }}" class="popover-regularise-btn">Regularise</a>
                                              </div>
                                          </div>
                                      {% else %}
                                          {% if record.status != 'WEEKLY_OFF' and record.status != 'HOLIDAY' and record.status != 'LEAVE' %}
-                                             <a href="{% url 'regularization_apply' %}" class="popover-regularise-btn" style="margin-top: 0; padding: 4px 10px; font-size: 0.75rem; background: #e0e7ff; color: #4f46e5; border-radius: 6px; font-weight: 700; text-decoration: none; display: inline-block;">Regularise</a>
+                                             <a href="{% url 'regularization_apply' %}?date={{ record.date|date:'Y-m-d' }}" class="popover-regularise-btn" style="margin-top: 0; padding: 4px 10px; font-size: 0.75rem; background: #e0e7ff; color: #4f46e5; border-radius: 6px; font-weight: 700; text-decoration: none; display: inline-block;">Regularise</a>
                                          {% else %}
                                              <span class="text-muted" style="font-size:0.8rem;">–</span>
                                          {% endif %}
@@ -1665,50 +1665,39 @@
         }
     });
 
+    // Pre-warm GPS location on page load for instantaneous 10ms lookup
+    window._lastKnownPosition = null;
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => { window._lastKnownPosition = pos; },
+            () => {},
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 300000 }
+        );
+    }
+
     // Main Clock-in/out Request handlers
+    let isClockActionInProgress = false;
+
     function handleClockAction(action, type, btnElement) {
-        if (!navigator.geolocation) {
-            alert("Geolocation is not supported by your browser. Please allow permission to proceed.");
-            return;
-        }
+        if (isClockActionInProgress) return;
+        isClockActionInProgress = true;
 
         const btn = btnElement;
-        const origText = btn.innerHTML;
+        const origContent = btn.innerHTML;
 
-        btn.innerHTML = '<span>Verifying...</span> <i class="fas fa-satellite-dish fa-spin"></i>';
+        btn.innerHTML = action === 'in'
+            ? '<span>Clocking in...</span> <i class="fas fa-satellite-dish fa-spin"></i>'
+            : '<span>Clocking out...</span> <i class="fas fa-satellite-dish fa-spin"></i>';
         btn.disabled = true;
 
         const csrfToken = document.getElementById('page-context')?.dataset.csrf || '';
+        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
 
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                submitClockRequest(pos);
-            },
-            (err) => {
-                console.warn("Geolocation warning:", err.message);
-                // Proceed with fallback confirmation if location fails to avoid locking out the user
-                const allowWithoutLocation = confirm(
-                    "Could not access GPS coordinates.\n" +
-                    "Would you like to log your attendance anyway?\n" +
-                    "(This is allowed, but will be flagged without location details)"
-                );
-
-                if (allowWithoutLocation) {
-                    submitClockRequest(null);
-                } else {
-                    btn.innerHTML = origText;
-                    btn.disabled = false;
-                }
-            },
-            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-        );
-
-        function submitClockRequest(pos) {
-            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        function executeClockRequest(pos) {
             const requestData = {
-                latitude: pos ? pos.coords.latitude : null,
-                longitude: pos ? pos.coords.longitude : null,
-                accuracy: pos ? pos.coords.accuracy : null,
+                latitude: pos ? pos.coords.latitude : (window._lastKnownPosition ? window._lastKnownPosition.coords.latitude : null),
+                longitude: pos ? pos.coords.longitude : (window._lastKnownPosition ? window._lastKnownPosition.coords.longitude : null),
+                accuracy: pos ? pos.coords.accuracy : (window._lastKnownPosition ? window._lastKnownPosition.coords.accuracy : null),
                 type: type,
                 timezone: userTimezone
             };
@@ -1727,25 +1716,74 @@
             .then(data => {
                 if (data.status === 'success') {
                     if (action === 'in') {
-                        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                        btn.classList.remove('bg-danger');
+                        btn.classList.add('bg-success');
+                        btn.innerHTML = '<span>Clocked In! 🎉</span> <i class="fas fa-check-circle"></i>';
+                        if (typeof confetti === 'function') {
+                            confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+                        }
+                    } else {
+                        btn.classList.remove('bg-danger');
+                        btn.classList.add('bg-secondary');
+                        btn.innerHTML = '<span>Clocked Out!</span> <i class="fas fa-check-circle"></i>';
                     }
-                    location.reload();
+
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 700);
                 }
                 else if (data.status === 'confirmation_required' || data.requires_confirmation) {
-                    handleConfirmationModal(data, pos, csrfToken, btn, origText);
+                    isClockActionInProgress = false;
+                    handleConfirmationModal(data, pos, csrfToken, btn, origContent);
                 }
                 else {
+                    isClockActionInProgress = false;
                     alert(data.message || 'An error occurred during submission.');
-                    btn.innerHTML = origText;
+                    btn.innerHTML = origContent;
                     btn.disabled = false;
                 }
             })
             .catch(error => {
+                isClockActionInProgress = false;
                 console.error("Network error:", error);
                 alert("Network error: " + error.message);
-                btn.innerHTML = origText;
+                btn.innerHTML = origContent;
                 btn.disabled = false;
             });
+        }
+
+        // Check if we already have position or fetch it quickly
+        if (window._lastKnownPosition) {
+            executeClockRequest(window._lastKnownPosition);
+        } else if (navigator.geolocation) {
+            let responded = false;
+            const fallbackTimer = setTimeout(() => {
+                if (!responded) {
+                    responded = true;
+                    executeClockRequest(null);
+                }
+            }, 2500);
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    if (!responded) {
+                        responded = true;
+                        clearTimeout(fallbackTimer);
+                        window._lastKnownPosition = pos;
+                        executeClockRequest(pos);
+                    }
+                },
+                (err) => {
+                    if (!responded) {
+                        responded = true;
+                        clearTimeout(fallbackTimer);
+                        executeClockRequest(null);
+                    }
+                },
+                { enableHighAccuracy: true, timeout: 2500, maximumAge: 60000 }
+            );
+        } else {
+            executeClockRequest(null);
         }
 
         function handleConfirmationModal(data, pos, csrfToken, btn, origText) {

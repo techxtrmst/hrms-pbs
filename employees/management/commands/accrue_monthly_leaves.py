@@ -50,15 +50,13 @@ class Command(BaseCommand):
                     local_tz = pytz.timezone("Asia/Kolkata")
                     local_time = current_time_utc.astimezone(local_tz)
 
-                # Check if it's the 1st of the month in their local time
-                if local_time.day != 1:
-                    # self.stdout.write(f"Skipping {employee}: Today is {local_time.date()}, not the 1st.")
+                # Check if it is the 2nd of the month or later in their local time
+                if local_time.day < 2:
                     skipped_count += 1
                     continue
 
                 # Check if we have already accrued for this month/year
                 if balance.last_accrual_month == local_time.month and balance.last_accrual_year == local_time.year:
-                    # self.stdout.write(f"Skipping {employee}: Already accrued for {local_time.month}/{local_time.year}")
                     skipped_count += 1
                     continue
 

@@ -261,7 +261,7 @@
                         Casual Leave: <span class="fw-bold text-primary">{{ cl_balance|floatformat:1 }}</span> days |
                         Sick Leave: <span class="fw-bold text-primary">{{ sl_balance|floatformat:1 }}</span> days
                         <br><br>
-                        <small>If you don't have sufficient balance, the excess days will be processed as <strong>Unpaid Leave (LOP)</strong>.</small>
+                        <small>⚡ <strong>Instant Auto-Approval:</strong> Leaves are approved automatically based on your available balance. If balance is exhausted or insufficient, the excess days will automatically be processed as <strong>Unpaid Leave (LOP)</strong>.</small>
                     </div>
                 </div>
 
@@ -315,12 +315,11 @@
             <div class="leave-footer">
                 <a href="{% url 'employee_profile' %}" class="btn-cancel">Cancel</a>
                 <button type="submit" class="btn-submit" id="submitBtn">
-                    <span id="submitText">Request Leave</span>
+                    <span id="submitText">Apply Leave</span>
                     <span id="loadingText" style="display: none;">
-                        <i class="fas fa-spinner fa-spin me-1"></i>Submitting...
+                        <i class="fas fa-spinner fa-spin me-1"></i>Applying...
                     </span>
                 </button>
-                <input type="hidden" name="confirm_lop" id="confirmLopInput" value="false">
             </div>
         </form>
     </div>
@@ -347,14 +346,6 @@
         if (!leaveTypeSelect || !startDateInput || !endDateInput || !balanceInfo || !balanceInfoText || !submitBtn || !durationSelect) {
             console.error('Required form elements not found');
             return;
-        }
-
-        // Auto-select Unpaid Leave if no balance
-        if (clBalance <= 0 && slBalance <= 0) {
-            if (leaveTypeSelect) {
-                leaveTypeSelect.value = 'UL';
-                leaveTypeSelect.dispatchEvent(new Event('change'));
-            }
         }
 
         // Initialize Flatpickr
@@ -420,15 +411,12 @@
                 const isSingleDay = startDate === endDate;
 
                 if (isSingleDay) {
-                    // Enable all options for single-day leaves
                     Array.from(durationSelect.options).forEach(option => {
                         option.disabled = false;
                     });
-
                     durationHelp.textContent = 'Select Full Day, First Half (Morning), or Second Half (Afternoon).';
                     durationHelp.className = 'text-muted mt-1';
                 } else {
-                    // Disable half-day options for multi-day leaves
                     Array.from(durationSelect.options).forEach(option => {
                         if (option.value === 'FIRST_HALF' || option.value === 'SECOND_HALF') {
                             option.disabled = true;
@@ -436,25 +424,19 @@
                             option.disabled = false;
                         }
                     });
-
-                    // Auto-select Full Day for multi-day leaves
                     durationSelect.value = 'FULL';
-
                     durationHelp.textContent = 'Multi-day leaves are automatically set to Full Day.';
                     durationHelp.className = 'text-info mt-1';
                 }
             } else {
-                // Enable all options when dates are not selected
                 Array.from(durationSelect.options).forEach(option => {
                     option.disabled = false;
                 });
-
                 durationHelp.textContent = 'First Half and Second Half options are only available for single-day leaves.';
                 durationHelp.className = 'text-muted mt-1';
             }
         }
 
-        // Initial duration options update - ensure all options are visible by default
         setTimeout(() => {
             updateDurationOptions();
         }, 100);
@@ -491,65 +473,63 @@
             })
             .then(response => response.json())
             .then(data => {
-                console.log('Validation response:', data);
-
                 if (data.status === 'success') {
                     const validation = data.validation;
                     const requestedDays = data.requested_days;
 
                     if (validation.will_be_lop && leaveType !== 'UL') {
                         balanceInfo.className = 'alert alert-warning mb-4';
-                        balanceInfoText.innerHTML = `
-                            <strong>⚠️ Insufficient Leave Balance:</strong><br>
-                            ${validation.message}<br>
-                            <small><strong>Requested:</strong> ${requestedDays} days | <strong>Available:</strong> ${validation.available_balance} days | <strong>Will be LOP:</strong> ${validation.shortfall} days</small>
-                            <div class="mt-3">
-                                <button type="button" class="btn btn-sm btn-outline-secondary me-2" onclick="cancelLeaveApplication()">
-                                    <i class="fas fa-times me-1"></i>Cancel
-                                </button>
-                                <button type="button" class="btn btn-sm btn-warning" onclick="confirmLOPApplication()">
-                                    <i class="fas fa-check me-1"></i>Proceed with LOP
-                                </button>
-                            </div>
-                        `;
+                        if (validation.available_balance > 0) {
+                            balanceInfoText.innerHTML = `
+                                <strong>⚡ Auto-Approval with Partial LOP:</strong><br>
+                                You have <strong>${validation.available_balance}</strong> day(s) available in your ${validation.leave_type_display} bucket.<br>
+                                <small>• <strong>Paid Leave:</strong> ${validation.available_balance} day(s)<br>
+                                • <strong>Loss of Pay (LOP):</strong> ${validation.shortfall} day(s)</small><br>
+                                <span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i>This will be automatically approved upon submission.</span>
+                            `;
+                        } else {
+                            balanceInfoText.innerHTML = `
+                                <strong>⚡ Auto-Approval as LOP:</strong><br>
+                                You have <strong>0</strong> balance for ${validation.leave_type_display}.<br>
+                                <small>• <strong>Loss of Pay (LOP):</strong> ${requestedDays} day(s)</small><br>
+                                <span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i>This will be automatically approved as Loss of Pay upon submission.</span>
+                            `;
+                        }
                         balanceInfo.style.display = 'block';
-
-                        // Disable submit button until user confirms
-                        submitBtn.disabled = true;
-                        submitBtn.textContent = 'Confirm LOP to Proceed';
+                        submitBtn.disabled = false;
+                        submitBtn.querySelector('#submitText').textContent = 'Apply Leave';
 
                     } else if (leaveType === 'UL') {
                         balanceInfo.className = 'alert alert-info mb-4';
                         balanceInfoText.innerHTML = `
-                            <strong>Unpaid Leave (LOP):</strong><br>
-                            ${requestedDays} days will be processed as Loss of Pay.
+                            <strong>⚡ Auto-Approval (Unpaid Leave):</strong><br>
+                            ${requestedDays} day(s) will be automatically approved as Loss of Pay (LOP).
                         `;
                         balanceInfo.style.display = 'block';
                         submitBtn.disabled = false;
-                        submitBtn.textContent = 'Request Leave';
+                        submitBtn.querySelector('#submitText').textContent = 'Apply Leave';
 
                     } else {
                         balanceInfo.className = 'alert alert-success mb-4';
                         balanceInfoText.innerHTML = `
-                            <strong>✅ Leave Available:</strong><br>
-                            You have sufficient ${validation.leave_type_display || 'leave'} balance for ${requestedDays} days.
+                            <strong>✅ Auto-Approval (Paid Leave):</strong><br>
+                            You have sufficient balance. <strong>${requestedDays}</strong> day(s) will be automatically approved and deducted from your ${validation.leave_type_display || 'leave'} bucket.
                         `;
                         balanceInfo.style.display = 'block';
                         submitBtn.disabled = false;
-                        submitBtn.textContent = 'Request Leave';
+                        submitBtn.querySelector('#submitText').textContent = 'Apply Leave';
                     }
                 } else {
-                    console.error('Validation failed:', data.message);
                     balanceInfo.style.display = 'none';
                     submitBtn.disabled = false;
-                    submitBtn.textContent = 'Request Leave';
+                    submitBtn.querySelector('#submitText').textContent = 'Apply Leave';
                 }
             })
             .catch(error => {
                 console.error('Error checking leave balance:', error);
                 balanceInfo.style.display = 'none';
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Request Leave';
+                submitBtn.querySelector('#submitText').textContent = 'Apply Leave';
             });
         }
 
@@ -561,20 +541,9 @@
         const submitText = document.getElementById('submitText');
         const loadingText = document.getElementById('loadingText');
 
-        // Prevent form submission if LOP confirmation is required
         const leaveForm = document.getElementById('leaveForm');
         if (leaveForm) {
             leaveForm.addEventListener('submit', function(e) {
-                const confirmLopInput = document.getElementById('confirmLopInput');
-                const confirmLopValue = confirmLopInput ? confirmLopInput.value : 'false';
-
-                if (submitBtn && submitBtn.disabled && confirmLopValue !== 'true') {
-                    e.preventDefault();
-                    alert('Please confirm the LOP (Loss of Pay) to proceed with your leave application.');
-                    return false;
-                }
-
-                // Prevent double submission
                 if (isSubmitting) {
                     e.preventDefault();
                     return false;

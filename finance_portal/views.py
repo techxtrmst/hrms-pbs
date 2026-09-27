@@ -255,7 +255,15 @@ def dashboard(request):
 
 
 def generate_payslip_internal(
-    employee, month, year, worked_days=None, monthly_gross=None, is_draft=False, travel_allowance=0.0, tds_deduction=0.0
+    employee,
+    month,
+    year,
+    worked_days=None,
+    monthly_gross=None,
+    is_draft=False,
+    travel_allowance=0.0,
+    tds_deduction=0.0,
+    arrears=0.0,
 ):
     """
     Core payroll generation helper (mirroring core/views.py process_payslip_generation).
@@ -265,6 +273,7 @@ def generate_payslip_internal(
     month_date = date(year, month, 1)
     travel_allowance = float(travel_allowance or 0.0)
     tds_deduction = float(tds_deduction or 0.0)
+    arrears = float(arrears or 0.0)
 
     if worked_days is None:
         worked_days = float(total_days)
@@ -284,6 +293,7 @@ def generate_payslip_internal(
         year=year,
         travel_allowance=travel_allowance,
         tds_deduction=tds_deduction,
+        arrears=arrears,
     )
 
     payslip, created = Payslip.objects.get_or_create(employee=employee, month=month_date)
@@ -295,14 +305,13 @@ def generate_payslip_internal(
     payslip.other_allowance = breakdown["other_allowance"]
     payslip.travel_allowance = breakdown["travel_allowance"]
     payslip.tds_deduction = breakdown["tds_deduction"]
+    payslip.arrears = breakdown.get("arrears", arrears)
 
-    # Map location specific allowances
-    if breakdown.get("country_code", "IN") == "IN":
-        payslip.conveyance_allowance = breakdown.get("lta", 0.0)
-        payslip.special_allowance = breakdown.get("other_allowance", 0.0)
-    else:
-        payslip.conveyance_allowance = breakdown.get("conveyance", 0.0)
-        payslip.special_allowance = breakdown.get("medical", 0.0)
+    # Map allowances
+    payslip.conveyance_allowance = breakdown.get(
+        "conveyance_allowance", breakdown.get("conveyance", breakdown.get("lta", 0.0))
+    )
+    payslip.special_allowance = breakdown.get("special_allowance", breakdown.get("other_allowance", 0.0))
 
     payslip.monthly_gross = breakdown["full_monthly_gross"]
     payslip.gross_salary = breakdown["gross_monthly"]
@@ -350,6 +359,13 @@ def generate_payslip_internal(
                 addr += f" {loc.postal_code}"
             branding["address"] = addr
 
+        arrears_val = float(payslip.arrears or 0.0)
+        arrears_rounded = round(arrears_val) if arrears_val > 0 else 0
+        arrears_negative_rounded = round(abs(arrears_val)) if arrears_val < 0 else 0
+        pt_rounded = round(payslip.professional_tax or 0)
+        tds_rounded = round(payslip.tds_deduction or 0)
+        total_taxes_deductions_rounded = pt_rounded + tds_rounded + arrears_negative_rounded
+
         context = {
             "payslip": payslip,
             "company": employee.company,
@@ -362,9 +378,13 @@ def generate_payslip_internal(
             "special_rounded": round(payslip.special_allowance or 0),
             "employer_pf_rounded": round(payslip.employer_pf or 0),
             "employee_pf_rounded": round(payslip.employee_pf or 0),
-            "professional_tax_rounded": round(payslip.professional_tax or 0),
-            "total_earnings_ctc": round((payslip.gross_salary or 0) + (payslip.employer_pf or 0)),
+            "professional_tax_rounded": pt_rounded,
+            "tds_deduction_rounded": tds_rounded,
+            "arrears_rounded": arrears_rounded,
+            "arrears_negative_rounded": arrears_negative_rounded,
+            "total_earnings_ctc": round(payslip.gross_salary or 0),
             "total_contributions": round((payslip.employee_pf or 0) + (payslip.employer_pf or 0)),
+            "total_taxes_deductions_rounded": total_taxes_deductions_rounded,
             "net_salary_rounded": round(payslip.net_salary or 0),
             "payable_units": f"{int(payslip.worked_days)} Days",
         }
@@ -421,6 +441,13 @@ def finalize_payslip_internal(payslip):
             addr += f" {loc.postal_code}"
         branding["address"] = addr
 
+    arrears_val = float(payslip.arrears or 0.0)
+    arrears_rounded = round(arrears_val) if arrears_val > 0 else 0
+    arrears_negative_rounded = round(abs(arrears_val)) if arrears_val < 0 else 0
+    pt_rounded = round(payslip.professional_tax or 0)
+    tds_rounded = round(payslip.tds_deduction or 0)
+    total_taxes_deductions_rounded = pt_rounded + tds_rounded + arrears_negative_rounded
+
     context = {
         "payslip": payslip,
         "company": employee.company,
@@ -433,11 +460,13 @@ def finalize_payslip_internal(payslip):
         "special_rounded": round(payslip.special_allowance or 0),
         "employer_pf_rounded": round(payslip.employer_pf or 0),
         "employee_pf_rounded": round(payslip.employee_pf or 0),
-        "professional_tax_rounded": round(payslip.professional_tax or 0),
-        "tds_deduction_rounded": round(payslip.tds_deduction or 0),
-        "total_earnings_ctc": round((payslip.gross_salary or 0) + (payslip.employer_pf or 0)),
+        "professional_tax_rounded": pt_rounded,
+        "tds_deduction_rounded": tds_rounded,
+        "arrears_rounded": arrears_rounded,
+        "arrears_negative_rounded": arrears_negative_rounded,
+        "total_earnings_ctc": round(payslip.gross_salary or 0),
         "total_contributions": round((payslip.employee_pf or 0) + (payslip.employer_pf or 0)),
-        "total_taxes_deductions_rounded": round((payslip.professional_tax or 0) + (payslip.tds_deduction or 0)),
+        "total_taxes_deductions_rounded": total_taxes_deductions_rounded,
         "net_salary_rounded": round(payslip.net_salary or 0),
         "payable_units": f"{int(payslip.worked_days)} Days",
     }
@@ -452,29 +481,38 @@ def finalize_payslip_internal(payslip):
 
 @finance_manager_required
 def process_draft_payroll(request):
-    """Process Phase 1 bulk draft payroll for a company or all companies with backend attendance count"""
+    """Process Phase 1 bulk or individual draft payroll for a company or single employee with backend attendance count"""
     if request.method != "POST":
         return redirect("finance_portal:dashboard")
 
     company_id = request.POST.get("company_id", "all")
     month = int(request.POST.get("month"))
     year = int(request.POST.get("year"))
+    employee_id = request.POST.get("employee_id")
 
     # Calculate range
     num_days = calendar.monthrange(year, month)[1]
     month_start = date(year, month, 1)
     month_end = date(year, month, num_days)
 
-    # Filter employees
-    employees = Employee.objects.filter(Q(date_of_joining__isnull=True) | Q(date_of_joining__lte=month_end)).filter(
-        Q(is_active=True) | Q(employment_status="ACTIVE") | (Q(exit_date__isnull=False) & Q(exit_date__gte=month_start))
-    )
+    if employee_id:
+        employees = Employee.objects.filter(id=employee_id)
+        if not employees.exists():
+            messages.error(request, "Employee not found.")
+            return redirect(f"/finance/?view=payroll&company={company_id}&month={month}&year={year}")
+    else:
+        # Filter employees
+        employees = Employee.objects.filter(Q(date_of_joining__isnull=True) | Q(date_of_joining__lte=month_end)).filter(
+            Q(is_active=True)
+            | Q(employment_status="ACTIVE")
+            | (Q(exit_date__isnull=False) & Q(exit_date__gte=month_start))
+        )
 
-    # Apply company filter
-    target_companies = Company.objects.filter(is_active=True)
-    if company_id and company_id != "all":
-        employees = employees.filter(company_id=company_id)
-        target_companies = target_companies.filter(id=company_id)
+        # Apply company filter
+        target_companies = Company.objects.filter(is_active=True)
+        if company_id and company_id != "all":
+            employees = employees.filter(company_id=company_id)
+            target_companies = target_companies.filter(id=company_id)
 
     if not employees.exists():
         messages.error(request, "No eligible employees found for the selected company/companies.")
@@ -505,25 +543,34 @@ def process_draft_payroll(request):
             errors.append(f"Error for {emp.user.get_full_name()}: {str(e)}")
 
     # Audit log
-    comp_name_str = "All Companies" if company_id == "all" else target_companies.first().name
-    details = f"Processed Phase 1 Draft payroll for {comp_name_str}. Period: {month}/{year}. Total: {employees.count()}, Success: {processed_count}."
-    if errors:
-        details += f" Errors: {len(errors)}"
+    if employee_id:
+        emp_obj = employees.first()
+        comp_obj = emp_obj.company
+        details = f"Processed Individual Phase 1 Draft payroll for {emp_obj.user.get_full_name()} ({emp_obj.badge_id}). Period: {month}/{year}."
+        action_name = "INDIVIDUAL_PAYROLL_DRAFT"
+        if errors:
+            messages.error(request, f"Failed to generate draft for {emp_obj.user.get_full_name()}: {errors[0]}")
+        else:
+            messages.success(request, f"Successfully generated Phase 1 Draft for {emp_obj.user.get_full_name()}!")
+    else:
+        comp_name_str = "All Companies" if company_id == "all" else target_companies.first().name
+        details = f"Processed Phase 1 Draft payroll for {comp_name_str}. Period: {month}/{year}. Total: {employees.count()}, Success: {processed_count}."
+        action_name = "BULK_PAYROLL_DRAFT"
+        comp_obj = None if company_id == "all" else target_companies.first()
+        if errors:
+            messages.warning(
+                request, f"Draft payroll generated with some errors ({len(errors)} failed out of {employees.count()})."
+            )
+        else:
+            messages.success(request, f"Successfully generated Phase 1 Draft payroll for {processed_count} employees!")
 
     FinanceAuditLog.objects.create(
         user=request.user,
-        action="BULK_PAYROLL_DRAFT",
-        company=None if company_id == "all" else target_companies.first(),
+        action=action_name,
+        company=comp_obj,
         details=details,
         ip_address=get_client_ip(request),
     )
-
-    if errors:
-        messages.warning(
-            request, f"Draft payroll generated with some errors ({len(errors)} failed out of {employees.count()})."
-        )
-    else:
-        messages.success(request, f"Successfully generated Phase 1 Draft payroll for {processed_count} employees!")
 
     return redirect(f"/finance/?view=payroll&company={company_id}&month={month}&year={year}")
 
@@ -558,8 +605,11 @@ def save_draft_payslip(request):
             payslip.travel_allowance = float(data["travel_allowance"])
         if "tds_deduction" in data:
             payslip.tds_deduction = float(data["tds_deduction"])
+        if "arrears" in data:
+            payslip.arrears = float(data["arrears"])
 
         # Dynamic salary calculations based on manual overrides
+        positive_arrears = float(payslip.arrears) if float(payslip.arrears or 0) > 0 else 0.0
         if "gross_salary" in data:
             payslip.gross_salary = float(data["gross_salary"])
             payslip.monthly_gross = payslip.gross_salary
@@ -570,6 +620,7 @@ def save_draft_payslip(request):
                 + payslip.conveyance_allowance
                 + payslip.special_allowance
                 + float(payslip.travel_allowance or 0.0)
+                + positive_arrears
             )
             payslip.monthly_gross = payslip.gross_salary
 
@@ -579,8 +630,10 @@ def save_draft_payslip(request):
             payslip.net_salary = (
                 payslip.gross_salary
                 - payslip.employee_pf
+                - payslip.employer_pf
                 - payslip.professional_tax
                 - float(payslip.tds_deduction or 0.0)
+                + (float(payslip.arrears or 0.0) if float(payslip.arrears or 0) < 0 else 0.0)
             )
         payslip.save()
 
@@ -655,13 +708,8 @@ def update_employee_ctc(request):
             year=month_obj.year,
         )
 
-        # Determine which allowance fields map to conveyance/special
-        if breakdown.get("country_code", "IN") == "IN":
-            conveyance = breakdown.get("lta", 0.0)
-            special = breakdown.get("other_allowance", 0.0)
-        else:
-            conveyance = breakdown.get("conveyance", 0.0)
-            special = breakdown.get("medical", 0.0)
+        conveyance = breakdown.get("conveyance_allowance", breakdown.get("conveyance", breakdown.get("lta", 0.0)))
+        special = breakdown.get("special_allowance", breakdown.get("other_allowance", 0.0))
 
         basic = breakdown["basic"]
         hra = breakdown["hra"]
@@ -1138,6 +1186,13 @@ def preview_draft_payslip(request, payslip_id):
             addr += f" {loc.postal_code}"
         branding["address"] = addr
 
+    arrears_val = float(payslip.arrears or 0.0)
+    arrears_rounded = round(arrears_val) if arrears_val > 0 else 0
+    arrears_negative_rounded = round(abs(arrears_val)) if arrears_val < 0 else 0
+    pt_rounded = round(payslip.professional_tax or 0)
+    tds_rounded = round(payslip.tds_deduction or 0)
+    total_taxes_deductions_rounded = pt_rounded + tds_rounded + arrears_negative_rounded
+
     context = {
         "payslip": payslip,
         "company": employee.company,
@@ -1150,11 +1205,13 @@ def preview_draft_payslip(request, payslip_id):
         "special_rounded": round(payslip.special_allowance or 0),
         "employer_pf_rounded": round(payslip.employer_pf or 0),
         "employee_pf_rounded": round(payslip.employee_pf or 0),
-        "professional_tax_rounded": round(payslip.professional_tax or 0),
-        "tds_deduction_rounded": round(payslip.tds_deduction or 0),
-        "total_earnings_ctc": round((payslip.gross_salary or 0) + (payslip.employer_pf or 0)),
+        "professional_tax_rounded": pt_rounded,
+        "tds_deduction_rounded": tds_rounded,
+        "arrears_rounded": arrears_rounded,
+        "arrears_negative_rounded": arrears_negative_rounded,
+        "total_earnings_ctc": round(payslip.gross_salary or 0),
         "total_contributions": round((payslip.employee_pf or 0) + (payslip.employer_pf or 0)),
-        "total_taxes_deductions_rounded": round((payslip.professional_tax or 0) + (payslip.tds_deduction or 0)),
+        "total_taxes_deductions_rounded": total_taxes_deductions_rounded,
         "net_salary_rounded": round(payslip.net_salary or 0),
         "payable_units": f"{int(payslip.worked_days)} Days",
     }
@@ -1229,12 +1286,8 @@ def recalculate_components(request):
             year=month_obj.year,
         )
 
-        if breakdown.get("country_code", "IN") == "IN":
-            conveyance = breakdown.get("lta", 0.0)
-            special = breakdown.get("other_allowance", 0.0)
-        else:
-            conveyance = breakdown.get("conveyance", 0.0)
-            special = breakdown.get("medical", 0.0)
+        conveyance = breakdown.get("conveyance_allowance", breakdown.get("conveyance", breakdown.get("lta", 0.0)))
+        special = breakdown.get("special_allowance", breakdown.get("other_allowance", 0.0))
 
         basic = breakdown["basic"]
         hra = breakdown["hra"]
@@ -1245,7 +1298,7 @@ def recalculate_components(request):
         net = breakdown["net_salary"]
         monthly_gross = breakdown["full_monthly_gross"]
 
-        # Update travel_allowance & tds_deduction if passed or keep existing
+        # Update travel_allowance & tds_deduction & arrears if passed or keep existing
         travel_allowance_val = data.get("travel_allowance")
         if travel_allowance_val is not None:
             payslip.travel_allowance = float(travel_allowance_val)
@@ -1254,8 +1307,14 @@ def recalculate_components(request):
         if tds_deduction_val is not None:
             payslip.tds_deduction = float(tds_deduction_val)
 
+        arrears_val = data.get("arrears")
+        if arrears_val is not None:
+            payslip.arrears = float(arrears_val)
+
         travel_allowance = float(payslip.travel_allowance or 0.0)
         tds_deduction = float(payslip.tds_deduction or 0.0)
+        arrears = float(payslip.arrears or 0.0)
+        positive_arrears = arrears if arrears > 0 else 0.0
 
         # Update payslip with recalculated values
         payslip.basic = basic
@@ -1265,9 +1324,9 @@ def recalculate_components(request):
         payslip.employee_pf = employee_pf
         payslip.employer_pf = employer_pf
         payslip.professional_tax = professional_tax
-        payslip.gross_salary = gross + travel_allowance
-        payslip.monthly_gross = monthly_gross + travel_allowance
-        payslip.net_salary = net + travel_allowance - tds_deduction
+        payslip.gross_salary = gross + travel_allowance + positive_arrears
+        payslip.monthly_gross = monthly_gross + travel_allowance + positive_arrears
+        payslip.net_salary = net + travel_allowance + arrears - tds_deduction
         payslip.save()
 
         # Audit log
@@ -1296,6 +1355,7 @@ def recalculate_components(request):
                 "net": round(payslip.net_salary, 2),
                 "travel_allowance": round(travel_allowance, 2),
                 "tds_deduction": round(tds_deduction, 2),
+                "arrears": round(arrears, 2),
                 "pf_enabled": pf_enabled,
             }
         )
@@ -1429,6 +1489,8 @@ def search_employees_finance(request):
         saved_worked_days = None
         saved_travel_allowance = 0.0
         saved_tds_deduction = 0.0
+        saved_arrears = 0.0
+        saved_arrears_type = "+"
         if month_val and year_val:
             try:
                 from datetime import date
@@ -1440,6 +1502,13 @@ def search_employees_finance(request):
                     saved_worked_days = float(payslip.worked_days) if payslip.worked_days is not None else None
                     saved_travel_allowance = float(payslip.travel_allowance or 0.0)
                     saved_tds_deduction = float(payslip.tds_deduction or 0.0)
+                    raw_arr = float(payslip.arrears or 0.0)
+                    if raw_arr < 0:
+                        saved_arrears_type = "-"
+                        saved_arrears = abs(raw_arr)
+                    else:
+                        saved_arrears_type = "+"
+                        saved_arrears = raw_arr
             except (ValueError, TypeError):
                 pass
 
@@ -1468,6 +1537,8 @@ def search_employees_finance(request):
             "saved_worked_days": saved_worked_days,
             "saved_travel_allowance": saved_travel_allowance,
             "saved_tds_deduction": saved_tds_deduction,
+            "saved_arrears": saved_arrears,
+            "saved_arrears_type": saved_arrears_type,
         }
         results.append(result)
 
@@ -1489,6 +1560,9 @@ def calculate_payslip_preview(request):
             pf_enabled = data.get("pf_enabled")
             travel_allowance = float(data.get("travel_allowance", 0.0) or 0.0)
             tds_deduction = float(data.get("tds_deduction", 0.0) or 0.0)
+            raw_arrears = float(data.get("arrears", 0.0) or 0.0)
+            arrears_type = str(data.get("arrears_type", "+")).strip().lower()
+            arrears = -abs(raw_arrears) if arrears_type in ["-", "minus"] or raw_arrears < 0 else abs(raw_arrears)
 
             # A finance manager can manage any employee in the active companies
             employee = get_object_or_404(Employee, id=employee_id)
@@ -1508,6 +1582,7 @@ def calculate_payslip_preview(request):
                 year=year,
                 travel_allowance=travel_allowance,
                 tds_deduction=tds_deduction,
+                arrears=arrears,
             )
             return JsonResponse({"status": "success", "breakdown": breakdown})
         except Exception as e:
@@ -1533,6 +1608,11 @@ def process_single_payroll(request):
     tds_deduction = 0.0
     if request.POST.get("tds_deduction_enabled") == "on":
         tds_deduction = float(request.POST.get("tds_deduction") or 0.0)
+    arrears = 0.0
+    if request.POST.get("arrears_enabled") == "on":
+        raw_arrears = float(request.POST.get("arrears") or 0.0)
+        arrears_type = str(request.POST.get("arrears_type", "+")).strip().lower()
+        arrears = -abs(raw_arrears) if arrears_type in ["-", "minus"] or raw_arrears < 0 else abs(raw_arrears)
 
     try:
         employee = get_object_or_404(Employee, id=employee_id)
@@ -1553,6 +1633,7 @@ def process_single_payroll(request):
             worked_days=worked_days,
             travel_allowance=travel_allowance,
             tds_deduction=tds_deduction,
+            arrears=arrears,
             is_draft=True,
         )
         messages.success(request, f"Successfully generated draft payslip for {employee.user.get_full_name()}!")

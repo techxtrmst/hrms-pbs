@@ -497,7 +497,7 @@ class PayslipGenerator:
                     <table class="salary-table">
                         {% for deduction in pf_contributions %}
                         <tr>
-                            <td class="salary-label">PF Employee</td>
+                            <td class="salary-label">{{ deduction.name }}</td>
                             <td class="salary-amount">{{ currency_symbol }}{{ "%.2f"|format(deduction.amount) }}</td>
                         </tr>
                         {% endfor %}

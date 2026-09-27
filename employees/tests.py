@@ -473,3 +473,209 @@ class ManagerFilteringTestCase(TestCase):
         self.assertIn(self.admin_employee, queryset)
         self.assertNotIn(self.inactive_mgr_emp, queryset)
         self.assertNotIn(self.resigned_mgr_emp, queryset)
+
+
+class LeaveAutoApprovalTestCase(TestCase):
+    def setUp(self):
+        from employees.models import LeaveBalance
+
+        self.company = Company.objects.create(name="AutoApprove Company", hr_email="hr@autoapprove.com")
+        self.user = User.objects.create_user(
+            username="leave_emp",
+            email="leave_emp@autoapprove.com",
+            password="password",
+            role=User.Role.EMPLOYEE,
+            company=self.company,
+            must_change_password=False,
+        )
+        self.employee = Employee.objects.create(
+            user=self.user,
+            company=self.company,
+            designation="Software Engineer",
+            department="IT",
+            badge_id="EMP999",
+        )
+        self.balance, _ = LeaveBalance.objects.get_or_create(employee=self.employee)
+        self.balance.casual_leave_allocated = 5.0
+        self.balance.sick_leave_allocated = 5.0
+        self.balance.casual_leave_used = 0.0
+        self.balance.sick_leave_used = 0.0
+        self.balance.unpaid_leave = 0.0
+        self.balance.save()
+
+        self.client = Client()
+        self.client.login(username="leave_emp@autoapprove.com", password="password")
+
+    def test_auto_approval_sufficient_balance(self):
+        """Test auto-approval when employee has sufficient CL balance."""
+        from datetime import timedelta
+
+        from employees.models import Attendance, LeaveRequest
+
+        # Pick next Monday and Tuesday to guarantee weekdays
+        days_until_monday = (7 - timezone.localdate().weekday()) % 7 or 7
+        start = timezone.localdate() + timedelta(days=days_until_monday)
+        end = start + timedelta(days=1)  # Monday and Tuesday (2 days)
+
+        leave = LeaveRequest.objects.create(
+            employee=self.employee,
+            leave_type="CL",
+            start_date=start,
+            end_date=end,
+            duration="FULL",
+            reason="Vacation",
+        )
+        result = leave.process_auto_approval(user_or_system=self.user)
+
+        self.assertEqual(leave.status, "APPROVED")
+        self.assertEqual(leave.approval_type, "FULL")
+        self.assertEqual(result["paid_days"], 2.0)
+        self.assertEqual(result["lop_days"], 0.0)
+
+        # Check balance
+        self.balance.refresh_from_db()
+        self.assertEqual(self.balance.casual_leave_used, 2.0)
+        self.assertEqual(self.balance.casual_leave_balance, 3.0)
+        self.assertEqual(self.balance.unpaid_leave, 0.0)
+
+        # Check attendance
+        self.assertEqual(Attendance.objects.filter(employee=self.employee, status="LEAVE").count(), 2)
+
+    def test_auto_approval_partial_balance_creates_lop(self):
+        """Test auto-approval when balance is partial (e.g., 2 available, 3 requested)."""
+        from datetime import timedelta
+
+        from employees.models import LeaveRequest
+
+        # Set available CL to 1.0
+        self.balance.casual_leave_used = 4.0
+        self.balance.save()
+
+        # Pick next Monday to Wednesday (3 working days)
+        days_until_monday = (7 - timezone.localdate().weekday()) % 7 or 7
+        start = timezone.localdate() + timedelta(days=days_until_monday + 7)
+        end = start + timedelta(days=2)  # Mon, Tue, Wed = 3 working days
+
+        leave = LeaveRequest.objects.create(
+            employee=self.employee,
+            leave_type="CL",
+            start_date=start,
+            end_date=end,
+            duration="FULL",
+            reason="Family event",
+        )
+        result = leave.process_auto_approval(user_or_system=self.user)
+
+        self.assertEqual(leave.status, "APPROVED")
+        self.assertEqual(leave.approval_type, "WITH_LOP")
+        self.assertEqual(result["paid_days"], 1.0)
+        self.assertEqual(result["lop_days"], 2.0)
+
+        # Check balance
+        self.balance.refresh_from_db()
+        self.assertEqual(self.balance.casual_leave_used, 5.0)  # 4 + 1
+        self.assertEqual(self.balance.casual_leave_balance, 0.0)
+        self.assertEqual(self.balance.unpaid_leave, 2.0)  # 2 days LOP
+
+    def test_auto_approval_zero_balance_entirely_lop(self):
+        """Test auto-approval when balance is 0 (all days convert to LOP)."""
+        from datetime import timedelta
+
+        from employees.models import LeaveRequest
+
+        # Exhaust CL balance
+        self.balance.casual_leave_used = 5.0
+        self.balance.save()
+
+        # Pick next Monday and Tuesday (2 working days)
+        days_until_monday = (7 - timezone.localdate().weekday()) % 7 or 7
+        start = timezone.localdate() + timedelta(days=days_until_monday + 14)
+        end = start + timedelta(days=1)  # 2 working days
+
+        leave = LeaveRequest.objects.create(
+            employee=self.employee,
+            leave_type="CL",
+            start_date=start,
+            end_date=end,
+            duration="FULL",
+            reason="Personal work",
+        )
+        result = leave.process_auto_approval(user_or_system=self.user)
+
+        self.assertEqual(leave.status, "APPROVED")
+        self.assertEqual(leave.approval_type, "WITH_LOP")
+        self.assertEqual(result["paid_days"], 0.0)
+        self.assertEqual(result["lop_days"], 2.0)
+
+        # Check balance
+        self.balance.refresh_from_db()
+        self.assertEqual(self.balance.unpaid_leave, 2.0)
+
+    def test_auto_approval_direct_unpaid_leave(self):
+        """Test auto-approval when directly applying for Unpaid Leave (UL)."""
+        from datetime import timedelta
+
+        from employees.models import LeaveRequest
+
+        # Pick next Monday (1 working day)
+        days_until_monday = (7 - timezone.localdate().weekday()) % 7 or 7
+        start = timezone.localdate() + timedelta(days=days_until_monday + 21)
+        end = start  # 1 working day
+
+        leave = LeaveRequest.objects.create(
+            employee=self.employee,
+            leave_type="UL",
+            start_date=start,
+            end_date=end,
+            duration="FULL",
+            reason="Unpaid leave",
+        )
+        result = leave.process_auto_approval(user_or_system=self.user)
+
+        self.assertEqual(leave.status, "APPROVED")
+        self.assertEqual(leave.approval_type, "WITH_LOP")
+        self.assertEqual(result["lop_days"], 1.0)
+
+        self.balance.refresh_from_db()
+        self.assertEqual(self.balance.unpaid_leave, 1.0)
+
+    def test_leave_spanning_weekend_excludes_week_offs(self):
+        """Test that leave spanning across weekend excludes week-offs (e.g. Thu to Mon = 3 working days)."""
+        from datetime import timedelta
+
+        from employees.models import Attendance, LeaveRequest
+
+        # Find next Thursday
+        today = timezone.localdate()
+        days_until_thursday = (3 - today.weekday()) % 7
+        if days_until_thursday <= 0:
+            days_until_thursday += 7
+        thursday = today + timedelta(days=days_until_thursday)
+        monday = thursday + timedelta(days=4)  # Thu, Fri, Sat(off), Sun(off), Mon
+
+        leave = LeaveRequest.objects.create(
+            employee=self.employee,
+            leave_type="CL",
+            start_date=thursday,
+            end_date=monday,
+            duration="FULL",
+            reason="Spanning weekend trip",
+        )
+        # Total days should exclude Saturday & Sunday
+        self.assertEqual(leave.total_days, 3.0)
+
+        result = leave.process_auto_approval(user_or_system=self.user)
+        self.assertEqual(leave.status, "APPROVED")
+        self.assertEqual(result["paid_days"], 3.0)
+        self.assertEqual(result["lop_days"], 0.0)
+
+        # Check balance: only 3 days deducted, not 5
+        self.balance.refresh_from_db()
+        self.assertEqual(self.balance.casual_leave_used, 3.0)
+        self.assertEqual(self.balance.casual_leave_balance, 2.0)
+
+        # Check attendance records: exactly 3 records created
+        self.assertEqual(
+            Attendance.objects.filter(employee=self.employee, date__gte=thursday, date__lte=monday).count(),
+            3,
+        )

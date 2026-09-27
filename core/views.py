@@ -2403,36 +2403,27 @@ def my_leaves(request):
             leave_request = LeaveRequest.objects.create(
                 employee=employee,
                 leave_type=leave_type,
-                start_date=start_date,
-                end_date=end_date,
+                start_date=s_dt,
+                end_date=e_dt,
                 reason=reason,
-                duration=duration,  # Use the duration from form
-                status="PENDING",
+                duration=duration,
             )
 
-            # Send Email Notifications
+            # Auto-approve based on leave bucket
+            result = leave_request.process_auto_approval(user_or_system=request.user)
+
+            # Send Email Notifications via Celery task
             try:
-                from core.email_utils import send_leave_request_notification
+                from core.tasks import safe_delay, send_leave_approval_notification_task
 
-                result = send_leave_request_notification(leave_request)
-
-                if not result.get("hr", False):
-                    messages.warning(
-                        request,
-                        "Leave request submitted, but email notification to HR failed. Please notify HR manually.",
-                    )
-
+                safe_delay(send_leave_approval_notification_task, leave_request.id)
             except Exception as mail_err:
                 import logging
 
                 logger = logging.getLogger(__name__)
-                logger.error(f"Error sending email: {mail_err}")
-                messages.warning(
-                    request,
-                    "Leave request submitted, but email notification system encountered an error.",
-                )
+                logger.error(f"Error sending approval notification email: {mail_err}")
 
-            messages.success(request, "Leave request submitted successfully.")
+            messages.success(request, f"✅ {result['message']}")
 
         except Exception as e:
             messages.error(request, f"Error submitting request: {str(e)}")
@@ -2506,11 +2497,26 @@ def cancel_leave_request(request, pk):
         messages.error(request, "Cannot cancel a leave request whose end date has passed.")
         return redirect("my_leaves")
 
-    if leave_request.status == "PENDING":
+    if leave_request.status in ["PENDING", "APPROVED"]:
+        if leave_request.status == "APPROVED":
+            leave_request.reverse_leave_deduction()
+            # Clean up attendance records for leave dates
+            from datetime import timedelta
+
+            from employees.models import Attendance
+
+            curr = leave_request.start_date
+            while curr <= leave_request.end_date:
+                Attendance.objects.filter(
+                    employee=leave_request.employee,
+                    date=curr,
+                    status__in=["LEAVE", "HALF_DAY"],
+                ).delete()
+                curr += timedelta(days=1)
         leave_request.delete()
         messages.success(request, "Leave request cancelled successfully.")
     else:
-        messages.error(request, "Only pending leave requests can be cancelled.")
+        messages.error(request, "This leave request cannot be cancelled.")
 
     return redirect("my_leaves")
 
@@ -4689,15 +4695,11 @@ def process_payslip_generation(request):
             payslip.hra = breakdown["hra"]
             payslip.lta = breakdown["lta"]
             payslip.other_allowance = breakdown["other_allowance"]
-            # Map location specific allowances
-            # For India: lta -> conveyance_allowance, other_allowance -> special_allowance
-            # For other countries: conveyance -> conveyance_allowance, medical -> special_allowance
-            if breakdown.get("country_code", "IN") == "IN":
-                payslip.conveyance_allowance = breakdown.get("lta", 0.0)
-                payslip.special_allowance = breakdown.get("other_allowance", 0.0)
-            else:
-                payslip.conveyance_allowance = breakdown.get("conveyance", 0.0)
-                payslip.special_allowance = breakdown.get("medical", 0.0)
+            # Map allowances
+            payslip.conveyance_allowance = breakdown.get(
+                "conveyance_allowance", breakdown.get("conveyance", breakdown.get("lta", 0.0))
+            )
+            payslip.special_allowance = breakdown.get("special_allowance", breakdown.get("other_allowance", 0.0))
             payslip.monthly_gross = breakdown["full_monthly_gross"]
             payslip.gross_salary = breakdown["gross_monthly"]
             payslip.employee_pf = breakdown["employee_pf"]
@@ -4747,6 +4749,13 @@ def process_payslip_generation(request):
                     addr += f" {loc.postal_code}"
                 branding["address"] = addr
 
+            arrears_val = float(payslip.arrears or 0.0)
+            arrears_rounded = round(arrears_val) if arrears_val > 0 else 0
+            arrears_negative_rounded = round(abs(arrears_val)) if arrears_val < 0 else 0
+            pt_rounded = round(payslip.professional_tax or 0)
+            tds_rounded = round(getattr(payslip, "tds_deduction", 0) or 0)
+            total_taxes_deductions_rounded = pt_rounded + tds_rounded + arrears_negative_rounded
+
             # Ensure all values in context are rounded as per user request
             context = {
                 "payslip": payslip,
@@ -4761,9 +4770,13 @@ def process_payslip_generation(request):
                 "special_rounded": round(payslip.special_allowance or 0),
                 "employer_pf_rounded": round(payslip.employer_pf or 0),
                 "employee_pf_rounded": round(payslip.employee_pf or 0),
-                "professional_tax_rounded": round(payslip.professional_tax or 0),
-                "total_earnings_ctc": round((payslip.gross_salary or 0) + (payslip.employer_pf or 0)),
+                "professional_tax_rounded": pt_rounded,
+                "tds_deduction_rounded": tds_rounded,
+                "arrears_rounded": arrears_rounded,
+                "arrears_negative_rounded": arrears_negative_rounded,
+                "total_earnings_ctc": round(payslip.gross_salary or 0),
                 "total_contributions": round((payslip.employee_pf or 0) + (payslip.employer_pf or 0)),
+                "total_taxes_deductions_rounded": total_taxes_deductions_rounded,
                 "net_salary_rounded": round(payslip.net_salary or 0),
                 # PDF shows current-month days (display_days), not cycle days
                 "payable_units": f"{breakdown.get('display_days', total_days)} Days",
@@ -4998,15 +5011,13 @@ def bulk_upload_payslips(request):
                     payslip.hra = breakdown["hra"]
                     payslip.lta = breakdown["lta"]
                     payslip.other_allowance = breakdown["other_allowance"]
-                    # Map location specific allowances
-                    # For India: lta -> conveyance_allowance, other_allowance -> special_allowance
-                    # For other countries: conveyance -> conveyance_allowance, medical -> special_allowance
-                    if breakdown.get("country_code", "IN") == "IN":
-                        payslip.conveyance_allowance = breakdown.get("lta", 0.0)
-                        payslip.special_allowance = breakdown.get("other_allowance", 0.0)
-                    else:
-                        payslip.conveyance_allowance = breakdown.get("conveyance", 0.0)
-                        payslip.special_allowance = breakdown.get("medical", 0.0)
+                    # Map allowances
+                    payslip.conveyance_allowance = breakdown.get(
+                        "conveyance_allowance", breakdown.get("conveyance", breakdown.get("lta", 0.0))
+                    )
+                    payslip.special_allowance = breakdown.get(
+                        "special_allowance", breakdown.get("other_allowance", 0.0)
+                    )
                     payslip.monthly_gross = breakdown["full_monthly_gross"]
                     payslip.gross_salary = breakdown["gross_monthly"]
                     payslip.employee_pf = breakdown["employee_pf"]
@@ -5053,6 +5064,13 @@ def bulk_upload_payslips(request):
                             addr += f" {loc.postal_code}"
                         branding["address"] = addr
 
+                    arrears_val = float(payslip.arrears or 0.0)
+                    arrears_rounded = round(arrears_val) if arrears_val > 0 else 0
+                    arrears_negative_rounded = round(abs(arrears_val)) if arrears_val < 0 else 0
+                    pt_rounded = round(payslip.professional_tax or 0)
+                    tds_rounded = round(getattr(payslip, "tds_deduction", 0) or 0)
+                    total_taxes_deductions_rounded = pt_rounded + tds_rounded + arrears_negative_rounded
+
                     # Ensure all values in context are rounded as per user request
                     context = {
                         "payslip": payslip,
@@ -5067,9 +5085,13 @@ def bulk_upload_payslips(request):
                         "special_rounded": round(payslip.special_allowance or 0),
                         "employer_pf_rounded": round(payslip.employer_pf or 0),
                         "employee_pf_rounded": round(payslip.employee_pf or 0),
-                        "professional_tax_rounded": round(payslip.professional_tax or 0),
-                        "total_earnings_ctc": round((payslip.gross_salary or 0) + (payslip.employer_pf or 0)),
+                        "professional_tax_rounded": pt_rounded,
+                        "tds_deduction_rounded": tds_rounded,
+                        "arrears_rounded": arrears_rounded,
+                        "arrears_negative_rounded": arrears_negative_rounded,
+                        "total_earnings_ctc": round(payslip.gross_salary or 0),
                         "total_contributions": round((payslip.employee_pf or 0) + (payslip.employer_pf or 0)),
+                        "total_taxes_deductions_rounded": total_taxes_deductions_rounded,
                         "net_salary_rounded": round(payslip.net_salary or 0),
                     }
 

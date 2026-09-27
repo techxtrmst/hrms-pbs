@@ -174,11 +174,14 @@ def generate_payslip_pdf_with_generator(payslip_instance, output_dir="media/pays
             earnings.append({"name": "Special Allowance", "amount": float(payslip_instance.special_allowance)})
         if hasattr(payslip_instance, "travel_allowance") and payslip_instance.travel_allowance > 0:
             earnings.append({"name": "Travel Allowance", "amount": float(payslip_instance.travel_allowance)})
+        if hasattr(payslip_instance, "arrears") and payslip_instance.arrears > 0:
+            earnings.append({"name": "Arrears", "amount": float(payslip_instance.arrears)})
 
         # Prepare deductions data
         deductions = []
-        if payslip_instance.employee_pf > 0:
-            deductions.append({"name": "PF Employee", "amount": float(payslip_instance.employee_pf)})
+        if (payslip_instance.employee_pf or 0) > 0 or (payslip_instance.employer_pf or 0) > 0:
+            total_pf = float((payslip_instance.employee_pf or 0) + (payslip_instance.employer_pf or 0))
+            deductions.append({"name": "Provident Fund", "amount": total_pf})
         if payslip_instance.professional_tax > 0:
             deductions.append({"name": "Professional Tax", "amount": float(payslip_instance.professional_tax)})
 
@@ -189,6 +192,8 @@ def generate_payslip_pdf_with_generator(payslip_instance, output_dir="media/pays
             deductions.append({"name": "Total Income Tax", "amount": float(payslip_instance.tds_deduction)})
         if hasattr(payslip_instance, "lop_deduction") and payslip_instance.lop_deduction > 0:
             deductions.append({"name": "LOP Deduction", "amount": float(payslip_instance.lop_deduction)})
+        if hasattr(payslip_instance, "arrears") and payslip_instance.arrears < 0:
+            deductions.append({"name": "Arrears Deduction", "amount": float(abs(payslip_instance.arrears))})
 
         # Prepare employee data dictionary
         employee_data = {
@@ -284,6 +289,13 @@ def _generate_payslip_pdf_fallback(payslip_instance):
 
         net_salary_words = num2words_flexible(payslip_instance.net_salary, currency_name)
 
+        arrears_val = float(payslip_instance.arrears or 0.0)
+        arrears_rounded = round(arrears_val) if arrears_val > 0 else 0
+        arrears_negative_rounded = round(abs(arrears_val)) if arrears_val < 0 else 0
+        pt_rounded = round(payslip_instance.professional_tax or 0)
+        tds_rounded = round(payslip_instance.tds_deduction or 0)
+        total_taxes_deductions_rounded = pt_rounded + tds_rounded + arrears_negative_rounded
+
         context = {
             "payslip": payslip_instance,
             "company": company,
@@ -296,13 +308,13 @@ def _generate_payslip_pdf_fallback(payslip_instance):
             "special_rounded": round(payslip_instance.special_allowance or 0),
             "employer_pf_rounded": round(payslip_instance.employer_pf or 0),
             "employee_pf_rounded": round(payslip_instance.employee_pf or 0),
-            "professional_tax_rounded": round(payslip_instance.professional_tax or 0),
-            "tds_deduction_rounded": round(payslip_instance.tds_deduction or 0),
-            "total_earnings_ctc": round((payslip_instance.gross_salary or 0) + (payslip_instance.employer_pf or 0)),
+            "professional_tax_rounded": pt_rounded,
+            "tds_deduction_rounded": tds_rounded,
+            "arrears_rounded": arrears_rounded,
+            "arrears_negative_rounded": arrears_negative_rounded,
+            "total_earnings_ctc": round(payslip_instance.gross_salary or 0),
             "total_contributions": round((payslip_instance.employee_pf or 0) + (payslip_instance.employer_pf or 0)),
-            "total_taxes_deductions_rounded": round(
-                (payslip_instance.professional_tax or 0) + (payslip_instance.tds_deduction or 0)
-            ),
+            "total_taxes_deductions_rounded": total_taxes_deductions_rounded,
             "net_salary_rounded": round(payslip_instance.net_salary or 0),
             "payable_units": f"{int(payslip_instance.worked_days)} Days"
             if payslip_instance.worked_days is not None

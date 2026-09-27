@@ -698,10 +698,13 @@ def clock_in(request):
                     attendance.current_session_type = session_type
                     attendance.user_timezone = user_timezone
 
-                    # Set first clock-in of the day
+                    # Set first clock-in of the day and location
                     if not attendance.clock_in:
                         attendance.clock_in = session.clock_in
-                        attendance.location_in = f"{lat},{lng}" if lat is not None and lng is not None else "N/A"
+                    if lat is not None and lng is not None:
+                        attendance.location_in = f"{lat},{lng}"
+                    elif not attendance.location_in:
+                        attendance.location_in = "N/A"
 
                     # Determine overall status based on clock_in_type
                     if session_number == 1:
@@ -1091,9 +1094,25 @@ def update_location(request):
                         }
                     )
 
-                # Log location for current session (Removed auto-clockout as per requirement)
-                if current_session.clock_in:
-                    pass  # Keep the clock_in check if needed for other logic, but removed the 9-hour constraint
+                # Attach clock-in coordinates to session if initially null (instant fast clock-in fallback)
+                if current_session.clock_in_latitude is None and lat is not None and lng is not None:
+                    current_session.clock_in_latitude = lat
+                    current_session.clock_in_longitude = lng
+                    current_session.save(update_fields=["clock_in_latitude", "clock_in_longitude"])
+                    if not attendance.location_in or attendance.location_in == "N/A":
+                        attendance.location_in = f"{lat},{lng}"
+                        attendance.save(update_fields=["location_in"])
+                    # Create CLOCK_IN location log if not already created
+                    if not LocationLog.objects.filter(attendance_session=current_session, log_type="CLOCK_IN").exists():
+                        LocationLog.objects.create(
+                            employee=employee,
+                            attendance_session=current_session,
+                            latitude=lat,
+                            longitude=lng,
+                            accuracy=accuracy if accuracy is not None else 9999,
+                            log_type="CLOCK_IN",
+                            is_valid=True,
+                        )
 
                 # Log location for current session
                 if attendance.location_tracking_active:
@@ -1406,8 +1425,8 @@ def employee_profile(request):
     emergency_contacts = employee.emergency_contacts.all().order_by("-is_primary", "created_at")
 
     # Get probation status
-    probation_status = employee.get_probation_status() if employee.date_of_joining else "IN_PROBATION"
-    probation_date = employee.get_probation_end_date() if employee.date_of_joining else None
+    probation_status = employee.get_probation_status()
+    probation_date = employee.get_probation_end_date()
 
     # Get available shifts for the company (for shift assignment)
     available_shifts = []
@@ -1502,19 +1521,6 @@ class LeaveApplyView(LoginRequiredMixin, CreateView):
         employee = self.request.user.employee_profile
         form.instance.employee = employee
 
-        # Multi-level Workflow Integration
-        from core.models import ApprovalWorkflow
-
-        workflow = ApprovalWorkflow.objects.filter(
-            company=employee.company, workflow_type="LEAVE", is_active=True
-        ).first()
-
-        if workflow:
-            form.instance.workflow = workflow
-            form.instance.current_step = 1
-            # Update approval_level based on first step config if needed
-            # For now, default to MANAGER as per existing logic but inside workflow
-
         # Server-side duplicate prevention: Check for recent duplicate submissions
         from datetime import timedelta
 
@@ -1529,57 +1535,25 @@ class LeaveApplyView(LoginRequiredMixin, CreateView):
         ).exists()
 
         if recent_duplicate:
-            # Removed redundant local import
-
             messages.warning(
                 self.request,
                 "You just submitted a leave request for these dates. Please wait before submitting again.",
             )
             return self.form_invalid(form)
 
-        # Check if this is a confirmation submission
-        confirm_lop = self.request.POST.get("confirm_lop", "false").lower() == "true"
+        # Save initial leave request
+        self.object = form.save()
 
-        # Validate leave application before saving
-        temp_leave_request = LeaveRequest(
-            employee=form.instance.employee,
-            leave_type=form.cleaned_data["leave_type"],
-            start_date=form.cleaned_data["start_date"],
-            end_date=form.cleaned_data["end_date"],
-            duration=form.cleaned_data.get("duration", "FULL"),
-        )
+        # Process Auto-Approval based on bucket balance
+        result = self.object.process_auto_approval(user_or_system=self.request.user)
 
-        validation = temp_leave_request.validate_leave_application()
+        # Send approval email notification via Celery task
+        from core.tasks import safe_delay, send_leave_approval_notification_task
 
-        # If validation shows issues and user hasn't confirmed, ask for confirmation
-        if validation.get("will_be_lop", False) and form.cleaned_data["leave_type"] != "UL" and not confirm_lop:
-            # Removed redundant local import
+        safe_delay(send_leave_approval_notification_task, self.object.id)
 
-            messages.error(
-                self.request,
-                f"⚠️ Insufficient Leave Balance: {validation['message']} Please confirm if you want to proceed with LOP (Loss of Pay).",
-            )
-
-            # Return form with validation warning for user confirmation
-            return self.render_to_response(
-                self.get_context_data(form=form, validation_warning=validation, show_confirmation=True)
-            )
-
-        # Add a comment to the leave request if it involves LOP
-        if validation.get("will_be_lop", False) and form.cleaned_data["leave_type"] != "UL":
-            original_reason = form.cleaned_data.get("reason", "")
-            lop_note = f"\n\n[System Note: This application involves {validation.get('shortfall', 0)} days of LOP due to insufficient balance. Available: {validation.get('available_balance', 0)} days, Requested: {validation.get('requested_days', 0)} days]"
-            form.instance.reason = original_reason + lop_note
-
-        # Proceed with normal save
-        response = super().form_valid(form)
-
-        # Send email notification immediately using Celery task to avoid delay and web server thread issues
-        from core.tasks import safe_delay, send_leave_request_notification_task
-
-        safe_delay(send_leave_request_notification_task, self.object.id)
-
-        return response
+        messages.success(self.request, f"✅ {result['message']}")
+        return redirect(self.get_success_url())
 
 
 @csrf_exempt
@@ -2145,12 +2119,9 @@ def employee_detail(request, pk):
                         }
                     )
 
-        # Calculate Probation Date (3 months from joining)
-        probation_date = None
-        probation_status = None
-        if employee.date_of_joining:
-            probation_date = employee.get_probation_end_date()
-            probation_status = employee.get_probation_status()
+        # Calculate Probation Date (3 months from joining, Bluebix has no probation)
+        probation_date = employee.get_probation_end_date()
+        probation_status = employee.get_probation_status()
 
         # Get available shifts for the company (for shift assignment)
         available_shifts = []
@@ -3535,6 +3506,13 @@ class RegularizationCreateView(LoginRequiredMixin, CreateView):
     template_name = "employees/regularization_form.html"
     success_url = reverse_lazy("regularization_list")  # Redirect to list or profile
 
+    def get_initial(self):
+        initial = super().get_initial()
+        date_param = self.request.GET.get("date")
+        if date_param:
+            initial["date"] = date_param
+        return initial
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Pass user's regularizations to show history on same page if needed
@@ -3906,6 +3884,10 @@ def leave_configuration(request):
         years_ctx.append({"value": y, "selected": "selected" if y == current_year else ""})
 
     # Fetch leave transaction history
+    import calendar
+    import re
+    from collections import defaultdict
+
     from .models import LeaveTransaction
 
     if user.role == User.Role.MANAGER:
@@ -3913,7 +3895,176 @@ def leave_configuration(request):
     else:
         transactions = LeaveTransaction.objects.filter(employee__company=company)
 
-    transactions = transactions.select_related("employee__user", "created_by").order_by("-created_at")
+    transactions = transactions.select_related("employee__user", "employee__leave_balance", "created_by").order_by(
+        "-created_at"
+    )
+
+    # Group batch transactions (e.g. Monthly Accrual runs) and prepare structured history items
+    history_items = []
+    batch_map = defaultdict(list)
+    tx_order = []
+
+    for tx in transactions:
+        is_batch = tx.transaction_type == "CREDIT" and (
+            "monthly accrual" in (tx.reason or "").lower()
+            or "batch accrual" in (tx.reason or "").lower()
+            or (tx.created_by is None and "accrual" in (tx.reason or "").lower())
+        )
+        if is_batch:
+            time_key = tx.created_at.strftime("%Y-%m-%d %H:%M")
+            batch_key = f"{tx.reason.strip()}_{time_key}"
+            if batch_key not in batch_map:
+                tx_order.append(("batch", batch_key))
+            batch_map[batch_key].append(tx)
+        else:
+            tx_order.append(("single", tx))
+
+    for item_type, val in tx_order:
+        if item_type == "batch":
+            tx_list = batch_map[val]
+            first_tx = tx_list[0]
+            total_days = sum(t.amount for t in tx_list)
+
+            # Extract month/year for reference and period
+            match = re.search(r"\((\d{1,2})/(\d{4})\)", first_tx.reason or "")
+            if match:
+                m_num, y_num = int(match.group(1)), int(match.group(2))
+                period_str = f"{calendar.month_name[m_num]} {y_num}"
+                ref_str = f"Accrual Job #ACR-{y_num}-{m_num:02d}"
+            else:
+                period_str = first_tx.created_at.strftime("%B %Y")
+                ref_str = f"Accrual Job #ACR-{first_tx.created_at.strftime('%Y-%m')}"
+
+            emp_credited_list = []
+            for t in tx_list:
+                emp = t.employee
+                u = emp.user
+                full_name = u.get_full_name() or u.username
+                if emp.pseudo_name:
+                    full_name += f" ({emp.pseudo_name})"
+
+                initials = (u.first_name[:1] + (u.last_name[:1] if u.last_name else "")).upper()
+                if not initials:
+                    initials = u.username[:2].upper()
+
+                bal = 0.0
+                if hasattr(emp, "leave_balance") and emp.leave_balance:
+                    bal = emp.leave_balance.casual_leave_balance + emp.leave_balance.sick_leave_balance
+
+                emp_credited_list.append(
+                    {
+                        "id": emp.id,
+                        "name": full_name,
+                        "email": u.email,
+                        "role": emp.designation or emp.department or "Staff",
+                        "avatar": emp.profile_picture.url if emp.profile_picture else "",
+                        "initials": initials,
+                        "days": f"+{t.amount:.1f}",
+                        "new_balance": f"{bal:.1f}",
+                    }
+                )
+
+            history_items.append(
+                {
+                    "id": f"batch_{first_tx.id}",
+                    "is_batch": True,
+                    "created_at": first_tx.created_at,
+                    "date_display": first_tx.created_at.strftime("%Y-%m-%d %H:%M"),
+                    "date_iso": first_tx.created_at.strftime("%Y-%m-%d"),
+                    "title": "Accrual Run Breakdown",
+                    "subtitle": f"{len(tx_list)} Employees Credited",
+                    "tx_type": "CREDIT",
+                    "leave_type_display": "Monthly Run",
+                    "leave_type_code": "MONTHLY_RUN",
+                    "days_display": f"+{total_days:.1f}",
+                    "days_val": total_days,
+                    "description": first_tx.reason,
+                    "actor_display": first_tx.created_by.get_full_name() if first_tx.created_by else "System Accrual",
+                    "is_system": not bool(first_tx.created_by),
+                    "affected_count": len(tx_list),
+                    "reference": ref_str,
+                    "period": period_str,
+                    "accrual_rule": "Monthly Accrual – Default Policy",
+                    "employees_credited": emp_credited_list,
+                    "search_text": f"accrual run breakdown monthly run {first_tx.reason.lower()} {(first_tx.created_by.get_full_name().lower() if first_tx.created_by else 'system accrual')} "
+                    + " ".join(e["name"].lower() + " " + e["email"].lower() for e in emp_credited_list),
+                }
+            )
+        else:
+            tx = val
+            emp = tx.employee
+            u = emp.user
+            full_name = u.get_full_name() or u.username
+            if emp.pseudo_name:
+                full_name += f" ({emp.pseudo_name})"
+
+            initials = (u.first_name[:1] + (u.last_name[:1] if u.last_name else "")).upper()
+            if not initials:
+                initials = u.username[:2].upper()
+
+            bal = 0.0
+            if hasattr(emp, "leave_balance") and emp.leave_balance:
+                bal = emp.leave_balance.casual_leave_balance + emp.leave_balance.sick_leave_balance
+
+            # Leave type clean display
+            lt_display = tx.get_leave_type_display()
+            if tx.leave_type == "UL":
+                lt_display = "Unpaid Leave (LOP)"
+            elif tx.leave_type == "SL":
+                lt_display = "Sick Leave"
+            elif tx.leave_type == "CL":
+                lt_display = "Casual Leave"
+
+            # Reference extraction
+            ref_match = re.search(r"Request #(\d+)", tx.reason or "")
+            ref_str = f"Leave Request #{ref_match.group(1)}" if ref_match else f"Transaction #{tx.id}"
+
+            prefix = "+" if tx.transaction_type == "CREDIT" else "-"
+            days_disp = f"{prefix}{tx.amount:.1f}"
+
+            history_items.append(
+                {
+                    "id": f"tx_{tx.id}",
+                    "is_batch": False,
+                    "created_at": tx.created_at,
+                    "date_display": tx.created_at.strftime("%Y-%m-%d %H:%M"),
+                    "date_iso": tx.created_at.strftime("%Y-%m-%d"),
+                    "title": full_name,
+                    "subtitle": u.email,
+                    "employee_name": full_name,
+                    "employee_email": u.email,
+                    "employee_role": emp.designation or emp.department or "Staff",
+                    "employee_avatar": emp.profile_picture.url if emp.profile_picture else "",
+                    "employee_initials": initials,
+                    "tx_type": tx.transaction_type,
+                    "leave_type_display": lt_display,
+                    "leave_type_code": tx.leave_type,
+                    "days_display": days_disp,
+                    "days_val": tx.amount,
+                    "description": tx.reason,
+                    "actor_display": tx.created_by.get_full_name() if tx.created_by else "System Accrual",
+                    "is_system": not bool(tx.created_by),
+                    "affected_count": 1,
+                    "reference": ref_str,
+                    "period": tx.created_at.strftime("%B %Y"),
+                    "accrual_rule": "Leave Deduction Policy"
+                    if tx.transaction_type == "DEBIT"
+                    else "Manual Adjustment Policy",
+                    "employees_credited": [
+                        {
+                            "id": emp.id,
+                            "name": full_name,
+                            "email": u.email,
+                            "role": emp.designation or emp.department or "Staff",
+                            "avatar": emp.profile_picture.url if emp.profile_picture else "",
+                            "initials": initials,
+                            "days": days_disp,
+                            "new_balance": f"{bal:.1f}",
+                        }
+                    ],
+                    "search_text": f"{full_name.lower()} {u.email.lower()} {(tx.reason or '').lower()} {(tx.created_by.get_full_name().lower() if tx.created_by else 'system accrual')} {lt_display.lower()}",
+                }
+            )
 
     return render(
         request,
@@ -3923,6 +4074,8 @@ def leave_configuration(request):
             "months_ctx": months_ctx,
             "years_ctx": years_ctx,
             "transactions": transactions,
+            "history_items": history_items,
+            "total_history_count": len(history_items),
             "locations": company.locations.filter(is_active=True).order_by("name"),
             "active_count": all_employees.filter(is_active=True, employment_status="ACTIVE").count(),
             "inactive_count": all_employees.filter(Q(is_active=False) | ~Q(employment_status="ACTIVE")).count(),
