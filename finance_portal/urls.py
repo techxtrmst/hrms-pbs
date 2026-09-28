@@ -8,6 +8,7 @@ urlpatterns = [
     path("", views.dashboard, name="dashboard"),
     path("process-bulk/", views.process_bulk_payroll, name="process_bulk_payroll"),
     path("process-draft/", views.process_draft_payroll, name="process_draft_payroll"),
+    path("finalize-single/<int:payslip_id>/", views.finalize_single_payslip, name="finalize_single_payslip"),
     path("save-draft-payslip/", views.save_draft_payslip, name="save_draft_payslip"),
     path("update-ctc/", views.update_employee_ctc, name="update_employee_ctc"),
     path("recalculate-components/", views.recalculate_components, name="recalculate_components"),

@@ -644,6 +644,26 @@ def save_draft_payslip(request):
             employee.annual_ctc = float(new_ctc)
             employee.save(update_fields=["annual_ctc"])
 
+        # Check if user requested to finalize immediately
+        if data.get("finalize"):
+            finalize_payslip_internal(payslip)
+            FinanceAuditLog.objects.create(
+                user=request.user,
+                company=payslip.employee.company,
+                action="INDIVIDUAL_PAYROLL_FINALIZE",
+                details=f"Saved and finalized individual payslip for {payslip.employee.user.get_full_name()} ({payslip.month.strftime('%b %Y')}). Net: {payslip.net_salary}.",
+                ip_address=get_client_ip(request),
+            )
+            return JsonResponse(
+                {
+                    "status": "success",
+                    "finalized": True,
+                    "net_salary": payslip.net_salary,
+                    "gross_salary": payslip.gross_salary,
+                    "message": "Payslip submitted and finalized successfully!",
+                }
+            )
+
         # Log change to security audit log
         FinanceAuditLog.objects.create(
             user=request.user,
@@ -664,6 +684,40 @@ def save_draft_payslip(request):
 
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=400)
+
+
+@finance_manager_required
+def finalize_single_payslip(request, payslip_id):
+    """Finalize a single draft payslip, render official PDF, and save."""
+    if request.method != "POST":
+        return redirect("finance_portal:dashboard")
+
+    payslip = get_object_or_404(Payslip, id=payslip_id)
+    company_id = request.POST.get("company_id", payslip.employee.company_id if payslip.employee.company else "all")
+    month = int(request.POST.get("month", payslip.month.month))
+    year = int(request.POST.get("year", payslip.month.year))
+    auto_send_email = request.POST.get("auto_send_email") == "on"
+
+    try:
+        finalize_payslip_internal(payslip)
+        if auto_send_email:
+            send_payslip_email(payslip)
+
+        FinanceAuditLog.objects.create(
+            user=request.user,
+            action="INDIVIDUAL_PAYROLL_FINALIZE",
+            company=payslip.employee.company,
+            details=f"Finalized individual payslip for {payslip.employee.user.get_full_name()} ({payslip.employee.badge_id}). Period: {month}/{year}. Net: {payslip.net_salary}.",
+            ip_address=get_client_ip(request),
+        )
+
+        messages.success(
+            request, f"Successfully finalized and submitted payslip for {payslip.employee.user.get_full_name()}!"
+        )
+    except Exception as e:
+        messages.error(request, f"Failed to finalize payslip: {str(e)}")
+
+    return redirect(f"/finance/?view=payroll&company={company_id}&month={month}&year={year}")
 
 
 @finance_manager_required
