@@ -41,6 +41,32 @@
             overflow-x: hidden;
         }
 
+        /* Profile & Team Photo Protection */
+        img,
+        .user-mini-img,
+        .profile-avatar-img,
+        .profile-avatar,
+        .employee-avatar,
+        .team-avatar-image,
+        .kp-hero-avatar img,
+        .org-node-avatar img,
+        .profile-image,
+        .user-avatar,
+        .user-avatar-sm,
+        [class*="avatar"],
+        [class*="profile-pic"] {
+            -webkit-user-drag: none !important;
+            -khtml-user-drag: none !important;
+            -moz-user-drag: none !important;
+            -o-user-drag: none !important;
+            user-drag: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+            -webkit-touch-callout: none !important;
+        }
+
         /* Premium Sidebar */
         .sidebar {
             height: 100vh;
@@ -3066,6 +3092,46 @@
         }
     </script>
     {% endif %}
+    <!-- Global Photo & Avatar Protection (Disable Right-Click, Drag, and Copy) -->
+    <script>
+        (function() {
+            function isProtectedImage(target) {
+                if (!target) return false;
+                if (target.tagName === 'IMG') return true;
+                if (target.closest && target.closest('img, .team-avatar-wrapper, .kp-hero-avatar, .user-mini-img, .employee-avatar, .profile-avatar, .profile-avatar-img, .user-avatar, .user-avatar-sm, [class*="avatar"], [class*="profile-pic"], [class*="team-avatar"]')) {
+                    return true;
+                }
+                return false;
+            }
+
+            // Prevent right-click context menu (Save image as, Copy image, Open in new tab)
+            document.addEventListener('contextmenu', function(e) {
+                if (isProtectedImage(e.target)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            }, true);
+
+            // Prevent drag-and-drop to download or open in a new tab/desktop
+            document.addEventListener('dragstart', function(e) {
+                if (isProtectedImage(e.target)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            }, true);
+
+            // Prevent shortcuts on images (Ctrl+S / Cmd+S / Ctrl+C)
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S' || e.key === 'c' || e.key === 'C')) {
+                    if (isProtectedImage(document.activeElement) || isProtectedImage(e.target)) {
+                        e.preventDefault();
+                    }
+                }
+            }, true);
+        })();
+    </script>
 </body>
 
 </html>

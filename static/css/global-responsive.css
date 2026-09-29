@@ -582,3 +582,32 @@
     .mb-mobile-2 { margin-bottom: var(--spacing-sm) !important; }
     .mb-mobile-3 { margin-bottom: var(--spacing-md) !important; }
 }
+
+/* ==========================================================================
+   Image & Profile Photo Protection (Disable Save, Download, Drag, and Copy)
+   ========================================================================== */
+img,
+.user-mini-img,
+.profile-avatar-img,
+.profile-avatar,
+.employee-avatar,
+.team-avatar-image,
+.kp-hero-avatar img,
+.org-node-avatar img,
+.profile-image,
+.user-avatar,
+.user-avatar-sm,
+[class*="avatar"],
+[class*="profile-pic"],
+[class*="team-avatar"] {
+    -webkit-user-drag: none !important;
+    -khtml-user-drag: none !important;
+    -moz-user-drag: none !important;
+    -o-user-drag: none !important;
+    user-drag: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+    -webkit-touch-callout: none !important;
+}
