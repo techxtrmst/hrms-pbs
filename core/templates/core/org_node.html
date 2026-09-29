@@ -1,54 +1,67 @@
-<li>
-    <div class="node-card">
-        <div class="d-flex flex-column align-items-center">
-            <div class="node-avatar-container mb-3">
-                {% if node.employee and node.employee.profile_picture %}
-                <img src="{{ node.employee.profile_picture.url }}" alt="Profile" class="node-avatar">
-                {% else %}
-                <div class="node-avatar d-flex align-items-center justify-content-center bg-light">
-                    <i class="fas fa-user text-muted" style="font-size: 1.5rem;"></i>
-                </div>
-                {% endif %}
-            </div>
+<li class="org-tree-node">
+    <div class="org-node-card {% if node.is_superadmin %}node-root{% endif %}" data-node-id="{{ node.id }}" data-search-text="{% if node.employee %}{{ node.employee.user.get_full_name }} {{ node.employee.designation }} {{ node.employee.department }}{% else %}{{ node.user.get_full_name }} Super Admin Global{% endif %}">
 
-            <h5 class="node-name text-center">
+        <!-- Avatar Section -->
+        <div class="org-avatar-wrap">
+            {% if node.employee and node.employee.profile_picture %}
+                <img src="{{ node.employee.profile_picture.url }}" alt="{{ node.employee.user.get_full_name }}" class="org-avatar-img">
+            {% elif node.employee %}
+                <div class="org-avatar-initials dept-avatar-{{ node.employee.department|lower|default:'default' }}">
+                    {% if node.employee.user.first_name and node.employee.user.last_name %}
+                        {{ node.employee.user.first_name|first|upper }}{{ node.employee.user.last_name|first|upper }}
+                    {% else %}
+                        {{ node.employee.user.username|slice:":2"|upper }}
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="org-avatar-initials dept-avatar-global">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Info Section -->
+        <div class="org-node-info">
+            <h5 class="org-node-name">
                 {% if node.employee %}
-                {{ node.employee.user.get_full_name }}
+                    {{ node.employee.user.get_full_name }}
                 {% else %}
-                {{ node.user.get_full_name }}
+                    {{ node.user.get_full_name|default:node.user.username }}
                 {% endif %}
             </h5>
 
-            <div class="node-role text-center">
+            <div class="org-node-role">
                 {% if node.employee %}
-                {{ node.employee.designation }}
+                    {{ node.employee.designation|default:"Team Member" }}
                 {% elif node.is_superadmin %}
-                Super Admin
+                    Super Admin
                 {% else %}
-                -
+                    Executive
                 {% endif %}
             </div>
 
-            <div class="node-dept">
-                {% if node.employee %}
-                {{ node.employee.department }}
+            <!-- Department Pill -->
+            <div class="org-dept-badge dept-badge-{% if node.employee and node.employee.department %}{{ node.employee.department|lower }}{% else %}global{% endif %}">
+                {% if node.employee and node.employee.department %}
+                    {{ node.employee.department|upper }}
                 {% else %}
-                Global
+                    GLOBAL
                 {% endif %}
             </div>
         </div>
 
+        <!-- Toggle Collapse/Expand Button -->
         {% if node.direct_reports %}
-        <div class="node-toggler" onclick="toggleNode(this)">
-            <i class="fas fa-minus"></i>
-        </div>
+            <div class="org-node-toggler" onclick="toggleNode(this)" title="Toggle Team View">
+                <i class="fas fa-minus"></i>
+            </div>
         {% endif %}
     </div>
 
     {% if node.direct_reports %}
-    <ul>
+    <ul class="org-children-group">
         {% for child in node.direct_reports %}
-        {% include "core/org_node.html" with node=child %}
+            {% include "core/org_node.html" with node=child %}
         {% endfor %}
     </ul>
     {% endif %}

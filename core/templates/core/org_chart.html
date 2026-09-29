@@ -1,24 +1,23 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}Organisation Structure | {{ company.name }}{% endblock %}
+{% block title %}Organization Chart | {{ company.name|default:"HRMS" }}{% endblock %}
 
 {% block extra_css %}
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&family=Inter:wght@400;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
     :root {
-        --primary-indigo: #3f51b5;
-        --vibrant-blue: #2196f3;
-        --bg-blueprint: #fbf8ff;
-        --grid-color: rgba(63, 81, 181, 0.05);
-        --glass-bg: rgba(255, 255, 255, 0.6);
-        --node-border: rgba(255, 255, 255, 0.8);
-        --text-dark: #1a1b22;
-        --text-muted: #454652;
+        --org-primary: #4f46e5;
+        --org-primary-hover: #4338ca;
+        --org-bg-canvas: #fbfbfd;
+        --org-card-border: rgba(226, 232, 240, 0.9);
+        --org-connector: #cbd5e1;
+        --org-text-main: #0f172a;
+        --org-text-muted: #64748b;
     }
 
-    /* Full-screen content override */
+    /* Full-screen content wrapper */
     body:has(.org-wrapper) .content {
         padding: 0 !important;
         overflow: hidden;
@@ -26,44 +25,157 @@
 
     .org-wrapper {
         position: relative;
-        height: calc(100vh - 80px);
+        height: calc(100vh - 75px);
         width: 100%;
         overflow: hidden;
-        background-color: var(--bg-blueprint);
+        background-color: var(--org-bg-canvas);
         background-image:
-            linear-gradient(rgba(63, 81, 181, 0.08) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(63, 81, 181, 0.08) 1px, transparent 1px);
+            linear-gradient(rgba(203, 213, 225, 0.18) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(203, 213, 225, 0.18) 1px, transparent 1px);
         background-size: 40px 40px;
         display: flex;
         flex-direction: column;
-        font-family: 'Inter', sans-serif;
+        font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
     }
 
-    @media (max-width: 768px) {
-        .org-wrapper { height: calc(100vh - 64px); }
-    }
-
-    /* Header Section */
-    .org-header {
-        background: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(10px);
-        border-bottom: 1px solid #e5e7eb;
-        padding: 1.5rem 2rem;
+    /* Header Bar */
+    .org-header-bar {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid #e2e8f0;
+        padding: 0.9rem 2rem;
         z-index: 100;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
     }
 
-    .org-header h4 {
-        font-family: 'Manrope', sans-serif;
+    .org-brand-box {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .org-icon-badge {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: #ede9fe;
+        color: #6366f1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        box-shadow: 0 2px 6px rgba(99, 102, 241, 0.1);
+    }
+
+    .org-title {
         font-weight: 800;
+        font-size: 1.25rem;
+        color: var(--org-text-main);
         letter-spacing: -0.02em;
-        color: var(--primary-indigo);
+        margin: 0;
+        line-height: 1.2;
     }
 
-    /* Panzoom Viewport */
+    .org-subtitle {
+        font-size: 0.76rem;
+        color: var(--org-text-muted);
+        font-weight: 500;
+        margin: 2px 0 0 0;
+    }
+
+    /* Search Input Box */
+    .org-search-box {
+        display: flex;
+        align-items: center;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 999px;
+        padding: 7px 18px;
+        gap: 10px;
+        width: 380px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+        transition: all 0.2s ease;
+    }
+
+    .org-search-box:focus-within {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+    }
+
+    .org-search-box i {
+        color: #94a3b8;
+        font-size: 0.9rem;
+    }
+
+    .org-search-input {
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 0.84rem;
+        color: var(--org-text-main);
+        font-weight: 500;
+        width: 100%;
+    }
+
+    .org-search-input::placeholder {
+        color: #94a3b8;
+    }
+
+    /* Action Buttons */
+    .org-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .btn-org-expand {
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #475569;
+        font-weight: 600;
+        font-size: 0.82rem;
+        padding: 7px 18px;
+        border-radius: 9px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-org-expand:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        color: #0f172a;
+    }
+
+    .btn-org-collapse {
+        border: 1px solid transparent;
+        background: #4f46e5;
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 0.82rem;
+        padding: 7px 18px;
+        border-radius: 9px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+        transition: all 0.2s;
+    }
+
+    .btn-org-collapse:hover {
+        background: #4338ca;
+        color: #ffffff;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+    }
+
+    /* Panzoom Container */
     #panzoom-container {
         flex: 1;
         width: 100%;
@@ -72,247 +184,402 @@
         cursor: grab;
     }
 
-    #panzoom-container:active { cursor: grabbing; }
-
-    .tree-canvas {
-        padding: 200px;
-        transform-origin: 0 0;
+    #panzoom-container:active {
+        cursor: grabbing;
     }
 
-    /* Tree Styling */
-    .tree ul {
-        padding-top: 120px;
-        position: relative;
+    .tree-canvas {
+        padding: 100px 80px;
+        transform-origin: 50% 0;
         display: flex;
         justify-content: center;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* =================================================================
+       FLEX-BASED PURE ORG TREE (Precision Connectors & True Centering)
+       ================================================================= */
+    .tree {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 0 auto;
+        padding: 0;
+    }
+
+    .tree, .tree ul {
+        list-style-type: none;
         margin: 0;
-        padding-left: 0;
-        transition: all 0.5s;
+        padding: 0;
+    }
+
+    .tree ul {
+        display: flex;
+        justify-content: center;
+        position: relative;
+        padding-top: 48px; /* Height of the drop connector */
     }
 
     .tree li {
-        float: left;
-        text-align: center;
         list-style-type: none;
         position: relative;
-        padding: 40px 15px 0 15px;
-        transition: all 0.5s;
+        padding: 48px 14px 0 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 
-    /* Connectors */
+    /* Horizontal branch connector spanning from child to child */
     .tree li::before, .tree li::after {
         content: '';
         position: absolute;
         top: 0;
         right: 50%;
-        border-top: 2px solid #cbd5e1;
+        border-top: 2px solid var(--org-connector);
         width: 50%;
-        height: 40px;
+        height: 48px;
     }
 
     .tree li::after {
         right: auto;
         left: 50%;
-        border-left: 2px solid #cbd5e1;
+        border-left: 2px solid var(--org-connector);
     }
 
-    .tree li:only-child::after, .tree li:only-child::before { display: none; }
-    .tree li:only-child { padding-top: 0; }
-    .tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
+    /* Only child has no horizontal crossbar */
+    .tree li:only-child::after, .tree li:only-child::before {
+        display: none;
+    }
+    .tree li:only-child {
+        padding-top: 48px;
+    }
+
+    /* First and last child borders rounded */
+    .tree li:first-child::before, .tree li:last-child::after {
+        border: 0 none;
+    }
+
     .tree li:last-child::before {
-        border-right: 2px solid #cbd5e1;
+        border-right: 2px solid var(--org-connector);
         border-radius: 0 12px 0 0;
     }
+
     .tree li:first-child::after {
         border-radius: 12px 0 0 0;
     }
 
+    /* Vertical connector line dropping straight down from parent card */
     .tree ul ul::before {
         content: '';
         position: absolute;
         top: 0;
         left: 50%;
-        border-left: 2px solid #cbd5e1;
+        border-left: 2px solid var(--org-connector);
         width: 0;
-        height: 40px;
+        height: 48px;
+        transform: translateX(-50%);
+        z-index: 1;
     }
 
-    /* Node Card - The Digital Architect Style */
-    .node-card {
-        background: var(--glass-bg);
-        backdrop-filter: blur(20px);
-        border: 1px solid var(--node-border);
-        border-radius: 16px;
-        padding: 1.25rem;
-        display: inline-block;
-        min-width: 240px;
+    /* Card styling */
+    .org-node-card {
+        background: #ffffff;
+        border: 1px solid var(--org-card-border);
+        border-radius: 18px;
+        padding: 20px 22px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 210px;
+        box-sizing: border-box;
         position: relative;
         z-index: 10;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        margin: 0 auto;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
     }
 
-    .node-card:hover {
-        transform: translateY(-5px);
-        border-color: var(--vibrant-blue);
-        box-shadow: 0 20px 25px -5px rgba(33, 150, 243, 0.1), 0 10px 10px -5px rgba(33, 150, 243, 0.04);
+    .org-node-card:hover {
+        transform: translateY(-3px);
+        border-color: #a5b4fc;
+        box-shadow: 0 14px 28px -4px rgba(99, 102, 241, 0.15), 0 4px 10px -2px rgba(0, 0, 0, 0.04);
     }
 
-    .node-avatar {
-        width: 64px;
-        height: 64px;
-        border-radius: 12px;
+    /* Root Card */
+    .org-node-card.node-root {
+        padding: 22px 26px;
+        box-shadow: 0 6px 20px -3px rgba(99, 102, 241, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+    }
+
+    /* Avatar */
+    .org-avatar-wrap {
+        margin-bottom: 10px;
+        position: relative;
+    }
+
+    .org-avatar-img {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
         object-fit: cover;
-        border: 2px solid #fff;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border: 2px solid #ffffff;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
         display: block;
     }
 
-    .node-name {
-        font-family: 'Manrope', sans-serif;
-        font-weight: 700;
-        font-size: 1.1rem;
-        color: var(--primary-indigo);
-        margin: 0;
-        line-height: 1.2;
-    }
-
-    .node-role {
-        font-size: 0.875rem;
-        font-weight: 600;
-        color: var(--text-muted);
-        margin: 0.25rem 0;
-    }
-
-    .node-dept {
-        display: inline-block;
-        padding: 2px 10px;
-        background: rgba(63, 81, 181, 0.1);
-        color: var(--primary-indigo);
-        border-radius: 999px;
-        font-family: 'Space Grotesk', sans-serif;
-        font-size: 0.7rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-top: 0.5rem;
-    }
-
-    /* Floating Controls */
-    .org-controls {
-        position: absolute;
-        bottom: 110px;
-        right: 32px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        z-index: 1000;
-    }
-
-    .control-btn {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        color: var(--primary-indigo);
+    .org-avatar-initials {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        font-weight: 700;
+        font-size: 1.05rem;
+        border: 2px solid #ffffff;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
     }
 
-    .control-btn:hover {
-        background: var(--vibrant-blue);
-        color: white;
-        transform: scale(1.05);
+    .dept-avatar-global { background: #ede9fe; color: #6366f1; }
+    .dept-avatar-hr { background: #e0e7ff; color: #4338ca; }
+    .dept-avatar-software, .dept-avatar-it { background: #d1fae5; color: #059669; }
+    .dept-avatar-finance { background: #fef3c7; color: #d97706; }
+    .dept-avatar-marketing { background: #ffe4e6; color: #e11d48; }
+    .dept-avatar-default { background: #f1f5f9; color: #475569; }
+
+    /* Node Text */
+    .org-node-info {
+        text-align: center;
+        width: 100%;
     }
 
-    /* Node Toggler */
-    .node-toggler {
+    .org-node-name {
+        font-weight: 700;
+        font-size: 0.94rem;
+        color: var(--org-text-main);
+        margin: 0;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 175px;
+    }
+
+    .org-node-role {
+        font-size: 0.76rem;
+        font-weight: 500;
+        color: var(--org-text-muted);
+        margin: 3px 0 8px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 175px;
+    }
+
+    /* Department Badge */
+    .org-dept-badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 999px;
+        font-size: 0.62rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .dept-badge-global {
+        background: #f5f3ff;
+        color: #7c3aed;
+        border: 1px solid rgba(124, 58, 237, 0.15);
+    }
+
+    .dept-badge-hr, .dept-badge-talent {
+        background: #eef2ff;
+        color: #4f46e5;
+        border: 1px solid rgba(79, 70, 229, 0.15);
+    }
+
+    .dept-badge-software, .dept-badge-it, .dept-badge-development {
+        background: #ecfdf5;
+        color: #059669;
+        border: 1px solid rgba(5, 150, 105, 0.15);
+    }
+
+    .dept-badge-finance, .dept-badge-accounts {
+        background: #fffbeb;
+        color: #d97706;
+        border: 1px solid rgba(217, 119, 6, 0.15);
+    }
+
+    .dept-badge-marketing, .dept-badge-sales {
+        background: #fff1f2;
+        color: #e11d48;
+        border: 1px solid rgba(225, 29, 72, 0.15);
+    }
+
+    .dept-badge-default {
+        background: #f8fafc;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* Node Toggler Button */
+    .org-node-toggler {
         position: absolute;
-        bottom: -14px;
+        bottom: -13px;
         left: 50%;
         transform: translateX(-50%);
-        width: 28px;
-        height: 28px;
-        background: white;
+        width: 26px;
+        height: 26px;
+        background: #ffffff;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        z-index: 20;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        z-index: 25;
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
         transition: all 0.2s;
+        font-size: 0.72rem;
+        color: #64748b;
     }
 
-    .node-toggler:hover {
-        background: var(--vibrant-blue);
-        color: white;
+    .org-node-toggler:hover {
+        background: #4f46e5;
+        color: #ffffff;
+        border-color: #4f46e5;
     }
 
     .collapsed > ul { display: none; }
-    .collapsed .node-toggler i { transform: rotate(180deg); }
+    .collapsed .org-node-toggler i { transform: rotate(180deg); }
+
+    /* Search Highlight & Dim */
+    .node-search-matched {
+        border-color: #6366f1 !important;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.25), 0 12px 24px rgba(99, 102, 241, 0.2) !important;
+        transform: translateY(-4px) scale(1.03) !important;
+    }
+
+    .node-search-dimmed {
+        opacity: 0.25;
+        filter: grayscale(80%);
+    }
+
+    /* Floating Controls Panel */
+    .org-floating-toolbar {
+        position: absolute;
+        right: 24px;
+        top: 90px;
+        display: flex;
+        flex-direction: column;
+        background: #ffffff;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        border-radius: 12px;
+        box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.08), 0 3px 6px -2px rgba(0, 0, 0, 0.03);
+        z-index: 1000;
+        overflow: hidden;
+    }
+
+    .floating-tool-btn {
+        width: 42px;
+        height: 42px;
+        border: none;
+        background: transparent;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        font-size: 0.92rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .floating-tool-btn:last-child {
+        border-bottom: none;
+    }
+
+    .floating-tool-btn:hover {
+        background: #f8fafc;
+        color: #4f46e5;
+    }
+
+    .floating-tool-btn:active {
+        background: #ede9fe;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="org-wrapper">
-    <!-- Header Section -->
-    <header class="org-header">
-        <div>
-            <h4 class="m-0">Organization Chart</h4>
-            <p class="text-muted small m-0">{{ company.name }} Architectural Hierarchy</p>
+<div class="org-wrapper" id="orgWrapper">
+    <!-- Header Bar -->
+    <header class="org-header-bar">
+        <div class="org-brand-box">
+            <div class="org-icon-badge">
+                <i class="fas fa-sitemap"></i>
+            </div>
+            <div>
+                <h4 class="org-title">Organization Chart</h4>
+                <p class="org-subtitle">{{ company.name|default:"Company" }} Architectural Hierarchy</p>
+            </div>
         </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-outline-primary btn-sm rounded-pill px-4" onclick="expandAll()">
-                <i class="fas fa-expand-alt me-2"></i>Expand All
+
+        <!-- Real-time Search Box -->
+        <div class="org-search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="orgSearchInput" class="org-search-input" placeholder="Search by name, designation or department..." oninput="handleOrgSearch(this.value)">
+        </div>
+
+        <!-- Actions -->
+        <div class="org-actions">
+            <button class="btn-org-expand" onclick="expandAll()" title="Expand all branches">
+                <i class="fas fa-expand-arrows-alt"></i> Expand All
             </button>
-            <button class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm" onclick="collapseAll()">
-                <i class="fas fa-compress-alt me-2"></i>Collapse All
+            <button class="btn-org-collapse" onclick="collapseAll()" title="Collapse all branches">
+                <i class="fas fa-compress-arrows-alt"></i> Collapse All
             </button>
         </div>
     </header>
 
-    <!-- Panzoom Area -->
+    <!-- Interactive Canvas Viewport -->
     <div id="panzoom-container">
         <div class="tree-canvas" id="org-tree">
             <div class="tree">
                 <ul>
                     {% for root in roots %}
-                    {% include "core/org_node.html" with node=root %}
+                        {% include "core/org_node.html" with node=root %}
                     {% empty %}
-                    <li>
-                        <div class="node-card p-5">
-                            <div class="text-muted">No hierarchy data available.</div>
-                        </div>
-                    </li>
+                        <li>
+                            <div class="org-node-card p-4">
+                                <div class="text-muted">No reporting hierarchy available.</div>
+                            </div>
+                        </li>
                     {% endfor %}
                 </ul>
             </div>
         </div>
     </div>
 
-    <!-- Floating Controls -->
-    <div class="org-controls">
-        <button class="control-btn shadow-sm" onclick="panzoom.zoomIn()" title="Zoom In">
+    <!-- Floating Zoom & Screen Controls -->
+    <div class="org-floating-toolbar">
+        <button class="floating-tool-btn" onclick="panzoom.zoomIn()" title="Zoom In">
             <i class="fas fa-plus"></i>
         </button>
-        <button class="control-btn shadow-sm" onclick="panzoom.zoomOut()" title="Zoom Out">
+        <button class="floating-tool-btn" onclick="panzoom.zoomOut()" title="Zoom Out">
             <i class="fas fa-minus"></i>
         </button>
-        <button class="control-btn shadow-sm" onclick="resetView()" title="Reset View">
+        <button class="floating-tool-btn" onclick="toggleFullscreen()" title="Toggle Fullscreen">
+            <i class="fas fa-expand"></i>
+        </button>
+        <button class="floating-tool-btn" onclick="resetView()" title="Reset & Recenter View">
             <i class="fas fa-sync-alt"></i>
         </button>
     </div>
 </div>
 
-<!-- Panzoom JS -->
+<!-- Panzoom Engine -->
 <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
 <script>
     let panzoom;
@@ -320,32 +587,33 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         const elem = document.getElementById('org-tree');
-        const parent = elem.parentElement;
+        const parent = document.getElementById('panzoom-container');
 
-        panzoom = Panzoom(elem, {
-            maxScale: 3,
-            minScale: 0.1,
-            contain: null, // Allow full freedom to move and zoom out
-            startScale: 0.6,
-        });
+        if (elem && parent) {
+            panzoom = Panzoom(elem, {
+                maxScale: 3.0,
+                minScale: 0.2,
+                contain: null,
+                startScale: 0.82,
+            });
 
-        // Enable wheel zoom
-        parent.addEventListener('wheel', panzoom.zoomWithWheel);
+            parent.addEventListener('wheel', panzoom.zoomWithWheel);
 
-        resetView = () => {
-            panzoom.reset();
-            const containerWidth = parent.offsetWidth;
-            const contentWidth = elem.offsetWidth;
+            resetView = () => {
+                panzoom.reset();
+                const containerWidth = parent.offsetWidth;
+                const treeElement = elem.querySelector('.tree');
+                const contentWidth = treeElement ? treeElement.offsetWidth : elem.offsetWidth;
+                const scale = 0.82;
 
-            // Center calculation
-            const x = (containerWidth - contentWidth * 0.6) / 2;
-            const y = 150;
+                panzoom.zoom(scale, { animate: false });
+                const x = (containerWidth - contentWidth * scale) / 2;
+                const y = 50;
+                panzoom.pan(x, y, { animate: false });
+            };
 
-            panzoom.pan(x, y);
-        };
-
-        // Initial center
-        setTimeout(resetView, 100);
+            setTimeout(resetView, 150);
+        }
     });
 
     function toggleNode(btn) {
@@ -364,7 +632,7 @@
     function expandAll() {
         document.querySelectorAll('li.collapsed').forEach(li => {
             li.classList.remove('collapsed');
-            const icon = li.querySelector('.node-toggler i');
+            const icon = li.querySelector('.org-node-toggler i');
             if (icon) {
                 icon.classList.remove('fa-plus');
                 icon.classList.add('fa-minus');
@@ -377,11 +645,59 @@
             const children = li.querySelector('ul');
             if (children) {
                 li.classList.add('collapsed');
-                const icon = li.querySelector('.node-toggler i');
+                const icon = li.querySelector('.org-node-toggler i');
                 if (icon) {
                     icon.classList.remove('fa-minus');
                     icon.classList.add('fa-plus');
                 }
+            }
+        });
+    }
+
+    function toggleFullscreen() {
+        const wrapper = document.getElementById('orgWrapper');
+        if (!document.fullscreenElement) {
+            wrapper.requestFullscreen().catch(err => {
+                console.error(`Error attempting to enable fullscreen: ${err.message}`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    function handleOrgSearch(query) {
+        query = query.trim().toLowerCase();
+        const cards = document.querySelectorAll('.org-node-card');
+
+        if (!query) {
+            cards.forEach(card => {
+                card.classList.remove('node-search-matched', 'node-search-dimmed');
+            });
+            return;
+        }
+
+        let firstMatch = null;
+        cards.forEach(card => {
+            const searchText = (card.getAttribute('data-search-text') || '').toLowerCase();
+            if (searchText.includes(query)) {
+                card.classList.add('node-search-matched');
+                card.classList.remove('node-search-dimmed');
+                if (!firstMatch) firstMatch = card;
+
+                // Auto expand parent nodes so matched child is visible
+                let parentLi = card.closest('li').parentElement.closest('li');
+                while (parentLi) {
+                    parentLi.classList.remove('collapsed');
+                    const icon = parentLi.querySelector('.org-node-toggler i');
+                    if (icon) {
+                        icon.classList.remove('fa-plus');
+                        icon.classList.add('fa-minus');
+                    }
+                    parentLi = parentLi.parentElement.closest('li');
+                }
+            } else {
+                card.classList.remove('node-search-matched');
+                card.classList.add('node-search-dimmed');
             }
         });
     }

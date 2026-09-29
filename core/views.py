@@ -1250,7 +1250,6 @@ def employee_dashboard(request):
                 "clock_in": clock_in_time.strftime("%I:%M %p") if clock_in_time else None,
                 "clock_out": clock_out_time.strftime("%I:%M %p") if clock_out_time else None,
                 "email": col.user.email or "No Email",
-                "mobile": col.mobile_number or "Not Provided",
                 "manager_name": col.manager.get_full_name() if col.manager else "No Manager",
                 "work_type": col.get_work_type_display() if hasattr(col, "get_work_type_display") else "Office",
             }
@@ -2858,38 +2857,43 @@ def employee_org_chart(request):
 
     if current_emp:
         if role == User.Role.EMPLOYEE:
-            # Employee View: Department + Reporting Manager
-            dept = current_emp.department
+            # Employee View: Reporting Manager and teammates who share the same manager
             manager_id = current_emp.manager_id
-
             added_ids = set()
 
-            # 1. Add Department Colleagues
-            for emp in all_employees:
-                if emp.department == dept:
-                    final_employees.append(emp)
-                    added_ids.add(emp.id)
+            # 1. Add Reporting Manager and chain up to top/CEO
+            curr_mgr_id = manager_id
+            while curr_mgr_id and curr_mgr_id in emp_map and curr_mgr_id not in added_ids:
+                mgr = emp_map[curr_mgr_id]
+                final_employees.append(mgr)
+                added_ids.add(mgr.id)
+                curr_mgr_id = mgr.manager_id
 
-            # 2. Add Reporting Manager (if not already added)
-            if manager_id and manager_id in emp_map:
-                mgr = emp_map[manager_id]
-                if mgr.id not in added_ids:
-                    final_employees.append(mgr)
-                    added_ids.add(mgr.id)
+            # 2. Add current employee
+            if current_emp.id not in added_ids:
+                final_employees.append(current_emp)
+                added_ids.add(current_emp.id)
+
+            # 3. Add teammates who report to the EXACT same reporting manager
+            if manager_id:
+                for emp in all_employees:
+                    if emp.manager_id == manager_id and emp.id not in added_ids:
+                        final_employees.append(emp)
+                        added_ids.add(emp.id)
 
         elif role in [User.Role.MANAGER, User.Role.COMPANY_ADMIN]:
             # Manager/Admin View
-            # Rule: "his team and his reporting manager"
-
+            # Rule: his team and his reporting manager
             if current_emp.manager_id:
-                # Restricted View
                 added_ids = set()
 
-                # 1. Reporting Manager
-                if current_emp.manager_id in emp_map:
-                    mgr = emp_map[current_emp.manager_id]
+                # 1. Reporting Manager chain up to top
+                curr_mgr_id = current_emp.manager_id
+                while curr_mgr_id and curr_mgr_id in emp_map and curr_mgr_id not in added_ids:
+                    mgr = emp_map[curr_mgr_id]
                     final_employees.append(mgr)
                     added_ids.add(mgr.id)
+                    curr_mgr_id = mgr.manager_id
 
                 # 2. Self
                 if current_emp.id not in added_ids:
@@ -3351,9 +3355,14 @@ def attendance_report(request):
         "present": 0,
         "absent": 0,
         "leave": 0,
+        "sick_leave": 0,
+        "paid_leave": 0,
+        "lop": 0,
         "half_day": 0,
         "weekly_off": 0,
         "holiday": 0,
+        "late_count": 0,
+        "early_count": 0,
     }
 
     for emp in employees:
@@ -3364,10 +3373,17 @@ def attendance_report(request):
                 "present": 0,
                 "absent": 0,
                 "leave": 0,
+                "sick_leave": 0,
+                "paid_leave": 0,
+                "lop": 0,
                 "half_day": 0,
                 "weekly_off": 0,
                 "holiday": 0,
+                "late_count": 0,
+                "early_count": 0,
             },
+            "late_details": [],
+            "early_details": [],
         }
 
         for dt in date_range:
@@ -3377,6 +3393,22 @@ def attendance_report(request):
             if att:
                 # Attendance record exists - check if employee actually clocked in
                 if att.clock_in:
+                    # Check late login
+                    if att.is_late or (att.late_by_minutes and att.late_by_minutes > 0):
+                        emp_data["stats"]["late_count"] += 1
+                        total_stats["late_count"] += 1
+                        time_str = timezone.localtime(att.clock_in).strftime("%I:%M %p")
+                        late_m = f" ({att.late_by_minutes}m late)" if att.late_by_minutes else ""
+                        emp_data["late_details"].append(f"{dt.strftime('%d-%b')}: {time_str}{late_m}")
+
+                    # Check early logout
+                    if att.is_early_departure or (att.early_departure_minutes and att.early_departure_minutes > 0):
+                        emp_data["stats"]["early_count"] += 1
+                        total_stats["early_count"] += 1
+                        out_str = timezone.localtime(att.clock_out).strftime("%I:%M %p") if att.clock_out else "—"
+                        early_m = f" ({att.early_departure_minutes}m early)" if att.early_departure_minutes else ""
+                        emp_data["early_details"].append(f"{dt.strftime('%d-%b')}: {out_str}{early_m}")
+
                     # Employee clocked in - determine status
                     if emp.is_week_off(dt):
                         status_code = "WEEK_OFF_WORK"
@@ -3389,7 +3421,6 @@ def attendance_report(request):
                     elif att.status == "HALF_DAY":
                         status_code = "HALF_DAY"
                     else:
-                        # Has clock_in but other status (shouldn't happen normally)
                         status_code = "PRESENT"
                 else:
                     # Attendance record exists but no clock_in - check the status
@@ -3402,18 +3433,14 @@ def attendance_report(request):
                     elif att.status == "HALF_DAY":
                         status_code = "HALF_DAY"
                     else:
-                        # No clock_in and not leave/holiday/weekoff = absent
                         status_code = "ABSENT"
             else:
                 # No attendance record - determine what it should be
-                # Check if it's a holiday for this employee's location
                 if emp.location_id and emp.location_id in holiday_map and dt in holiday_map[emp.location_id]:
                     status_code = "HOLIDAY"
-                # Check if it's a weekoff for this employee
                 elif emp.is_week_off(dt):
                     status_code = "WEEKLY_OFF"
                 else:
-                    # No record and not holiday/weekoff = absent
                     status_code = "ABSENT"
 
             # Map status to display value and count
@@ -3423,12 +3450,7 @@ def attendance_report(request):
                 display_val = "WOW"
                 emp_data["stats"]["present"] += 1
                 total_stats["present"] += 1
-            elif status_code == "PRESENT":
-                display_val = "P"
-                emp_data["stats"]["present"] += 1
-                total_stats["present"] += 1
-            elif status_code == "WFH":
-                # Count WFH as present
+            elif status_code == "PRESENT" or status_code == "WFH":
                 display_val = "P"
                 emp_data["stats"]["present"] += 1
                 total_stats["present"] += 1
@@ -3440,10 +3462,16 @@ def attendance_report(request):
                 leave_type = leave_type_detail_map.get(emp.id, {}).get(dt)
                 if leave_type == "SL":
                     display_val = "SL"
+                    emp_data["stats"]["sick_leave"] += 1
+                    total_stats["sick_leave"] += 1
                 elif leave_type == "CL":
                     display_val = "PL"
+                    emp_data["stats"]["paid_leave"] += 1
+                    total_stats["paid_leave"] += 1
                 elif leave_type == "UL":
                     display_val = "LOP"
+                    emp_data["stats"]["lop"] += 1
+                    total_stats["lop"] += 1
                 else:
                     display_val = "L"
                 emp_data["stats"]["leave"] += 1
@@ -3470,6 +3498,8 @@ def attendance_report(request):
         emp_data["working_days"] = working_days
         emp_data["present_days"] = present_days
         emp_data["attendance_percentage"] = round((present_days / working_days * 100) if working_days > 0 else 0, 1)
+        emp_data["late_details_str"] = " | ".join(emp_data["late_details"]) if emp_data["late_details"] else "None"
+        emp_data["early_details_str"] = " | ".join(emp_data["early_details"]) if emp_data["early_details"] else "None"
 
         reports.append(emp_data)
 
@@ -3533,6 +3563,7 @@ def download_attendance(request):
     # Styles
     header_font = Font(bold=True, color="FFFFFF")
     header_fill = PatternFill(start_color="2c5282", end_color="2c5282", fill_type="solid")
+    summary_fill = PatternFill(start_color="1e3a8a", end_color="1e3a8a", fill_type="solid")
 
     # 1. Define Headers
     headers = [
@@ -3553,18 +3584,23 @@ def download_attendance(request):
         date_cols.append(current_date)
         current_date += timedelta(days=1)
 
-    # Summary Headers (simplified)
+    # Summary Headers at the end of export
     summary_headers = [
         "Total Days",
-        "Present",
-        "Half Day",
-        "Weekly Offs",
-        "Holidays",
-        "Leave",
-        "Absent Days",
-        "Working Days",
+        "Total Present",
+        "Total Absent",
+        "Sick Leave (SL)",
+        "Casual/Paid Leave (PL)",
+        "Loss of Pay (LOP)",
+        "Half Days (HD)",
+        "Weekly Offs (WO)",
+        "Holidays (H)",
+        "Working Days (WD)",
         "Attendance %",
-        "Late Arrival Days",
+        "Total Late Logins",
+        "Late Login Details",
+        "Total Early Logouts",
+        "Early Logout Details",
     ]
     headers.extend(summary_headers)
 
@@ -3572,11 +3608,10 @@ def download_attendance(request):
     for col_num, header_title in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col_num, value=header_title)
         cell.font = header_font
-        cell.fill = header_fill
-        cell.alignment = Alignment(horizontal="center")
+        cell.fill = summary_fill if header_title in summary_headers else header_fill
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
     # 2. Fetch Data
-
     employees = Employee.objects.filter(company=request.user.company).select_related("user", "manager", "location")
 
     # Filter out employees who left before the report period
@@ -3674,42 +3709,55 @@ def download_attendance(request):
             value=emp.manager.get_full_name() if emp.manager else "-",
         )
 
-        # Stats Counters (simplified)
+        # Stats Counters
         stats = {
             "present": 0,
             "absent": 0,
             "leave": 0,
+            "sick_leave": 0,
+            "paid_leave": 0,
+            "lop": 0,
             "half_day": 0,
             "weekly_off": 0,
             "holiday": 0,
-            "late_arrival": 0,
+            "late_count": 0,
+            "early_count": 0,
         }
+        late_details_list = []
+        early_details_list = []
 
         # Date Columns
         col_idx = 7
         for dt in date_cols:
             att = att_map.get(emp.id, {}).get(dt)
 
-            # Determine status using same logic as report view - check actual clock-in
             if att:
-                # Attendance record exists - check if employee actually clocked in
                 if att.clock_in:
-                    # Employee clocked in - determine status
+                    # Check late login
+                    if att.is_late or (att.late_by_minutes and att.late_by_minutes > 0):
+                        stats["late_count"] += 1
+                        time_str = timezone.localtime(att.clock_in).strftime("%I:%M %p")
+                        late_m = f" ({att.late_by_minutes}m late)" if att.late_by_minutes else ""
+                        late_details_list.append(f"{dt.strftime('%d-%b')}: {time_str}{late_m}")
+
+                    # Check early logout
+                    if att.is_early_departure or (att.early_departure_minutes and att.early_departure_minutes > 0):
+                        stats["early_count"] += 1
+                        out_str = timezone.localtime(att.clock_out).strftime("%I:%M %p") if att.clock_out else "—"
+                        early_m = f" ({att.early_departure_minutes}m early)" if att.early_departure_minutes else ""
+                        early_details_list.append(f"{dt.strftime('%d-%b')}: {out_str}{early_m}")
+
                     if emp.is_week_off(dt):
                         status_code = "WEEK_OFF_WORK"
                     elif att.status == "WFH":
-                        status_code = "WFH"  # Will be counted as Present
-                    elif att.status == "PRESENT":
+                        status_code = "WFH"
+                    elif att.status == "PRESENT" or att.status == "HYBRID":
                         status_code = "PRESENT"
-                    elif att.status == "HYBRID":
-                        status_code = "PRESENT"  # Hybrid counted as present
                     elif att.status == "HALF_DAY":
                         status_code = "HALF_DAY"
                     else:
-                        # Has clock_in but other status (shouldn't happen normally)
                         status_code = "PRESENT"
                 else:
-                    # Attendance record exists but no clock_in - check the status
                     if att.status == "LEAVE":
                         status_code = "LEAVE"
                     elif att.status == "WEEKLY_OFF":
@@ -3719,10 +3767,8 @@ def download_attendance(request):
                     elif att.status == "HALF_DAY":
                         status_code = "HALF_DAY"
                     else:
-                        # No clock_in and not leave/holiday/weekoff = absent
                         status_code = "ABSENT"
             else:
-                # No attendance record - determine what it should be
                 if emp.location_id and emp.location_id in holiday_map and dt in holiday_map[emp.location_id]:
                     status_code = "HOLIDAY"
                 elif emp.is_week_off(dt):
@@ -3735,14 +3781,7 @@ def download_attendance(request):
             if status_code == "WEEK_OFF_WORK":
                 display_val = "WOW"
                 stats["present"] += 1
-            elif status_code == "PRESENT":
-                display_val = "P"
-                stats["present"] += 1
-                if att and att.is_late:
-                    display_val += " (L)"
-                    stats["late_arrival"] += 1
-            elif status_code == "WFH":
-                # Count WFH as present
+            elif status_code == "PRESENT" or status_code == "WFH":
                 display_val = "P"
                 stats["present"] += 1
             elif status_code == "ABSENT":
@@ -3752,10 +3791,13 @@ def download_attendance(request):
                 leave_type = leave_type_detail_map.get(emp.id, {}).get(dt)
                 if leave_type == "SL":
                     display_val = "SL"
+                    stats["sick_leave"] += 1
                 elif leave_type == "CL":
                     display_val = "PL"
+                    stats["paid_leave"] += 1
                 elif leave_type == "UL":
                     display_val = "LOP"
+                    stats["lop"] += 1
                 else:
                     display_val = "L"
                 stats["leave"] += 1
@@ -3773,15 +3815,23 @@ def download_attendance(request):
             cell.alignment = Alignment(horizontal="center")
             col_idx += 1
 
-        # Summary Columns
+        # Comprehensive Summary Columns at the end
         total_days = len(date_cols)
         working_days = total_days - stats["weekly_off"] - stats["holiday"]
-        present_days = stats["present"]  # WFH is already counted as present
+        present_days = stats["present"]
         attendance_percentage = round((present_days / working_days * 100) if working_days > 0 else 0, 1)
 
         ws.cell(row=row_num, column=col_idx, value=total_days)
         col_idx += 1
         ws.cell(row=row_num, column=col_idx, value=stats["present"])
+        col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=stats["absent"])
+        col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=stats["sick_leave"])
+        col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=stats["paid_leave"])
+        col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=stats["lop"])
         col_idx += 1
         ws.cell(row=row_num, column=col_idx, value=stats["half_day"])
         col_idx += 1
@@ -3789,18 +3839,26 @@ def download_attendance(request):
         col_idx += 1
         ws.cell(row=row_num, column=col_idx, value=stats["holiday"])
         col_idx += 1
-        ws.cell(row=row_num, column=col_idx, value=stats["leave"])
-        col_idx += 1
-        ws.cell(row=row_num, column=col_idx, value=stats["absent"])
-        col_idx += 1
         ws.cell(row=row_num, column=col_idx, value=working_days)
         col_idx += 1
         ws.cell(row=row_num, column=col_idx, value=f"{attendance_percentage}%")
         col_idx += 1
-        ws.cell(row=row_num, column=col_idx, value=stats["late_arrival"])
+        ws.cell(row=row_num, column=col_idx, value=stats["late_count"])
+        col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=" | ".join(late_details_list) if late_details_list else "None")
+        col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=stats["early_count"])
+        col_idx += 1
+        ws.cell(row=row_num, column=col_idx, value=" | ".join(early_details_list) if early_details_list else "None")
         col_idx += 1
 
         row_num += 1
+
+    # Auto-adjust column widths for summary columns
+    for col in ws.columns:
+        max_len = max(len(str(cell.value or "")) for cell in col)
+        col_letter = openpyxl.utils.get_column_letter(col[0].column)
+        ws.column_dimensions[col_letter].width = min(max(max_len + 3, 10), 45)
 
     # Return Excel File
     import io
