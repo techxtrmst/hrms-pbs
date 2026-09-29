@@ -1900,42 +1900,57 @@
         text-overflow: ellipsis;
     }
 
-    /* Team hover info details card */
-    .team-member-hover-details {
-        position: absolute;
-        bottom: 100%;
-        left: 50%;
-        transform: translateX(-50%) translateY(-8px);
-        background: rgba(17, 12, 46, 0.98);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.12);
+    /* Global Floating Team Popover */
+    #globalTeamPopover {
+        position: fixed;
+        display: none;
+        z-index: 999999;
+        background: rgba(15, 23, 42, 0.98);
+        backdrop-filter: blur(14px);
+        border: 1px solid rgba(255, 255, 255, 0.16);
         color: #ffffff;
-        padding: 12px 16px;
+        padding: 14px 16px;
         border-radius: 12px;
         font-size: 0.74rem;
         line-height: 1.45;
         width: 250px;
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+        pointer-events: none;
+        transition: opacity 0.18s ease;
         opacity: 0;
-        visibility: hidden;
-        pointer-events: auto;
-        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
-        z-index: 100;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        text-align: left;
     }
-    .team-member-hover-details::after {
-        content: '';
+
+    #globalTeamPopover.visible {
+        opacity: 1;
+    }
+
+    #globalTeamPopover .popover-arrow {
         position: absolute;
-        top: 100%;
+        width: 0;
+        height: 0;
+        border-style: solid;
+    }
+
+    #globalTeamPopover.arrow-bottom .popover-arrow {
+        bottom: -6px;
         left: 50%;
         transform: translateX(-50%);
-        border-width: 6px;
-        border-style: solid;
-        border-color: rgba(15, 23, 42, 0.95) transparent transparent transparent;
+        border-width: 6px 6px 0 6px;
+        border-color: rgba(15, 23, 42, 0.98) transparent transparent transparent;
     }
-    .team-member-card:hover .team-member-hover-details {
-        opacity: 1;
-        visibility: visible;
-        transform: translateX(-50%) translateY(-12px);
+
+    #globalTeamPopover.arrow-top .popover-arrow {
+        top: -6px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-width: 0 6px 6px 6px;
+        border-color: transparent transparent rgba(15, 23, 42, 0.98) transparent;
+    }
+
+    /* Hide static inline details */
+    .team-member-hover-details {
+        display: none;
     }
 
     /* ==========================================================================
@@ -3410,6 +3425,61 @@
         if (e.key === 'Escape') {
             closeCelebrationWishesModal();
         }
+    });
+
+    // Smart Global Floating Popover for Team Attendance
+    document.addEventListener('DOMContentLoaded', function () {
+        let popover = document.getElementById('globalTeamPopover');
+        if (!popover) {
+            popover = document.createElement('div');
+            popover.id = 'globalTeamPopover';
+            popover.innerHTML = '<div class="popover-content"></div><div class="popover-arrow"></div>';
+            document.body.appendChild(popover);
+        }
+
+        const contentEl = popover.querySelector('.popover-content');
+        const cards = document.querySelectorAll('.team-member-card');
+
+        cards.forEach(card => {
+            const details = card.querySelector('.team-member-hover-details');
+            if (!details) return;
+
+            card.addEventListener('mouseenter', function () {
+                contentEl.innerHTML = details.innerHTML;
+                popover.style.display = 'block';
+
+                const rect = card.getBoundingClientRect();
+                const popRect = popover.getBoundingClientRect();
+                const popWidth = popRect.width || 250;
+                const popHeight = popRect.height || 160;
+
+                // Horizontal centering with screen edge boundary check
+                let left = rect.left + (rect.width / 2) - (popWidth / 2);
+                if (left < 14) left = 14;
+                if (left + popWidth > window.innerWidth - 14) {
+                    left = window.innerWidth - popWidth - 14;
+                }
+
+                // Vertical positioning:
+                // If top row or near viewport top (less than popHeight + 20px above), flip BELOW card
+                let top;
+                if (rect.top <= popHeight + 20) {
+                    top = rect.bottom + 12;
+                    popover.className = 'visible arrow-top';
+                } else {
+                    top = rect.top - popHeight - 12;
+                    popover.className = 'visible arrow-bottom';
+                }
+
+                popover.style.left = `${left}px`;
+                popover.style.top = `${top}px`;
+            });
+
+            card.addEventListener('mouseleave', function () {
+                popover.classList.remove('visible');
+                popover.style.display = 'none';
+            });
+        });
     });
 </script>
 {% endblock %}

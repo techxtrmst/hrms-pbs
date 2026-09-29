@@ -1182,28 +1182,52 @@ def employee_dashboard(request):
         # If employee has no location, show no holidays
         upcoming_holidays = Holiday.objects.none()
 
-    # --- Department Team Attendance Today ---
+    # --- Team Attendance Today (Strictly Same Reporting Manager) ---
     team_members_list = []
     dept_name = (
         employee.department.upper()
         if employee.department and employee.department.lower() == "it"
-        else (employee.department.title() if employee.department else "Company")
+        else (employee.department.title() if employee.department else "My")
     )
 
-    if employee.department:
+    if employee.manager:
+        # Only show teammates reporting to the EXACT SAME manager
         colleagues = (
             Employee.objects.filter(
-                company=employee.company, department=employee.department, is_active=True, employment_status="ACTIVE"
+                company=employee.company,
+                manager=employee.manager,
+                is_active=True,
+                employment_status="ACTIVE",
             )
-            .select_related("user")
+            .select_related("user", "manager")
             .exclude(id=employee.id)
         )
     else:
-        colleagues = (
-            Employee.objects.filter(company=employee.company, is_active=True, employment_status="ACTIVE")
-            .select_related("user")
-            .exclude(id=employee.id)[:15]
-        )
+        # If employee has no manager, check if they are a manager with direct reports
+        direct_reports = Employee.objects.filter(
+            company=employee.company,
+            manager=request.user,
+            is_active=True,
+            employment_status="ACTIVE",
+        ).select_related("user", "manager")
+
+        if direct_reports.exists():
+            colleagues = direct_reports
+        elif employee.department:
+            # Fallback for unassigned hierarchy in same department with no manager
+            colleagues = (
+                Employee.objects.filter(
+                    company=employee.company,
+                    department=employee.department,
+                    manager__isnull=True,
+                    is_active=True,
+                    employment_status="ACTIVE",
+                )
+                .select_related("user", "manager")
+                .exclude(id=employee.id)
+            )
+        else:
+            colleagues = Employee.objects.none()
 
     colleague_ids = [c.id for c in colleagues]
     colleague_attendance = {
