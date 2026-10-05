@@ -6,7 +6,6 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.encoding import force_bytes
-from django.utils.html import strip_tags
 from django.utils.http import urlsafe_base64_encode
 
 logger = logging.getLogger(__name__)
@@ -66,8 +65,31 @@ def send_activation_email(user, request=None):
 
             # Render HTML content
             html_content = render_to_string("accounts/emails/activation_email.html", context)
-            # Create text fallback
-            text_content = strip_tags(html_content)
+
+            # Clean, structured plain text fallback for anti-spam filters
+            text_content = f"""Hello {first_name},
+
+Welcome to {company_name}!
+
+Your employee account has been created on the HRMS portal. To complete your setup and create your password, please activate your account using the secure link below:
+
+{activation_link}
+
+Quick Setup Steps:
+1. Click the activation link above.
+2. Choose a secure password for your login.
+3. Sign in to access your employee dashboard, profile, and attendance.
+
+Security Notice:
+- This activation link is valid for 24 hours.
+- For security reasons, please do not share this email or link with anyone.
+
+If you have any questions or need assistance, please contact your company HR administrator.
+
+Best regards,
+{company_name} HR Team
+HRMS Portal
+"""
 
             logger.info(f"Email content prepared for {user.email}")
         except Exception as e:
@@ -76,8 +98,9 @@ def send_activation_email(user, request=None):
 
         # Get email connection and send
         try:
-            # MANDATORY: Use hrms@petabytz.com for all activation emails
-            from_email = "Petabytz HR <hrms@petabytz.com>"
+            # Authenticated sender with clear company display name
+            from_email = f"{company_name} HR <hrms@petabytz.com>"
+            reply_to_email = getattr(user.employee_profile.company, "hr_email", None) or "hrms@petabytz.com"
 
             logger.info(f"Getting HR email connection for {user.email}")
             # Get standardized connection
@@ -86,12 +109,20 @@ def send_activation_email(user, request=None):
             connection = get_hr_email_connection()
 
             logger.info(f"Creating email object for {user.email}")
-            # Create email object
+            # Create email object with anti-spam headers
+            headers = {
+                "Reply-To": reply_to_email,
+                "X-Mailer": "Petabytz-HRMS-Platform",
+                "X-Auto-Response-Suppress": "All",
+                "Auto-Submitted": "auto-generated",
+            }
+
             email = EmailMultiAlternatives(
                 subject=subject,
                 body=text_content,
                 from_email=from_email,
                 to=[user.email],
+                headers=headers,
                 connection=connection,
             )
             email.attach_alternative(html_content, "text/html")

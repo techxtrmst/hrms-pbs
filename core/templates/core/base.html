@@ -1954,6 +1954,174 @@
         </div>
         {% if request.user.is_authenticated %}
         <div class="d-flex align-items-center gap-3">
+            <!-- Account / Multi-Entity Switcher (Admin Portal) -->
+            {% if user.role == 'COMPANY_ADMIN' or user.role == 'EMPLOYEE_MANAGER' or user.role == 'SUPERADMIN' or user.is_superuser %}
+            <div class="dropdown" id="accountSwitcherDropdownContainer">
+                <!-- Topbar Pill Trigger -->
+                <button class="btn btn-sm d-flex align-items-center gap-2 rounded-pill px-3 py-1 dropdown-toggle"
+                        type="button" id="accountSwitcherBtn" data-bs-toggle="dropdown" aria-expanded="false"
+                        style="background: #ffffff; border: 1.5px solid #e2e8f0; color: #0f172a; font-size: 0.88rem; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.04); transition: all 0.2s ease;">
+                    <span class="d-inline-flex align-items-center justify-content-center"
+                          style="width: 28px; height: 28px; border-radius: 8px; background: {{ current_account_data.theme_bg|default:'#ede9fe' }}; color: {{ current_account_data.theme_text|default:'#7c3aed' }}; font-size: 0.85rem;">
+                        <i class="fas fa-building"></i>
+                    </span>
+                    <span class="d-none d-md-inline text-truncate" style="max-width: 150px;">
+                        {{ request.user.company.name|default:"HRMS Portal" }}
+                    </span>
+                    <i class="fas fa-chevron-down ms-1" style="font-size: 0.72rem; color: #64748b;"></i>
+                </button>
+
+                <!-- Dropdown Menu Card (Exact Match) -->
+                <div class="dropdown-menu dropdown-menu-end shadow-lg border-0" aria-labelledby="accountSwitcherBtn"
+                     style="width: 530px; min-width: 530px; max-width: 550px; border-radius: 24px; padding: 24px; box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0,0,0,0.08) !important; z-index: 1060; margin-top: 12px; position: relative; background: #ffffff; border: 1px solid #edf2f7 !important;">
+
+                    <!-- Upward Caret / Pointer -->
+                    <div style="position: absolute; top: -7px; right: 28px; width: 14px; height: 14px; background: #ffffff; transform: rotate(45deg); border-left: 1px solid #edf2f7; border-top: 1px solid #edf2f7;"></div>
+
+                    <!-- CURRENT ACCOUNT Section -->
+                    <div class="text-uppercase fw-bold mb-2" style="font-size: 0.76rem; color: #64748b; letter-spacing: 0.8px;">
+                        CURRENT ACCOUNT
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mb-4"
+                         style="background: #f0f5ff; border: 1.5px solid #dce7fe; border-radius: 18px; padding: 16px 20px;">
+                        <div class="d-flex align-items-center gap-3 overflow-hidden flex-grow-1 me-3">
+                            <div class="d-flex align-items-center justify-content-center flex-shrink-0"
+                                 style="width: 36px; height: 36px; min-width: 36px; min-height: 36px;">
+                                <!-- Modern Building Illustration -->
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <rect x="5" y="4" width="10" height="17" rx="1.5" fill="#4f46e5"/>
+                                    <rect x="7" y="7" width="2" height="2" rx="0.5" fill="#ffffff"/>
+                                    <rect x="11" y="7" width="2" height="2" rx="0.5" fill="#ffffff"/>
+                                    <rect x="7" y="11" width="2" height="2" rx="0.5" fill="#ffffff"/>
+                                    <rect x="11" y="11" width="2" height="2" rx="0.5" fill="#ffffff"/>
+                                    <rect x="7" y="15" width="2" height="2" rx="0.5" fill="#ffffff"/>
+                                    <rect x="11" y="15" width="2" height="2" rx="0.5" fill="#ffffff"/>
+                                    <path d="M15 10H19V21H15V10Z" fill="#818cf8"/>
+                                    <rect x="16.5" y="12.5" width="1.5" height="1.5" rx="0.3" fill="#ffffff"/>
+                                    <rect x="16.5" y="16" width="1.5" height="1.5" rx="0.3" fill="#ffffff"/>
+                                    <rect x="4" y="20.5" width="16" height="1.5" rx="0.75" fill="#312e81"/>
+                                </svg>
+                            </div>
+                            <div class="overflow-hidden">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold text-dark text-truncate" style="font-size: 1.05rem; color: #0f172a; letter-spacing: -0.2px;">
+                                        {{ request.user.company.name|default:"Softstandard" }} Admin
+                                    </span>
+                                    <span class="d-inline-flex align-items-center gap-1.5 px-2.5 py-0.5 rounded-pill"
+                                          style="background: #dcfce7; color: #16a34a; font-size: 0.75rem; font-weight: 600;">
+                                        <span style="width: 6px; height: 6px; border-radius: 50%; background: #16a34a; display: inline-block;"></span> Active
+                                    </span>
+                                </div>
+                                <div class="text-muted text-truncate mt-0.5" style="font-size: 0.86rem; color: #64748b !important; font-weight: 400;">
+                                    {{ request.user.role|title }}
+                                </div>
+                            </div>
+                        </div>
+                        <a href="{% url 'employee_profile' %}" class="btn btn-sm d-flex align-items-center gap-2 px-3 py-2 flex-shrink-0"
+                           style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; color: #1e293b; font-size: 0.88rem; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.03); text-decoration: none;">
+                            <i class="fas fa-cog" style="color: #64748b; font-size: 0.95rem;"></i> Manage
+                        </a>
+                    </div>
+
+                    <!-- OTHER ACCOUNTS Header + Search -->
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="text-uppercase fw-bold" style="font-size: 0.76rem; color: #64748b; letter-spacing: 0.8px;">
+                            OTHER ACCOUNTS
+                        </div>
+                        <div class="d-flex align-items-center px-3 py-1.5" style="border: 1.5px solid #e2e8f0; background: #ffffff; border-radius: 10px;">
+                            <i class="fas fa-search me-2" style="font-size: 0.85rem; color: #94a3b8 !important;"></i>
+                            <input type="text" id="switcherAccountSearchInput" placeholder="Search teams or accounts..."
+                                   style="border: none; outline: none; background: transparent; font-size: 0.82rem; width: 195px; color: #334155;">
+                        </div>
+                    </div>
+
+                    <!-- OTHER ACCOUNTS List -->
+                    <div id="switcherAccountsList" style="max-height: 240px; overflow-y: auto; padding-right: 2px;">
+                        {% if other_linked_accounts %}
+                            {% for acc in other_linked_accounts %}
+                            <div class="d-flex align-items-center justify-content-between p-3 mb-2.5 switcher-account-row"
+                                 data-account-name="{{ acc.company_name|lower }} {{ acc.full_name|lower }} {{ acc.role_display|lower }}"
+                                 style="background: #ffffff; border: 1.5px solid #edf2f7; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: all 0.2s;">
+                                <div class="d-flex align-items-center gap-3 overflow-hidden flex-grow-1 me-3">
+                                    <div class="d-flex align-items-center justify-content-center flex-shrink-0"
+                                         style="width: 36px; height: 36px; min-width: 36px; min-height: 36px;">
+                                        {% if 'bluebix' in acc.company_name|lower %}
+                                        <!-- Vector Building & Tree Illustration for Bluebix -->
+                                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <rect x="5" y="7" width="9" height="14" rx="1" fill="#0d9488"/>
+                                            <rect x="7" y="9.5" width="2" height="2" rx="0.4" fill="#ffffff"/>
+                                            <rect x="10.5" y="9.5" width="2" height="2" rx="0.4" fill="#ffffff"/>
+                                            <rect x="7" y="13" width="2" height="2" rx="0.4" fill="#ffffff"/>
+                                            <rect x="10.5" y="13" width="2" height="2" rx="0.4" fill="#ffffff"/>
+                                            <rect x="7" y="16.5" width="2" height="2" rx="0.4" fill="#ffffff"/>
+                                            <rect x="10.5" y="16.5" width="2" height="2" rx="0.4" fill="#ffffff"/>
+                                            <circle cx="18" cy="15" r="3.5" fill="#16a34a"/>
+                                            <rect x="17.2" y="17" width="1.6" height="4" rx="0.4" fill="#b45309"/>
+                                            <rect x="4" y="20.5" width="16" height="1.5" rx="0.75" fill="#047857"/>
+                                        </svg>
+                                        {% else %}
+                                        <i class="fas fa-building" style="color: {{ acc.theme_text|default:'#0284c7' }}; font-size: 1.35rem;"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="overflow-hidden" style="min-width: 0;">
+                                        <div class="fw-bold text-dark text-truncate" style="font-size: 1.05rem; color: #0f172a; letter-spacing: -0.2px;">
+                                            {{ acc.company_name }}
+                                        </div>
+                                        <div class="text-muted text-truncate mt-0.5" style="font-size: 0.86rem; color: #64748b !important; font-weight: 400;">
+                                            {{ acc.role_display }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                    <form action="{% url 'switch_account' acc.user_id %}" method="post" class="m-0">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.path }}">
+                                        <button type="submit" class="btn btn-sm d-flex align-items-center gap-2 px-3 py-2"
+                                                style="background: #ffffff; border: 1.5px solid #3b82f6; color: #2563eb; font-weight: 600; font-size: 0.88rem; border-radius: 10px; transition: all 0.2s;"
+                                                title="Switch to this account">
+                                            <i class="fas fa-exchange-alt" style="font-size: 0.85rem;"></i> Switch
+                                        </button>
+                                    </form>
+                                    <div class="dropdown">
+                                        <button type="button" class="btn btn-sm text-muted p-1 border-0" data-bs-toggle="dropdown" aria-expanded="false" style="color: #64748b;" title="Options">
+                                            <i class="fas fa-ellipsis-v" style="font-size: 1rem;"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1" style="border-radius: 10px; font-size: 0.82rem; min-width: 140px; border: 1px solid #e2e8f0 !important;">
+                                            <li>
+                                                <a class="dropdown-item text-danger d-flex align-items-center gap-2 py-1.5 remove-linked-acc-btn" href="javascript:void(0);" data-user-id="{{ acc.user_id }}">
+                                                    <i class="fas fa-trash-alt" style="font-size: 0.8rem;"></i> Remove
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-4 text-muted px-2" style="font-size: 0.86rem;" id="noOtherAccountsPlaceholder">
+                                <i class="fas fa-building fa-2x mb-2 text-secondary opacity-50 d-block"></i>
+                                <span>No other accounts linked yet.</span>
+                                <div class="small text-muted mt-1">Click below to link your account from another entity.</div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Add Another Account Button (Exact Match) -->
+                    <div class="mt-2.5">
+                        <button type="button" class="btn w-100 d-flex align-items-center justify-content-center gap-2 py-3"
+                                data-bs-toggle="modal" data-bs-target="#addAccountModal"
+                                style="background: #eff6ff; border: 1.5px dashed #93c5fd; border-radius: 14px; color: #2563eb; font-weight: 600; font-size: 0.95rem; transition: all 0.2s;">
+                            <span class="d-inline-flex align-items-center justify-content-center rounded-circle"
+                                  style="width: 24px; height: 24px; min-width: 24px; min-height: 24px; background: #2563eb; color: #ffffff; font-size: 0.75rem; font-weight: bold;">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                            <span>Add Another Account</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             {% if user.role == 'COMPANY_ADMIN' or user.role == 'EMPLOYEE_MANAGER' or user.role == 'MANAGER' %}
             <!-- Notification Bell -->
             <div class="position-relative" id="notificationContainer">
@@ -2024,6 +2192,13 @@
                             Profile</a></li>
                     <li><a class="dropdown-item" href="{% url 'id_card' %}"><i class="fas fa-id-badge me-2"></i>ID
                             Card</a></li>
+                    {% if user.role == 'COMPANY_ADMIN' or user.role == 'EMPLOYEE_MANAGER' or user.role == 'SUPERADMIN' or user.is_superuser %}
+                    <li>
+                        <a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#addAccountModal">
+                            <i class="fas fa-user-plus me-2 text-primary"></i>Add Another Account
+                        </a>
+                    </li>
+                    {% endif %}
                     <li>
                         <hr class="dropdown-divider">
                     </li>
@@ -3132,6 +3307,206 @@
             }, true);
         })();
     </script>
+
+    {% if request.user.is_authenticated and user.role == 'COMPANY_ADMIN' or user.role == 'EMPLOYEE_MANAGER' or user.role == 'SUPERADMIN' or user.is_superuser %}
+    <!-- Add Another Account Modal -->
+    <div class="modal fade" id="addAccountModal" tabindex="-1" aria-labelledby="addAccountModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header text-white" style="background: linear-gradient(135deg, #0f1624 0%, #1e2033 100%); border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 32px; height: 32px; background: rgba(91, 71, 251, 0.25); color: #818cf8;">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div>
+                            <h6 class="modal-title fw-bold mb-0 text-white" id="addAccountModalLabel">Add Another Account</h6>
+                            <small style="font-size: 0.72rem; color: #94a3b8;">Link account from another entity or role</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="addAccountForm" method="post">
+                    {% csrf_token %}
+                    <div class="modal-body p-4">
+                        <div id="addAccountAlert" class="alert alert-danger py-2 px-3 small d-none" role="alert"></div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark small mb-1">Email Address <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="fas fa-envelope"></i></span>
+                                <input type="email" class="form-control border-start-0" id="linkAccountEmail" name="email" placeholder="name@company.com" required autocomplete="email">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark small mb-1">Password <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="fas fa-lock"></i></span>
+                                <input type="password" class="form-control border-start-0 border-end-0" id="linkAccountPassword" name="password" placeholder="Enter account password" required autocomplete="current-password">
+                                <button class="btn btn-outline-secondary border-start-0" type="button" id="toggleLinkAccountPassword">
+                                    <i class="fas fa-eye" id="toggleLinkAccountPasswordIcon"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="switchImmediatelyCheckbox" name="switch_now" checked>
+                            <label class="form-check-label small text-muted" for="switchImmediatelyCheckbox">
+                                Switch to this account immediately after adding
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light px-4 py-3 d-flex justify-content-between border-top">
+                        <button type="button" class="btn btn-light btn-sm rounded-pill px-3 border" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4 fw-semibold" id="linkAccountSubmitBtn">
+                            <span class="spinner-border spinner-border-sm me-1 d-none" id="linkAccountSpinner" role="status" aria-hidden="true"></span>
+                            <span>Verify & Add Account</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Switcher JavaScript -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle password visibility in Add Account Modal
+        const togglePassBtn = document.getElementById('toggleLinkAccountPassword');
+        const passInput = document.getElementById('linkAccountPassword');
+        const passIcon = document.getElementById('toggleLinkAccountPasswordIcon');
+        if (togglePassBtn && passInput && passIcon) {
+            togglePassBtn.addEventListener('click', function() {
+                if (passInput.type === 'password') {
+                    passInput.type = 'text';
+                    passIcon.classList.remove('fa-eye');
+                    passIcon.classList.add('fa-eye-slash');
+                } else {
+                    passInput.type = 'password';
+                    passIcon.classList.remove('fa-eye-slash');
+                    passIcon.classList.add('fa-eye');
+                }
+            });
+        }
+
+        // Add Account Form submission via AJAX
+        const addAccForm = document.getElementById('addAccountForm');
+        const alertBox = document.getElementById('addAccountAlert');
+        const submitBtn = document.getElementById('linkAccountSubmitBtn');
+        const spinner = document.getElementById('linkAccountSpinner');
+
+        if (addAccForm) {
+            addAccForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (alertBox) {
+                    alertBox.classList.add('d-none');
+                    alertBox.textContent = '';
+                }
+                if (submitBtn) submitBtn.disabled = true;
+                if (spinner) spinner.classList.remove('d-none');
+
+                const formData = new FormData(addAccForm);
+                formData.set('switch_now', document.getElementById('switchImmediatelyCheckbox').checked ? 'true' : 'false');
+
+                fetch('{% url "link_account_api" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(res => res.json().then(data => ({ status: res.status, body: data })))
+                .then(({ status, body }) => {
+                    if (body.success) {
+                        if (body.redirect_url) {
+                            window.location.href = body.redirect_url;
+                        } else {
+                            window.location.reload();
+                        }
+                    } else {
+                        if (alertBox) {
+                            alertBox.textContent = body.message || 'Failed to authenticate account.';
+                            alertBox.classList.remove('d-none');
+                        }
+                        if (submitBtn) submitBtn.disabled = false;
+                        if (spinner) spinner.classList.add('d-none');
+                    }
+                })
+                .catch(err => {
+                    if (alertBox) {
+                        alertBox.textContent = 'A network error occurred. Please try again.';
+                        alertBox.classList.remove('d-none');
+                    }
+                    if (submitBtn) submitBtn.disabled = false;
+                    if (spinner) spinner.classList.add('d-none');
+                });
+            });
+        }
+
+        // Remove linked account from switcher
+        document.querySelectorAll('.remove-linked-acc-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                const userId = this.getAttribute('data-user-id');
+                if (!userId) return;
+
+                if (confirm('Remove this account from the quick switcher list?')) {
+                    const formData = new FormData();
+                    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+                    fetch(`/accounts/remove-linked/${userId}/`, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.location.reload();
+                        } else {
+                            alert(data.message || 'Failed to remove account.');
+                        }
+                    })
+                    .catch(() => {
+                        alert('Network error occurred.');
+                    });
+                }
+            });
+        });
+
+        // Live Search Filter for Other Accounts in Switcher
+        const switcherSearchInput = document.getElementById('switcherAccountSearchInput');
+        if (switcherSearchInput) {
+            switcherSearchInput.addEventListener('input', function() {
+                const query = this.value.toLowerCase().trim();
+                const rows = document.querySelectorAll('.switcher-account-row');
+                let matchCount = 0;
+
+                rows.forEach(row => {
+                    const name = row.getAttribute('data-account-name') || '';
+                    if (!query || name.includes(query)) {
+                        row.style.display = 'flex';
+                        matchCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                const emptyPlaceholder = document.getElementById('noOtherAccountsPlaceholder');
+                if (emptyPlaceholder && rows.length > 0) {
+                    emptyPlaceholder.style.display = matchCount === 0 ? 'block' : 'none';
+                    if (matchCount === 0) {
+                        emptyPlaceholder.innerHTML = '<i class="fas fa-search fa-2x mb-2 text-secondary opacity-50 d-block"></i><span>No accounts found matching "' + query + '".</span>';
+                    }
+                }
+            });
+        }
+    });
+    </script>
+    {% endif %}
 </body>
 
 </html>

@@ -1,207 +1,132 @@
-<!DOCTYPE html>
-<html>
-
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Welcome to {{ company_name }}</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            margin: 0;
-            padding: 0;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 40px auto;
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-        }
-
-        .header {
-            {% if company_name == 'Petabytz' %}
-            background-color: #667eea;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            {% elif company_name == 'Bluebix' %}
-            background-color: #3b82f6;
-            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
-            {% elif company_name == 'SoftStandards' %}
-            background-color: #10b981;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            {% else %}
-            background-color: #6366f1;
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-            {% endif %}
-            color: #ffffff;
-            padding: 40px 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-
-        .logo-icon {
-            font-size: 40px;
-            margin-bottom: 10px;
-            display: inline-block;
-        }
-
-        .content {
-            padding: 40px 30px;
-            color: #333333;
-            line-height: 1.6;
-        }
-
-        .greeting {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #2d3748;
-        }
-
-        .message-body {
-            font-size: 16px;
-            color: #4a5568;
-            margin-bottom: 30px;
-        }
-
-        .btn-container {
-            text-align: center;
-            margin: 35px 0;
-        }
-
-        .btn-primary {
-            {% if company_name == 'Petabytz' %}
-            background-color: #667eea;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
-            {% elif company_name == 'Bluebix' %}
-            background-color: #3b82f6;
-            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-            {% elif company_name == 'SoftStandards' %}
-            background-color: #10b981;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-            {% else %}
-            background-color: #6366f1;
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
-            {% endif %}
-            color: #ffffff !important;
-            text-decoration: none;
-            padding: 16px 36px;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 16px;
-            display: inline-block;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            {% if company_name == 'Petabytz' %}
-            box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4);
-            {% elif company_name == 'Bluebix' %}
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-            {% elif company_name == 'SoftStandards' %}
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-            {% else %}
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
-            {% endif %}
-            transform: translateY(-2px);
-        }
-
-        .note {
-            font-size: 13px;
-            color: #718096;
-            text-align: center;
-            margin-top: 30px;
-            border-top: 1px solid #edf2f7;
-            padding-top: 20px;
-        }
-
-        .footer {
-            background-color: #f8fafc;
-            padding: 20px;
-            text-align: center;
-            font-size: 12px;
-            color: #a0aec0;
-            border-top: 1px solid #edf2f7;
-        }
-
-        .link-fallback {
-            word-break: break-all;
-            {% if company_name == 'Petabytz' %}
-            color: #667eea;
-            {% elif company_name == 'Bluebix' %}
-            color: #3b82f6;
-            {% elif company_name == 'SoftStandards' %}
-            color: #10b981;
-            {% else %}
-            color: #6366f1;
-            {% endif %}
-            font-size: 12px;
-            margin-top: 10px;
-        }
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta name="format-detection" content="telephone=no, address=no, email=no, date=no, url=no" />
+    <title>Welcome to {{ company_name|default:"HRMS" }} - Set Up Your Account</title>
+    <!--[if mso]>
+    <style type="text/css">
+        body, table, td, a { font-family: Arial, Helvetica, sans-serif !important; }
     </style>
+    <![endif]-->
 </head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; color: #1e293b;">
 
-<body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            {% if company_name == 'Petabytz' %}
-            <div class="logo-icon">&#128187;</div> <!-- Computer Icon -->
-            <h1>Petabytz HRMS</h1>
-            {% elif company_name == 'Bluebix' %}
-            <div class="logo-icon">&#127760;</div> <!-- Globe Icon -->
-            <h1>Bluebix HRMS</h1>
-            {% elif company_name == 'SoftStandards' %}
-            <div class="logo-icon">&#9881;</div> <!-- Gear Icon -->
-            <h1>SoftStandards HRMS</h1>
-            {% else %}
-            <div class="logo-icon">&#128188;</div> <!-- Briefcase Icon -->
-            <h1>{{ company_name }} HRMS</h1>
-            {% endif %}
-        </div>
-
-        <!-- Content -->
-        <div class="content">
-            <div class="greeting">Hi {{ first_name }},</div>
-
-            <div class="message-body">
-                <p><strong>Welcome to the team!</strong></p>
-                <p>We are thrilled to have you onboard. Your employee account has been successfully created.</p>
-                <p>To get started, please activate your account and set your secure password by clicking the button
-                    below:</p>
-            </div>
-
-            <div class="btn-container">
-                <a href="{{ activation_link }}" class="btn-primary">Activate Account</a>
-            </div>
-
-            <div class="note">
-                <p>This activation link is valid for <strong>24 hours</strong>.</p>
-                <p style="margin-top: 10px;">If the button above doesn't work, copy and paste this link into your
-                    browser:</p>
-                <div class="link-fallback">{{ activation_link }}</div>
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="footer">
-            &copy; 2025 {{ company_name|default:"Company" }}. All rights reserved.<br>
-            This is an automated system email. Please do not reply.
-        </div>
+    <!-- Hidden Preheader Text for Inbox Preview -->
+    <div style="display: none; font-size: 1px; color: #ffffff; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
+        Your employee account has been created for {{ company_name|default:"the organization" }}. Please activate your account and create your password.
+        &zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
     </div>
-</body>
 
+    <!-- Main Wrapper Table -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f1f5f9; margin: 0; padding: 30px 15px;">
+        <tr>
+            <td align="center">
+                <!-- Content Container Card -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); overflow: hidden;">
+
+                    <!-- Header Banner -->
+                    <tr>
+                        <td style="background-color: #0f172a; padding: 32px 36px; text-align: left;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <tr>
+                                    <td>
+                                        <div style="font-size: 12px; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 4px;">
+                                            Human Resources Management System
+                                        </div>
+                                        <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.3px;">
+                                            {{ company_name|default:"HRMS Portal" }}
+                                        </h1>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Body Content -->
+                    <tr>
+                        <td style="padding: 36px 36px 28px 36px;">
+                            <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">
+                                Welcome, {{ employee_name|default:first_name|default:"Team Member" }}!
+                            </h2>
+
+                            <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 24px; color: #334155;">
+                                An official employee account has been created for you on the <strong>{{ company_name|default:"organization" }}</strong> HRMS portal.
+                            </p>
+
+                            <p style="margin: 0 0 24px 0; font-size: 15px; line-height: 24px; color: #334155;">
+                                Through the portal, you will be able to manage your profile, view attendance, request leaves, access payslips, and connect with company resources.
+                            </p>
+
+                            <!-- Next Steps Box -->
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 28px;">
+                                <tr>
+                                    <td style="padding: 16px 20px;">
+                                        <div style="font-size: 13px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                                            Quick Setup Steps:
+                                        </div>
+                                        <div style="font-size: 14px; line-height: 22px; color: #334155;">
+                                            <strong>1.</strong> Click the button below to verify your account.<br/>
+                                            <strong>2.</strong> Choose a secure password for your login.<br/>
+                                            <strong>3.</strong> Sign in to explore your employee dashboard.
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Primary Action Button (Bulletproof Table-Button) -->
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 28px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td align="center" style="border-radius: 8px; background-color: #2563eb;">
+                                                    <a href="{{ activation_link }}" target="_blank" style="display: inline-block; padding: 14px 32px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 8px; background-color: #2563eb; letter-spacing: 0.2px;">
+                                                        Activate Your Account &rarr;
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Security Expiration Notice -->
+                            <p style="margin: 0 0 20px 0; font-size: 13px; line-height: 20px; color: #64748b; text-align: center;">
+                                <em>This secure activation link is valid for <strong>24 hours</strong> from the time of issue.</em>
+                            </p>
+
+                            <!-- Direct Link Fallback Box -->
+                            <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 24px;">
+                                <p style="margin: 0 0 8px 0; font-size: 12px; color: #64748b; line-height: 18px;">
+                                    If you cannot click the button above, copy and paste this link into your web browser:
+                                </p>
+                                <p style="margin: 0; font-size: 12px; color: #2563eb; word-break: break-all; line-height: 18px; font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace; background-color: #f8fafc; padding: 10px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                    {{ activation_link }}
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Footer Section -->
+                    <tr>
+                        <td style="background-color: #f8fafc; padding: 24px 36px; border-top: 1px solid #e2e8f0; text-align: center;">
+                            <p style="margin: 0 0 6px 0; font-size: 12px; font-weight: 600; color: #475569;">
+                                &copy; {{ company_name|default:"Petabytz Technologies" }}. All rights reserved.
+                            </p>
+                            <p style="margin: 0; font-size: 11px; line-height: 16px; color: #94a3b8;">
+                                You are receiving this email because your organization registered an employee account on the HRMS portal.<br/>
+                                If you believe you received this in error, please contact your company HR administrator.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</body>
 </html>

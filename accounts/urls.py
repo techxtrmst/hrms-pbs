@@ -17,4 +17,8 @@ urlpatterns = [
         views.CustomPasswordResetConfirmView.as_view(),
         name="password_reset_confirm",
     ),
+    # Multi-account / multi-entity switcher endpoints
+    path("link-account/", views.link_account_api, name="link_account_api"),
+    path("switch/<int:user_id>/", views.switch_account_view, name="switch_account"),
+    path("remove-linked/<int:user_id>/", views.remove_linked_account_api, name="remove_linked_account_api"),
 ]

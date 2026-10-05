@@ -134,6 +134,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.notification_count",  # Notification count for admins/managers
                 "core.context_processors.google_maps_api_key",  # Google Maps API key
+                "accounts.context_processors.linked_accounts_context",  # Multi-account / multi-entity switcher
             ],
         },
     },

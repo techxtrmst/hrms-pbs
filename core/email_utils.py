@@ -803,8 +803,10 @@ def send_welcome_email_with_link(employee, domain):
             logger.warning(f"Employee {user.get_full_name()} has no email address")
             return False
 
-        # MANDATORY: Use hrms@petabytz.com for all welcome emails
-        from_email = "Petabytz HR <hrms@petabytz.com>"
+        company_name = employee.company.name
+        # Authenticated sender with clear company display name
+        from_email = f"{company_name} HR <hrms@petabytz.com>"
+        reply_to_email = employee.company.hr_email or "hrms@petabytz.com"
 
         # Get standardized connection
         connection = get_hr_email_connection()
@@ -818,16 +820,20 @@ def send_welcome_email_with_link(employee, domain):
         token = default_token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
 
+        # Protocol handling
+        protocol = "https" if not domain.startswith("127.0.0.1") and not domain.startswith("localhost") else "http"
+
         # Construct the link
         try:
-            link = f"http://{domain}{reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})}"
+            link = f"{protocol}://{domain}{reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})}"
         except Exception:
             # Fallback if URL name differs
-            link = f"http://{domain}/accounts/reset/{uid}/{token}/"
+            link = f"{protocol}://{domain}/accounts/reset/{uid}/{token}/"
 
         context = {
             "employee_name": user.get_full_name(),
-            "company_name": employee.company.name,
+            "first_name": user.first_name or "Team Member",
+            "company_name": company_name,
             "activation_link": link,
             "username": user.username,
         }
@@ -836,12 +842,48 @@ def send_welcome_email_with_link(employee, domain):
             html_content = render_to_string("core/emails/welcome_email.html", context)
         except Exception:
             # Fallback Template
-            html_content = f"<html><body><h2>Welcome to {employee.company.name}!</h2><p>Please activate your account: <a href='{link}'>{link}</a></p></body></html>"
+            html_content = f"<html><body><h2>Welcome to {company_name}!</h2><p>Please activate your account: <a href='{link}'>{link}</a></p></body></html>"
 
-        subject = f"Welcome to {employee.company.name} - Activate Your Account"
+        text_content = f"""Hello {user.first_name or user.get_full_name()},
+
+Welcome to {company_name}!
+
+An employee account has been created for you on the HRMS portal. To complete your setup and create your password, please activate your account using the secure link below:
+
+{link}
+
+Quick Setup Steps:
+1. Click the activation link above.
+2. Choose a secure password for your login.
+3. Sign in to access your employee dashboard.
+
+Security Notice:
+- This activation link is valid for 24 hours.
+- For security reasons, please do not share this email or link with anyone.
+
+Best regards,
+{company_name} HR Team
+HRMS Portal
+"""
+
+        subject = f"Welcome to {company_name} - Activate Your Account"
         recipient_list = [user.email]
 
-        email = EmailMultiAlternatives(subject, "", from_email, recipient_list, connection=connection)
+        headers = {
+            "Reply-To": reply_to_email,
+            "X-Mailer": "Petabytz-HRMS-Platform",
+            "X-Auto-Response-Suppress": "All",
+            "Auto-Submitted": "auto-generated",
+        }
+
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=from_email,
+            to=recipient_list,
+            headers=headers,
+            connection=connection,
+        )
         email.attach_alternative(html_content, "text/html")
         email.send()
 
