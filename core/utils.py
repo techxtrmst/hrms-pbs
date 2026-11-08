@@ -16,7 +16,7 @@ try:
     from payslip_generator import PayslipGenerator
 
     PAYSLIP_GENERATOR_AVAILABLE = True
-except ImportError:
+except (ImportError, OSError):
     PayslipGenerator = None
     PAYSLIP_GENERATOR_AVAILABLE = False
 

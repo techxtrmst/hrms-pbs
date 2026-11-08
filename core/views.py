@@ -21,7 +21,6 @@ from accounts.models import User
 from companies.models import Holiday, PayrollConfiguration
 from employees.models import (
     Attendance,
-    AttendanceSession,
     Employee,
     HandbookSection,
     LeaveBalance,
@@ -1597,21 +1596,30 @@ def personal_home(request):
             for att in Attendance.objects.filter(employee__in=team_members, is_currently_clocked_in=True)
         }
 
+        # Batch-fetch all team members' attendance records in a single query
+        all_team_atts = Attendance.objects.filter(
+            employee__in=team_members,
+            date__range=[start_date, end_date],
+            clock_in__isnull=False,
+            clock_out__isnull=False,
+        ).values("employee_id", "clock_in", "clock_out", "is_late")
+        team_atts_by_employee = {}
+        for att in all_team_atts:
+            team_atts_by_employee.setdefault(att["employee_id"], []).append(att)
+
         for member in team_members:
-            member_atts = Attendance.objects.filter(
-                employee=member, date__range=[start_date, end_date], clock_in__isnull=False, clock_out__isnull=False
-            )
+            member_atts = team_atts_by_employee.get(member.id, [])
             m_total_sec = 0
             m_sessions = 0
             m_on_time = 0
             m_late = 0
             for att in member_atts:
-                sec = (att.clock_out - att.clock_in).total_seconds()
+                sec = (att["clock_out"] - att["clock_in"]).total_seconds()
                 m_total_sec += sec
                 m_sessions += 1
                 team_total_seconds += sec
                 team_sessions += 1
-                if not att.is_late:
+                if not att["is_late"]:
                     m_on_time += 1
                     team_on_time += 1
                 else:
@@ -1699,6 +1707,33 @@ def personal_home(request):
         context["team_members_data"] = team_members_data
 
         # --- Enrich history with GPS location data for map display ---
+        # Batch-fetch all sessions and location logs across the date range to eliminate N+1 queries
+        from employees.models import AttendanceSession, LocationLog
+
+        all_sessions = AttendanceSession.objects.filter(
+            employee=employee,
+            date__range=[start_date, end_date],
+        ).order_by("session_number")
+        sessions_by_date = {}
+        for s in all_sessions:
+            sessions_by_date.setdefault(s.date, []).append(s)
+
+        all_loc_logs = (
+            LocationLog.objects.filter(
+                employee=employee,
+                attendance_session__date__range=[start_date, end_date],
+                is_valid=True,
+            )
+            .select_related("attendance_session")
+            .order_by("timestamp")
+        )
+        loc_logs_by_date = {}
+        for log in all_loc_logs:
+            if log.attendance_session and log.attendance_session.date:
+                key = (log.attendance_session.date, log.log_type)
+                if key not in loc_logs_by_date:
+                    loc_logs_by_date[key] = log
+
         enriched_history = []
         for record in history:
             if isinstance(record, Attendance):
@@ -1723,50 +1758,31 @@ def personal_home(request):
                 clock_in_lat, clock_in_lng = _parse_latlong(record.location_in)
                 clock_out_lat, clock_out_lng = _parse_latlong(record.location_out)
 
-                # 2. Fallback: AttendanceSession (has lat/lng as DecimalField)
-                if not clock_in_lat:
-                    first_session = (
-                        AttendanceSession.objects.filter(employee=employee, date=record.date)
-                        .order_by("session_number")
-                        .first()
-                    )
-                    if first_session:
-                        if first_session.clock_in_latitude:
-                            clock_in_lat = float(first_session.clock_in_latitude)
-                            clock_in_lng = (
-                                float(first_session.clock_in_longitude) if first_session.clock_in_longitude else None
-                            )
-                        if first_session.clock_out_latitude:
-                            clock_out_lat = float(first_session.clock_out_latitude)
-                            clock_out_lng = (
-                                float(first_session.clock_out_longitude) if first_session.clock_out_longitude else None
-                            )
+                day_sessions_list = sessions_by_date.get(record.date, [])
 
-                # 3. Fallback: LocationLog (created ONLY when real GPS coordinates exist)
-                if not clock_in_lat:
-                    from employees.models import LocationLog
-
-                    loc_in = (
-                        LocationLog.objects.filter(
-                            employee=employee, attendance_session__date=record.date, log_type="CLOCK_IN", is_valid=True
+                # 2. Fallback: AttendanceSession (from pre-fetched dict)
+                if not clock_in_lat and day_sessions_list:
+                    first_session = day_sessions_list[0]
+                    if first_session.clock_in_latitude:
+                        clock_in_lat = float(first_session.clock_in_latitude)
+                        clock_in_lng = (
+                            float(first_session.clock_in_longitude) if first_session.clock_in_longitude else None
                         )
-                        .order_by("timestamp")
-                        .first()
-                    )
+                    if first_session.clock_out_latitude:
+                        clock_out_lat = float(first_session.clock_out_latitude)
+                        clock_out_lng = (
+                            float(first_session.clock_out_longitude) if first_session.clock_out_longitude else None
+                        )
+
+                # 3. Fallback: LocationLog (from pre-fetched dict)
+                if not clock_in_lat:
+                    loc_in = loc_logs_by_date.get((record.date, "CLOCK_IN"))
                     if loc_in and loc_in.latitude:
                         clock_in_lat = float(loc_in.latitude)
                         clock_in_lng = float(loc_in.longitude) if loc_in.longitude else None
 
                 if not clock_out_lat:
-                    from employees.models import LocationLog
-
-                    loc_out = (
-                        LocationLog.objects.filter(
-                            employee=employee, attendance_session__date=record.date, log_type="CLOCK_OUT", is_valid=True
-                        )
-                        .order_by("timestamp")
-                        .first()
-                    )
+                    loc_out = loc_logs_by_date.get((record.date, "CLOCK_OUT"))
                     if loc_out and loc_out.latitude:
                         clock_out_lat = float(loc_out.latitude)
                         clock_out_lng = float(loc_out.longitude) if loc_out.longitude else None
@@ -1827,14 +1843,10 @@ def personal_home(request):
                     except Exception:
                         pass
 
-                # Query daily sessions for the current record date to render capsules
+                # Query daily sessions for the current record date from pre-fetched memory dict
                 day_sessions = []
                 try:
-                    session_objs = AttendanceSession.objects.filter(employee=employee, date=record.date).order_by(
-                        "session_number"
-                    )
-
-                    for s in session_objs:
+                    for s in day_sessions_list:
                         s_in = timezone.localtime(s.clock_in) if s.clock_in else None
                         s_out = timezone.localtime(s.clock_out) if s.clock_out else None
 
@@ -1966,28 +1978,37 @@ def personal_home(request):
         today.replace(day=1)
         today.replace(day=last_day)
 
-        # Celebrations - Birthdays this month (all dates in current month) - Only Active Employees
-        company_employees = (
+        # Celebrations - Only Active Employees (single query evaluated in memory for max speed)
+        active_company_employees = list(
             Employee.objects.filter(company=employee.company, is_active=True, employment_status="ACTIVE")
             .filter(Q(exit_date__isnull=True) | Q(exit_date__gt=today))
             .select_related("user")
         )
-        birthdays = company_employees.filter(dob__month=current_month).order_by("dob__day")
+        birthdays = [e for e in active_company_employees if e.dob and e.dob.month == current_month]
+        birthdays.sort(key=lambda e: e.dob.day if e.dob else 0)
         context["birthdays"] = birthdays
 
         # Today's specific celebrations
         context["today"] = today
-        context["todays_birthdays"] = company_employees.filter(dob__month=today.month, dob__day=today.day)
-        context["todays_anniversaries"] = company_employees.filter(
-            date_of_joining__month=today.month, date_of_joining__day=today.day
-        ).exclude(date_of_joining__year=today.year)
+        context["todays_birthdays"] = [
+            e for e in active_company_employees if e.dob and e.dob.month == today.month and e.dob.day == today.day
+        ]
+        context["todays_anniversaries"] = [
+            e
+            for e in active_company_employees
+            if e.date_of_joining
+            and e.date_of_joining.month == today.month
+            and e.date_of_joining.day == today.day
+            and e.date_of_joining.year != today.year
+        ]
 
         # Work Anniversaries this month (all dates in current month)
-        work_anniversaries = (
-            company_employees.filter(date_of_joining__month=current_month)
-            .exclude(date_of_joining__year=current_year)
-            .order_by("date_of_joining__day")
-        )
+        work_anniversaries = [
+            e
+            for e in active_company_employees
+            if e.date_of_joining and e.date_of_joining.month == current_month and e.date_of_joining.year != current_year
+        ]
+        work_anniversaries.sort(key=lambda e: e.date_of_joining.day if e.date_of_joining else 0)
         context["work_anniversaries"] = work_anniversaries
 
         # Holidays - Only location-specific holidays (no company-wide)
@@ -2422,7 +2443,7 @@ def my_leaves(request):
                 messages.error(request, "Half-day options are only available for single-day leaves.")
                 return redirect("my_leaves")
 
-            # Create Leave Request
+            # Create Leave Request (remains PENDING for up to 60 days)
             leave_request = LeaveRequest.objects.create(
                 employee=employee,
                 leave_type=leave_type,
@@ -2430,23 +2451,24 @@ def my_leaves(request):
                 end_date=e_dt,
                 reason=reason,
                 duration=duration,
+                status="PENDING",
             )
 
-            # Auto-approve based on leave bucket
-            result = leave_request.process_auto_approval(user_or_system=request.user)
-
-            # Send Email Notifications via Celery task
+            # Send Email Notifications to Manager/HR via Celery task
             try:
-                from core.tasks import safe_delay, send_leave_approval_notification_task
+                from core.tasks import safe_delay, send_leave_request_notification_task
 
-                safe_delay(send_leave_approval_notification_task, leave_request.id)
+                safe_delay(send_leave_request_notification_task, leave_request.id)
             except Exception as mail_err:
                 import logging
 
                 logger = logging.getLogger(__name__)
-                logger.error(f"Error sending approval notification email: {mail_err}")
+                logger.error(f"Error sending leave request notification email: {mail_err}")
 
-            messages.success(request, f"✅ {result['message']}")
+            messages.success(
+                request,
+                "Your leave request has been submitted and is pending review by your manager/admin. If no action is taken within 60 days, it will be automatically approved.",
+            )
 
         except Exception as e:
             messages.error(request, f"Error submitting request: {str(e)}")

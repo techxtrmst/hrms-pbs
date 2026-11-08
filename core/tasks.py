@@ -172,24 +172,42 @@ def send_anniversary_emails(self):
     }
 
 
+@shared_task(bind=True, ignore_result=False, max_retries=3)
+def auto_approve_expired_leaves_task(self, days=60):
+    """
+    Auto-approve leave requests that have been pending for 60+ days
+    without manager or admin action.
+    """
+    from django.core.management import call_command
+
+    try:
+        call_command("auto_approve_expired_leaves", days=days)
+        return {"status": "success", "message": f"Auto-approval of expired leaves (>= {days} days) completed"}
+    except Exception as e:
+        logger.error(f"Error in auto_approve_expired_leaves_task: {e}")
+        return {"status": "error", "message": str(e)}
+
+
 @shared_task(bind=True, ignore_result=False)
 def send_daily_notifications(self):
     """
-    Send combined daily notifications (birthdays + anniversaries).
+    Send combined daily notifications (birthdays + anniversaries) and daily tasks.
 
-    This is a convenience task that runs both birthday and anniversary
-    email tasks. Schedule this single task instead of both individual tasks.
+    This is a convenience task that runs birthday and anniversary
+    email tasks and checks for 60+ days pending leaves to auto-approve.
 
     Returns:
-        dict: Combined results from both tasks
+        dict: Combined results from tasks
     """
     birthday_result = send_birthday_emails.delay()
     anniversary_result = send_anniversary_emails.delay()
+    expired_leaves_result = auto_approve_expired_leaves_task.delay(days=60)
 
     return {
         "task": "send_daily_notifications",
         "birthday_task_id": str(birthday_result.id),
         "anniversary_task_id": str(anniversary_result.id),
+        "expired_leaves_task_id": str(expired_leaves_result.id),
     }
 
 

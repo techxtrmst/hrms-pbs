@@ -1665,14 +1665,67 @@
         }
     });
 
-    // Pre-warm GPS location on page load for instantaneous 10ms lookup
-    window._lastKnownPosition = null;
+    // --- High Accuracy & Fast Geolocation Manager ---
+    function savePosition(pos) {
+        if (!pos || !pos.coords) return;
+        window._lastKnownPosition = {
+            coords: {
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                accuracy: pos.coords.accuracy
+            },
+            timestamp: Date.now()
+        };
+        try {
+            sessionStorage.setItem('hrms_last_pos', JSON.stringify({
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                accuracy: pos.coords.accuracy,
+                timestamp: Date.now()
+            }));
+        } catch (e) {}
+    }
+
+    function getStoredPosition() {
+        if (window._lastKnownPosition && (Date.now() - window._lastKnownPosition.timestamp < 600000)) {
+            return window._lastKnownPosition;
+        }
+        try {
+            const raw = sessionStorage.getItem('hrms_last_pos');
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed && (Date.now() - parsed.timestamp < 600000)) {
+                    window._lastKnownPosition = {
+                        coords: {
+                            latitude: parsed.latitude,
+                            longitude: parsed.longitude,
+                            accuracy: parsed.accuracy
+                        },
+                        timestamp: parsed.timestamp
+                    };
+                    return window._lastKnownPosition;
+                }
+            }
+        } catch (e) {}
+        return null;
+    }
+
+    // Pre-warm high-accuracy GPS immediately on page load
+    window._lastKnownPosition = getStoredPosition();
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-            (pos) => { window._lastKnownPosition = pos; },
+            (pos) => { savePosition(pos); },
             () => {},
-            { enableHighAccuracy: true, timeout: 5000, maximumAge: 300000 }
+            { enableHighAccuracy: true, timeout: 4000, maximumAge: 300000 }
         );
+        // Passive background watcher keeps GPS satellites locked and coordinates warm
+        try {
+            navigator.geolocation.watchPosition(
+                (pos) => { savePosition(pos); },
+                () => {},
+                { enableHighAccuracy: true, maximumAge: 60000 }
+            );
+        } catch (e) {}
     }
 
     // Main Clock-in/out Request handlers
@@ -1694,10 +1747,11 @@
         const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
 
         function executeClockRequest(pos) {
+            const effectivePos = pos || getStoredPosition();
             const requestData = {
-                latitude: pos ? pos.coords.latitude : (window._lastKnownPosition ? window._lastKnownPosition.coords.latitude : null),
-                longitude: pos ? pos.coords.longitude : (window._lastKnownPosition ? window._lastKnownPosition.coords.longitude : null),
-                accuracy: pos ? pos.coords.accuracy : (window._lastKnownPosition ? window._lastKnownPosition.coords.accuracy : null),
+                latitude: effectivePos ? effectivePos.coords.latitude : null,
+                longitude: effectivePos ? effectivePos.coords.longitude : null,
+                accuracy: effectivePos ? effectivePos.coords.accuracy : null,
                 type: type,
                 timezone: userTimezone
             };
@@ -1730,11 +1784,11 @@
 
                     setTimeout(() => {
                         window.location.reload();
-                    }, 700);
+                    }, 500);
                 }
                 else if (data.status === 'confirmation_required' || data.requires_confirmation) {
                     isClockActionInProgress = false;
-                    handleConfirmationModal(data, pos, csrfToken, btn, origContent);
+                    handleConfirmationModal(data, effectivePos, csrfToken, btn, origContent);
                 }
                 else {
                     isClockActionInProgress = false;
@@ -1752,24 +1806,27 @@
             });
         }
 
-        // Check if we already have position or fetch it quickly
-        if (window._lastKnownPosition) {
-            executeClockRequest(window._lastKnownPosition);
+        // Fast high-accuracy execution strategy:
+        // 1. If high-accuracy location is already cached from warmup or previous page, execute INSTANTLY (0 ms wait).
+        const cachedPosition = getStoredPosition();
+        if (cachedPosition) {
+            executeClockRequest(cachedPosition);
         } else if (navigator.geolocation) {
+            // 2. Otherwise give high-accuracy GPS up to 3 seconds to lock
             let responded = false;
             const fallbackTimer = setTimeout(() => {
                 if (!responded) {
                     responded = true;
-                    executeClockRequest(null);
+                    executeClockRequest(getStoredPosition());
                 }
-            }, 2500);
+            }, 3000);
 
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     if (!responded) {
                         responded = true;
                         clearTimeout(fallbackTimer);
-                        window._lastKnownPosition = pos;
+                        savePosition(pos);
                         executeClockRequest(pos);
                     }
                 },
@@ -1777,10 +1834,10 @@
                     if (!responded) {
                         responded = true;
                         clearTimeout(fallbackTimer);
-                        executeClockRequest(null);
+                        executeClockRequest(getStoredPosition());
                     }
                 },
-                { enableHighAccuracy: true, timeout: 2500, maximumAge: 60000 }
+                { enableHighAccuracy: true, timeout: 3000, maximumAge: 60000 }
             );
         } else {
             executeClockRequest(null);
@@ -1828,14 +1885,15 @@
 
             function executeClockOut() {
                 btn.innerHTML = '<span>Processing...</span> <i class="fas fa-spinner fa-spin"></i>';
+                const effectivePos = pos || getStoredPosition();
                 fetch("{% url 'api_clock_out' %}", {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                     body: JSON.stringify({
-                        latitude: pos ? pos.coords.latitude : null,
-                        longitude: pos ? pos.coords.longitude : null,
+                        latitude: effectivePos ? effectivePos.coords.latitude : null,
+                        longitude: effectivePos ? effectivePos.coords.longitude : null,
                         force_clockout: true,
-                        accuracy: pos ? pos.coords.accuracy : null
+                        accuracy: effectivePos ? effectivePos.coords.accuracy : null
                     })
                 })
                 .then(r => r.json())

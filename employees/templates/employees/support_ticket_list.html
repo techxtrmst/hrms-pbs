@@ -110,7 +110,7 @@
                 <h5 class="modal-title fw-bold text-dark" id="createTicketModalLabel"><i class="fas fa-ticket-alt text-info me-2"></i>Create New Support Ticket</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{% url 'support_ticket_create' %}" method="post">
+            <form id="createTicketForm" action="{% url 'support_ticket_create' %}" method="post">
                 {% csrf_token %}
                 <div class="modal-body px-4 py-3">
                     <div class="mb-3">
@@ -144,7 +144,7 @@
                 </div>
                 <div class="modal-footer border-0 pb-4 px-4 pt-0">
                     <button type="button" class="btn btn-light rounded-3 px-3" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-info text-white rounded-3 px-4 fw-semibold shadow-sm">Submit Ticket</button>
+                    <button type="submit" id="submitTicketBtn" class="btn btn-info text-white rounded-3 px-4 fw-semibold shadow-sm">Submit Ticket</button>
                 </div>
             </form>
         </div>
@@ -165,4 +165,25 @@
         color: #94a3b8;
     }
 </style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ticketForm = document.getElementById('createTicketForm');
+    const submitBtn = document.getElementById('submitTicketBtn');
+    const ticketModal = document.getElementById('createTicketModal');
+
+    if (ticketForm && submitBtn) {
+        ticketForm.addEventListener('submit', function() {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting...';
+        });
+    }
+
+    if (ticketModal && submitBtn) {
+        ticketModal.addEventListener('hidden.bs.modal', function() {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Submit Ticket';
+        });
+    }
+});
+</script>
 {% endblock %}

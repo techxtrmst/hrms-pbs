@@ -59,6 +59,12 @@ class EmailSchedulerService:
                 except Exception as accrual_err:
                     logger.error(f"[ERROR] Automated monthly leave accrual failed: {accrual_err}")
 
+                # Run automated 60-day auto-approval of pending leave requests
+                try:
+                    call_command("auto_approve_expired_leaves", days=60)
+                except Exception as leave_err:
+                    logger.error(f"[ERROR] Auto-approval of expired leaves failed: {leave_err}")
+
                 logger.info("[OK] Background scheduled tasks completed successfully")
 
             except Exception as e:

@@ -24,3 +24,21 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+
+class LinkedAccount(models.Model):
+    """
+    Stores permanent links between user accounts across companies/roles for 1-click switching.
+    """
+
+    primary_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="linked_accounts")
+    linked_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="linked_to_accounts")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("primary_user", "linked_user")
+        verbose_name = "Linked Account"
+        verbose_name_plural = "Linked Accounts"
+
+    def __str__(self):
+        return f"{self.primary_user.email} -> {self.linked_user.email}"

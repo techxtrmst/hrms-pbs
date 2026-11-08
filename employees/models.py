@@ -1358,6 +1358,20 @@ class LeaveRequest(models.Model):
         return end < today
 
     @property
+    def days_pending(self):
+        """Number of days this request has been pending"""
+        if self.created_at:
+            from django.utils import timezone
+
+            return (timezone.now() - self.created_at).days
+        return 0
+
+    @property
+    def days_until_auto_approval(self):
+        """Days remaining until 60-day auto-approval triggers"""
+        return max(0, 60 - self.days_pending)
+
+    @property
     def total_days(self):
         """Calculate total leave days excluding employee's week-offs"""
         from datetime import datetime, timedelta
@@ -1441,23 +1455,23 @@ class LeaveRequest(models.Model):
     def _generate_validation_message(self, leave_check):
         """Generate user-friendly validation message"""
         if self.leave_type == "UL":
-            return f"Unpaid Leave (LOP) application for {self.total_days} day(s) will be automatically approved as Loss of Pay."
+            return f"Unpaid Leave (LOP) application for {self.total_days} day(s) will be submitted as Pending. If approved or unattended after 60 days, it will be processed as Loss of Pay."
 
         if self.leave_type in ["OD", "OT"]:
-            return f"{self.get_leave_type_display()} application for {self.total_days} day(s) will be automatically approved."
+            return f"{self.get_leave_type_display()} application for {self.total_days} day(s) will be submitted as Pending for review."
 
         available = leave_check.get("available", 0.0)
         shortfall = leave_check.get("shortfall", 0.0)
 
         if not leave_check.get("will_be_lop"):
-            return f"Leave application will be automatically approved as Paid Leave ({self.total_days} day(s) available in your {self.get_leave_type_display()} bucket)."
+            return f"Leave application will be submitted as Pending ({self.total_days} day(s) available in your {self.get_leave_type_display()} bucket). If no action is taken within 60 days, it will be automatically approved."
         else:
             if available <= 0:
-                return f"You have 0 {self.get_leave_type_display()} balance. This leave will be automatically approved as {self.total_days} day(s) of Loss of Pay (LOP)."
+                return f"You have 0 {self.get_leave_type_display()} balance. This leave will be submitted as Pending, and will be processed as {self.total_days} day(s) of Loss of Pay (LOP) upon approval or after 60 days."
             else:
-                return f"You have {available} day(s) of {self.get_leave_type_display()} available. {available} day(s) will be approved as Paid Leave and {shortfall} day(s) will be automatically processed as Loss of Pay (LOP)."
+                return f"You have {available} day(s) of {self.get_leave_type_display()} available. {available} day(s) will be Paid Leave and {shortfall} day(s) will be Loss of Pay (LOP) upon approval or after 60 days."
 
-    def process_auto_approval(self, user_or_system=None):
+    def process_auto_approval(self, user_or_system=None, reason_suffix=None):
         """
         Auto-approves the leave request based on the employee's available leave bucket.
         - If sufficient balance available: Approved as FULL (deducted from leave type balance).
@@ -1467,6 +1481,12 @@ class LeaveRequest(models.Model):
 
         Updates attendance records, logs LeaveTransactions, sets status='APPROVED', and saves.
         """
+        if self.status != "PENDING":
+            return {
+                "status": self.status,
+                "message": f"Leave request is already {self.status}.",
+            }
+
         from datetime import timedelta
 
         from django.utils import timezone
@@ -1476,6 +1496,7 @@ class LeaveRequest(models.Model):
         balance, _ = LeaveBalance.objects.get_or_create(employee=self.employee)
         requested_days = self.total_days
         leave_label = self.get_leave_type_display()
+        auto_prefix = reason_suffix or "Auto-approved"
 
         paid_days = 0.0
         lop_days = 0.0
@@ -1489,18 +1510,18 @@ class LeaveRequest(models.Model):
                 transaction_type="DEBIT",
                 leave_type="UL",
                 amount=lop_days,
-                reason=f"Auto-approved Unpaid Leave (LOP) for Request #{self.id} ({self.start_date} to {self.end_date})",
+                reason=f"{auto_prefix} Unpaid Leave (LOP) for Request #{self.id} ({self.start_date} to {self.end_date})",
                 created_by=user_or_system
                 if (user_or_system and getattr(user_or_system, "is_authenticated", False))
                 else None,
             )
-            comment = f"Auto-approved as Unpaid Leave (LOP) for {lop_days} day(s)."
+            comment = f"{auto_prefix} as Unpaid Leave (LOP) for {lop_days} day(s)."
             msg = f"Your Unpaid Leave (LOP) request for {lop_days} day(s) has been automatically approved."
 
         elif self.leave_type in ["OD", "OT"]:
             approval_type = "FULL"
             paid_days = requested_days
-            comment = f"Auto-approved {leave_label} for {requested_days} day(s)."
+            comment = f"{auto_prefix} {leave_label} for {requested_days} day(s)."
             msg = f"Your {leave_label} request for {requested_days} day(s) has been automatically approved."
 
         else:
@@ -1514,12 +1535,12 @@ class LeaveRequest(models.Model):
                     transaction_type="DEBIT",
                     leave_type=self.leave_type,
                     amount=paid_days,
-                    reason=f"Auto-approved {leave_label} for Request #{self.id} ({self.start_date} to {self.end_date})",
+                    reason=f"{auto_prefix} {leave_label} for Request #{self.id} ({self.start_date} to {self.end_date})",
                     created_by=user_or_system
                     if (user_or_system and getattr(user_or_system, "is_authenticated", False))
                     else None,
                 )
-                comment = f"Auto-approved as Paid Leave ({paid_days} day(s) from {leave_label} bucket)."
+                comment = f"{auto_prefix} as Paid Leave ({paid_days} day(s) from {leave_label} bucket)."
                 msg = f"Your leave request for {paid_days} day(s) has been automatically approved as Paid Leave."
 
             elif available > 0:
@@ -1537,7 +1558,7 @@ class LeaveRequest(models.Model):
                     transaction_type="DEBIT",
                     leave_type=self.leave_type,
                     amount=paid_days,
-                    reason=f"Auto-approved (Paid Portion) for Request #{self.id}: {leave_label} ({self.start_date} to {self.end_date})",
+                    reason=f"{auto_prefix} (Paid Portion) for Request #{self.id}: {leave_label} ({self.start_date} to {self.end_date})",
                     created_by=created_user,
                 )
                 LeaveTransaction.log(
@@ -1545,10 +1566,10 @@ class LeaveRequest(models.Model):
                     transaction_type="DEBIT",
                     leave_type="UL",
                     amount=lop_days,
-                    reason=f"Auto-approved (LOP Portion) for Request #{self.id} ({self.start_date} to {self.end_date})",
+                    reason=f"{auto_prefix} (LOP Portion) for Request #{self.id} ({self.start_date} to {self.end_date})",
                     created_by=created_user,
                 )
-                comment = f"Auto-approved: {paid_days} day(s) {leave_label} (Paid) and {lop_days} day(s) Loss of Pay (LOP) due to balance limit."
+                comment = f"{auto_prefix}: {paid_days} day(s) {leave_label} (Paid) and {lop_days} day(s) Loss of Pay (LOP) due to balance limit."
                 msg = f"Your leave request has been automatically approved: {paid_days} day(s) Paid Leave and {lop_days} day(s) Loss of Pay (LOP)."
 
             else:
@@ -1560,13 +1581,13 @@ class LeaveRequest(models.Model):
                     transaction_type="DEBIT",
                     leave_type="UL",
                     amount=lop_days,
-                    reason=f"Auto-approved as LOP for Request #{self.id}: Insufficient {leave_label} balance ({self.start_date} to {self.end_date})",
+                    reason=f"{auto_prefix} as LOP for Request #{self.id}: Insufficient {leave_label} balance ({self.start_date} to {self.end_date})",
                     created_by=user_or_system
                     if (user_or_system and getattr(user_or_system, "is_authenticated", False))
                     else None,
                 )
                 comment = (
-                    f"Auto-approved as Loss of Pay (LOP) for {lop_days} day(s) due to exhausted {leave_label} balance."
+                    f"{auto_prefix} as Loss of Pay (LOP) for {lop_days} day(s) due to exhausted {leave_label} balance."
                 )
                 msg = f"Your leave request for {lop_days} day(s) has been automatically approved as Loss of Pay (LOP) since your {leave_label} balance is exhausted."
 

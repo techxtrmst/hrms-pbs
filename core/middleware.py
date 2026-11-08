@@ -115,11 +115,21 @@ class CompanyIsolationMiddleware:
 
             # Validate user belongs to the correct company (if domain company is identified)
             if not is_superadmin and domain_company and user_company and domain_company.id != user_company.id:
-                # User is trying to access wrong company's domain
-                return HttpResponseForbidden(
-                    f"Access Denied: You are not authorized to access {domain_company.name}. "
-                    f"Please use your company's domain: {user_company.primary_domain}"
-                )
+                # Check if user has verified linked account access with the domain company
+                from accounts.models import LinkedAccount
+
+                has_linked_access = LinkedAccount.objects.filter(
+                    primary_user=request.user,
+                    linked_user__company=domain_company,
+                    linked_user__is_active=True,
+                ).exists()
+
+                if not has_linked_access:
+                    # User is trying to access wrong company's domain
+                    return HttpResponseForbidden(
+                        f"Access Denied: You are not authorized to access {domain_company.name}. "
+                        f"Please use your company's domain: {user_company.primary_domain}"
+                    )
 
             # Set company (prefer user's company for localhost development)
             request.company = user_company or domain_company

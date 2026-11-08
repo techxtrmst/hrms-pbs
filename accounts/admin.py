@@ -7,7 +7,7 @@ from unfold.contrib.import_export.forms import ExportForm, ImportForm
 
 from core.middleware import is_debug_mode_enabled
 
-from .models import User
+from .models import LinkedAccount, User
 
 
 class ConditionalHijackMixin(HijackUserAdminMixin):
@@ -50,3 +50,10 @@ class CustomUserAdmin(ConditionalHijackMixin, UserAdmin, ModelAdmin, ImportExpor
         ("Company Info", {"fields": ("company", "role", "is_finance_manager")}),
         ("Security Settings", {"fields": ("must_change_password",)}),
     )
+
+
+@admin.register(LinkedAccount)
+class LinkedAccountAdmin(ModelAdmin):
+    list_display = ("primary_user", "linked_user", "created_at")
+    search_fields = ("primary_user__email", "linked_user__email")
+    list_filter = ("created_at",)

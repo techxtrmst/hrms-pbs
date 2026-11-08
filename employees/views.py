@@ -1541,18 +1541,19 @@ class LeaveApplyView(LoginRequiredMixin, CreateView):
             )
             return self.form_invalid(form)
 
-        # Save initial leave request
+        # Save initial leave request as PENDING
+        form.instance.status = "PENDING"
         self.object = form.save()
 
-        # Process Auto-Approval based on bucket balance
-        result = self.object.process_auto_approval(user_or_system=self.request.user)
+        # Send leave request notification to Manager/HR via Celery task
+        from core.tasks import safe_delay, send_leave_request_notification_task
 
-        # Send approval email notification via Celery task
-        from core.tasks import safe_delay, send_leave_approval_notification_task
+        safe_delay(send_leave_request_notification_task, self.object.id)
 
-        safe_delay(send_leave_approval_notification_task, self.object.id)
-
-        messages.success(self.request, f"✅ {result['message']}")
+        messages.success(
+            self.request,
+            "Your leave request has been submitted and is pending review by your manager/admin. If no action is taken within 60 days, it will be automatically approved.",
+        )
         return redirect(self.get_success_url())
 
 

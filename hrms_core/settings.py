@@ -157,6 +157,7 @@ DATABASES = {
         "PASSWORD": env("DB_PASSWORD"),
         "HOST": env("DB_HOST", default="localhost"),
         "PORT": env("DB_PORT", default="5432"),
+        "CONN_MAX_AGE": env.int("CONN_MAX_AGE", default=600),  # Reuse persistent connections (prevents DB overload)
     }
 }
 

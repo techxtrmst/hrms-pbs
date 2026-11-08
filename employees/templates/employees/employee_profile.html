@@ -711,6 +711,20 @@ body {
 
   <!-- Leave Balance / Stats Row -->
   <div class="kp-stats mb-4 animate__animated animate__fadeIn" style="animation-delay:0.05s;">
+    {% if "bluebix" in employee.company.name|lower or "softstandard" in employee.company.name|lower %}
+    <div class="kp-stat-item">
+      <div class="kp-stat-val" style="color:var(--kp);">{% if leave_balance %}{{ leave_balance.combined_sick_casual_balance|floatformat:1 }}{% else %}0.0{% endif %}</div>
+      <div class="kp-stat-lbl">Casual/Sick Leave</div>
+    </div>
+    <div class="kp-stat-item">
+      <div class="kp-stat-val" style="color:var(--kw);">{% if leave_balance %}{{ leave_balance.carry_forward_leave|floatformat:1 }}{% else %}0.0{% endif %}</div>
+      <div class="kp-stat-lbl">Carry Forward</div>
+    </div>
+    <div class="kp-stat-item">
+      <div class="kp-stat-val" style="color:var(--kd);">{% if leave_balance %}{{ leave_balance.unpaid_leave|floatformat:1 }}{% else %}0.0{% endif %}</div>
+      <div class="kp-stat-lbl">Unpaid (LOP)</div>
+    </div>
+    {% else %}
     <div class="kp-stat-item">
       <div class="kp-stat-val" style="color:var(--kp);">{% if leave_balance %}{{ leave_balance.casual_leave_balance|floatformat:1 }}{% else %}0.0{% endif %}</div>
       <div class="kp-stat-lbl">Casual Leave</div>
@@ -723,6 +737,7 @@ body {
       <div class="kp-stat-val" style="color:var(--kw);">{% if leave_balance %}{{ leave_balance.carry_forward_leave|floatformat:1 }}{% else %}0.0{% endif %}</div>
       <div class="kp-stat-lbl">Carry Forward</div>
     </div>
+    {% endif %}
     <div class="kp-stat-item">
       <div class="kp-stat-val" style="color:var(--t1);">{% if employee.date_of_joining %}{{ employee.date_of_joining|timesince }}{% else %}—{% endif %}</div>
       <div class="kp-stat-lbl">Tenure</div>
@@ -1002,6 +1017,13 @@ body {
             </div>
           </div>
           <div class="kp-section-body">
+            {% if "bluebix" in employee.company.name|lower or "softstandard" in employee.company.name|lower %}
+            <div class="kp-lb">
+              <div class="kp-lb-head"><span><i class="fas fa-heartbeat me-2" style="color:var(--kp);"></i>Casual / Sick Leave</span><span style="color:var(--kp);font-weight:700;">{{ leave_balance.combined_sick_casual_balance|floatformat:1 }} / {{ leave_balance.combined_sick_casual_allocated|floatformat:1 }}</span></div>
+              <div class="kp-lb-bg"><div class="kp-lb-fill" style="width:{% if leave_balance.combined_sick_casual_allocated > 0 %}{% widthratio leave_balance.combined_sick_casual_balance leave_balance.combined_sick_casual_allocated 100 %}{% else %}0{% endif %}%;background:var(--kp);"></div></div>
+              <div class="kp-lb-sub">Used: {{ leave_balance.combined_sick_casual_used|floatformat:1 }} days</div>
+            </div>
+            {% else %}
             <div class="kp-lb">
               <div class="kp-lb-head"><span><i class="fas fa-umbrella-beach me-2" style="color:var(--kp);"></i>Casual Leave</span><span style="color:var(--kp);font-weight:700;">{{ leave_balance.casual_leave_balance|floatformat:1 }} / {{ leave_balance.casual_leave_allocated|floatformat:1 }}</span></div>
               <div class="kp-lb-bg"><div class="kp-lb-fill" style="width:{% if leave_balance.casual_leave_allocated > 0 %}{% widthratio leave_balance.casual_leave_balance leave_balance.casual_leave_allocated 100 %}{% else %}0{% endif %}%;background:var(--kp);"></div></div>
@@ -1012,6 +1034,7 @@ body {
               <div class="kp-lb-bg"><div class="kp-lb-fill" style="width:{% if leave_balance.sick_leave_allocated > 0 %}{% widthratio leave_balance.sick_leave_balance leave_balance.sick_leave_allocated 100 %}{% else %}0{% endif %}%;background:var(--ks);"></div></div>
               <div class="kp-lb-sub">Used: {{ leave_balance.sick_leave_used|floatformat:1 }} days</div>
             </div>
+            {% endif %}
             {% if leave_balance.carry_forward_leave > 0 %}
             <div class="kp-lb">
               <div class="kp-lb-head"><span><i class="fas fa-forward me-2" style="color:var(--kw);"></i>Carry Forward</span><span style="color:var(--kw);font-weight:700;">{{ leave_balance.carry_forward_leave|floatformat:1 }} days</span></div>
@@ -1021,10 +1044,16 @@ body {
           </div>
         </div>
         <div class="row g-3 mb-4">
+          {% if "bluebix" in employee.company.name|lower or "softstandard" in employee.company.name|lower %}
+          <div class="col-6 col-md-4"><div class="kp-lstat"><div class="kp-lstat-val" style="color:var(--kp);">{{ leave_balance.combined_sick_casual_balance|floatformat:1 }}</div><div class="kp-lstat-lbl">Casual/Sick Left</div></div></div>
+          <div class="col-6 col-md-4"><div class="kp-lstat"><div class="kp-lstat-val" style="color:var(--kw);">{{ leave_balance.carry_forward_leave|floatformat:1 }}</div><div class="kp-lstat-lbl">Carry Fwd</div></div></div>
+          <div class="col-6 col-md-4"><div class="kp-lstat"><div class="kp-lstat-val" style="color:var(--kd);">{{ leave_balance.unpaid_leave|floatformat:1 }}</div><div class="kp-lstat-lbl">Unpaid (LOP) Used</div></div></div>
+          {% else %}
           <div class="col-6 col-md-3"><div class="kp-lstat"><div class="kp-lstat-val" style="color:var(--kp);">{{ leave_balance.casual_leave_balance|floatformat:0 }}</div><div class="kp-lstat-lbl">Casual Left</div></div></div>
           <div class="col-6 col-md-3"><div class="kp-lstat"><div class="kp-lstat-val" style="color:var(--ks);">{{ leave_balance.sick_leave_balance|floatformat:0 }}</div><div class="kp-lstat-lbl">Sick Left</div></div></div>
           <div class="col-6 col-md-3"><div class="kp-lstat"><div class="kp-lstat-val" style="color:var(--kw);">{{ leave_balance.carry_forward_leave|floatformat:0 }}</div><div class="kp-lstat-lbl">Carry Fwd</div></div></div>
           <div class="col-6 col-md-3"><div class="kp-lstat"><div class="kp-lstat-val" style="color:var(--kd);">{{ leave_balance.unpaid_leave|floatformat:0 }}</div><div class="kp-lstat-lbl">Unpaid Used</div></div></div>
+          {% endif %}
         </div>
         <div class="d-flex gap-3">
           {% if not is_viewing_colleague %}

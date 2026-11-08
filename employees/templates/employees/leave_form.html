@@ -481,18 +481,18 @@
                         balanceInfo.className = 'alert alert-warning mb-4';
                         if (validation.available_balance > 0) {
                             balanceInfoText.innerHTML = `
-                                <strong>⚡ Auto-Approval with Partial LOP:</strong><br>
+                                <strong>⚠️ Request Pending (Partial LOP):</strong><br>
                                 You have <strong>${validation.available_balance}</strong> day(s) available in your ${validation.leave_type_display} bucket.<br>
                                 <small>• <strong>Paid Leave:</strong> ${validation.available_balance} day(s)<br>
                                 • <strong>Loss of Pay (LOP):</strong> ${validation.shortfall} day(s)</small><br>
-                                <span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i>This will be automatically approved upon submission.</span>
+                                <span class="text-secondary"><i class="fas fa-clock me-1"></i>Request will remain pending for review. If unattended, it will auto-approve after 60 days.</span>
                             `;
                         } else {
                             balanceInfoText.innerHTML = `
-                                <strong>⚡ Auto-Approval as LOP:</strong><br>
+                                <strong>⚠️ Request Pending (Loss of Pay):</strong><br>
                                 You have <strong>0</strong> balance for ${validation.leave_type_display}.<br>
                                 <small>• <strong>Loss of Pay (LOP):</strong> ${requestedDays} day(s)</small><br>
-                                <span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i>This will be automatically approved as Loss of Pay upon submission.</span>
+                                <span class="text-secondary"><i class="fas fa-clock me-1"></i>Request will remain pending for review. If unattended, it will auto-approve after 60 days.</span>
                             `;
                         }
                         balanceInfo.style.display = 'block';
@@ -502,8 +502,8 @@
                     } else if (leaveType === 'UL') {
                         balanceInfo.className = 'alert alert-info mb-4';
                         balanceInfoText.innerHTML = `
-                            <strong>⚡ Auto-Approval (Unpaid Leave):</strong><br>
-                            ${requestedDays} day(s) will be automatically approved as Loss of Pay (LOP).
+                            <strong>ℹ️ Request Pending (Unpaid Leave):</strong><br>
+                            ${requestedDays} day(s) will be submitted as Pending for review. If unattended, it will auto-approve after 60 days.
                         `;
                         balanceInfo.style.display = 'block';
                         submitBtn.disabled = false;
@@ -512,8 +512,8 @@
                     } else {
                         balanceInfo.className = 'alert alert-success mb-4';
                         balanceInfoText.innerHTML = `
-                            <strong>✅ Auto-Approval (Paid Leave):</strong><br>
-                            You have sufficient balance. <strong>${requestedDays}</strong> day(s) will be automatically approved and deducted from your ${validation.leave_type_display || 'leave'} bucket.
+                            <strong>✅ Request Pending (Paid Leave):</strong><br>
+                            Sufficient balance available: <strong>${requestedDays}</strong> day(s) in your ${validation.leave_type_display || 'leave'} bucket. Request will remain pending for review, and will auto-approve after 60 days if no action is taken.
                         `;
                         balanceInfo.style.display = 'block';
                         submitBtn.disabled = false;

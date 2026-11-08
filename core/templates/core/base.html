@@ -1701,7 +1701,8 @@
         <a href="{% url 'employee_org_chart' %}" class="{% if 'org-chart' in request.path %}active{% endif %}">
             <i class="fas fa-sitemap"></i> <span>Organisation</span>
         </a>
-        <a href="{% url 'activity-dashboard' %}" class="{% if 'activity-tracking' in request.path %}active{% endif %}">
+        <!-- Activity Intelligence (Hidden as requested) -->
+        <a href="{% url 'activity-dashboard' %}" class="d-none {% if 'activity-tracking' in request.path %}active{% endif %}" style="display: none !important;">
             <i class="fas fa-desktop"></i> <span>Activity Intelligence</span>
         </a>
         {% endif %}

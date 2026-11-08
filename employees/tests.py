@@ -679,3 +679,147 @@ class LeaveAutoApprovalTestCase(TestCase):
             Attendance.objects.filter(employee=self.employee, date__gte=thursday, date__lte=monday).count(),
             3,
         )
+
+
+class LeaveSixtyDayAutoApprovalTestCase(TestCase):
+    """Tests for the 60-day auto-approval workflow for unattended pending leaves."""
+
+    def setUp(self):
+        from datetime import date
+
+        from companies.models import Company, Location
+        from employees.models import Employee, LeaveBalance
+
+        self.company = Company.objects.create(name="SixtyDay Corp", hr_email="hr@sixtyday.com")
+        self.location = Location.objects.create(company=self.company, name="HQ", timezone="UTC")
+        self.user = User.objects.create_user(
+            username="testuser_60d",
+            email="testuser_60d@test.com",
+            password="password",
+            company=self.company,
+        )
+        self.employee = Employee.objects.create(
+            user=self.user,
+            company=self.company,
+            location=self.location,
+            designation="Developer",
+            department="IT",
+            badge_id="DEV60D",
+            employment_status="ACTIVE",
+            date_of_joining=date(2025, 1, 1),
+        )
+        self.balance, _ = LeaveBalance.objects.get_or_create(employee=self.employee)
+        self.balance.casual_leave_allocated = 10.0
+        self.balance.casual_leave_used = 0.0
+        self.balance.sick_leave_allocated = 10.0
+        self.balance.sick_leave_used = 0.0
+        self.balance.unpaid_leave = 0.0
+        self.balance.save()
+
+    def test_leave_request_stays_pending_initially(self):
+        """Newly created leave request must remain PENDING (not auto-approved immediately)."""
+        from datetime import timedelta
+
+        from employees.models import LeaveRequest
+
+        today = timezone.localdate()
+        start = today + timedelta(days=5)
+        end = today + timedelta(days=6)
+
+        leave = LeaveRequest.objects.create(
+            employee=self.employee,
+            leave_type="CL",
+            start_date=start,
+            end_date=end,
+            duration="FULL",
+            reason="Upcoming trip",
+            status="PENDING",
+        )
+
+        self.assertEqual(leave.status, "PENDING")
+        self.assertIsNone(leave.approved_by)
+        self.assertIsNone(leave.approved_at)
+        self.assertEqual(leave.days_pending, 0)
+        self.assertEqual(leave.days_until_auto_approval, 60)
+
+    def test_auto_approve_command_ignores_leaves_under_60_days(self):
+        """Requests pending for less than 60 days must NOT be auto-approved."""
+        from datetime import timedelta
+
+        from django.core.management import call_command
+
+        from employees.models import LeaveRequest
+
+        today = timezone.localdate()
+        start = today + timedelta(days=10)
+        end = today + timedelta(days=11)
+
+        leave = LeaveRequest.objects.create(
+            employee=self.employee,
+            leave_type="CL",
+            start_date=start,
+            end_date=end,
+            duration="FULL",
+            reason="Recent request",
+            status="PENDING",
+        )
+        # Artificially set created_at to 30 days ago
+        LeaveRequest.objects.filter(pk=leave.pk).update(created_at=timezone.now() - timedelta(days=30))
+        leave.refresh_from_db()
+        self.assertEqual(leave.days_pending, 30)
+        self.assertEqual(leave.days_until_auto_approval, 30)
+
+        # Run the command for 60-day threshold
+        call_command("auto_approve_expired_leaves", days=60)
+
+        leave.refresh_from_db()
+        self.assertEqual(leave.status, "PENDING")
+        self.assertIsNone(leave.approved_by)
+
+    def test_auto_approve_command_approves_leaves_over_60_days(self):
+        """Requests pending for 60 or more days must be automatically approved."""
+        from datetime import timedelta
+
+        from django.core.management import call_command
+
+        from employees.models import LeaveRequest
+
+        # Pick weekdays to ensure week-off calculations work cleanly
+        days_until_monday = (7 - timezone.localdate().weekday()) % 7 or 7
+        start = timezone.localdate() + timedelta(days=days_until_monday)
+        end = start + timedelta(days=1)  # 2 days
+
+        leave = LeaveRequest.objects.create(
+            employee=self.employee,
+            leave_type="CL",
+            start_date=start,
+            end_date=end,
+            duration="FULL",
+            reason="Old pending request",
+            status="PENDING",
+        )
+        # Artificially set created_at to 61 days ago
+        LeaveRequest.objects.filter(pk=leave.pk).update(created_at=timezone.now() - timedelta(days=61))
+        leave.refresh_from_db()
+        self.assertGreaterEqual(leave.days_pending, 60)
+        self.assertEqual(leave.days_until_auto_approval, 0)
+
+        # Run command
+        call_command("auto_approve_expired_leaves", days=60)
+
+        leave.refresh_from_db()
+        self.assertEqual(leave.status, "APPROVED")
+        self.assertIsNone(leave.approved_by)  # System auto-approved
+        self.assertIsNotNone(leave.approved_at)
+        self.assertIn("Auto-approved after 60 days", leave.admin_comment)
+
+        # Verify leave balance deduction
+        self.balance.refresh_from_db()
+        self.assertEqual(self.balance.casual_leave_used, 2.0)
+        self.assertEqual(self.balance.casual_leave_balance, 8.0)
+
+        # Verify attendance records created
+        self.assertEqual(
+            Attendance.objects.filter(employee=self.employee, status="LEAVE").count(),
+            2,
+        )

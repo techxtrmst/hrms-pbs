@@ -8,12 +8,12 @@ import os
 from pathlib import Path
 from typing import Any
 
-# Conditional import for weasyprint to handle CI/CD environments
+# Conditional import for weasyprint to handle CI/CD environments and missing C-libraries on Windows
 try:
     from weasyprint import HTML
 
     WEASYPRINT_AVAILABLE = True
-except ImportError:
+except (ImportError, OSError):
     WEASYPRINT_AVAILABLE = False
     HTML = None
 

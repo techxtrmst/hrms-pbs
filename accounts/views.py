@@ -20,7 +20,7 @@ from django.views.decorators.http import require_POST
 from companies.models import Company
 
 from .forms import LoginForm
-from .models import User
+from .models import LinkedAccount, User
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +126,7 @@ def link_account_api(request):
     API endpoint to authenticate and link an additional account from another entity or role.
     Stores the linked account in the session for quick 1-click switching.
     """
+    current_user = request.user
     email = request.POST.get("email", "").strip()
     password = request.POST.get("password", "")
     switch_now = request.POST.get("switch_now", "false").lower() in ["true", "1", "yes"]
@@ -150,8 +151,22 @@ def link_account_api(request):
             {"success": False, "message": "This account is inactive. Please contact your administrator."}, status=400
         )
 
+    # Save permanent bidirectional links in the database
+    LinkedAccount.objects.get_or_create(primary_user=current_user, linked_user=user)
+    LinkedAccount.objects.get_or_create(primary_user=user, linked_user=current_user)
+
+    # Link all accounts in the group
+    c_ids = set(LinkedAccount.objects.filter(primary_user=current_user).values_list("linked_user_id", flat=True))
+    t_ids = set(LinkedAccount.objects.filter(primary_user=user).values_list("linked_user_id", flat=True))
+    cluster_ids = c_ids | t_ids | {current_user.id, user.id}
+
+    cluster_users = list(User.objects.filter(id__in=cluster_ids, is_active=True))
+    for u1 in cluster_users:
+        for u2 in cluster_users:
+            if u1.id != u2.id:
+                LinkedAccount.objects.get_or_create(primary_user=u1, linked_user=u2)
+
     # Ensure current user is in linked accounts
-    current_user = request.user
     session_accounts = list(request.session.get("linked_accounts", []))
 
     # Helper to format account entry
@@ -223,50 +238,34 @@ def switch_account_view(request, user_id):
     """
     One-click switcher to switch active session to another linked account.
     """
-    # Verify the target user exists and is active
     target_user = get_object_or_404(User, id=user_id, is_active=True)
 
-    # Check that user is in linked accounts or current user is superadmin/admin
-    session_accounts = list(request.session.get("linked_accounts", []))
-    is_linked = any(acc.get("user_id") == user_id for acc in session_accounts)
+    # Check if target_user is linked in DB or current user is admin/superuser
+    is_linked = LinkedAccount.objects.filter(primary_user=request.user, linked_user=target_user).exists()
     is_admin = request.user.is_superuser or request.user.role in [User.Role.SUPERADMIN, User.Role.COMPANY_ADMIN]
 
     if not is_linked and not is_admin:
         messages.error(request, "You do not have permission to switch to this account. Please link it first.")
         return redirect("dashboard")
 
-    # Ensure current user is in session_accounts before switching
-    current_user = request.user
-    if not any(acc.get("user_id") == current_user.id for acc in session_accounts):
-        session_accounts.append(
-            {
-                "user_id": current_user.id,
-                "email": current_user.email,
-                "full_name": current_user.get_full_name() or current_user.username,
-                "company_name": current_user.company.name if current_user.company else "HRMS Portal",
-                "company_slug": current_user.company.slug if current_user.company else "",
-                "role": current_user.role,
-                "role_display": current_user.get_role_display()
-                if hasattr(current_user, "get_role_display")
-                else current_user.role,
-                "designation": getattr(getattr(current_user, "employee_profile", None), "designation", "") or "",
-                "avatar_url": getattr(
-                    getattr(getattr(current_user, "employee_profile", None), "profile_picture", None), "url", ""
-                )
-                if getattr(getattr(current_user, "employee_profile", None), "profile_picture", None)
-                else "",
-            }
-        )
+    # If is_admin and not linked yet in DB, establish mutual link
+    if not is_linked:
+        LinkedAccount.objects.get_or_create(primary_user=request.user, linked_user=target_user)
+        LinkedAccount.objects.get_or_create(primary_user=target_user, linked_user=request.user)
+
+    current_company_id = request.user.company_id
 
     # Switch session
     auth_login(request, target_user, backend="django.contrib.auth.backends.ModelBackend")
-    request.session["linked_accounts"] = session_accounts
-    request.session.modified = True
 
     company_name = target_user.company.name if target_user.company else "HRMS Portal"
     messages.success(request, f"Switched to {target_user.get_full_name() or target_user.email} ({company_name})")
 
+    # If switching across different companies, redirect to dashboard to prevent company-specific 404s
     next_url = request.POST.get("next") or request.GET.get("next") or reverse("dashboard")
+    if current_company_id != target_user.company_id:
+        next_url = reverse("dashboard")
+
     return redirect(next_url)
 
 
@@ -274,12 +273,15 @@ def switch_account_view(request, user_id):
 @require_POST
 def remove_linked_account_api(request, user_id):
     """
-    Remove an account from the linked accounts switcher in current session.
+    Remove an account from the linked accounts switcher permanently from DB and current session.
     """
     if user_id == request.user.id:
         return JsonResponse(
             {"success": False, "message": "Cannot remove currently active account from switcher."}, status=400
         )
+
+    LinkedAccount.objects.filter(primary_user=request.user, linked_user_id=user_id).delete()
+    LinkedAccount.objects.filter(primary_user_id=user_id, linked_user=request.user).delete()
 
     session_accounts = request.session.get("linked_accounts", [])
     updated_accounts = [acc for acc in session_accounts if acc.get("user_id") != user_id]

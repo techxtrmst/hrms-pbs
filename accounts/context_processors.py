@@ -1,4 +1,4 @@
-from accounts.models import User
+from accounts.models import LinkedAccount, User
 
 
 def linked_accounts_context(request):
@@ -70,32 +70,48 @@ def linked_accounts_context(request):
             "theme_badge_bg": colors["badge_bg"],
         }
 
-    # Ensure current user is in session_accounts list
-    current_in_session = any(acc.get("user_id") == current_user.id for acc in session_accounts)
-    if not current_in_session:
-        session_accounts.append(get_user_data(current_user, is_current=True, idx=0))
-        request.session["linked_accounts"] = session_accounts
-        request.session.modified = True
+    # Fetch database-backed linked account user IDs
+    db_linked_user_ids = list(
+        LinkedAccount.objects.filter(primary_user=current_user, linked_user__is_active=True)
+        .order_by("created_at")
+        .values_list("linked_user_id", flat=True)
+    )
+
+    # Also include any user IDs currently in session
+    session_user_ids = [acc.get("user_id") for acc in session_accounts if isinstance(acc, dict) and "user_id" in acc]
+
+    # Combine unique user IDs with current_user first, then DB-linked, then session-linked
+    combined_user_ids = []
+    seen = set()
+    for uid in [current_user.id] + db_linked_user_ids + session_user_ids:
+        if uid and uid not in seen:
+            seen.add(uid)
+            combined_user_ids.append(uid)
 
     # Validate all user IDs against active DB users
-    user_ids = [acc.get("user_id") for acc in session_accounts if "user_id" in acc]
     active_users = {
         u.id: u
-        for u in User.objects.filter(id__in=user_ids, is_active=True).select_related("company", "employee_profile")
+        for u in User.objects.filter(id__in=combined_user_ids, is_active=True).select_related(
+            "company", "employee_profile"
+        )
     }
 
     valid_linked_accounts = []
     other_linked_accounts = []
+    session_data = []
 
-    for i, acc in enumerate(session_accounts):
-        uid = acc.get("user_id")
+    for i, uid in enumerate(combined_user_ids):
         if uid in active_users:
             u = active_users[uid]
             is_curr = u.id == current_user.id
             acc_data = get_user_data(u, is_current=is_curr, idx=i)
             valid_linked_accounts.append(acc_data)
+            session_data.append(acc_data)
             if not is_curr:
                 other_linked_accounts.append(acc_data)
+
+    # Sync back to session so request.session has the fresh list
+    request.session["linked_accounts"] = session_data
 
     # Compute current user data with theme
     current_account_data = get_user_data(current_user, is_current=True, idx=0)
