@@ -277,15 +277,15 @@ OBSERVABILITY = {
     "ENABLED": True,
     "CAPTURE_SQL_QUERIES": DEBUG,  # Capture SQL queries (expensive in production)
     "STORE_SQL_QUERIES": False,  # Store SQL queries in database (for slow request analysis)
-    "LOG_REQUEST_BODY": True,  # Log request bodies
-    "MAX_BODY_SIZE": 10000,  # Maximum request/response body size to log (bytes)
+    "LOG_REQUEST_BODY": False,  # Disabled to prevent database bloat
+    "MAX_BODY_SIZE": 1000,  # Maximum request/response body size to log (bytes)
     # Data retention (in days)
     "RETENTION": {
-        "REQUEST_LOGS": 7,  # Keep request logs for 7 days
+        "REQUEST_LOGS": 1,  # Keep request logs for 1 day
         "ERROR_LOGS": 30,  # Keep error logs for 30 days
-        "LOG_ENTRIES": 7,  # Keep log entries for 7 days
-        "METRICS": 90,  # Keep aggregated metrics for 90 days
-        "SYSTEM_METRICS": 30,  # Keep system metrics for 30 days
+        "LOG_ENTRIES": 1,  # Keep log entries for 1 day
+        "METRICS": 7,  # Keep aggregated metrics for 7 days
+        "SYSTEM_METRICS": 3,  # Keep system metrics for 3 days
     },
     # Paths to exclude from logging
     "EXCLUDE_PATHS": [

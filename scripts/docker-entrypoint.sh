@@ -177,6 +177,9 @@ fi
 echo "Collecting static files..."
 python manage.py collectstatic --noinput --clear
 
+echo "🧹 Running automated purge for desktop tracking and screenshots to reclaim disk space..."
+python manage.py purge_tracking_data || true
+
 echo "Starting Gunicorn WSGI server..."
 exec gunicorn hrms_core.wsgi:application \
     --bind 0.0.0.0:8000 \
